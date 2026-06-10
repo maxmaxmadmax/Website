@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoundzGood Whitsundays</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- No Nav Bar in index.html, as it is loaded dynamically in the other pages. The navbar is not needed on the homepage as the hero section contains clear calls to action. -->
+    
+
+<section class="hero">
+
+    <video autoplay muted loop playsinline class="hero-video">
+        <source src="videos/build.mp4" type="video/mp4">
+    </video>
+
+    <div class="overlay"></div>
+
+    <div class="hero-content">
+        <img src="images/logowhite.png" alt="SoundzGood Logo" class="hero-logo">
+
+        <p>
+            Page Under Construction
+        </p>
+
+        <div class="buttons">
+            <a href="events.html" class="btn btn-outline">Events</a>
+            <a href="contact.html" class="btn">Contact</a>
+        </div>
+    </div>
+
+</section>
+
+<script>
+fetch('components/navbar.html')
+  .then(response => response.text())
+  .then(data => {
+    document.getElementById('navbar').innerHTML = data;
+  });
+</script>
+
+</body>
+</html>

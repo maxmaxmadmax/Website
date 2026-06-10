@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact | SoundzGood</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<script>
+fetch('components/navbar.html')
+  .then(response => response.text())
+  .then(data => {
+    document.getElementById('navbar').innerHTML = data;
+  });
+</script>
+
+<body>
+
+<div id="navbar"></div>
+
+<header class="page-header contact-header">
+    <div class="header-overlay"></div>
+
+    <div class="header-content">
+        <h1>Contact Us</h1>
+        <p>Let's talk about your next event.</p>
+    </div>
+</header>
+
+<section class="section">
+
+    <div class="contact-wrapper">
+
+        <div class="contact-info">
+
+            <h2>Get In Touch</h2>
+
+            <p>
+                Whether you're planning a festival, community event,
+                corporate function, wedding or private event,
+                we'd love to hear from you.
+            </p>
+
+            <div class="contact-item">
+                <h3>Phone</h3>
+                <p>0422 393 022</p>
+            </div>
+
+            <div class="contact-item">
+                <h3>Email</h3>
+                <p>info@soundzgood.com.au</p>
+            </div>
+
+            <div class="contact-item">
+                <h3>Location</h3>
+                <p>Whitsundays, Queensland</p>
+            </div>
+
+        </div>
+
+        <form class="contact-form">
+
+            <input type="text" placeholder="Your Name" required>
+
+            <input type="email" placeholder="Email Address" required>
+
+            <input type="tel" placeholder="Phone Number">
+
+            <input type="text" placeholder="Event Date">
+
+            <input type="text" placeholder="Event Location">
+
+            <select>
+                <option>Select Service</option>
+                <option>Audio Hire</option>
+                <option>Lighting Hire</option>
+                <option>Stage Hire</option>
+                <option>Event Production</option>
+                <option>Festival Production</option>
+                <option>Corporate Event</option>
+                <option>Wedding</option>
+                <option>Other</option>
+            </select>
+
+            <textarea
+                rows="6"
+                placeholder="Tell us about your event..."
+            ></textarea>
+
+            <button type="submit" class="btn">
+                Send Enquiry
+            </button>
+
+        </form>
+
+    </div>
+
+</section>
+
+<section class="section dark">
+
+    <h2>Service Areas</h2>
+
+    <div class="features">
+
+        <div class="feature">
+            <h3>Whitsundays</h3>
+            <p>Bowen, Airlie Beach, Proserpine, Hamilton Island.</p>
+        </div>
+
+        <div class="feature">
+            <h3>North Queensland</h3>
+            <p>Mackay, Townsville, Cairns and surrounding areas.</p>
+        </div>
+
+    </div>
+
+</section>
+
+</body>
+</html>

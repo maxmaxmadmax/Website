@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Services | SoundzGood</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<script>
+fetch('components/navbar.html')
+  .then(response => response.text())
+  .then(data => {
+    document.getElementById('navbar').innerHTML = data;
+  });
+</script>
+
+<body>
+
+<nav>
+   <div id="navbar"></div>
+</nav>
+
+<header class="page-header services-header">
+    <div class="header-overlay"></div>
+
+    <div class="header-content">
+        <h1>Event Production & Equipment Hire</h1>
+        <p>Professional audio, lighting, staging and event solutions across North Queensland.</p>
+    </div>
+</header>
+
+<section class="section">
+    <h2>What We Do</h2>
+
+    <div class="service-grid">
+
+        <div class="service-card">
+            <h3>Audio Systems</h3>
+            <p>PA systems, wireless microphones, live music, corporate events and sporting events.</p>
+        </div>
+
+        <div class="service-card">
+            <h3>Lighting</h3>
+            <p>Stage lighting, moving heads, wash lighting, atmospheric effects and event lighting design.</p>
+        </div>
+
+        <div class="service-card">
+            <h3>Staging</h3>
+            <p>Trailer stage, portable staging, stage setup and event infrastructure.</p>
+        </div>
+
+        <div class="service-card">
+            <h3>Event Production</h3>
+            <p>Technical planning, production coordination, on-site crew and complete event support.</p>
+        </div>
+
+    </div>
+</section>
+
+<section class="section dark">
+    <h2>Equipment Hire</h2>
+
+    <div class="gallery">
+        <img src="images/speakers.jpg" alt="Speakers">
+        <img src="images/lighting.jpg" alt="Lighting">
+        <img src="images/microphones.jpg" alt="Microphones">
+        <img src="images/stage.jpg" alt="Stage">
+    </div>
+</section>
+
+<section class="section">
+    <h2>Event Types</h2>
+
+    <div class="features">
+        <div class="feature">
+            <h3>Festivals</h3>
+            <p>Outdoor events, live music and community festivals.</p>
+        </div>
+
+        <div class="feature">
+            <h3>Corporate</h3>
+            <p>Professional audio, lighting and AV support for business events.</p>
+        </div>
+
+        <div class="feature">
+            <h3>Weddings</h3>
+            <p>Sound, lighting and staging support for private celebrations.</p>
+        </div>
+
+        <div class="feature">
+            <h3>Sporting Events</h3>
+            <p>PA systems, announcements, presentations and event coverage.</p>
+        </div>
+    </div>
+</section>
+
+<section class="section dark">
+    <h2>Why SoundzGood?</h2>
+
+    <div class="features">
+        <div class="feature">
+            <h3>Local</h3>
+            <p>Based in the Whitsundays and servicing North Queensland.</p>
+        </div>
+
+        <div class="feature">
+            <h3>Reliable</h3>
+            <p>Professional equipment and experienced operators.</p>
+        </div>
+
+        <div class="feature">
+            <h3>Flexible</h3>
+            <p>Dry hire, operated hire or complete event production.</p>
+        </div>
+    </div>
+</section>
+
+<section class="section cta">
+    <h2>Planning an event?</h2>
+    <p>Let's discuss your requirements and build a package that suits your event.</p>
+    <a href="contact.html" class="btn">Request a Quote</a>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Events | SoundzGood</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<div id="event_navbar"></div>
+
+<body>
+
+    <div id="navbar"></div>
+
+    
+
+<div class="sticky-zone">
+
+  <div class="overlay"></div>
+
+    <section class="hero">
+        <video autoplay muted loop playsinline class="hero-video">
+            <source src="videos/loop.mp4" type="video/mp4">
+        </video>
+    </section>
+
+<section class="event-hero">
+  <div class="overlay"></div>
+
+  <div class="event-hero-content">
+    <p class="presented">SOUNDZGOOD PRESENTS</p>
+    <h1>SOUNDZGOOD 2.0</h1>
+    <p class="event-location">BOWEN SPORTING COMPLEX</p>
+    <p class="event-date">22 AUGUST 2026 · 18+</p>
+
+    <a href="https://events.humanitix.com/soundzgood-2-0-bowen" class="btn">GET TICKETS</a>
+  </div>
+</section>
+    
+    <section class="lineup">
+      <h2>Lineup</h2>
+      <br>
+      <h4>DROPPING SOON</h4>
+      <br>
+
+<!--
+        <h1>UNKNOWN 
+<span class="diamond">◆</span>
+        UNKNOWN</h1>
+        <br>
+        <h1>UNKNOWN
+        <span class="diamond">◆</span>  
+        UNKNOWN</h1>
+        <br>
+      <h2>DJ Lineup</h2>
+      <br>
+      <h3>DANCE INTO THE NIGHT</h3>
+      <br>
+        <h1>UNKNOWN
+        <span class="diamond">◆</span>  
+        UNKNOWN</h1>
+        <br>    
+        <h1>UNKNOWN
+        <span class="diamond">◆</span>  
+        UNKNOWN</h1>
+
+        -->
+
+<h5 class="weekend-tagline">Make a Weekend of It in Bowen</h5>
+
+<p class="presented">Experience SoundzGood. Explore Bowen.</p>
+
+    </section>
+
+</div>
+
+<section class="after-lineup">
+    <h2></h2>
+</section>
+
+<section class="section">
+  <h2></h2>
+    <p>
+        Join us for an unforgettable event and make the most of your time in the Whitsundays.
+    </p>    
+  <div class="gallery">
+    <img src="images/bowen.jpeg" alt="">
+    <img src="images/portdenroom.jpg" alt="">
+  </div>
+</section>
+
+
+<section class="announcement-strip">
+  <p>SOUNDZGOOD 2.0 · TICKETS ON SALE NOW · BOWEN SPORTING COMPLEX · 18+ EVENT ·</p>
+</section>
+
+<section>
+  <h2>Upcoming Event</h2>
+
+  <div>
+      
+<script src="https://events.humanitix.com/scripts/widgets/inline.js" type="module"></script>
+<iframe data-checkout="soundzgood-2-0-bowen"></iframe>
+
+  </div>
+</section>
+
+
+<section class="lineup-section", class= "text-sponsored">
+  <h2>PROUDLY SPONSORED BY</h2> 
+  
+ <div class="sponsors">
+    <a href="https://www.guestreservations.com/port-denison-motor-inn/booking?utm_source=microsoft&utm_medium=cpc&utm_campaign=318380760&msclkid=0aeef479491117d7bee29e5fdcb831b6" target="_blank">
+        <img src="images/pdmilogo.webp" alt="Port Denison Motor Inn">
+         </a>
+    <a href="https://www.lowcockbuilders.com.au/" target="_blank">
+      <img src="images/lcblogo.png" alt="Low Cock Builders">
+    </a>
+  </div>
+
+
+</section>
+
+
+
+<div id="footer"></div>
+
+<script src="js/main.js"></script>
+
+<script>
+fetch('components/event_navbar.html')
+  .then(response => response.text())
+  .then(data => {
+    document.getElementById('navbar').innerHTML = data;
+  });
+</script>
+
+</body>
+</html>
