@@ -52,14 +52,6 @@ nav a{
 
     position:relative;
 }
-
-.overlay{
-    position:absolute;
-    inset:0;
-
-    background:rgba(0,0,0,0.55);
-}
-
 .hero-content{
     position:relative;
     z-index:2;
@@ -431,16 +423,7 @@ nav a{
     position:absolute;
     top:50%;
     left:50%;
-    width:100%;
-    height:100%;
-    object-fit:cover;
     transform:translate(-50%, -50%);
-}
-
-.overlay{
-    position:absolute;
-    inset:0;
-    background:rgba(0,0,0,0.55);
 }
 
 .hero-content{
@@ -499,10 +482,9 @@ nav a{
 }
 
 .event-hero{
-  margin-top: -500px;
+  margin-top: -65vh;
   position:relative;
   overflow:hidden;
-  display:flex;
   align-items:center;
   justify-content:center;
   text-align:center;
@@ -518,13 +500,11 @@ nav a{
   letter-spacing:2px;
   font-size:.9rem;
   margin-bottom:20px;
-  font-weight:bold;
 }
 
 .event-hero h1{
-  font-size:clamp(3rem, 11vw, 9rem);
-  line-height:.9;
-  margin-bottom:25px;
+  font-size:clamp(3rem, 9vw, 8rem);
+  margin-bottom:15px;
   text-transform:uppercase;
 }
 
@@ -598,6 +578,20 @@ nav a{
   align-items:center;
   text-align:center;
   padding:80px 10%;
+
+    z-index: 1000;
+
+  background: linear-gradient(
+    to bottom,
+    rgb(255, 136, 0),
+    rgba(255, 136, 0, 0.986),
+    rgba(255, 132, 0, 0.886),
+    rgba(255, 132, 0, 0.786),
+    rgba(0, 0, 0, 0.032)
+  );
+
+  padding: 20px 40px;
+  box-sizing: border-box;
 }
 
 .lineup-section h2{
@@ -631,7 +625,7 @@ nav a{
 }
 
 .sponsors img{
-  height:40px;
+  height:55px;
   width:auto;
 }
 
@@ -639,11 +633,6 @@ nav a{
     position:relative;
 }
 
-.overlay{
-    position:absolute;
-    inset:0;
-    background:rgba(0,0,0,.4);
-}
 
 .image-text{
     position:absolute;
@@ -669,6 +658,13 @@ nav{
     justify-content:space-between;
     align-items:center;
     padding:20px 60px;
+    background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.45),
+    rgba(0, 0, 0, 0)
+  );
+
+  padding: 20px 40px;
 }
 
 .Nav img{
@@ -705,18 +701,6 @@ nav a{
     justify-content:center;
 }
 
-.hero-video{
-    position:absolute;
-    width:100%;
-    height:100%;
-    object-fit:cover;
-}
-
-.overlay{
-    position:absolute;
-    inset:0;
-}
-
 .hero-content{
     position:relative;
     z-index:2;
@@ -725,14 +709,10 @@ nav a{
 
 
 .lineup{
+    margin-top: -100px;
     position:relative;
     z-index:2;
     min-height:50vh;
-    text-transform:uppercase;
-    font-family: 'Courier New', Courier, monospace;
-    font-weight: bold;
-    display:grid;
-    gap:20px;
     align-items:center;
     justify-content:center;
     text-align:center;
@@ -773,8 +753,6 @@ nav a{
   font-size: clamp(1rem, 6vw, 2.5rem);
   font-weight: 400;
   line-height: 1;
-  color: #ff8a00;
-  text-shadow: black solid 2px;
   text-align: center;
   letter-spacing: 0.02em;
   font-style: italic;
@@ -803,7 +781,6 @@ nav a{
 /* Mobile adjustment */
 @media (max-width: 768px) {
   .weekend-tagline {
-    font-size: clamp(2rem, 10vw, 4rem);
     line-height: 1.05;
   }
 
