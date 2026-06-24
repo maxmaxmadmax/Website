@@ -1,0 +1,20 @@
+[
+    {
+        "id": "catch_6a3bdc89b31f28.30709021",
+        "angler": "Max Mitchell",
+        "division": "Senior",
+        "species": "Spanish Mackerel",
+        "weight_kg": 1.23,
+        "length_cm": 22,
+        "timestamp": "2026-06-24 13:32:57"
+    },
+    {
+        "id": "catch_6a3bdca243d2e3.99519035",
+        "angler": "John Joe",
+        "division": "Senior",
+        "species": "Barramundi",
+        "weight_kg": 1,
+        "length_cm": 11,
+        "timestamp": "2026-06-24 13:33:22"
+    }
+]
