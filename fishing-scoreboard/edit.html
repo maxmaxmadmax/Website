@@ -87,7 +87,7 @@
 
 </main>
 
-<script src="js/config.js"></script>
+
 <script src="js/api.js"></script>
 <script>
 const alertBox  = document.getElementById('alert');
@@ -186,7 +186,10 @@ editForm.addEventListener('submit', async function (e) {
         editCard.style.display = 'none';
         loadCatches();
     } catch (err) {
-        showAlert('❌ Could not save changes.', 'error');
+        if (err.message === 'NO_TOKEN' || err.message === 'BAD_TOKEN') {
+            localStorage.removeItem('gh_token');
+            showAlert('❌ Invalid or missing token. Go to the Admin page to set it up.', 'error');
+        } else { showAlert('❌ Could not save changes.', 'error'); }
     }
 });
 
@@ -198,7 +201,10 @@ async function deleteCatch(id, anglerName) {
         showAlert('✅ Entry deleted.', 'success');
         loadCatches();
     } catch (err) {
-        showAlert('❌ Could not delete entry.', 'error');
+        if (err.message === 'NO_TOKEN' || err.message === 'BAD_TOKEN') {
+            localStorage.removeItem('gh_token');
+            showAlert('❌ Invalid or missing token. Go to the Admin page to set it up.', 'error');
+        } else { showAlert('❌ Could not delete entry.', 'error'); }
     }
 }
 

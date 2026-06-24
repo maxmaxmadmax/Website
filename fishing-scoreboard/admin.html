@@ -25,6 +25,23 @@
 
     <div id="alert" class="alert" style="display:none;"></div>
 
+    <!-- Token setup — only shown if no token is saved yet -->
+    <div class="card" id="tokenCard" style="display:none;">
+        <h2>🔑 Admin Setup</h2>
+        <p style="color:#aaa; margin-bottom:1rem; font-size:0.9rem;">
+            Enter your GitHub personal access token to enable saving catches.<br/>
+            This is saved in your browser only — never sent anywhere except GitHub.
+        </p>
+        <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+            <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                   style="flex:1; min-width:200px;" />
+            <button class="btn btn-primary" onclick="saveToken()">Save Token</button>
+        </div>
+        <p style="margin-top:0.75rem; font-size:0.8rem; color:#666;">
+            Need a token? Go to GitHub → Settings → Developer Settings → Personal Access Tokens → Tokens (classic) → generate one with <strong>gist</strong> scope.
+        </p>
+    </div>
+
     <div class="card">
         <h2>📋 Record a Catch</h2>
 
@@ -85,12 +102,25 @@
 
 </main>
 
-<script src="js/config.js"></script>
+
 <script src="js/api.js"></script>
 <script>
 const form      = document.getElementById('catchForm');
 const alertBox  = document.getElementById('alert');
 const submitBtn = document.getElementById('submitBtn');
+
+// Show token setup card if no token saved in browser yet
+if (!localStorage.getItem('gh_token')) {
+    document.getElementById('tokenCard').style.display = 'block';
+}
+
+function saveToken() {
+    const t = document.getElementById('tokenInput').value.trim();
+    if (!t) return;
+    localStorage.setItem('gh_token', t);
+    document.getElementById('tokenCard').style.display = 'none';
+    showAlert('✅ Token saved. You can now submit catches.', 'success');
+}
 
 const ALLOWED_DIVISIONS = ['Senior', 'Junior'];
 const ALLOWED_SPECIES   = ['Barramundi','Coral Trout','Spanish Mackerel','Mangrove Jack','Flathead','Whiting','Mud Crab','Other Species'];
@@ -174,7 +204,16 @@ form.addEventListener('submit', async function (e) {
         form.reset();
         loadRecent();
     } catch (err) {
-        showAlert('❌ Could not save catch. Check your internet connection.', 'error');
+        if (err.message === 'NO_TOKEN') {
+            document.getElementById('tokenCard').style.display = 'block';
+            showAlert('❌ Please enter your GitHub token above first.', 'error');
+        } else if (err.message === 'BAD_TOKEN') {
+            localStorage.removeItem('gh_token');
+            document.getElementById('tokenCard').style.display = 'block';
+            showAlert('❌ Token rejected — please enter a valid token above.', 'error');
+        } else {
+            showAlert('❌ Could not save catch. Check your internet connection.', 'error');
+        }
     }
 
     submitBtn.disabled    = false;

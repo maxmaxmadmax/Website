@@ -1,64 +1,60 @@
 // ============================================================
 // api.js
-// Reads and writes catch data using a GitHub Gist as storage.
+// Storage: public GitHub Gist (no token needed to read).
+// Writes (admin/edit) use a token saved in the browser.
 // ============================================================
 
-const GIST_URL = `https://api.github.com/gists/${GITHUB_GIST_ID}`;
+const GIST_ID  = '97c3aa66fb9b53e4dbb7daa4b76eac5f';
+const GIST_URL = `https://api.github.com/gists/${GIST_ID}`;
 
-// ---------- Read all catches from the Gist ----------
+// Raw public URL — readable by anyone, no auth needed
+const RAW_URL  = `https://gist.githubusercontent.com/maxmaxmadmax/${GIST_ID}/raw/catches.json`;
+
+// ---------- Read catches (no token required) ----------
 async function readCatches() {
-    const res = await fetch(GIST_URL, {
-        headers: {
-            'Authorization': `Bearer ${GITHUB_TOKEN}`,
-            'Accept': 'application/vnd.github+json'
-        }
-    });
-    if (!res.ok) throw new Error('Could not read data from Gist.');
-    const data = await res.json();
-    // The gist stores the JSON as a string inside files['catches.json'].content
-    return JSON.parse(data.files['catches.json'].content) || [];
+    // Add cache-busting so the browser always fetches the latest version
+    const res = await fetch(RAW_URL + '?t=' + Date.now());
+    if (!res.ok) throw new Error('Could not read scoreboard data.');
+    return await res.json();
 }
 
-// ---------- Write the full catches array back to the Gist ----------
+// ---------- Write catches (requires token in localStorage) ----------
 async function writeCatches(catches) {
+    const token = localStorage.getItem('gh_token');
+    if (!token) throw new Error('NO_TOKEN');
+
     const res = await fetch(GIST_URL, {
         method: 'PATCH',
         headers: {
-            'Authorization': `Bearer ${GITHUB_TOKEN}`,
+            'Authorization': `Bearer ${token}`,
             'Accept': 'application/vnd.github+json',
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            files: {
-                'catches.json': {
-                    content: JSON.stringify(catches, null, 2)
-                }
-            }
+            files: { 'catches.json': { content: JSON.stringify(catches, null, 2) } }
         })
     });
-    if (!res.ok) throw new Error('Could not save data to Gist.');
+    if (res.status === 401) throw new Error('BAD_TOKEN');
+    if (!res.ok) throw new Error('Could not save data.');
     return true;
 }
 
-// ---------- Generate a unique ID ----------
+// ---------- Helpers ----------
 function generateId() {
     return 'catch_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 }
 
-// ---------- Current timestamp as "YYYY-MM-DD HH:MM:SS" ----------
 function nowTimestamp() {
     return new Date().toLocaleString('sv-SE').replace('T', ' ').slice(0, 19);
 }
 
-// ---------- Escape HTML to prevent XSS ----------
 function escHtml(str) {
     const div = document.createElement('div');
     div.textContent = String(str);
     return div.innerHTML;
 }
 
-// ---------- Build leaderboard from catches ----------
-// Best catch per species+division. Highest weight wins; tie = longest length.
+// ---------- Build leaderboard ----------
 function buildLeaders(catches) {
     const groups = {};
     for (const c of catches) {
@@ -67,16 +63,13 @@ function buildLeaders(catches) {
             groups[key] = c;
         } else {
             const curr = groups[key];
-            const beatsByWeight = c.weight_kg > curr.weight_kg;
-            const sameWeight    = c.weight_kg == curr.weight_kg;
-            const beatsByLength = c.length_cm > curr.length_cm;
-            if (beatsByWeight || (sameWeight && beatsByLength)) {
+            if (c.weight_kg > curr.weight_kg ||
+               (c.weight_kg == curr.weight_kg && c.length_cm > curr.length_cm)) {
                 groups[key] = c;
             }
         }
     }
-    return Object.values(groups).sort((a, b) => {
-        if (a.species !== b.species) return a.species.localeCompare(b.species);
-        return a.division.localeCompare(b.division);
-    });
+    return Object.values(groups).sort((a, b) =>
+        a.species !== b.species ? a.species.localeCompare(b.species) : a.division.localeCompare(b.division)
+    );
 }
