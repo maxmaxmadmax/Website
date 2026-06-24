@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fishing Competition Scoreboard</title>
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header>
+    <a href="index.html" class="header-brand">
+        <img src="https://thestonkafishingchallenge.com.au/wp-content/uploads/2023/04/logo-transparent-file-1.png"
+             alt="Stonka Fishing Challenge logo" class="header-logo" />
+        <h1>Stonka Fishing Challenge<span>Live Scoreboard</span></h1>
+    </a>
+    <nav>
+        <a href="scoreboard.html">Live Scoreboard</a>
+        <a href="admin.html">Admin</a>
+        <a href="edit.html">Edit Entries</a>
+    </nav>
+</header>
+
+<main>
+    <div style="text-align:center; padding: 2rem 0 1rem;">
+        <h2 style="font-size: 1.8rem; color: #f4a11d;">Welcome</h2>
+        <p style="color: #a8d4f0; margin-top: 0.5rem;">
+            Choose a section below to get started.
+        </p>
+    </div>
+
+    <div class="landing-grid">
+
+        <a href="scoreboard.html" class="landing-card">
+            <div class="icon">🏆</div>
+            <h2>Live Scoreboard</h2>
+            <p>Public leaderboard. Auto-refreshes every 5 seconds.</p>
+        </a>
+
+        <a href="admin.html" class="landing-card">
+            <div class="icon">📋</div>
+            <h2>Enter a Catch</h2>
+            <p>Admin page to record a new weigh-in.</p>
+        </a>
+
+        <a href="edit.html" class="landing-card">
+            <div class="icon">✏️</div>
+            <h2>Edit / Delete</h2>
+            <p>Fix or remove existing catch entries.</p>
+        </a>
+
+        <!-- Big screen link opens scoreboard in TV mode -->
+        <a href="scoreboard.html?bigscreen=1" class="landing-card">
+            <div class="icon">📺</div>
+            <h2>Big Screen</h2>
+            <p>Large-text scoreboard for a TV or projector.</p>
+        </a>
+
+    </div>
+</main>
+
+</body>
+</html>

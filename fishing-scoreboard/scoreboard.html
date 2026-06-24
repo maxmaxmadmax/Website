@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live Scoreboard – Stonka Fishing Challenge</title>
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header>
+    <a href="index.html" class="header-brand">
+        <img src="https://thestonkafishingchallenge.com.au/wp-content/uploads/2023/04/logo-transparent-file-1.png"
+             alt="Stonka Fishing Challenge logo" class="header-logo" />
+        <h1>Stonka Fishing Challenge<span>Live Scoreboard</span></h1>
+    </a>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="admin.html">Admin</a>
+        <a href="edit.html">Edit Entries</a>
+        <a href="#" id="bigscreenToggle">📺 Big Screen</a>
+    </nav>
+</header>
+
+<main>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+        <div>
+            <span class="live-dot"></span>
+            <span style="color:#2ecc71; font-weight:600;">LIVE</span>
+            <span style="color:#5a8ab0; font-size:0.85rem; margin-left:0.5rem;">Auto-refreshes every 5 seconds</span>
+        </div>
+        <div class="updated-text" id="updatedAt">Fetching data…</div>
+    </div>
+
+    <div class="card">
+        <h2>🏆 Current Leaders — by Species &amp; Division</h2>
+        <div id="leadersTable"><div class="spinner"></div></div>
+    </div>
+
+    <div class="card">
+        <h2>🕐 Last Weighed — All Submissions</h2>
+        <div id="recentTable"><div class="spinner"></div></div>
+    </div>
+
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script>
+// Big-screen mode
+const params = new URLSearchParams(window.location.search);
+if (params.get('bigscreen') === '1') document.body.classList.add('bigscreen');
+
+document.getElementById('bigscreenToggle').addEventListener('click', function (e) {
+    e.preventDefault();
+    document.body.classList.toggle('bigscreen');
+});
+
+function renderLeaders(leaders) {
+    if (leaders.length === 0) return '<p class="empty-state">No catches recorded yet. Check back soon!</p>';
+
+    const rows = leaders.map(c => `
+        <tr>
+            <td>${escHtml(c.species)}</td>
+            <td><span class="pill pill-${c.division.toLowerCase()}">${escHtml(c.division)}</span></td>
+            <td>${escHtml(c.angler)} <span class="leader-badge">👑 Leader</span></td>
+            <td><strong>${c.weight_kg} kg</strong></td>
+            <td>${c.length_cm} cm</td>
+            <td style="color:#666;font-size:0.85em;">${escHtml(c.timestamp)}</td>
+        </tr>`).join('');
+
+    return `<table>
+        <thead><tr><th>Species</th><th>Division</th><th>Leader</th><th>Weight</th><th>Length</th><th>Weighed At</th></tr></thead>
+        <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function renderRecent(catches) {
+    if (catches.length === 0) return '<p class="empty-state">No catches yet.</p>';
+
+    const rows = catches.map(c => `
+        <tr>
+            <td>${escHtml(c.angler)}</td>
+            <td><span class="pill pill-${c.division.toLowerCase()}">${escHtml(c.division)}</span></td>
+            <td>${escHtml(c.species)}</td>
+            <td>${c.weight_kg} kg</td>
+            <td>${c.length_cm} cm</td>
+            <td style="color:#666;font-size:0.85em;">${escHtml(c.timestamp)}</td>
+        </tr>`).join('');
+
+    return `<table>
+        <thead><tr><th>Angler</th><th>Division</th><th>Species</th><th>Weight</th><th>Length</th><th>Weighed At</th></tr></thead>
+        <tbody>${rows}</tbody>
+    </table>`;
+}
+
+async function refresh() {
+    try {
+        const catches = await readCatches();
+        const leaders = buildLeaders(catches);
+        const recent  = [...catches].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+        document.getElementById('leadersTable').innerHTML = renderLeaders(leaders);
+        document.getElementById('recentTable').innerHTML  = renderRecent(recent);
+        document.getElementById('updatedAt').textContent  = 'Last updated: ' + new Date().toLocaleTimeString();
+    } catch (err) {
+        document.getElementById('updatedAt').textContent = '⚠️ Could not reach server. Retrying…';
+    }
+}
+
+refresh();
+setInterval(refresh, 5000);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Enter Catch – Admin</title>
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header>
+    <a href="index.html" class="header-brand">
+        <img src="https://thestonkafishingchallenge.com.au/wp-content/uploads/2023/04/logo-transparent-file-1.png"
+             alt="Stonka Fishing Challenge logo" class="header-logo" />
+        <h1>Stonka Fishing Challenge<span>Live Scoreboard</span></h1>
+    </a>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="scoreboard.html">Live Scoreboard</a>
+        <a href="edit.html">Edit Entries</a>
+    </nav>
+</header>
+
+<main>
+
+    <div id="alert" class="alert" style="display:none;"></div>
+
+    <div class="card">
+        <h2>📋 Record a Catch</h2>
+
+        <form id="catchForm">
+
+            <div class="form-group">
+                <label for="angler">Angler Name</label>
+                <input type="text" id="angler" placeholder="e.g. Jane Smith" maxlength="100" required />
+            </div>
+
+            <div class="form-group">
+                <label for="division">Division</label>
+                <select id="division" required>
+                    <option value="">— Select division —</option>
+                    <option value="Senior">Senior</option>
+                    <option value="Junior">Junior</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="species">Species</label>
+                <select id="species" required>
+                    <option value="">— Select species —</option>
+                    <option value="Barramundi">Barramundi</option>
+                    <option value="Coral Trout">Coral Trout</option>
+                    <option value="Spanish Mackerel">Spanish Mackerel</option>
+                    <option value="Mangrove Jack">Mangrove Jack</option>
+                    <option value="Flathead">Flathead</option>
+                    <option value="Whiting">Whiting</option>
+                    <option value="Mud Crab">Mud Crab</option>
+                    <option value="Other Species">Other Species</option>
+                </select>
+            </div>
+
+            <div class="form-group"></div>
+
+            <div class="form-group">
+                <label for="weight_kg">Weight (kg)</label>
+                <input type="number" id="weight_kg" placeholder="e.g. 4.75" step="0.01" min="0.01" max="500" required />
+            </div>
+
+            <div class="form-group">
+                <label for="length_cm">Length (cm)</label>
+                <input type="number" id="length_cm" placeholder="e.g. 68" step="0.1" min="0.1" max="400" required />
+            </div>
+
+            <div class="form-group full-width" style="margin-top:0.5rem;">
+                <button type="submit" class="btn btn-primary" id="submitBtn">✅ Submit Catch</button>
+            </div>
+
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>🕐 Recent Submissions</h2>
+        <div id="recentList"><div class="spinner"></div></div>
+    </div>
+
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script>
+const form      = document.getElementById('catchForm');
+const alertBox  = document.getElementById('alert');
+const submitBtn = document.getElementById('submitBtn');
+
+const ALLOWED_DIVISIONS = ['Senior', 'Junior'];
+const ALLOWED_SPECIES   = ['Barramundi','Coral Trout','Spanish Mackerel','Mangrove Jack','Flathead','Whiting','Mud Crab','Other Species'];
+
+function showAlert(msg, type) {
+    alertBox.textContent   = msg;
+    alertBox.className     = 'alert alert-' + type;
+    alertBox.style.display = 'block';
+    alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function loadRecent() {
+    const recentList = document.getElementById('recentList');
+    try {
+        const catches = await readCatches();
+        // Show newest first
+        const sorted = [...catches].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+        if (sorted.length === 0) {
+            recentList.innerHTML = '<p class="empty-state">No catches recorded yet.</p>';
+            return;
+        }
+
+        const rows = sorted.slice(0, 10).map(c => `
+            <tr>
+                <td>${escHtml(c.angler)}</td>
+                <td><span class="pill pill-${c.division.toLowerCase()}">${escHtml(c.division)}</span></td>
+                <td>${escHtml(c.species)}</td>
+                <td>${c.weight_kg} kg</td>
+                <td>${c.length_cm} cm</td>
+                <td style="color:#666;font-size:0.8rem;">${escHtml(c.timestamp)}</td>
+            </tr>
+        `).join('');
+
+        recentList.innerHTML = `
+            <table>
+                <thead><tr><th>Angler</th><th>Division</th><th>Species</th><th>Weight</th><th>Length</th><th>Time</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+    } catch (err) {
+        recentList.innerHTML = '<p class="empty-state">Could not load recent catches.</p>';
+    }
+}
+
+form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const angler   = document.getElementById('angler').value.trim();
+    const division = document.getElementById('division').value;
+    const species  = document.getElementById('species').value;
+    const weight   = parseFloat(document.getElementById('weight_kg').value);
+    const length   = parseFloat(document.getElementById('length_cm').value);
+
+    // Basic client-side validation
+    if (!angler)                            return showAlert('❌ Angler name is required.', 'error');
+    if (!ALLOWED_DIVISIONS.includes(division)) return showAlert('❌ Please select a division.', 'error');
+    if (!ALLOWED_SPECIES.includes(species))    return showAlert('❌ Please select a species.', 'error');
+    if (weight <= 0 || weight > 500)        return showAlert('❌ Weight must be between 0 and 500 kg.', 'error');
+    if (length <= 0 || length > 400)        return showAlert('❌ Length must be between 0 and 400 cm.', 'error');
+
+    submitBtn.disabled    = true;
+    submitBtn.textContent = 'Saving…';
+
+    try {
+        // Read current catches, add the new one, write back
+        const catches = await readCatches();
+
+        catches.push({
+            id:        generateId(),
+            angler,
+            division,
+            species,
+            weight_kg: weight,
+            length_cm: length,
+            timestamp: nowTimestamp(),
+        });
+
+        await writeCatches(catches);
+
+        showAlert('✅ Catch recorded successfully!', 'success');
+        form.reset();
+        loadRecent();
+    } catch (err) {
+        showAlert('❌ Could not save catch. Check your internet connection.', 'error');
+    }
+
+    submitBtn.disabled    = false;
+    submitBtn.textContent = '✅ Submit Catch';
+});
+
+loadRecent();
+</script>
+
+</body>
+</html>

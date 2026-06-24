@@ -1,0 +1,367 @@
+/* ============================================================
+   style.css  –  Stonka Fishing Challenge Scoreboard
+   Brand colours taken from thestonkafishingchallenge.com.au
+   ============================================================ */
+
+/* ---------- Google Font (bold condensed – matches the Stonka vibe) ---------- */
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap');
+
+/* ---------- Reset & base ---------- */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    /* Barlow for body text, condensed for headings via class */
+    font-family: 'Barlow', 'Segoe UI', sans-serif;
+    background: #111111;       /* near-black – matches the dark photo overlays */
+    color: #f0f0f0;
+    min-height: 100vh;
+    line-height: 1.5;
+}
+
+/* ---------- Page header ---------- */
+header {
+    background: #D4641A;       /* Stonka burnt orange – nav bar colour */
+    border-bottom: 4px solid #8B3E0A;   /* darker orange underline */
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+/* Logo + title group */
+.header-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+}
+
+.header-logo {
+    height: 56px;
+    width: auto;
+    /* The logo PNG has a transparent background – no extra treatment needed */
+}
+
+header h1 {
+    font-family: 'Barlow Condensed', 'Segoe UI', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    line-height: 1.1;
+}
+
+header h1 span {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    color: rgba(255,255,255,0.75);
+    text-transform: uppercase;
+}
+
+header nav a {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #ffffff;
+    text-decoration: none;
+    margin-left: 1.5rem;
+    padding: 0.25rem 0;
+    border-bottom: 2px solid transparent;
+    transition: border-color 0.2s, color 0.2s;
+}
+
+header nav a:hover {
+    border-bottom-color: #ffffff;
+    color: #ffffff;
+}
+
+/* ---------- Main content wrapper ---------- */
+main {
+    max-width: 980px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+/* ---------- Page title strip (below header) ---------- */
+.page-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #D4641A;
+    margin-bottom: 1.25rem;
+}
+
+/* ---------- Cards ---------- */
+.card {
+    background: #1C1C1C;
+    border: 1px solid #2E2E2E;
+    border-top: 3px solid #D4641A;     /* orange top stripe on every card */
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.card h2 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #D4641A;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #2E2E2E;
+}
+
+/* ---------- Form styles ---------- */
+form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 600px) {
+    form { grid-template-columns: 1fr; }
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #aaaaaa;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+input, select {
+    background: #0e0e0e;
+    border: 1px solid #3a3a3a;
+    border-radius: 5px;
+    color: #f0f0f0;
+    padding: 0.6rem 0.8rem;
+    font-size: 1rem;
+    font-family: 'Barlow', sans-serif;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #D4641A;
+    box-shadow: 0 0 0 3px rgba(212, 100, 26, 0.25);
+}
+
+select option {
+    background: #0e0e0e;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+    display: inline-block;
+    padding: 0.65rem 1.4rem;
+    border: none;
+    border-radius: 5px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    text-decoration: none;
+    text-align: center;
+}
+
+.btn:active { transform: scale(0.98); }
+.btn:hover  { opacity: 0.88; }
+
+.btn-primary   { background: #D4641A; color: #ffffff; }
+.btn-danger    { background: #b52b2b; color: #ffffff; }
+.btn-secondary { background: #2e2e2e; color: #f0f0f0; border: 1px solid #444; }
+.btn-sm        { padding: 0.3rem 0.75rem; font-size: 0.85rem; }
+
+/* ---------- Alert / status messages ---------- */
+.alert {
+    padding: 0.8rem 1rem;
+    border-radius: 5px;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.alert-success { background: rgba(39, 174, 96, 0.15);  border: 1px solid #27ae60; color: #2ecc71; }
+.alert-error   { background: rgba(181, 43, 43, 0.15);  border: 1px solid #b52b2b; color: #e05555; }
+
+/* ---------- Tables ---------- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+th {
+    background: #0e0e0e;
+    color: #D4641A;
+    padding: 0.65rem 0.8rem;
+    text-align: left;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+td {
+    padding: 0.65rem 0.8rem;
+    border-bottom: 1px solid #2a2a2a;
+}
+
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(212, 100, 26, 0.06); }
+
+/* ---------- Scoreboard-specific ---------- */
+
+/* Leader badge */
+.leader-badge {
+    display: inline-block;
+    background: #D4641A;
+    color: #ffffff;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    margin-left: 0.4rem;
+    vertical-align: middle;
+}
+
+/* Division pill */
+.pill {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 3px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.pill-senior { background: #8B3E0A; color: #f0c898; }
+.pill-junior { background: #1a4a8B; color: #98c0f0; }
+
+/* Live indicator dot */
+.live-dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    background: #2ecc71;
+    border-radius: 50%;
+    margin-right: 0.4rem;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.25; }
+}
+
+/* Last-updated footer text */
+.updated-text {
+    font-size: 0.8rem;
+    color: #666666;
+}
+
+/* ---------- Big-screen / TV mode ---------- */
+body.bigscreen { font-size: 1.4rem; }
+
+body.bigscreen header h1      { font-size: 2rem; }
+body.bigscreen .header-logo   { height: 80px; }
+body.bigscreen table          { font-size: 1.3rem; }
+body.bigscreen th             { font-size: 1rem; padding: 1rem; }
+body.bigscreen td             { padding: 0.9rem 1rem; }
+body.bigscreen .leader-badge  { font-size: 0.9rem; padding: 0.2rem 0.7rem; }
+body.bigscreen main           { max-width: 1400px; }
+
+/* ---------- Landing page cards ---------- */
+.landing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+}
+
+.landing-card {
+    background: #1C1C1C;
+    border: 1px solid #2E2E2E;
+    border-top: 3px solid #D4641A;
+    border-radius: 8px;
+    padding: 1.75rem 1.25rem;
+    text-align: center;
+    text-decoration: none;
+    color: #f0f0f0;
+    transition: border-color 0.2s, transform 0.2s, background 0.2s;
+}
+
+.landing-card:hover {
+    background: #222222;
+    transform: translateY(-3px);
+}
+
+.landing-card .icon { font-size: 2.2rem; margin-bottom: 0.7rem; }
+
+.landing-card h2 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #D4641A;
+    margin-bottom: 0.4rem;
+}
+
+.landing-card p { font-size: 0.88rem; color: #888888; }
+
+/* ---------- Spinner ---------- */
+.spinner {
+    border: 3px solid #2E2E2E;
+    border-top-color: #D4641A;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    animation: spin 0.8s linear infinite;
+    margin: 2rem auto;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Empty state ---------- */
+.empty-state {
+    text-align: center;
+    color: #555555;
+    padding: 2rem;
+    font-size: 0.95rem;
+}

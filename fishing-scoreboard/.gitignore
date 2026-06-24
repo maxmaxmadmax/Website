@@ -1,0 +1,5 @@
+# Keep the GitHub token off public repos
+js/config.js
+
+# PHP data file (not needed on GitHub Pages)
+data/catches.json

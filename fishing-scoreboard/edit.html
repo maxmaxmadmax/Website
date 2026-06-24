@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Entries – Stonka Fishing Challenge</title>
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header>
+    <a href="index.html" class="header-brand">
+        <img src="https://thestonkafishingchallenge.com.au/wp-content/uploads/2023/04/logo-transparent-file-1.png"
+             alt="Stonka Fishing Challenge logo" class="header-logo" />
+        <h1>Stonka Fishing Challenge<span>Live Scoreboard</span></h1>
+    </a>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="scoreboard.html">Live Scoreboard</a>
+        <a href="admin.html">Enter Catch</a>
+    </nav>
+</header>
+
+<main>
+
+    <div id="alert" class="alert" style="display:none;"></div>
+
+    <div class="card" id="editCard" style="display:none;">
+        <h2>✏️ Edit Catch</h2>
+        <form id="editForm">
+            <input type="hidden" id="editId" />
+
+            <div class="form-group">
+                <label for="editAngler">Angler Name</label>
+                <input type="text" id="editAngler" maxlength="100" required />
+            </div>
+
+            <div class="form-group">
+                <label for="editDivision">Division</label>
+                <select id="editDivision" required>
+                    <option value="Senior">Senior</option>
+                    <option value="Junior">Junior</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="editSpecies">Species</label>
+                <select id="editSpecies" required>
+                    <option value="Barramundi">Barramundi</option>
+                    <option value="Coral Trout">Coral Trout</option>
+                    <option value="Spanish Mackerel">Spanish Mackerel</option>
+                    <option value="Mangrove Jack">Mangrove Jack</option>
+                    <option value="Flathead">Flathead</option>
+                    <option value="Whiting">Whiting</option>
+                    <option value="Mud Crab">Mud Crab</option>
+                    <option value="Other Species">Other Species</option>
+                </select>
+            </div>
+
+            <div class="form-group"></div>
+
+            <div class="form-group">
+                <label for="editWeight">Weight (kg)</label>
+                <input type="number" id="editWeight" step="0.01" min="0.01" max="500" required />
+            </div>
+
+            <div class="form-group">
+                <label for="editLength">Length (cm)</label>
+                <input type="number" id="editLength" step="0.1" min="0.1" max="400" required />
+            </div>
+
+            <div class="form-group full-width" style="display:flex; gap:1rem; margin-top:0.5rem;">
+                <button type="submit" class="btn btn-primary">💾 Save Changes</button>
+                <button type="button" class="btn btn-secondary" id="cancelEdit">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>📋 All Catch Entries</h2>
+        <p style="color:#555; font-size:0.85rem; margin-bottom:1rem;">
+            Click <strong style="color:#D4641A;">Edit</strong> to modify a record, or
+            <strong style="color:#e05555;">Delete</strong> to remove it.
+        </p>
+        <div id="catchesTable"><div class="spinner"></div></div>
+    </div>
+
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script>
+const alertBox  = document.getElementById('alert');
+const editCard  = document.getElementById('editCard');
+const editForm  = document.getElementById('editForm');
+
+function showAlert(msg, type) {
+    alertBox.textContent   = msg;
+    alertBox.className     = 'alert alert-' + type;
+    alertBox.style.display = 'block';
+    alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function hideAlert() { alertBox.style.display = 'none'; }
+
+async function loadCatches() {
+    const el = document.getElementById('catchesTable');
+    el.innerHTML = '<div class="spinner"></div>';
+    try {
+        const catches = await readCatches();
+        const sorted  = [...catches].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+        renderTable(sorted);
+    } catch (err) {
+        el.innerHTML = '<p class="empty-state">Could not load catches.</p>';
+    }
+}
+
+function renderTable(catches) {
+    const el = document.getElementById('catchesTable');
+    if (catches.length === 0) {
+        el.innerHTML = '<p class="empty-state">No catches recorded yet.</p>';
+        return;
+    }
+
+    const rows = catches.map(c => `
+        <tr>
+            <td>${escHtml(c.angler)}</td>
+            <td><span class="pill pill-${c.division.toLowerCase()}">${escHtml(c.division)}</span></td>
+            <td>${escHtml(c.species)}</td>
+            <td>${c.weight_kg} kg</td>
+            <td>${c.length_cm} cm</td>
+            <td style="color:#555;font-size:0.8rem;">${escHtml(c.timestamp)}</td>
+            <td style="white-space:nowrap;">
+                <button class="btn btn-secondary btn-sm"
+                    onclick="openEdit('${escHtml(c.id)}','${escHtml(c.angler)}','${escHtml(c.division)}','${escHtml(c.species)}',${c.weight_kg},${c.length_cm})"
+                >Edit</button>
+                <button class="btn btn-danger btn-sm" style="margin-left:0.4rem;"
+                    onclick="deleteCatch('${escHtml(c.id)}','${escHtml(c.angler)}')"
+                >Delete</button>
+            </td>
+        </tr>`).join('');
+
+    el.innerHTML = `<table>
+        <thead><tr><th>Angler</th><th>Division</th><th>Species</th><th>Weight</th><th>Length</th><th>Weighed At</th><th>Actions</th></tr></thead>
+        <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function openEdit(id, angler, division, species, weight, length) {
+    hideAlert();
+    document.getElementById('editId').value       = id;
+    document.getElementById('editAngler').value   = angler;
+    document.getElementById('editDivision').value = division;
+    document.getElementById('editSpecies').value  = species;
+    document.getElementById('editWeight').value   = weight;
+    document.getElementById('editLength').value   = length;
+    editCard.style.display = 'block';
+    editCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+document.getElementById('cancelEdit').addEventListener('click', () => {
+    editCard.style.display = 'none';
+    hideAlert();
+});
+
+editForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const id = document.getElementById('editId').value;
+
+    try {
+        const catches = await readCatches();
+        const idx = catches.findIndex(c => c.id === id);
+        if (idx === -1) return showAlert('❌ Catch not found.', 'error');
+
+        catches[idx] = {
+            ...catches[idx],
+            angler:    document.getElementById('editAngler').value.trim(),
+            division:  document.getElementById('editDivision').value,
+            species:   document.getElementById('editSpecies').value,
+            weight_kg: parseFloat(document.getElementById('editWeight').value),
+            length_cm: parseFloat(document.getElementById('editLength').value),
+        };
+
+        await writeCatches(catches);
+        showAlert('✅ Catch updated.', 'success');
+        editCard.style.display = 'none';
+        loadCatches();
+    } catch (err) {
+        showAlert('❌ Could not save changes.', 'error');
+    }
+});
+
+async function deleteCatch(id, anglerName) {
+    if (!confirm(`Delete the catch for "${anglerName}"?\nThis cannot be undone.`)) return;
+    try {
+        const catches = await readCatches();
+        await writeCatches(catches.filter(c => c.id !== id));
+        showAlert('✅ Entry deleted.', 'success');
+        loadCatches();
+    } catch (err) {
+        showAlert('❌ Could not delete entry.', 'error');
+    }
+}
+
+loadCatches();
+</script>
+
+</body>
+</html>
