@@ -1,0 +1,112 @@
+/* --------------------------------------------------------------------------
+   SoundzGood - shared page script
+
+   1. Loads components/navbar.html into  <div id="navbar"></div>
+   2. Loads components/footer.html into  <div id="footer"></div>
+   3. Highlights the menu link for the page you are currently on
+
+   You normally do not need to edit this file.
+   To change the menu or footer, edit the files in the components folder.
+   -------------------------------------------------------------------------- */
+
+/* Turn the scrapbook scroll animation on. This runs straight away (before the
+   page is painted) so nothing flashes into view first. If the browser is too
+   old, or the visitor prefers less motion, the class is removed again below
+   and everything simply shows normally. */
+if (supportsScrollAnimation()) {
+    document.documentElement.classList.add('has-scroll-anim');
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    loadComponent('navbar', 'components/navbar.html', highlightCurrentPage);
+    loadComponent('footer', 'components/footer.html');
+    initScrapbookAnimation();
+});
+
+function supportsScrollAnimation() {
+    return 'IntersectionObserver' in window &&
+        !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+/* Paste each act onto the page as it scrolls into view */
+function initScrapbookAnimation() {
+    if (!supportsScrollAnimation()) {
+        document.documentElement.classList.remove('has-scroll-anim');
+        return;
+    }
+
+    var items = document.querySelectorAll('.act, .act-wave');
+
+    if (items.length === 0) {
+        return; // not the events page
+    }
+
+    var observer = new IntersectionObserver(function (entries) {
+        for (var i = 0; i < entries.length; i++) {
+            if (entries[i].isIntersecting) {
+                entries[i].target.classList.add('is-visible');
+                observer.unobserve(entries[i].target); // only animate once
+            }
+        }
+    }, {
+        threshold: 0.2,
+        rootMargin: '0px 0px -6% 0px'
+    });
+
+    for (var i = 0; i < items.length; i++) {
+        observer.observe(items[i]);
+    }
+
+    /* Safety net: if anything hasn't been revealed after a few seconds
+       (an old browser, a stalled observer), show it anyway. The lineup must
+       never be left invisible. */
+    setTimeout(function () {
+        for (var i = 0; i < items.length; i++) {
+            items[i].classList.add('is-visible');
+        }
+    }, 4000);
+}
+
+/* Fetch an HTML snippet and drop it into the element with the given id */
+function loadComponent(id, url, onLoaded) {
+    var target = document.getElementById(id);
+
+    if (!target) {
+        return; // this page doesn't use that component
+    }
+
+    fetch(url)
+        .then(function (response) {
+            return response.text();
+        })
+        .then(function (html) {
+            target.innerHTML = html;
+
+            if (onLoaded) {
+                onLoaded();
+            }
+        })
+        .catch(function () {
+            /* If the snippet can't load, the page still works - it just
+               shows without the menu or footer. */
+        });
+}
+
+/* Add class="active" to the menu link matching the current page */
+function highlightCurrentPage() {
+    var page = window.location.pathname.split('/').pop();
+
+    if (page === '') {
+        page = 'index.html'; // the site root serves index.html
+    }
+
+    /* Only the menu links - not the logo, which also points at index.html */
+    var links = document.querySelectorAll('#navbar ul a');
+
+    for (var i = 0; i < links.length; i++) {
+        if (links[i].getAttribute('href') === page) {
+            links[i].classList.add('active');
+            links[i].setAttribute('aria-current', 'page');
+        }
+    }
+}

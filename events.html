@@ -3,121 +3,322 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Events | SoundzGood</title>
+
+  <title>SoundzGood 2.0 Bowen | Saturday 22 August 2026</title>
+  <meta name="description" content="SoundzGood 2.0 takes over the Bowen Sporting Complex on Saturday 22 August 2026. Live bands, DJs, cold drinks and food under the North Queensland sky. Doors 2:00 pm. 18+ event.">
+
+  <!-- Facebook / Messenger sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="SoundzGood Whitsundays">
+  <meta property="og:title" content="SoundzGood 2.0 Bowen | Saturday 22 August 2026">
+  <meta property="og:description" content="One big outdoor stage. Live bands. DJs. Cold drinks. Food. Your mates. Bowen Sporting Complex, Saturday 22 August 2026. Doors 2:00 pm. 18+ event.">
+  <meta property="og:url" content="https://www.soundzgood.com.au/events.html">
+  <!-- To use custom event artwork, save it as images/og-event.jpg and change the line below -->
+  <meta property="og:image" content="https://www.soundzgood.com.au/images/logo.png">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" href="images/logo.png">
   <link rel="stylesheet" href="style.css">
+  <script src="js/main.js" defer></script>
 </head>
 
-
-
 <body>
+
   <div id="navbar"></div>
 
-  <div class="sticky-zone">
-    <section class="hero">
-        <video autoplay muted loop playsinline class="hero-video">
-            <source src="videos/loop.mp4" type="video/mp4">
-         
-    
-        </video>
-    </section>
-    
-    <section class="event-hero">
-      <div class="event-hero-content">
-        <p class="presented">SOUNDZGOOD PRESENTS</p>
-        <h1>SOUNDZGOOD 2.0</h1>
-        <p class="event-location">BOWEN SPORTING COMPLEX</p>
-        <p class="event-date">22 AUGUST 2026 · 18+ EVENT<br>DOORS OPEN 2:00 PM</p>
-        <a href="https://events.humanitix.com/soundzgood-2-0-bowen" class="btn">GET TICKETS</a>
+  <!-- 1. EVENT NAME + MAIN ARTWORK ------------------------------------- -->
+  <section class="event-hero">
+
+    <video autoplay muted loop playsinline class="hero-video" poster="images/bowen.jpeg">
+      <source src="videos/loop.mp4" type="video/mp4">
+    </video>
+
+    <div class="overlay"></div>
+
+    <div class="event-hero-content">
+      <!-- Event logo artwork (sun, palms and wordmark all in one file) -->
+      <h1 class="event-logo-heading">
+        <img src="images/soundzgood-2-0-logo.png"
+             alt="SoundzGood 2.0"
+             class="event-logo" width="1000" height="1000">
+      </h1>
+
+      <!-- 2. DATE, VENUE, DOORS, AGE ------------------------------------ -->
+      <p class="poster-tagline">Live Music &middot; Food &middot; Bar &middot; DJs</p>
+      <p class="poster-tagline">18+ Event</p>
+
+      <p class="event-headline-date">August 22nd</p>
+      <p class="event-date">Doors Open 2PM</p>
+      <p class="event-location">Bowen Sporting Complex</p>
+
+      <!-- 3. BUY TICKETS ----------------------------------------------- -->
+      <div class="buttons">
+        <a href="https://events.humanitix.com/soundzgood-2-0-bowen"
+           class="btn btn-ticket" target="_blank" rel="noopener">Buy Tickets</a>
       </div>
-    </section>
+    </div>
 
-    
-    
-    <section class="lineup">
-      <h2>Lineup</h2>
-      <br>
-      <h4>DROPPING SOON</h4>
-      <br>
+  </section>
 
-<!--
-      <h1>UNKNOWN 
-      <span class="diamond">◆</span>
-      UNKNOWN</h1>
-      <br>
-      <h1>UNKNOWN
-      <span class="diamond">◆</span>  
-      UNKNOWN</h1>
-      <br>
-      <h2>DJ Lineup</h2>
-      <br>
-      <h3>DANCE INTO THE NIGHT</h3>
-      <br>
-      <h1>UNKNOWN
-      <span class="diamond">◆</span>  
-      UNKNOWN</h1>
-      <br>    
-      <h1>UNKNOWN
-      <span class="diamond">◆</span>  
-      UNKNOWN</h1>
-         -->
-      <h5 class="weekend-tagline">Make a Weekend of It in Bowen</h5>
-      <p class="presented">Experience SoundzGood. Explore Bowen.</p>
-    </section>
-
+  <!-- Sticky bar - keeps tickets reachable all the way down the page ---- -->
+  <div class="ticket-bar">
+    <p>Sat 22 Aug 2026 &middot; Bowen Sporting Complex &middot; Doors 2:00 PM &middot; 18+</p>
+    <a href="https://events.humanitix.com/soundzgood-2-0-bowen"
+       class="btn" target="_blank" rel="noopener">Buy Tickets</a>
   </div>
 
- <!-- <section class="section">
-    <h2></h2>
-      <p>
-        Join us for an unforgettable event and make the most of your time in the Whitsundays.
-      </p>    
-    <div class="gallery">
-      <img src="images/bowen.jpeg" alt="Bowen Sporting Complex">
-      <img src="images/portdenroom.jpg" alt="Port Denison Room">
-    </div>
-  </section>
- -->
-
   <section class="announcement-strip">
-    <p>SOUNDZGOOD 2.0 · TICKETS ON SALE NOW · BOWEN SPORTING COMPLEX · 18+ EVENT ·</p>
+    <p>SoundzGood 2.0 &middot; Tickets On Sale Now &middot; Bowen Sporting Complex &middot; 18+ Event &middot;</p>
   </section>
 
-  <section>
-    <div>
-      <script src="https://events.humanitix.com/scripts/widgets/inline.js" type="module"></script>
-        <iframe data-checkout="soundzgood-2-0-bowen"></iframe>
+  <!-- ONE CONTINUOUS SUNSET: details flow into the lineup, the lineup flows
+       into the description, and the whole thing sinks into black. -->
+  <div class="event-flow">
+
+  <!-- Palm silhouettes for atmosphere (decorative only) -->
+  <svg class="flow-palm flow-palm-left" viewBox="0 0 120 130" aria-hidden="true">
+    <path d="M30 128 C33 96 40 62 54 40"/>
+    <path d="M54 40 C36 28 18 31 8 43"/>
+    <path d="M54 40 C42 20 26 14 13 19"/>
+    <path d="M54 40 C57 17 49 5 38 0"/>
+    <path d="M54 40 C72 20 92 18 104 27"/>
+    <path d="M54 40 C74 31 92 36 101 47"/>
+  </svg>
+
+  <svg class="flow-palm flow-palm-right" viewBox="0 0 120 130" aria-hidden="true">
+    <path d="M30 128 C33 96 40 62 54 40"/>
+    <path d="M54 40 C36 28 18 31 8 43"/>
+    <path d="M54 40 C42 20 26 14 13 19"/>
+    <path d="M54 40 C57 17 49 5 38 0"/>
+    <path d="M54 40 C72 20 92 18 104 27"/>
+    <path d="M54 40 C74 31 92 36 101 47"/>
+  </svg>
+
+  <svg class="flow-palm flow-palm-low" viewBox="0 0 120 130" aria-hidden="true">
+    <path d="M30 128 C33 96 40 62 54 40"/>
+    <path d="M54 40 C36 28 18 31 8 43"/>
+    <path d="M54 40 C42 20 26 14 13 19"/>
+    <path d="M54 40 C57 17 49 5 38 0"/>
+    <path d="M54 40 C72 20 92 18 104 27"/>
+    <path d="M54 40 C74 31 92 36 101 47"/>
+  </svg>
+
+
+  <!-- Event details at a glance ---------------------------------------- -->
+  <section class="section">
+    <div class="detail-grid">
+
+      <div class="detail-card">
+        <h3>Date</h3>
+        <p>Saturday<br>22 August 2026</p>
+      </div>
+
+      <div class="detail-card">
+        <h3>Doors Open</h3>
+        <p>2:00 PM</p>
+      </div>
+
+      <div class="detail-card">
+        <h3>Venue</h3>
+        <p>Bowen Sporting Complex</p>
+      </div>
+
+      <div class="detail-card">
+        <h3>Entry</h3>
+        <p>18+ Event</p>
+      </div>
+
     </div>
   </section>
 
-  <section class="lineup-section", class= "text-sponsored">
-        <h2>PROUDLY SPONSORED BY</h2> 
-    <div class="sponsors">
-          <a href="https://www.guestreservations.com/port-denison-motor-inn/booking?utm_source=microsoft&utm_medium=cpc&utm_campaign=318380760&msclkid=0aeef479491117d7bee29e5fdcb831b6" target="_blank">
-            <img src="images/pdmilogo.webp" alt="Port Denison Motor Inn">
-          </a>
-          <a href="https://www.lowcockbuilders.com.au/" target="_blank">
-            <img src="images/lcblogo.png" alt="Low Cock Builders">
-          </a>
-          <a href="https://www.facebook.com/evolutionbeautywhitsundays" target="_blank">
-            <img src="images/eb-logo.jpg" alt="Evolution Beauty">
-          </a>
-          <a href="https://www.facebook.com/profile.php?id=61588497981743" target="_blank">
-            <img src="images/ms-sippi.logo.jpg" alt="MS Sippi">
-          </a>
-      </div>
+  <!-- 4. LINEUP --------------------------------------------------------- -->
+  <section class="lineup">
+
+    <h2>Lineup</h2>
+    <p class="section-intro">One big outdoor stage. Live bands and DJs from open to close.</p>
+
+    <!-- Each act flows straight into the next. To add a cut-out photo,
+         put this line just above an <h3>, changing the file name:
+         <img src="images/rossco.png" alt="Rossco" class="artist-photo"> -->
+    <div class="acts">
+
+      <article class="act">
+        <img src="images/rossco.png" alt="Rossco" class="artist-photo"
+             width="460" height="541" loading="lazy" decoding="async">
+        <h3>Rossco</h3>
+        <p>Love Island</p>
+      </article>
+
+      <svg class="act-wave" viewBox="0 0 1200 14" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 7 q25 -6 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0"/>
+      </svg>
+
+      <article class="act">
+        <img src="images/jacob-biermann.png" alt="Jacob Biermann" class="artist-photo"
+             width="460" height="904" loading="lazy" decoding="async">
+        <h3>Jacob Biermann</h3>
+        <p>Triple J Unearthed High Finalist</p>
+      </article>
+
+      <svg class="act-wave" viewBox="0 0 1200 14" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 7 q25 -6 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0"/>
+      </svg>
+
+      <article class="act">
+        <img src="images/dj-henasi.png" alt="Brothas Entertainment &mdash; DJ Henasi" class="artist-photo"
+             width="460" height="518" loading="lazy" decoding="async">
+        <h3>Brothas Entertainment &mdash; DJ Henasi</h3>
+        <p>Special R&amp;B Set</p>
+      </article>
+
+      <svg class="act-wave" viewBox="0 0 1200 14" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 7 q25 -6 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0"/>
+      </svg>
+
+      <article class="act">
+        <img src="images/nina-sinclair.png" alt="Nina Sinclair" class="artist-photo"
+             width="460" height="558" loading="lazy" decoding="async">
+        <h3>Nina Sinclair</h3>
+        <p>One of North Queensland&rsquo;s Leading Female DJs</p>
+      </article>
+
+      <svg class="act-wave" viewBox="0 0 1200 14" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 7 q25 -6 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0"/>
+      </svg>
+
+      <article class="act">
+        <img src="images/pluto-tango.png" alt="Pluto Tango" class="artist-photo"
+             width="460" height="464" loading="lazy" decoding="async">
+        <h3>Pluto Tango</h3>
+        <p>Live Loop Artist</p>
+      </article>
+
+      <svg class="act-wave" viewBox="0 0 1200 14" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 7 q25 -6 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0"/>
+      </svg>
+
+      <article class="act">
+        <img src="images/flaw-clinic.png" alt="Flaw Clinic" class="artist-photo"
+             width="460" height="980" loading="lazy" decoding="async">
+        <h3>Flaw Clinic</h3>
+        <p>Bowen Icons Return</p>
+      </article>
+
+    </div>
   </section>
 
-<div id="footer"></div>
+  <!-- 5. EVENT DESCRIPTION ---------------------------------------------- -->
+  <section class="section flow-copy">
+    <div class="event-copy">
 
-<script src="js/main.js"></script>
+      <h2>Bowen, This One&rsquo;s For You</h2>
 
-<script>
-fetch('components/event_navbar.html')
-  .then(response => response.text())
-  .then(data => {
-    document.getElementById('navbar').innerHTML = data;
-  });
-</script>
+      <p class="lead">
+        After the huge response to our first event, SoundzGood 2.0 is taking over
+        the Bowen Sporting Complex on Saturday 22 August 2026.
+      </p>
+
+      <p>
+        One big outdoor stage. Live bands. DJs. Cold drinks. Food. Your mates.
+        All under the North Queensland sky.
+      </p>
+
+      <p>
+        Expect a full festival-style stage production, licensed bars, food vendors
+        and hours of live entertainment right here in Bowen.
+      </p>
+
+      <p>
+        Come early, grab a drink, catch the live acts and stay as the DJs take
+        over after dark.
+      </p>
+
+      <p>
+        Round up your crew and lock in your tickets.<br>
+        Good music. Good people. SoundzGood.
+      </p>
+
+      <div class="buttons">
+        <a href="https://events.humanitix.com/soundzgood-2-0-bowen"
+           class="btn btn-ticket" target="_blank" rel="noopener">Buy Tickets</a>
+      </div>
+
+    </div>
+  </section>
+
+  </div><!-- /event-flow -->
+
+  <!-- SPONSORS - featured in the middle of the page ---------------------
+       To add a sponsor: save the logo in the images folder and copy one of
+       the blocks below, changing the link, file name and alt text.
+       Still to add from the poster: Vee Jay's Tomatoes, Bowen Barracudas,
+       Lehmann Print Solutions, Muscle Studio, Whitsunday Regional Council,
+       LJ Hooker, Taylamaid Whitsundays.                                  -->
+  <section class="sponsor-feature">
+    <div class="sponsor-panel">
+
+      <h2>Proudly Sponsored By</h2>
+      <p class="section-intro">SoundzGood 2.0 is made possible by these local businesses.</p>
+
+      <div class="sponsor-grid">
+
+        <a href="https://www.guestreservations.com/port-denison-motor-inn/booking?utm_source=microsoft&amp;utm_medium=cpc&amp;utm_campaign=318380760&amp;msclkid=0aeef479491117d7bee29e5fdcb831b6"
+           target="_blank" rel="noopener">
+          <img src="images/pdmilogo.webp" alt="Port Denison Motor Inn" loading="lazy">
+        </a>
+
+        <a href="https://www.lowcockbuilders.com.au/" target="_blank" rel="noopener">
+          <img src="images/lcblogo.png" alt="Lowcock Builders" loading="lazy">
+        </a>
+
+        <a href="https://www.facebook.com/evolutionbeautywhitsundays" target="_blank" rel="noopener">
+          <img src="images/eb-logo.jpg" alt="Evolution Beauty" loading="lazy">
+        </a>
+
+        <a href="https://www.facebook.com/profile.php?id=61588497981743" target="_blank" rel="noopener">
+          <img src="images/ms-sippi.logo.jpg" alt="MS Sippi" loading="lazy">
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Make a weekend of it --------------------------------------------- -->
+  <section class="section dark">
+    <div class="event-copy">
+      <h5 class="weekend-tagline">Make a Weekend of It in Bowen</h5>
+      <p class="presented">Experience SoundzGood. Explore Bowen.</p>
+
+      <div class="weekend-links">
+        <a href="https://www.tourismbowen.com.au/"
+           class="btn btn-outline" target="_blank" rel="noopener">Explore Bowen</a>
+        <a href="https://www.guestreservations.com/port-denison-motor-inn/booking?utm_source=microsoft&amp;utm_medium=cpc&amp;utm_campaign=318380760&amp;msclkid=1db920434d0215e79b534a657272fffa&amp;ctTriggered=true"
+           class="btn btn-outline" target="_blank" rel="noopener">Accommodation</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Humanitix checkout ------------------------------------------------ -->
+  <section class="section">
+    <h2>Get Your Tickets</h2>
+    <div class="checkout-embed">
+      <script src="https://events.humanitix.com/scripts/widgets/inline.js" type="module"></script>
+      <iframe data-checkout="soundzgood-2-0-bowen" title="Buy tickets to SoundzGood 2.0"></iframe>
+    </div>
+  </section>
+
+  <!-- 7. FINAL CALL TO ACTION ------------------------------------------- -->
+  <section class="section cta">
+    <h2>SoundzGood 2.0</h2>
+    <p>
+      Saturday 22 August 2026 &middot; Bowen Sporting Complex &middot;
+      Doors 2:00 PM &middot; 18+ Event
+    </p>
+    <a href="https://events.humanitix.com/soundzgood-2-0-bowen"
+       class="btn btn-ticket" target="_blank" rel="noopener">Buy Tickets</a>
+  </section>
+
+  <div id="footer"></div>
 
 </body>
 </html>

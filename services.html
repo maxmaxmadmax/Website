@@ -3,102 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Services | SoundzGood</title>
-    <link rel="stylesheet" href="style.css">
-</head>
 
-<script>
-fetch('components/navbar.html')
-  .then(response => response.text())
-  .then(data => {
-    document.getElementById('navbar').innerHTML = data;
-  });
-</script>
+    <title>Event Production, Audio, Lighting and Stage Hire | SoundzGood</title>
+    <meta name="description" content="Hire SoundzGood for live event production, PA and audio systems, stage lighting, mobile trailer staging, DJs and event equipment hire across the Whitsundays and North Queensland.">
+
+    <!-- Facebook / Messenger sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="SoundzGood Whitsundays">
+    <meta property="og:title" content="Event Production, Audio, Lighting and Stage Hire | SoundzGood">
+    <meta property="og:description" content="Complete audio, lighting, staging and technical production for festivals, concerts, community events and corporate functions.">
+    <meta property="og:url" content="https://www.soundzgood.com.au/services.html">
+    <meta property="og:image" content="https://www.soundzgood.com.au/images/logo.png">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="icon" href="images/logo.png">
+    <link rel="stylesheet" href="style.css">
+    <script src="js/main.js" defer></script>
+</head>
 
 <body>
 
-<nav>
-   <div id="navbar"></div>
-</nav>
+<div id="navbar"></div>
 
 <header class="page-header services-header">
+
+    <video autoplay muted loop playsinline class="header-video" poster="images/bowen.jpeg">
+        <source src="videos/build.mp4" type="video/mp4">
+    </video>
+
     <div class="header-overlay"></div>
 
     <div class="header-content">
-        <h1>Event Production & Equipment Hire</h1>
-        <p>Professional audio, lighting, staging and event solutions across North Queensland.</p>
+        <h1>Hire SoundzGood</h1>
+        <p>
+            Professional audio, lighting, staging and event production
+            across the Whitsundays and North Queensland.
+        </p>
     </div>
+
 </header>
 
+<!-- SERVICES ------------------------------------------------------------ -->
 <section class="section">
+
     <h2>What We Do</h2>
+    <p class="section-intro">
+        From a single PA system through to a full festival build, we supply the
+        equipment and the crew to run it.
+    </p>
 
     <div class="service-grid">
 
         <div class="service-card">
-            <h3>Audio Systems</h3>
-            <p>PA systems, wireless microphones, live music, corporate events and sporting events.</p>
+            <h3>Live Event Production</h3>
+            <p>
+                Complete audio, lighting, staging and technical production for
+                festivals, concerts, community events and corporate functions.
+            </p>
+        </div>
+
+        <div class="service-card">
+            <h3>Audio</h3>
+            <p>
+                Professional PA systems, digital mixing consoles, microphones,
+                monitor systems and experienced audio technicians.
+            </p>
         </div>
 
         <div class="service-card">
             <h3>Lighting</h3>
-            <p>Stage lighting, moving heads, wash lighting, atmospheric effects and event lighting design.</p>
+            <p>
+                Stage lighting, moving lights, wash lighting, festoon lighting,
+                architectural lighting and lighting operation.
+            </p>
         </div>
 
         <div class="service-card">
             <h3>Staging</h3>
-            <p>Trailer stage, portable staging, stage setup and event infrastructure.</p>
+            <p>
+                Mobile trailer stage, stage structures, roof systems, access
+                stairs, stage lighting and production infrastructure.
+            </p>
         </div>
 
         <div class="service-card">
-            <h3>Event Production</h3>
-            <p>Technical planning, production coordination, on-site crew and complete event support.</p>
+            <h3>DJ and Entertainment</h3>
+            <p>
+                Professional DJs, DJ equipment, event entertainment and complete
+                dance-floor production.
+            </p>
+        </div>
+
+        <div class="service-card">
+            <h3>Equipment Hire</h3>
+            <p>
+                Audio, lighting, staging, DJ equipment, backline, televisions,
+                LED screens and event equipment.
+            </p>
+        </div>
+
+        <div class="service-card">
+            <h3>Ticketed Events</h3>
+            <p>
+                SoundzGood produces and promotes original ticketed events
+                throughout the Whitsundays.
+            </p>
         </div>
 
     </div>
+
 </section>
 
+<!-- WHY SOUNDZGOOD ------------------------------------------------------ -->
 <section class="section dark">
-    <h2>Equipment Hire</h2>
 
-    <div class="gallery">
-        <img src="images/speakers.jpg" alt="Speakers">
-        <img src="images/lighting.jpg" alt="Lighting">
-        <img src="images/microphones.jpg" alt="Microphones">
-        <img src="images/stage.jpg" alt="Stage">
-    </div>
-</section>
-
-<section class="section">
-    <h2>Event Types</h2>
-
-    <div class="features">
-        <div class="feature">
-            <h3>Festivals</h3>
-            <p>Outdoor events, live music and community festivals.</p>
-        </div>
-
-        <div class="feature">
-            <h3>Corporate</h3>
-            <p>Professional audio, lighting and AV support for business events.</p>
-        </div>
-
-        <div class="feature">
-            <h3>Weddings</h3>
-            <p>Sound, lighting and staging support for private celebrations.</p>
-        </div>
-
-        <div class="feature">
-            <h3>Sporting Events</h3>
-            <p>PA systems, announcements, presentations and event coverage.</p>
-        </div>
-    </div>
-</section>
-
-<section class="section dark">
     <h2>Why SoundzGood?</h2>
 
     <div class="features">
+
         <div class="feature">
             <h3>Local</h3>
             <p>Based in the Whitsundays and servicing North Queensland.</p>
@@ -113,14 +135,26 @@ fetch('components/navbar.html')
             <h3>Flexible</h3>
             <p>Dry hire, operated hire or complete event production.</p>
         </div>
+
     </div>
+
 </section>
 
+<!-- CALL TO ACTION ------------------------------------------------------ -->
 <section class="section cta">
+
     <h2>Planning an event?</h2>
-    <p>Let's discuss your requirements and build a package that suits your event.</p>
-    <a href="contact.html" class="btn">Request a Quote</a>
+
+    <p>
+        Tell us the date, location, expected attendance and what equipment or
+        production support you need.
+    </p>
+
+    <a href="contact.html" class="btn btn-ticket">Request a Quote</a>
+
 </section>
+
+<div id="footer"></div>
 
 </body>
 </html>

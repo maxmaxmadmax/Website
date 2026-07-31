@@ -3,29 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contact | SoundzGood</title>
-    <link rel="stylesheet" href="style.css">
-</head>
 
-<script>
-fetch('components/navbar.html')
-  .then(response => response.text())
-  .then(data => {
-    document.getElementById('navbar').innerHTML = data;
-  });
-</script>
+    <title>Contact SoundzGood | Event Production Whitsundays</title>
+    <meta name="description" content="Contact SoundzGood Whitsundays for event production, audio, lighting, staging and equipment hire. Servicing Bowen, Airlie Beach, Proserpine and North Queensland.">
+
+    <!-- Facebook / Messenger sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="SoundzGood Whitsundays">
+    <meta property="og:title" content="Contact SoundzGood | Event Production Whitsundays">
+    <meta property="og:description" content="Tell us about your event and we'll put together a package that suits it.">
+    <meta property="og:url" content="https://www.soundzgood.com.au/contact.html">
+    <meta property="og:image" content="https://www.soundzgood.com.au/images/logo.png">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="icon" href="images/logo.png">
+    <link rel="stylesheet" href="style.css">
+    <script src="js/main.js" defer></script>
+</head>
 
 <body>
 
 <div id="navbar"></div>
 
 <header class="page-header contact-header">
+
     <div class="header-overlay"></div>
 
     <div class="header-content">
         <h1>Contact Us</h1>
         <p>Let's talk about your next event.</p>
     </div>
+
 </header>
 
 <section class="section">
@@ -44,12 +52,12 @@ fetch('components/navbar.html')
 
             <div class="contact-item">
                 <h3>Phone</h3>
-                <p>0422 393 022</p>
+                <p><a href="tel:+61422393022">0422 393 022</a></p>
             </div>
 
             <div class="contact-item">
                 <h3>Email</h3>
-                <p>info@soundzgood.com.au</p>
+                <p><a href="mailto:info@soundzgood.com.au">info@soundzgood.com.au</a></p>
             </div>
 
             <div class="contact-item">
@@ -61,21 +69,24 @@ fetch('components/navbar.html')
 
         <form class="contact-form">
 
-            <input type="text" placeholder="Your Name" required>
+            <input type="text" name="name" placeholder="Your Name" aria-label="Your name" required>
 
-            <input type="email" placeholder="Email Address" required>
+            <input type="email" name="email" placeholder="Email Address" aria-label="Email address" required>
 
-            <input type="tel" placeholder="Phone Number">
+            <input type="tel" name="phone" placeholder="Phone Number" aria-label="Phone number">
 
-            <input type="text" placeholder="Event Date">
+            <input type="text" name="event-date" placeholder="Event Date" aria-label="Event date">
 
-            <input type="text" placeholder="Event Location">
+            <input type="text" name="event-location" placeholder="Event Location" aria-label="Event location">
 
-            <select>
+            <input type="text" name="attendance" placeholder="Expected Attendance" aria-label="Expected attendance">
+
+            <select name="service" aria-label="Select service">
                 <option>Select Service</option>
                 <option>Audio Hire</option>
                 <option>Lighting Hire</option>
                 <option>Stage Hire</option>
+                <option>DJ and Entertainment</option>
                 <option>Event Production</option>
                 <option>Festival Production</option>
                 <option>Corporate Event</option>
@@ -84,7 +95,9 @@ fetch('components/navbar.html')
             </select>
 
             <textarea
+                name="message"
                 rows="6"
+                aria-label="Tell us about your event"
                 placeholder="Tell us about your event..."
             ></textarea>
 
@@ -117,6 +130,8 @@ fetch('components/navbar.html')
     </div>
 
 </section>
+
+<div id="footer"></div>
 
 </body>
 </html>

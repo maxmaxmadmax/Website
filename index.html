@@ -3,44 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SoundzGood Whitsundays</title>
+
+    <title>SoundzGood Whitsundays | Events, Audio, Lighting and Staging</title>
+    <meta name="description" content="SoundzGood Whitsundays run ticketed live events and supply professional audio, lighting, staging and event production across the Whitsundays and North Queensland.">
+
+    <!-- Facebook / Messenger sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="SoundzGood Whitsundays">
+    <meta property="og:title" content="SoundzGood Whitsundays | Events, Audio, Lighting and Staging">
+    <meta property="og:description" content="Live events, plus professional audio, lighting, staging and event production across the Whitsundays and North Queensland.">
+    <meta property="og:url" content="https://www.soundzgood.com.au/">
+    <meta property="og:image" content="https://www.soundzgood.com.au/images/logo.png">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="icon" href="images/logo.png">
     <link rel="stylesheet" href="style.css">
+    <script src="js/main.js" defer></script>
 </head>
+
 <body>
 
-<!-- No Nav Bar in index.html, as it is loaded dynamically in the other pages. The navbar is not needed on the homepage as the hero section contains clear calls to action. -->
-    
+<div id="navbar"></div>
 
+<!-- HERO ---------------------------------------------------------------- -->
 <section class="hero">
 
-    <video autoplay muted loop playsinline class="hero-video">
+    <video autoplay muted loop playsinline class="hero-video" poster="images/bowen.jpeg">
         <source src="videos/hero.mp4" type="video/mp4">
     </video>
 
     <div class="overlay"></div>
 
     <div class="hero-content">
-        <img src="images/logowhite.png" alt="SoundzGood Logo" class="hero-logo">
+        <img src="images/logowhite.png" alt="SoundzGood Whitsundays" class="hero-logo">
 
-        <p>
-            ATTEND EVENTS / HIRE US 
-        </p>
+        <p class="hero-tagline">Attend Events / Hire Us</p>
 
         <div class="buttons">
-            <a href="events.html" class="btn">Events</a>
-            <a href="pageunderconstruction.html" class="btn btn-outline">Services</a>
+            <a href="events.html" class="btn">View Events</a>
+            <a href="services.html" class="btn btn-outline">Hire SoundzGood</a>
+            <a href="contact.html" class="btn btn-outline">Contact Us</a>
         </div>
     </div>
 
 </section>
 
-<script>
-fetch('components/navbar.html')
-  .then(response => response.text())
-  .then(data => {
-    document.getElementById('navbar').innerHTML = data;
-  });
-</script>
+<!-- THE TWO SIDES OF SOUNDZGOOD ----------------------------------------- -->
+<section class="section">
+
+    <div class="split-grid">
+
+        <div class="split-card">
+            <h3>Attend Events</h3>
+            <p>
+                Discover upcoming SoundzGood events and purchase tickets.
+            </p>
+            <a href="events.html" class="btn">View Events</a>
+        </div>
+
+        <div class="split-card">
+            <h3>Hire SoundzGood</h3>
+            <p>
+                Professional audio, lighting, staging and event production
+                across the Whitsundays and North Queensland.
+            </p>
+            <a href="services.html" class="btn">Hire SoundzGood</a>
+        </div>
+
+    </div>
+
+</section>
+
+<!-- FEATURED EVENT ------------------------------------------------------ -->
+<section class="section dark">
+
+    <div class="featured-event">
+
+        <p class="eyebrow">Next Event</p>
+
+        <h2>SoundzGood 2.0</h2>
+
+        <ul class="event-facts">
+            <li><strong>Saturday 22 August 2026</strong></li>
+            <li><strong>Bowen Sporting Complex</strong></li>
+            <li><strong>Doors Open 2:00 PM</strong></li>
+            <li><strong>18+ Event</strong></li>
+        </ul>
+
+        <div class="buttons">
+            <a href="https://events.humanitix.com/soundzgood-2-0-bowen"
+               class="btn btn-ticket" target="_blank" rel="noopener">Buy Tickets</a>
+            <a href="events.html" class="btn btn-outline">Event Details</a>
+        </div>
+
+    </div>
+
+</section>
+
+<div id="footer"></div>
 
 </body>
 </html>
