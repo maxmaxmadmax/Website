@@ -41,7 +41,11 @@ function initScrapbookAnimation() {
         return; // not the events page
     }
 
+    var observerHasFired = false;
+
     var observer = new IntersectionObserver(function (entries) {
+        observerHasFired = true;
+
         for (var i = 0; i < entries.length; i++) {
             if (entries[i].isIntersecting) {
                 entries[i].target.classList.add('is-visible');
@@ -49,22 +53,27 @@ function initScrapbookAnimation() {
             }
         }
     }, {
-        threshold: 0.2,
-        rootMargin: '0px 0px -6% 0px'
+        threshold: 0.15,
+        rootMargin: '0px 0px -4% 0px'
     });
 
     for (var i = 0; i < items.length; i++) {
         observer.observe(items[i]);
     }
 
-    /* Safety net: if anything hasn't been revealed after a few seconds
-       (an old browser, a stalled observer), show it anyway. The lineup must
-       never be left invisible. */
+    /* Safety net for a browser where the observer never runs at all.
+       If it has fired even once it is working, so we leave the animation
+       alone - otherwise this would reveal every act at the same time and
+       wreck the effect. */
     setTimeout(function () {
+        if (observerHasFired) {
+            return;
+        }
+
         for (var i = 0; i < items.length; i++) {
             items[i].classList.add('is-visible');
         }
-    }, 4000);
+    }, 5000);
 }
 
 /* Fetch an HTML snippet and drop it into the element with the given id */
