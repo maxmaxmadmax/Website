@@ -1059,6 +1059,51 @@ nav a.nav-ticket.active{
     margin:0;
 }
 
+/*  ARTIST BIOGRAPHY AND VIDEO
+    Sits underneath each act and spans the full width of it, so the name
+    and cut-out above keep the layout they already had.                 */
+.act-bio{
+    grid-column:1 / -1;
+    max-width:70ch;
+    margin-top:20px;
+    text-align:left; /* long copy always reads left, even on mirrored rows */
+}
+
+/* Overrides the short uppercase role styling for the body copy */
+.act .act-bio p{
+    font-family:var(--sg-font);
+    font-size:clamp(.92rem, 1.9vw, 1.02rem);
+    font-weight:normal;
+    letter-spacing:0;
+    text-transform:none;
+    line-height:1.6;
+    color:rgba(0,0,0,.78);
+    margin:0 0 14px;
+}
+
+/* Responsive 16:9 video */
+.act-video{
+    position:relative;
+    width:100%;
+    max-width:620px;
+    aspect-ratio:16 / 9;
+    margin-top:18px;
+
+    border:2px solid rgba(0,0,0,.55);
+    border-radius:12px;
+    overflow:hidden;
+    background:#000;
+    box-shadow:0 10px 26px rgba(80,28,0,.3);
+}
+
+.act-video iframe{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    border:0;
+}
+
 /* Wavy hand-drawn divider between acts */
 .act-wave{
     display:block;
