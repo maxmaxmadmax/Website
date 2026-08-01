@@ -679,10 +679,10 @@ nav a.nav-ticket.active{
 .event-hero-content{
     position:relative;
     z-index:2;
-    padding:110px 20px 50px;
+    padding:76px 20px 40px;
 
     width:100%;
-    max-width:900px;
+    max-width:960px;
     min-width:0; /* lets long titles wrap instead of widening the page */
 }
 
@@ -691,11 +691,14 @@ nav a.nav-ticket.active{
     margin:0;
 }
 
+/* Sized against viewport height, not width, so the logo, the lineup, the
+   date and the ticket button all fit on the first screen together. */
 .event-logo{
     display:block;
-    width:min(520px, 86%);
-    height:auto;
-    margin:0 auto 6px;
+    height:clamp(120px, 24vh, 260px);
+    width:auto;
+    max-width:86%;
+    margin:0 auto 4px;
 }
 
 .event-hero-logo{
@@ -715,11 +718,11 @@ nav a.nav-ticket.active{
 
 .event-headline-date{
     font-family:var(--sg-font-display);
-    font-size:clamp(2.4rem, 9vw, 4.6rem);
+    font-size:clamp(1.9rem, 5.6vw, 3.4rem);
     line-height:1;
     letter-spacing:-1.5px;
     text-transform:uppercase;
-    margin:18px 0 4px;
+    margin:10px 0 4px;
     color:#000;
 }
 
@@ -888,9 +891,107 @@ nav a.nav-ticket.active{
     margin-bottom:10px;
 }
 
+/*  THE LINEUP WALL
+    Festival-poster style: all the names in one centred typographic block,
+    separated by diamonds and wrapping naturally across lines.           */
+
+.lineup-wall{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:center;
+    gap:.02em .3em;
+
+    max-width:900px;
+    margin:18px auto 20px;
+    line-height:1.06;
+}
+
+.lw-name{
+    font-family:var(--sg-font-display);
+    font-size:clamp(1.15rem, 3.6vw, 2.5rem);
+    text-transform:uppercase;
+    letter-spacing:-1px;
+    color:#000;
+    white-space:nowrap;
+}
+
+/* The one long act name is set smaller so it still holds a single line,
+   the way festival posters size their longer billings. */
+.lw-name.lw-long{
+    font-size:clamp(.85rem, 2.5vw, 1.7rem);
+}
+
+/*  Separator: the SoundzGood sun, drawn in CSS so there is no image file.
+    Change the colour on background-color below.                         */
+.lw-sep{
+    --sun-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='%23000' stroke-width='2.1' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='4' fill='%23000'/%3E%3Cline x1='12' y1='1.8' x2='12' y2='4.2'/%3E%3Cline x1='12' y1='19.8' x2='12' y2='22.2'/%3E%3Cline x1='1.8' y1='12' x2='4.2' y2='12'/%3E%3Cline x1='19.8' y1='12' x2='22.2' y2='12'/%3E%3Cline x1='4.8' y1='4.8' x2='6.5' y2='6.5'/%3E%3Cline x1='17.5' y1='17.5' x2='19.2' y2='19.2'/%3E%3Cline x1='4.8' y1='19.2' x2='6.5' y2='17.5'/%3E%3Cline x1='17.5' y1='6.5' x2='19.2' y2='4.8'/%3E%3C/g%3E%3C/svg%3E");
+
+    display:inline-block;
+    width:clamp(13px, 1.9vw, 24px);
+    aspect-ratio:1;
+    flex:0 0 auto;
+
+    background-color:#000;
+    -webkit-mask:var(--sun-icon) center / contain no-repeat;
+    mask:var(--sun-icon) center / contain no-repeat;
+
+    opacity:.75;
+}
+
+/* Date and venue pills, like the ones on the poster */
+.lineup-pill{
+    display:inline-block;
+    font-family:var(--sg-font-display);
+    font-size:clamp(.85rem, 2.4vw, 1.35rem);
+    letter-spacing:1px;
+    text-transform:uppercase;
+    padding:12px 26px;
+    border-radius:8px;
+}
+
+.lineup-pill-date{
+    border:3px solid #000;
+    background:rgba(255,255,255,.28);
+    color:#000;
+    margin-bottom:8px;
+}
+
+.lineup-pill-venue{
+    background:#000;
+    color:#fff;
+    margin-top:30px;
+}
+
+.lineup-support{
+    color:var(--sg-sand);
+    font-family:var(--sg-font-display);
+    font-size:clamp(.8rem, 2vw, 1.2rem);
+    letter-spacing:1px;
+    text-transform:uppercase;
+    text-shadow:0 2px 5px rgba(0,0,0,.3);
+}
+
+
 /*  THE LINEUP FLOW
     No boxes - one continuous sunset that runs from one act straight into
     the next, separated only by a hand-drawn wave.                        */
+
+/* Divider between the lineup wall and the individual artist section */
+.acts-heading{
+    font-family:var(--sg-font-accent);
+    font-size:.8rem;
+    font-weight:bold;
+    letter-spacing:4px;
+    text-transform:uppercase;
+    color:rgba(0,0,0,.55);
+    margin-top:64px;
+    padding-top:26px;
+    border-top:2px solid rgba(0,0,0,.22);
+    max-width:var(--sg-max-width);
+    margin-left:auto;
+    margin-right:auto;
+}
 
 .acts{
     max-width:var(--sg-max-width);
@@ -1829,11 +1930,18 @@ nav a.nav-ticket.active{
         margin-bottom:12px;
     }
 
-    /* The logo is square, so keep it small enough that the date and the
-       ticket button still land above the fold on a phone. */
+    /* Height-driven (never width) so the square logo keeps its shape, and
+       small enough that the lineup, date and ticket button all still land
+       above the fold on a phone. */
     .event-logo{
-        width:min(200px, 58%);
+        height:clamp(105px, 19vh, 150px);
+        width:auto;
         margin-bottom:2px;
+    }
+
+    .lineup-wall{
+        margin:10px auto 12px;
+        gap:.02em .28em;
     }
 
     .event-hero .poster-tagline{
