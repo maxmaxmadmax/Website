@@ -681,7 +681,7 @@ nav a.nav-ticket.active{
     z-index:2;
     /*  Everything in this hero is sized in vh so the whole poster always
         fits the screen without scrolling, on any height of display.     */
-    padding:max(96px, 9vh) 20px 3vh;
+    padding:max(88px, 8vh) 20px 1.4vh;
 
     width:100%;
     max-width:960px;
@@ -697,10 +697,10 @@ nav a.nav-ticket.active{
    date and the ticket button all fit on the first screen together. */
 .event-logo{
     display:block;
-    height:clamp(140px, 34vh, 520px);
+    height:clamp(140px, 44vh, 660px);
     width:auto;
     max-width:94%;
-    margin:0 auto 2.2vh;
+    margin:0 auto 1.5vh;
 }
 
 .event-hero-logo{
@@ -720,11 +720,11 @@ nav a.nav-ticket.active{
 
 .event-headline-date{
     font-family:var(--sg-font-display);
-    font-size:clamp(1.4rem, min(4.9vh, 5.6vw), 3.4rem);
+    font-size:clamp(1.4rem, min(4.3vh, 5.2vw), 3.4rem);
     line-height:1;
     letter-spacing:-1.5px;
     text-transform:uppercase;
-    margin:3vh 0 .9vh;
+    margin:1.8vh 0 .8vh;
     color:#000;
 }
 
@@ -750,8 +750,8 @@ nav a.nav-ticket.active{
     font-family:var(--sg-font-display);
     font-size:clamp(.72rem, min(1.85vh, 2.4vw), 1.25rem);
     letter-spacing:1.5px;
-    padding:1.5vh 3.2vh;
-    margin:2.2vh 0 0;
+    padding:1.2vh 3vh;
+    margin:1.2vh 0 0;
     text-shadow:none;
 }
 
@@ -921,7 +921,7 @@ nav a.nav-ticket.active{
 
 .lineup-wall{
     max-width:920px;
-    margin:3vh auto 0;
+    margin:1.8vh auto 0;
 }
 
 /* One line of the billing */
@@ -942,7 +942,7 @@ nav a.nav-ticket.active{
 
 .lw-name{
     font-family:var(--sg-font-display);
-    font-size:clamp(1rem, min(3.7vh, 4vw), 2.85rem);
+    font-size:clamp(1rem, min(3.3vh, 3.8vw), 2.85rem);
     text-transform:uppercase;
     letter-spacing:-.5px;
     color:#000;
@@ -1728,7 +1728,7 @@ nav a.nav-ticket.active{
     letter-spacing:.34em;
     text-indent:.34em; /* balances the trailing letter-space so it stays centred */
     text-transform:uppercase;
-    margin:0 0 1.2vh;
+    margin:0 0 .75vh;
 }
 
 /* The two tagline rows sit together as one block */
