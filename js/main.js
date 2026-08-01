@@ -21,7 +21,34 @@ document.addEventListener('DOMContentLoaded', function () {
     loadComponent('navbar', 'components/navbar.html', highlightCurrentPage);
     loadComponent('footer', 'components/footer.html');
     initScrapbookAnimation();
+    initTicketBar();
 });
+
+/* Hide the sticky ticket bar while the checkout section is on screen -
+   the real ticket form is right there, so the bar is just in the way. */
+function initTicketBar() {
+    var bar = document.querySelector('.ticket-bar');
+    var checkout = document.getElementById('tickets');
+
+    if (!bar || !checkout || !('IntersectionObserver' in window)) {
+        return;
+    }
+
+    var observer = new IntersectionObserver(function (entries) {
+        // rootMargin below trims the bottom of the viewport, so this only
+        // counts once the checkout reaches the top strip of the screen.
+        if (entries[0].isIntersecting) {
+            bar.classList.add('is-hidden');
+        } else {
+            bar.classList.remove('is-hidden');
+        }
+    }, {
+        threshold: 0,
+        rootMargin: '0px 0px -80% 0px'
+    });
+
+    observer.observe(checkout);
+}
 
 function supportsScrollAnimation() {
     return 'IntersectionObserver' in window &&

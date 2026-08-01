@@ -679,7 +679,9 @@ nav a.nav-ticket.active{
 .event-hero-content{
     position:relative;
     z-index:2;
-    padding:76px 20px 40px;
+    /*  Everything in this hero is sized in vh so the whole poster always
+        fits the screen without scrolling, on any height of display.     */
+    padding:max(96px, 9vh) 20px 3vh;
 
     width:100%;
     max-width:960px;
@@ -695,10 +697,10 @@ nav a.nav-ticket.active{
    date and the ticket button all fit on the first screen together. */
 .event-logo{
     display:block;
-    height:clamp(120px, 24vh, 260px);
+    height:clamp(140px, 34vh, 520px);
     width:auto;
-    max-width:86%;
-    margin:0 auto 4px;
+    max-width:94%;
+    margin:0 auto 2.2vh;
 }
 
 .event-hero-logo{
@@ -718,28 +720,39 @@ nav a.nav-ticket.active{
 
 .event-headline-date{
     font-family:var(--sg-font-display);
-    font-size:clamp(1.9rem, 5.6vw, 3.4rem);
+    font-size:clamp(1.4rem, min(4.9vh, 5.6vw), 3.4rem);
     line-height:1;
     letter-spacing:-1.5px;
     text-transform:uppercase;
-    margin:10px 0 4px;
+    margin:3vh 0 .9vh;
     color:#000;
 }
 
 .event-hero .event-date{
-    font-family:var(--sg-font-display);
-    font-size:clamp(1.05rem, 3.4vw, 1.6rem);
-    letter-spacing:0;
+    font-family:var(--sg-font);
+    font-weight:bold;
+    font-size:clamp(.7rem, min(1.75vh, 2.1vw), 1.05rem);
+    letter-spacing:.2em;
+    text-indent:.2em;
+    text-transform:uppercase;
     color:#000;
-    margin:0 0 6px;
+    margin:0;
 }
 
+/* Venue sits in a black box with orange type */
 .event-hero .event-location{
+    display:inline-block;
+    background:#000;
+    color:var(--sg-orange-bright);
+    border-radius:8px;
+    padding:13px 30px;
+
     font-family:var(--sg-font-display);
-    font-size:clamp(.95rem, 3vw, 1.35rem);
-    letter-spacing:0;
-    color:#000;
-    margin-bottom:28px;
+    font-size:clamp(.72rem, min(1.85vh, 2.4vw), 1.25rem);
+    letter-spacing:1.5px;
+    padding:1.5vh 3.2vh;
+    margin:2.2vh 0 0;
+    text-shadow:none;
 }
 
 /* Black ticket button reads best against the orange sky */
@@ -805,6 +818,17 @@ nav a.nav-ticket.active{
     gap:14px 28px;
 
     padding:14px 6%;
+
+    transition:opacity .3s ease, transform .35s ease, visibility .35s;
+}
+
+/* Hidden by js/main.js once the checkout section is on screen, since the
+   real ticket form is right there. */
+.ticket-bar.is-hidden{
+    opacity:0;
+    visibility:hidden;
+    transform:translateY(-100%);
+    pointer-events:none;
 }
 
 .ticket-bar p{
@@ -896,30 +920,42 @@ nav a.nav-ticket.active{
     separated by diamonds and wrapping naturally across lines.           */
 
 .lineup-wall{
+    max-width:920px;
+    margin:3vh auto 0;
+}
+
+/* One line of the billing */
+.lw-line{
     display:flex;
     flex-wrap:wrap;
     align-items:center;
     justify-content:center;
-    gap:.02em .3em;
+    gap:.1em .55em;   /* the space either side of the sun */
 
-    max-width:900px;
-    margin:18px auto 20px;
-    line-height:1.06;
+    margin:0 0 .5vh;
+    line-height:1.1;
+}
+
+.lw-line:last-child{
+    margin-bottom:0;
 }
 
 .lw-name{
     font-family:var(--sg-font-display);
-    font-size:clamp(1.15rem, 3.6vw, 2.5rem);
+    font-size:clamp(1rem, min(3.7vh, 4vw), 2.85rem);
     text-transform:uppercase;
-    letter-spacing:-1px;
+    letter-spacing:-.5px;
     color:#000;
     white-space:nowrap;
+
+    /* soft lift, so the type sits on the sunset instead of looking flat */
+    text-shadow:0 3px 14px rgba(90, 30, 0, .22);
 }
 
-/* The one long act name is set smaller so it still holds a single line,
-   the way festival posters size their longer billings. */
-.lw-name.lw-long{
-    font-size:clamp(.85rem, 2.5vw, 1.7rem);
+/* The long billing line is set smaller, the way posters size a long name */
+.lw-line-sm .lw-name{
+    font-size:clamp(.78rem, min(2.5vh, 2.7vw), 1.85rem);
+    letter-spacing:0;
 }
 
 /*  Separator: the SoundzGood sun, drawn in CSS so there is no image file.
@@ -976,22 +1012,6 @@ nav a.nav-ticket.active{
 /*  THE LINEUP FLOW
     No boxes - one continuous sunset that runs from one act straight into
     the next, separated only by a hand-drawn wave.                        */
-
-/* Divider between the lineup wall and the individual artist section */
-.acts-heading{
-    font-family:var(--sg-font-accent);
-    font-size:.8rem;
-    font-weight:bold;
-    letter-spacing:4px;
-    text-transform:uppercase;
-    color:rgba(0,0,0,.55);
-    margin-top:64px;
-    padding-top:26px;
-    border-top:2px solid rgba(0,0,0,.22);
-    max-width:var(--sg-max-width);
-    margin-left:auto;
-    margin-right:auto;
-}
 
 .acts{
     max-width:var(--sg-max-width);
@@ -1308,6 +1328,158 @@ nav a.nav-ticket.active{
     margin-top:28px;
 }
 
+/*  MAKE A WEEKEND OF IT
+    Travel-brochure treatment: the photography does the selling, with the
+    copy sitting over it. Aimed at people driving in from out of town.   */
+
+.weekend-section{
+    background:
+        radial-gradient(120% 90% at 50% 0%, #1b1005 0%, #0a0a0a 62%);
+}
+
+.weekend-eyebrow{
+    font-family:var(--sg-font-accent);
+    font-size:.78rem;
+    font-weight:bold;
+    letter-spacing:4px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+    text-align:center;
+    margin-bottom:12px;
+}
+
+.weekend-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
+    gap:26px;
+    max-width:var(--sg-max-width);
+    margin:auto;
+}
+
+/* The whole card is the link */
+.weekend-card{
+    position:relative;
+    display:block;
+    min-height:420px;
+    border-radius:20px;
+    overflow:hidden;
+    text-decoration:none;
+    border:1px solid var(--sg-border);
+    transition:transform .3s, border-color .3s;
+}
+
+.weekend-card:hover,
+.weekend-card:focus-visible{
+    transform:translateY(-6px);
+    border-color:#4a2a06;
+}
+
+.weekend-card img{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    transition:transform .6s ease;
+}
+
+.weekend-card:hover img{
+    transform:scale(1.06);
+}
+
+/* Scrim so the copy stays readable over the photo */
+.weekend-card-body{
+    position:relative;
+    z-index:1;
+    height:100%;
+    min-height:420px;
+
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    justify-content:flex-end;
+    gap:10px;
+
+    padding:32px 30px 30px;
+    background:linear-gradient(
+        to bottom,
+        rgba(0,0,0,0) 30%,
+        rgba(0,0,0,.72) 68%,
+        rgba(0,0,0,.92) 100%
+    );
+}
+
+.weekend-card-body h3{
+    font-family:var(--sg-font-display);
+    font-size:clamp(1.5rem, 3.4vw, 2.1rem);
+    letter-spacing:-.5px;
+    text-transform:uppercase;
+    color:#fff;
+}
+
+.weekend-card-body p{
+    color:var(--sg-muted);
+    max-width:44ch;
+}
+
+.weekend-cta{
+    display:inline-flex;
+    align-items:center;
+    gap:.5em;
+
+    font-family:var(--sg-font-accent);
+    font-size:.85rem;
+    font-weight:bold;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--sg-orange-bright);
+    margin-top:6px;
+}
+
+.weekend-cta::after{
+    content:"\2192"; /* arrow */
+    transition:transform .25s;
+}
+
+.weekend-card:hover .weekend-cta::after{
+    transform:translateX(5px);
+}
+
+/* Practical travel note for people coming in from out of town */
+.weekend-note{
+    max-width:640px;
+    margin:32px auto 0;
+    text-align:center;
+    color:var(--sg-dim);
+    font-size:.92rem;
+}
+
+
+/* Event banner used in place of individual sponsor logos */
+.sponsor-banner{
+    display:block;
+    width:100%;
+    max-width:var(--sg-max-width);
+    height:auto;
+    margin:auto;
+    border-radius:16px;
+    border:3px solid #000;
+    box-shadow:0 18px 46px rgba(80,28,0,.42);
+}
+
+/* Full-width artwork that closes the page */
+.closing-banner{
+    background:#000;
+    padding:0;
+    line-height:0; /* removes the gap under an inline image */
+}
+
+.closing-banner img{
+    display:block;
+    width:100%;
+    height:auto;
+}
+
 
 /* ==========================================================================
    8b. SUNSET STYLING  (from the SoundzGood 2.0 poster artwork)
@@ -1546,13 +1718,22 @@ nav a.nav-ticket.active{
     color:#000;
 }
 
-/* Poster tagline strip: LIVE MUSIC / FOOD / BAR / DJS */
+/*  Poster tagline: LIVE MUSIC / FOOD / BAR / DJS
+    Set light and widely tracked, so it reads as a fine line against the
+    heavy display type above and below it.                              */
 .poster-tagline{
-    font-family:var(--sg-font-display);
-    font-size:clamp(.85rem, 2.6vw, 1.25rem);
-    letter-spacing:2px;
+    font-family:var(--sg-font);
+    font-weight:400;
+    font-size:clamp(.62rem, min(1.7vh, 1.7vw), .95rem);
+    letter-spacing:.34em;
+    text-indent:.34em; /* balances the trailing letter-space so it stays centred */
     text-transform:uppercase;
-    margin-bottom:10px;
+    margin:0 0 1.2vh;
+}
+
+/* The two tagline rows sit together as one block */
+.poster-tagline + .poster-tagline{
+    margin-bottom:0;
 }
 
 /* Sponsor bar on solid black, mirroring the base of the poster */
@@ -1573,9 +1754,41 @@ nav a.nav-ticket.active{
     The sponsor logos are mostly dark artwork on a white background, so they
     sit on a white panel. On black they would show up as white boxes.       */
 
+/* Orange sunset band, sitting between the weekend section and the checkout */
 .sponsor-feature{
-    background:#000;
-    padding:80px 6%;
+    position:relative;
+    padding:70px 6%;
+    overflow:hidden;
+    background:linear-gradient(
+        180deg,
+        var(--sg-sun-top) 0%,
+        var(--sg-sun-mid) 55%,
+        var(--sg-sun-deep) 100%
+    );
+}
+
+.sponsor-feature::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background-image:var(--sg-grain);
+    opacity:.16;
+    mix-blend-mode:multiply;
+    pointer-events:none;
+}
+
+.sponsor-feature > *{
+    position:relative;
+    z-index:1;
+}
+
+.sponsor-feature h2{
+    color:#000;
+}
+
+.sponsor-feature .section-intro{
+    color:rgba(0,0,0,.7);
+    margin-bottom:38px;
 }
 
 .sponsor-panel{
@@ -1608,25 +1821,34 @@ nav a.nav-ticket.active{
     gap:34px 28px;
 }
 
+/* Each logo sits on its own white tile. Some logos are dark art on a white
+   background and some are transparent - a white tile suits both, and stops
+   the white-background ones showing as pale boxes on the orange. */
 .sponsor-grid a{
     display:flex;
     align-items:center;
     justify-content:center;
     width:100%;
-    min-height:88px;
-    padding:6px;
-    transition:transform .25s;
+    min-height:130px;
+    padding:20px;
+
+    background:#fff;
+    border-radius:14px;
+    box-shadow:0 10px 26px rgba(80,28,0,.28);
+
+    transition:transform .25s, box-shadow .25s;
 }
 
 .sponsor-grid img{
-    max-height:78px;
+    max-height:84px;
     max-width:100%;
     width:auto;
     object-fit:contain;
 }
 
 .sponsor-grid a:hover{
-    transform:scale(1.07);
+    transform:translateY(-5px);
+    box-shadow:0 16px 34px rgba(80,28,0,.38);
 }
 
 /* Compact strip across the bottom of every page, inside the footer */
@@ -1875,21 +2097,36 @@ nav a.nav-ticket.active{
 
 @media (max-width:768px){
 
-    /* Nav becomes a compact solid bar so it never covers hero text.
-       Kept short so the event date + ticket button stay above the fold. */
+    /* Nav stays a transparent overlay on the hero, the same as desktop.
+       The small nav logo is hidden here because the big hero logo sits
+       directly beneath it - show it again by deleting the .Nav rule. */
     nav{
-        position:static;
         flex-direction:column;
-        gap:8px;
-        padding:12px 16px;
-        background:#0a0a0a;
-        border-bottom:1px solid var(--sg-border);
+        gap:6px;
+        padding:14px 16px;
+        background:linear-gradient(
+            to bottom,
+            rgba(0,0,0,.5),
+            rgba(0,0,0,0)
+        );
+        border-bottom:none;
+    }
+
+    nav .Nav{
+        display:none;
+    }
+
+    /* One row of links only. The sticky ticket bar sits directly below the
+       hero and follows you down the page, so the menu does not need its
+       own ticket button here - and the hero gets the space back. */
+    nav a.nav-ticket{
+        display:none;
     }
 
     nav ul{
         flex-wrap:wrap;
         justify-content:center;
-        gap:4px 16px;
+        gap:2px 16px;
     }
 
     nav a{
@@ -1912,8 +2149,9 @@ nav a.nav-ticket.active{
         min-height:auto;
     }
 
+    /* Top padding clears the overlaying nav */
     .hero-content{
-        padding:40px 20px 60px;
+        padding:120px 20px 60px;
     }
 
     .hero-logo{
@@ -1922,7 +2160,7 @@ nav a.nav-ticket.active{
     }
 
     .event-hero-content{
-        padding:26px 20px 50px;
+        padding:max(84px, 11vh) 20px 3.5vh;
     }
 
     .event-hero-logo{
@@ -1930,18 +2168,35 @@ nav a.nav-ticket.active{
         margin-bottom:12px;
     }
 
-    /* Height-driven (never width) so the square logo keeps its shape, and
-       small enough that the lineup, date and ticket button all still land
-       above the fold on a phone. */
+    /* Height-driven (never width) so the square logo keeps its shape */
     .event-logo{
-        height:clamp(105px, 19vh, 150px);
+        height:clamp(150px, 38vh, 340px);
         width:auto;
-        margin-bottom:2px;
+        margin-bottom:2vh;
+    }
+
+    .poster-tagline{
+        letter-spacing:.26em;
+        text-indent:.26em;
+        margin-bottom:1vh;
     }
 
     .lineup-wall{
-        margin:10px auto 12px;
-        gap:.02em .28em;
+        margin:2.4vh auto 0;
+    }
+
+    .event-headline-date{
+        margin:2.4vh 0 .7vh;
+    }
+
+    .lw-line{
+        gap:.08em .45em;
+        margin-bottom:.2em;
+    }
+
+    .event-hero .event-location{
+        padding:11px 22px;
+        margin-top:12px;
     }
 
     .event-hero .poster-tagline{
@@ -2018,7 +2273,7 @@ nav a.nav-ticket.active{
     }
 
     .header-content{
-        padding:60px 20px 50px;
+        padding:118px 20px 50px;
     }
 
     .page-header{

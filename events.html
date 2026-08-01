@@ -13,13 +13,11 @@
   <meta property="og:title" content="SoundzGood 2.0 Bowen | Saturday 22 August 2026">
   <meta property="og:description" content="One big outdoor stage. Live bands. DJs. Cold drinks. Food. Your mates. Bowen Sporting Complex, Saturday 22 August 2026. Doors 2:00 pm. 18+ event.">
   <meta property="og:url" content="https://www.soundzgood.com.au/events.html">
-  <!-- Share image. 1200x630 with no transparency so link previews render
-       predictably. To use the SoundzGood 2.0 event artwork instead, swap
-       og-soundzgood.png for og-event.png on the line below. -->
-  <meta property="og:image" content="https://www.soundzgood.com.au/images/og-soundzgood.png">
+  <!-- Share image: the SoundzGood 2.0 banner artwork, already 1200x628 -->
+  <meta property="og:image" content="https://www.soundzgood.com.au/images/soundzgood-2-0-banner.jpg">
   <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="SoundzGood Whitsundays">
+  <meta property="og:image:height" content="628">
+  <meta property="og:image:alt" content="SoundzGood 2.0 - Bowen, Saturday 22 August 2026">
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="images/logo.png">
@@ -53,32 +51,39 @@
       <p class="poster-tagline">18+ Event</p>
 
       <!--  LINEUP
-            Every act in one block, separated by the SoundzGood sun.
-            To add or remove an act, copy a name span together with the
-            <span class="lw-sep"> that sits beside it.                  -->
+            One <p class="lw-line"> per line of the billing, exactly like a
+            printed poster. Keeping the lines explicit means a sun never
+            ends up stranded on the end of a line.
+            To change the billing, edit a line below - the sun separators
+            are the <i class="lw-sep"> tags between the names.          -->
       <div class="lineup-wall">
-        <span class="lw-name">Rossco</span>
-        <span class="lw-sep" aria-hidden="true"></span>
-        <span class="lw-name">Jacob Biermann</span>
-        <span class="lw-sep" aria-hidden="true"></span>
-        <span class="lw-name lw-long">Brothas Entertainment &mdash; DJ Henasi</span>
-        <span class="lw-sep" aria-hidden="true"></span>
-        <span class="lw-name">Nina Sinclair</span>
-        <span class="lw-sep" aria-hidden="true"></span>
-        <span class="lw-name">Pluto Tango</span>
-        <span class="lw-sep" aria-hidden="true"></span>
-        <span class="lw-name">Flaw Clinic</span>
+
+        <p class="lw-line">
+          <span class="lw-name">Rossco</span>
+          <i class="lw-sep" aria-hidden="true"></i>
+          <span class="lw-name">Jacob Biermann</span>
+        </p>
+
+        <p class="lw-line lw-line-sm">
+          <span class="lw-name">Brothas Entertainment &mdash; DJ Henasi</span>
+        </p>
+
+        <p class="lw-line">
+          <span class="lw-name">Nina Sinclair</span>
+          <i class="lw-sep" aria-hidden="true"></i>
+          <span class="lw-name">Pluto Tango</span>
+        </p>
+
+        <p class="lw-line">
+          <span class="lw-name">Flaw Clinic</span>
+        </p>
+
       </div>
 
       <p class="event-headline-date">August 22nd</p>
       <p class="event-date">Doors Open 2PM</p>
       <p class="event-location">Bowen Sporting Complex</p>
 
-      <!-- 3. BUY TICKETS ----------------------------------------------- -->
-      <div class="buttons">
-        <a href="https://events.humanitix.com/soundzgood-2-0-bowen"
-           class="btn btn-ticket" target="_blank" rel="noopener">Buy Tickets</a>
-      </div>
     </div>
 
   </section>
@@ -157,10 +162,8 @@
   <!-- 4. LINEUP --------------------------------------------------------- -->
   <section class="lineup">
 
-    <h2>Lineup</h2>
+    <h2>Meet the Artists</h2>
     <p class="section-intro">One big outdoor stage. Live bands and DJs from open to close.</p>
-
-    <h3 class="acts-heading">Meet the Artists</h3>
 
     <!-- Each act flows straight into the next. To add a cut-out photo,
          put this line just above an <h3>, changing the file name:
@@ -273,58 +276,95 @@
 
   </div><!-- /event-flow -->
 
-  <!-- SPONSORS - featured in the middle of the page ---------------------
+  <!-- Make a weekend of it: tourism + accommodation call to action ------ -->
+  <section class="section weekend-section">
+
+    <p class="weekend-eyebrow">Coming from out of town?</p>
+    <h2>Make a Weekend of It</h2>
+    <p class="section-intro">
+      Bowen is the quiet end of the Whitsundays &mdash; turquoise water,
+      easy beaches and warm winter days. Come for the music, stay for
+      the town.
+    </p>
+
+    <div class="weekend-grid">
+
+      <a class="weekend-card"
+         href="https://www.tourismbowen.com.au/"
+         target="_blank" rel="noopener">
+        <img src="images/bowen.jpeg" alt="Horseshoe Bay, Bowen" loading="lazy">
+        <div class="weekend-card-body">
+          <h3>Explore Bowen</h3>
+          <p>
+            Snorkel Horseshoe Bay, hunt down the Big Mango, and take the
+            long way home along the coast.
+          </p>
+          <span class="weekend-cta">Plan your trip</span>
+        </div>
+      </a>
+
+      <a class="weekend-card"
+         href="https://www.guestreservations.com/port-denison-motor-inn/booking?utm_source=microsoft&amp;utm_medium=cpc&amp;utm_campaign=318380760&amp;msclkid=1db920434d0215e79b534a657272fffa&amp;ctTriggered=true"
+         target="_blank" rel="noopener">
+        <img src="images/portdenroom.jpg" alt="Room at the Port Denison Motor Inn" loading="lazy">
+        <div class="weekend-card-body">
+          <h3>Stay the Night</h3>
+          <p>
+            Rooms book out fast on event weekends. Port Denison Motor Inn
+            will sort you out, so nobody is driving home after the last set.
+          </p>
+          <span class="weekend-cta">Book a room</span>
+        </div>
+      </a>
+
+    </div>
+
+    <p class="weekend-note">
+      Bowen sits on the Bruce Highway between Townsville and Mackay.
+      Nearest airports are Whitsunday Coast (Proserpine) and Townsville.
+    </p>
+
+  </section>
+
+  <!-- SPONSORS ----------------------------------------------------------
        To add a sponsor: save the logo in the images folder and copy one of
-       the blocks below, changing the link, file name and alt text.
+       the blocks below, changing the link, file name and alt text. Each
+       logo sits on its own white tile, so logos with a white background
+       and logos with a transparent background both look right.
        Still to add from the poster: Vee Jay's Tomatoes, Bowen Barracudas,
        Lehmann Print Solutions, Muscle Studio, Whitsunday Regional Council,
        LJ Hooker, Taylamaid Whitsundays.                                  -->
   <section class="sponsor-feature">
-    <div class="sponsor-panel">
 
-      <h2>Proudly Sponsored By</h2>
-      <p class="section-intro">SoundzGood 2.0 is made possible by these local businesses.</p>
+    <h2>Proudly Sponsored By</h2>
+    <p class="section-intro">SoundzGood 2.0 is made possible by these local businesses.</p>
 
-      <div class="sponsor-grid">
+    <div class="sponsor-grid">
 
-        <a href="https://www.guestreservations.com/port-denison-motor-inn/booking?utm_source=microsoft&amp;utm_medium=cpc&amp;utm_campaign=318380760&amp;msclkid=0aeef479491117d7bee29e5fdcb831b6"
-           target="_blank" rel="noopener">
-          <img src="images/pdmilogo.webp" alt="Port Denison Motor Inn" loading="lazy">
-        </a>
+      <a href="https://www.guestreservations.com/port-denison-motor-inn/booking?utm_source=microsoft&amp;utm_medium=cpc&amp;utm_campaign=318380760&amp;msclkid=0aeef479491117d7bee29e5fdcb831b6"
+         target="_blank" rel="noopener">
+        <img src="images/pdmilogo.webp" alt="Port Denison Motor Inn" loading="lazy">
+      </a>
 
-        <a href="https://www.lowcockbuilders.com.au/" target="_blank" rel="noopener">
-          <img src="images/lcblogo.png" alt="Lowcock Builders" loading="lazy">
-        </a>
+      <a href="https://www.lowcockbuilders.com.au/" target="_blank" rel="noopener">
+        <img src="images/lcblogo.png" alt="Lowcock Builders" loading="lazy">
+      </a>
 
-        <a href="https://www.facebook.com/evolutionbeautywhitsundays" target="_blank" rel="noopener">
-          <img src="images/eb-logo.jpg" alt="Evolution Beauty" loading="lazy">
-        </a>
+      <a href="https://www.facebook.com/evolutionbeautywhitsundays" target="_blank" rel="noopener">
+        <img src="images/eb-logo.jpg" alt="Evolution Beauty" loading="lazy">
+      </a>
 
-        <a href="https://www.facebook.com/profile.php?id=61588497981743" target="_blank" rel="noopener">
-          <img src="images/ms-sippi.logo.jpg" alt="MS Sippi" loading="lazy">
-        </a>
+      <a href="https://www.facebook.com/profile.php?id=61588497981743" target="_blank" rel="noopener">
+        <img src="images/ms-sippi.logo.jpg" alt="MS Sippi" loading="lazy">
+      </a>
 
-      </div>
     </div>
   </section>
 
-  <!-- Make a weekend of it --------------------------------------------- -->
-  <section class="section dark">
-    <div class="event-copy">
-      <h5 class="weekend-tagline">Make a Weekend of It in Bowen</h5>
-      <p class="presented">Experience SoundzGood. Explore Bowen.</p>
-
-      <div class="weekend-links">
-        <a href="https://www.tourismbowen.com.au/"
-           class="btn btn-outline" target="_blank" rel="noopener">Explore Bowen</a>
-        <a href="https://www.guestreservations.com/port-denison-motor-inn/booking?utm_source=microsoft&amp;utm_medium=cpc&amp;utm_campaign=318380760&amp;msclkid=1db920434d0215e79b534a657272fffa&amp;ctTriggered=true"
-           class="btn btn-outline" target="_blank" rel="noopener">Accommodation</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- Humanitix checkout ------------------------------------------------ -->
-  <section class="section">
+  <!-- Humanitix checkout ------------------------------------------------
+       The id is used by js/main.js to hide the sticky ticket bar while
+       this section is on screen.                                        -->
+  <section class="section" id="tickets">
     <h2>Get Your Tickets</h2>
     <div class="checkout-embed">
       <script src="https://events.humanitix.com/scripts/widgets/inline.js" type="module"></script>
@@ -332,15 +372,11 @@
     </div>
   </section>
 
-  <!-- 7. FINAL CALL TO ACTION ------------------------------------------- -->
-  <section class="section cta">
-    <h2>SoundzGood 2.0</h2>
-    <p>
-      Saturday 22 August 2026 &middot; Bowen Sporting Complex &middot;
-      Doors 2:00 PM &middot; 18+ Event
-    </p>
-    <a href="https://events.humanitix.com/soundzgood-2-0-bowen"
-       class="btn btn-ticket" target="_blank" rel="noopener">Buy Tickets</a>
+  <!-- Closing image ----------------------------------------------------- -->
+  <section class="closing-banner">
+    <img src="images/soundzgood-2-0-banner.jpg"
+         alt="SoundzGood 2.0 lineup and event sponsors"
+         width="1200" height="628" loading="lazy">
   </section>
 
   <div id="footer"></div>
