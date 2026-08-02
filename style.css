@@ -1205,26 +1205,22 @@ nav a.nav-ticket.active{
         scale(.55);
 }
 
-/* Landed - left noticeably crooked, like a pasted clipping */
-.has-scroll-anim .act.is-visible{
+/*  Landed - flat.
+    The acts are tall now that each carries a biography, and a resting
+    tilt on a very tall block swings its top edge a long way sideways,
+    pushing the copy off a narrow screen. The crooked scrapbook look is
+    kept on the cut-out itself instead, further down.                   */
+.has-scroll-anim .act.is-visible,
+.has-scroll-anim .act:nth-of-type(even).is-visible{
     opacity:1;
     will-change:auto; /* release the GPU hint once it has landed */
     transform:
         perspective(1100px)
         translate3d(0, 0, 0)
         rotateX(0deg)
-        rotate(-2.5deg)
+        rotate(0deg)
         scale(1);
     filter:blur(0);
-}
-
-.has-scroll-anim .act:nth-of-type(even).is-visible{
-    transform:
-        perspective(1100px)
-        translate3d(0, 0, 0)
-        rotateX(0deg)
-        rotate(2.5deg)
-        scale(1);
 }
 
 /* The cut-out is stuck down a beat after the name, with its own kick */
@@ -1240,9 +1236,15 @@ nav a.nav-ticket.active{
     transform:translateY(60px) rotate(11deg) scale(.72);
 }
 
+/* The cut-out keeps the pasted-crooked look. It is small, so tilting it
+   only moves it a few pixels - unlike tilting the whole act. */
 .has-scroll-anim .act.is-visible .artist-photo{
     opacity:1;
-    transform:translateY(0) rotate(0deg) scale(1);
+    transform:translateY(0) rotate(-2.5deg) scale(1);
+}
+
+.has-scroll-anim .act:nth-of-type(even).is-visible .artist-photo{
+    transform:translateY(0) rotate(2.5deg) scale(1);
 }
 
 /* Dividers sweep open between the acts */
@@ -2277,6 +2279,27 @@ nav a.nav-ticket.active{
 
     .act{
         padding:32px 0;
+    }
+
+    /* Gentler entry on a narrow screen. The acts are tall, so a big
+       rotation swings them a long way sideways on the way in. */
+    .has-scroll-anim .act{
+        transform:
+            perspective(1100px)
+            translate3d(-26px, 70px, 0)
+            rotateX(34deg)
+            rotate(-5deg)
+            scale(.82);
+        filter:blur(5px);
+    }
+
+    .has-scroll-anim .act:nth-of-type(even){
+        transform:
+            perspective(1100px)
+            translate3d(26px, 70px, 0)
+            rotateX(34deg)
+            rotate(5deg)
+            scale(.82);
     }
 
     /* Not enough width for a photo beside a long name, so stack them.

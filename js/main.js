@@ -80,8 +80,12 @@ function initScrapbookAnimation() {
             }
         }
     }, {
-        threshold: 0.15,
-        rootMargin: '0px 0px -4% 0px'
+        /* threshold 0, not a percentage of the element. Each act is tall
+           now that it carries a biography, so asking for a percentage of
+           it meant scrolling a long way in before anything appeared. This
+           fires as soon as the top edge comes into view. */
+        threshold: 0,
+        rootMargin: '0px 0px -10% 0px'
     });
 
     for (var i = 0; i < items.length; i++) {
@@ -130,19 +134,29 @@ function loadComponent(id, url, onLoaded) {
 
 /* Add class="active" to the menu link matching the current page */
 function highlightCurrentPage() {
-    var page = window.location.pathname.split('/').pop();
+    var here = tidyPath(window.location.pathname);
 
-    if (page === '') {
-        page = 'index.html'; // the site root serves index.html
-    }
-
-    /* Only the menu links - not the logo, which also points at index.html */
+    /* Only the menu links - not the logo, which also points home */
     var links = document.querySelectorAll('#navbar ul a');
 
     for (var i = 0; i < links.length; i++) {
-        if (links[i].getAttribute('href') === page) {
+        var href = links[i].getAttribute('href');
+
+        /* skip anything off-site, such as the ticket link */
+        if (!href || href.charAt(0) !== '/') {
+            continue;
+        }
+
+        if (tidyPath(href) === here) {
             links[i].classList.add('active');
             links[i].setAttribute('aria-current', 'page');
         }
     }
+}
+
+/* Treats /events.html and /events as the same page, so an older bookmark
+   or shared link still highlights the right menu item. */
+function tidyPath(path) {
+    path = path.replace(/\/index\.html$/, '/').replace(/\.html$/, '');
+    return path === '' ? '/' : path;
 }
