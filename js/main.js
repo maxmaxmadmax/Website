@@ -18,11 +18,47 @@ if (supportsScrollAnimation()) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    loadComponent('navbar', 'components/navbar.html', highlightCurrentPage);
+    loadComponent('navbar', 'components/navbar.html', function () {
+        highlightCurrentPage();
+        initHomeNav();
+    });
     loadComponent('footer', 'components/footer.html');
     initScrapbookAnimation();
     initTicketBar();
 });
+
+/* Home page only: keep the menu out of the way over the hero, then slide
+   it in once the next event section is reached. Runs straight after the
+   menu is inserted, so it never flashes into view first. */
+function initHomeNav() {
+    var trigger = document.getElementById('next-event');
+    var navEl = document.querySelector('#navbar nav');
+
+    if (!trigger || !navEl || !('IntersectionObserver' in window)) {
+        return; // not the home page, or no support - leave the menu showing
+    }
+
+    navEl.classList.add('is-tucked');
+
+    var observer = new IntersectionObserver(function (entries) {
+        var entry = entries[0];
+
+        // showing once the section is reached, and staying shown past it
+        if (entry.isIntersecting || entry.boundingClientRect.top < 0) {
+            navEl.classList.remove('is-tucked');
+        } else {
+            navEl.classList.add('is-tucked'); // scrolled back up to the hero
+        }
+    }, {
+        /* Trimming most of the viewport off the bottom means the menu waits
+           until the section is genuinely arriving, rather than appearing
+           while the hero is still filling the screen. */
+        threshold: 0,
+        rootMargin: '0px 0px -60% 0px'
+    });
+
+    observer.observe(trigger);
+}
 
 /* Hide the sticky ticket bar while the checkout section is on screen -
    the real ticket form is right there, so the bar is just in the way. */

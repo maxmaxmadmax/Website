@@ -24,7 +24,7 @@
     <script src="js/main.js" defer></script>
 </head>
 
-<body>
+<body class="home">
 
 <div id="navbar"></div>
 
@@ -40,8 +40,6 @@
     <div class="hero-content">
         <img src="images/logowhite.png" alt="SoundzGood Whitsundays" class="hero-logo">
 
-        <p class="hero-tagline">Attend Events / Hire Us</p>
-
         <div class="buttons">
             <a href="/events" class="btn">View Events</a>
             <a href="/services" class="btn btn-outline">Hire SoundzGood</a>
@@ -51,34 +49,10 @@
 
 </section>
 
-<!-- THE TWO SIDES OF SOUNDZGOOD ----------------------------------------- -->
-<section class="section">
-
-    <div class="split-grid">
-
-        <div class="split-card">
-            <h3>Attend Events</h3>
-            <p>
-                Discover upcoming SoundzGood events and purchase tickets.
-            </p>
-            <a href="/events" class="btn">View Events</a>
-        </div>
-
-        <div class="split-card">
-            <h3>Hire SoundzGood</h3>
-            <p>
-                Professional audio, lighting, staging and event production
-                across the Whitsundays and North Queensland.
-            </p>
-            <a href="/services" class="btn">Hire SoundzGood</a>
-        </div>
-
-    </div>
-
-</section>
-
-<!-- FEATURED EVENT ------------------------------------------------------ -->
-<section class="section dark">
+<!-- FEATURED EVENT ------------------------------------------------------
+     The id is used by js/main.js: on the home page the menu stays hidden
+     over the hero and slides in once you reach this section.           -->
+<section class="section dark" id="next-event">
 
     <div class="featured-event">
 

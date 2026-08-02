@@ -275,6 +275,33 @@ nav a.nav-ticket.active{
 }
 
 
+/*  HOME PAGE MENU
+    The hero is left clean, then the menu slides in as a fixed bar once
+    you reach the next event section. It has to be fixed rather than
+    absolute, otherwise it would sit at the top of the document and be
+    out of sight by the time it is wanted.
+    js/main.js adds and removes .is-tucked.                             */
+.home nav{
+    position:fixed;
+    background:rgba(10,10,10,.94);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--sg-border);
+    transition:opacity .35s ease, transform .4s ease, visibility .4s;
+}
+
+.home nav.is-tucked{
+    opacity:0;
+    visibility:hidden;
+    transform:translateY(-105%);
+    pointer-events:none;
+}
+
+/* The sponsors are event sponsors, so they stay on the event page */
+.home .footer-sponsors{
+    display:none;
+}
+
+
 /* ==========================================================================
    5. FOOTER
    Footer content lives in components/footer.html
