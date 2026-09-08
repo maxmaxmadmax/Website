@@ -1,0 +1,27 @@
+# Firebase Cloud Functions dependencies - installed, never committed
+functions/node_modules/
+node_modules/
+
+# Firebase CLI local state and logs
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+ui-debug.log
+database-debug.log
+pubsub-debug.log
+storage-debug.log
+
+# Local environment. The Stripe secret key and the webhook signing secret
+# belong in Firebase Functions secrets, never in this repository, which is
+# public.
+.env
+.env.*
+functions/.env
+functions/.env.*
+serviceAccountKey.json
+*-firebase-adminsdk-*.json
+
+# OS noise
+.DS_Store
+Thumbs.db

@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Vendor Signup | Eatz &amp; Beatz Halloween Edition | SoundzGood</title>
+    <meta name="description" content="Book a food, market or community stall site at Eatz &amp; Beatz Halloween Edition, Bowen Sports Complex, Saturday 31 October 2026. Choose your site on the interactive map.">
+
+    <!-- Facebook / Messenger sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="SoundzGood Whitsundays">
+    <meta property="og:title" content="Vendor Signup | Eatz &amp; Beatz Halloween Edition">
+    <meta property="og:description" content="Food vendors, market stalls and community groups - book your site for Eatz &amp; Beatz Halloween Edition, Bowen Sports Complex, 31 October 2026.">
+    <meta property="og:url" content="https://www.soundzgood.com.au/vendor-signup">
+    <meta property="og:image" content="https://www.soundzgood.com.au/images/og-soundzgood.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="SoundzGood Whitsundays">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="icon" href="images/logo.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="vendor-signup.css">
+    <script src="js/main.js" defer></script>
+    <script type="module" src="js/vendor-signup.js"></script>
+</head>
+
+<body class="vendor-signup">
+
+<div id="navbar"></div>
+
+<!-- Shown only while Firebase is still on placeholder settings ---------- -->
+<div class="vs-preview-banner" id="vs-preview-banner" hidden>
+    <strong>Preview mode.</strong>
+    <span data-preview-message>
+        Firebase is not connected yet, so nothing on this page is saved and no
+        payment can be taken. Everything else works so the page can be checked.
+    </span>
+</div>
+
+<!-- HERO ---------------------------------------------------------------- -->
+<header class="vs-hero">
+
+    <svg class="vs-web vs-web-left" viewBox="0 0 100 100" aria-hidden="true">
+        <path d="M0 0 L100 100 M0 0 L100 60 M0 0 L60 100 M0 0 L100 20 M0 0 L20 100"/>
+        <path d="M22 0 Q14 14 0 22 M42 0 Q28 28 0 42 M62 0 Q40 40 0 62 M82 0 Q54 54 0 82"/>
+    </svg>
+
+    <svg class="vs-web vs-web-right" viewBox="0 0 100 100" aria-hidden="true">
+        <path d="M0 0 L100 100 M0 0 L100 60 M0 0 L60 100 M0 0 L100 20 M0 0 L20 100"/>
+        <path d="M22 0 Q14 14 0 22 M42 0 Q28 28 0 42 M62 0 Q40 40 0 62 M82 0 Q54 54 0 82"/>
+    </svg>
+
+    <div class="vs-hero-inner">
+
+        <!-- little pumpkin, drawn rather than loaded -->
+        <svg class="vs-pumpkin" viewBox="0 0 64 64" aria-hidden="true">
+            <path d="M32 14c-1 0-2-4 1-7 2-2 5-2 5-2s-1 4-3 6c-1 1-2 3-3 3z" fill="#4caf50"/>
+            <ellipse cx="32" cy="38" rx="24" ry="20" fill="#ff6b00"/>
+            <ellipse cx="20" cy="38" rx="9" ry="20" fill="#e2661a" opacity=".55"/>
+            <ellipse cx="44" cy="38" rx="9" ry="20" fill="#e2661a" opacity=".55"/>
+            <path d="M23 33l7 5-7 3zM41 33l-7 5 7 3z" fill="#1a0a00"/>
+            <path d="M22 47q10 7 20 0-4 4-10 4t-10-4z" fill="#1a0a00"/>
+        </svg>
+
+        <h1>Eatz &amp; Beatz</h1>
+        <p class="vs-hero-sub">Halloween Edition</p>
+        <p class="vs-hero-kicker">Vendor Signup</p>
+
+        <p class="vs-hero-meta">Saturday 31 October 2026</p>
+        <p class="vs-hero-meta">Bowen Sports Complex &middot; Bowen, Queensland</p>
+
+        <div class="buttons">
+            <button type="button" class="btn btn-ticket" data-start>Book Your Site</button>
+            <a href="/contact" class="btn btn-outline">Ask a Question</a>
+        </div>
+    </div>
+
+</header>
+
+<!-- PRICING ------------------------------------------------------------- -->
+<section class="section">
+
+    <h2>Sites and Pricing</h2>
+    <p class="section-intro">
+        Pick the option that suits you. Every site includes your marked space
+        at the Bowen Sports Complex for the day of the event.
+    </p>
+
+    <div class="vs-price-grid">
+
+        <div class="vs-price-card">
+            <h3>Food Vendor</h3>
+            <p class="vs-price-amount" data-price="food">$100</p>
+            <p>
+                Hot food, drinks and dessert traders. Choose a food category so
+                we keep a good mix on the day.
+            </p>
+        </div>
+
+        <div class="vs-price-card">
+            <h3>Market Stall</h3>
+            <p class="vs-price-amount" data-price="market">$50</p>
+            <p>
+                Makers, retail, craft and non-food traders in the market rows.
+            </p>
+        </div>
+
+        <div class="vs-price-card">
+            <h3>Community Group</h3>
+            <p class="vs-price-amount" data-price="community">Free</p>
+            <p>
+                Non-food community groups, clubs and not-for-profits. No charge.
+            </p>
+        </div>
+
+    </div>
+
+    <p class="vs-bar-note">
+        We are not taking bar or alcohol vendors for this event &mdash;
+        SoundzGood runs the bar.
+    </p>
+
+</section>
+
+<!-- THE FLOW ------------------------------------------------------------ -->
+<section class="section dark" id="vs-flow">
+
+    <div class="vs-flow">
+
+        <div class="vs-account" id="vs-account"></div>
+
+        <ol class="vs-stepper" id="vs-stepper"></ol>
+
+        <!-- 1. VENDOR TYPE ------------------------------------------------ -->
+        <div class="vs-step" data-step="type">
+            <h2>What kind of vendor are you?</h2>
+            <p class="vs-step-intro">This decides your price and which sites you can choose from.</p>
+
+            <div class="vs-type-grid">
+                <button type="button" class="vs-type" data-vendor-type="food">
+                    <span class="vs-type-name">Food Vendor</span>
+                    <span class="vs-type-price" data-price="food">$100</span>
+                    <span class="vs-type-desc">Hot food, drinks, desserts. You'll pick a food category next.</span>
+                </button>
+
+                <button type="button" class="vs-type" data-vendor-type="market">
+                    <span class="vs-type-name">Market Stall</span>
+                    <span class="vs-type-price" data-price="market">$50</span>
+                    <span class="vs-type-desc">Makers, craft, retail and other non-food trading.</span>
+                </button>
+
+                <button type="button" class="vs-type" data-vendor-type="community">
+                    <span class="vs-type-name">Community Group</span>
+                    <span class="vs-type-price" data-price="community">Free</span>
+                    <span class="vs-type-desc">Clubs, not-for-profits and community organisations. Non-food.</span>
+                </button>
+            </div>
+
+            <p class="vs-error" data-error="type" hidden></p>
+        </div>
+
+        <!-- 2. BUSINESS DETAILS ------------------------------------------- -->
+        <div class="vs-step" data-step="business" hidden>
+            <h2>Your business</h2>
+            <p class="vs-step-intro">So we know who is coming and how to reach you.</p>
+
+            <div class="vs-field-grid">
+                <div class="vs-field">
+                    <label for="vs-biz-name">Business or group name</label>
+                    <input type="text" id="vs-biz-name" autocomplete="organization" required>
+                </div>
+
+                <div class="vs-field">
+                    <label for="vs-biz-contact">Contact name</label>
+                    <input type="text" id="vs-biz-contact" autocomplete="name" required>
+                </div>
+
+                <div class="vs-field">
+                    <label for="vs-biz-email">Email</label>
+                    <input type="email" id="vs-biz-email" autocomplete="email" required>
+                </div>
+
+                <div class="vs-field">
+                    <label for="vs-biz-phone">Phone</label>
+                    <input type="tel" id="vs-biz-phone" autocomplete="tel" required>
+                </div>
+
+                <div class="vs-field">
+                    <label for="vs-biz-abn">ABN <span class="vs-field-hint">(if you have one)</span></label>
+                    <input type="text" id="vs-biz-abn" inputmode="numeric">
+                </div>
+
+                <div class="vs-field is-wide">
+                    <label for="vs-biz-desc">What do you sell or do?</label>
+                    <textarea id="vs-biz-desc" rows="4"></textarea>
+                </div>
+            </div>
+
+            <p class="vs-error" data-error="business" hidden></p>
+
+            <div class="vs-step-actions">
+                <button type="button" class="btn btn-outline" data-back>Back</button>
+                <button type="button" class="btn" data-next>Continue</button>
+            </div>
+        </div>
+
+        <!-- 3. FOOD CATEGORY ---------------------------------------------- -->
+        <div class="vs-step" data-step="category" hidden>
+            <h2>Your food category</h2>
+            <p class="vs-step-intro">
+                We limit how many vendors sell the same thing so everyone trades well.
+                Categories that are full are closed off.
+            </p>
+
+            <div class="vs-category-grid" id="vs-categories"></div>
+
+            <p class="vs-error" data-error="category" hidden></p>
+
+            <div class="vs-step-actions">
+                <button type="button" class="btn btn-outline" data-back>Back</button>
+                <button type="button" class="btn" data-next>Continue</button>
+            </div>
+        </div>
+
+        <!-- 4. SETUP ------------------------------------------------------ -->
+        <div class="vs-step" data-step="setup" hidden>
+            <h2>Your setup</h2>
+            <p class="vs-step-intro">So we give you a site that actually fits, with the right power.</p>
+
+            <div class="vs-field-grid">
+                <div class="vs-field">
+                    <label for="vs-setup-frontage">Frontage in metres</label>
+                    <input type="number" id="vs-setup-frontage" min="1" max="30" step="0.5" required>
+                </div>
+
+                <div class="vs-field">
+                    <label for="vs-setup-depth">Depth in metres</label>
+                    <input type="number" id="vs-setup-depth" min="1" max="30" step="0.5" required>
+                </div>
+
+                <div class="vs-field">
+                    <label for="vs-setup-power">Power needed</label>
+                    <select id="vs-setup-power">
+                        <option value="None">None</option>
+                        <option value="10 amp">10 amp</option>
+                        <option value="15 amp">15 amp</option>
+                        <option value="Three phase">Three phase</option>
+                        <option value="Own generator">I bring my own generator</option>
+                    </select>
+                </div>
+
+                <div class="vs-field">
+                    <label for="vs-setup-arrival">Preferred arrival time</label>
+                    <input type="text" id="vs-setup-arrival" placeholder="e.g. from 9:00 am">
+                </div>
+
+                <div class="vs-field is-wide">
+                    <label for="vs-setup-power-details">Power details <span class="vs-field-hint">(what you are running)</span></label>
+                    <input type="text" id="vs-setup-power-details" placeholder="e.g. fryer, warmer, lights">
+                </div>
+
+                <div class="vs-field">
+                    <label class="vs-check">
+                        <input type="checkbox" id="vs-setup-water">
+                        <span>I need water access</span>
+                    </label>
+                </div>
+
+                <div class="vs-field">
+                    <label class="vs-check">
+                        <input type="checkbox" id="vs-setup-vehicle">
+                        <span>My vehicle stays on site</span>
+                    </label>
+                </div>
+
+                <div class="vs-field is-wide">
+                    <label for="vs-setup-notes">Anything else we should know?</label>
+                    <textarea id="vs-setup-notes" rows="3"></textarea>
+                </div>
+            </div>
+
+            <p class="vs-error" data-error="setup" hidden></p>
+
+            <div class="vs-step-actions">
+                <button type="button" class="btn btn-outline" data-back>Back</button>
+                <button type="button" class="btn" data-next>Continue</button>
+            </div>
+        </div>
+
+        <!-- 5. DOCUMENTS -------------------------------------------------- -->
+        <div class="vs-step" data-step="documents" hidden>
+            <h2>Your documents</h2>
+            <p class="vs-step-intro">
+                Public liability is required for all vendors. Food vendors also need
+                their food licence. PDF or photo, up to 10 MB each.
+            </p>
+
+            <div class="vs-file-row">
+                <div class="vs-field">
+                    <label for="vs-doc-type">Document type</label>
+                    <select id="vs-doc-type">
+                        <option>Public Liability Insurance</option>
+                        <option>Food Licence</option>
+                        <option>Food Safety Supervisor Certificate</option>
+                        <option>Electrical Test and Tag</option>
+                        <option>Gas Certificate</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+
+                <div class="vs-field">
+                    <label for="vs-file">Choose a file</label>
+                    <input type="file" id="vs-file" accept="application/pdf,image/*" multiple>
+                </div>
+            </div>
+
+            <ul class="vs-doc-list" id="vs-doc-list"></ul>
+
+            <p class="vs-busy" data-busy="documents" hidden>Uploading…</p>
+            <p class="vs-error" data-error="documents" hidden></p>
+
+            <div class="vs-step-actions">
+                <button type="button" class="btn btn-outline" data-back>Back</button>
+                <button type="button" class="btn" data-next>Continue</button>
+            </div>
+        </div>
+
+        <!-- 6. THE MAP ---------------------------------------------------- -->
+        <div class="vs-step" data-step="site" hidden>
+            <h2>Choose your site</h2>
+            <p class="vs-step-intro">
+                Only the sites for your vendor type can be selected. Once you pick
+                one it is held for you for 10 minutes while you finish.
+            </p>
+
+            <!-- sign in appears here, right where an account is first needed -->
+            <div class="vs-auth" id="vs-auth" hidden>
+                <h3>Create your vendor account</h3>
+                <p>
+                    So we can hold your site and you can come back to your booking later.
+                </p>
+
+                <div class="vs-auth-tabs">
+                    <button type="button" class="vs-auth-tab is-selected" data-auth-mode="signup">New vendor</button>
+                    <button type="button" class="vs-auth-tab" data-auth-mode="signin">I have an account</button>
+                </div>
+
+                <form id="vs-auth-form" data-mode="signup">
+                    <div class="vs-field-grid">
+                        <div class="vs-field">
+                            <label for="vs-auth-email">Email</label>
+                            <input type="email" id="vs-auth-email" autocomplete="email" required>
+                        </div>
+                        <div class="vs-field">
+                            <label for="vs-auth-password">Password</label>
+                            <input type="password" id="vs-auth-password" autocomplete="current-password"
+                                   minlength="6" required>
+                        </div>
+                    </div>
+
+                    <p class="vs-busy" data-busy="auth" hidden>Working…</p>
+                    <p class="vs-error" data-error="auth" hidden></p>
+
+                    <div class="vs-step-actions">
+                        <button type="submit" class="btn" id="vs-auth-submit">Create Account</button>
+                    </div>
+                </form>
+            </div>
+
+            <ul class="vs-legend">
+                <li><span class="vs-swatch is-available"></span> Available</li>
+                <li><span class="vs-swatch is-mine"></span> Held by you</li>
+                <li><span class="vs-swatch is-held"></span> On hold</li>
+                <li><span class="vs-swatch is-booked"></span> Booked</li>
+                <li><span class="vs-swatch is-blocked"></span> Not available</li>
+            </ul>
+
+            <div class="vs-map-wrap">
+                <div class="vs-map" id="vs-map"></div>
+            </div>
+
+            <p class="vs-map-counts" id="vs-map-counts"></p>
+            <p class="vs-site-choice" id="vs-site-choice">No site selected yet.</p>
+            <p class="vs-hold-timer" id="vs-hold-timer"></p>
+
+            <p class="vs-busy" data-busy="site" hidden>Holding your site…</p>
+            <p class="vs-error" data-error="site" hidden></p>
+
+            <div class="vs-step-actions">
+                <button type="button" class="btn btn-outline" data-back>Back</button>
+                <button type="button" class="btn" data-next>Continue</button>
+            </div>
+        </div>
+
+        <!-- 7. REVIEW AND PAY --------------------------------------------- -->
+        <div class="vs-step" data-step="review" hidden>
+            <h2>Review and pay</h2>
+            <p class="vs-step-intro">Check everything over before you pay.</p>
+
+            <div id="vs-review"></div>
+
+            <p class="vs-busy" data-busy="review" hidden>Taking you to checkout…</p>
+            <p class="vs-error" data-error="review" hidden></p>
+
+            <div class="vs-step-actions">
+                <button type="button" class="btn btn-outline" data-back>Back</button>
+                <button type="button" class="btn btn-ticket" id="vs-pay">Pay and Book</button>
+            </div>
+        </div>
+
+        <!-- WAITING ON THE WEBHOOK ---------------------------------------- -->
+        <div class="vs-confirming" id="vs-confirming" hidden>
+            <div class="vs-spinner"></div>
+            <h2>Confirming your booking</h2>
+            <p data-confirming-note>
+                We're waiting on Stripe to confirm the payment. This usually takes
+                a few seconds.
+            </p>
+        </div>
+
+        <!-- CONFIRMATION --------------------------------------------------- -->
+        <div class="vs-confirmed" id="vs-confirmed" hidden></div>
+
+    </div>
+
+</section>
+
+<!-- WHAT HAPPENS NEXT --------------------------------------------------- -->
+<section class="section">
+
+    <h2>What Happens Next</h2>
+
+    <div class="steps-grid">
+        <div class="step">
+            <span class="step-number">1</span>
+            <h3>We Check Your Details</h3>
+            <p>We look over your documents and confirm your site suits your setup.</p>
+        </div>
+
+        <div class="step">
+            <span class="step-number">2</span>
+            <h3>We Send Your Bump-In</h3>
+            <p>Closer to the event you get your arrival time, gate and site position.</p>
+        </div>
+
+        <div class="step">
+            <span class="step-number">3</span>
+            <h3>Event Day</h3>
+            <p>Arrive at your bump-in time, set up on your marked site and trade.</p>
+        </div>
+    </div>
+
+</section>
+
+<div id="footer"></div>
+
+</body>
+</html>

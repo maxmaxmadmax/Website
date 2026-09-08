@@ -1,0 +1,1068 @@
+/* ==========================================================================
+   VENDOR SIGNUP - page specific styles
+
+   Loaded after style.css, so everything here sits on top of the existing
+   SoundzGood look. Fonts, buttons, colours, page width and the responsive
+   rules all come from style.css - this file only adds what the booking
+   flow needs, plus a light Halloween accent for this one event.
+
+   Everything is prefixed .vs- so nothing here can leak into another page.
+   ========================================================================== */
+
+.vendor-signup{
+    /* Halloween accents, scoped to this page only */
+    --vs-purple:#6b3fa0;
+    --vs-purple-deep:#3a1f5c;
+    --vs-slime:#8bc34a;
+
+    --vs-available:#2e7d32;
+    --vs-held:#c8860d;
+    --vs-booked:#5a1f1f;
+    --vs-blocked:#2a2a2a;
+    --vs-mine:var(--sg-orange);
+}
+
+
+/* --------------------------------------------------------------------------
+   HERO
+   -------------------------------------------------------------------------- */
+.vs-hero{
+    position:relative;
+    overflow:hidden;
+    text-align:center;
+
+    background:
+        radial-gradient(120% 100% at 50% 0%, var(--vs-purple-deep) 0%, #0a0a0a 58%),
+        var(--sg-black);
+}
+
+.vs-hero::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background-image:var(--sg-grain);
+    opacity:.14;
+    mix-blend-mode:overlay;
+    pointer-events:none;
+}
+
+.vs-hero > *{
+    position:relative;
+    z-index:1;
+}
+
+.vs-hero-inner{
+    padding:120px 20px 70px;
+    max-width:860px;
+    margin:auto;
+}
+
+.vs-hero h1{
+    font-family:var(--sg-font-display);
+    font-size:clamp(2.1rem, 6vw, 4rem);
+    line-height:.98;
+    letter-spacing:-1px;
+    text-transform:uppercase;
+    margin-bottom:6px;
+}
+
+.vs-hero .vs-hero-sub{
+    font-family:var(--sg-font-display);
+    font-size:clamp(1.1rem, 3.4vw, 2rem);
+    letter-spacing:-.5px;
+    text-transform:uppercase;
+    color:var(--sg-orange);
+    margin-bottom:18px;
+}
+
+.vs-hero .vs-hero-kicker{
+    font-family:var(--sg-font-display);
+    font-size:clamp(1.3rem, 4vw, 2.4rem);
+    letter-spacing:-.5px;
+    text-transform:uppercase;
+    margin-bottom:20px;
+}
+
+.vs-hero-meta{
+    font-family:var(--sg-font);
+    font-weight:400;
+    font-size:clamp(.72rem, 1.8vw, .95rem);
+    letter-spacing:.3em;
+    text-indent:.3em;
+    text-transform:uppercase;
+    color:var(--sg-muted);
+    margin-bottom:6px;
+}
+
+/* Small pumpkin, drawn rather than loaded */
+.vs-pumpkin{
+    display:block;
+    width:56px;
+    height:auto;
+    margin:0 auto 18px;
+}
+
+/* Cobweb in the top corners of the hero */
+.vs-web{
+    position:absolute;
+    top:0;
+    width:130px;
+    height:130px;
+    opacity:.22;
+    pointer-events:none;
+    z-index:1;
+}
+
+.vs-web-left{ left:0; }
+.vs-web-right{ right:0; transform:scaleX(-1); }
+
+.vs-web path{
+    fill:none;
+    stroke:#fff;
+    stroke-width:1.4;
+}
+
+
+/* --------------------------------------------------------------------------
+   PREVIEW BANNER
+   Shown only while Firebase has not been connected.
+   -------------------------------------------------------------------------- */
+.vs-preview-banner{
+    background:#4a1d1d;
+    border-bottom:2px solid #7a2f2f;
+    color:#ffd9d9;
+    padding:14px 6%;
+    text-align:center;
+    font-size:.95rem;
+}
+
+.vs-preview-banner strong{
+    color:#fff;
+}
+
+
+/* --------------------------------------------------------------------------
+   PRICING CARDS
+   -------------------------------------------------------------------------- */
+.vs-price-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
+    gap:20px;
+    max-width:var(--sg-max-width);
+    margin:auto;
+}
+
+.vs-price-card{
+    background:var(--sg-panel);
+    border:1px solid var(--sg-border);
+    border-top:4px solid var(--sg-orange);
+    border-radius:16px;
+    padding:30px 26px;
+    text-align:center;
+}
+
+.vs-price-card h3{
+    font-family:var(--sg-font-display);
+    font-size:1.2rem;
+    letter-spacing:-.5px;
+    text-transform:uppercase;
+    margin-bottom:10px;
+}
+
+.vs-price-amount{
+    font-family:var(--sg-font-display);
+    font-size:2.4rem;
+    color:var(--sg-orange);
+    line-height:1;
+    margin-bottom:10px;
+}
+
+.vs-price-card p{
+    color:var(--sg-muted);
+    font-size:.95rem;
+}
+
+/* The bar note - we run the bar, so no bar vendors */
+.vs-bar-note{
+    max-width:760px;
+    margin:34px auto 0;
+    padding:18px 22px;
+    border:1px solid var(--vs-purple);
+    border-left:4px solid var(--vs-purple);
+    border-radius:12px;
+    background:rgba(107,63,160,.12);
+    color:var(--sg-muted);
+    text-align:center;
+    font-size:.95rem;
+}
+
+
+/* --------------------------------------------------------------------------
+   STEPPER
+   -------------------------------------------------------------------------- */
+.vs-stepper{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:8px 6px;
+    list-style:none;
+    max-width:var(--sg-max-width);
+    margin:0 auto 34px;
+}
+
+.vs-stepper-item{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 14px;
+    border-radius:50px;
+    border:1px solid var(--sg-border);
+    background:var(--sg-panel);
+    color:var(--sg-dim);
+    font-size:.82rem;
+}
+
+.vs-stepper-num{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    background:#2a2a2a;
+    color:var(--sg-muted);
+    font-family:var(--sg-font-display);
+    font-size:.72rem;
+    flex:0 0 auto;
+}
+
+.vs-stepper-item.is-current{
+    border-color:var(--sg-orange);
+    color:#fff;
+}
+
+.vs-stepper-item.is-current .vs-stepper-num{
+    background:var(--sg-orange);
+    color:#fff;
+}
+
+.vs-stepper-item.is-done .vs-stepper-num{
+    background:var(--vs-available);
+    color:#fff;
+}
+
+
+/* --------------------------------------------------------------------------
+   STEP PANELS
+   -------------------------------------------------------------------------- */
+.vs-flow{
+    max-width:940px;
+    margin:auto;
+}
+
+.vs-step{
+    background:var(--sg-panel);
+    border:1px solid var(--sg-border);
+    border-radius:18px;
+    padding:34px 30px;
+}
+
+.vs-step h2{
+    text-align:left;
+    font-size:clamp(1.4rem, 3.4vw, 2rem);
+    margin-bottom:8px;
+}
+
+.vs-step-intro{
+    color:var(--sg-muted);
+    margin-bottom:26px;
+}
+
+.vs-step-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    margin-top:28px;
+}
+
+.vs-error{
+    background:#4a1d1d;
+    border:1px solid #7a2f2f;
+    color:#ffd9d9;
+    border-radius:10px;
+    padding:12px 16px;
+    margin-top:18px;
+    font-size:.95rem;
+}
+
+.vs-busy{
+    color:var(--sg-gold);
+    font-family:var(--sg-font-accent);
+    font-size:.85rem;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    margin-top:16px;
+}
+
+.vs-muted{
+    color:var(--sg-dim);
+}
+
+
+/* --------------------------------------------------------------------------
+   VENDOR TYPE CHOICES
+   -------------------------------------------------------------------------- */
+.vs-type-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));
+    gap:16px;
+}
+
+.vs-type{
+    text-align:left;
+    background:#0d0d0d;
+    border:2px solid var(--sg-border);
+    border-radius:14px;
+    padding:24px 22px;
+    color:#fff;
+    cursor:pointer;
+    transition:border-color .2s, transform .2s;
+}
+
+.vs-type:hover{
+    transform:translateY(-3px);
+    border-color:#4a2a06;
+}
+
+.vs-type.is-selected{
+    border-color:var(--sg-orange);
+    background:#170d02;
+}
+
+.vs-type-name{
+    display:block;
+    font-family:var(--sg-font-display);
+    font-size:1.15rem;
+    letter-spacing:-.5px;
+    text-transform:uppercase;
+    margin-bottom:6px;
+}
+
+.vs-type-price{
+    display:block;
+    font-family:var(--sg-font-display);
+    font-size:1.6rem;
+    color:var(--sg-orange);
+    margin-bottom:8px;
+}
+
+.vs-type-desc{
+    display:block;
+    color:var(--sg-muted);
+    font-size:.9rem;
+}
+
+
+/* --------------------------------------------------------------------------
+   FORM FIELDS - matches the existing contact form styling
+   -------------------------------------------------------------------------- */
+.vs-field-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
+    gap:16px;
+}
+
+.vs-field{
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+}
+
+.vs-field.is-wide{
+    grid-column:1 / -1;
+}
+
+.vs-field label{
+    font-family:var(--sg-font-accent);
+    font-size:.74rem;
+    font-weight:bold;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+}
+
+.vs-field input,
+.vs-field select,
+.vs-field textarea{
+    padding:14px;
+    border-radius:8px;
+    background:#0b0b0b;
+    color:#fff;
+    border:1px solid var(--sg-border);
+    font-family:var(--sg-font);
+    font-size:1rem;
+    width:100%;
+}
+
+.vs-field textarea{
+    resize:vertical;
+}
+
+.vs-field-hint{
+    color:var(--sg-dim);
+    font-size:.82rem;
+}
+
+.vs-check{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:var(--sg-muted);
+}
+
+.vs-check input{
+    width:20px;
+    height:20px;
+    flex:0 0 auto;
+}
+
+
+/* --------------------------------------------------------------------------
+   FOOD CATEGORIES
+   -------------------------------------------------------------------------- */
+.vs-category-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));
+    gap:12px;
+}
+
+.vs-category{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:5px;
+
+    background:#0d0d0d;
+    border:2px solid var(--sg-border);
+    border-radius:12px;
+    padding:16px 18px;
+    color:#fff;
+    text-align:left;
+    cursor:pointer;
+    transition:border-color .2s, transform .2s;
+}
+
+.vs-category:hover:not(:disabled){
+    transform:translateY(-2px);
+    border-color:#4a2a06;
+}
+
+.vs-category.is-selected{
+    border-color:var(--sg-orange);
+    background:#170d02;
+}
+
+.vs-category-name{
+    font-family:var(--sg-font-display);
+    font-size:1rem;
+    letter-spacing:-.3px;
+    text-transform:uppercase;
+}
+
+.vs-category-count{
+    font-family:var(--sg-font-accent);
+    font-size:.78rem;
+    letter-spacing:1px;
+    color:var(--sg-dim);
+}
+
+.vs-category.is-full{
+    opacity:.55;
+    cursor:not-allowed;
+    border-color:#3a1414;
+}
+
+.vs-category-full{
+    position:absolute;
+    top:10px;
+    right:12px;
+    font-family:var(--sg-font-accent);
+    font-size:.66rem;
+    font-weight:bold;
+    letter-spacing:1.5px;
+    color:#ff8a8a;
+    background:#4a1d1d;
+    border-radius:4px;
+    padding:2px 6px;
+}
+
+
+/* --------------------------------------------------------------------------
+   DOCUMENTS
+   -------------------------------------------------------------------------- */
+.vs-doc-list{
+    list-style:none;
+    margin-top:20px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+
+.vs-doc{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px 14px;
+    background:#0b0b0b;
+    border:1px solid var(--sg-border);
+    border-radius:10px;
+    padding:12px 16px;
+}
+
+.vs-doc-type{
+    font-family:var(--sg-font-accent);
+    font-size:.72rem;
+    font-weight:bold;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+}
+
+.vs-doc-name{
+    flex:1;
+    min-width:120px;
+    word-break:break-word;
+}
+
+.vs-doc-size{
+    color:var(--sg-dim);
+    font-size:.85rem;
+}
+
+.vs-doc-empty{
+    color:var(--sg-dim);
+    font-size:.92rem;
+}
+
+.vs-link{
+    background:none;
+    border:none;
+    color:var(--sg-orange);
+    cursor:pointer;
+    font-size:.9rem;
+    text-decoration:underline;
+    padding:4px;
+}
+
+.vs-file-row{
+    display:grid;
+    grid-template-columns:minmax(160px, 220px) 1fr;
+    gap:14px;
+    align-items:end;
+}
+
+
+/* --------------------------------------------------------------------------
+   THE MAP
+   -------------------------------------------------------------------------- */
+.vs-map-wrap{
+    background:#0b0b0b;
+    border:1px solid var(--sg-border);
+    border-radius:14px;
+    padding:14px;
+    /* long site plans scroll sideways inside here, never on the page */
+    overflow-x:auto;
+}
+
+.vs-map{
+    min-width:520px;
+}
+
+.vmap-svg{
+    display:block;
+    width:100%;
+    height:auto;
+}
+
+/* fixed furniture */
+.vmap-landmark rect{
+    fill:#151515;
+    stroke:#2b2b2b;
+    stroke-width:2;
+}
+
+.vmap-landmark-stage rect{
+    fill:#1d1030;
+    stroke:var(--vs-purple);
+}
+
+.vmap-landmark-bar rect{
+    fill:#221004;
+    stroke:#5a3a10;
+}
+
+.vmap-landmark-path rect{
+    fill:#101010;
+    stroke:#232323;
+    stroke-dasharray:6 6;
+}
+
+.vmap-landmark-text{
+    fill:#8a8a8a;
+    font-family:'Courier New', Courier, monospace;
+    font-size:13px;
+    letter-spacing:1.5px;
+}
+
+/* bookable sites */
+.vmap-site rect{
+    stroke-width:2.5;
+    transition:fill .15s, stroke .15s;
+}
+
+.vmap-site-label{
+    fill:#fff;
+    font-family:"Arial Black", Arial, sans-serif;
+    font-size:17px;
+    pointer-events:none;
+}
+
+.vmap-site-sub{
+    fill:rgba(255,255,255,.72);
+    font-family:'Courier New', Courier, monospace;
+    font-size:10px;
+    letter-spacing:1px;
+    pointer-events:none;
+}
+
+.vmap-site.is-available rect{ fill:#12310f; stroke:var(--vs-available); }
+.vmap-site.is-held rect{      fill:#33280a; stroke:var(--vs-held); }
+.vmap-site.is-booked rect{    fill:#2a0f0f; stroke:#8c3a3a; }
+.vmap-site.is-blocked rect{   fill:#161616; stroke:#3a3a3a; }
+.vmap-site.is-mine rect{      fill:#3a1e00; stroke:var(--vs-mine); }
+
+.vmap-site.is-selectable{ cursor:pointer; }
+
+.vmap-site.is-selectable:hover rect{
+    fill:#1b4a17;
+    stroke:#4caf50;
+}
+
+.vmap-site.is-selected rect{
+    fill:#4a2600;
+    stroke:var(--sg-orange);
+    stroke-width:4;
+}
+
+.vmap-site.is-locked .vmap-site-label{ fill:rgba(255,255,255,.5); }
+
+.vmap-site.is-wrong-type rect{
+    fill:#0f0f0f;
+    stroke:#242424;
+}
+
+.vmap-site.is-wrong-type .vmap-site-label,
+.vmap-site.is-wrong-type .vmap-site-sub{
+    fill:rgba(255,255,255,.24);
+}
+
+.vmap-site.is-selectable:focus-visible rect{
+    stroke:var(--sg-gold);
+    stroke-width:4;
+}
+
+/* legend */
+.vs-legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 20px;
+    margin:18px 0 6px;
+    list-style:none;
+}
+
+.vs-legend li{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:var(--sg-muted);
+    font-size:.86rem;
+}
+
+.vs-swatch{
+    width:16px;
+    height:16px;
+    border-radius:4px;
+    border:2px solid;
+    flex:0 0 auto;
+}
+
+.vs-swatch.is-available{ background:#12310f; border-color:var(--vs-available); }
+.vs-swatch.is-held{      background:#33280a; border-color:var(--vs-held); }
+.vs-swatch.is-booked{    background:#2a0f0f; border-color:#8c3a3a; }
+.vs-swatch.is-blocked{   background:#161616; border-color:#3a3a3a; }
+.vs-swatch.is-mine{      background:#3a1e00; border-color:var(--vs-mine); }
+
+.vs-site-choice{
+    margin-top:14px;
+    padding:12px 16px;
+    border-radius:10px;
+    background:#0b0b0b;
+    border:1px solid var(--sg-border);
+    color:var(--sg-dim);
+}
+
+.vs-site-choice.is-chosen{
+    border-color:var(--sg-orange);
+    color:#fff;
+}
+
+.vs-hold-timer{
+    margin-top:10px;
+    font-family:var(--sg-font-accent);
+    font-size:.85rem;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+}
+
+.vs-hold-timer.is-expired{
+    color:#ff8a8a;
+}
+
+.vs-map-counts{
+    color:var(--sg-dim);
+    font-size:.88rem;
+    margin-top:4px;
+}
+
+
+/* --------------------------------------------------------------------------
+   INLINE SIGN IN
+   -------------------------------------------------------------------------- */
+.vs-auth{
+    background:#0b0b0b;
+    border:1px solid var(--vs-purple);
+    border-radius:14px;
+    padding:24px 22px;
+    margin-bottom:24px;
+}
+
+.vs-auth h3{
+    font-family:var(--sg-font-display);
+    font-size:1.1rem;
+    letter-spacing:-.5px;
+    text-transform:uppercase;
+    margin-bottom:8px;
+}
+
+.vs-auth p{
+    color:var(--sg-muted);
+    font-size:.92rem;
+    margin-bottom:16px;
+}
+
+.vs-auth-tabs{
+    display:flex;
+    gap:8px;
+    margin-bottom:16px;
+}
+
+.vs-auth-tab{
+    background:#141414;
+    border:1px solid var(--sg-border);
+    color:var(--sg-muted);
+    border-radius:50px;
+    padding:8px 18px;
+    cursor:pointer;
+    font-size:.88rem;
+}
+
+.vs-auth-tab.is-selected{
+    border-color:var(--sg-orange);
+    color:#fff;
+}
+
+.vs-account{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    color:var(--sg-dim);
+    font-size:.88rem;
+    margin-bottom:20px;
+}
+
+
+/* --------------------------------------------------------------------------
+   REVIEW AND CONFIRMATION
+   -------------------------------------------------------------------------- */
+.vs-summary-list{
+    display:grid;
+    gap:1px;
+    background:var(--sg-border);
+    border:1px solid var(--sg-border);
+    border-radius:12px;
+    overflow:hidden;
+}
+
+.vs-summary-list > div{
+    display:grid;
+    grid-template-columns:minmax(120px, 200px) 1fr;
+    gap:14px;
+    background:#0b0b0b;
+    padding:13px 18px;
+}
+
+.vs-summary-list dt{
+    font-family:var(--sg-font-accent);
+    font-size:.74rem;
+    font-weight:bold;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+    align-self:center;
+}
+
+.vs-summary-list dd{
+    color:#fff;
+    word-break:break-word;
+}
+
+.vs-total{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:20px;
+
+    margin-top:20px;
+    padding:20px 22px;
+    border-radius:12px;
+    background:linear-gradient(150deg, #241001, #0c0c0c);
+    border:1px solid #3a2000;
+}
+
+.vs-total span{
+    font-family:var(--sg-font-accent);
+    font-size:.8rem;
+    font-weight:bold;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+}
+
+.vs-total strong{
+    font-family:var(--sg-font-display);
+    font-size:2rem;
+    color:#fff;
+}
+
+.vs-confirming,
+.vs-confirmed{
+    max-width:760px;
+    margin:auto;
+    text-align:center;
+}
+
+.vs-confirm-card{
+    background:var(--sg-panel);
+    border:1px solid var(--sg-border);
+    border-top:4px solid var(--vs-available);
+    border-radius:18px;
+    padding:40px 32px;
+    text-align:left;
+}
+
+.vs-eyebrow{
+    font-family:var(--sg-font-accent);
+    font-size:.76rem;
+    font-weight:bold;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:var(--vs-slime);
+    margin-bottom:10px;
+}
+
+.vs-confirm-card h2{
+    text-align:left;
+    margin-bottom:10px;
+}
+
+.vs-confirm-ref{
+    font-family:var(--sg-font-accent);
+    letter-spacing:2px;
+    color:var(--sg-muted);
+    margin-bottom:24px;
+}
+
+.vs-confirm-note{
+    color:var(--sg-muted);
+    margin-top:22px;
+    font-size:.95rem;
+}
+
+.vs-spinner{
+    width:42px;
+    height:42px;
+    margin:0 auto 20px;
+    border:3px solid #2a2a2a;
+    border-top-color:var(--sg-orange);
+    border-radius:50%;
+    animation:vs-spin 1s linear infinite;
+}
+
+@keyframes vs-spin{
+    to{ transform:rotate(360deg); }
+}
+
+
+/* --------------------------------------------------------------------------
+   ADMIN DASHBOARD
+   Staff only, so plain and dense rather than styled up.
+   -------------------------------------------------------------------------- */
+.va-tabs{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    justify-content:center;
+    margin-bottom:22px;
+}
+
+.va-panel{
+    margin-bottom:20px;
+}
+
+.va-table-wrap{
+    overflow-x:auto;   /* wide tables scroll in here, never on the page */
+}
+
+.va-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:.9rem;
+    min-width:640px;
+}
+
+.va-table th,
+.va-table td{
+    text-align:left;
+    padding:11px 12px;
+    border-bottom:1px solid var(--sg-border);
+    vertical-align:top;
+}
+
+.va-table th{
+    font-family:var(--sg-font-accent);
+    font-size:.72rem;
+    font-weight:bold;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+    white-space:nowrap;
+}
+
+.va-table td{
+    color:var(--sg-muted);
+}
+
+.va-table tr.is-flagged td{
+    background:#2a1010;
+}
+
+.va-sub{
+    display:block;
+    color:var(--sg-dim);
+    font-size:.8rem;
+}
+
+.va-status{
+    display:inline-block;
+    padding:3px 9px;
+    border-radius:50px;
+    font-size:.74rem;
+    font-family:var(--sg-font-accent);
+    letter-spacing:1px;
+    text-transform:uppercase;
+    background:#242424;
+    color:var(--sg-muted);
+    white-space:nowrap;
+}
+
+.va-status.is-confirmed,
+.va-status.is-available{ background:#12310f; color:#9ade95; }
+
+.va-status.is-pending_payment,
+.va-status.is-held{ background:#33280a; color:#f0c860; }
+
+.va-status.is-booked,
+.va-status.is-needs_attention{ background:#3a1414; color:#ff9d9d; }
+
+.va-status.is-cancelled,
+.va-status.is-blocked{ background:#1c1c1c; color:#8a8a8a; }
+
+.va-limit{
+    width:76px;
+    padding:7px 10px;
+    border-radius:7px;
+    background:#0b0b0b;
+    color:#fff;
+    border:1px solid var(--sg-border);
+    font-family:var(--sg-font);
+    font-size:.9rem;
+}
+
+
+/* --------------------------------------------------------------------------
+   MOBILE
+   -------------------------------------------------------------------------- */
+@media (max-width:768px){
+
+    .vs-hero-inner{
+        padding:100px 20px 54px;
+    }
+
+    .vs-step{
+        padding:26px 20px;
+        border-radius:14px;
+    }
+
+    .vs-step-actions .btn{
+        width:100%;
+        max-width:none;
+    }
+
+    .vs-file-row{
+        grid-template-columns:1fr;
+    }
+
+    .vs-summary-list > div{
+        grid-template-columns:1fr;
+        gap:4px;
+    }
+
+    .vs-stepper-name{
+        display:none;   /* numbers only, so the stepper stays one row */
+    }
+
+    .vs-stepper-item{
+        padding:7px 10px;
+    }
+
+    .vs-total{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:6px;
+    }
+
+    .vs-web{
+        width:88px;
+        height:88px;
+    }
+}
+
+@media (prefers-reduced-motion:reduce){
+    .vs-spinner{ animation:none; }
+    .vs-type:hover,
+    .vs-category:hover:not(:disabled){ transform:none; }
+}

@@ -21,11 +21,44 @@ document.addEventListener('DOMContentLoaded', function () {
     loadComponent('navbar', 'components/navbar.html', function () {
         highlightCurrentPage();
         initHomeNav();
+        trackNavHeight();
     });
     loadComponent('footer', 'components/footer.html');
     initScrapbookAnimation();
     initTicketBar();
 });
+
+/* Publishes the real height of the menu as --sg-nav-height.
+
+   The menu sits over the top of each hero, so every hero needs to start
+   below it. Hard coding that number means the heroes break the next time a
+   menu item is added and the bar wraps onto a second row - which is exactly
+   what happened when Vendors was added. Measuring it instead keeps the
+   heroes correct whatever the menu ends up holding. */
+function trackNavHeight() {
+    var navEl = document.querySelector('#navbar nav');
+    if (!navEl) return;
+
+    var apply = function () {
+        var height = Math.ceil(navEl.getBoundingClientRect().height);
+        if (height > 0) {
+            document.documentElement.style.setProperty('--sg-nav-height', height + 'px');
+        }
+    };
+
+    apply();
+
+    // Re-measure when the bar rewraps: rotation, resize, or a late font.
+    if ('ResizeObserver' in window) {
+        new ResizeObserver(apply).observe(navEl);
+    } else {
+        window.addEventListener('resize', apply);
+    }
+
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(apply).catch(function () {});
+    }
+}
 
 /* Home page only: keep the menu out of the way over the hero, then slide
    it in once the next event section is reached. Runs straight after the

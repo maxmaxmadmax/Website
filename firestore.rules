@@ -1,0 +1,97 @@
+rules_version = '2';
+
+// SoundzGood vendor signup
+//
+// The important rule here: nothing a vendor can write decides whether a site
+// is taken or whether they have paid. Site allocation and payment status are
+// written only by Cloud Functions using the Admin SDK, which bypasses these
+// rules. Vendors can read the map and write their own draft details, and that
+// is all.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
+    function ownsDoc() {
+      return signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // ---------------------------------------------------------------
+    // Events, sites and categories
+    // Public read so the map and the category counts can be shown to
+    // anyone. Written by admins or by Cloud Functions only.
+    // ---------------------------------------------------------------
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if isAdmin();
+
+      match /sites/{siteId} {
+        // Never writable from a browser. Holds and bookings go through
+        // the holdSite / releaseHold functions so they run in a
+        // transaction and cannot double book.
+        allow read: if true;
+        allow write: if false;
+      }
+
+      match /categories/{categoryId} {
+        // Counts are maintained server side in the same transaction that
+        // allocates a site, so a limit cannot be beaten by two people
+        // submitting at once.
+        allow read: if true;
+        allow create, delete: if isAdmin();
+        allow update: if isAdmin() &&
+          // an admin may change the limit or the name, never the live count
+          request.resource.data.count == resource.data.count;
+      }
+    }
+
+    // ---------------------------------------------------------------
+    // Bookings
+    // A vendor may create and edit their own booking while it is still a
+    // draft. Once it is pending payment or confirmed it is read only to
+    // them - only Cloud Functions move it forward.
+    // ---------------------------------------------------------------
+    match /bookings/{bookingId} {
+
+      allow read: if isAdmin() || ownsDoc();
+
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'draft'
+        && request.resource.data.paymentStatus == 'none'
+        // a vendor cannot invent a price, a site or a confirmation
+        && !('amountCents' in request.resource.data)
+        && !('siteId' in request.resource.data)
+        && !('stripeSessionId' in request.resource.data)
+        && request.resource.data.vendorType in ['food', 'market', 'community'];
+
+      allow update: if signedIn()
+        && ownsDoc()
+        && resource.data.status == 'draft'
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.status == 'draft'
+        && request.resource.data.paymentStatus == 'none'
+        && !('amountCents' in request.resource.data)
+        && !('siteId' in request.resource.data)
+        && !('stripeSessionId' in request.resource.data)
+        && request.resource.data.vendorType in ['food', 'market', 'community'];
+
+      // Bookings are cancelled, never deleted, so there is an audit trail.
+      allow delete: if false;
+    }
+
+    // ---------------------------------------------------------------
+    // Anything not named above is closed.
+    // ---------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

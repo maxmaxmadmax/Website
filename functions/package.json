@@ -1,0 +1,20 @@
+{
+  "name": "soundzgood-vendor-functions",
+  "description": "Vendor signup backend for the SoundzGood website",
+  "private": true,
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "lint": "node --check index.js && node --check lib/layout.js",
+    "serve": "firebase emulators:start --only functions,firestore,auth,storage",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.3.0",
+    "firebase-functions": "^7.3.2",
+    "stripe": "^22.6.1"
+  }
+}

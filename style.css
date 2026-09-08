@@ -718,8 +718,10 @@ nav a.nav-ticket.active{
     position:relative;
     z-index:2;
     /*  Everything in this hero is sized in vh so the whole poster always
-        fits the screen without scrolling, on any height of display.     */
-    padding:max(88px, 8vh) 20px 1.4vh;
+        fits the screen without scrolling, on any height of display.
+        The top clears the menu, whose real height js/main.js publishes as
+        --sg-nav-height - so adding a menu item cannot land on the logo. */
+    padding:calc(var(--sg-nav-height, 88px) + 8px) 20px 1.4vh;
 
     width:100%;
     max-width:960px;
@@ -2528,13 +2530,16 @@ nav a.nav-ticket.active{
     nav ul{
         flex-wrap:wrap;
         justify-content:center;
-        gap:2px 16px;
+        gap:2px 7px;
     }
 
+    /* Tight enough that five menu items still sit on one row at 375px.
+       If a sixth is ever added the bar simply wraps - the heroes read
+       --sg-nav-height, so nothing lands underneath the menu either way. */
     nav a{
-        padding:11px 4px;
-        font-size:.82rem;
-        letter-spacing:.5px;
+        padding:11px 2px;
+        font-size:.8rem;
+        letter-spacing:0;
     }
 
     nav a.nav-ticket{
@@ -2551,9 +2556,9 @@ nav a.nav-ticket.active{
         min-height:auto;
     }
 
-    /* Top padding clears the overlaying nav */
+    /* Top padding clears the overlaying nav, measured not guessed */
     .hero-content{
-        padding:120px 20px 60px;
+        padding:calc(var(--sg-nav-height, 120px) + 20px) 20px 60px;
     }
 
     .hero-logo{
@@ -2562,7 +2567,7 @@ nav a.nav-ticket.active{
     }
 
     .event-hero-content{
-        padding:max(84px, 11vh) 20px 3.5vh;
+        padding:calc(var(--sg-nav-height, 84px) + 10px) 20px 3.5vh;
     }
 
     .event-hero-logo{
@@ -2709,7 +2714,7 @@ nav a.nav-ticket.active{
     }
 
     .header-content{
-        padding:118px 20px 50px;
+        padding:calc(var(--sg-nav-height, 118px) + 18px) 20px 50px;
     }
 
     .page-header{

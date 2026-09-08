@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Vendor Admin | SoundzGood</title>
+
+    <!-- Staff tool, not for search engines and not in the public menu -->
+    <meta name="robots" content="noindex, nofollow">
+
+    <link rel="icon" href="images/logo.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="vendor-signup.css">
+    <script type="module" src="js/vendor-admin.js"></script>
+</head>
+
+<body class="vendor-signup">
+
+<section class="section" style="padding-top:60px;">
+
+    <h2>Vendor Admin</h2>
+    <p class="section-intro">
+        Eatz &amp; Beatz Halloween Edition &middot; Bowen Sports Complex
+    </p>
+
+    <div class="vs-flow">
+
+        <!-- Sign in ---------------------------------------------------- -->
+        <div class="vs-step" id="va-signin">
+            <h2>Sign in</h2>
+            <p class="vs-step-intro">Admin accounts only.</p>
+
+            <form id="va-form">
+                <div class="vs-field-grid">
+                    <div class="vs-field">
+                        <label for="va-email">Email</label>
+                        <input type="email" id="va-email" autocomplete="email" required>
+                    </div>
+                    <div class="vs-field">
+                        <label for="va-password">Password</label>
+                        <input type="password" id="va-password" autocomplete="current-password" required>
+                    </div>
+                </div>
+
+                <p class="vs-error" data-error="admin" hidden></p>
+
+                <div class="vs-step-actions">
+                    <button type="submit" class="btn">Sign In</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Dashboard -------------------------------------------------- -->
+        <div id="va-dash" hidden>
+
+            <div class="vs-account" id="va-account"></div>
+
+            <div class="va-tabs" id="va-tabs">
+                <button type="button" class="vs-auth-tab is-selected" data-tab="bookings">Bookings</button>
+                <button type="button" class="vs-auth-tab" data-tab="sites">Sites</button>
+                <button type="button" class="vs-auth-tab" data-tab="categories">Categories</button>
+                <button type="button" class="vs-auth-tab" data-tab="setup">Setup</button>
+            </div>
+
+            <!-- Bookings -->
+            <div class="vs-step va-panel" data-panel="bookings">
+                <h2>Bookings</h2>
+                <p class="vs-step-intro" id="va-booking-summary"></p>
+                <div id="va-bookings"></div>
+            </div>
+
+            <!-- Sites -->
+            <div class="vs-step va-panel" data-panel="sites" hidden>
+                <h2>Sites</h2>
+                <p class="vs-step-intro">
+                    Free a site that is stuck, or block one off so nobody can book it.
+                </p>
+                <div id="va-sites"></div>
+            </div>
+
+            <!-- Categories -->
+            <div class="vs-step va-panel" data-panel="categories" hidden>
+                <h2>Food categories</h2>
+                <p class="vs-step-intro">
+                    Raise a limit and the category reopens on its own - the signup page
+                    compares the live count against the limit.
+                </p>
+                <div id="va-categories"></div>
+            </div>
+
+            <!-- Setup -->
+            <div class="vs-step va-panel" data-panel="setup" hidden>
+                <h2>Event setup</h2>
+                <p class="vs-step-intro">
+                    Creates the event, its sites and its food categories from the default
+                    Bowen Sports Complex layout. Safe to run more than once - it will not
+                    overwrite anything that already exists.
+                </p>
+
+                <p class="vs-busy" data-busy="admin" hidden>Working…</p>
+                <p class="vs-error" data-error="setup" hidden></p>
+                <p id="va-seed-result" class="vs-muted"></p>
+
+                <div class="vs-step-actions">
+                    <button type="button" class="btn" id="va-seed">Seed Event Layout</button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+</body>
+</html>

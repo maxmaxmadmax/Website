@@ -1,0 +1,35 @@
+rules_version = '2';
+
+// Vendor documents - insurance certificates, food licences, safety paperwork.
+// A vendor can only ever see and write inside their own folder.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
+    match /vendor-documents/{uid}/{allPaths=**} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+
+      allow write: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.size < 10 * 1024 * 1024
+        && (
+          request.resource.contentType.matches('image/.*') ||
+          request.resource.contentType == 'application/pdf'
+        );
+
+      allow delete: if isAdmin() || (signedIn() && request.auth.uid == uid);
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
