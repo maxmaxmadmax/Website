@@ -876,9 +876,9 @@ function renderReview() {
   rows.push(
     ['Frontage', state.setup.frontage ? `${state.setup.frontage} m` : '-'],
     ['Depth', state.setup.depth ? `${state.setup.depth} m` : '-'],
-    ['Own power', state.setup.ownPower || '-'],
+    ['Power', state.setup.ownPower || '-'],
     ['Power and water', state.setup.selfSufficient ? 'Bringing my own' : 'Not confirmed'],
-    ['Arrival', state.setup.arrivalTime || '-'],
+    ['Vehicle on site', state.setup.vehicleOnSite ? 'Yes' : 'No'],
     ['Documents', state.documents.length ? `${state.documents.length} attached` : 'None'],
     ['Site', state.siteLabel || 'Not chosen']
   );
@@ -1016,12 +1016,11 @@ function collectStep(step) {
       frontage: val('vs-setup-frontage'),
       depth: val('vs-setup-depth'),
       // All vendors run off their own power and water at this event, so
-      // what we record is what they are bringing, not what they want from us.
+      // what we record is what they are bringing, not what they want from
+      // us. Loud generators get placed away from the stage.
       ownPower: val('vs-setup-own-power'),
-      powerDetails: val('vs-setup-power-details'),
       selfSufficient: document.getElementById('vs-setup-selfsufficient')?.checked || false,
       vehicleOnSite: document.getElementById('vs-setup-vehicle')?.checked || false,
-      arrivalTime: val('vs-setup-arrival'),
       notes: val('vs-setup-notes'),
     };
   }
@@ -1058,7 +1057,12 @@ function validateStep(step) {
 
   if (step === 'setup') {
     if (!val('vs-setup-frontage') || !val('vs-setup-depth')) {
-      setStepError('setup', 'Please give us your frontage and depth in metres.');
+      setStepError('setup', 'Please choose your frontage and depth.');
+      return false;
+    }
+
+    if (!val('vs-setup-own-power')) {
+      setStepError('setup', 'Please tell us what power you are bringing.');
       return false;
     }
 

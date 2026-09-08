@@ -251,33 +251,55 @@
         <!-- 4. SETUP ------------------------------------------------------ -->
         <div class="vs-step" data-step="setup" hidden>
             <h2>Your setup</h2>
-            <p class="vs-step-intro">So we give you a site that actually fits, with the right power.</p>
+            <p class="vs-step-intro">So we give you a site that actually fits, and put you in the right spot.</p>
 
             <div class="vs-field-grid">
                 <div class="vs-field">
                     <label for="vs-setup-frontage">Frontage in metres</label>
-                    <input type="number" id="vs-setup-frontage" min="1" max="30" step="0.5" required>
+                    <select id="vs-setup-frontage" required>
+                        <option value="">Select frontage</option>
+                        <option value="1">1 m</option>
+                        <option value="2">2 m</option>
+                        <option value="3">3 m</option>
+                        <option value="4">4 m</option>
+                        <option value="5">5 m</option>
+                        <option value="6">6 m</option>
+                        <option value="7">7 m</option>
+                        <option value="8">8 m</option>
+                        <option value="9">9 m</option>
+                        <option value="10">10 m</option>
+                        <option value="11">11 m</option>
+                        <option value="12">12 m</option>
+                    </select>
                 </div>
 
                 <div class="vs-field">
                     <label for="vs-setup-depth">Depth in metres</label>
-                    <input type="number" id="vs-setup-depth" min="1" max="30" step="0.5" required>
-                </div>
-
-                <div class="vs-field">
-                    <label for="vs-setup-own-power">Power you are bringing</label>
-                    <input type="text" id="vs-setup-own-power"
-                           placeholder="e.g. 2.4 kVA generator">
-                </div>
-
-                <div class="vs-field">
-                    <label for="vs-setup-arrival">Preferred arrival time</label>
-                    <input type="text" id="vs-setup-arrival" placeholder="e.g. from 9:00 am">
+                    <select id="vs-setup-depth" required>
+                        <option value="">Select depth</option>
+                        <option value="1">1 m</option>
+                        <option value="2">2 m</option>
+                        <option value="3">3 m</option>
+                        <option value="4">4 m</option>
+                        <option value="5">5 m</option>
+                        <option value="6">6 m</option>
+                        <option value="7">7 m</option>
+                        <option value="8">8 m</option>
+                    </select>
                 </div>
 
                 <div class="vs-field is-wide">
-                    <label for="vs-setup-power-details">What you are running <span class="vs-field-hint">(so we can plan spacing)</span></label>
-                    <input type="text" id="vs-setup-power-details" placeholder="e.g. fryer, warmer, lights">
+                    <label for="vs-setup-own-power">Power you are bringing</label>
+                    <select id="vs-setup-own-power" required>
+                        <option value="">Select power</option>
+                        <option value="Silent generator">Silent generator</option>
+                        <option value="Loud generator">Loud generator</option>
+                        <option value="No generator">No generator, I don't need power</option>
+                    </select>
+                    <span class="vs-field-hint">
+                        We place louder generators away from the main stage, to keep
+                        noise down and the event comfortable for everyone.
+                    </span>
                 </div>
 
                 <div class="vs-field is-wide">
