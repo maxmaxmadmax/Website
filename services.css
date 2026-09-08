@@ -107,6 +107,7 @@
 #sg-services-page .sgs-community{ background-image:linear-gradient(135deg, #2b1f08 0%, #0a0a0a 62%); }
 #sg-services-page .sgs-weddings { background-image:linear-gradient(135deg, #241528 0%, #0a0a0a 62%); }
 #sg-services-page .sgs-corporate{ background-image:linear-gradient(135deg, #0f2a18 0%, #0a0a0a 62%); }
+#sg-services-page .sgs-dj       { background-image:linear-gradient(135deg, #1c1c22 0%, #0a0a0a 62%); }
 #sg-services-page .sgs-festivals{ background-image:linear-gradient(135deg, #3a1d02 0%, #0a0a0a 62%); }
 #sg-services-page .sgs-screens  { background-image:linear-gradient(135deg, #0d2033 0%, #0a0a0a 62%); }
 #sg-services-page .sgs-trailer  { background-image:linear-gradient(135deg, #2b2205 0%, #0a0a0a 62%); }
@@ -121,16 +122,28 @@
     z-index:0;
 }
 
-/*  Dark wash so the words stay readable over any photo. Heaviest on the left
-    where the text sits, so the right hand side of the picture stays visible
-    rather than the whole frame being dimmed flat.                         */
+/*  Just enough wash to hold the words, and no more - the photography is
+    what sells this page, so most of the frame is left alone.
+
+    It only really darkens the left third, where the text sits. Across the
+    middle and right the picture is close to untouched. The two faint bands
+    top and bottom are only there so the menu and the slide labels stay
+    legible over a bright photo.                                          */
 #sg-services-page .sgs-scrim{
     position:absolute;
     inset:0;
     z-index:1;
     background:
-        linear-gradient(90deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,.72) 42%, rgba(0,0,0,.25) 78%, rgba(0,0,0,.45) 100%),
-        linear-gradient(180deg, rgba(0,0,0,.55) 0%, transparent 32%, transparent 58%, rgba(0,0,0,.85) 100%);
+        linear-gradient(95deg,
+            rgba(0,0,0,.68) 0%,
+            rgba(0,0,0,.44) 34%,
+            rgba(0,0,0,.10) 64%,
+            rgba(0,0,0,.06) 100%),
+        linear-gradient(180deg,
+            rgba(0,0,0,.34) 0%,
+            transparent 20%,
+            transparent 66%,
+            rgba(0,0,0,.58) 100%);
 }
 
 #sg-services-page .sgs-content{
@@ -164,15 +177,27 @@
     color:#fff;
     margin:0 0 22px;
     text-shadow:0 6px 40px rgba(0,0,0,.6);
-    max-width:14ch;
+
+    /*  Wide enough for the longest single word on any slide.
+        ENTERTAINMENT is 13 characters and was breaking across two lines at
+        14ch, which put a lone T underneath it. Every title sets its own
+        line breaks with <br>, so this only ever acts as a safety net.   */
+    max-width:16ch;
+    overflow-wrap:normal;
+    word-break:normal;
 }
 
+/*  The smaller lines carry their own shadow rather than leaning on the
+    scrim. That is what lets the wash stay light: the text holds up on its
+    own over a bright patch of photo, instead of the whole frame being
+    darkened to protect it.                                               */
 #sg-services-page .sgs-desc{
     font-size:clamp(1rem, 2.1vw, 1.25rem);
     line-height:1.6;
-    color:var(--sg-muted, #d0d0d0);
+    color:#eaeaea;
     max-width:46ch;
     margin-bottom:18px;
+    text-shadow:0 2px 14px rgba(0,0,0,.85);
 }
 
 #sg-services-page .sgs-line{
@@ -182,6 +207,7 @@
     text-transform:uppercase;
     color:#fff;
     margin-bottom:10px;
+    text-shadow:0 2px 12px rgba(0,0,0,.9);
 }
 
 #sg-services-page .sgs-place{
@@ -189,8 +215,13 @@
     font-size:clamp(.68rem, 1.5vw, .8rem);
     letter-spacing:.28em;
     text-transform:uppercase;
-    color:var(--sg-dim, #aaa);
+    color:#c8c8c8;
     margin-bottom:30px;
+    text-shadow:0 2px 12px rgba(0,0,0,.9);
+}
+
+#sg-services-page .sgs-eyebrow{
+    text-shadow:0 2px 12px rgba(0,0,0,.9);
 }
 
 #sg-services-page .sgs-actions{
@@ -390,7 +421,7 @@
 #sg-services-page .sgs-progress span{
     display:block;
     height:100%;
-    width:12.5%;                 /* one slide of eight, until the script runs */
+    width:11.111%;               /* one slide of nine, until the script runs */
     background:var(--sgs-yellow);
     transition:width .35s ease, transform .35s ease;
 }
@@ -573,14 +604,15 @@
     #sg-services-page .sgs-arrow{ display:none; }
 
     /*  The scrim leans to the bottom rather than the left, because the text
-        now sits over the middle of the picture rather than beside it.     */
+        now sits over the bottom of the picture rather than beside it. The
+        top two thirds of the photo are left nearly clear.                 */
     #sg-services-page .sgs-scrim{
         background:linear-gradient(
             180deg,
-            rgba(0,0,0,.72) 0%,
-            rgba(0,0,0,.35) 28%,
-            rgba(0,0,0,.55) 58%,
-            rgba(0,0,0,.92) 100%
+            rgba(0,0,0,.5) 0%,
+            rgba(0,0,0,.1) 24%,
+            rgba(0,0,0,.34) 56%,
+            rgba(0,0,0,.84) 100%
         );
     }
 
@@ -594,7 +626,11 @@
         align-items:flex-end;
     }
 
+    /*  Sized so the longest single word on the page - ENTERTAINMENT, at 13
+        characters - still fits across a 375px screen. Any larger and it
+        runs off the edge and gets clipped by the slide.                  */
     #sg-services-page .sgs-title{
+        font-size:clamp(1.9rem, 8.4vw, 3.2rem);
         letter-spacing:-1px;
         margin-bottom:16px;
     }
