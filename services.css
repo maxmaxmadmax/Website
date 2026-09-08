@@ -104,8 +104,9 @@
     photography is still being collected - and so a photo dropped on top has
     something warm underneath it rather than flat black.                   */
 #sg-services-page .sgs-intro    { background-image:linear-gradient(135deg, #2a1403 0%, #0a0a0a 62%); }
-#sg-services-page .sgs-community{ background-image:linear-gradient(135deg, #10261c 0%, #0a0a0a 62%); }
+#sg-services-page .sgs-community{ background-image:linear-gradient(135deg, #2b1f08 0%, #0a0a0a 62%); }
 #sg-services-page .sgs-weddings { background-image:linear-gradient(135deg, #241528 0%, #0a0a0a 62%); }
+#sg-services-page .sgs-corporate{ background-image:linear-gradient(135deg, #0f2a18 0%, #0a0a0a 62%); }
 #sg-services-page .sgs-festivals{ background-image:linear-gradient(135deg, #3a1d02 0%, #0a0a0a 62%); }
 #sg-services-page .sgs-screens  { background-image:linear-gradient(135deg, #0d2033 0%, #0a0a0a 62%); }
 #sg-services-page .sgs-trailer  { background-image:linear-gradient(135deg, #2b2205 0%, #0a0a0a 62%); }
@@ -389,7 +390,7 @@
 #sg-services-page .sgs-progress span{
     display:block;
     height:100%;
-    width:14.2857%;              /* one slide of seven, until the script runs */
+    width:12.5%;                 /* one slide of eight, until the script runs */
     background:var(--sgs-yellow);
     transition:width .35s ease, transform .35s ease;
 }
@@ -552,15 +553,17 @@
     #sg-services-page .sgs-caps{
         grid-template-columns:repeat(2, 1fr);
     }
+
+    /*  Eight labels wrap onto two rows below about 900px, which is the
+        cluttered look the compact line exists to avoid - so it takes over
+        here rather than waiting for phone widths. The arrows stay.      */
+    #sg-services-page .sgs-nav-list{ display:none; }
+    #sg-services-page .sgs-nav-compact{ display:block; }
 }
 
 /* Phone */
 @media (max-width:700px){
-    /*  Seven labels will not fit across a phone without becoming a wall of
-        tiny tap targets, so the short form takes over.                    */
-    #sg-services-page .sgs-nav-list{ display:none; }
-    #sg-services-page .sgs-nav-compact{ display:block; }
-
+    /* the compact line is already in charge from 900px down */
     #sg-services-page .sgs-nav{
         bottom:44px;
     }
