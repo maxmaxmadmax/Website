@@ -1,0 +1,109 @@
+/* --------------------------------------------------------------------------
+   EVENTS PAGE - the countdown on the featured event
+
+   The whole file stops immediately if the countdown is not on the page, so
+   it can never touch another page even though it sits in the shared js
+   folder.
+
+   One value drives everything: the data-doors attribute on the countdown in
+   events.html. The ticking numbers and the line of text underneath are both
+   worked out from it, so changing the doors time in one place changes both.
+
+   The date carries the Queensland offset (+10:00), which means the count is
+   to the right moment no matter where the visitor is reading from.
+   -------------------------------------------------------------------------- */
+(function () {
+    'use strict';
+
+    var box = document.getElementById('ev-countdown');
+    if (!box) {
+        return; // not the events page, or no countdown on it
+    }
+
+    var doors = new Date(box.getAttribute('data-doors'));
+    if (isNaN(doors.getTime())) {
+        // a date we cannot read is worse than none at all
+        box.hidden = true;
+        return;
+    }
+
+    var fields = {
+        days: box.querySelector('[data-cd="days"]'),
+        hours: box.querySelector('[data-cd="hours"]'),
+        mins: box.querySelector('[data-cd="mins"]'),
+        secs: box.querySelector('[data-cd="secs"]')
+    };
+
+    var label = box.querySelector('.ev-countdown-label');
+    var when = box.querySelector('[data-cd="when"]');
+    var timer = null;
+
+    /*  The doors time written out, in Bowen's time rather than the
+        visitor's - the event happens when it happens. */
+    function describeDoors() {
+        try {
+            return doors.toLocaleString('en-AU', {
+                timeZone: 'Australia/Brisbane',
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+        } catch (err) {
+            // an old browser without time zone support still gets a date
+            return doors.toDateString();
+        }
+    }
+
+    function pad(n) {
+        return (n < 10 ? '0' : '') + n;
+    }
+
+    function tick() {
+        var left = doors.getTime() - Date.now();
+
+        if (left <= 0) {
+            stop();
+            box.classList.add('is-open');
+            if (label) { label.textContent = 'Doors are open'; }
+
+            var units = box.querySelector('.ev-countdown-units');
+            if (units) { units.hidden = true; }
+            return;
+        }
+
+        var secs = Math.floor(left / 1000);
+        var days = Math.floor(secs / 86400);
+        var hours = Math.floor((secs % 86400) / 3600);
+        var mins = Math.floor((secs % 3600) / 60);
+
+        if (fields.days) { fields.days.textContent = days; }
+        if (fields.hours) { fields.hours.textContent = pad(hours); }
+        if (fields.mins) { fields.mins.textContent = pad(mins); }
+        if (fields.secs) { fields.secs.textContent = pad(secs % 60); }
+    }
+
+    function start() {
+        if (timer) { return; }
+        tick();
+        timer = setInterval(tick, 1000);
+    }
+
+    function stop() {
+        clearInterval(timer);
+        timer = null;
+    }
+
+    if (when) {
+        when.textContent = describeDoors();
+    }
+
+    /* Nothing to count while the tab is in the background. */
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) { stop(); } else { start(); }
+    });
+
+    start();
+}());

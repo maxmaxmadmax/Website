@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="events.css">
   <script src="js/main.js" defer></script>
+  <script src="js/events.js" defer></script>
 </head>
 
 <body>
@@ -47,42 +48,44 @@
      card with no photo yet still looks finished.
      ========================================================================== -->
 
-<!-- 1. HERO -------------------------------------------------------------- -->
-<header class="ev-hero">
-  <div class="ev-hero-inner">
-    <h1>Events</h1>
-    <p>
-      Upcoming events, festivals, live music and community events from
-      SoundzGood Whitsundays.
-    </p>
-  </div>
-</header>
+<!--  The page led with an EVENTS title above the featured event. With the
+      event itself filling the screen that was two headers stacked, so it
+      has gone. This heading stays for screen readers and search engines -
+      it says what the page is, which the artwork below cannot.        -->
+<h1 class="ev-sr-only">Events</h1>
 
+<!-- 2. UPCOMING - THE FEATURED EVENT ------------------------------------
+     A full height hero for whatever is on next. Halloween styling is kept
+     to this one section by .is-halloween, so it never reaches the rest of
+     the site.
 
-<!-- 2. UPCOMING EVENTS --------------------------------------------------- -->
-<section class="section ev-section">
+     THE COUNTDOWN
+     The date and time it counts to is the data-doors attribute below, and
+     one value drives everything - the ticking numbers and the line of text
+     underneath are both worked out from it. It is a full date and time
+     with the Queensland offset (+10:00), so it counts down to the right
+     moment wherever the visitor is.
+     ------------------------------------------------------------------- -->
+<section class="ev-feature is-halloween" aria-labelledby="ev-feature-name">
 
-  <h2>Upcoming Events</h2>
+  <!-- cobwebs and a pumpkin, drawn rather than loaded, same as the
+       vendor signup page uses -->
+  <svg class="ev-web" viewBox="0 0 100 100" aria-hidden="true">
+    <path d="M0 0 L100 100 M0 0 L100 60 M0 0 L60 100 M0 0 L100 20 M0 0 L20 100"/>
+    <path d="M22 0 Q14 14 0 22 M42 0 Q28 28 0 42 M62 0 Q40 40 0 62 M82 0 Q54 54 0 82"/>
+  </svg>
 
-  <!--  FEATURED EVENT - Eatz & Beatz, Halloween Edition.
-        Halloween styling is scoped to this one card by .is-halloween, so it
-        never leaks into the rest of the site.                             -->
-  <article class="ev-feature is-halloween">
-
-    <!-- cobwebs and a pumpkin, drawn rather than loaded, same as the
-         vendor signup page uses -->
-    <svg class="ev-web" viewBox="0 0 100 100" aria-hidden="true">
-      <path d="M0 0 L100 100 M0 0 L100 60 M0 0 L60 100 M0 0 L100 20 M0 0 L20 100"/>
-      <path d="M22 0 Q14 14 0 22 M42 0 Q28 28 0 42 M62 0 Q40 40 0 62 M82 0 Q54 54 0 82"/>
-    </svg>
+  <div class="ev-feature-inner">
 
     <div class="ev-feature-body">
+      <p class="ev-feature-eyebrow">Upcoming Events</p>
+
       <span class="ev-badge is-upcoming">Upcoming</span>
 
-      <h3 class="ev-feature-name">
+      <h2 class="ev-feature-name" id="ev-feature-name">
         Eatz &amp; Beatz
         <span>Halloween Edition</span>
-      </h3>
+      </h2>
 
       <p class="ev-meta">
         <span class="ev-meta-date">31 October 2026</span>
@@ -90,6 +93,22 @@
       </p>
 
       <p class="ev-feature-desc">Food &bull; Market Stalls &bull; Music &bull; Halloween</p>
+
+      <!--  CHANGE THE DOORS TIME HERE. 4:00 pm is a placeholder - put the
+            real one in and both the countdown and the line underneath it
+            follow. Format: YYYY-MM-DDTHH:MM:SS+10:00                    -->
+      <div class="ev-countdown" id="ev-countdown" data-doors="2026-10-31T16:00:00+10:00">
+        <p class="ev-countdown-label">Doors open in</p>
+
+        <ol class="ev-countdown-units" aria-hidden="true">
+          <li><b data-cd="days">--</b><span>Days</span></li>
+          <li><b data-cd="hours">--</b><span>Hrs</span></li>
+          <li><b data-cd="mins">--</b><span>Min</span></li>
+          <li><b data-cd="secs">--</b><span>Sec</span></li>
+        </ol>
+
+        <p class="ev-countdown-when" data-cd="when"></p>
+      </div>
 
       <div class="ev-actions">
         <!--  TODO: point this at the Eatz & Beatz event page once it exists.
@@ -111,7 +130,7 @@
       </svg>
     </div>
 
-  </article>
+  </div>
 
 </section>
 
