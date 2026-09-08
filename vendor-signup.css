@@ -1345,3 +1345,20 @@
     .vs-type:hover .vs-type-bg img{ transform:none; }
     .vs-type:hover .vs-type-art{ transform:translateX(-50%); }
 }
+
+
+/* --------------------------------------------------------------------------
+   FOOTER TWEAK FOR THESE PAGES
+
+   The shared footer carries the sponsor strip on every page. It is hidden
+   here - this page is a form a vendor is working through, and a band of
+   white with other businesses' logos in the middle of that is a
+   distraction. The strip itself is untouched in components/footer.html,
+   so every other page still shows it.
+
+   This also covers /vendor-admin, which uses the same body class and is a
+   staff screen that has no business advertising to anyone.
+   -------------------------------------------------------------------------- */
+body.vendor-signup .footer-sponsors{
+    display:none;
+}
