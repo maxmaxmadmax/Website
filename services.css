@@ -813,3 +813,20 @@
         transform:none;
     }
 }
+
+
+/* --------------------------------------------------------------------------
+   FOOTER TWEAK FOR THIS PAGE
+
+   The shared footer carries the sponsor strip on every page. It is hidden
+   here, where a band of white with other businesses' logos sits badly under
+   a page of full bleed event photography.
+
+   Tied to #sg-services-page rather than a body class, so it keeps this
+   file's rule that everything hangs off that one id. The footer is a
+   sibling of it, so the selector only ever matches on this page and
+   components/footer.html is left alone for every other one.
+   -------------------------------------------------------------------------- */
+#sg-services-page ~ #footer .footer-sponsors{
+    display:none;
+}

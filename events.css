@@ -652,3 +652,20 @@
     .ev-card:hover{ transform:none; }
     .ev-card:hover .ev-card-art{ transform:none; }
 }
+
+
+/* --------------------------------------------------------------------------
+   FOOTER TWEAK FOR THIS PAGE
+
+   The shared footer carries the sponsor strip on every page. It is hidden
+   here: this page is a list of events, and a band of white with other
+   businesses' logos across the middle of it breaks the run of dark event
+   artwork above.
+
+   Scoped to the body class rather than edited in components/footer.html,
+   so every other page still shows the sponsors. The same approach as
+   vendor-signup.css and the .home rule in style.css.
+   -------------------------------------------------------------------------- */
+body.events-page .footer-sponsors{
+    display:none;
+}
