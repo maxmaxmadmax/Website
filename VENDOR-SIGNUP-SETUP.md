@@ -119,16 +119,30 @@ me: food categories default to 2 (catch-all "Other Food" 4), market to 6
 ("Other Market Stall" 10). Set them to whatever you actually want before you
 open bookings.
 
-**Market stall sizes** - every bay on the plan is one 3 m frontage. A 3x3
-booking ($50) takes one bay; a 3x6 booking ($80) takes that bay and the one
-below it, which is why each stall carries `neighbourId`. Both bays are
-allocated in the same transaction, so a 3x6 can never end up with half its
-space, and the last bay in each column cannot take a 3x6 because it has no
-partner. Enforced in `holdSite`, not only by hiding sites on the map.
+**Market stall sizes** - every bay on the plan is one 3 m x 3 m at $50, and
+vendors pick their own shape by tapping bays on the map: one bay for a 3x3, or
+up to eight joined together for anything bigger. `adjacentIds` on each bay says
+which bays touch, and `holdSite` walks that to check the group is one joined
+block before allocating the lot in a single transaction - so a big stall can
+never end up with part of its space, and two vendors can never share a bay.
+Bays touch up and down their own column only, so a stall cannot straddle an
+aisle. Change `maxMarketBays` on the event document to allow more or fewer
+than eight.
+
+**Release waves** - so the market does not end up with gaps, bays open a few
+at a time. Each bay carries a `tier`: the first three of every column are tier
+1, the next three tier 2, and so on (`marketTierSize` on the event document).
+Only the lowest tier that still has a free bay is open - everything past it is
+greyed out on the map and refused by `holdSite`. As soon as the open tier fills
+the next one opens on its own; nothing has to be switched on by hand.
+
+A stall only has to *start* in the open wave. Once one of its bays is inside,
+the rest may run on past the line, so a vendor who wants eight bays is not
+turned away while the market is nearly empty.
 
 **Community groups** - there are no community sites on the plan, so a
-community group takes a market bay like anyone else and simply is not charged.
-That is why "Community / Charity / Club" is one of the market categories.
+community group takes a market bay like anyone else. That is why "Community /
+Charity / Club" is one of the market categories.
 
 **Power and water** - this event has none on site. Every vendor confirms they
 are bringing their own before they can go past the setup step, and what they

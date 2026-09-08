@@ -91,37 +91,89 @@ function bookingReference() {
   return `EB-${out}`;
 }
 
-/* Which kind of site a vendor type occupies.
-   There are no dedicated community sites on the plan - community groups
-   take a market bay like anyone else, they just are not charged for it. */
+/* Which kind of site a vendor type occupies. */
 function siteTypeFor(vendorType) {
   return vendorType === 'food' ? 'food' : 'market';
 }
 
-/* How many adjoining market bays a booking takes.
-   A 3x6 stall is two 3 m bays side by side. */
-function baysNeeded(booking) {
-  return booking.vendorType === 'market' && booking.stallSize === '3x6' ? 2 : 1;
-}
-
-/* Market stalls are priced by frontage, everything else by type.
-   Keep this in step with the pricing map in functions/lib/layout.js. */
-function priceKeyFor(booking) {
-  if (booking.vendorType === 'market') {
-    return `market-${booking.stallSize || '3x3'}`;
+/* How many bays a booking may take.
+   A food van is one 6 m x 3 m site. A market stall is any joined group of
+   between one and eight bays. Anything outside that is rejected rather than
+   quietly clamped, so a hand-made request cannot buy nine bays for the
+   price of eight. */
+function checkBayCount(event, vendorType, count) {
+  if (vendorType !== 'market') {
+    if (count !== 1) {
+      throw new HttpsError('invalid-argument', 'A food van takes one site.');
+    }
+    return 1;
   }
-  return booking.vendorType;
-}
 
-function priceFor(event, booking) {
-  const cents = event.pricing ? event.pricing[priceKeyFor(booking)] : undefined;
-  if (cents == null) {
+  const max = event.maxMarketBays || 8;
+
+  if (!Number.isInteger(count) || count < 1 || count > max) {
     throw new HttpsError(
-      'failed-precondition',
-      'No price is set for that vendor type. Check the event pricing.'
+      'invalid-argument',
+      `A market stall must be between 1 and ${max} bays.`
     );
   }
-  return cents;
+
+  return count;
+}
+
+/* Food is a flat fee. Market stalls are per bay. */
+function priceFor(event, vendorType, bayCount) {
+  if (!event.pricing) {
+    throw new HttpsError('failed-precondition', 'No pricing is set for this event.');
+  }
+
+  if (vendorType === 'food') {
+    const cents = event.pricing.food;
+    if (cents == null) {
+      throw new HttpsError('failed-precondition', 'No food van price is set.');
+    }
+    return cents;
+  }
+
+  const perBay = event.pricing.marketPerBay;
+  if (perBay == null) {
+    throw new HttpsError('failed-precondition', 'No market bay price is set.');
+  }
+
+  return perBay * bayCount;
+}
+
+/* True when a site is there to be taken - free, or already held by the
+   person asking, or holding an expired hold nobody has tidied up yet. */
+function siteIsFree(site, uid, now) {
+  if (site.status === 'blocked' || site.status === 'booked') return false;
+  if (site.status === 'held') {
+    return site.heldBy === uid || holdHasExpired(site, now);
+  }
+  return true;
+}
+
+/* Every bay in a group must touch another bay in the same group, or the
+   stall is not one stall - it is bays scattered around the market. Walks
+   out from the first bay and checks it reaches all of them. */
+function isJoinedUp(sitesById) {
+  const ids = Object.keys(sitesById);
+  if (ids.length <= 1) return true;
+
+  const seen = new Set([ids[0]]);
+  const queue = [ids[0]];
+
+  while (queue.length) {
+    const site = sitesById[queue.shift()];
+    for (const neighbourId of site.adjacentIds || []) {
+      if (sitesById[neighbourId] && !seen.has(neighbourId)) {
+        seen.add(neighbourId);
+        queue.push(neighbourId);
+      }
+    }
+  }
+
+  return seen.size === ids.length;
 }
 
 /* True when a hold has run out. Anything not held is not expired. */
@@ -134,17 +186,30 @@ function holdHasExpired(site, now) {
 /* -------------------------------------------------------------------------
    holdSite
 
-   Puts a 10 minute hold on a site while the vendor finishes checkout.
+   Puts a 10 minute hold on the bays a vendor has picked - one for a food
+   van, or a joined group of up to eight for a market stall.
+
    Runs in a transaction so two people pressing at the same moment cannot
-   both come away with it, and checks the category limit in the same
-   transaction for the same reason.
+   both come away with the same bay, and checks the category limit, the
+   joined-up rule and the release wave in the same transaction. The page
+   checks all three as well, but only these ones count.
    ------------------------------------------------------------------------- */
 exports.holdSite = onCall(async (request) => {
   const uid = requireAuth(request);
-  const { eventId, siteId, bookingId } = request.data || {};
+  const { eventId, siteId, siteIds, bookingId } = request.data || {};
 
-  if (!eventId || !siteId || !bookingId) {
+  // Older callers sent a single siteId; both shapes are accepted.
+  const requested = Array.isArray(siteIds) && siteIds.length
+    ? siteIds
+    : (siteId ? [siteId] : []);
+
+  if (!eventId || !requested.length || !bookingId) {
     throw new HttpsError('invalid-argument', 'Missing event, site or booking.');
+  }
+
+  const uniqueIds = [...new Set(requested)];
+  if (uniqueIds.length !== requested.length) {
+    throw new HttpsError('invalid-argument', 'That site was listed twice.');
   }
 
   const now = Date.now();
@@ -172,51 +237,36 @@ exports.holdSite = onCall(async (request) => {
       throw new HttpsError('failed-precondition', 'This booking is already confirmed.');
     }
 
-    const thisSiteRef = siteRef(eventId, siteId);
-    const siteSnap = await tx.get(thisSiteRef);
-    if (!siteSnap.exists) {
-      throw new HttpsError('not-found', 'That site does not exist.');
-    }
-    const site = siteSnap.data();
-
-    // The site must suit the vendor type - a market stall cannot take a
-    // food van bay, and vice versa.
+    const bayCount = checkBayCount(event, booking.vendorType, uniqueIds.length);
     const wantedType = siteTypeFor(booking.vendorType);
-    if (site.type !== wantedType) {
-      throw new HttpsError(
-        'failed-precondition',
-        `Site ${site.label} is a ${site.type} site.`
-      );
-    }
 
-    /* A 3x6 stall is two adjoining bays, so we take the chosen bay and the
-       one below it. Both are read and written inside this one transaction,
-       which is what stops a 3x6 ending up with half its space, or two
-       vendors sharing a bay. */
-    const wanted = [site];
-    const wantedRefs = [thisSiteRef];
+    /* Read every requested bay inside this transaction, so the whole group
+       is allocated together or not at all. A stall can never end up with
+       part of its space, and two vendors can never share a bay. */
+    const wantedRefs = uniqueIds.map((id) => siteRef(eventId, id));
+    const wanted = [];
+    const byId = {};
 
-    if (baysNeeded(booking) === 2) {
-      if (!site.neighbourId) {
+    for (const ref of wantedRefs) {
+      const snap = await tx.get(ref);
+      if (!snap.exists) {
+        throw new HttpsError('not-found', 'One of those sites does not exist.');
+      }
+
+      const s = snap.data();
+      s.id = ref.id;
+      wanted.push(s);
+      byId[ref.id] = s;
+
+      // Each bay must suit the vendor type - a market stall cannot take a
+      // food van site, and vice versa.
+      if (s.type !== wantedType) {
         throw new HttpsError(
           'failed-precondition',
-          `Site ${site.label} is the last bay in its row, so it cannot take a 3x6 stall.`
+          `Site ${s.label} is a ${s.type} site.`
         );
       }
 
-      const partnerRef = siteRef(eventId, site.neighbourId);
-      const partnerSnap = await tx.get(partnerRef);
-
-      if (!partnerSnap.exists) {
-        throw new HttpsError('not-found', 'The bay next to that one is missing.');
-      }
-
-      wanted.push(partnerSnap.data());
-      wantedRefs.push(partnerRef);
-    }
-
-    // Every bay involved has to be free, not only the one clicked.
-    for (const s of wanted) {
       if (s.status === 'blocked') {
         throw new HttpsError('failed-precondition', `Site ${s.label} is not available.`);
       }
@@ -225,6 +275,45 @@ exports.holdSite = onCall(async (request) => {
       }
       if (s.status === 'held' && s.heldBy !== uid && !holdHasExpired(s, now)) {
         throw new HttpsError('already-exists', `Site ${s.label} is on hold for someone else.`);
+      }
+    }
+
+    // A stall is one block of bays, not bays dotted around the market.
+    if (!isJoinedUp(byId)) {
+      throw new HttpsError(
+        'failed-precondition',
+        'The bays you picked are not all next to each other. Choose a joined-up block.'
+      );
+    }
+
+    /* Release waves. Bays carry a tier - the first three of each column are
+       tier 1, the next three tier 2, and so on - and only the lowest tier
+       that still has a free bay is open. That keeps the market filling from
+       the front instead of leaving gaps down the rows.
+
+       A stall only has to *start* inside the open wave; the rest of it may
+       run on past the line, so a vendor who needs eight bays is not turned
+       away while the market is nearly empty. */
+    if (wantedType === 'market' && wanted.some((s) => s.tier)) {
+      const marketSnap = await tx.get(
+        db.collection('events').doc(eventId).collection('sites').where('type', '==', 'market')
+      );
+
+      let openTier = Infinity;
+      for (const doc of marketSnap.docs) {
+        const s = doc.data();
+        if (!s.tier) continue;
+        if (!siteIsFree(s, uid, now)) continue;
+        if (s.tier < openTier) openTier = s.tier;
+      }
+
+      const startsInOpenWave = wanted.some((s) => !s.tier || s.tier <= openTier);
+      if (openTier !== Infinity && !startsInOpenWave) {
+        throw new HttpsError(
+          'failed-precondition',
+          'Those bays have not been released yet. Please start from the bays ' +
+          'nearer the front of the market - your stall can then run back into these.'
+        );
       }
     }
 
@@ -262,8 +351,8 @@ exports.holdSite = onCall(async (request) => {
       categoryName = category.name;
     }
 
-    /* Let go of whatever this booking held before, including the partner
-       bay if it was a 3x6. Everything is read before anything is written,
+    /* Let go of whatever this booking held before, including any bays it is
+       not keeping. Everything is read before anything is written,
        because a Firestore transaction will not read after a write. */
     const previous = Array.isArray(booking.siteIds) && booking.siteIds.length
       ? booking.siteIds
@@ -300,16 +389,18 @@ exports.holdSite = onCall(async (request) => {
       });
     }
 
-    const siteIds = wantedRefs.map((r) => r.id);
+    const heldIds = wantedRefs.map((r) => r.id);
     const siteLabel = wanted.map((s) => s.label).join(' + ');
+    const amountCents = priceFor(event, booking.vendorType, bayCount);
 
     tx.update(bookingRef, {
-      siteId,                 // the bay they clicked
-      siteIds,                // every bay this booking holds
-      siteLabel,              // "M4" or "M4 + M5"
-      siteType: site.type,
+      siteId: heldIds[0],     // first bay, kept for anything reading one id
+      siteIds: heldIds,       // every bay this booking holds
+      siteLabel,              // "M4" or "M4 + M5 + M6"
+      siteType: wantedType,
+      bayCount,               // set from the bays taken, never from the client
       categoryName,
-      amountCents: priceFor(event, booking),
+      amountCents,
       currency: event.currency || 'aud',
       holdExpiresAt: expiresAt,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -318,9 +409,10 @@ exports.holdSite = onCall(async (request) => {
     return {
       ok: true,
       siteLabel,
-      siteIds,
+      siteIds: heldIds,
+      bayCount,
       holdExpiresAt: expiresAt.toMillis(),
-      amountCents: priceFor(event, booking),
+      amountCents,
     };
   });
 });
@@ -364,7 +456,9 @@ exports.releaseHold = onCall(async (request) => {
 /* -------------------------------------------------------------------------
    createCheckout
 
-   Free community bookings are confirmed here and never touch Stripe.
+   A booking that costs nothing is confirmed here and never touches Stripe.
+   Nothing is free by default any more, but an admin can price something at
+   zero, and this keeps working if they do.
    Paid bookings get a Stripe Checkout session; the booking is only marked
    paid later by the webhook.
    ------------------------------------------------------------------------- */
@@ -394,7 +488,7 @@ exports.createCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request
 
   const amount = booking.amountCents ?? 0;
 
-  // ---- Free: community groups -------------------------------------------
+  // ---- Nothing to pay -----------------------------------------------------
   if (amount === 0) {
     await confirmBooking(bookingId, { paymentStatus: 'free' });
     return { ok: true, free: true };
@@ -510,8 +604,7 @@ async function confirmBooking(bookingId, extra = {}) {
       return { ok: false, reason: 'site-taken' };
     }
 
-    // Count the category now that the booking is real. Food and market
-    // both count; community groups have no category.
+    // Count the category now that the booking is real.
     if (booking.categoryId && !booking.countedCategoryId) {
       const catRef = categoryRef(booking.eventId, booking.categoryId);
       const catSnap = await tx.get(catRef);

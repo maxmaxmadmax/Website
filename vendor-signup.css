@@ -362,6 +362,67 @@
     font-size:.9rem;
 }
 
+.vs-type-size,
+.vs-price-size{
+    display:block;
+    font-family:var(--sg-font-accent);
+    font-size:.74rem;
+    font-weight:bold;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+    margin-bottom:8px;
+}
+
+.vs-type-per,
+.vs-price-per{
+    font-family:var(--sg-font);
+    font-size:.82rem;
+    font-weight:normal;
+    letter-spacing:0;
+    text-transform:none;
+    color:var(--sg-dim);
+}
+
+/* Two options rather than four, so give them room */
+.vs-type-grid.is-two{
+    grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
+}
+
+/*  Photos on the vendor cards.
+    If the file is not there yet the onerror handler adds .is-empty and the
+    slot collapses, so the card still looks finished rather than broken. */
+.vs-type-photo,
+.vs-price-photo{
+    display:block;
+    width:calc(100% + 44px);
+    margin:-24px -22px 18px;
+    aspect-ratio:16 / 10;
+    overflow:hidden;
+    border-radius:12px 12px 0 0;
+    background:linear-gradient(150deg, #241001, #0c0c0c);
+}
+
+.vs-price-photo{
+    margin:-30px -26px 20px;
+    width:calc(100% + 52px);
+}
+
+.vs-type-photo img,
+.vs-price-photo img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+}
+
+.vs-type-photo.is-empty,
+.vs-price-photo.is-empty{
+    display:none;
+}
+
+
+
 
 /* --------------------------------------------------------------------------
    FORM FIELDS - matches the existing contact form styling
@@ -690,6 +751,20 @@
 
 .vmap-site.is-locked .vmap-site-label{ fill:rgba(255,255,255,.5); }
 
+/*  Free, but not released yet - the bays in front of it have to go first.
+    Deliberately flatter than "booked" so it reads as "not now" rather than
+    "gone", and it goes back to green on its own once its wave opens.       */
+.vmap-site.is-not-open rect{
+    fill:#101010;
+    stroke:#2c2c2c;
+    stroke-dasharray:5 4;
+}
+
+.vmap-site.is-not-open .vmap-site-label,
+.vmap-site.is-not-open .vmap-site-sub{
+    fill:rgba(255,255,255,.3);
+}
+
 .vmap-site.is-wrong-type rect{
     fill:#0f0f0f;
     stroke:#242424;
@@ -735,6 +810,31 @@
 .vs-swatch.is-booked{    background:#2a0f0f; border-color:#8c3a3a; }
 .vs-swatch.is-blocked{   background:#161616; border-color:#3a3a3a; }
 .vs-swatch.is-mine{      background:#3a1e00; border-color:var(--vs-mine); }
+.vs-swatch.is-not-open{  background:#101010; border-color:#2c2c2c; }
+
+/*  Instructions above the plan. Worth spelling out, because tapping several
+    bays to build a shape is not something people expect from a map.        */
+.vs-map-intro{
+    margin:14px 0 0;
+    color:var(--sg-muted);
+    font-size:.92rem;
+    line-height:1.6;
+}
+
+.vs-map-intro strong{
+    color:var(--sg-gold);
+}
+
+.vs-map-intro-sub{
+    color:var(--sg-dim);
+    font-size:.86rem;
+}
+
+/*  Nothing is held until this is pressed, so it only appears once bays
+    have been picked.                                                       */
+.vs-site-confirm{
+    margin-top:14px;
+}
 
 .vs-site-choice{
     margin-top:14px;

@@ -13,11 +13,17 @@
    real ground. The map scales that to whatever width it is drawn at, so the
    numbers below are not pixels.
 
-   MARKET STALLS AND THE 3x6 OPTION
-   Every stall on the plan is one 3 m frontage bay. A 3x3 booking takes one
-   bay; a 3x6 booking takes that bay and the one directly below it, which is
-   why each stall carries `neighbourId`. Both bays are allocated in a single
-   transaction, so a 3x6 can never end up with only half its space.
+   MARKET STALLS AND SHAPES
+   Every stall on the plan is one 3 m x 3 m bay. A vendor picks the bays they
+   want - one for a 3x3, or up to eight joined together for a bigger stall -
+   so they choose their own shape rather than being handed a fixed one.
+   `adjacentIds` says which bays touch, and the whole group is allocated in a
+   single transaction, so a big stall can never end up with only part of its
+   space.
+
+   Bays touch up and down their own column only. The columns either side of
+   an aisle are not joined, and the two middle columns back on to each other,
+   so a stall cannot straddle either pair and block a walkway.
    -------------------------------------------------------------------------- */
 
 const MAP_WIDTH = 760;
@@ -65,8 +71,13 @@ function foodSites() {
   return [...left, ...right, ...angled];
 }
 
+/* How many bays open at a time in each column. The first three of every
+   column go first, then the next three, and so on - so the market fills
+   from the top out rather than leaving gaps down the rows. */
+const MARKET_TIER_SIZE = 3;
+
 /* Forty market stalls: four columns of ten.
-   Each stall knows the one below it, so a 3x6 booking can take a pair. */
+   Each bay knows the one below it, so a stall can take a run of bays. */
 function marketSites() {
   const w = 84;
   const h = 56;
@@ -86,10 +97,21 @@ function marketSites() {
     const built = column({ ids: col.ids, type: 'market', x: col.x, y: top, w, h, gap });
 
     built.forEach((site, i) => {
-      // The stall directly below, in the same column. The last one in a
-      // column has no partner, so it can only ever be a 3x3.
-      site.neighbourId = i < built.length - 1 ? built[i + 1].id : null;
+      // The bays this one touches: the one above and the one below, in the
+      // same column. A stall is any joined group of these, so a vendor can
+      // grow up the column as well as down.
+      site.adjacentIds = [
+        i > 0 ? built[i - 1].id : null,
+        i < built.length - 1 ? built[i + 1].id : null,
+      ].filter(Boolean);
+
       site.column = col.ids[0];
+
+      // Release tier: 1 for the first three bays of the column, 2 for the
+      // next three, and so on. A tier only opens once every bay in the
+      // tiers before it has gone.
+      site.tier = Math.floor(i / MARKET_TIER_SIZE) + 1;
+      site.position = i + 1;
     });
 
     sites.push(...built);
@@ -198,14 +220,23 @@ function defaultEvent() {
     currency: 'aud',
 
     /* Prices in cents so there is no floating point money anywhere.
-       Market stalls are priced by frontage: 3x3 takes one bay, 3x6 takes
-       two adjoining bays. See priceKeyFor() in functions/index.js. */
+
+       A food van site is 6 m x 3 m and costs a flat fee. Market stalls are
+       sold by the 3 m x 3 m bay - a vendor takes between one and eight
+       adjoining bays and pays per bay. See priceFor() in
+       functions/index.js. */
     pricing: {
       food: 10000,
-      'market-3x3': 5000,
-      'market-3x6': 8000,
-      community: 0,
+      marketPerBay: 5000,
     },
+
+    /* The most bays one market stall may take. */
+    maxMarketBays: 8,
+
+    /* Bays open a tier at a time so the market fills from the top out
+       instead of leaving gaps. A stall bigger than the open tier may still
+       run on into the next one - what is gated is where a stall starts. */
+    marketTierSize: MARKET_TIER_SIZE,
 
     map: {
       width: MAP_WIDTH,

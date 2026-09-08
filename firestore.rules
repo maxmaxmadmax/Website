@@ -70,7 +70,7 @@ service cloud.firestore {
         && !('amountCents' in request.resource.data)
         && !('siteId' in request.resource.data)
         && !('stripeSessionId' in request.resource.data)
-        && request.resource.data.vendorType in ['food', 'market', 'community'];
+        && request.resource.data.vendorType in ['food', 'market'];
 
       allow update: if signedIn()
         && ownsDoc()
@@ -81,7 +81,7 @@ service cloud.firestore {
         && !('amountCents' in request.resource.data)
         && !('siteId' in request.resource.data)
         && !('stripeSessionId' in request.resource.data)
-        && request.resource.data.vendorType in ['food', 'market', 'community'];
+        && request.resource.data.vendorType in ['food', 'market'];
 
       // Bookings are cancelled, never deleted, so there is an audit trail.
       allow delete: if false;

@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Vendor Signup | Eatz &amp; Beatz Halloween Edition | SoundzGood</title>
-    <meta name="description" content="Book a food, market or community stall site at Eatz &amp; Beatz Halloween Edition, Bowen Sports Complex, Saturday 31 October 2026. Choose your site on the interactive map.">
+    <meta name="description" content="Book a food van or market stall site at Eatz &amp; Beatz Halloween Edition, Bowen Sports Complex, Saturday 31 October 2026. Choose your site on the interactive map.">
 
     <!-- Facebook / Messenger sharing -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="SoundzGood Whitsundays">
     <meta property="og:title" content="Vendor Signup | Eatz &amp; Beatz Halloween Edition">
-    <meta property="og:description" content="Food vendors, market stalls and community groups - book your site for Eatz &amp; Beatz Halloween Edition, Bowen Sports Complex, 31 October 2026.">
+    <meta property="og:description" content="Food vendors and market stalls - book your site for Eatz &amp; Beatz Halloween Edition, Bowen Sports Complex, 31 October 2026.">
     <meta property="og:url" content="https://www.soundzgood.com.au/vendor-signup">
     <meta property="og:image" content="https://www.soundzgood.com.au/images/og-soundzgood.png">
     <meta property="og:image:width" content="1200">
@@ -90,38 +90,34 @@
 
     <div class="vs-price-grid">
 
+        <!-- Photo: save yours as images/vendor-food-van.jpg to fill this in -->
         <div class="vs-price-card">
+            <div class="vs-price-photo">
+                <img src="images/vendor-food-van.jpg" alt="" loading="lazy"
+                     onerror="this.closest('.vs-price-photo').classList.add('is-empty')">
+            </div>
             <h3>Food Vendor</h3>
             <p class="vs-price-amount" data-price="food">$100</p>
+            <p class="vs-price-size">6 m &times; 3 m site</p>
             <p>
                 Hot food, drinks and dessert traders. Choose a food category so
                 we keep a good mix on the day.
             </p>
         </div>
 
+        <!-- Photo: save yours as images/vendor-market-stall.jpg -->
         <div class="vs-price-card">
-            <h3>Market Stall 3&times;3</h3>
-            <p class="vs-price-amount" data-price="market-3x3">$50</p>
+            <div class="vs-price-photo">
+                <img src="images/vendor-market-stall.jpg" alt="" loading="lazy"
+                     onerror="this.closest('.vs-price-photo').classList.add('is-empty')">
+            </div>
+            <h3>Market Stall</h3>
+            <p class="vs-price-amount"><span data-price="market-bay">$50</span>
+                <span class="vs-price-per">per 3 m &times; 3 m bay</span></p>
+            <p class="vs-price-size">Take up to 8 bays side by side</p>
             <p>
-                A 3 &times; 3 metre marquee site for makers, retail, craft and
-                other non-food traders.
-            </p>
-        </div>
-
-        <div class="vs-price-card">
-            <h3>Market Stall 3&times;6</h3>
-            <p class="vs-price-amount" data-price="market-3x6">$80</p>
-            <p>
-                A double 3 &times; 6 metre marquee site, for larger setups that
-                need the extra frontage.
-            </p>
-        </div>
-
-        <div class="vs-price-card">
-            <h3>Community Group</h3>
-            <p class="vs-price-amount" data-price="community">Free</p>
-            <p>
-                Non-food community groups, clubs and not-for-profits. No charge.
+                Makers, craft, retail, community groups and other non-food
+                traders. Need more room? Book more bays.
             </p>
         </div>
 
@@ -154,31 +150,28 @@
             <h2>What kind of vendor are you?</h2>
             <p class="vs-step-intro">This decides your price and which sites you can choose from.</p>
 
-            <div class="vs-type-grid">
+            <div class="vs-type-grid is-two">
                 <button type="button" class="vs-type" data-vendor-type="food">
+                    <span class="vs-type-photo">
+                        <img src="images/vendor-food-van.jpg" alt="" loading="lazy"
+                             onerror="this.closest('.vs-type-photo').classList.add('is-empty')">
+                    </span>
                     <span class="vs-type-name">Food Vendor</span>
                     <span class="vs-type-price" data-price="food">$100</span>
+                    <span class="vs-type-size">6 m &times; 3 m site</span>
                     <span class="vs-type-desc">Hot food, drinks, desserts. You'll pick a food category next.</span>
                 </button>
 
-                <button type="button" class="vs-type"
-                        data-vendor-type="market" data-stall-size="3x3">
-                    <span class="vs-type-name">Market Stall 3&times;3</span>
-                    <span class="vs-type-price" data-price="market-3x3">$50</span>
-                    <span class="vs-type-desc">A 3 &times; 3 m marquee site. Makers, craft, retail and other non-food trading.</span>
-                </button>
-
-                <button type="button" class="vs-type"
-                        data-vendor-type="market" data-stall-size="3x6">
-                    <span class="vs-type-name">Market Stall 3&times;6</span>
-                    <span class="vs-type-price" data-price="market-3x6">$80</span>
-                    <span class="vs-type-desc">A double 3 &times; 6 m marquee site for larger setups.</span>
-                </button>
-
-                <button type="button" class="vs-type" data-vendor-type="community">
-                    <span class="vs-type-name">Community Group</span>
-                    <span class="vs-type-price" data-price="community">Free</span>
-                    <span class="vs-type-desc">Clubs, not-for-profits and community organisations. Non-food.</span>
+                <button type="button" class="vs-type" data-vendor-type="market">
+                    <span class="vs-type-photo">
+                        <img src="images/vendor-market-stall.jpg" alt="" loading="lazy"
+                             onerror="this.closest('.vs-type-photo').classList.add('is-empty')">
+                    </span>
+                    <span class="vs-type-name">Market Stall</span>
+                    <span class="vs-type-price"><span data-price="market-bay">$50</span>
+                        <span class="vs-type-per">per bay</span></span>
+                    <span class="vs-type-size">3 m &times; 3 m per bay, up to 8 bays</span>
+                    <span class="vs-type-desc">Makers, craft, retail, community groups and other non-food trading.</span>
                 </button>
             </div>
 
@@ -211,14 +204,22 @@
                     <input type="tel" id="vs-biz-phone" autocomplete="tel" required>
                 </div>
 
-                <div class="vs-field">
-                    <label for="vs-biz-abn">ABN <span class="vs-field-hint">(if you have one)</span></label>
-                    <input type="text" id="vs-biz-abn" inputmode="numeric">
+                <div class="vs-field is-wide">
+                    <label for="vs-biz-socials">Social media links</label>
+                    <input type="text" id="vs-biz-socials"
+                           placeholder="Instagram, Facebook or a website - however people find you">
+                    <span class="vs-field-hint">
+                        So we can tag you when we promote the event.
+                    </span>
                 </div>
 
                 <div class="vs-field is-wide">
                     <label for="vs-biz-desc">What do you sell or do?</label>
                     <textarea id="vs-biz-desc" rows="4"></textarea>
+                    <span class="vs-field-hint">
+                        We use this in our marketing, so tell us what you'd want
+                        people to read about you.
+                    </span>
                 </div>
             </div>
 
@@ -421,7 +422,20 @@
                 <li><span class="vs-swatch is-held"></span> On hold</li>
                 <li><span class="vs-swatch is-booked"></span> Booked</li>
                 <li><span class="vs-swatch is-blocked"></span> Not available</li>
+                <li><span class="vs-swatch is-not-open"></span> Opens later</li>
             </ul>
+
+            <p class="vs-map-intro">
+                Tap a bay to take it. Market stalls can join up to
+                <strong>8 bays</strong> together, so tap the ones next to it to
+                make your stall whatever shape you need. Tap a bay again to
+                drop it.
+            </p>
+            <p class="vs-map-intro vs-map-intro-sub">
+                Bays further back stay greyed out until the ones in front of
+                them are taken, so the market fills up without gaps. If your
+                stall needs the room, it can still run on into them.
+            </p>
 
             <div class="vs-map-wrap">
                 <div class="vs-map" id="vs-map"></div>
@@ -433,7 +447,12 @@
             </p>
 
             <p class="vs-map-counts" id="vs-map-counts"></p>
-            <p class="vs-site-choice" id="vs-site-choice">No site selected yet.</p>
+            <p class="vs-site-choice" id="vs-site-choice">Tap the bays you want.</p>
+
+            <button type="button" class="btn vs-site-confirm" id="vs-site-confirm" hidden>
+                Hold this site
+            </button>
+
             <p class="vs-hold-timer" id="vs-hold-timer"></p>
 
             <p class="vs-busy" data-busy="site" hidden>Holding your site…</p>

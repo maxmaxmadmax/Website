@@ -9,9 +9,15 @@
    admin dashboard without touching this file. The layout at the bottom is
    only used for the offline preview.
 
-   A 3x6 market stall is two adjoining bays, so selecting one bay shows and
-   takes the one below it as well. The server does the same thing inside a
-   transaction - this is only the on-screen half.
+   A market stall is any joined group of bays, up to eight, so vendors pick
+   their own shape. Two rules keep that tidy, and both are enforced again on
+   the server inside a transaction - this file is only the on-screen half:
+
+     - bays in a group must touch, so a stall is one block, not scattered;
+     - bays far from the front are greyed out until the ones in front of them
+       are gone, so the market fills from the top out instead of leaving
+       gaps. A stall already big enough to reach past that line may still
+       grow into it - what is gated is where a stall starts.
    -------------------------------------------------------------------------- */
 
 export class VendorMap {
@@ -22,34 +28,35 @@ export class VendorMap {
    */
   constructor(host, options = {}) {
     this.host = host;
+    /* Called with the ids now selected, whenever that changes. */
     this.onSelect = options.onSelect || function () {};
+    this.maxBays = options.maxBays || 8;
 
     this.sites = [];
     this.landmarks = [];
     this.mapSize = { width: 760, height: 1420 };
 
-    this.vendorType = null;   // food | market | community
-    this.stallSize = null;    // market only: 3x3 or 3x6
-    this.selectedIds = [];    // one bay, or two for a 3x6
+    this.vendorType = null;   // food | market
+    this.selectedIds = [];    // one food site, or a joined group of bays
     this.myUid = null;        // so my own hold does not look unavailable
 
     this.byId = new Map();
   }
 
-  /* Community groups have no sites of their own on the plan - they take a
-     market bay like anyone else, they are simply not charged for it. */
   siteTypeWanted() {
     if (!this.vendorType) return null;
     return this.vendorType === 'food' ? 'food' : 'market';
   }
 
-  baysNeeded() {
-    return this.vendorType === 'market' && this.stallSize === '3x6' ? 2 : 1;
+  /* Food vans take exactly one site; market stalls take a group. */
+  isMultiSelect() {
+    return this.vendorType === 'market';
   }
 
-  setVendorType(type, stallSize) {
+  setVendorType(type) {
+    if (type !== this.vendorType) this.selectedIds = [];
     this.vendorType = type;
-    this.stallSize = stallSize || null;
+    this._openTier = null;
     this.render();
   }
 
@@ -64,12 +71,25 @@ export class VendorMap {
     }
     if (landmarks) this.landmarks = landmarks;
     if (mapSize) this.mapSize = mapSize;
+    this._openTier = null;
+
+    // A bay in the group may have been taken by someone else while the page
+    // was open. Drop anything no longer free and keep the rest joined up.
+    if (this.selectedIds.length) {
+      const stillFree = this.selectedIds.filter((id) => {
+        const s = this.byId.get(id);
+        return s && this.isFree(s);
+      });
+      this.selectedIds = this.largestGroup(stillFree);
+    }
+
     this.render();
   }
 
-  /* Accepts one id or a list, so a 3x6 lights up both bays. */
+  /* Accepts one id or a list, so a whole group lights up. */
   setSelected(ids) {
     this.selectedIds = !ids ? [] : (Array.isArray(ids) ? ids : [ids]);
+    this._openTier = null;
     this.render();
   }
 
@@ -103,34 +123,138 @@ export class VendorMap {
     return site.type === wanted;
   }
 
-  /* The bays this site would take if chosen. Two for a 3x6, one otherwise. */
-  baysFor(site) {
-    if (this.baysNeeded() === 1) return [site];
-    if (!site.neighbourId) return null;          // last bay in the row
-    const partner = this.byId.get(site.neighbourId);
-    return partner ? [site, partner] : null;
+  /* The bays touching this one. Food sites have none - they stand alone. */
+  neighboursOf(site) {
+    const ids = site.adjacentIds || [];
+    return ids.map((id) => this.byId.get(id)).filter(Boolean);
   }
 
+  /* ---- release waves ---------------------------------------------------
+     Bays carry a tier: the first three of each column are tier 1, the next
+     three tier 2, and so on. The open tier is the lowest one that still has
+     a free bay - so nothing past it can be picked until the bays in front
+     of it have gone, and the market fills from the top out.
+
+     Sites with no tier (the food vans) are never gated. */
+  openTier() {
+    if (this._openTier !== null && this._openTier !== undefined) return this._openTier;
+
+    let open = Infinity;
+    for (const site of this.sites) {
+      if (!site.tier) continue;
+      if (site.type !== 'market') continue;
+      if (!this.isFree(site)) continue;
+      if (site.tier < open) open = site.tier;
+    }
+
+    this._openTier = open === Infinity ? 0 : open;
+    return this._openTier;
+  }
+
+  /* True when this bay is past the wave that is currently open. It is drawn
+     greyed out and cannot start a selection, but a stall that has already
+     started in the open wave may still grow into it. */
+  isBeyondWave(site) {
+    if (!site.tier) return false;
+    return site.tier > this.openTier();
+  }
+
+  /* Can this site be clicked right now, given what is already selected? */
   isSelectable(site) {
     if (!this.matchesVendor(site)) return false;
 
-    const bays = this.baysFor(site);
-    if (!bays) return false;                     // no partner for a 3x6
+    // Clicking a bay already in the group always works - it takes it out.
+    if (this.selectedIds.includes(site.id)) return true;
 
-    return bays.every((b) => this.isFree(b));
+    if (!this.isFree(site)) return false;
+
+    if (!this.isMultiSelect()) return !this.isBeyondWave(site);
+
+    if (this.selectedIds.length === 0) {
+      // The first bay has to be inside the open wave.
+      return !this.isBeyondWave(site);
+    }
+
+    if (this.selectedIds.length >= this.maxBays) return false;
+
+    // After that, any bay touching the group will do - including one past
+    // the wave, so a big stall is not cut off half way down a column.
+    return this.neighboursOf(site).some((n) => this.selectedIds.includes(n.id));
+  }
+
+  /* Add or remove a bay, keeping the group in one piece. */
+  toggle(site) {
+    if (!this.isSelectable(site)) return;
+
+    if (!this.isMultiSelect()) {
+      this.selectedIds = this.selectedIds.includes(site.id) ? [] : [site.id];
+    } else if (this.selectedIds.includes(site.id)) {
+      const left = this.selectedIds.filter((id) => id !== site.id);
+      // Taking a bay out of the middle would split the stall in two, so
+      // keep whichever piece is bigger rather than leaving it scattered.
+      this.selectedIds = this.largestGroup(left);
+    } else {
+      this.selectedIds = [...this.selectedIds, site.id];
+    }
+
+    this._openTier = null;
+    this.render();
+    this.onSelect(this.selectedIds.slice());
+  }
+
+  /* The biggest joined run inside a set of ids, in map order. */
+  largestGroup(ids) {
+    const set = new Set(ids);
+    const seen = new Set();
+    let best = [];
+
+    for (const id of ids) {
+      if (seen.has(id)) continue;
+
+      const group = [];
+      const queue = [id];
+      seen.add(id);
+
+      while (queue.length) {
+        const current = queue.shift();
+        group.push(current);
+        const site = this.byId.get(current);
+        if (!site) continue;
+        for (const n of this.neighboursOf(site)) {
+          if (set.has(n.id) && !seen.has(n.id)) {
+            seen.add(n.id);
+            queue.push(n.id);
+          }
+        }
+      }
+
+      if (group.length > best.length) best = group;
+    }
+
+    return this.inMapOrder(best);
+  }
+
+  /* Ids sorted the way they read on the plan, so labels come out
+     "M24 + M25 + M26" rather than in click order. */
+  inMapOrder(ids) {
+    const order = new Map(this.sites.map((s, i) => [s.id, i]));
+    return ids.slice().sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0));
+  }
+
+  selectedSites() {
+    return this.selectedIds.map((id) => this.byId.get(id)).filter(Boolean);
   }
 
   counts() {
-    const out = { available: 0, held: 0, booked: 0, blocked: 0, mine: 0 };
+    const out = { available: 0, held: 0, booked: 0, blocked: 0, mine: 0, notYetOpen: 0 };
     for (const site of this.sites) {
       if (!this.matchesVendor(site)) continue;
       const s = this.statusFor(site);
       out[s] = (out[s] || 0) + 1;
+      if (this.isFree(site) && this.isBeyondWave(site)) out.notYetOpen += 1;
     }
-    // For a 3x6 what matters is how many pairs are left, not bays.
-    if (this.baysNeeded() === 2) {
-      out.pairs = this.sites.filter((s) => this.isSelectable(s)).length;
-    }
+    // Bays past the open wave are free, but not yet up for grabs.
+    out.openNow = Math.max(0, out.available - out.notYetOpen);
     return out;
   }
 
@@ -178,6 +302,8 @@ export class VendorMap {
       const selectable = this.isSelectable(site);
       const isSelected = this.selectedIds.includes(site.id);
       const wrongType = this.vendorType && !this.matchesVendor(site);
+      // Free, but held back until the bays in front of it are gone.
+      const waiting = this.isFree(site) && this.isBeyondWave(site) && !isSelected && !selectable;
 
       const g = document.createElementNS(ns, 'g');
       g.setAttribute(
@@ -189,6 +315,7 @@ export class VendorMap {
           selectable ? 'is-selectable' : 'is-locked',
           isSelected ? 'is-selected' : '',
           wrongType ? 'is-wrong-type' : '',
+          waiting ? 'is-not-open' : '',
         ].filter(Boolean).join(' ')
       );
 
@@ -203,16 +330,18 @@ export class VendorMap {
         g.setAttribute('tabindex', '0');
         g.setAttribute('role', 'button');
 
-        const bays = this.baysFor(site) || [site];
-        const names = bays.map((b) => b.label).join(' and ');
+        const action = isSelected
+          ? 'selected, choose again to remove'
+          : (this.selectedIds.length ? 'add to your stall' : 'choose');
         g.setAttribute(
           'aria-label',
-          `Site ${names}, ${site.type}, ${status === 'mine' ? 'your hold' : status}`
+          `Site ${site.label}, ${site.type}, ${status === 'mine' ? 'your hold' : status}, ${action}`
         );
+        g.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
 
         const choose = (ev) => {
           ev.preventDefault();
-          this.onSelect(site);
+          this.toggle(site);
         };
         g.addEventListener('click', choose);
         g.addEventListener('keydown', (ev) => {
@@ -246,7 +375,7 @@ export class VendorMap {
         sub.setAttribute('y', site.y + site.h / 2 + 18);
         sub.setAttribute('text-anchor', 'middle');
         sub.setAttribute('class', 'vmap-site-sub');
-        sub.textContent = this.subLabel(site, status, wrongType);
+        sub.textContent = this.subLabel(site, status, wrongType, isSelected, waiting);
         g.appendChild(sub);
       }
 
@@ -257,8 +386,10 @@ export class VendorMap {
     this.host.appendChild(svg);
   }
 
-  subLabel(site, status, wrongType) {
+  subLabel(site, status, wrongType, isSelected, waiting) {
     if (wrongType) return site.type;
+    if (isSelected) return 'PICKED';
+    if (waiting) return 'LATER';
     if (status === 'mine') return 'YOURS';
     if (status === 'available') return 'FREE';
     if (status === 'held') return 'ON HOLD';
@@ -310,7 +441,12 @@ export function previewLayout() {
   for (const col of cols) {
     const built = column(col.list, 'market', col.x, 726, 84, 56, 12);
     built.forEach((s, i) => {
-      s.neighbourId = i < built.length - 1 ? built[i + 1].id : null;
+      s.adjacentIds = [
+        i > 0 ? built[i - 1].id : null,
+        i < built.length - 1 ? built[i + 1].id : null,
+      ].filter(Boolean);
+      s.tier = Math.floor(i / 3) + 1;   // three bays per release wave
+      s.position = i + 1;
     });
     sites.push(...built);
   }

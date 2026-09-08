@@ -27,39 +27,43 @@ import { VendorMap, previewLayout, previewCategories } from './vendor-map.js';
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
 /* Prices shown before the server confirms them. The server prices from the
-   event document; these are only for display. Market stalls are priced by
-   marquee size, so their key is market-<size>. */
-const PRICING = {
-  'food': { cents: 10000, label: '$100' },
-  'market-3x3': { cents: 5000, label: '$50' },
-  'market-3x6': { cents: 8000, label: '$80' },
-  'community': { cents: 0, label: 'Free' },
+   event document; these are only for display.
+
+   A food van is a flat fee for its 6 m x 3 m site. A market stall is sold
+   by the 3 m x 3 m bay - between one and eight in a row. */
+const PRICE = {
+  foodCents: 10000,
+  marketPerBayCents: 5000,
 };
 
-const VENDOR_LABEL = {
-  food: 'Food Vendor',
-  market: 'Market Stall',
-  community: 'Non-Food Community Group',
-};
+const MAX_BAYS = 8;
 
-/* Matches priceKeyFor() in functions/index.js */
-function priceKey() {
+/* Matches priceFor() in functions/index.js */
+function priceCents() {
+  if (state.vendorType === 'food') return PRICE.foodCents;
   if (state.vendorType === 'market') {
-    return `market-${state.stallSize || '3x3'}`;
+    return PRICE.marketPerBayCents * (state.bayCount || 1);
   }
-  return state.vendorType;
+  return 0;
 }
 
-function priceInfo() {
-  return PRICING[priceKey()] || PRICING.community;
+function money(cents) {
+  return cents === 0 ? 'Free' : `$${(cents / 100).toFixed(0)}`;
+}
+
+function priceLabel() {
+  return money(priceCents());
 }
 
 function vendorLabel() {
-  const base = VENDOR_LABEL[state.vendorType] || '';
-  if (state.vendorType === 'market' && state.stallSize) {
-    return `${base} (${state.stallSize}m marquee)`;
+  if (state.vendorType === 'food') return 'Food Vendor (6 m x 3 m)';
+
+  if (state.vendorType === 'market') {
+    const n = state.bayCount || 1;
+    return `Market Stall (${n} x 3 m bay${n > 1 ? 's' : ''}, ${n * 3} m frontage)`;
   }
-  return base;
+
+  return '';
 }
 
 const STEPS = ['type', 'business', 'category', 'setup', 'documents', 'site', 'review'];
@@ -72,7 +76,7 @@ const state = {
   preview: !isFirebaseConfigured,
 
   vendorType: null,
-  stallSize: null,        // market only: '3x3' or '3x6'
+  bayCount: 1,            // market only: how many bays are held, set from the map
   business: {},
   categoryId: null,
   categoryName: null,
@@ -259,14 +263,16 @@ function subscribeCategories() {
 }
 
 function paintEventHeader(ev) {
-  const price = document.querySelectorAll('[data-price]');
-  price.forEach((el) => {
-    const type = el.getAttribute('data-price');
-    if (ev.pricing && ev.pricing[type] != null) {
-      el.textContent = ev.pricing[type] === 0
-        ? 'Free'
-        : `$${(ev.pricing[type] / 100).toFixed(0)}`;
-    }
+  if (!ev.pricing) return;
+
+  const shown = {
+    food: ev.pricing.food,
+    'market-bay': ev.pricing.marketPerBay,
+  };
+
+  document.querySelectorAll('[data-price]').forEach((el) => {
+    const cents = shown[el.getAttribute('data-price')];
+    if (cents != null) el.textContent = money(cents);
   });
 }
 
@@ -278,7 +284,14 @@ function buildMap() {
   if (!host) return;
 
   map = new VendorMap(host, {
-    onSelect: (site) => chooseSite(site),
+    maxBays: MAX_BAYS,
+    // Clicking only builds up the shape on screen. Nothing is held until
+    // the vendor confirms, so they can try sizes without locking bays away
+    // from anyone else.
+    onSelect: () => {
+      renderSiteChoice();
+      renderMapMeta();
+    },
   });
 
   if (state.user) map.setUid(state.user.uid);
@@ -288,20 +301,43 @@ function renderMapMeta() {
   const legend = document.getElementById('vs-map-counts');
   if (!legend || !map) return;
 
+  if (!state.vendorType) { legend.textContent = ''; return; }
+
   const c = map.counts();
-  legend.textContent = state.vendorType
-    ? `${c.available} available for ${vendorLabel().toLowerCase()}` +
-      (c.mine ? ` · ${c.mine} held by you` : '')
-    : '';
+  const parts = [`${c.openNow} open now`];
+  if (c.notYetOpen) parts.push(`${c.notYetOpen} open later`);
+  if (c.mine) parts.push(`${c.mine} held by you`);
+
+  legend.textContent = parts.join(' · ');
 }
 
-async function chooseSite(site) {
+/* What the vendor has clicked but not yet confirmed. */
+function pendingSites() {
+  return map ? map.selectedSites() : [];
+}
+
+function pendingLabel() {
+  return pendingSites().map((s) => s.label).join(' + ');
+}
+
+function pendingPriceCents() {
+  const n = pendingSites().length || 1;
+  return state.vendorType === 'food' ? PRICE.foodCents : PRICE.marketPerBayCents * n;
+}
+
+/* Take the bays the vendor has picked. One call for the whole group, so
+   the server allocates them together or not at all. */
+async function holdChosenSites() {
+  const chosen = pendingSites();
+  if (!chosen.length) return;
+
+  const ids = chosen.map((s) => s.id);
+
   if (state.preview) {
-    const bays = map.baysFor(site) || [site];
-    state.siteId = site.id;
-    state.siteIds = bays.map((b) => b.id);
-    state.siteLabel = bays.map((b) => b.label).join(' + ');
-    map.setSelected(state.siteIds);
+    state.siteId = ids[0];
+    state.siteIds = ids;
+    state.bayCount = state.vendorType === 'market' ? ids.length : 1;
+    state.siteLabel = pendingLabel();
     renderSiteChoice();
     return;
   }
@@ -318,10 +354,11 @@ async function chooseSite(site) {
     await ensureBookingDoc();
 
     const call = fb.fn.httpsCallable(fb.fns, 'holdSite');
-    const res = await call({ eventId, siteId: site.id, bookingId: state.bookingId });
+    const res = await call({ eventId, siteIds: ids, bookingId: state.bookingId });
 
-    state.siteId = site.id;
-    state.siteIds = res.data.siteIds || [site.id];
+    state.siteIds = res.data.siteIds || ids;
+    state.siteId = state.siteIds[0];
+    state.bayCount = state.vendorType === 'market' ? state.siteIds.length : 1;
     state.siteLabel = res.data.siteLabel;
     state.holdExpiresAt = res.data.holdExpiresAt;
 
@@ -349,6 +386,7 @@ function startHoldCountdown() {
       state.siteId = null;
       state.siteIds = [];
       state.siteLabel = null;
+      state.bayCount = 1;
       map.setSelected(null);
       renderSiteChoice();
       stopHoldCountdown();
@@ -382,7 +420,7 @@ async function ensureBookingDoc() {
     uid: state.user.uid,
     eventId,
     vendorType: state.vendorType,
-    stallSize: state.stallSize,
+    bayCount: state.bayCount,
     business: state.business,
     categoryId: state.categoryId,
     setup: state.setup,
@@ -405,7 +443,7 @@ async function saveDraft() {
 
   await updateDoc(doc(fb.db, 'bookings', state.bookingId), {
     vendorType: state.vendorType,
-    stallSize: state.stallSize,
+    bayCount: state.bayCount,
     business: state.business,
     categoryId: state.categoryId,
     setup: state.setup,
@@ -434,6 +472,7 @@ async function loadExistingBooking() {
 
     state.bookingId = snap.id;
     state.vendorType = b.vendorType || state.vendorType;
+    state.bayCount = b.bayCount || 1;
     state.business = b.business || {};
     state.categoryId = b.categoryId || null;
     state.setup = b.setup || {};
@@ -443,7 +482,7 @@ async function loadExistingBooking() {
     state.siteLabel = b.siteLabel || null;
 
     if (map) {
-      map.setVendorType(state.vendorType, state.stallSize);
+      map.setVendorType(state.vendorType);
       map.setSelected(state.siteIds);
     }
   } catch (err) {
@@ -760,7 +799,7 @@ function render() {
 
   if (state.step === 'category') renderCategories();
   if (state.step === 'site') {
-    if (map) map.setVendorType(state.vendorType, state.stallSize);
+    if (map) map.setVendorType(state.vendorType);
     renderSiteChoice();
     renderMapMeta();
     renderSignInPrompt();
@@ -847,12 +886,38 @@ function renderCategories() {
 
 function renderSiteChoice() {
   const out = document.getElementById('vs-site-choice');
+  const confirm = document.getElementById('vs-site-confirm');
   if (!out) return;
 
-  out.textContent = state.siteLabel
-    ? `Selected: site ${state.siteLabel}`
-    : 'No site selected yet.';
-  out.classList.toggle('is-chosen', Boolean(state.siteLabel));
+  const chosen = pendingSites();
+  const held = Boolean(state.siteLabel);
+  const heldIds = state.siteIds.join(',');
+  const sameAsHeld = held && chosen.map((s) => s.id).join(',') === heldIds;
+
+  if (sameAsHeld) {
+    out.textContent = `Held for you: site ${state.siteLabel} · ${money(priceCents())}`;
+  } else if (chosen.length) {
+    const n = chosen.length;
+    const size = state.vendorType === 'market'
+      ? ` (${n} bay${n > 1 ? 's' : ''} · ${n * 3} m x 3 m)`
+      : ' (6 m x 3 m)';
+    out.textContent = `Picked: ${pendingLabel()}${size} · ${money(pendingPriceCents())}`;
+  } else if (held) {
+    out.textContent = `Held for you: site ${state.siteLabel}`;
+  } else {
+    out.textContent = state.vendorType === 'market'
+      ? `Tap the bays you want. Take up to ${MAX_BAYS} joined together for a bigger stall.`
+      : 'Tap the site you want.';
+  }
+
+  out.classList.toggle('is-chosen', sameAsHeld || chosen.length > 0);
+
+  if (confirm) {
+    confirm.hidden = chosen.length === 0 || sameAsHeld;
+    confirm.textContent = chosen.length > 1
+      ? `Hold these ${chosen.length} bays`
+      : 'Hold this site';
+  }
 }
 
 function renderSignInPrompt() {
@@ -865,7 +930,7 @@ function renderReview() {
   const host = document.getElementById('vs-review');
   if (!host) return;
 
-  const price = priceInfo();
+  const cents = priceCents();
 
   const rows = [
     ['Vendor type', vendorLabel() || '-'],
@@ -873,6 +938,7 @@ function renderReview() {
     ['Contact', state.business.contactName || '-'],
     ['Email', state.business.email || '-'],
     ['Phone', state.business.phone || '-'],
+    ['Social media', state.business.socials || '-'],
   ];
 
   if (needsCategory()) {
@@ -898,13 +964,13 @@ function renderReview() {
 
     <div class="vs-total">
       <span>Total</span>
-      <strong>${price.label}${price.cents ? ' AUD' : ''}</strong>
+      <strong>${money(cents)}${cents ? ' AUD' : ''}</strong>
     </div>
   `;
 
   const payBtn = document.getElementById('vs-pay');
   if (payBtn) {
-    payBtn.textContent = price.cents === 0 ? 'Confirm Booking' : `Pay ${price.label} and Book`;
+    payBtn.textContent = cents === 0 ? 'Confirm Booking' : `Pay ${money(cents)} and Book`;
     payBtn.disabled = !state.siteLabel;
   }
 }
@@ -917,17 +983,24 @@ function wireStaticControls() {
   document.querySelectorAll('[data-vendor-type]').forEach((btn) => {
     btn.addEventListener('click', () => {
       state.vendorType = btn.getAttribute('data-vendor-type');
-      state.stallSize = btn.getAttribute('data-stall-size') || null;
 
-      document.querySelectorAll('[data-vendor-type]').forEach((b) => {
-        b.classList.toggle('is-selected', b === btn);
-      });
+        document.querySelectorAll('[data-vendor-type]').forEach((b) => {
+          b.classList.toggle('is-selected', b === btn);
+        });
 
-      if (map) map.setVendorType(state.vendorType, state.stallSize);
-      setStepError('type', '');
-      nextStep();
+        setStepError('type', '');
+
+        /* Size is no longer asked for here. A market stall is however many
+           bays the vendor picks on the map, so the price follows from that
+           and the flow moves straight on. */
+        if (map) map.setVendorType(state.vendorType);
+        nextStep();
     });
   });
+
+  // hold the bays picked on the map
+  const holdBtn = document.getElementById('vs-site-confirm');
+  if (holdBtn) holdBtn.addEventListener('click', holdChosenSites);
 
   // next / back
   document.querySelectorAll('[data-next]').forEach((btn) => {
@@ -1012,7 +1085,7 @@ function collectStep(step) {
       contactName: val('vs-biz-contact'),
       email: val('vs-biz-email'),
       phone: val('vs-biz-phone'),
-      abn: val('vs-biz-abn'),
+      socials: val('vs-biz-socials'),
       description: val('vs-biz-desc'),
     };
   }
