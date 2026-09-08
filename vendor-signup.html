@@ -93,28 +93,55 @@
             <h2>What kind of vendor are you?</h2>
             <p class="vs-step-intro">This decides your price and which sites you can choose from.</p>
 
+            <!--  The photo fills the whole card and the wording sits over it.
+                  Save yours as images/vendor-food-van.jpg and
+                  images/vendor-market-stall.jpg - about 1200 x 900, landscape.
+                  The card starts on .no-photo and shows the drawn artwork
+                  below; the photo only takes over once it has actually
+                  loaded, so a missing file still looks finished.          -->
             <div class="vs-type-grid is-two">
-                <button type="button" class="vs-type" data-vendor-type="food">
-                    <span class="vs-type-photo">
-                        <img src="images/vendor-food-van.jpg" alt="" loading="lazy"
-                             onerror="this.closest('.vs-type-photo').classList.add('is-empty')">
+                <button type="button" class="vs-type no-photo" data-vendor-type="food">
+                    <span class="vs-type-bg">
+                        <img src="images/vendor-food-van.jpg" alt=""
+                             onload="this.closest('.vs-type').classList.remove('no-photo')">
+                        <svg class="vs-type-art" viewBox="0 0 120 80" aria-hidden="true">
+                            <path d="M14 54V30h48l14 12v12z"/>
+                            <path d="M62 30h10l14 12H62z"/>
+                            <circle cx="34" cy="58" r="6"/>
+                            <circle cx="76" cy="58" r="6"/>
+                            <path d="M20 36h30v10H20z"/>
+                            <path d="M10 26h60l-4-8H14z"/>
+                        </svg>
                     </span>
-                    <span class="vs-type-name">Food Vendor</span>
-                    <span class="vs-type-price" data-price="food">$100</span>
-                    <span class="vs-type-size">6 m &times; 3 m site</span>
-                    <span class="vs-type-desc">Hot food, drinks, desserts. You'll pick a food category later on.</span>
+
+                    <span class="vs-type-body">
+                        <span class="vs-type-name">Food Vendor</span>
+                        <span class="vs-type-price" data-price="food">$100</span>
+                        <span class="vs-type-size">6 m &times; 3 m site</span>
+                        <span class="vs-type-desc">Hot food, drinks, desserts. You'll pick a food category later on.</span>
+                    </span>
                 </button>
 
-                <button type="button" class="vs-type" data-vendor-type="market">
-                    <span class="vs-type-photo">
-                        <img src="images/vendor-market-stall.jpg" alt="" loading="lazy"
-                             onerror="this.closest('.vs-type-photo').classList.add('is-empty')">
+                <button type="button" class="vs-type no-photo" data-vendor-type="market">
+                    <span class="vs-type-bg">
+                        <img src="images/vendor-market-stall.jpg" alt=""
+                             onload="this.closest('.vs-type').classList.remove('no-photo')">
+                        <svg class="vs-type-art" viewBox="0 0 120 80" aria-hidden="true">
+                            <path d="M18 30h84v30H18z"/>
+                            <path d="M10 30 26 12h68l16 18z"/>
+                            <path d="M26 30v30M60 30v30M94 30v30"/>
+                            <path d="M18 60h84"/>
+                            <path d="M34 44h18v16H34z"/>
+                        </svg>
                     </span>
-                    <span class="vs-type-name">Market Stall</span>
-                    <span class="vs-type-price"><span data-price="market-bay">$50</span>
-                        <span class="vs-type-per">per bay</span></span>
-                    <span class="vs-type-size">3 m &times; 3 m per bay, up to 8 bays</span>
-                    <span class="vs-type-desc">Makers, craft, retail, community groups and other non-food trading.</span>
+
+                    <span class="vs-type-body">
+                        <span class="vs-type-name">Market Stall</span>
+                        <span class="vs-type-price"><span data-price="market-bay">$50</span>
+                            <span class="vs-type-per">per bay</span></span>
+                        <span class="vs-type-size">3 m &times; 3 m per bay, up to 8 bays</span>
+                        <span class="vs-type-desc">Makers, craft, retail, community groups and other non-food trading.</span>
+                    </span>
                 </button>
             </div>
 

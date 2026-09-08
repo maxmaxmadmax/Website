@@ -13,6 +13,7 @@
     /* Halloween accents, scoped to this page only */
     --vs-purple:#6b3fa0;
     --vs-purple-deep:#3a1f5c;
+    --vs-purple-light:#b98cff;
     --vs-slime:#8bc34a;
 
     --vs-available:#2e7d32;
@@ -370,25 +371,134 @@
     gap:16px;
 }
 
+/*  The photo fills the card and the wording sits on it, over a scrim dark
+    enough that the text stays readable whatever the photo turns out to be.
+    Content is bottom-aligned so the two cards line up even when one has
+    more words than the other.                                             */
 .vs-type{
+    position:relative;
+    display:flex;
+    align-items:flex-end;
+    min-height:340px;
+    overflow:hidden;
+
     text-align:left;
     background:#0d0d0d;
     border:2px solid var(--sg-border);
-    border-radius:14px;
-    padding:24px 22px;
+    border-radius:18px;
+    padding:0;
     color:#fff;
     cursor:pointer;
-    transition:border-color .2s, transform .2s;
+    transition:border-color .25s, transform .25s, box-shadow .25s;
+}
+
+.vs-type-bg{
+    position:absolute;
+    inset:0;
+    overflow:hidden;
+    background:linear-gradient(155deg, #2a1201, #0a0a0a 62%);
+}
+
+.vs-type-bg img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+    transition:transform .5s ease;
+}
+
+/*  The scrim. Solid at the bottom where the words are, clear at the top so
+    the photo still reads as a photo.                                      */
+.vs-type-bg::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(
+        to top,
+        rgba(0,0,0,.94) 0%,
+        rgba(0,0,0,.82) 28%,
+        rgba(0,0,0,.42) 58%,
+        rgba(0,0,0,.15) 100%
+    );
+}
+
+.vs-type-body{
+    position:relative;
+    display:block;
+    width:100%;
+    padding:26px 24px 24px;
+}
+
+/*  Line art shown until a real photo is saved, so an empty card still
+    looks like a choice rather than a mistake. The card starts on
+    .no-photo and the image removes it once it has loaded - the other way
+    round (onerror) leaves the card blank whenever the photo simply never
+    starts loading, which is what happens on a step that is hidden.        */
+.vs-type-art{
+    display:none;
+    position:absolute;
+    top:34px;
+    left:50%;
+    transform:translateX(-50%);
+    width:min(58%, 190px);
+    fill:none;
+    stroke:var(--sg-orange);
+    stroke-width:2.5;
+    stroke-linejoin:round;
+    opacity:.5;
+    transition:opacity .25s, transform .5s ease;
+}
+
+.vs-type.no-photo .vs-type-bg img{ display:none; }
+.vs-type.no-photo .vs-type-art{ display:block; }
+
+.vs-type[data-vendor-type="market"] .vs-type-bg{
+    background:linear-gradient(155deg, #1d0f2c, #0a0a0a 62%);
+}
+
+.vs-type[data-vendor-type="market"] .vs-type-art{
+    stroke:var(--vs-purple-light, #b98cff);
 }
 
 .vs-type:hover{
-    transform:translateY(-3px);
-    border-color:#4a2a06;
+    transform:translateY(-4px);
+    border-color:#5a3308;
+    box-shadow:0 18px 40px rgba(0,0,0,.55);
+}
+
+.vs-type:hover .vs-type-bg img{ transform:scale(1.06); }
+
+.vs-type:hover .vs-type-art{
+    opacity:.75;
+    transform:translateX(-50%) translateY(-4px);
+}
+
+.vs-type:focus-visible{
+    outline:none;
+    border-color:var(--sg-gold);
 }
 
 .vs-type.is-selected{
     border-color:var(--sg-orange);
-    background:#170d02;
+    box-shadow:0 0 0 1px var(--sg-orange), 0 18px 40px rgba(0,0,0,.55);
+}
+
+/*  Tick badge on the chosen card - colour alone should not be the only
+    thing saying which one is picked.                                      */
+.vs-type.is-selected::after{
+    content:'\2713';
+    position:absolute;
+    top:16px;
+    right:16px;
+    width:34px;
+    height:34px;
+    display:grid;
+    place-items:center;
+    border-radius:50%;
+    background:var(--sg-orange);
+    color:#0a0a0a;
+    font-size:1.05rem;
+    font-weight:bold;
 }
 
 .vs-type-name{
@@ -439,29 +549,6 @@
     grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
 }
 
-/*  Photos on the vendor cards.
-    If the file is not there yet the onerror handler adds .is-empty and the
-    slot collapses, so the card still looks finished rather than broken. */
-.vs-type-photo{
-    display:block;
-    width:calc(100% + 44px);
-    margin:-24px -22px 18px;
-    aspect-ratio:16 / 10;
-    overflow:hidden;
-    border-radius:12px 12px 0 0;
-    background:linear-gradient(150deg, #241001, #0c0c0c);
-}
-
-.vs-type-photo img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    display:block;
-}
-
-.vs-type-photo.is-empty{
-    display:none;
-}
 
 
 
@@ -1234,10 +1321,27 @@
         width:88px;
         height:88px;
     }
+
+    /*  Shorter cards on a phone, where they stack and two full-height
+        tiles would push the second one well below the fold.            */
+    .vs-type{
+        min-height:252px;
+    }
+
+    .vs-type-body{
+        padding:20px 18px 18px;
+    }
+
+    .vs-type-art{
+        top:24px;
+        width:min(46%, 132px);
+    }
 }
 
 @media (prefers-reduced-motion:reduce){
     .vs-spinner{ animation:none; }
     .vs-type:hover,
     .vs-category:hover:not(:disabled){ transform:none; }
+    .vs-type:hover .vs-type-bg img{ transform:none; }
+    .vs-type:hover .vs-type-art{ transform:translateX(-50%); }
 }
