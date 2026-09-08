@@ -95,9 +95,32 @@
                 ' &mdash; ' + (names[i] || '');
         }
 
+        /*  The bar sits under the label it belongs to.
+
+            Even eighths look wrong here: the labels are different widths, so
+            a fixed slice drifts away from the word it is meant to be marking
+            - far enough by the sixth slide that the bar sits under the next
+            label along. Measured against the bar's own box rather than using
+            offsetLeft, which is relative to a different element.
+
+            When the labels are hidden and the compact "06 / 08" line is
+            showing instead, there is nothing to line up with, so it goes
+            back to even slices as a plain progress meter.                 */
         if (progress) {
-            progress.style.width = (100 / slides.length) + '%';
-            progress.style.transform = 'translateX(' + (i * 100) + '%)';
+            var list = page.querySelector('#sgs-nav-list');
+            var active = navButtons[i];
+            var labelsShown = list && getComputedStyle(list).display !== 'none';
+
+            if (labelsShown && active) {
+                var barBox = progress.parentNode.getBoundingClientRect();
+                var labelBox = active.getBoundingClientRect();
+                progress.style.width = labelBox.width + 'px';
+                progress.style.transform =
+                    'translateX(' + (labelBox.left - barBox.left) + 'px)';
+            } else {
+                progress.style.width = (100 / slides.length) + '%';
+                progress.style.transform = 'translateX(' + (i * 100) + '%)';
+            }
         }
 
         if (prevBtn) { prevBtn.disabled = atStart(); }
