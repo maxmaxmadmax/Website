@@ -1,16 +1,26 @@
 SERVICES PAGE PHOTOGRAPHY
 =========================
 
-Save the slide photos in this folder using these exact names. Each one is
-picked up automatically - nothing in the code needs changing.
+Save the slide photos in this folder. The name each slide looks for is set
+on the slide itself in services.html, so if you use a different name or a
+different format, change it there to match.
 
+    IN PLACE
+    festivals.webp            Festivals slide
+    corporate-functions.webp  Corporate Functions slide
+    big-screens.webp          Big Screens slide
+    sporting-events.webp      Sporting Events slide
+
+    STILL NEEDED
     community-events.jpg      Community Events slide
     weddings.jpg              Weddings slide
-    corporate-functions.jpg   Corporate Functions slide
-    festivals.jpg             Festivals slide
-    big-screens.jpg           Big Screens slide
     trailer-stage.jpg         Trailer Stage slide
-    sporting-events.jpg       Sporting Events slide
+
+The four already here came through as WebP, which is a good format for
+this - smaller than JPG at the same quality. They are around 900-1200px
+wide, which is fine on a phone or a laptop but will soften on a large
+desktop screen. If you have the originals, saving those over the top at
+about 2000px wide would sharpen them up.
 
 Until a file is here, that slide shows its own dark gradient instead, so a
 missing photo looks deliberate rather than broken.
