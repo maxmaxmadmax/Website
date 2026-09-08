@@ -1,0 +1,654 @@
+/* ==========================================================================
+   SERVICES PAGE
+
+   Every rule in this file begins with #sg-services-page, so nothing here can
+   reach the homepage, events, vendor signup, contact, or any page added
+   later. The shared menu and footer sit outside that element and are left
+   completely alone.
+
+   Loaded after style.css, so the fonts and colours still come from there.
+
+   SLIDE PHOTOGRAPHY
+   A slide's picture is set on the element itself in services.html:
+
+       style="--sgs-img:url('images/services/festivals.jpg')"
+
+   If that file is not there the browser simply paints nothing for it and the
+   slide's gradient shows through, so a missing photo looks deliberate rather
+   than broken.
+   ========================================================================== */
+
+#sg-services-page{
+    /* Local tokens. Scoped to this element, so they cannot leak either. */
+    --sgs-yellow:#ffb700;
+    --sgs-shell:#000;
+    --sgs-ink:#fff;
+
+    display:block;
+    background:var(--sgs-shell);
+    color:var(--sgs-ink);
+    /* nothing on this page may push the document sideways */
+    overflow-x:hidden;
+}
+
+
+/* --------------------------------------------------------------------------
+   1. THE SLIDER
+   -------------------------------------------------------------------------- */
+#sg-services-page .sgs-stage{
+    position:relative;
+    background:#000;
+}
+
+/*  A plain horizontally scrolling element with snap points. Touch, trackpad
+    and keyboard all work natively - the script adds arrows and the wheel
+    behaviour on top, so the slider still works if it never loads.
+
+    Vertical scrolling is never captured here: the track only scrolls on its
+    own axis, so the page keeps moving down normally.                      */
+#sg-services-page .sgs-track{
+    display:flex;
+    overflow-x:auto;
+    overflow-y:hidden;
+    scroll-snap-type:x mandatory;
+    scroll-behavior:smooth;
+
+    /* iOS: keep the swipe from dragging the whole page around */
+    overscroll-behavior-x:contain;
+
+    /* the scrollbar would cut across the photography */
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+}
+
+#sg-services-page .sgs-track::-webkit-scrollbar{ display:none; }
+
+#sg-services-page .sgs-track:focus-visible{
+    outline:2px solid var(--sgs-yellow);
+    outline-offset:-4px;
+}
+
+#sg-services-page .sgs-slide{
+    position:relative;
+    flex:0 0 100%;
+    width:100%;
+    scroll-snap-align:start;
+    scroll-snap-stop:always;
+
+    display:flex;
+    align-items:center;
+
+    /* Full height, minus nothing - the menu floats over the top of it.
+       svh rather than vh so the address bar appearing on a phone does not
+       leave the bottom of the slide cut off. */
+    height:100vh;
+    height:100svh;
+
+    overflow:hidden;
+    background-color:#0a0a0a;
+}
+
+/*  The photograph. A separate layer rather than a background on the slide
+    itself, so the gradient underneath still shows if the file is missing. */
+#sg-services-page .sgs-slide::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background-image:var(--sgs-img);
+    background-size:cover;
+    background-position:center;
+    z-index:0;
+}
+
+/*  A different gradient per slide, so the page has some variety while the
+    photography is still being collected - and so a photo dropped on top has
+    something warm underneath it rather than flat black.                   */
+#sg-services-page .sgs-intro    { background-image:linear-gradient(135deg, #2a1403 0%, #0a0a0a 62%); }
+#sg-services-page .sgs-community{ background-image:linear-gradient(135deg, #10261c 0%, #0a0a0a 62%); }
+#sg-services-page .sgs-weddings { background-image:linear-gradient(135deg, #241528 0%, #0a0a0a 62%); }
+#sg-services-page .sgs-festivals{ background-image:linear-gradient(135deg, #3a1d02 0%, #0a0a0a 62%); }
+#sg-services-page .sgs-screens  { background-image:linear-gradient(135deg, #0d2033 0%, #0a0a0a 62%); }
+#sg-services-page .sgs-trailer  { background-image:linear-gradient(135deg, #2b2205 0%, #0a0a0a 62%); }
+#sg-services-page .sgs-sporting { background-image:linear-gradient(135deg, #06231f 0%, #0a0a0a 62%); }
+
+#sg-services-page .sgs-video{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    z-index:0;
+}
+
+/*  Dark wash so the words stay readable over any photo. Heaviest on the left
+    where the text sits, so the right hand side of the picture stays visible
+    rather than the whole frame being dimmed flat.                         */
+#sg-services-page .sgs-scrim{
+    position:absolute;
+    inset:0;
+    z-index:1;
+    background:
+        linear-gradient(90deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,.72) 42%, rgba(0,0,0,.25) 78%, rgba(0,0,0,.45) 100%),
+        linear-gradient(180deg, rgba(0,0,0,.55) 0%, transparent 32%, transparent 58%, rgba(0,0,0,.85) 100%);
+}
+
+#sg-services-page .sgs-content{
+    position:relative;
+    z-index:2;
+    width:100%;
+    max-width:var(--sg-max-width, 1200px);
+    margin:0 auto;
+    padding:0 6%;
+    /* clear of the menu at the top and the slide nav at the bottom */
+    padding-top:calc(var(--sg-nav-height, 88px) + 24px);
+    padding-bottom:190px;
+}
+
+#sg-services-page .sgs-eyebrow{
+    font-family:var(--sg-font-accent);
+    font-size:clamp(.72rem, 1.6vw, .9rem);
+    font-weight:bold;
+    letter-spacing:.42em;
+    text-transform:uppercase;
+    color:var(--sgs-yellow);
+    margin-bottom:14px;
+}
+
+#sg-services-page .sgs-title{
+    font-family:var(--sg-font-display);
+    font-size:clamp(2.6rem, 8.4vw, 6.6rem);
+    line-height:.92;
+    letter-spacing:-2px;
+    text-transform:uppercase;
+    color:#fff;
+    margin:0 0 22px;
+    text-shadow:0 6px 40px rgba(0,0,0,.6);
+    max-width:14ch;
+}
+
+#sg-services-page .sgs-desc{
+    font-size:clamp(1rem, 2.1vw, 1.25rem);
+    line-height:1.6;
+    color:var(--sg-muted, #d0d0d0);
+    max-width:46ch;
+    margin-bottom:18px;
+}
+
+#sg-services-page .sgs-line{
+    font-family:var(--sg-font-accent);
+    font-size:clamp(.72rem, 1.6vw, .86rem);
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:#fff;
+    margin-bottom:10px;
+}
+
+#sg-services-page .sgs-place{
+    font-family:var(--sg-font-accent);
+    font-size:clamp(.68rem, 1.5vw, .8rem);
+    letter-spacing:.28em;
+    text-transform:uppercase;
+    color:var(--sg-dim, #aaa);
+    margin-bottom:30px;
+}
+
+#sg-services-page .sgs-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    margin-top:26px;
+}
+
+
+/* --------------------------------------------------------------------------
+   2. BUTTONS
+   Named .sgs-btn rather than reusing .btn, so this page cannot drag the
+   site-wide button styling around with it.
+   -------------------------------------------------------------------------- */
+#sg-services-page .sgs-btn{
+    display:inline-block;
+    padding:16px 30px;
+    border-radius:50px;
+    border:2px solid transparent;
+
+    font-family:var(--sg-font-accent);
+    font-size:.8rem;
+    font-weight:bold;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    text-align:center;
+    text-decoration:none;
+    cursor:pointer;
+
+    transition:background-color .2s, color .2s, border-color .2s, transform .2s;
+}
+
+#sg-services-page .sgs-btn-primary{
+    background:var(--sgs-yellow);
+    border-color:var(--sgs-yellow);
+    color:#0a0a0a;
+}
+
+#sg-services-page .sgs-btn-primary:hover{
+    background:#ffc93a;
+    border-color:#ffc93a;
+    transform:translateY(-2px);
+}
+
+#sg-services-page .sgs-btn-ghost{
+    background:rgba(0,0,0,.35);
+    border-color:rgba(255,255,255,.55);
+    color:#fff;
+}
+
+#sg-services-page .sgs-btn-ghost:hover{
+    background:#fff;
+    border-color:#fff;
+    color:#0a0a0a;
+    transform:translateY(-2px);
+}
+
+#sg-services-page .sgs-btn:focus-visible{
+    outline:3px solid var(--sgs-yellow);
+    outline-offset:3px;
+}
+
+
+/* --------------------------------------------------------------------------
+   3. ARROWS
+   -------------------------------------------------------------------------- */
+#sg-services-page .sgs-arrow{
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
+    z-index:4;
+
+    width:52px;
+    height:52px;
+    display:grid;
+    place-items:center;
+
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,.35);
+    background:rgba(0,0,0,.45);
+    color:#fff;
+    font-size:1.9rem;
+    line-height:1;
+    cursor:pointer;
+
+    transition:background-color .2s, border-color .2s, opacity .2s;
+}
+
+#sg-services-page .sgs-arrow span{
+    /* the chevron glyph sits low in its box */
+    margin-top:-4px;
+}
+
+#sg-services-page .sgs-arrow-prev{ left:18px; }
+#sg-services-page .sgs-arrow-next{ right:18px; }
+
+#sg-services-page .sgs-arrow:hover{
+    background:var(--sgs-yellow);
+    border-color:var(--sgs-yellow);
+    color:#0a0a0a;
+}
+
+#sg-services-page .sgs-arrow:focus-visible{
+    outline:3px solid var(--sgs-yellow);
+    outline-offset:3px;
+}
+
+/* At either end the arrow has nowhere to go */
+#sg-services-page .sgs-arrow[disabled]{
+    opacity:.25;
+    cursor:default;
+}
+
+#sg-services-page .sgs-arrow[disabled]:hover{
+    background:rgba(0,0,0,.45);
+    border-color:rgba(255,255,255,.35);
+    color:#fff;
+}
+
+
+/* --------------------------------------------------------------------------
+   4. SLIDE NAVIGATION
+   -------------------------------------------------------------------------- */
+#sg-services-page .sgs-nav{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:52px;
+    z-index:4;
+
+    max-width:var(--sg-max-width, 1200px);
+    margin:0 auto;
+    padding:0 6%;
+}
+
+#sg-services-page .sgs-nav-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px 26px;
+    list-style:none;
+    margin:0 0 14px;
+    padding:0;
+}
+
+#sg-services-page .sgs-nav-list button{
+    background:none;
+    border:0;
+    padding:6px 0;
+    cursor:pointer;
+
+    font-family:var(--sg-font-accent);
+    font-size:.72rem;
+    font-weight:bold;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:rgba(255,255,255,.55);
+
+    transition:color .2s;
+}
+
+#sg-services-page .sgs-nav-list button:hover{ color:#fff; }
+
+#sg-services-page .sgs-nav-list button[aria-current="true"]{
+    color:var(--sgs-yellow);
+}
+
+#sg-services-page .sgs-nav-list button:focus-visible{
+    outline:2px solid var(--sgs-yellow);
+    outline-offset:3px;
+}
+
+/* Shown instead of the seven labels on a narrow screen */
+#sg-services-page .sgs-nav-compact{
+    display:none;
+    font-family:var(--sg-font-accent);
+    font-size:.76rem;
+    font-weight:bold;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:#fff;
+    margin:0 0 12px;
+}
+
+#sg-services-page .sgs-nav-compact b{
+    color:var(--sgs-yellow);
+    font-weight:bold;
+}
+
+#sg-services-page .sgs-progress{
+    height:2px;
+    background:rgba(255,255,255,.18);
+    border-radius:2px;
+    overflow:hidden;
+}
+
+#sg-services-page .sgs-progress span{
+    display:block;
+    height:100%;
+    width:14.2857%;              /* one slide of seven, until the script runs */
+    background:var(--sgs-yellow);
+    transition:width .35s ease, transform .35s ease;
+}
+
+#sg-services-page .sgs-scroll-hint{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:18px;
+    z-index:4;
+    text-align:center;
+
+    font-family:var(--sg-font-accent);
+    font-size:.66rem;
+    letter-spacing:.3em;
+    text-transform:uppercase;
+    color:rgba(255,255,255,.45);
+    margin:0;
+    transition:opacity .3s;
+}
+
+/* Out of the way once the visitor has started scrolling the page down */
+#sg-services-page.is-scrolled .sgs-scroll-hint{ opacity:0; }
+
+
+/* --------------------------------------------------------------------------
+   5. THE PAGE BELOW THE SLIDER
+   -------------------------------------------------------------------------- */
+#sg-services-page .sgs-block{
+    padding:92px 6%;
+    background:#0a0a0a;
+}
+
+#sg-services-page .sgs-wrap{
+    max-width:var(--sg-max-width, 1200px);
+    margin:0 auto;
+}
+
+#sg-services-page .sgs-block h2{
+    font-family:var(--sg-font-display);
+    font-size:clamp(1.9rem, 5vw, 3.4rem);
+    line-height:1.02;
+    letter-spacing:-1px;
+    text-transform:uppercase;
+    color:#fff;
+    margin:0 0 24px;
+}
+
+#sg-services-page .sgs-kicker{
+    font-family:var(--sg-font-accent);
+    font-size:.74rem;
+    font-weight:bold;
+    letter-spacing:.34em;
+    text-transform:uppercase;
+    color:var(--sgs-yellow);
+    margin:0 0 16px;
+}
+
+#sg-services-page .sgs-copy{
+    max-width:70ch;
+}
+
+#sg-services-page .sgs-copy p{
+    color:var(--sg-muted, #d0d0d0);
+    font-size:1.04rem;
+    line-height:1.85;
+    margin-bottom:18px;
+}
+
+#sg-services-page .sgs-intro-copy{
+    border-bottom:1px solid var(--sg-border, #222);
+}
+
+/* Capabilities ------------------------------------------------------------ */
+#sg-services-page .sgs-caps-heading{
+    font-size:clamp(1.2rem, 3vw, 1.6rem) !important;
+    color:var(--sg-dim, #aaa) !important;
+    letter-spacing:.2em !important;
+}
+
+/*  Three across, two rows. auto-fit would give four on a wide screen and
+    leave a row of two hanging, which reads as an accident.                */
+#sg-services-page .sgs-caps{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:2px;
+    list-style:none;
+    margin:0;
+    padding:0;
+    background:var(--sg-border, #222);
+    border:1px solid var(--sg-border, #222);
+    border-radius:16px;
+    overflow:hidden;
+}
+
+#sg-services-page .sgs-caps li{
+    background:#0d0d0d;
+    padding:30px 26px;
+}
+
+#sg-services-page .sgs-caps h3{
+    font-family:var(--sg-font-display);
+    font-size:1.05rem;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    color:var(--sgs-yellow);
+    margin:0 0 10px;
+}
+
+#sg-services-page .sgs-caps p{
+    color:var(--sg-muted, #d0d0d0);
+    font-size:.94rem;
+    line-height:1.65;
+    margin:0;
+}
+
+/* Service area and closing call to action --------------------------------- */
+#sg-services-page .sgs-area{
+    background:#000;
+    border-top:1px solid var(--sg-border, #222);
+}
+
+#sg-services-page .sgs-cta{
+    text-align:center;
+    background:
+        radial-gradient(90% 120% at 50% 0%, #2a1403 0%, #0a0a0a 58%),
+        #0a0a0a;
+    border-top:1px solid var(--sg-border, #222);
+    padding-top:104px;
+    padding-bottom:104px;
+}
+
+#sg-services-page .sgs-cta-copy{
+    color:var(--sg-muted, #d0d0d0);
+    font-size:1.08rem;
+    line-height:1.75;
+    max-width:52ch;
+    margin:0 auto 34px;
+}
+
+
+/* --------------------------------------------------------------------------
+   6. RESPONSIVE
+   -------------------------------------------------------------------------- */
+
+/* Tablet */
+@media (max-width:900px){
+    #sg-services-page .sgs-content{
+        padding-bottom:200px;
+    }
+
+    #sg-services-page .sgs-title{
+        max-width:none;
+    }
+
+    #sg-services-page .sgs-block{
+        padding:70px 6%;
+    }
+
+    #sg-services-page .sgs-caps{
+        grid-template-columns:repeat(2, 1fr);
+    }
+}
+
+/* Phone */
+@media (max-width:700px){
+    /*  Seven labels will not fit across a phone without becoming a wall of
+        tiny tap targets, so the short form takes over.                    */
+    #sg-services-page .sgs-nav-list{ display:none; }
+    #sg-services-page .sgs-nav-compact{ display:block; }
+
+    #sg-services-page .sgs-nav{
+        bottom:44px;
+    }
+
+    /*  Arrows are dropped on touch screens - swiping is the natural gesture
+        and the arrows sit right on top of the photography.                */
+    #sg-services-page .sgs-arrow{ display:none; }
+
+    /*  The scrim leans to the bottom rather than the left, because the text
+        now sits over the middle of the picture rather than beside it.     */
+    #sg-services-page .sgs-scrim{
+        background:linear-gradient(
+            180deg,
+            rgba(0,0,0,.72) 0%,
+            rgba(0,0,0,.35) 28%,
+            rgba(0,0,0,.55) 58%,
+            rgba(0,0,0,.92) 100%
+        );
+    }
+
+    #sg-services-page .sgs-content{
+        padding:calc(var(--sg-nav-height, 88px) + 18px) 7% 170px;
+        /* words sit low, so a face or a stage in the photo is not covered */
+        align-self:flex-end;
+    }
+
+    #sg-services-page .sgs-slide{
+        align-items:flex-end;
+    }
+
+    #sg-services-page .sgs-title{
+        letter-spacing:-1px;
+        margin-bottom:16px;
+    }
+
+    #sg-services-page .sgs-desc{
+        font-size:1rem;
+    }
+
+    /* full width, easy to hit with a thumb */
+    #sg-services-page .sgs-actions{
+        flex-direction:column;
+        gap:10px;
+    }
+
+    #sg-services-page .sgs-actions .sgs-btn,
+    #sg-services-page .sgs-content > .sgs-btn{
+        display:block;
+        width:100%;
+        padding:17px 20px;
+    }
+
+    #sg-services-page .sgs-block{
+        padding:58px 7%;
+    }
+
+    #sg-services-page .sgs-caps{
+        grid-template-columns:1fr;
+    }
+
+    #sg-services-page .sgs-caps li{
+        padding:24px 22px;
+    }
+
+    #sg-services-page .sgs-cta{
+        padding-top:72px;
+        padding-bottom:72px;
+    }
+}
+
+
+/* --------------------------------------------------------------------------
+   7. REDUCED MOTION
+   Snapping and arrows still work - they simply arrive instantly.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion:reduce){
+    #sg-services-page .sgs-track{
+        scroll-behavior:auto;
+    }
+
+    #sg-services-page .sgs-btn,
+    #sg-services-page .sgs-arrow,
+    #sg-services-page .sgs-progress span,
+    #sg-services-page .sgs-scroll-hint{
+        transition:none;
+    }
+
+    #sg-services-page .sgs-btn:hover{
+        transform:none;
+    }
+}

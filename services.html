@@ -1,846 +1,317 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Event Production, Stage, Audio and Lighting Hire | SoundzGood</title>
-    <meta name="description" content="SoundzGood provides audio, lighting, mobile staging, LED screens, DJ equipment, backline and technical production across the Whitsundays and North Queensland.">
+  <title>Event Production North Queensland | SoundzGood</title>
+  <meta name="description" content="SoundzGood provides event production, PA systems, lighting, LED screens, mobile staging and technical crew for festivals, weddings, sporting and community events across Bowen, the Whitsundays and North Queensland.">
 
-    <!-- Facebook / Messenger sharing -->
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="SoundzGood Whitsundays">
-    <meta property="og:title" content="Event Production, Stage, Audio and Lighting Hire | SoundzGood">
-    <meta property="og:description" content="SoundzGood provides audio, lighting, mobile staging, LED screens, DJ equipment, backline and technical production across the Whitsundays and North Queensland.">
-    <meta property="og:url" content="https://www.soundzgood.com.au/services">
-    <meta property="og:image" content="https://www.soundzgood.com.au/images/og-soundzgood.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="SoundzGood Whitsundays">
-    <meta name="twitter:card" content="summary_large_image">
+  <!-- Facebook / Messenger sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="SoundzGood Whitsundays">
+  <meta property="og:title" content="Event Production North Queensland | SoundzGood">
+  <meta property="og:description" content="Sound, lighting, staging, LED screens and technical crew for festivals, weddings, sporting and community events across Bowen, the Whitsundays and North Queensland.">
+  <meta property="og:url" content="https://www.soundzgood.com.au/services">
+  <meta property="og:image" content="https://www.soundzgood.com.au/images/og-soundzgood.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="SoundzGood Whitsundays">
+  <meta name="twitter:card" content="summary_large_image">
 
-    <link rel="icon" href="images/logo.png">
-    <link rel="stylesheet" href="style.css">
-    <script src="js/main.js" defer></script>
+  <link rel="icon" href="images/logo.png">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="services.css">
+  <script src="js/main.js" defer></script>
+  <script src="js/services.js" defer></script>
 </head>
 
 <body>
 
 <div id="navbar"></div>
 
-<!-- HERO ---------------------------------------------------------------- -->
-<header class="page-header services-header">
+<!-- ==========================================================================
+     SERVICES PAGE
 
-    <video autoplay muted loop playsinline class="header-video" poster="images/bowen.jpeg">
-        <source src="videos/build.mp4" type="video/mp4">
-    </video>
+     Everything below the shared menu lives inside #sg-services-page. Every
+     rule in services.css and every listener in js/services.js is scoped to
+     that id, so nothing here can reach another page.
 
-    <div class="header-overlay"></div>
+     SLIDE PHOTOGRAPHY
+     Each slide carries its own picture as a variable on the element:
 
-    <div class="header-content">
-        <p class="weekend-eyebrow">
-            Event Production Across the Whitsundays, Islands &amp; Outback Queensland
-        </p>
+         style="--sgs-img:url('images/services/festivals.jpg')"
 
-        <h1>Bring Your Event to Life</h1>
+     Drop a photo at that path and the slide picks it up. Until then the
+     slide shows its gradient, which is why an empty slide still looks
+     finished rather than broken. Landscape, about 2000px wide, is plenty.
+     ========================================================================== -->
+<main id="sg-services-page">
 
+  <!-- ====================================================================
+       FULL SCREEN SLIDER
+
+       The track is a normal horizontally scrolling element with CSS scroll
+       snapping, so swiping, trackpad gestures and keyboard all work even if
+       js/services.js never loads. The script only adds the arrows, the wheel
+       handling and the progress bar on top of that.
+       ==================================================================== -->
+  <section class="sgs-stage" aria-label="What we do">
+
+    <div class="sgs-track" id="sgs-track" tabindex="0"
+         aria-label="Event types, use the left and right arrow keys to move between them">
+
+      <!-- 1. INTRO ---------------------------------------------------- -->
+      <article class="sgs-slide sgs-intro" id="sgs-slide-intro" aria-labelledby="sgs-h1">
+        <!-- Real SoundzGood footage. The script only gives this a source on
+             a large screen, so a phone never downloads it. -->
+        <video class="sgs-video" id="sgs-hero-video"
+               data-src="videos/hero.mp4"
+               muted loop playsinline preload="none" aria-hidden="true"></video>
+
+        <div class="sgs-scrim"></div>
+
+        <div class="sgs-content">
+          <p class="sgs-eyebrow">We make</p>
+          <h1 class="sgs-title" id="sgs-h1">Events<br>Happen.</h1>
+          <p class="sgs-line">Sound &bull; Lighting &bull; Staging &bull; LED Screens &bull; Production</p>
+          <p class="sgs-place">Bowen &bull; Whitsundays &bull; North Queensland</p>
+
+          <div class="sgs-actions">
+            <button type="button" class="sgs-btn sgs-btn-primary" data-sgs-start>Start Exploring</button>
+            <a href="/contact" class="sgs-btn sgs-btn-ghost">Get a Quote</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- 2. COMMUNITY EVENTS ----------------------------------------- -->
+      <article class="sgs-slide sgs-community"
+               style="--sgs-img:url('images/services/community-events.jpg')">
+        <div class="sgs-scrim"></div>
+        <div class="sgs-content">
+          <h2 class="sgs-title">Community<br>Events</h2>
+          <p class="sgs-desc">
+            Sound, staging, lighting and screens for events that bring people
+            together.
+          </p>
+          <p class="sgs-line">Markets &bull; Community Days &bull; Council Events &bull; Public Events</p>
+          <!-- TODO: point at a community events page when one exists -->
+          <a href="/contact" class="sgs-btn sgs-btn-ghost">Explore Community Events</a>
+        </div>
+      </article>
+
+      <!-- 3. WEDDINGS -------------------------------------------------- -->
+      <article class="sgs-slide sgs-weddings"
+               style="--sgs-img:url('images/services/weddings.jpg')">
+        <div class="sgs-scrim"></div>
+        <div class="sgs-content">
+          <h2 class="sgs-title">Weddings</h2>
+          <p class="sgs-desc">
+            Ceremony audio, reception production, lighting and DJs across the
+            Whitsundays.
+          </p>
+          <p class="sgs-line">Ceremony &bull; Reception &bull; DJ &bull; Lighting</p>
+          <!-- TODO: point at a weddings page when one exists -->
+          <a href="/contact" class="sgs-btn sgs-btn-ghost">Explore Weddings</a>
+        </div>
+      </article>
+
+      <!-- 4. FESTIVALS ------------------------------------------------- -->
+      <article class="sgs-slide sgs-festivals"
+               style="--sgs-img:url('images/services/festivals.jpg')">
+        <div class="sgs-scrim"></div>
+        <div class="sgs-content">
+          <h2 class="sgs-title">Festivals</h2>
+          <p class="sgs-desc">
+            Complete production for live music, festivals and outdoor events.
+          </p>
+          <p class="sgs-line">Audio &bull; Lighting &bull; Stage &bull; Backline &bull; Crew</p>
+          <!-- TODO: point at a festivals page when one exists -->
+          <a href="/contact" class="sgs-btn sgs-btn-ghost">Explore Festivals</a>
+        </div>
+      </article>
+
+      <!-- 5. BIG SCREENS ----------------------------------------------- -->
+      <article class="sgs-slide sgs-screens"
+               style="--sgs-img:url('images/services/big-screens.jpg')">
+        <div class="sgs-scrim"></div>
+        <div class="sgs-content">
+          <h2 class="sgs-title">Big<br>Screens</h2>
+          <p class="sgs-desc">
+            Large LED screens for live video, scoreboards, sponsor content and
+            outdoor events.
+          </p>
+          <p class="sgs-line">LED Screens &bull; Scoreboards &bull; Video &bull; Sponsors</p>
+          <!-- TODO: point at a big screens page when one exists -->
+          <a href="/contact" class="sgs-btn sgs-btn-ghost">Explore Big Screens</a>
+        </div>
+      </article>
+
+      <!-- 6. TRAILER STAGE --------------------------------------------- -->
+      <article class="sgs-slide sgs-trailer"
+               style="--sgs-img:url('images/services/trailer-stage.jpg')">
+        <div class="sgs-scrim"></div>
+        <div class="sgs-content">
+          <h2 class="sgs-title">Trailer<br>Stage</h2>
+          <p class="sgs-desc">
+            A fast, professional mobile stage solution for festivals, concerts
+            and community events.
+          </p>
+          <p class="sgs-line">Mobile Stage &bull; Roof &bull; Lighting &bull; Production</p>
+          <!-- TODO: point at a trailer stage page when one exists -->
+          <a href="/contact" class="sgs-btn sgs-btn-ghost">Explore Trailer Stage</a>
+        </div>
+      </article>
+
+      <!-- 7. SPORTING EVENTS ------------------------------------------- -->
+      <article class="sgs-slide sgs-sporting"
+               style="--sgs-img:url('images/services/sporting-events.jpg')">
+        <div class="sgs-scrim"></div>
+        <div class="sgs-content">
+          <h2 class="sgs-title">Sporting<br>Events</h2>
+          <p class="sgs-desc">
+            PA systems, commentary, big screens and production for sporting
+            events across North Queensland.
+          </p>
+          <p class="sgs-line">Commentary &bull; PA &bull; Scoreboards &bull; LED Screens</p>
+          <!-- TODO: point at a sporting events page when one exists -->
+          <a href="/contact" class="sgs-btn sgs-btn-ghost">Explore Sporting Events</a>
+        </div>
+      </article>
+
+    </div>
+
+    <!-- Arrows. Added by the markup rather than the script so they are in
+         the tab order even before the script runs. -->
+    <button type="button" class="sgs-arrow sgs-arrow-prev" id="sgs-prev"
+            aria-controls="sgs-track" aria-label="Previous event type">
+      <span aria-hidden="true">&#8249;</span>
+    </button>
+
+    <button type="button" class="sgs-arrow sgs-arrow-next" id="sgs-next"
+            aria-controls="sgs-track" aria-label="Next event type">
+      <span aria-hidden="true">&#8250;</span>
+    </button>
+
+    <!-- Slide navigation. The labels show on a wide screen; a phone gets the
+         short "03 / 07 - FESTIVALS" line instead, which is the same
+         information without seven tap targets crammed edge to edge. -->
+    <!--  A div rather than a <nav>: style.css styles the bare nav element
+          for the site menu (fixed to the top of the page, full width, with
+          its own background), and that would land on this as well. The role
+          gives assistive software the same meaning without inheriting any
+          of it, and no shared rule had to be changed.                    -->
+    <div class="sgs-nav" role="navigation" aria-label="Choose an event type">
+      <p class="sgs-nav-compact" id="sgs-compact" aria-hidden="true"></p>
+
+      <ol class="sgs-nav-list" id="sgs-nav-list">
+        <li><button type="button" data-sgs-go="0">Intro</button></li>
+        <li><button type="button" data-sgs-go="1">Community</button></li>
+        <li><button type="button" data-sgs-go="2">Weddings</button></li>
+        <li><button type="button" data-sgs-go="3">Festivals</button></li>
+        <li><button type="button" data-sgs-go="4">Big Screens</button></li>
+        <li><button type="button" data-sgs-go="5">Trailer Stage</button></li>
+        <li><button type="button" data-sgs-go="6">Sporting</button></li>
+      </ol>
+
+      <div class="sgs-progress" aria-hidden="true">
+        <span id="sgs-progress-bar"></span>
+      </div>
+    </div>
+
+    <p class="sgs-scroll-hint" aria-hidden="true">Scroll on for more</p>
+
+  </section>
+
+
+  <!-- ====================================================================
+       BELOW THE SLIDER - ordinary vertical page
+       ==================================================================== -->
+  <section class="sgs-block sgs-intro-copy">
+    <div class="sgs-wrap">
+      <p class="sgs-kicker">Event Production</p>
+      <h2>More Than Just Hire.</h2>
+      <div class="sgs-copy">
         <p>
-            SoundzGood provides professional audio, lighting, staging, screens
-            and technical production for events across the Whitsundays and
-            North Queensland.
+          SoundzGood provides complete event production across Bowen, the
+          Whitsundays and North Queensland.
         </p>
         <p>
-            From live music and festivals to community events, sporting events,
-            weddings and corporate functions, we supply the equipment and crew
-            needed to deliver a professional event.
+          From small community events and weddings through to festivals,
+          sporting events and outdoor productions, we can provide the sound,
+          lighting, staging, LED screens and technical crew required to bring
+          an event together.
         </p>
-
-        <div class="buttons">
-            <a href="/contact" class="btn btn-ticket">Request a Quote</a>
-            <a href="#services" class="btn btn-outline">View Our Services</a>
-        </div>
+      </div>
     </div>
+  </section>
 
-</header>
+  <!-- CORE CAPABILITIES -------------------------------------------------
+       To add one, copy a <li> and change the words.                     -->
+  <section class="sgs-block sgs-caps-block">
+    <div class="sgs-wrap">
+      <h2 class="sgs-caps-heading">Core Capabilities</h2>
 
-<!-- INTRODUCTION -------------------------------------------------------- -->
-<section class="section">
+      <ul class="sgs-caps">
+        <li>
+          <h3>Audio</h3>
+          <p>Professional PA systems, microphones and live-event audio.</p>
+        </li>
+        <li>
+          <h3>Lighting</h3>
+          <p>Stage lighting, event lighting and architectural lighting.</p>
+        </li>
+        <li>
+          <h3>Staging</h3>
+          <p>Mobile staging and our trailer stage.</p>
+        </li>
+        <li>
+          <h3>LED Screens</h3>
+          <p>Outdoor LED screens, scoreboards and video playback.</p>
+        </li>
+        <li>
+          <h3>Backline &amp; DJ</h3>
+          <p>DJ systems, drums, amplifiers and artist equipment.</p>
+        </li>
+        <li>
+          <h3>Technical Crew</h3>
+          <p>Audio engineers, lighting operators and event technicians.</p>
+        </li>
+      </ul>
+    </div>
+  </section>
 
-    <div class="about-wrap">
-        <p class="weekend-eyebrow">More Than Equipment Hire</p>
-        <h2>Practical Event Production From Start to Finish</h2>
-
+  <!-- SERVICE AREA ------------------------------------------------------ -->
+  <section class="sgs-block sgs-area">
+    <div class="sgs-wrap">
+      <h2>Event Production Across North Queensland</h2>
+      <div class="sgs-copy">
         <p>
-            SoundzGood works with event organisers, venues, businesses,
-            community groups and councils to deliver reliable event production.
+          SoundzGood is based in Bowen and provides event production, PA
+          systems, lighting, LED screens, staging and technical support across
+          the Whitsundays and North Queensland.
         </p>
         <p>
-            We can provide individual equipment, deliver and set up a system,
-            supply technical operators or manage the main production
-            requirements for your event.
+          We regularly work across Bowen, Airlie Beach, Proserpine, Mackay,
+          Townsville, Collinsville and the surrounding regional areas.
         </p>
-        <p>
-            Our services include professional audio, event lighting, mobile
-            staging, LED screens, DJ equipment, backline and technical crew.
-        </p>
+      </div>
     </div>
+  </section>
 
-</section>
-
-<!-- FEATURE STATEMENT --------------------------------------------------- -->
-<section class="feature-band">
-    <h2>Audio. Lighting. Staging. Screens. Crew.</h2>
-    <p>
-        One experienced local production team helping you bring the technical
-        side of your event together.
-    </p>
-</section>
-
-<!-- OUR SERVICES -------------------------------------------------------- -->
-<section class="section dark" id="services">
-
-    <h2>Our Services</h2>
-    <p class="section-intro">
-        Tap any service to see what it can include. The equipment and crew
-        supplied will depend on the size and requirements of the event.
-    </p>
-
-    <div class="service-list">
-
-        <!-- EVENT PRODUCTION -->
-        <details class="service-item" open>
-            <summary>
-                <span class="service-name">Event Production</span>
-                <span class="service-tagline">Technical support built around your event</span>
-            </summary>
-            <div class="service-body">
-                <p>
-                    SoundzGood provides technical production for live events
-                    across the Whitsundays and North Queensland.
-                </p>
-                <p>
-                    We work with organisers to understand the event location,
-                    audience size, entertainment and technical requirements
-                    before recommending a suitable production package.
-                </p>
-                <p class="list-heading">Our event production services can include:</p>
-                <ul class="tick-list">
-                    <li>Professional audio</li>
-                    <li>Event lighting</li>
-                    <li>Mobile staging</li>
-                    <li>LED screens</li>
-                    <li>Stage monitoring</li>
-                    <li>DJ equipment</li>
-                    <li>Backline</li>
-                    <li>Technical operators</li>
-                    <li>Equipment delivery</li>
-                    <li>Setup and testing</li>
-                    <li>Event operation</li>
-                    <li>Pack-down</li>
-                    <li>Artist changeovers</li>
-                    <li>Basic site and stage layout assistance</li>
-                </ul>
-                <p>
-                    The equipment and crew supplied will depend on the size and
-                    requirements of the event.
-                </p>
-                <a href="/contact" class="btn">Discuss Your Event</a>
-            </div>
-        </details>
-
-        <!-- LIVE MUSIC AND FESTIVALS -->
-        <details class="service-item">
-            <summary>
-                <span class="service-name">Live Music and Festivals</span>
-                <span class="service-tagline">Built for live performance</span>
-            </summary>
-            <div class="service-body">
-                <p>
-                    SoundzGood provides production for live bands, festivals,
-                    concerts, touring artists and ticketed events.
-                </p>
-                <p>
-                    We understand the importance of clear sound, reliable
-                    equipment, efficient artist changeovers and keeping the
-                    event running to schedule.
-                </p>
-                <p class="list-heading">Live music production can include:</p>
-                <ul class="tick-list">
-                    <li>Front-of-house audio</li>
-                    <li>Stage monitoring</li>
-                    <li>Digital mixing consoles</li>
-                    <li>Microphones</li>
-                    <li>Wireless microphones</li>
-                    <li>Stage equipment</li>
-                    <li>Backline</li>
-                    <li>DJ equipment</li>
-                    <li>Stage lighting</li>
-                    <li>Mobile staging</li>
-                    <li>LED screens</li>
-                    <li>Audio engineers</li>
-                    <li>Lighting operators</li>
-                    <li>Technical crew</li>
-                </ul>
-                <p>
-                    Production packages can be scaled to suit the venue,
-                    audience and event budget.
-                </p>
-            </div>
-        </details>
-
-        <!-- MOBILE TRAILER STAGE -->
-        <details class="service-item">
-            <summary>
-                <span class="service-name">Mobile Trailer Stage</span>
-                <span class="service-tagline">A professional stage for outdoor events</span>
-            </summary>
-            <div class="service-body">
-                <p>
-                    SoundzGood operates a mobile trailer stage suitable for
-                    festivals, concerts, community events, sporting events,
-                    presentations and outdoor productions.
-                </p>
-                <p>
-                    The stage can be hired on its own or supplied as part of a
-                    complete production package.
-                </p>
-                <p class="list-heading">Stage packages can include:</p>
-                <ul class="tick-list">
-                    <li>Mobile trailer stage</li>
-                    <li>Stage roof</li>
-                    <li>Access stairs</li>
-                    <li>Safety rails</li>
-                    <li>Stage lighting</li>
-                    <li>Audio systems</li>
-                    <li>Stage monitoring</li>
-                    <li>Backline</li>
-                    <li>Technical operators</li>
-                    <li>Setup and pack-down</li>
-                </ul>
-                <p>
-                    We can also assist with practical stage positioning based on
-                    the event site and audience area.
-                </p>
-                <a href="/contact" class="btn">Enquire About the Stage</a>
-            </div>
-        </details>
-
-        <!-- PROFESSIONAL AUDIO -->
-        <details class="service-item">
-            <summary>
-                <span class="service-name">Professional Audio</span>
-                <span class="service-tagline">Clear sound for every part of the event</span>
-            </summary>
-            <div class="service-body">
-                <p>
-                    SoundzGood provides professional PA systems for live music,
-                    speeches, presentations, sporting events, festivals,
-                    ceremonies and community events.
-                </p>
-                <p>
-                    The audio system is selected based on the audience size,
-                    venue and type of event.
-                </p>
-                <p class="list-heading">Audio services include:</p>
-                <ul class="tick-list">
-                    <li>Professional PA systems</li>
-                    <li>Outdoor audio systems</li>
-                    <li>Digital mixing consoles</li>
-                    <li>Front-of-house mixing</li>
-                    <li>Stage monitor systems</li>
-                    <li>Wireless microphones</li>
-                    <li>Vocal and instrument microphones</li>
-                    <li>Speaker stands</li>
-                    <li>Microphone stands</li>
-                    <li>DI boxes</li>
-                    <li>Playback systems</li>
-                    <li>Delay speakers</li>
-                    <li>Portable PA systems</li>
-                    <li>Battery-powered speakers</li>
-                    <li>Audio engineers and operators</li>
-                </ul>
-                <p>
-                    Systems range from simple portable setups through to larger
-                    outdoor event systems.
-                </p>
-            </div>
-        </details>
-
-        <!-- EVENT LIGHTING -->
-        <details class="service-item">
-            <summary>
-                <span class="service-name">Event Lighting</span>
-                <span class="service-tagline">Lighting for stages, dance floors and event spaces</span>
-            </summary>
-            <div class="service-body">
-                <p>
-                    SoundzGood provides lighting for live music, festivals,
-                    weddings, corporate functions, community events and private
-                    events.
-                </p>
-                <p class="list-heading">Lighting services include:</p>
-                <ul class="tick-list">
-                    <li>Stage wash lighting</li>
-                    <li>Moving-head lighting</li>
-                    <li>Concert lighting</li>
-                    <li>Dance-floor lighting</li>
-                    <li>Blinders</li>
-                    <li>Festoon lighting</li>
-                    <li>Lighting control</li>
-                    <li>Lighting programming</li>
-                    <li>Lighting operators</li>
-                </ul>
-                <p>
-                    Lighting can be supplied as a standalone service or included
-                    with audio and staging.
-                </p>
-            </div>
-        </details>
-
-        <!-- LED SCREENS -->
-        <details class="service-item">
-            <summary>
-                <span class="service-name">LED Screens and Event Displays</span>
-                <span class="service-tagline">Help your audience see what is happening</span>
-            </summary>
-            <div class="service-body">
-                <p>
-                    SoundzGood provides LED screens, televisions and digital
-                    displays for events.
-                </p>
-                <p>
-                    These can be used for scoreboards, sponsor content, event
-                    information, video playback and presentations.
-                </p>
-                <p class="list-heading">Screen services can include:</p>
-                <ul class="tick-list">
-                    <li>Outdoor LED screens</li>
-                    <li>Digital scoreboards</li>
-                    <li>Sponsor slides</li>
-                    <li>Event schedules</li>
-                    <li>Video playback</li>
-                    <li>Television hire</li>
-                    <li>Presentation displays</li>
-                    <li>Custom scoreboard displays</li>
-                    <li>Screen setup and operation</li>
-                </ul>
-                <p>
-                    Our digital scoreboard systems are particularly suited to
-                    sporting events, fishing competitions and live event
-                    results.
-                </p>
-            </div>
-        </details>
-
-        <!-- DJ EQUIPMENT -->
-        <details class="service-item">
-            <summary>
-                <span class="service-name">DJ Equipment and Entertainment</span>
-                <span class="service-tagline">Professional DJ setups for events and artists</span>
-            </summary>
-            <div class="service-body">
-                <p>
-                    SoundzGood supplies DJ equipment and DJs for festivals,
-                    venues, weddings, private functions and public events.
-                </p>
-                <p class="list-heading">Services can include:</p>
-                <ul class="tick-list">
-                    <li>Professional DJs</li>
-                    <li>Pioneer CDJ players</li>
-                    <li>Professional DJ mixers</li>
-                    <li>DJ controllers</li>
-                    <li>DJ monitors</li>
-                    <li>DJ tables and booths</li>
-                    <li>Complete DJ audio systems</li>
-                    <li>Dance-floor lighting</li>
-                    <li>Artist setup and changeover support</li>
-                </ul>
-                <p>
-                    DJ equipment can be included as part of a larger
-                    event-production package.
-                </p>
-            </div>
-        </details>
-
-        <!-- BACKLINE HIRE -->
-        <details class="service-item">
-            <summary>
-                <span class="service-name">Backline Hire</span>
-                <span class="service-tagline">Stage equipment for bands and artists</span>
-            </summary>
-            <div class="service-body">
-                <p>
-                    SoundzGood provides backline for live bands, festivals,
-                    touring artists and local events.
-                </p>
-                <p class="list-heading">Available equipment includes:</p>
-                <ul class="tick-list">
-                    <li>Drum kits</li>
-                    <li>Guitar amplifiers</li>
-                    <li>Bass amplifiers</li>
-                    <li>Speaker cabinets</li>
-                    <li>Guitar stands</li>
-                    <li>Microphone stands</li>
-                    <li>DI boxes</li>
-                    <li>Stage cabling</li>
-                    <li>Drum hardware</li>
-                    <li>Stage equipment</li>
-                </ul>
-                <p>
-                    Backline can be hired individually or supplied as part of a
-                    complete live music package.
-                </p>
-            </div>
-        </details>
-
-        <!-- SPORTING EVENTS -->
-        <details class="service-item">
-            <summary>
-                <span class="service-name">Sporting Events and Fishing Competitions</span>
-                <span class="service-tagline">Audio and digital displays for large event areas</span>
-            </summary>
-            <div class="service-body">
-                <p>
-                    SoundzGood provides audio and screen systems for sporting
-                    grounds, fishing competitions, race events, presentations
-                    and outdoor event sites.
-                </p>
-                <p class="list-heading">Services can include:</p>
-                <ul class="tick-list">
-                    <li>Distributed PA systems</li>
-                    <li>Commentary microphones</li>
-                    <li>Wireless microphones</li>
-                    <li>Music playback</li>
-                    <li>Presentation audio</li>
-                    <li>LED screens</li>
-                    <li>Digital scoreboards</li>
-                    <li>Sponsor slides</li>
-                    <li>Television displays</li>
-                    <li>Technical operators</li>
-                </ul>
-                <p>
-                    Systems can be designed to cover the main event area,
-                    audience zones and presentation spaces.
-                </p>
-            </div>
-        </details>
-
-        <!-- COMMUNITY AND COUNCIL EVENTS -->
-        <details class="service-item">
-            <summary>
-                <span class="service-name">Community and Council Events</span>
-                <span class="service-tagline">Local production for regional events</span>
-            </summary>
-            <div class="service-body">
-                <p>
-                    SoundzGood supports community events, council events,
-                    markets, shows, school events and public celebrations.
-                </p>
-                <p>
-                    We understand the practical requirements involved in
-                    delivering events at outdoor and regional locations.
-                </p>
-                <p class="list-heading">Services can include:</p>
-                <ul class="tick-list">
-                    <li>Portable PA systems</li>
-                    <li>Larger outdoor audio systems</li>
-                    <li>Wireless microphones</li>
-                    <li>Stage lighting</li>
-                    <li>Mobile staging</li>
-                    <li>LED screens</li>
-                    <li>Festoon lighting</li>
-                    <li>Music playback</li>
-                    <li>Technical operators</li>
-                    <li>Setup and pack-down</li>
-                </ul>
-            </div>
-        </details>
-
-        <!-- CORPORATE EVENTS -->
-        <details class="service-item">
-            <summary>
-                <span class="service-name">Corporate Events</span>
-                <span class="service-tagline">Professional audio visual support</span>
-            </summary>
-            <div class="service-body">
-                <p>
-                    SoundzGood provides technical support for corporate
-                    functions, awards nights, presentations, staff events and
-                    business events.
-                </p>
-                <p class="list-heading">Corporate event services can include:</p>
-                <ul class="tick-list">
-                    <li>PA systems</li>
-                    <li>Wireless microphones</li>
-                    <li>Presentation audio</li>
-                    <li>Televisions and screens</li>
-                    <li>Stage lighting</li>
-                    <li>Background music</li>
-                    <li>DJs</li>
-                    <li>Small stages</li>
-                    <li>Technical operators</li>
-                </ul>
-                <p>
-                    We can work directly with the organiser or venue to
-                    coordinate the required equipment and setup.
-                </p>
-            </div>
-        </details>
-
-        <!-- WEDDINGS AND PRIVATE EVENTS -->
-        <details class="service-item">
-            <summary>
-                <span class="service-name">Weddings and Private Events</span>
-                <span class="service-tagline">Sound, lighting and entertainment</span>
-            </summary>
-            <div class="service-body">
-                <p>
-                    SoundzGood provides audio, lighting, staging and DJ services
-                    for weddings and private events.
-                </p>
-                <p class="list-heading">Services can include:</p>
-                <ul class="tick-list">
-                    <li>Ceremony audio</li>
-                    <li>Wireless microphones</li>
-                    <li>Reception audio</li>
-                    <li>Speech microphones</li>
-                    <li>DJs</li>
-                    <li>Dance-floor lighting</li>
-                    <li>Festoon lighting</li>
-                    <li>Live musician audio</li>
-                    <li>Small stages</li>
-                    <li>Background music</li>
-                    <li>Equipment delivery and setup</li>
-                </ul>
-                <p>
-                    Packages can be tailored to the venue, event location and
-                    entertainment plans.
-                </p>
-            </div>
-        </details>
-
-        <!-- PORTABLE EQUIPMENT HIRE -->
-        <details class="service-item">
-            <summary>
-                <span class="service-name">Portable Equipment Hire</span>
-                <span class="service-tagline">Simple equipment for smaller events</span>
-            </summary>
-            <div class="service-body">
-                <p>
-                    SoundzGood provides portable audio and lighting equipment
-                    for speeches, ceremonies, markets, private functions and
-                    smaller events.
-                </p>
-                <p class="list-heading">Available equipment includes:</p>
-                <ul class="tick-list">
-                    <li>Battery-powered speakers</li>
-                    <li>Portable PA systems</li>
-                    <li>Wireless microphones</li>
-                    <li>Small audio mixers</li>
-                    <li>Speaker stands</li>
-                    <li>Microphone stands</li>
-                    <li>Televisions</li>
-                    <li>Festoon lighting</li>
-                    <li>Small lighting systems</li>
-                    <li>DJ equipment</li>
-                </ul>
-                <p>
-                    Depending on the event, equipment may be supplied for
-                    collection, delivered and set up, or supplied with an
-                    operator.
-                </p>
-            </div>
-        </details>
-
-        <!-- TECHNICAL CREW -->
-        <details class="service-item">
-            <summary>
-                <span class="service-name">Technical Crew</span>
-                <span class="service-tagline">Experienced operators for live events</span>
-            </summary>
-            <div class="service-body">
-                <p>
-                    SoundzGood can provide technical crew to install and operate
-                    the equipment supplied for your event.
-                </p>
-                <p class="list-heading">Crew can include:</p>
-                <ul class="tick-list">
-                    <li>Audio engineers</li>
-                    <li>Lighting operators</li>
-                    <li>AV technicians</li>
-                    <li>Stage technicians</li>
-                    <li>Stagehands</li>
-                    <li>DJ technicians</li>
-                    <li>Setup and pack-down crew</li>
-                </ul>
-                <p>
-                    Crew requirements will depend on the event size, location
-                    and production package.
-                </p>
-            </div>
-        </details>
-
+  <!-- FINAL CTA --------------------------------------------------------- -->
+  <section class="sgs-block sgs-cta">
+    <div class="sgs-wrap">
+      <h2>Planning an Event?</h2>
+      <p class="sgs-cta-copy">
+        Tell us what you&rsquo;re putting together and we&rsquo;ll help work out
+        the production you need.
+      </p>
+      <a href="/contact" class="sgs-btn sgs-btn-primary">Get a Quote</a>
     </div>
+  </section>
 
-</section>
-
-<!-- EQUIPMENT HIRE OPTIONS ---------------------------------------------- -->
-<section class="section">
-
-    <h2>Equipment Hire Options</h2>
-    <p class="section-intro">Choose the level of support you need.</p>
-
-    <div class="steps-grid">
-
-        <div class="step">
-            <span class="step-number">1</span>
-            <h3>Equipment Hire</h3>
-            <p>
-                Hire selected equipment for your event. Availability and
-                collection requirements depend on the equipment being hired.
-            </p>
-        </div>
-
-        <div class="step">
-            <span class="step-number">2</span>
-            <h3>Delivery and Setup</h3>
-            <p>
-                SoundzGood delivers, installs and tests the equipment before the
-                event. We then return to pack it down after the event.
-            </p>
-        </div>
-
-        <div class="step">
-            <span class="step-number">3</span>
-            <h3>Operated Hire</h3>
-            <p>
-                Equipment is supplied with a SoundzGood technician to operate it
-                during the event.
-            </p>
-        </div>
-
-        <div class="step">
-            <span class="step-number">4</span>
-            <h3>Event Production</h3>
-            <p>
-                SoundzGood supplies and operates the main audio, lighting,
-                staging and screen requirements for the event.
-            </p>
-        </div>
-
-    </div>
-
-</section>
-
-<!-- EVENTS WE SUPPORT --------------------------------------------------- -->
-<section class="section dark">
-
-    <h2>Events We Support</h2>
-
-    <ul class="tag-list">
-        <li>Music festivals</li>
-        <li>Live concerts</li>
-        <li>Touring artists</li>
-        <li>Live band events</li>
-        <li>Ticketed events</li>
-        <li>Corporate functions</li>
-        <li>Awards nights</li>
-        <li>Weddings</li>
-        <li>Private events</li>
-        <li>Council events</li>
-        <li>Community festivals</li>
-        <li>Markets</li>
-        <li>Sporting events</li>
-        <li>Fishing competitions</li>
-        <li>School events</li>
-        <li>Agricultural shows</li>
-        <li>Venue entertainment</li>
-        <li>Ceremonies</li>
-        <li>Public presentations</li>
-    </ul>
-
-</section>
-
-<!-- WHY SOUNDZGOOD ------------------------------------------------------ -->
-<section class="section">
-
-    <h2>Why SoundzGood</h2>
-
-    <div class="why-grid">
-
-        <div class="why-item">
-            <h3>Local Experience</h3>
-            <p>
-                SoundzGood is based in Bowen and works across the Whitsundays
-                and regional North Queensland.
-            </p>
-        </div>
-
-        <div class="why-item">
-            <h3>Multiple Services From One Team</h3>
-            <p>
-                Audio, lighting, mobile staging, screens, DJ equipment, backline
-                and operators can be coordinated through SoundzGood.
-            </p>
-        </div>
-
-        <div class="why-item">
-            <h3>Packages Built Around the Event</h3>
-            <p>
-                We recommend equipment based on the venue, audience and type of
-                event.
-            </p>
-        </div>
-
-        <div class="why-item">
-            <h3>Hands-On Event Experience</h3>
-            <p>
-                SoundzGood works on live music, festivals, community events,
-                sporting events, weddings, private events and corporate
-                functions.
-            </p>
-        </div>
-
-        <div class="why-item">
-            <h3>Flexible Support</h3>
-            <p>
-                Choose equipment hire, delivery and setup, operated hire or
-                broader event production.
-            </p>
-        </div>
-
-    </div>
-
-</section>
-
-<!-- HOW IT WORKS -------------------------------------------------------- -->
-<section class="section dark">
-
-    <h2>How It Works</h2>
-    <p class="section-intro">From enquiry to event day.</p>
-
-    <div class="steps-grid steps-five">
-
-        <div class="step">
-            <span class="step-number">1</span>
-            <h3>Tell Us About Your Event</h3>
-            <p>
-                Send us your event date, location, expected attendance and the
-                type of event you are planning.
-            </p>
-        </div>
-
-        <div class="step">
-            <span class="step-number">2</span>
-            <h3>We Review the Requirements</h3>
-            <p>
-                We consider the event site, audience, entertainment and
-                equipment needed.
-            </p>
-        </div>
-
-        <div class="step">
-            <span class="step-number">3</span>
-            <h3>We Provide a Quote</h3>
-            <p>
-                You receive a production or equipment package based on the
-                information provided.
-            </p>
-        </div>
-
-        <div class="step">
-            <span class="step-number">4</span>
-            <h3>We Deliver the Equipment</h3>
-            <p>
-                Our team delivers, installs and tests the equipment included in
-                the booking.
-            </p>
-        </div>
-
-        <div class="step">
-            <span class="step-number">5</span>
-            <h3>We Operate and Pack Down</h3>
-            <p>
-                Where operators are included, our team runs the equipment during
-                the event and packs it down afterwards.
-            </p>
-        </div>
-
-    </div>
-
-</section>
-
-<!-- SERVICE AREA -------------------------------------------------------- -->
-<section class="section">
-
-    <h2>Service Area</h2>
-    <p class="section-intro">
-        Based in Bowen. Working across North Queensland. SoundzGood services
-        events throughout the Whitsundays and surrounding regions.
-    </p>
-
-    <ul class="tag-list">
-        <li>Bowen</li>
-        <li>Airlie Beach</li>
-        <li>Proserpine</li>
-        <li>Collinsville</li>
-        <li>Mackay</li>
-        <li>Townsville</li>
-        <li>The Whitsunday Islands</li>
-        <li>Surrounding regional areas</li>
-    </ul>
-
-    <p class="center-text service-note">Travel is available for suitable events.</p>
-
-</section>
-
-<!-- WHAT TO SEND US ----------------------------------------------------- -->
-<section class="section dark">
-
-    <div class="about-wrap">
-        <h2>Tell Us About Your Event</h2>
-        <p>Please include:</p>
-    </div>
-
-    <ul class="tick-list checklist">
-        <li>Event date</li>
-        <li>Event location</li>
-        <li>Event type</li>
-        <li>Expected attendance</li>
-        <li>Start and finish times</li>
-        <li>Live bands, DJs or speakers</li>
-        <li>Audio requirements</li>
-        <li>Lighting requirements</li>
-        <li>Stage requirements</li>
-        <li>Screen requirements</li>
-        <li>Setup and pack-down times</li>
-    </ul>
-
-    <p class="center-text service-note">
-        Send us the information you currently have, even when some details are
-        not yet confirmed.
-    </p>
-
-</section>
-
-<!-- FINAL CALL TO ACTION ------------------------------------------------ -->
-<section class="sponsor-feature">
-
-    <p class="weekend-eyebrow">Planning an Event?</p>
-    <h2>Tell Us What You Are Working On</h2>
-
-    <p class="section-intro">
-        Send us your event date, location, expected audience and the services
-        you require. We will review the details and recommend a suitable
-        equipment or production package.
-    </p>
-
-    <div class="buttons">
-        <a href="/contact" class="btn">Request a Quote</a>
-        <a href="tel:+61422393022" class="btn btn-outline">Call 0422 393 022</a>
-    </div>
-
-</section>
+</main>
 
 <div id="footer"></div>
 
