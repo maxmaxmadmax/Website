@@ -79,6 +79,7 @@ const state = {
   setup: {},
   documents: [],
   siteId: null,
+  siteIds: [],
   siteLabel: null,
 
   bookingId: null,
@@ -296,9 +297,11 @@ function renderMapMeta() {
 
 async function chooseSite(site) {
   if (state.preview) {
+    const bays = map.baysFor(site) || [site];
     state.siteId = site.id;
-    state.siteLabel = site.label;
-    map.setSelected(site.id);
+    state.siteIds = bays.map((b) => b.id);
+    state.siteLabel = bays.map((b) => b.label).join(' + ');
+    map.setSelected(state.siteIds);
     renderSiteChoice();
     return;
   }
@@ -318,10 +321,11 @@ async function chooseSite(site) {
     const res = await call({ eventId, siteId: site.id, bookingId: state.bookingId });
 
     state.siteId = site.id;
+    state.siteIds = res.data.siteIds || [site.id];
     state.siteLabel = res.data.siteLabel;
     state.holdExpiresAt = res.data.holdExpiresAt;
 
-    map.setSelected(site.id);
+    map.setSelected(state.siteIds);
     startHoldCountdown();
     renderSiteChoice();
   } catch (err) {
@@ -343,6 +347,7 @@ function startHoldCountdown() {
       el.textContent = 'Your hold has expired. Choose a site again.';
       el.classList.add('is-expired');
       state.siteId = null;
+      state.siteIds = [];
       state.siteLabel = null;
       map.setSelected(null);
       renderSiteChoice();
@@ -434,11 +439,12 @@ async function loadExistingBooking() {
     state.setup = b.setup || {};
     state.documents = b.documents || [];
     state.siteId = b.siteId || null;
+    state.siteIds = b.siteIds || (b.siteId ? [b.siteId] : []);
     state.siteLabel = b.siteLabel || null;
 
     if (map) {
       map.setVendorType(state.vendorType, state.stallSize);
-      map.setSelected(state.siteId);
+      map.setSelected(state.siteIds);
     }
   } catch (err) {
     console.warn('Could not restore booking', err);

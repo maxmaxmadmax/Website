@@ -96,7 +96,7 @@ Open **`/vendor-admin`**, sign in, go to **Setup** and press
 **Seed Event Layout**. That writes:
 
 - the event (Eatz & Beatz Halloween Edition, 31 October 2026, Bowen Sports Complex)
-- 28 sites - 12 food, 8 market 3x3, 4 market 3x6, 4 community
+- 50 sites - 10 food vans and 40 market bays, from the event site plan
 - 34 categories - 18 food, 16 market - each with a limit
 
 Safe to run more than once; it never overwrites what is already there.
@@ -119,10 +119,16 @@ me: food categories default to 2 (catch-all "Other Food" 4), market to 6
 ("Other Market Stall" 10). Set them to whatever you actually want before you
 open bookings.
 
-**Market stall sizes** - market sites come in 3x3 ($50) and 3x6 ($80). The size
-is part of the price key (`market-3x3`, `market-3x6`) and is stamped on each
-site, so a 3x3 booking cannot take a 3x6 space it has not paid for. That is
-enforced in `holdSite`, not only by hiding sites on the map.
+**Market stall sizes** - every bay on the plan is one 3 m frontage. A 3x3
+booking ($50) takes one bay; a 3x6 booking ($80) takes that bay and the one
+below it, which is why each stall carries `neighbourId`. Both bays are
+allocated in the same transaction, so a 3x6 can never end up with half its
+space, and the last bay in each column cannot take a 3x6 because it has no
+partner. Enforced in `holdSite`, not only by hiding sites on the map.
+
+**Community groups** - there are no community sites on the plan, so a
+community group takes a market bay like anyone else and simply is not charged.
+That is why "Community / Charity / Club" is one of the market categories.
 
 **Power and water** - this event has none on site. Every vendor confirms they
 are bringing their own before they can go past the setup step, and what they

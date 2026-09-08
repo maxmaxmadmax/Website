@@ -583,22 +583,39 @@
    THE MAP
    -------------------------------------------------------------------------- */
 .vs-map-wrap{
+    position:relative;
     background:#0b0b0b;
     border:1px solid var(--sg-border);
     border-radius:14px;
     padding:14px;
-    /* long site plans scroll sideways inside here, never on the page */
-    overflow-x:auto;
+
+    /*  The site plan is portrait and tall. Drawn at full width it would be
+        around 1500px high, so it scrolls inside this box instead - never
+        on the page itself.                                              */
+    max-height:min(70vh, 780px);
+    overflow:auto;
+    overscroll-behavior:contain;
 }
 
 .vs-map{
-    min-width:520px;
+    /*  Sized so a market bay stays a 44px tap target. A bay is 56 units
+        tall in a 760 unit plan, so the plan has to be drawn at least
+        760 x 44 / 56 = 597px wide. Below that the bays get too small to
+        hit on a phone, and the numbers too small to read. The box above
+        scrolls, so this costs nothing but a swipe.                     */
+    min-width:620px;
 }
 
 .vmap-svg{
     display:block;
     width:100%;
     height:auto;
+}
+
+.vs-map-hint{
+    color:var(--sg-dim);
+    font-size:.84rem;
+    margin-top:8px;
 }
 
 /* fixed furniture */

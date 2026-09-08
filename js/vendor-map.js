@@ -6,11 +6,13 @@
 
    The layout is not hard coded here. Sites arrive from Firestore and are
    drawn from their x / y / w / h, so the plan can be rearranged from the
-   admin dashboard without touching this file. The small layout at the
-   bottom is only used for the offline preview.
-   -------------------------------------------------------------------------- */
+   admin dashboard without touching this file. The layout at the bottom is
+   only used for the offline preview.
 
-const STATUS_ORDER = ['available', 'held', 'booked', 'blocked'];
+   A 3x6 market stall is two adjoining bays, so selecting one bay shows and
+   takes the one below it as well. The server does the same thing inside a
+   transaction - this is only the on-screen half.
+   -------------------------------------------------------------------------- */
 
 export class VendorMap {
   /**
@@ -24,14 +26,25 @@ export class VendorMap {
 
     this.sites = [];
     this.landmarks = [];
-    this.mapSize = { width: 1000, height: 700 };
+    this.mapSize = { width: 760, height: 1420 };
 
-    this.vendorType = null;   // only sites of this type are selectable
+    this.vendorType = null;   // food | market | community
     this.stallSize = null;    // market only: 3x3 or 3x6
-    this.selectedId = null;
+    this.selectedIds = [];    // one bay, or two for a 3x6
     this.myUid = null;        // so my own hold does not look unavailable
 
-    this.svg = null;
+    this.byId = new Map();
+  }
+
+  /* Community groups have no sites of their own on the plan - they take a
+     market bay like anyone else, they are simply not charged for it. */
+  siteTypeWanted() {
+    if (!this.vendorType) return null;
+    return this.vendorType === 'food' ? 'food' : 'market';
+  }
+
+  baysNeeded() {
+    return this.vendorType === 'market' && this.stallSize === '3x6' ? 2 : 1;
   }
 
   setVendorType(type, stallSize) {
@@ -45,18 +58,22 @@ export class VendorMap {
   }
 
   setLayout({ sites, landmarks, mapSize }) {
-    if (sites) this.sites = sites;
+    if (sites) {
+      this.sites = sites;
+      this.byId = new Map(sites.map((s) => [s.id, s]));
+    }
     if (landmarks) this.landmarks = landmarks;
     if (mapSize) this.mapSize = mapSize;
     this.render();
   }
 
-  setSelected(siteId) {
-    this.selectedId = siteId;
+  /* Accepts one id or a list, so a 3x6 lights up both bays. */
+  setSelected(ids) {
+    this.selectedIds = !ids ? [] : (Array.isArray(ids) ? ids : [ids]);
     this.render();
   }
 
-  /* What a site looks like to *this* visitor. My own held site reads as
+  /* What a site looks like to *this* visitor. My own held bay reads as
      mine, not as unavailable. */
   statusFor(site) {
     if (site.status === 'held') {
@@ -74,31 +91,45 @@ export class VendorMap {
     return site.status || 'available';
   }
 
-  /* A site is only offered when it matches both the vendor type and, for
-     market stalls, the marquee size they are paying for. */
+  isFree(site) {
+    if (!site) return false;
+    const s = this.statusFor(site);
+    return s === 'available' || s === 'mine';
+  }
+
   matchesVendor(site) {
-    if (!this.vendorType) return false;
-    if (site.type !== this.vendorType) return false;
-    if (this.vendorType === 'market' && this.stallSize && site.size &&
-        site.size !== this.stallSize) {
-      return false;
-    }
-    return true;
+    const wanted = this.siteTypeWanted();
+    if (!wanted) return false;
+    return site.type === wanted;
+  }
+
+  /* The bays this site would take if chosen. Two for a 3x6, one otherwise. */
+  baysFor(site) {
+    if (this.baysNeeded() === 1) return [site];
+    if (!site.neighbourId) return null;          // last bay in the row
+    const partner = this.byId.get(site.neighbourId);
+    return partner ? [site, partner] : null;
   }
 
   isSelectable(site) {
     if (!this.matchesVendor(site)) return false;
 
-    const status = this.statusFor(site);
-    return status === 'available' || status === 'mine';
+    const bays = this.baysFor(site);
+    if (!bays) return false;                     // no partner for a 3x6
+
+    return bays.every((b) => this.isFree(b));
   }
 
   counts() {
     const out = { available: 0, held: 0, booked: 0, blocked: 0, mine: 0 };
     for (const site of this.sites) {
-      if (this.vendorType && !this.matchesVendor(site)) continue;
+      if (!this.matchesVendor(site)) continue;
       const s = this.statusFor(site);
       out[s] = (out[s] || 0) + 1;
+    }
+    // For a 3x6 what matters is how many pairs are left, not bays.
+    if (this.baysNeeded() === 2) {
+      out.pairs = this.sites.filter((s) => this.isSelectable(s)).length;
     }
     return out;
   }
@@ -125,16 +156,18 @@ export class VendorMap {
       rect.setAttribute('y', mark.y);
       rect.setAttribute('width', mark.w);
       rect.setAttribute('height', mark.h);
-      rect.setAttribute('rx', 8);
+      rect.setAttribute('rx', mark.kind === 'barrier' ? 2 : 8);
       g.appendChild(rect);
 
-      const label = document.createElementNS(ns, 'text');
-      label.setAttribute('x', mark.x + mark.w / 2);
-      label.setAttribute('y', mark.y + mark.h / 2 + 6);
-      label.setAttribute('text-anchor', 'middle');
-      label.setAttribute('class', 'vmap-landmark-text');
-      label.textContent = mark.label;
-      g.appendChild(label);
+      if (mark.label) {
+        const label = document.createElementNS(ns, 'text');
+        label.setAttribute('x', mark.x + mark.w / 2);
+        label.setAttribute('y', mark.y + mark.h / 2 + 6);
+        label.setAttribute('text-anchor', 'middle');
+        label.setAttribute('class', 'vmap-landmark-text');
+        label.textContent = mark.label;
+        g.appendChild(label);
+      }
 
       svg.appendChild(g);
     }
@@ -143,7 +176,7 @@ export class VendorMap {
     for (const site of this.sites) {
       const status = this.statusFor(site);
       const selectable = this.isSelectable(site);
-      const isSelected = site.id === this.selectedId;
+      const isSelected = this.selectedIds.includes(site.id);
       const wrongType = this.vendorType && !this.matchesVendor(site);
 
       const g = document.createElementNS(ns, 'g');
@@ -159,12 +192,22 @@ export class VendorMap {
         ].filter(Boolean).join(' ')
       );
 
+      // The two vans at the bottom of the food run sit on an angle.
+      if (site.rotate) {
+        const cx = site.x + site.w / 2;
+        const cy = site.y + site.h / 2;
+        g.setAttribute('transform', `rotate(${site.rotate} ${cx} ${cy})`);
+      }
+
       if (selectable) {
         g.setAttribute('tabindex', '0');
         g.setAttribute('role', 'button');
+
+        const bays = this.baysFor(site) || [site];
+        const names = bays.map((b) => b.label).join(' and ');
         g.setAttribute(
           'aria-label',
-          `Site ${site.label}, ${site.type}, ${status === 'mine' ? 'your hold' : status}`
+          `Site ${names}, ${site.type}, ${status === 'mine' ? 'your hold' : status}`
         );
 
         const choose = (ev) => {
@@ -184,39 +227,38 @@ export class VendorMap {
       rect.setAttribute('y', site.y);
       rect.setAttribute('width', site.w);
       rect.setAttribute('height', site.h);
-      rect.setAttribute('rx', 7);
+      rect.setAttribute('rx', 6);
       g.appendChild(rect);
 
       const label = document.createElementNS(ns, 'text');
       label.setAttribute('x', site.x + site.w / 2);
-      label.setAttribute('y', site.y + site.h / 2 + 2);
+      label.setAttribute('y', site.y + site.h / 2 + (site.h > 70 ? 0 : 3));
       label.setAttribute('text-anchor', 'middle');
       label.setAttribute('class', 'vmap-site-label');
       label.textContent = site.label;
       g.appendChild(label);
 
-      // A short status word under the label, so the map is readable
-      // without relying on colour alone.
-      const sub = document.createElementNS(ns, 'text');
-      sub.setAttribute('x', site.x + site.w / 2);
-      sub.setAttribute('y', site.y + site.h / 2 + 20);
-      sub.setAttribute('text-anchor', 'middle');
-      sub.setAttribute('class', 'vmap-site-sub');
-      sub.textContent = this.subLabel(site, status, wrongType);
-      g.appendChild(sub);
+      // A short word under the label, so the map is readable without
+      // relying on colour alone. Small bays have no room for it.
+      if (site.h > 60) {
+        const sub = document.createElementNS(ns, 'text');
+        sub.setAttribute('x', site.x + site.w / 2);
+        sub.setAttribute('y', site.y + site.h / 2 + 18);
+        sub.setAttribute('text-anchor', 'middle');
+        sub.setAttribute('class', 'vmap-site-sub');
+        sub.textContent = this.subLabel(site, status, wrongType);
+        g.appendChild(sub);
+      }
 
       svg.appendChild(g);
     }
 
     this.host.innerHTML = '';
     this.host.appendChild(svg);
-    this.svg = svg;
   }
 
   subLabel(site, status, wrongType) {
-    // For a mismatch, say what it actually is - "3x6" is more use to a
-    // market vendor than "market".
-    if (wrongType) return site.size || site.type;
+    if (wrongType) return site.type;
     if (status === 'mine') return 'YOURS';
     if (status === 'available') return 'FREE';
     if (status === 'held') return 'ON HOLD';
@@ -230,45 +272,70 @@ export class VendorMap {
    Offline preview layout
 
    Only used when Firebase has not been configured yet, so the page can be
-   opened and reviewed before the backend exists. The real layout lives in
-   Firestore and is seeded from functions/lib/layout.js.
+   opened and reviewed before the backend exists. Mirrors the seed in
+   functions/lib/layout.js - the real layout lives in Firestore.
    -------------------------------------------------------------------------- */
 export function previewLayout() {
   const sites = [];
 
-  const run = (prefix, type, count, startX, y, w, h, gap, size) => {
-    for (let i = 0; i < count; i++) {
-      sites.push({
-        id: `${prefix}${i + 1}`,
-        label: `${prefix}${i + 1}`,
-        type,
-        ...(size ? { size } : {}),
-        x: startX + i * (w + gap),
-        y, w, h,
-        status: 'available',
-      });
-    }
+  const ids = (prefix, from, to) => {
+    const out = [];
+    for (let i = from; i <= to; i++) out.push(`${prefix}${i}`);
+    return out;
   };
 
-  run('F', 'food', 6, 90, 170, 110, 80, 26);
-  run('G', 'food', 6, 90, 300, 110, 80, 26);
-  run('M', 'market', 8, 70, 440, 90, 70, 18, '3x3');
-  run('N', 'market', 4, 70, 530, 190, 70, 18, '3x6');
-  run('C', 'community', 4, 70, 630, 120, 55, 24);
+  const column = (list, type, x, y, w, h, gap) =>
+    list.map((id, i) => ({
+      id, label: id, type,
+      x, y: y + i * (h + gap), w, h,
+      status: 'available',
+    }));
 
-  // a couple of pre-set states so the legend means something in preview
-  sites[2].status = 'booked';
-  sites[7].status = 'blocked';
+  // Ten food vans: four each side, two on the angle
+  sites.push(...column(ids('F', 1, 4), 'food', 118, 132, 74, 92, 22));
+  sites.push(...column(ids('F', 5, 8), 'food', 568, 132, 74, 92, 22));
+  sites.push(
+    { id: 'F9', label: 'F9', type: 'food', x: 96, y: 592, w: 74, h: 92, rotate: -38, status: 'available' },
+    { id: 'F10', label: 'F10', type: 'food', x: 590, y: 592, w: 74, h: 92, rotate: 38, status: 'available' }
+  );
+
+  // Forty market bays in four columns of ten
+  const cols = [
+    { list: ids('M', 1, 10), x: 68 },
+    { list: ids('M', 11, 20), x: 272 },
+    { list: ids('M', 21, 30), x: 372 },
+    { list: ids('M', 31, 40), x: 576 },
+  ];
+
+  for (const col of cols) {
+    const built = column(col.list, 'market', col.x, 726, 84, 56, 12);
+    built.forEach((s, i) => {
+      s.neighbourId = i < built.length - 1 ? built[i + 1].id : null;
+    });
+    sites.push(...built);
+  }
+
+  // a few pre-set states so the legend means something in preview
+  const setStatus = (id, status) => {
+    const s = sites.find((x) => x.id === id);
+    if (s) s.status = status;
+  };
+  setStatus('F3', 'booked');
+  setStatus('M5', 'booked');
+  setStatus('M14', 'blocked');
+  setStatus('M23', 'booked');
 
   return {
-    mapSize: { width: 1000, height: 700 },
+    mapSize: { width: 760, height: 1420 },
     sites,
     landmarks: [
-      { id: 'stage', label: 'MAIN STAGE', kind: 'stage', x: 300, y: 30, w: 400, h: 90 },
-      { id: 'bar', label: 'BAR (SoundzGood)', kind: 'bar', x: 760, y: 170, w: 170, h: 110 },
-      { id: 'toilets', label: 'TOILETS', kind: 'facility', x: 760, y: 320, w: 170, h: 70 },
-      { id: 'entry', label: 'ENTRY', kind: 'entry', x: 760, y: 610, w: 170, h: 70 },
-      { id: 'walkway', label: 'MAIN WALKWAY', kind: 'path', x: 60, y: 262, w: 660, h: 28 },
+      { id: 'stage', label: 'STAGE', kind: 'stage', x: 296, y: 24, w: 168, h: 74 },
+      { id: 'front-barrier', label: '', kind: 'barrier', x: 150, y: 112, w: 460, h: 8 },
+      { id: 'bar', label: 'BAR', kind: 'bar', x: 306, y: 566, w: 148, h: 104 },
+      { id: 'walkway', label: 'WALKWAY', kind: 'path', x: 368, y: 130, w: 24, h: 420 },
+      { id: 'barrier-left', label: '', kind: 'barrier', x: 40, y: 660, w: 8, h: 300 },
+      { id: 'barrier-right', label: '', kind: 'barrier', x: 712, y: 660, w: 8, h: 300 },
+      { id: 'entry', label: 'ENTRY', kind: 'entry', x: 296, y: 1360, w: 168, h: 46 },
     ],
   };
 }
@@ -317,17 +384,11 @@ export function previewCategories() {
 
   const build = (rows, appliesTo, limit, otherLimit) =>
     rows.map(([id, name]) => ({
-      id,
-      name,
-      appliesTo,
+      id, name, appliesTo, count: 0,
       limit: id.startsWith('other-') ? otherLimit : limit,
-      count: 0,
     }));
 
-  const all = [
-    ...build(food, 'food', 2, 4),
-    ...build(market, 'market', 6, 10),
-  ];
+  const all = [...build(food, 'food', 2, 4), ...build(market, 'market', 6, 10)];
 
   // one of each full in preview, so the FULL state is visible
   all.find((c) => c.id === 'coffee').count = 2;
@@ -335,5 +396,3 @@ export function previewCategories() {
 
   return all;
 }
-
-export { STATUS_ORDER };

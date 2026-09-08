@@ -91,7 +91,20 @@ function bookingReference() {
   return `EB-${out}`;
 }
 
-/* Market stalls are priced by marquee size, everything else by type.
+/* Which kind of site a vendor type occupies.
+   There are no dedicated community sites on the plan - community groups
+   take a market bay like anyone else, they just are not charged for it. */
+function siteTypeFor(vendorType) {
+  return vendorType === 'food' ? 'food' : 'market';
+}
+
+/* How many adjoining market bays a booking takes.
+   A 3x6 stall is two 3 m bays side by side. */
+function baysNeeded(booking) {
+  return booking.vendorType === 'market' && booking.stallSize === '3x6' ? 2 : 1;
+}
+
+/* Market stalls are priced by frontage, everything else by type.
    Keep this in step with the pricing map in functions/lib/layout.js. */
 function priceKeyFor(booking) {
   if (booking.vendorType === 'market') {
@@ -167,31 +180,52 @@ exports.holdSite = onCall(async (request) => {
     const site = siteSnap.data();
 
     // The site must suit the vendor type - a market stall cannot take a
-    // food site, and vice versa.
-    if (site.type !== booking.vendorType) {
+    // food van bay, and vice versa.
+    const wantedType = siteTypeFor(booking.vendorType);
+    if (site.type !== wantedType) {
       throw new HttpsError(
         'failed-precondition',
-        `Site ${site.label} is for ${site.type} vendors.`
+        `Site ${site.label} is a ${site.type} site.`
       );
     }
 
-    // Market sites also come in two marquee sizes, and a 3x3 booking must
-    // not take a 3x6 space it has not paid for.
-    if (booking.vendorType === 'market' && site.size && site.size !== booking.stallSize) {
-      throw new HttpsError(
-        'failed-precondition',
-        `Site ${site.label} is a ${site.size} marquee site.`
-      );
+    /* A 3x6 stall is two adjoining bays, so we take the chosen bay and the
+       one below it. Both are read and written inside this one transaction,
+       which is what stops a 3x6 ending up with half its space, or two
+       vendors sharing a bay. */
+    const wanted = [site];
+    const wantedRefs = [thisSiteRef];
+
+    if (baysNeeded(booking) === 2) {
+      if (!site.neighbourId) {
+        throw new HttpsError(
+          'failed-precondition',
+          `Site ${site.label} is the last bay in its row, so it cannot take a 3x6 stall.`
+        );
+      }
+
+      const partnerRef = siteRef(eventId, site.neighbourId);
+      const partnerSnap = await tx.get(partnerRef);
+
+      if (!partnerSnap.exists) {
+        throw new HttpsError('not-found', 'The bay next to that one is missing.');
+      }
+
+      wanted.push(partnerSnap.data());
+      wantedRefs.push(partnerRef);
     }
 
-    if (site.status === 'blocked') {
-      throw new HttpsError('failed-precondition', `Site ${site.label} is not available.`);
-    }
-    if (site.status === 'booked') {
-      throw new HttpsError('already-exists', `Site ${site.label} has just been taken.`);
-    }
-    if (site.status === 'held' && site.heldBy !== uid && !holdHasExpired(site, now)) {
-      throw new HttpsError('already-exists', `Site ${site.label} is on hold for someone else.`);
+    // Every bay involved has to be free, not only the one clicked.
+    for (const s of wanted) {
+      if (s.status === 'blocked') {
+        throw new HttpsError('failed-precondition', `Site ${s.label} is not available.`);
+      }
+      if (s.status === 'booked') {
+        throw new HttpsError('already-exists', `Site ${s.label} has just been taken.`);
+      }
+      if (s.status === 'held' && s.heldBy !== uid && !holdHasExpired(s, now)) {
+        throw new HttpsError('already-exists', `Site ${s.label} is on hold for someone else.`);
+      }
     }
 
     // Food vendors and market stalls both pick a category, and it must not
@@ -228,33 +262,51 @@ exports.holdSite = onCall(async (request) => {
       categoryName = category.name;
     }
 
-    // Release any site this booking was holding previously.
-    if (booking.siteId && booking.siteId !== siteId) {
-      const oldRef = siteRef(eventId, booking.siteId);
+    /* Let go of whatever this booking held before, including the partner
+       bay if it was a 3x6. Everything is read before anything is written,
+       because a Firestore transaction will not read after a write. */
+    const previous = Array.isArray(booking.siteIds) && booking.siteIds.length
+      ? booking.siteIds
+      : (booking.siteId ? [booking.siteId] : []);
+
+    const toRelease = [];
+    for (const oldId of previous) {
+      if (wantedRefs.some((r) => r.id === oldId)) continue; // keeping this one
+      const oldRef = siteRef(eventId, oldId);
       const oldSnap = await tx.get(oldRef);
       if (oldSnap.exists && oldSnap.data().heldBy === uid && oldSnap.data().status === 'held') {
-        tx.update(oldRef, {
-          status: 'available',
-          heldBy: admin.firestore.FieldValue.delete(),
-          holdExpiresAt: admin.firestore.FieldValue.delete(),
-          bookingId: admin.firestore.FieldValue.delete(),
-        });
+        toRelease.push(oldRef);
       }
+    }
+
+    for (const ref of toRelease) {
+      tx.update(ref, {
+        status: 'available',
+        heldBy: admin.firestore.FieldValue.delete(),
+        holdExpiresAt: admin.firestore.FieldValue.delete(),
+        bookingId: admin.firestore.FieldValue.delete(),
+      });
     }
 
     const holdMinutes = event.holdMinutes || 10;
     const expiresAt = admin.firestore.Timestamp.fromMillis(now + holdMinutes * 60 * 1000);
 
-    tx.update(thisSiteRef, {
-      status: 'held',
-      heldBy: uid,
-      bookingId,
-      holdExpiresAt: expiresAt,
-    });
+    for (const ref of wantedRefs) {
+      tx.update(ref, {
+        status: 'held',
+        heldBy: uid,
+        bookingId,
+        holdExpiresAt: expiresAt,
+      });
+    }
+
+    const siteIds = wantedRefs.map((r) => r.id);
+    const siteLabel = wanted.map((s) => s.label).join(' + ');
 
     tx.update(bookingRef, {
-      siteId,
-      siteLabel: site.label,
+      siteId,                 // the bay they clicked
+      siteIds,                // every bay this booking holds
+      siteLabel,              // "M4" or "M4 + M5"
       siteType: site.type,
       categoryName,
       amountCents: priceFor(event, booking),
@@ -265,7 +317,8 @@ exports.holdSite = onCall(async (request) => {
 
     return {
       ok: true,
-      siteLabel: site.label,
+      siteLabel,
+      siteIds,
       holdExpiresAt: expiresAt.toMillis(),
       amountCents: priceFor(event, booking),
     };
@@ -277,26 +330,32 @@ exports.holdSite = onCall(async (request) => {
    ------------------------------------------------------------------------- */
 exports.releaseHold = onCall(async (request) => {
   const uid = requireAuth(request);
-  const { eventId, siteId } = request.data || {};
+  const { eventId, siteId, siteIds } = request.data || {};
 
-  if (!eventId || !siteId) {
+  const wanted = Array.isArray(siteIds) && siteIds.length
+    ? siteIds
+    : (siteId ? [siteId] : []);
+
+  if (!eventId || !wanted.length) {
     throw new HttpsError('invalid-argument', 'Missing event or site.');
   }
 
   await db.runTransaction(async (tx) => {
-    const ref = siteRef(eventId, siteId);
-    const snap = await tx.get(ref);
-    if (!snap.exists) return;
+    const refs = wanted.map((id) => siteRef(eventId, id));
+    const snaps = await Promise.all(refs.map((r) => tx.get(r)));
 
-    const site = snap.data();
-    if (site.status === 'held' && site.heldBy === uid) {
-      tx.update(ref, {
-        status: 'available',
-        heldBy: admin.firestore.FieldValue.delete(),
-        holdExpiresAt: admin.firestore.FieldValue.delete(),
-        bookingId: admin.firestore.FieldValue.delete(),
-      });
-    }
+    snaps.forEach((snap, i) => {
+      if (!snap.exists) return;
+      const site = snap.data();
+      if (site.status === 'held' && site.heldBy === uid) {
+        tx.update(refs[i], {
+          status: 'available',
+          heldBy: admin.firestore.FieldValue.delete(),
+          holdExpiresAt: admin.firestore.FieldValue.delete(),
+          bookingId: admin.firestore.FieldValue.delete(),
+        });
+      }
+    });
   });
 
   return { ok: true };
@@ -414,18 +473,32 @@ async function confirmBooking(bookingId, extra = {}) {
       return { ok: true, alreadyConfirmed: true };
     }
 
-    const ref = siteRef(booking.eventId, booking.siteId);
-    const siteSnap = await tx.get(ref);
+    // A 3x6 stall holds two bays, so confirm every one of them.
+    const bayIds = Array.isArray(booking.siteIds) && booking.siteIds.length
+      ? booking.siteIds
+      : (booking.siteId ? [booking.siteId] : []);
 
-    if (!siteSnap.exists) {
-      throw new Error(`Site ${booking.siteId} vanished while confirming ${bookingId}`);
+    if (!bayIds.length) {
+      throw new Error(`Booking ${bookingId} has no site to confirm`);
     }
 
-    const site = siteSnap.data();
+    const refs = bayIds.map((id) => siteRef(booking.eventId, id));
+    const snaps = await Promise.all(refs.map((r) => tx.get(r)));
 
-    // If someone else got there first, do not silently double book. The
-    // booking is flagged so an admin can refund and re-seat them.
-    if (site.status === 'booked' && site.bookingId !== bookingId) {
+    for (let i = 0; i < snaps.length; i++) {
+      if (!snaps[i].exists) {
+        throw new Error(`Site ${bayIds[i]} vanished while confirming ${bookingId}`);
+      }
+    }
+
+    // If someone else got there first on any bay, do not silently double
+    // book. The booking is flagged so an admin can refund and re-seat them.
+    const stolen = snaps.find((s) => {
+      const d = s.data();
+      return d.status === 'booked' && d.bookingId !== bookingId;
+    });
+
+    if (stolen) {
       tx.update(bookingRef, {
         status: 'needs_attention',
         paymentStatus: extra.paymentStatus || 'paid',
@@ -433,7 +506,7 @@ async function confirmBooking(bookingId, extra = {}) {
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         ...stripeFields(extra),
       });
-      logger.error('Site taken before payment settled', { bookingId, siteId: booking.siteId });
+      logger.error('Site taken before payment settled', { bookingId, bayIds });
       return { ok: false, reason: 'site-taken' };
     }
 
@@ -449,12 +522,14 @@ async function confirmBooking(bookingId, extra = {}) {
       }
     }
 
-    tx.update(ref, {
-      status: 'booked',
-      bookingId,
-      heldBy: admin.firestore.FieldValue.delete(),
-      holdExpiresAt: admin.firestore.FieldValue.delete(),
-    });
+    for (const ref of refs) {
+      tx.update(ref, {
+        status: 'booked',
+        bookingId,
+        heldBy: admin.firestore.FieldValue.delete(),
+        holdExpiresAt: admin.firestore.FieldValue.delete(),
+      });
+    }
 
     tx.update(bookingRef, {
       status: 'confirmed',
@@ -563,25 +638,35 @@ async function releaseBookingHold(bookingId) {
     if (!snap.exists) return;
 
     const booking = snap.data();
-    if (booking.status === 'confirmed' || !booking.siteId) return;
+    if (booking.status === 'confirmed') return;
 
-    const ref = siteRef(booking.eventId, booking.siteId);
-    const siteSnap = await tx.get(ref);
+    // Give back every bay, not only the first - a 3x6 holds two.
+    const bayIds = Array.isArray(booking.siteIds) && booking.siteIds.length
+      ? booking.siteIds
+      : (booking.siteId ? [booking.siteId] : []);
 
-    if (siteSnap.exists && siteSnap.data().status === 'held' &&
-        siteSnap.data().bookingId === bookingId) {
-      tx.update(ref, {
-        status: 'available',
-        heldBy: admin.firestore.FieldValue.delete(),
-        holdExpiresAt: admin.firestore.FieldValue.delete(),
-        bookingId: admin.firestore.FieldValue.delete(),
-      });
-    }
+    if (!bayIds.length) return;
+
+    const refs = bayIds.map((id) => siteRef(booking.eventId, id));
+    const snaps = await Promise.all(refs.map((r) => tx.get(r)));
+
+    snaps.forEach((siteSnap, i) => {
+      if (siteSnap.exists && siteSnap.data().status === 'held' &&
+          siteSnap.data().bookingId === bookingId) {
+        tx.update(refs[i], {
+          status: 'available',
+          heldBy: admin.firestore.FieldValue.delete(),
+          holdExpiresAt: admin.firestore.FieldValue.delete(),
+          bookingId: admin.firestore.FieldValue.delete(),
+        });
+      }
+    });
 
     tx.update(bookingRef, {
       status: 'draft',
       paymentStatus: 'none',
       siteId: admin.firestore.FieldValue.delete(),
+      siteIds: admin.firestore.FieldValue.delete(),
       siteLabel: admin.firestore.FieldValue.delete(),
       holdExpiresAt: admin.firestore.FieldValue.delete(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -770,18 +855,24 @@ exports.adminCancelBooking = onCall(async (request) => {
 
     const booking = snap.data();
 
-    if (booking.siteId) {
-      const ref = siteRef(booking.eventId, booking.siteId);
-      const siteSnap = await tx.get(ref);
+    // Release every bay the booking held, a 3x6 included.
+    const bayIds = Array.isArray(booking.siteIds) && booking.siteIds.length
+      ? booking.siteIds
+      : (booking.siteId ? [booking.siteId] : []);
+
+    const bayRefs = bayIds.map((id) => siteRef(booking.eventId, id));
+    const baySnaps = await Promise.all(bayRefs.map((r) => tx.get(r)));
+
+    baySnaps.forEach((siteSnap, i) => {
       if (siteSnap.exists && siteSnap.data().bookingId === bookingId) {
-        tx.update(ref, {
+        tx.update(bayRefs[i], {
           status: 'available',
           bookingId: admin.firestore.FieldValue.delete(),
           heldBy: admin.firestore.FieldValue.delete(),
           holdExpiresAt: admin.firestore.FieldValue.delete(),
         });
       }
-    }
+    });
 
     if (booking.countedCategoryId) {
       const catRef = categoryRef(booking.eventId, booking.countedCategoryId);

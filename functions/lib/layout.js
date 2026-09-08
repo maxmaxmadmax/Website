@@ -1,68 +1,122 @@
 /* --------------------------------------------------------------------------
-   Default site layout for Bowen Sports Complex.
+   Site layout for Bowen Sports Complex - Eatz & Beatz Halloween Edition.
 
-   This is a SEED only. Once it has been written to Firestore the layout lives
-   there and can be changed from the admin dashboard - moving a site, changing
-   its type, adding rows - without touching this file or redeploying.
+   Drawn from the event site plan: stage at the top, ten food vans flanking
+   the central walkway (four each side plus two on the angle), the bar in the
+   middle, and forty market stalls in four columns of ten.
 
-   Coordinates are in an arbitrary 1000 x 700 space. The map scales that to
-   whatever width it is drawn at, so the numbers below are not pixels.
+   This is a SEED only. Once written to Firestore the layout lives there and
+   can be changed from the admin dashboard - moving a stall, changing a type,
+   adding a row - without touching this file or redeploying.
+
+   Coordinates are in an arbitrary 760 x 1420 space, portrait to match the
+   real ground. The map scales that to whatever width it is drawn at, so the
+   numbers below are not pixels.
+
+   MARKET STALLS AND THE 3x6 OPTION
+   Every stall on the plan is one 3 m frontage bay. A 3x3 booking takes one
+   bay; a 3x6 booking takes that bay and the one directly below it, which is
+   why each stall carries `neighbourId`. Both bays are allocated in a single
+   transaction, so a 3x6 can never end up with only half its space.
    -------------------------------------------------------------------------- */
 
-const MAP_WIDTH = 1000;
-const MAP_HEIGHT = 700;
+const MAP_WIDTH = 760;
+const MAP_HEIGHT = 1420;
 
-/* Builds a straight run of sites.
-   `size` only applies to market stalls, which come in 3x3 and 3x6. */
-function row({ prefix, type, count, startX, y, w, h, gap, size }) {
+/* A vertical run of sites. */
+function column({ ids, type, x, y, w, h, gap, rotate }) {
+  return ids.map((id, i) => ({
+    id,
+    label: id,
+    type,
+    x,
+    y: y + i * (h + gap),
+    w,
+    h,
+    ...(rotate ? { rotate } : {}),
+    status: 'available',
+    notes: '',
+  }));
+}
+
+/* Numbers 1..n with a prefix: M1, M2, ... */
+function ids(prefix, from, to) {
+  const out = [];
+  for (let i = from; i <= to; i++) out.push(`${prefix}${i}`);
+  return out;
+}
+
+/* Ten food vans: four down each side of the walkway, plus two on the
+   angle at the bottom of the run, as drawn on the plan. */
+function foodSites() {
+  const w = 74;
+  const h = 92;
+  const gap = 22;
+
+  const left = column({ ids: ids('F', 1, 4), type: 'food', x: 118, y: 132, w, h, gap });
+  const right = column({ ids: ids('F', 5, 8), type: 'food', x: 568, y: 132, w, h, gap });
+
+  // The two angled vans closing off the bottom of the food run
+  const angled = [
+    { id: 'F9', label: 'F9', type: 'food', x: 96, y: 592, w, h, rotate: -38, status: 'available', notes: '' },
+    { id: 'F10', label: 'F10', type: 'food', x: 590, y: 592, w, h, rotate: 38, status: 'available', notes: '' },
+  ];
+
+  return [...left, ...right, ...angled];
+}
+
+/* Forty market stalls: four columns of ten.
+   Each stall knows the one below it, so a 3x6 booking can take a pair. */
+function marketSites() {
+  const w = 84;
+  const h = 56;
+  const gap = 12;
+  const top = 726;
+
+  const columns = [
+    { ids: ids('M', 1, 10), x: 68 },
+    { ids: ids('M', 11, 20), x: 272 },
+    { ids: ids('M', 21, 30), x: 372 },
+    { ids: ids('M', 31, 40), x: 576 },
+  ];
+
   const sites = [];
 
-  for (let i = 0; i < count; i++) {
-    sites.push({
-      id: `${prefix}${i + 1}`,
-      label: `${prefix}${i + 1}`,
-      type,
-      ...(size ? { size } : {}),
-      x: startX + i * (w + gap),
-      y,
-      w,
-      h,
-      status: 'available',
-      notes: '',
+  for (const col of columns) {
+    const built = column({ ids: col.ids, type: 'market', x: col.x, y: top, w, h, gap });
+
+    built.forEach((site, i) => {
+      // The stall directly below, in the same column. The last one in a
+      // column has no partner, so it can only ever be a 3x3.
+      site.neighbourId = i < built.length - 1 ? built[i + 1].id : null;
+      site.column = col.ids[0];
     });
+
+    sites.push(...built);
   }
 
   return sites;
 }
 
-/* The schematic: stage at the top, food along both sides of the main
-   thoroughfare, market stalls across the middle, community groups near the
-   entry. Adjust freely in the admin dashboard afterwards. */
 function defaultSites() {
-  return [
-    // Food vendors - the two runs flanking the main walkway
-    ...row({ prefix: 'F', type: 'food', count: 6, startX: 90, y: 170, w: 110, h: 80, gap: 26 }),
-    ...row({ prefix: 'G', type: 'food', count: 6, startX: 90, y: 300, w: 110, h: 80, gap: 26 }),
-
-    // Market stalls - 3x3 marquees on the first row, 3x6 on the second.
-    // The 3x6 sites are drawn twice as wide so the plan reads true to
-    // the ground.
-    ...row({ prefix: 'M', type: 'market', size: '3x3', count: 8, startX: 70, y: 440, w: 90, h: 70, gap: 18 }),
-    ...row({ prefix: 'N', type: 'market', size: '3x6', count: 4, startX: 70, y: 530, w: 190, h: 70, gap: 18 }),
-
-    // Community groups - near the entry
-    ...row({ prefix: 'C', type: 'community', count: 4, startX: 70, y: 630, w: 120, h: 55, gap: 24 }),
-  ];
+  return [...foodSites(), ...marketSites()];
 }
 
-/* Fixed furniture drawn on the map for orientation. Not bookable. */
+/* Fixed furniture drawn for orientation. Not bookable.
+   The bar is ours, which is why there are no bar vendor sites. */
 function defaultLandmarks() {
   return [
-    { id: 'stage', label: 'MAIN STAGE', kind: 'stage', x: 300, y: 30, w: 400, h: 90 },
-    { id: 'bar', label: 'BAR (SoundzGood)', kind: 'bar', x: 760, y: 170, w: 170, h: 110 },
-    { id: 'toilets', label: 'TOILETS', kind: 'facility', x: 760, y: 320, w: 170, h: 70 },
-    { id: 'entry', label: 'ENTRY', kind: 'entry', x: 760, y: 610, w: 170, h: 70 },
-    { id: 'walkway', label: 'MAIN WALKWAY', kind: 'path', x: 60, y: 262, w: 660, h: 28 },
+    { id: 'stage', label: 'STAGE', kind: 'stage', x: 296, y: 24, w: 168, h: 74 },
+    { id: 'front-barrier', label: '', kind: 'barrier', x: 150, y: 112, w: 460, h: 8 },
+
+    { id: 'bar', label: 'BAR', kind: 'bar', x: 306, y: 566, w: 148, h: 104 },
+
+    { id: 'walkway', label: 'WALKWAY', kind: 'path', x: 368, y: 130, w: 24, h: 420 },
+
+    { id: 'barrier-left', label: '', kind: 'barrier', x: 40, y: 660, w: 8, h: 300 },
+    { id: 'barrier-right', label: '', kind: 'barrier', x: 712, y: 660, w: 8, h: 300 },
+
+    { id: 'entry', label: 'ENTRY', kind: 'entry', x: 296, y: 1360, w: 168, h: 46 },
   ];
 }
 
@@ -142,19 +196,22 @@ function defaultEvent() {
     status: 'open',
     holdMinutes: 10,
     currency: 'aud',
+
     /* Prices in cents so there is no floating point money anywhere.
-       Market stalls are priced by marquee size, so the key for a market
-       booking is market-<size>. See priceKeyFor() in functions/index.js. */
+       Market stalls are priced by frontage: 3x3 takes one bay, 3x6 takes
+       two adjoining bays. See priceKeyFor() in functions/index.js. */
     pricing: {
       food: 10000,
       'market-3x3': 5000,
       'market-3x6': 8000,
       community: 0,
     },
+
     map: {
       width: MAP_WIDTH,
       height: MAP_HEIGHT,
     },
+
     landmarks: defaultLandmarks(),
   };
 }
