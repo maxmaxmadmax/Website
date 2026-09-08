@@ -1,26 +1,32 @@
 SERVICES PAGE PHOTOGRAPHY
 =========================
 
-Save the slide photos in this folder. The name each slide looks for is set
-on the slide itself in services.html, so if you use a different name or a
-different format, change it there to match.
+One photo per slide. The name each slide looks for is set on the slide
+itself in services.html, so if you swap in a different name or format,
+change it there to match.
 
-    IN PLACE
-    festivals.webp            Festivals slide
+    community-events.webp     Community Events slide
+    weddings.webp             Weddings slide
     corporate-functions.webp  Corporate Functions slide
+    festivals.webp            Festivals slide
     big-screens.webp          Big Screens slide
+    trailer-stage.webp        Trailer Stage slide
     sporting-events.webp      Sporting Events slide
 
-    STILL NEEDED
-    community-events.jpg      Community Events slide
-    weddings.jpg              Weddings slide
-    trailer-stage.jpg         Trailer Stage slide
+All seven are in place. The Intro slide has no photo - it runs
+videos/hero.mp4 on a large screen and a gradient everywhere else.
 
-The four already here came through as WebP, which is a good format for
-this - smaller than JPG at the same quality. They are around 900-1200px
-wide, which is fine on a phone or a laptop but will soften on a large
-desktop screen. If you have the originals, saving those over the top at
-about 2000px wide would sharpen them up.
+REPLACING ONE WITH A SHARPER COPY
+Several of these came through at around 900-1200px wide, and
+community-events is only 638px. That is fine on a phone and passable on
+a laptop, but it softens on a large desktop screen. If you have the
+originals, save them over the top using the same names, around 2000px
+wide - nothing in the code needs changing.
+
+Widths as they stand:
+    weddings 1672   trailer-stage 1536   corporate-functions 1218
+    festivals 1077  sporting-events 1059  big-screens 913
+    community-events 638   <- the one most worth replacing
 
 Until a file is here, that slide shows its own dark gradient instead, so a
 missing photo looks deliberate rather than broken.
