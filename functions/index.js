@@ -317,14 +317,13 @@ exports.holdSite = onCall(async (request) => {
       }
     }
 
-    // Food vendors and market stalls both pick a category, and it must not
-    // be full. Community groups do not.
+    /* The category is picked after the site now, so a booking may not have
+       one yet. If it does, it is checked here as well - a vendor who goes
+       back and changes it should not be able to hold a site under a
+       category that has since filled up. The gate that actually matters is
+       in createCheckout, which is the last point before money moves. */
     let categoryName = null;
-    if (booking.vendorType === 'food' || booking.vendorType === 'market') {
-      if (!booking.categoryId) {
-        throw new HttpsError('failed-precondition', 'Choose a category first.');
-      }
-
+    if (booking.categoryId) {
       const catSnap = await tx.get(categoryRef(eventId, booking.categoryId));
       if (!catSnap.exists) {
         throw new HttpsError('not-found', 'That category no longer exists.');
@@ -486,6 +485,44 @@ exports.createCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request
     throw new HttpsError('failed-precondition', 'Choose a site first.');
   }
 
+  /* The category limit is checked here, right before money moves. The site
+     is chosen earlier in the flow than the category, so holdSite cannot be
+     the last word on it - and two vendors sitting on the last space in a
+     category would otherwise both be able to pay. Reading and stamping the
+     category name in one transaction means whoever gets here second is
+     turned away before Stripe is ever called. */
+  const categoryName = await db.runTransaction(async (tx) => {
+    if (!booking.categoryId) {
+      throw new HttpsError('failed-precondition', 'Choose a category first.');
+    }
+
+    const catSnap = await tx.get(categoryRef(booking.eventId, booking.categoryId));
+    if (!catSnap.exists) {
+      throw new HttpsError('not-found', 'That category no longer exists.');
+    }
+
+    const category = catSnap.data();
+
+    if (category.appliesTo !== booking.vendorType) {
+      throw new HttpsError(
+        'failed-precondition',
+        `${category.name} is not a ${booking.vendorType} category.`
+      );
+    }
+
+    // A booking already counted against this category keeps its place.
+    const alreadyCounted = booking.countedCategoryId === booking.categoryId;
+    if (!alreadyCounted && category.count >= category.limit) {
+      throw new HttpsError(
+        'resource-exhausted',
+        `${category.name} is full for this event. Please choose another category.`
+      );
+    }
+
+    tx.update(bookingRef, { categoryName: category.name });
+    return category.name;
+  });
+
   const amount = booking.amountCents ?? 0;
 
   // ---- Nothing to pay -----------------------------------------------------
@@ -514,7 +551,8 @@ exports.createCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request
           currency: booking.currency || 'aud',
           unit_amount: amount,
           product_data: {
-            name: `${vendorTypeLabel(booking.vendorType)} site - ${booking.siteLabel}`,
+            name: `${vendorTypeLabel(booking.vendorType)} site - ${booking.siteLabel}`
+              + (categoryName ? ` (${categoryName})` : ''),
             description: 'Eatz & Beatz Halloween Edition, Bowen Sports Complex, 31 October 2026',
           },
         },

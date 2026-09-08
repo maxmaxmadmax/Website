@@ -109,10 +109,17 @@ Safe to run more than once; it never overwrites what is already there.
 transaction (`holdSite`, then `confirmBooking`). Two people pressing at the same
 moment cannot both get it; the second gets "that site has just been taken".
 
-**Category limits** - checked in the same transaction, not only on screen.
+**Category limits** - checked server side in a transaction, not only on screen.
 Raising a limit in the admin dashboard reopens the category immediately, because
 the page compares the live count against the limit rather than storing a
 "full" flag.
+
+The check that counts is in `createCheckout`, immediately before Stripe is
+called. That is deliberate: vendors choose their site (step 3) before their
+category (step 4), so `holdSite` cannot be the last word on it - it only
+re-checks a category if the booking already has one. Two vendors sitting on the
+last space in a category would otherwise both be able to pay; whoever reaches
+checkout second is turned away instead.
 
 The limits the seed sets are a **starting point only**, not a rule anyone gave
 me: food categories default to 2 (catch-all "Other Food" 4), market to 6

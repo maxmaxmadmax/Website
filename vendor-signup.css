@@ -224,6 +224,112 @@
     margin-bottom:26px;
 }
 
+/*  Business, category and setup share one step, so each gets a subheading
+    with a rule above it to break the page into obvious sections.          */
+.vs-sub{
+    font-family:var(--sg-font-display);
+    font-size:1.15rem;
+    letter-spacing:-.5px;
+    text-transform:uppercase;
+    margin:38px 0 18px;
+    padding-top:26px;
+    border-top:1px solid var(--sg-border);
+}
+
+.vs-step > .vs-sub:first-of-type{
+    margin-top:0;
+    padding-top:0;
+    border-top:0;
+}
+
+
+/* --------------------------------------------------------------------------
+   EVENT INFO AND FAQS
+   -------------------------------------------------------------------------- */
+.vs-facts{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+    gap:2px;
+    background:var(--sg-border);
+    border:1px solid var(--sg-border);
+    border-radius:12px;
+    overflow:hidden;
+    margin-bottom:30px;
+}
+
+.vs-facts > div{
+    background:#0b0b0b;
+    padding:16px 18px;
+}
+
+.vs-facts dt{
+    font-family:var(--sg-font-accent);
+    font-size:.7rem;
+    font-weight:bold;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+    margin-bottom:6px;
+}
+
+.vs-facts dd{
+    color:#fff;
+    font-size:.95rem;
+}
+
+/*  Native <details> accordions - no script, and they still open if the
+    JavaScript on this page ever fails to load.                            */
+.vs-faqs{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.vs-faqs details{
+    background:#0b0b0b;
+    border:1px solid var(--sg-border);
+    border-radius:12px;
+    overflow:hidden;
+}
+
+.vs-faqs details[open]{
+    border-color:var(--vs-purple);
+}
+
+.vs-faqs summary{
+    padding:16px 46px 16px 18px;
+    cursor:pointer;
+    position:relative;
+    font-weight:bold;
+    color:#fff;
+    list-style:none;
+}
+
+.vs-faqs summary::-webkit-details-marker{ display:none; }
+
+.vs-faqs summary::after{
+    content:'+';
+    position:absolute;
+    right:18px;
+    top:50%;
+    transform:translateY(-50%);
+    font-family:var(--sg-font-display);
+    font-size:1.3rem;
+    line-height:1;
+    color:var(--sg-orange);
+}
+
+.vs-faqs details[open] summary::after{ content:'\2013'; }
+
+.vs-faqs summary:hover{ color:var(--sg-gold); }
+
+.vs-faqs details p{
+    padding:0 18px 18px;
+    color:var(--sg-muted);
+    font-size:.94rem;
+    line-height:1.7;
+}
+
 .vs-step-actions{
     display:flex;
     flex-wrap:wrap;

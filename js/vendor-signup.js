@@ -1,8 +1,8 @@
 /* --------------------------------------------------------------------------
    Eatz & Beatz - vendor signup flow
 
-   Vendor type -> business details -> category -> setup -> documents ->
-   site on the map -> review -> pay -> confirmation.
+   Vendor type -> event info and FAQs -> site on the map -> business,
+   category and setup -> documents -> review -> pay -> confirmation.
 
    Two things worth knowing if you come back to this later:
 
@@ -66,7 +66,10 @@ function vendorLabel() {
   return '';
 }
 
-const STEPS = ['type', 'business', 'category', 'setup', 'documents', 'site', 'review'];
+/* The site is picked early, before we ask for business details, so vendors
+   can see what is left before filling anything in. Business, category and
+   setup are one step - they are all "tell us about your stall". */
+const STEPS = ['type', 'info', 'site', 'details', 'documents', 'review'];
 
 /* -------------------------------------------------------------------------
    State
@@ -256,7 +259,7 @@ function subscribeCategories() {
       categories = [];
       snap.forEach((d) => categories.push({ id: d.id, ...d.data() }));
       categories.sort((a, b) => a.name.localeCompare(b.name));
-      if (state.step === 'category') renderCategories();
+      if (state.step === 'details') renderCategories();
     },
     (err) => console.error('categories listener', err)
   );
@@ -756,14 +759,8 @@ function showConfirmation() {
 /* -------------------------------------------------------------------------
    Steps and rendering
    ------------------------------------------------------------------------- */
-/* Food vendors and market stalls both pick a category. Community groups
-   do not, so that step drops out of the flow for them. */
-function needsCategory() {
-  return state.vendorType === 'food' || state.vendorType === 'market';
-}
-
 function visibleSteps() {
-  return STEPS.filter((s) => s !== 'category' || needsCategory());
+  return STEPS.slice();
 }
 
 function goTo(step) {
@@ -797,7 +794,7 @@ function render() {
 
   renderStepper(steps);
 
-  if (state.step === 'category') renderCategories();
+  if (state.step === 'details') renderCategories();
   if (state.step === 'site') {
     if (map) map.setVendorType(state.vendorType);
     renderSiteChoice();
@@ -814,11 +811,10 @@ function renderStepper(steps) {
 
   const names = {
     type: 'Vendor type',
-    business: 'Business',
-    category: 'Category',
-    setup: 'Setup',
+    info: 'Event info',
+    site: 'Choose your site',
+    details: 'Business & setup',
     documents: 'Documents',
-    site: 'Your site',
     review: 'Review & pay',
   };
 
@@ -879,7 +875,7 @@ function renderCategories() {
       state.categoryId = id;
       state.categoryName = cat ? cat.name : null;
       renderCategories();
-      setStepError('category', '');
+      setStepError('details', '');
     });
   });
 }
@@ -941,9 +937,7 @@ function renderReview() {
     ['Social media', state.business.socials || '-'],
   ];
 
-  if (needsCategory()) {
-    rows.push(['Category', state.categoryName || '-']);
-  }
+  rows.push(['Category', state.categoryName || '-']);
 
   rows.push(
     ['Frontage', state.setup.frontage ? `${state.setup.frontage} m` : '-'],
@@ -1079,7 +1073,7 @@ function wireStaticControls() {
 }
 
 function collectStep(step) {
-  if (step === 'business') {
+  if (step === 'details') {
     state.business = {
       name: val('vs-biz-name'),
       contactName: val('vs-biz-contact'),
@@ -1088,9 +1082,9 @@ function collectStep(step) {
       socials: val('vs-biz-socials'),
       description: val('vs-biz-desc'),
     };
-  }
 
-  if (step === 'setup') {
+    // Business, category and setup share a step, so the setup fields are
+    // read in the same pass.
     state.setup = {
       frontage: val('vs-setup-frontage'),
       depth: val('vs-setup-depth'),
@@ -1113,45 +1107,43 @@ function validateStep(step) {
     return false;
   }
 
-  if (step === 'business') {
+  /* Business, category and setup are one step now, so they share one error
+     line. Checked in the order they appear on the page, and the first thing
+     missing is scrolled to - otherwise on a long step the message can sit
+     off screen and look like nothing happened. */
+  if (step === 'details') {
     const name = val('vs-biz-name');
     const contact = val('vs-biz-contact');
     const email = val('vs-biz-email');
     const phone = val('vs-biz-phone');
 
     if (!name || !contact || !email || !phone) {
-      setStepError('business', 'Please fill in business name, contact, email and phone.');
-      return false;
+      return failDetails('Please fill in business name, contact, email and phone.',
+        'vs-biz-name');
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setStepError('business', 'That email address does not look right.');
-      return false;
+      return failDetails('That email address does not look right.', 'vs-biz-email');
     }
-  }
 
-  if (step === 'category' && needsCategory() && !state.categoryId) {
-    setStepError('category', 'Please choose a category.');
-    return false;
-  }
+    if (!state.categoryId) {
+      return failDetails('Please choose a category.', 'vs-categories');
+    }
 
-  if (step === 'setup') {
     if (!val('vs-setup-frontage') || !val('vs-setup-depth')) {
-      setStepError('setup', 'Please choose your frontage and depth.');
-      return false;
+      return failDetails('Please choose your frontage and depth.', 'vs-setup-frontage');
     }
 
     if (!val('vs-setup-own-power')) {
-      setStepError('setup', 'Please tell us what power you are bringing.');
-      return false;
+      return failDetails('Please tell us what power you are bringing.',
+        'vs-setup-own-power');
     }
 
     // Every vendor brings their own power and water to this event, so we
     // ask them to say plainly that they can.
     const ack = document.getElementById('vs-setup-selfsufficient');
     if (ack && !ack.checked) {
-      setStepError('setup',
-        'Please confirm you are bringing your own power and water.');
-      return false;
+      return failDetails('Please confirm you are bringing your own power and water.',
+        'vs-setup-selfsufficient');
     }
   }
 
@@ -1161,6 +1153,19 @@ function validateStep(step) {
   }
 
   return true;
+}
+
+/* Show the problem and take the vendor to the field it is about. */
+function failDetails(message, focusId) {
+  setStepError('details', message);
+
+  const el = document.getElementById(focusId);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (typeof el.focus === 'function') el.focus({ preventScroll: true });
+  }
+
+  return false;
 }
 
 /* -------------------------------------------------------------------------
