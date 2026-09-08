@@ -10,13 +10,14 @@
    scrollbar and the keyboard all work without any of this. What is added
    here is the polish on top:
 
+     - stepping the banner along on its own every couple of seconds
      - arrows, and disabling them at either end
-     - the active label, the compact "03 / 07" line and the progress bar
-     - dragging with a mouse, which a scroll container does not do for free
+     - the active label, the compact "03 / 09" line and the progress bar
      - the hero video, given a source only on a big screen
 
-   Nothing here traps the page, and the vertical wheel is left entirely
-   alone: it scrolls the page, as it does everywhere else on the site.
+   The page scrolls normally. Nothing here touches the vertical wheel or
+   pins anything - the banner is an ordinary block at the top of the page
+   and you scroll straight past it.
    -------------------------------------------------------------------------- */
 (function () {
     'use strict';
@@ -45,43 +46,17 @@
 
     var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    /*  Pinned mode is for pointer devices with room for it. A phone or a
-        tablet keeps the plain sideways scroller, where a swipe and the
-        browser's own momentum are already better than anything here.    */
-    var pinned = window.matchMedia('(min-width: 901px) and (pointer: fine)').matches;
-
-    /*  How much of each screenful holds the slide still before it starts
-        moving. A quarter each end, so it settles rather than drifting. */
-    var HOLD = 0.25;
-
-    var pinnedIndex = 0;
+    /* How long each slide is shown before the banner moves on. */
+    var DWELL = 2500;
 
     /* ---------------------------------------------------------------------
        Moving between slides
-
-       In pinned mode a slide is a position on the page, so going to one is
-       an ordinary page scroll - which means the browser animates it, the
-       same as clicking any other link on the site. Otherwise it is a scroll
-       of the track itself.
        --------------------------------------------------------------------- */
-    function goTo(index) {
+    function goTo(index, instant) {
         var i = Math.max(0, Math.min(slides.length - 1, index));
-
-        if (pinned && page.classList.contains('is-pinned')) {
-            var stageEl = page.querySelector('#sgs-stage');
-            var runway = stageEl.offsetHeight - window.innerHeight;
-            // the middle of that slide's held stretch
-            var p = i / (slides.length - 1);
-            window.scrollTo({
-                top: Math.round(stageEl.offsetTop + runway * p),
-                behavior: reduceMotion ? 'auto' : 'smooth'
-            });
-            return;
-        }
-
         track.scrollTo({
             left: slides[i].offsetLeft,
-            behavior: reduceMotion ? 'auto' : 'smooth'
+            behavior: (instant || reduceMotion) ? 'auto' : 'smooth'
         });
     }
 
@@ -96,13 +71,10 @@
         return scrollLeft > 0 ? slides.length - 1 : 0;
     }
 
-    /* Which slide is in front of us right now. Read from whatever is doing
-       the scrolling, so the labels, the arrows and the picture always
-       agree however you got there. */
+    /* Which slide is in front of us right now. Read from the scroll
+       position, so a swipe, an arrow, a label and the timer all agree. */
     function currentIndex() {
-        return pinned && page.classList.contains('is-pinned')
-            ? pinnedIndex
-            : indexAt(track.scrollLeft);
+        return indexAt(track.scrollLeft);
     }
 
     function atStart() { return currentIndex() === 0; }
@@ -193,27 +165,30 @@
        Controls
        --------------------------------------------------------------------- */
     if (prevBtn) {
-        prevBtn.addEventListener('click', function () { goTo(currentIndex() - 1); });
+        prevBtn.addEventListener('click', function () { holdAuto(); goTo(currentIndex() - 1); });
     }
 
     if (nextBtn) {
-        nextBtn.addEventListener('click', function () { goTo(currentIndex() + 1); });
+        nextBtn.addEventListener('click', function () { holdAuto(); goTo(currentIndex() + 1); });
     }
 
     navButtons.forEach(function (btn) {
         btn.addEventListener('click', function () {
+            holdAuto();
             goTo(parseInt(btn.getAttribute('data-sgs-go'), 10) || 0);
         });
     });
 
     if (startBtn) {
-        startBtn.addEventListener('click', function () { goTo(1); });
+        startBtn.addEventListener('click', function () { holdAuto(); goTo(1); });
     }
 
     /* Left and right move between slides while the slider has the focus.
        Home and End jump to either end. Up and down are deliberately left
        alone so the page still scrolls with the keyboard. */
     track.addEventListener('keydown', function (ev) {
+        holdAuto();
+
         if (ev.key === 'ArrowRight') {
             ev.preventDefault();
             goTo(currentIndex() + 1);
@@ -230,108 +205,128 @@
     });
 
     /* ---------------------------------------------------------------------
-       PINNED MODE - the page scroll drives the picture
+       Moving along on its own
 
-       On a computer the stage becomes a tall block of page, one screenful
-       per slide, and the viewport inside it sticks to the top. How far down
-       that block you have scrolled decides how far sideways the track is
-       moved. So the picture glides across as you scroll normally, and the
-       browser is doing all of the scrolling itself.
+       The banner steps to the right every 2.5 seconds and starts again from
+       the first slide after the last.
 
-       That is the whole point. The two earlier attempts both intercepted
-       the wheel and then moved the track in code, which meant fighting the
-       browser's own momentum - it kept delivering events after a gesture
-       had been declared finished, so the script would set a position while
-       the browser was still animating to another one. That fight is what
-       felt clunky and stuck. Nothing is intercepted now.
+       It stops when it should:
+         - while the pointer is over it, or something inside it has keyboard
+           focus, so it never moves out from under someone reading it or
+           about to click a button;
+         - for a spell after any manual move, so pressing an arrow does not
+           get overruled a moment later;
+         - while the tab is in the background, or the banner is scrolled off
+           screen, so it is not animating to nobody;
+         - entirely, if the visitor has asked for reduced motion.
 
-       LOCKING IN
-       The movement is not a flat mapping. Inside each screenful the slide
-       is held still for the first and last quarter and slides across the
-       middle, so it settles on each one rather than drifting continuously.
-
-       Touch keeps the plain sideways scroller with snap points instead -
-       swiping is already the right gesture and native momentum there is
-       better than anything worth writing.
+       The wrap back to the first slide is instant rather than a smooth
+       sweep. Gliding back across eight slides reads as a glitch, and it is
+       over in a frame.
        --------------------------------------------------------------------- */
-    var stage = page.querySelector('#sgs-stage');
-    var viewport = page.querySelector('#sgs-viewport');
+    var timer = null;
+    var paused = false;
+    var heldUntil = 0;
 
-    if (pinned && stage && viewport) {
-        page.classList.add('is-pinned');
+    function step() {
+        if (paused || Date.now() < heldUntil) { return; }
 
-        var lastX = null;
+        var i = currentIndex();
+        if (i >= slides.length - 1) {
+            goTo(0, true);          // straight back to the start
+        } else {
+            goTo(i + 1);
+        }
+    }
 
-        /*  How much page you scroll to cross one slide, as a fraction of the
-            window. A whole screenful each felt like wading - nine slides
-            meant nine screens before the reading below came into view. At
-            0.7 the run is a little over six screens and each slide still
-            gets a moment of its own, because a quarter of that at each end
-            is a hold rather than movement.                               */
-        var SEGMENT = 0.7;
+    function startAuto() {
+        if (reduceMotion || timer) { return; }
+        timer = setInterval(step, DWELL);
+    }
 
-        var measure = function () {
-            var w = viewport.clientWidth;
-            page.style.setProperty('--sgs-w', w + 'px');
-            stage.style.height =
-                Math.round(window.innerHeight * (1 + (slides.length - 1) * SEGMENT)) + 'px';
-            return w;
-        };
+    function stopAuto() {
+        clearInterval(timer);
+        timer = null;
+    }
 
-        var slideWidth = measure();
+    /* Called whenever the visitor moves the banner themselves. */
+    function holdAuto() {
+        heldUntil = Date.now() + DWELL * 2;
+    }
 
-        var applyPin = function () {
-            var vh = window.innerHeight;
-            var top = stage.offsetTop;
-            var runway = stage.offsetHeight - vh;      // scrollable distance
-            if (runway <= 0) { return; }
+    if (!reduceMotion) {
+        var stageEl = page.querySelector('#sgs-stage');
 
-            var p = (window.pageYOffset - top) / runway;
-            p = Math.max(0, Math.min(1, p));
-
-            var raw = p * (slides.length - 1);
-            var i = Math.floor(raw);
-            var f = raw - i;
-
-            /*  Held, then across, then held. The clamp either side is what
-                makes it land on a slide instead of drifting.             */
-            var t = Math.max(0, Math.min(1, (f - HOLD) / (1 - HOLD * 2)));
-            var eased = t * t * (3 - 2 * t);           // ease in and out
-
-            var x = -(i + eased) * slideWidth;
-
-            if (x !== lastX) {
-                lastX = x;
-                track.style.transform = 'translate3d(' + x + 'px,0,0)';
-            }
-
-            pinnedIndex = Math.min(slides.length - 1, i + (eased >= 0.5 ? 1 : 0));
-
-            // let the buttons and hint out of the way once we are past
-            page.classList.toggle('is-past', p >= 1 &&
-                window.pageYOffset > top + runway + 4);
-        };
-
-        var ticking = false;
-        var onScroll = function () {
-            if (ticking) { return; }
-            ticking = true;
-            window.requestAnimationFrame(function () {
-                ticking = false;
-                applyPin();
-                paint();
-            });
-        };
-
-        window.addEventListener('scroll', onScroll, { passive: true });
-        window.addEventListener('resize', function () {
-            slideWidth = measure();
-            lastX = null;
-            applyPin();
+        ['pointerenter', 'focusin'].forEach(function (name) {
+            stageEl.addEventListener(name, function () { paused = true; });
         });
 
-        applyPin();
+        ['pointerleave', 'focusout'].forEach(function (name) {
+            stageEl.addEventListener(name, function () { paused = false; });
+        });
+
+        // a swipe or a drag of the track counts as taking over
+        stageEl.addEventListener('pointerdown', holdAuto);
+        stageEl.addEventListener('touchstart', holdAuto, { passive: true });
+
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) { stopAuto(); } else { startAuto(); }
+        });
+
+        /*  Only runs while the banner is actually on screen. */
+        if ('IntersectionObserver' in window) {
+            new IntersectionObserver(function (entries) {
+                if (entries[0].isIntersecting) { startAuto(); } else { stopAuto(); }
+            }, { threshold: 0.35 }).observe(stageEl);
+        } else {
+            startAuto();
+        }
     }
+
+    /* ---------------------------------------------------------------------
+       The menu button
+
+       Every page carries the same menu, and its button sells tickets. On
+       this page there is nothing to buy - someone here is pricing an event
+       - so it asks for a quote instead.
+
+       Done from this file rather than by editing components/navbar.html,
+       because that file is shared: changing it would change the button on
+       the homepage, the events page and everywhere else. This script only
+       ever runs on the services page, so the change cannot reach them.
+
+       The menu is fetched and dropped in by js/main.js after this runs, so
+       there may be nothing to change yet - hence watching for it to arrive
+       and giving up quietly if it never does.
+       --------------------------------------------------------------------- */
+    (function swapMenuButton() {
+        var host = document.getElementById('navbar');
+        if (!host) { return; }
+
+        var apply = function () {
+            var btn = host.querySelector('.nav-ticket');
+            if (!btn) { return false; }
+
+            btn.textContent = 'Get a Quote';
+            btn.setAttribute('href', '/contact');
+            btn.removeAttribute('target');
+            btn.removeAttribute('rel');
+            return true;
+        };
+
+        if (apply()) { return; }
+
+        if (!('MutationObserver' in window)) { return; }
+
+        var watcher = new MutationObserver(function () {
+            if (apply()) { watcher.disconnect(); }
+        });
+        watcher.observe(host, { childList: true, subtree: true });
+
+        // the menu is a small local file; if it has not arrived by now it
+        // is not coming, and the page is fine without the change
+        setTimeout(function () { watcher.disconnect(); }, 8000);
+    }());
 
     /* ---------------------------------------------------------------------
        The hero video

@@ -40,75 +40,6 @@
     background:#000;
 }
 
-/* --------------------------------------------------------------------------
-   PINNED MODE
-
-   What the script switches on once it runs. The stage becomes a tall block
-   of page - one screen of scrolling per slide - and the viewport inside it
-   sticks to the top while you scroll past. The track is then moved sideways
-   by transform, worked out from how far down that block you are.
-
-   This is why it feels smooth: the browser is doing the scrolling, exactly
-   as it does everywhere else, and the only thing the script does is set a
-   transform to match. Nothing is intercepted, nothing is animated against
-   the scroll, so there is nothing to fight and nothing to get stuck on.
-
-   Without the script none of this applies and the track stays an ordinary
-   sideways scroller with snap points, which still works on its own.
-   -------------------------------------------------------------------------- */
-#sg-services-page.is-pinned .sgs-viewport{
-    position:sticky;
-    top:0;
-    height:100vh;
-    height:100svh;
-    overflow:hidden;
-}
-
-#sg-services-page.is-pinned .sgs-track{
-    /* no longer a scroller - the transform does the moving */
-    overflow:visible;
-    scroll-snap-type:none;
-    width:max-content;
-    will-change:transform;
-}
-
-/*  Width comes from the script, measured off the sticky viewport, and the
-    same number is used for the transform. 100vw cannot be used here: it
-    counts the vertical scrollbar, so each slide would be a scrollbar wider
-    than the space it is shown in and the run would drift sideways - about
-    a hundred pixels adrift by the last one.                              */
-#sg-services-page.is-pinned .sgs-slide{
-    flex:0 0 var(--sgs-w);
-    width:var(--sgs-w);
-}
-
-/*  The arrows, labels and hint sit on the sticky viewport rather than the
-    tall stage, or they would scroll away up the page.                     */
-#sg-services-page.is-pinned .sgs-arrow,
-#sg-services-page.is-pinned .sgs-nav,
-#sg-services-page.is-pinned .sgs-scroll-hint{
-    position:fixed;
-}
-
-#sg-services-page.is-pinned .sgs-arrow{ top:50%; }
-#sg-services-page.is-pinned .sgs-nav{ bottom:52px; left:0; right:0; }
-#sg-services-page.is-pinned .sgs-scroll-hint{ bottom:18px; left:0; right:0; }
-
-/*  Hidden once the slider has been scrolled past, so they do not hang over
-    the reading section below.                                            */
-#sg-services-page.is-pinned.is-past .sgs-arrow,
-#sg-services-page.is-pinned.is-past .sgs-nav,
-#sg-services-page.is-pinned.is-past .sgs-scroll-hint{
-    opacity:0;
-    pointer-events:none;
-}
-
-#sg-services-page.is-pinned .sgs-arrow,
-#sg-services-page.is-pinned .sgs-nav,
-#sg-services-page.is-pinned .sgs-scroll-hint{
-    transition:opacity .25s;
-}
-
 /*  A plain horizontally scrolling element with snap points. Touch, trackpad
     and keyboard all work natively - the script adds arrows and the wheel
     behaviour on top, so the slider still works if it never loads.
@@ -138,25 +69,6 @@
 
 #sg-services-page .sgs-track::-webkit-scrollbar{ display:none; }
 
-/*  Says the slider can be dragged. Only on a device with a mouse - a grab
-    cursor means nothing on a phone, where you swipe.                     */
-@media (pointer: fine){
-    #sg-services-page .sgs-track{ cursor:grab; }
-    #sg-services-page .sgs-track.is-dragging{ cursor:grabbing; }
-
-    /*  While dragging, stop the browser selecting the headings and stop
-        images being dragged off as files - both make it feel broken.    */
-    #sg-services-page .sgs-track.is-dragging{
-        user-select:none;
-        -webkit-user-select:none;
-    }
-
-    #sg-services-page .sgs-track.is-dragging *{
-        cursor:grabbing;
-        -webkit-user-drag:none;
-    }
-}
-
 #sg-services-page .sgs-track:focus-visible{
     outline:2px solid var(--sgs-yellow);
     outline-offset:-4px;
@@ -175,9 +87,12 @@
     display:flex;
     align-items:center;
 
-    /* Full height, minus nothing - the menu floats over the top of it.
-       svh rather than vh so the address bar appearing on a phone does not
-       leave the bottom of the slide cut off. */
+    /*  Full height. The menu floats over the top of it rather than pushing
+        it down, so this fills the screen exactly.
+
+        svh rather than vh so the address bar appearing on a phone does not
+        leave the bottom of the slide cut off. The page scrolls past it
+        normally - nothing is pinned and nothing is held.                */
     height:100vh;
     height:100svh;
 
@@ -523,25 +438,6 @@
     transition:width .35s ease, transform .35s ease;
 }
 
-#sg-services-page .sgs-scroll-hint{
-    position:absolute;
-    left:0;
-    right:0;
-    bottom:18px;
-    z-index:4;
-    text-align:center;
-
-    font-family:var(--sg-font-accent);
-    font-size:.66rem;
-    letter-spacing:.3em;
-    text-transform:uppercase;
-    color:rgba(255,255,255,.45);
-    margin:0;
-    transition:opacity .3s;
-}
-
-/* Out of the way once the visitor has started scrolling the page down */
-#sg-services-page.is-scrolled .sgs-scroll-hint{ opacity:0; }
 
 
 /* --------------------------------------------------------------------------
@@ -909,8 +805,7 @@
 
     #sg-services-page .sgs-btn,
     #sg-services-page .sgs-arrow,
-    #sg-services-page .sgs-progress span,
-    #sg-services-page .sgs-scroll-hint{
+    #sg-services-page .sgs-progress span{
         transition:none;
     }
 
