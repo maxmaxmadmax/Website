@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
        example - still finds the menu and footer. */
     loadComponent('navbar', '/components/navbar.html', function () {
         highlightCurrentPage();
+        initSubmenus();
         initHomeNav();
         trackNavHeight();
     });
@@ -60,6 +61,68 @@ function trackNavHeight() {
     if (document.fonts && document.fonts.ready) {
         document.fonts.ready.then(apply).catch(function () {});
     }
+}
+
+/* Menu dropdowns.
+
+   Hovering opens them on a computer and CSS does that on its own. This is
+   for a touch screen, where there is no hover: the little arrow beside the
+   menu item opens and closes it. The arrow is a button of its own rather
+   than the menu item, so tapping "Events" still goes to the events page
+   instead of being swallowed to open a menu. */
+function initSubmenus() {
+    var parents = document.querySelectorAll('#navbar .has-sub');
+
+    if (parents.length === 0) {
+        return;
+    }
+
+    var closeAll = function (except) {
+        for (var i = 0; i < parents.length; i++) {
+            if (parents[i] === except) {
+                continue;
+            }
+            parents[i].classList.remove('is-open');
+            var btn = parents[i].querySelector('.sub-toggle');
+            if (btn) {
+                btn.setAttribute('aria-expanded', 'false');
+            }
+        }
+    };
+
+    for (var i = 0; i < parents.length; i++) {
+        (function (parent) {
+            var toggle = parent.querySelector('.sub-toggle');
+            if (!toggle) {
+                return;
+            }
+
+            toggle.addEventListener('click', function (ev) {
+                ev.preventDefault();
+                ev.stopPropagation();
+
+                var open = parent.classList.toggle('is-open');
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                closeAll(parent);
+            });
+        }(parents[i]));
+    }
+
+    /* Tapping or clicking anywhere else puts them away again. */
+    document.addEventListener('click', function (ev) {
+        for (var i = 0; i < parents.length; i++) {
+            if (parents[i].contains(ev.target)) {
+                return;
+            }
+        }
+        closeAll(null);
+    });
+
+    document.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Escape') {
+            closeAll(null);
+        }
+    });
 }
 
 /* Home page only: keep the menu out of the way over the hero, then slide
@@ -221,6 +284,13 @@ function highlightCurrentPage() {
         if (tidyPath(href) === here) {
             links[i].classList.add('active');
             links[i].setAttribute('aria-current', 'page');
+
+            /* A page inside a dropdown also marks the item it sits under,
+               so the menu still shows where you are while it is shut. */
+            var parent = links[i].closest ? links[i].closest('.has-sub') : null;
+            if (parent) {
+                parent.classList.add('has-active');
+            }
         }
     }
 }

@@ -256,6 +256,102 @@ nav a.active{
     font-weight:bold;
 }
 
+/* --------------------------------------------------------------------------
+   MENU SUBMENU
+
+   Events carries a dropdown. It opens on hover on a computer, on keyboard
+   focus for anyone tabbing through, and from the small arrow on a touch
+   screen, where hover does not exist.
+
+   All new rules - nothing above this is changed.
+   -------------------------------------------------------------------------- */
+nav .has-sub{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:4px;
+}
+
+nav .sub-toggle{
+    background:none;
+    border:0;
+    padding:10px 2px;
+    color:#fff;
+    font-size:.7rem;
+    line-height:1;
+    cursor:pointer;
+    transition:color .25s, transform .25s;
+}
+
+nav .sub-toggle:hover{
+    color:var(--sg-gold);
+}
+
+nav .has-sub.is-open .sub-toggle span{
+    display:inline-block;
+    transform:rotate(180deg);
+}
+
+nav .subnav{
+    position:absolute;
+    top:100%;
+    left:0;
+    z-index:110;
+
+    display:block;
+    min-width:210px;
+    padding:8px;
+    margin:0;
+
+    background:rgba(12,12,12,.97);
+    border:1px solid var(--sg-border);
+    border-radius:12px;
+    box-shadow:0 18px 40px rgba(0,0,0,.55);
+
+    /*  Kept in the page rather than display:none, so it can fade and so
+        the links stay reachable by keyboard while it is opening.      */
+    opacity:0;
+    visibility:hidden;
+    transform:translateY(-6px);
+    transition:opacity .18s, transform .18s, visibility .18s;
+}
+
+nav .has-sub:hover .subnav,
+nav .has-sub:focus-within .subnav,
+nav .has-sub.is-open .subnav{
+    opacity:1;
+    visibility:visible;
+    transform:translateY(0);
+}
+
+nav .subnav li{
+    display:block;
+}
+
+nav .subnav a{
+    display:block;
+    padding:10px 12px;
+    border-radius:8px;
+    border-bottom:0;
+    font-size:.85rem;
+    letter-spacing:.5px;
+    white-space:nowrap;
+}
+
+nav .subnav a:hover{
+    background:rgba(255,255,255,.07);
+    color:var(--sg-gold);
+}
+
+/*  The parent is marked when the page you are on lives under it, so the
+    menu still shows where you are while the dropdown is shut.          */
+nav .has-sub.has-active > a{
+    color:var(--sg-orange);
+    border-bottom-color:var(--sg-orange);
+    font-weight:bold;
+}
+
+
 /* "Buy Tickets" pill inside the menu */
 nav a.nav-ticket{
     background:var(--sg-orange);
@@ -2522,9 +2618,20 @@ nav a.nav-ticket.active{
 
     /* One row of links only. The sticky ticket bar sits directly below the
        hero and follows you down the page, so the menu does not need its
-       own ticket button here - and the hero gets the space back. */
-    nav a.nav-ticket{
+       own ticket button here - and the hero gets the space back.
+
+       The whole list item goes, not just the link: an empty item still
+       wrapped onto a second row and left the menu taller than it looked. */
+    nav a.nav-ticket,
+    nav li.nav-ticket-item{
         display:none;
+    }
+
+    /* A bigger area to hit for the dropdown arrow, without making the
+       menu item any wider. */
+    nav .sub-toggle{
+        padding:11px 6px;
+        font-size:.8rem;
     }
 
     nav ul{

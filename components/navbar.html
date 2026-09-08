@@ -12,11 +12,31 @@
 
     <ul>
         <li><a href="/">Home</a></li>
-        <li><a href="/events">Events</a></li>
+
+        <!--  Events carries a submenu. It opens on hover on a computer, and
+              the little arrow opens it on a touch screen, where there is no
+              hover to speak of. Add another <li> inside .subnav to put more
+              under it - js/main.js needs no changes.                     -->
+        <li class="has-sub">
+            <a href="/events">Events</a>
+
+            <button type="button" class="sub-toggle"
+                    aria-expanded="false" aria-label="Show more under Events">
+                <span aria-hidden="true">&#9662;</span>
+            </button>
+
+            <ul class="subnav">
+                <li><a href="/vendor-signup">Vendor Application</a></li>
+            </ul>
+        </li>
+
         <li><a href="/services">Hire Us</a></li>
-        <li><a href="/vendor-signup">Vendors</a></li>
         <li><a href="/contact">Contact</a></li>
-        <li>
+        <!--  The class is here so the whole item can be hidden on a phone,
+              not just the link inside it. Hiding only the link left an
+              empty list item that still wrapped onto a second row and made
+              the menu taller than it looked.                           -->
+        <li class="nav-ticket-item">
             <a class="nav-ticket"
                href="https://events.humanitix.com/soundzgood-2-0-bowen"
                target="_blank" rel="noopener">Buy Tickets</a>
