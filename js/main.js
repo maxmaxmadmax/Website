@@ -18,12 +18,14 @@ if (supportsScrollAnimation()) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    loadComponent('navbar', 'components/navbar.html', function () {
+    /* Absolute paths, so a page in a subfolder - an archived event, for
+       example - still finds the menu and footer. */
+    loadComponent('navbar', '/components/navbar.html', function () {
         highlightCurrentPage();
         initHomeNav();
         trackNavHeight();
     });
-    loadComponent('footer', 'components/footer.html');
+    loadComponent('footer', '/components/footer.html');
     initScrapbookAnimation();
     initTicketBar();
 });
@@ -224,8 +226,16 @@ function highlightCurrentPage() {
 }
 
 /* Treats /events.html and /events as the same page, so an older bookmark
-   or shared link still highlights the right menu item. */
+   or shared link still highlights the right menu item.
+
+   Anything filed under /events/ - an archived event, say - counts as the
+   events page too, so the menu still shows where you are. */
 function tidyPath(path) {
     path = path.replace(/\/index\.html$/, '/').replace(/\.html$/, '');
+
+    if (path.indexOf('/events/') === 0) {
+        return '/events';
+    }
+
     return path === '' ? '/' : path;
 }

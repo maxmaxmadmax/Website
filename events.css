@@ -1,0 +1,574 @@
+/* ==========================================================================
+   EVENTS HUB - page specific styles
+
+   Loaded after style.css on /events and on the archived event pages, so
+   fonts, colours, buttons, page width and the responsive rules all still
+   come from style.css. This file only adds what the events hub needs.
+
+   Everything is prefixed .ev- so nothing here can reach another page. The
+   few exceptions are deliberate and named: .ticket-bar.is-archived and
+   .btn.is-done, which restyle existing components on an archived event
+   page only.
+
+   ADDING AN EVENT
+   You should not need to open this file to add an event. Copy a card in
+   events.html and change the words. Artwork comes from a --ev-art variable
+   set on the card itself.
+   ========================================================================== */
+
+
+/* --------------------------------------------------------------------------
+   1. HERO
+   Deliberately short. This page is a list, so the list should be the first
+   thing you see rather than a full screen of title.
+   -------------------------------------------------------------------------- */
+.ev-hero{
+    position:relative;
+    overflow:hidden;
+    text-align:center;
+    background:
+        radial-gradient(120% 110% at 50% 0%, #241001 0%, var(--sg-black) 62%),
+        var(--sg-black);
+}
+
+.ev-hero::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background-image:var(--sg-grain);
+    opacity:.12;
+    mix-blend-mode:overlay;
+    pointer-events:none;
+}
+
+.ev-hero-inner{
+    position:relative;
+    /* clears the menu, which sits over the top of the page */
+    padding:calc(var(--sg-nav-height, 78px) + 56px) 20px 56px;
+    max-width:760px;
+    margin:auto;
+}
+
+.ev-hero h1{
+    font-family:var(--sg-font-display);
+    font-size:clamp(2.4rem, 8vw, 4.6rem);
+    line-height:1;
+    letter-spacing:-1px;
+    text-transform:uppercase;
+    margin-bottom:14px;
+}
+
+.ev-hero p{
+    color:var(--sg-muted);
+    font-size:clamp(.95rem, 2.2vw, 1.1rem);
+    line-height:1.7;
+}
+
+
+/* --------------------------------------------------------------------------
+   2. SHARED PIECES - badges and the date/place line
+   -------------------------------------------------------------------------- */
+.ev-badge{
+    display:inline-block;
+    padding:6px 14px;
+    border-radius:50px;
+    border:1px solid;
+    font-family:var(--sg-font-accent);
+    font-size:.7rem;
+    font-weight:bold;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    white-space:nowrap;
+}
+
+.ev-badge.is-upcoming{ background:var(--sg-orange); border-color:var(--sg-orange); color:#0a0a0a; }
+.ev-badge.is-soon{     background:transparent;      border-color:var(--sg-gold);   color:var(--sg-gold); }
+.ev-badge.is-past{     background:#1a1a1a;          border-color:#333;             color:var(--sg-dim); }
+.ev-badge.is-soldout{  background:#3a1414;          border-color:#8c3a3a;          color:#ff9d9d; }
+
+.ev-meta{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px 14px;
+    font-family:var(--sg-font-accent);
+    font-size:.82rem;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+}
+
+.ev-meta-date{ color:var(--sg-gold); font-weight:bold; }
+.ev-meta-place{ color:var(--sg-dim); }
+
+.ev-section{
+    max-width:var(--sg-max-width);
+    margin:auto;
+}
+
+.ev-section h2{
+    text-align:left;
+}
+
+
+/* --------------------------------------------------------------------------
+   3. FEATURED UPCOMING EVENT
+   The biggest thing on the page, so an upcoming event always outranks the
+   archive visually.
+   -------------------------------------------------------------------------- */
+.ev-feature{
+    position:relative;
+    overflow:hidden;
+    display:grid;
+    grid-template-columns:1.35fr .65fr;
+    align-items:center;
+    gap:24px;
+
+    border:1px solid var(--sg-border);
+    border-radius:22px;
+    background:var(--sg-panel);
+    margin-top:26px;
+}
+
+/*  Halloween treatment, scoped to the card carrying .is-halloween. The rest
+    of the site stays exactly as it is.                                    */
+.ev-feature.is-halloween{
+    border-color:#3a1f5c;
+    background:
+        radial-gradient(90% 130% at 88% 12%, #3a1f5c 0%, transparent 58%),
+        linear-gradient(150deg, #1b0d02 0%, #0b0b0b 60%);
+}
+
+.ev-feature.is-halloween::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background-image:var(--sg-grain);
+    opacity:.1;
+    mix-blend-mode:overlay;
+    pointer-events:none;
+}
+
+.ev-web{
+    position:absolute;
+    top:0;
+    right:0;
+    width:150px;
+    height:150px;
+    opacity:.2;
+    transform:scaleX(-1);
+    pointer-events:none;
+}
+
+.ev-web path{
+    fill:none;
+    stroke:#fff;
+    stroke-width:1.4;
+}
+
+.ev-feature-body{
+    position:relative;
+    z-index:1;
+    padding:38px 34px;
+}
+
+.ev-feature-name{
+    font-family:var(--sg-font-display);
+    font-size:clamp(1.9rem, 4.6vw, 3.1rem);
+    line-height:1;
+    letter-spacing:-1px;
+    text-transform:uppercase;
+    margin:16px 0 14px;
+}
+
+.ev-feature-name span{
+    display:block;
+    color:var(--sg-orange);
+    font-size:.52em;
+    margin-top:8px;
+}
+
+.ev-feature-desc{
+    color:var(--sg-muted);
+    font-size:1.02rem;
+    margin:14px 0 26px;
+}
+
+.ev-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+}
+
+/* The pumpkin sits in the corner of the card rather than as a background
+   image, so there is no extra file to load. */
+.ev-feature-art{
+    position:relative;
+    z-index:1;
+    display:grid;
+    place-items:center;
+    padding:24px;
+}
+
+.ev-pumpkin{
+    width:min(78%, 210px);
+    height:auto;
+    filter:drop-shadow(0 0 44px rgba(255,107,0,.34));
+}
+
+
+/* --------------------------------------------------------------------------
+   4. NEXT SOUNDZGOOD TEASER
+   Festival-poster feel: artwork pushed out of focus, oversized wordmark,
+   one soft glow. No animation - it has to sit quietly under the real event.
+   -------------------------------------------------------------------------- */
+.ev-teaser-wrap{
+    padding:0 6%;
+    margin:70px auto;
+    max-width:var(--sg-max-width);
+}
+
+.ev-teaser{
+    position:relative;
+    overflow:hidden;
+    border:1px solid #2a2a2a;
+    border-radius:22px;
+    text-align:center;
+    isolation:isolate;
+}
+
+/*  The blurred artwork. Scaled up past the edges so the blur has no soft
+    border, and dimmed hard so the type stays the loudest thing here.     */
+.ev-teaser::before{
+    content:"";
+    position:absolute;
+    inset:-8%;
+    background-image:var(--ev-art);
+    background-size:cover;
+    background-position:center;
+    filter:blur(34px) saturate(1.25) brightness(.5);
+    z-index:-2;
+}
+
+.ev-teaser::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+        radial-gradient(70% 90% at 50% 42%, rgba(255,107,0,.18) 0%, transparent 62%),
+        linear-gradient(180deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,.9) 100%);
+    z-index:-1;
+}
+
+.ev-teaser-body{
+    padding:78px 24px 68px;
+    max-width:720px;
+    margin:auto;
+}
+
+.ev-teaser-word{
+    font-family:var(--sg-font-display);
+    font-size:clamp(2.3rem, 10vw, 5.6rem);
+    line-height:.94;
+    letter-spacing:-2px;
+    text-transform:uppercase;
+    margin:22px 0 4px;
+    color:#fff;
+    text-shadow:0 0 60px rgba(255,107,0,.45);
+}
+
+.ev-teaser-chapter{
+    font-family:var(--sg-font-display);
+    font-size:clamp(1.1rem, 3.6vw, 2rem);
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+    margin-bottom:20px;
+}
+
+.ev-teaser-meta{
+    display:flex;
+    justify-content:center;
+    gap:8px 20px;
+    flex-wrap:wrap;
+    font-family:var(--sg-font-accent);
+    font-size:.82rem;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--sg-muted);
+    margin-bottom:22px;
+}
+
+.ev-teaser-copy{
+    color:var(--sg-muted);
+    line-height:1.8;
+    margin-bottom:26px;
+}
+
+.ev-teaser-status{
+    display:inline-block;
+    padding:12px 24px;
+    border:1px solid var(--sg-orange);
+    border-radius:50px;
+    font-family:var(--sg-font-accent);
+    font-size:.76rem;
+    font-weight:bold;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:var(--sg-orange);
+}
+
+
+/* --------------------------------------------------------------------------
+   5. PREVIOUS EVENTS GRID
+   Muted next to the upcoming card, and lifting a little on hover.
+   -------------------------------------------------------------------------- */
+/*  auto-fit rather than auto-fill: with two events the pair spreads across
+    the row instead of leaving an empty third column. Add a third and it
+    becomes three columns on a wide screen on its own.                     */
+.ev-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));
+    gap:24px;
+    margin-top:26px;
+}
+
+.ev-card{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    border:1px solid var(--sg-border);
+    border-radius:18px;
+    background:var(--sg-panel);
+    transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+
+/*  One stretched link covers the whole card, so the entire card is
+    clickable while the page still has exactly one link per event.       */
+.ev-card-link{
+    position:absolute;
+    inset:0;
+    z-index:2;
+}
+
+.ev-card-art{
+    aspect-ratio:16 / 9;
+    background-image:var(--ev-art);
+    background-size:cover;
+    background-position:center;
+    /* Past events sit back: dimmer and less saturated than an upcoming one */
+    filter:brightness(.62) saturate(.72);
+    transition:filter .25s ease, transform .45s ease;
+}
+
+/*  For a card with only a logo rather than event artwork. Contained, not
+    cropped, on a dark tile.                                              */
+.ev-card-art.is-logo{
+    background-size:min(56%, 190px);
+    background-repeat:no-repeat;
+    background-color:#141414;
+    filter:brightness(.75);
+}
+
+.ev-card-body{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:12px;
+    padding:22px 22px 24px;
+    flex:1;
+}
+
+.ev-card-body h3{
+    font-family:var(--sg-font-display);
+    font-size:1.5rem;
+    letter-spacing:-.5px;
+    text-transform:uppercase;
+}
+
+.ev-card-artists{
+    color:var(--sg-dim);
+    font-size:.92rem;
+    line-height:1.65;
+}
+
+/*  Pushed to the bottom so the buttons line up across cards of different
+    heights.                                                              */
+.ev-card-btn{
+    margin-top:auto;
+    pointer-events:none;   /* the stretched link above does the clicking */
+    transition:background-color .25s ease, color .25s ease, border-color .25s ease;
+}
+
+.ev-card:hover{
+    transform:translateY(-4px);
+    border-color:#3a3a3a;
+    box-shadow:0 18px 40px rgba(0,0,0,.5);
+}
+
+.ev-card:hover .ev-card-art{
+    filter:brightness(.86) saturate(.95);
+    transform:scale(1.04);
+}
+
+.ev-card:hover .ev-card-btn{
+    background:var(--sg-orange);
+    border-color:var(--sg-orange);
+    color:#0a0a0a;
+}
+
+.ev-card:focus-within{
+    border-color:var(--sg-orange);
+}
+
+/*  A past event with no archive page yet. The card still shows - it just
+    does not pretend to go anywhere.                                      */
+.ev-card.is-nolink .ev-card-link{ display:none; }
+.ev-card.is-nolink{ cursor:default; }
+.ev-card.is-nolink:hover{ transform:none; box-shadow:none; }
+.ev-card.is-nolink .ev-card-btn{ opacity:.45; }
+.ev-card.is-nolink:hover .ev-card-btn{
+    background:transparent;
+    color:var(--sg-orange);
+    border-color:var(--sg-orange);
+}
+
+
+/* --------------------------------------------------------------------------
+   6. ARCHIVED EVENT PAGES
+   Small changes to existing components on a past event page. Both are
+   scoped to a class that only an archived page carries.
+   -------------------------------------------------------------------------- */
+.ev-archive-flag{
+    margin-bottom:18px;
+}
+
+/* The sticky bar keeps its position but stops selling anything */
+.ticket-bar.is-archived{
+    background:#141414;
+    border-top:1px solid var(--sg-border);
+}
+
+/* Reads as a statement, not a button you can press */
+.btn.is-done{
+    background:#1a1a1a;
+    border:1px solid #333;
+    color:var(--sg-dim);
+    cursor:default;
+}
+
+.ev-gallery{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+    gap:16px;
+    max-width:var(--sg-max-width);
+    margin:auto;
+}
+
+.ev-gallery figure{
+    margin:0;
+    border-radius:14px;
+    overflow:hidden;
+    background:var(--sg-panel);
+    border:1px solid var(--sg-border);
+}
+
+.ev-gallery img{
+    width:100%;
+    height:100%;
+    aspect-ratio:4 / 3;
+    object-fit:cover;
+    display:block;
+}
+
+.ev-gallery figcaption{
+    padding:12px 14px;
+    color:var(--sg-dim);
+    font-size:.86rem;
+}
+
+/*  Shown while there is nothing to show. Same shape as the aftermovie
+    placeholder so an empty page still looks laid out.                    */
+.ev-gallery-empty,
+.ev-aftermovie{
+    max-width:760px;
+    margin:auto;
+    padding:44px 24px;
+    border:1px dashed #2e2e2e;
+    border-radius:16px;
+    background:var(--sg-panel);
+    color:var(--sg-dim);
+    text-align:center;
+}
+
+.ev-back-strip{
+    text-align:center;
+}
+
+
+/* --------------------------------------------------------------------------
+   7. RESPONSIVE
+   -------------------------------------------------------------------------- */
+
+/* Tablet: the featured card stops being side by side */
+@media (max-width:900px){
+    .ev-feature{
+        grid-template-columns:1fr;
+        gap:0;
+    }
+
+    /* artwork above the words, so the words are not pushed off the bottom */
+    .ev-feature-art{
+        order:-1;
+        padding:30px 24px 0;
+    }
+
+    .ev-pumpkin{
+        width:120px;
+    }
+
+    .ev-feature-body{
+        padding:26px 26px 32px;
+    }
+}
+
+/* Phone */
+@media (max-width:600px){
+    .ev-hero-inner{
+        padding:calc(var(--sg-nav-height, 78px) + 34px) 18px 38px;
+    }
+
+    /* one card per row, and never narrower than the screen */
+    .ev-grid{
+        grid-template-columns:1fr;
+    }
+
+    .ev-teaser-wrap{
+        padding:0 5%;
+        margin:48px auto;
+    }
+
+    .ev-teaser-body{
+        padding:52px 18px 46px;
+    }
+
+    /* full width buttons are easier to hit with a thumb */
+    .ev-actions .btn{
+        width:100%;
+        text-align:center;
+    }
+
+    .ev-card-body{
+        padding:18px 18px 20px;
+    }
+}
+
+@media (prefers-reduced-motion:reduce){
+    .ev-card,
+    .ev-card-art,
+    .ev-card-btn{
+        transition:none;
+    }
+
+    .ev-card:hover{ transform:none; }
+    .ev-card:hover .ev-card-art{ transform:none; }
+}
