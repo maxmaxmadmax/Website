@@ -56,7 +56,13 @@
        js/services.js never loads. The script only adds the arrows, the wheel
        handling and the progress bar on top of that.
        ==================================================================== -->
-  <section class="sgs-stage" aria-label="What we do">
+  <section class="sgs-stage" id="sgs-stage" aria-label="What we do">
+
+    <!--  The sticky window the slides move behind. Without JavaScript this
+          is just a plain wrapper and the track below scrolls sideways on
+          its own; the script turns it into the pinned viewport that the
+          page scroll drives.                                            -->
+    <div class="sgs-viewport" id="sgs-viewport">
 
     <div class="sgs-track" id="sgs-track" tabindex="0"
          aria-label="Event types, use the left and right arrow keys to move between them">
@@ -212,6 +218,7 @@
       </article>
 
     </div>
+    </div><!-- /sgs-viewport -->
 
     <!-- Arrows. Added by the markup rather than the script so they are in
          the tab order even before the script runs. -->

@@ -12,13 +12,11 @@
 
      - arrows, and disabling them at either end
      - the active label, the compact "03 / 07" line and the progress bar
-     - the mouse wheel moving sideways instead of down while the slider is
-       filling the screen
+     - dragging with a mouse, which a scroll container does not do for free
      - the hero video, given a source only on a big screen
 
-   Nothing here traps the page. The wheel is only borrowed while the slider
-   is genuinely on screen and has somewhere left to go; at either end the
-   event is left alone and the page scrolls on as normal.
+   Nothing here traps the page, and the vertical wheel is left entirely
+   alone: it scrolls the page, as it does everywhere else on the site.
    -------------------------------------------------------------------------- */
 (function () {
     'use strict';
@@ -47,34 +45,68 @@
 
     var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    /*  Pinned mode is for pointer devices with room for it. A phone or a
+        tablet keeps the plain sideways scroller, where a swipe and the
+        browser's own momentum are already better than anything here.    */
+    var pinned = window.matchMedia('(min-width: 901px) and (pointer: fine)').matches;
+
+    /*  How much of each screenful holds the slide still before it starts
+        moving. A quarter each end, so it settles rather than drifting. */
+    var HOLD = 0.25;
+
+    var pinnedIndex = 0;
+
     /* ---------------------------------------------------------------------
        Moving between slides
+
+       In pinned mode a slide is a position on the page, so going to one is
+       an ordinary page scroll - which means the browser animates it, the
+       same as clicking any other link on the site. Otherwise it is a scroll
+       of the track itself.
        --------------------------------------------------------------------- */
     function goTo(index) {
         var i = Math.max(0, Math.min(slides.length - 1, index));
+
+        if (pinned && page.classList.contains('is-pinned')) {
+            var stageEl = page.querySelector('#sgs-stage');
+            var runway = stageEl.offsetHeight - window.innerHeight;
+            // the middle of that slide's held stretch
+            var p = i / (slides.length - 1);
+            window.scrollTo({
+                top: Math.round(stageEl.offsetTop + runway * p),
+                behavior: reduceMotion ? 'auto' : 'smooth'
+            });
+            return;
+        }
+
         track.scrollTo({
             left: slides[i].offsetLeft,
             behavior: reduceMotion ? 'auto' : 'smooth'
         });
     }
 
-    /* Which slide is in front of us right now. Worked out from the scroll
-       position rather than tracked separately, so a swipe, a keypress and an
-       arrow click all end up agreeing. */
-    function currentIndex() {
-        var mid = track.scrollLeft + track.clientWidth / 2;
+    /* Which slide sits in front of a given scroll position of the track. */
+    function indexAt(scrollLeft) {
+        var mid = scrollLeft + track.clientWidth / 2;
         for (var i = 0; i < slides.length; i++) {
             if (mid >= slides[i].offsetLeft && mid < slides[i].offsetLeft + slides[i].offsetWidth) {
                 return i;
             }
         }
-        return track.scrollLeft > 0 ? slides.length - 1 : 0;
+        return scrollLeft > 0 ? slides.length - 1 : 0;
     }
 
-    function atStart() { return track.scrollLeft <= 2; }
-    function atEnd() {
-        return track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
+    /* Which slide is in front of us right now. Read from whatever is doing
+       the scrolling, so the labels, the arrows and the picture always
+       agree however you got there. */
+    function currentIndex() {
+        return pinned && page.classList.contains('is-pinned')
+            ? pinnedIndex
+            : indexAt(track.scrollLeft);
     }
+
+    function atStart() { return currentIndex() === 0; }
+    function atEnd() { return currentIndex() === slides.length - 1; }
 
     /* ---------------------------------------------------------------------
        Keeping the labels, arrows and bar in step
@@ -198,93 +230,107 @@
     });
 
     /* ---------------------------------------------------------------------
-       Mouse wheel
+       PINNED MODE - the page scroll drives the picture
 
-       The picture glides sideways with the wheel, one to one, and settles
-       onto the nearest slide when you stop. It is not stepped: an earlier
-       version moved a whole slide per gesture and then ignored the wheel for
-       half a second so it would not run away on trackpad inertia, which made
-       the page feel like it was lagging behind the hand. Following the
-       gesture directly and letting it land afterwards is both smoother and
-       more responsive.
+       On a computer the stage becomes a tall block of page, one screenful
+       per slide, and the viewport inside it sticks to the top. How far down
+       that block you have scrolled decides how far sideways the track is
+       moved. So the picture glides across as you scroll normally, and the
+       browser is doing all of the scrolling itself.
 
-       Snapping is switched off while the wheel is turning - with it left on,
-       the browser drags the track back to a slide edge between every event
-       and the movement stutters. It goes back on when the gesture ends,
-       which is what locks the slide into place.
+       That is the whole point. The two earlier attempts both intercepted
+       the wheel and then moved the track in code, which meant fighting the
+       browser's own momentum - it kept delivering events after a gesture
+       had been declared finished, so the script would set a position while
+       the browser was still animating to another one. That fight is what
+       felt clunky and stuck. Nothing is intercepted now.
 
-       The moment there is no next slide the event is left alone, so the
-       visitor carries straight on down the page and can scroll back up the
-       same way. Touch is never touched - swiping is already right there.
+       LOCKING IN
+       The movement is not a flat mapping. Inside each screenful the slide
+       is held still for the first and last quarter and slides across the
+       middle, so it settles on each one rather than drifting continuously.
+
+       Touch keeps the plain sideways scroller with snap points instead -
+       swiping is already the right gesture and native momentum there is
+       better than anything worth writing.
        --------------------------------------------------------------------- */
-    var finePointer = window.matchMedia('(pointer: fine)').matches;
+    var stage = page.querySelector('#sgs-stage');
+    var viewport = page.querySelector('#sgs-viewport');
 
-    if (finePointer) {
-        var gliding = false;
-        var settleTimer;
-        var glideFrom = 0;      // slide we set off from
-        var glideBy = 0;        // how far the gesture pushed, in pixels
+    if (pinned && stage && viewport) {
+        page.classList.add('is-pinned');
 
-        var endGlide = function () {
-            gliding = false;
-            track.style.scrollSnapType = '';          // back to snapping
+        var lastX = null;
 
-            var landOn = currentIndex();
+        /*  How much page you scroll to cross one slide, as a fraction of the
+            window. A whole screenful each felt like wading - nine slides
+            meant nine screens before the reading below came into view. At
+            0.7 the run is a little over six screens and each slide still
+            gets a moment of its own, because a quarter of that at each end
+            is a hold rather than movement.                               */
+        var SEGMENT = 0.7;
 
-            /*  A short flick still counts. Landing purely on whichever slide
-                is nearest means a small deliberate nudge slides the picture
-                a little and then puts it back, which feels like the page
-                ignored you - and on a mouse with notched wheel it takes
-                eight of them to get anywhere. So if the gesture had a clear
-                direction but has not carried far enough to change slide,
-                it goes one that way.                                     */
-            if (landOn === glideFrom && Math.abs(glideBy) > track.clientWidth * 0.07) {
-                landOn = glideFrom + (glideBy > 0 ? 1 : -1);
-            }
-
-            glideBy = 0;
-            goTo(landOn);
+        var measure = function () {
+            var w = viewport.clientWidth;
+            page.style.setProperty('--sgs-w', w + 'px');
+            stage.style.height =
+                Math.round(window.innerHeight * (1 + (slides.length - 1) * SEGMENT)) + 'px';
+            return w;
         };
 
-        track.addEventListener('wheel', function (ev) {
-            // a genuine sideways gesture already does the right thing
-            if (Math.abs(ev.deltaX) > Math.abs(ev.deltaY)) {
-                return;
+        var slideWidth = measure();
+
+        var applyPin = function () {
+            var vh = window.innerHeight;
+            var top = stage.offsetTop;
+            var runway = stage.offsetHeight - vh;      // scrollable distance
+            if (runway <= 0) { return; }
+
+            var p = (window.pageYOffset - top) / runway;
+            p = Math.max(0, Math.min(1, p));
+
+            var raw = p * (slides.length - 1);
+            var i = Math.floor(raw);
+            var f = raw - i;
+
+            /*  Held, then across, then held. The clamp either side is what
+                makes it land on a slide instead of drifting.             */
+            var t = Math.max(0, Math.min(1, (f - HOLD) / (1 - HOLD * 2)));
+            var eased = t * t * (3 - 2 * t);           // ease in and out
+
+            var x = -(i + eased) * slideWidth;
+
+            if (x !== lastX) {
+                lastX = x;
+                track.style.transform = 'translate3d(' + x + 'px,0,0)';
             }
 
-            var rect = track.getBoundingClientRect();
-            var mostlyOnScreen = rect.top <= 4 && rect.bottom >= window.innerHeight - 4;
-            if (!mostlyOnScreen) {
-                return; // the slider is only passing through - leave the page alone
-            }
+            pinnedIndex = Math.min(slides.length - 1, i + (eased >= 0.5 ? 1 : 0));
 
-            var goingDown = ev.deltaY > 0;
+            // let the buttons and hint out of the way once we are past
+            page.classList.toggle('is-past', p >= 1 &&
+                window.pageYOffset > top + runway + 4);
+        };
 
-            // nothing left that way? let the page have the scroll
-            if ((goingDown && atEnd()) || (!goingDown && atStart())) {
-                if (gliding) { endGlide(); }
-                return;
-            }
+        var ticking = false;
+        var onScroll = function () {
+            if (ticking) { return; }
+            ticking = true;
+            window.requestAnimationFrame(function () {
+                ticking = false;
+                applyPin();
+                paint();
+            });
+        };
 
-            ev.preventDefault();
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', function () {
+            slideWidth = measure();
+            lastX = null;
+            applyPin();
+        });
 
-            if (!gliding) {
-                gliding = true;
-                glideFrom = currentIndex();
-                glideBy = 0;
-                track.style.scrollSnapType = 'none';
-            }
-
-            /*  A notched mouse wheel reports lines rather than pixels - 3 of
-                them per notch - so it is scaled to roughly what the browser
-                itself treats a line as.                                   */
-            var step = ev.deltaMode === 1 ? ev.deltaY * 40 : ev.deltaY;
-            track.scrollLeft += step;
-            glideBy += step;
-
-            clearTimeout(settleTimer);
-            settleTimer = setTimeout(endGlide, 110);
-        }, { passive: false });
+        applyPin();
     }
 
     /* ---------------------------------------------------------------------
