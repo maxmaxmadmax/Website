@@ -420,6 +420,22 @@
     color:var(--sg-muted);
 }
 
+/* Something the vendor must read before ticking the box under it */
+.vs-notice{
+    background:rgba(107,63,160,.14);
+    border:1px solid var(--vs-purple);
+    border-left:4px solid var(--vs-purple);
+    border-radius:10px;
+    padding:14px 18px;
+    margin-bottom:12px;
+    color:var(--sg-muted);
+    font-size:.94rem;
+}
+
+.vs-notice strong{
+    color:#fff;
+}
+
 .vs-check input{
     width:20px;
     height:20px;

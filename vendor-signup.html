@@ -100,10 +100,20 @@
         </div>
 
         <div class="vs-price-card">
-            <h3>Market Stall</h3>
-            <p class="vs-price-amount" data-price="market">$50</p>
+            <h3>Market Stall 3&times;3</h3>
+            <p class="vs-price-amount" data-price="market-3x3">$50</p>
             <p>
-                Makers, retail, craft and non-food traders in the market rows.
+                A 3 &times; 3 metre marquee site for makers, retail, craft and
+                other non-food traders.
+            </p>
+        </div>
+
+        <div class="vs-price-card">
+            <h3>Market Stall 3&times;6</h3>
+            <p class="vs-price-amount" data-price="market-3x6">$80</p>
+            <p>
+                A double 3 &times; 6 metre marquee site, for larger setups that
+                need the extra frontage.
             </p>
         </div>
 
@@ -116,6 +126,12 @@
         </div>
 
     </div>
+
+    <p class="vs-bar-note">
+        <strong>All vendors supply their own power and water.</strong>
+        There is no power or water connection at your site, so bring a
+        generator and whatever water you need for the day.
+    </p>
 
     <p class="vs-bar-note">
         We are not taking bar or alcohol vendors for this event &mdash;
@@ -145,10 +161,18 @@
                     <span class="vs-type-desc">Hot food, drinks, desserts. You'll pick a food category next.</span>
                 </button>
 
-                <button type="button" class="vs-type" data-vendor-type="market">
-                    <span class="vs-type-name">Market Stall</span>
-                    <span class="vs-type-price" data-price="market">$50</span>
-                    <span class="vs-type-desc">Makers, craft, retail and other non-food trading.</span>
+                <button type="button" class="vs-type"
+                        data-vendor-type="market" data-stall-size="3x3">
+                    <span class="vs-type-name">Market Stall 3&times;3</span>
+                    <span class="vs-type-price" data-price="market-3x3">$50</span>
+                    <span class="vs-type-desc">A 3 &times; 3 m marquee site. Makers, craft, retail and other non-food trading.</span>
+                </button>
+
+                <button type="button" class="vs-type"
+                        data-vendor-type="market" data-stall-size="3x6">
+                    <span class="vs-type-name">Market Stall 3&times;6</span>
+                    <span class="vs-type-price" data-price="market-3x6">$80</span>
+                    <span class="vs-type-desc">A double 3 &times; 6 m marquee site for larger setups.</span>
                 </button>
 
                 <button type="button" class="vs-type" data-vendor-type="community">
@@ -208,7 +232,7 @@
 
         <!-- 3. FOOD CATEGORY ---------------------------------------------- -->
         <div class="vs-step" data-step="category" hidden>
-            <h2>Your food category</h2>
+            <h2 id="vs-category-heading">Your category</h2>
             <p class="vs-step-intro">
                 We limit how many vendors sell the same thing so everyone trades well.
                 Categories that are full are closed off.
@@ -241,14 +265,9 @@
                 </div>
 
                 <div class="vs-field">
-                    <label for="vs-setup-power">Power needed</label>
-                    <select id="vs-setup-power">
-                        <option value="None">None</option>
-                        <option value="10 amp">10 amp</option>
-                        <option value="15 amp">15 amp</option>
-                        <option value="Three phase">Three phase</option>
-                        <option value="Own generator">I bring my own generator</option>
-                    </select>
+                    <label for="vs-setup-own-power">Power you are bringing</label>
+                    <input type="text" id="vs-setup-own-power"
+                           placeholder="e.g. 2.4 kVA generator">
                 </div>
 
                 <div class="vs-field">
@@ -257,14 +276,19 @@
                 </div>
 
                 <div class="vs-field is-wide">
-                    <label for="vs-setup-power-details">Power details <span class="vs-field-hint">(what you are running)</span></label>
+                    <label for="vs-setup-power-details">What you are running <span class="vs-field-hint">(so we can plan spacing)</span></label>
                     <input type="text" id="vs-setup-power-details" placeholder="e.g. fryer, warmer, lights">
                 </div>
 
-                <div class="vs-field">
+                <div class="vs-field is-wide">
+                    <p class="vs-notice">
+                        <strong>This event has no power or water at your site.</strong>
+                        Every vendor supplies their own, so please bring a generator
+                        and whatever water you need for the day.
+                    </p>
                     <label class="vs-check">
-                        <input type="checkbox" id="vs-setup-water">
-                        <span>I need water access</span>
+                        <input type="checkbox" id="vs-setup-selfsufficient" required>
+                        <span>I am supplying my own power and water</span>
                     </label>
                 </div>
 

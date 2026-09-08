@@ -291,14 +291,19 @@ function renderCategories() {
     return;
   }
 
+  // Food and market categories share this table, so say which is which.
+  const ordered = [...categories].sort((a, b) =>
+    (a.appliesTo || '').localeCompare(b.appliesTo || '') || a.name.localeCompare(b.name));
+
   host.innerHTML = `
     <div class="va-table-wrap">
       <table class="va-table">
-        <thead><tr><th>Category</th><th>Booked</th><th>Limit</th><th></th></tr></thead>
+        <thead><tr><th>Category</th><th>For</th><th>Booked</th><th>Limit</th><th></th></tr></thead>
         <tbody>
-          ${categories.map((c) => `
+          ${ordered.map((c) => `
             <tr>
               <td>${escapeHtml(c.name)}</td>
+              <td>${escapeHtml(c.appliesTo || '-')}</td>
               <td>${c.count || 0}</td>
               <td>
                 <input type="number" min="0" class="va-limit"

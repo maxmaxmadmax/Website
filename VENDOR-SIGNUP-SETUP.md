@@ -96,8 +96,8 @@ Open **`/vendor-admin`**, sign in, go to **Setup** and press
 **Seed Event Layout**. That writes:
 
 - the event (Eatz & Beatz Halloween Edition, 31 October 2026, Bowen Sports Complex)
-- 32 sites - 12 food, 16 market, 4 community
-- 13 food categories with their limits
+- 28 sites - 12 food, 8 market 3x3, 4 market 3x6, 4 community
+- 34 categories - 18 food, 16 market - each with a limit
 
 Safe to run more than once; it never overwrites what is already there.
 
@@ -113,6 +113,20 @@ moment cannot both get it; the second gets "that site has just been taken".
 Raising a limit in the admin dashboard reopens the category immediately, because
 the page compares the live count against the limit rather than storing a
 "full" flag.
+
+The limits the seed sets are a **starting point only**, not a rule anyone gave
+me: food categories default to 2 (catch-all "Other Food" 4), market to 6
+("Other Market Stall" 10). Set them to whatever you actually want before you
+open bookings.
+
+**Market stall sizes** - market sites come in 3x3 ($50) and 3x6 ($80). The size
+is part of the price key (`market-3x3`, `market-3x6`) and is stamped on each
+site, so a 3x3 booking cannot take a 3x6 space it has not paid for. That is
+enforced in `holdSite`, not only by hiding sites on the map.
+
+**Power and water** - this event has none on site. Every vendor confirms they
+are bringing their own before they can go past the setup step, and what they
+are bringing is recorded on the booking.
 
 **The 10 minute hold** - `holdSite` stamps `holdExpiresAt`. The `expireHolds`
 function runs every minute and hands back anything past its time, so an

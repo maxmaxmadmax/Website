@@ -27,14 +27,16 @@ export class VendorMap {
     this.mapSize = { width: 1000, height: 700 };
 
     this.vendorType = null;   // only sites of this type are selectable
+    this.stallSize = null;    // market only: 3x3 or 3x6
     this.selectedId = null;
     this.myUid = null;        // so my own hold does not look unavailable
 
     this.svg = null;
   }
 
-  setVendorType(type) {
+  setVendorType(type, stallSize) {
     this.vendorType = type;
+    this.stallSize = stallSize || null;
     this.render();
   }
 
@@ -72,9 +74,20 @@ export class VendorMap {
     return site.status || 'available';
   }
 
-  isSelectable(site) {
+  /* A site is only offered when it matches both the vendor type and, for
+     market stalls, the marquee size they are paying for. */
+  matchesVendor(site) {
     if (!this.vendorType) return false;
     if (site.type !== this.vendorType) return false;
+    if (this.vendorType === 'market' && this.stallSize && site.size &&
+        site.size !== this.stallSize) {
+      return false;
+    }
+    return true;
+  }
+
+  isSelectable(site) {
+    if (!this.matchesVendor(site)) return false;
 
     const status = this.statusFor(site);
     return status === 'available' || status === 'mine';
@@ -83,7 +96,7 @@ export class VendorMap {
   counts() {
     const out = { available: 0, held: 0, booked: 0, blocked: 0, mine: 0 };
     for (const site of this.sites) {
-      if (this.vendorType && site.type !== this.vendorType) continue;
+      if (this.vendorType && !this.matchesVendor(site)) continue;
       const s = this.statusFor(site);
       out[s] = (out[s] || 0) + 1;
     }
@@ -131,7 +144,7 @@ export class VendorMap {
       const status = this.statusFor(site);
       const selectable = this.isSelectable(site);
       const isSelected = site.id === this.selectedId;
-      const wrongType = this.vendorType && site.type !== this.vendorType;
+      const wrongType = this.vendorType && !this.matchesVendor(site);
 
       const g = document.createElementNS(ns, 'g');
       g.setAttribute(
@@ -201,7 +214,9 @@ export class VendorMap {
   }
 
   subLabel(site, status, wrongType) {
-    if (wrongType) return site.type;
+    // For a mismatch, say what it actually is - "3x6" is more use to a
+    // market vendor than "market".
+    if (wrongType) return site.size || site.type;
     if (status === 'mine') return 'YOURS';
     if (status === 'available') return 'FREE';
     if (status === 'held') return 'ON HOLD';
@@ -221,12 +236,13 @@ export class VendorMap {
 export function previewLayout() {
   const sites = [];
 
-  const run = (prefix, type, count, startX, y, w, h, gap) => {
+  const run = (prefix, type, count, startX, y, w, h, gap, size) => {
     for (let i = 0; i < count; i++) {
       sites.push({
         id: `${prefix}${i + 1}`,
         label: `${prefix}${i + 1}`,
         type,
+        ...(size ? { size } : {}),
         x: startX + i * (w + gap),
         y, w, h,
         status: 'available',
@@ -236,8 +252,8 @@ export function previewLayout() {
 
   run('F', 'food', 6, 90, 170, 110, 80, 26);
   run('G', 'food', 6, 90, 300, 110, 80, 26);
-  run('M', 'market', 8, 70, 440, 90, 70, 18);
-  run('N', 'market', 8, 70, 530, 90, 70, 18);
+  run('M', 'market', 8, 70, 440, 90, 70, 18, '3x3');
+  run('N', 'market', 4, 70, 530, 190, 70, 18, '3x6');
   run('C', 'community', 4, 70, 630, 120, 55, 24);
 
   // a couple of pre-set states so the legend means something in preview
@@ -257,22 +273,67 @@ export function previewLayout() {
   };
 }
 
+/* Mirrors functions/lib/layout.js so the preview shows the real list. */
 export function previewCategories() {
-  return [
-    { id: 'donuts', name: 'Donuts', limit: 1, count: 1, appliesTo: 'food' },
-    { id: 'burgers', name: 'Burgers', limit: 2, count: 0, appliesTo: 'food' },
-    { id: 'hot-chips', name: 'Hot Chips', limit: 1, count: 0, appliesTo: 'food' },
-    { id: 'coffee', name: 'Coffee', limit: 2, count: 1, appliesTo: 'food' },
-    { id: 'asian', name: 'Asian', limit: 2, count: 0, appliesTo: 'food' },
-    { id: 'mexican', name: 'Mexican', limit: 1, count: 0, appliesTo: 'food' },
-    { id: 'pizza', name: 'Pizza', limit: 1, count: 0, appliesTo: 'food' },
-    { id: 'bbq-meats', name: 'BBQ and Meats', limit: 2, count: 0, appliesTo: 'food' },
-    { id: 'seafood', name: 'Seafood', limit: 1, count: 0, appliesTo: 'food' },
-    { id: 'ice-cream', name: 'Ice Cream and Desserts', limit: 2, count: 0, appliesTo: 'food' },
-    { id: 'drinks-non-alc', name: 'Non-Alcoholic Drinks', limit: 2, count: 0, appliesTo: 'food' },
-    { id: 'vegan', name: 'Vegan and Vegetarian', limit: 2, count: 0, appliesTo: 'food' },
-    { id: 'other-food', name: 'Other Food', limit: 3, count: 0, appliesTo: 'food' },
+  const food = [
+    ['burgers-fries-american', 'Burgers / Loaded Fries / American'],
+    ['pizza-italian', 'Pizza / Italian'],
+    ['mexican-tacos', 'Mexican / Tacos / Nachos'],
+    ['asian-noodles', 'Asian / Noodles / Dumplings'],
+    ['indian-curry', 'Indian / Curry'],
+    ['bbq-smoked-meats', 'BBQ / Smoked Meats'],
+    ['seafood', 'Seafood'],
+    ['chicken-wings', 'Chicken / Wings'],
+    ['hot-dogs-sausages', 'Hot Dogs / Sausages'],
+    ['donuts-churros', 'Donuts / Churros'],
+    ['ice-cream-gelato', 'Ice Cream / Gelato / Frozen Desserts'],
+    ['cakes-baked-sweets', 'Cakes / Cupcakes / Baked Sweets'],
+    ['lollies-fairy-floss', 'Lollies / Fairy Floss / Sweet Treats'],
+    ['coffee', 'Coffee'],
+    ['drinks-juice-smoothies', 'Non-Alcoholic Drinks / Juice / Smoothies'],
+    ['healthy-salads-acai', 'Healthy / Salads / Acai'],
+    ['vegetarian-vegan', 'Vegetarian / Vegan Specialty'],
+    ['other-food', 'Other Food'],
   ];
+
+  const market = [
+    ['clothing-fashion', 'Clothing / Fashion'],
+    ['jewellery', 'Jewellery'],
+    ['candles-home-fragrance', 'Candles / Home Fragrance'],
+    ['arts-prints-photography', 'Arts / Prints / Photography'],
+    ['handmade-crafts', 'Handmade Crafts'],
+    ['homewares-decor', 'Homewares / Decor'],
+    ['beauty-skincare', 'Beauty / Skincare'],
+    ['plants-garden', 'Plants / Garden'],
+    ['toys-kids-products', 'Toys / Kids Products'],
+    ['pet-products', 'Pet Products'],
+    ['local-produce-packaged', 'Local Produce / Packaged Food'],
+    ['gifts-novelty', 'Gifts / Novelty Products'],
+    ['spiritual-crystals', 'Spiritual / Crystals'],
+    ['services-promotional', 'Services / Promotional Stall'],
+    ['community-charity-club', 'Community / Charity / Club'],
+    ['other-market', 'Other Market Stall'],
+  ];
+
+  const build = (rows, appliesTo, limit, otherLimit) =>
+    rows.map(([id, name]) => ({
+      id,
+      name,
+      appliesTo,
+      limit: id.startsWith('other-') ? otherLimit : limit,
+      count: 0,
+    }));
+
+  const all = [
+    ...build(food, 'food', 2, 4),
+    ...build(market, 'market', 6, 10),
+  ];
+
+  // one of each full in preview, so the FULL state is visible
+  all.find((c) => c.id === 'coffee').count = 2;
+  all.find((c) => c.id === 'jewellery').count = 6;
+
+  return all;
 }
 
 export { STATUS_ORDER };

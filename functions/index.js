@@ -91,6 +91,26 @@ function bookingReference() {
   return `EB-${out}`;
 }
 
+/* Market stalls are priced by marquee size, everything else by type.
+   Keep this in step with the pricing map in functions/lib/layout.js. */
+function priceKeyFor(booking) {
+  if (booking.vendorType === 'market') {
+    return `market-${booking.stallSize || '3x3'}`;
+  }
+  return booking.vendorType;
+}
+
+function priceFor(event, booking) {
+  const cents = event.pricing ? event.pricing[priceKeyFor(booking)] : undefined;
+  if (cents == null) {
+    throw new HttpsError(
+      'failed-precondition',
+      'No price is set for that vendor type. Check the event pricing.'
+    );
+  }
+  return cents;
+}
+
 /* True when a hold has run out. Anything not held is not expired. */
 function holdHasExpired(site, now) {
   if (site.status !== 'held') return false;
@@ -155,6 +175,15 @@ exports.holdSite = onCall(async (request) => {
       );
     }
 
+    // Market sites also come in two marquee sizes, and a 3x3 booking must
+    // not take a 3x6 space it has not paid for.
+    if (booking.vendorType === 'market' && site.size && site.size !== booking.stallSize) {
+      throw new HttpsError(
+        'failed-precondition',
+        `Site ${site.label} is a ${site.size} marquee site.`
+      );
+    }
+
     if (site.status === 'blocked') {
       throw new HttpsError('failed-precondition', `Site ${site.label} is not available.`);
     }
@@ -165,18 +194,28 @@ exports.holdSite = onCall(async (request) => {
       throw new HttpsError('already-exists', `Site ${site.label} is on hold for someone else.`);
     }
 
-    // Food vendors must have a category, and it must not be full.
+    // Food vendors and market stalls both pick a category, and it must not
+    // be full. Community groups do not.
     let categoryName = null;
-    if (booking.vendorType === 'food') {
+    if (booking.vendorType === 'food' || booking.vendorType === 'market') {
       if (!booking.categoryId) {
-        throw new HttpsError('failed-precondition', 'Choose a food category first.');
+        throw new HttpsError('failed-precondition', 'Choose a category first.');
       }
 
       const catSnap = await tx.get(categoryRef(eventId, booking.categoryId));
       if (!catSnap.exists) {
-        throw new HttpsError('not-found', 'That food category no longer exists.');
+        throw new HttpsError('not-found', 'That category no longer exists.');
       }
       const category = catSnap.data();
+
+      // A food vendor cannot take a market category, or the other way
+      // round, even if the request is put together by hand.
+      if (category.appliesTo !== booking.vendorType) {
+        throw new HttpsError(
+          'failed-precondition',
+          `${category.name} is not a ${booking.vendorType} category.`
+        );
+      }
 
       // Count this vendor's own in-flight hold only once.
       const alreadyCounted = booking.countedCategoryId === booking.categoryId;
@@ -218,7 +257,7 @@ exports.holdSite = onCall(async (request) => {
       siteLabel: site.label,
       siteType: site.type,
       categoryName,
-      amountCents: event.pricing[booking.vendorType] ?? 0,
+      amountCents: priceFor(event, booking),
       currency: event.currency || 'aud',
       holdExpiresAt: expiresAt,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -228,7 +267,7 @@ exports.holdSite = onCall(async (request) => {
       ok: true,
       siteLabel: site.label,
       holdExpiresAt: expiresAt.toMillis(),
-      amountCents: event.pricing[booking.vendorType] ?? 0,
+      amountCents: priceFor(event, booking),
     };
   });
 });
@@ -398,8 +437,9 @@ async function confirmBooking(bookingId, extra = {}) {
       return { ok: false, reason: 'site-taken' };
     }
 
-    // Count the category now that the booking is real.
-    if (booking.vendorType === 'food' && booking.categoryId && !booking.countedCategoryId) {
+    // Count the category now that the booking is real. Food and market
+    // both count; community groups have no category.
+    if (booking.categoryId && !booking.countedCategoryId) {
       const catRef = categoryRef(booking.eventId, booking.categoryId);
       const catSnap = await tx.get(catRef);
       if (catSnap.exists) {

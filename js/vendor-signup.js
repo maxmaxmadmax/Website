@@ -26,12 +26,14 @@ import { VendorMap, previewLayout, previewCategories } from './vendor-map.js';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
-/* Prices shown before the server confirms them. The server uses the values
-   on the event document; these are only for display. */
+/* Prices shown before the server confirms them. The server prices from the
+   event document; these are only for display. Market stalls are priced by
+   marquee size, so their key is market-<size>. */
 const PRICING = {
-  food: { cents: 10000, label: '$100' },
-  market: { cents: 5000, label: '$50' },
-  community: { cents: 0, label: 'Free' },
+  'food': { cents: 10000, label: '$100' },
+  'market-3x3': { cents: 5000, label: '$50' },
+  'market-3x6': { cents: 8000, label: '$80' },
+  'community': { cents: 0, label: 'Free' },
 };
 
 const VENDOR_LABEL = {
@@ -39,6 +41,26 @@ const VENDOR_LABEL = {
   market: 'Market Stall',
   community: 'Non-Food Community Group',
 };
+
+/* Matches priceKeyFor() in functions/index.js */
+function priceKey() {
+  if (state.vendorType === 'market') {
+    return `market-${state.stallSize || '3x3'}`;
+  }
+  return state.vendorType;
+}
+
+function priceInfo() {
+  return PRICING[priceKey()] || PRICING.community;
+}
+
+function vendorLabel() {
+  const base = VENDOR_LABEL[state.vendorType] || '';
+  if (state.vendorType === 'market' && state.stallSize) {
+    return `${base} (${state.stallSize}m marquee)`;
+  }
+  return base;
+}
 
 const STEPS = ['type', 'business', 'category', 'setup', 'documents', 'site', 'review'];
 
@@ -50,6 +72,7 @@ const state = {
   preview: !isFirebaseConfigured,
 
   vendorType: null,
+  stallSize: null,        // market only: '3x3' or '3x6'
   business: {},
   categoryId: null,
   categoryName: null,
@@ -266,7 +289,7 @@ function renderMapMeta() {
 
   const c = map.counts();
   legend.textContent = state.vendorType
-    ? `${c.available} available for ${VENDOR_LABEL[state.vendorType].toLowerCase()}s` +
+    ? `${c.available} available for ${vendorLabel().toLowerCase()}` +
       (c.mine ? ` · ${c.mine} held by you` : '')
     : '';
 }
@@ -354,6 +377,7 @@ async function ensureBookingDoc() {
     uid: state.user.uid,
     eventId,
     vendorType: state.vendorType,
+    stallSize: state.stallSize,
     business: state.business,
     categoryId: state.categoryId,
     setup: state.setup,
@@ -376,6 +400,7 @@ async function saveDraft() {
 
   await updateDoc(doc(fb.db, 'bookings', state.bookingId), {
     vendorType: state.vendorType,
+    stallSize: state.stallSize,
     business: state.business,
     categoryId: state.categoryId,
     setup: state.setup,
@@ -412,7 +437,7 @@ async function loadExistingBooking() {
     state.siteLabel = b.siteLabel || null;
 
     if (map) {
-      map.setVendorType(state.vendorType);
+      map.setVendorType(state.vendorType, state.stallSize);
       map.setSelected(state.siteId);
     }
   } catch (err) {
@@ -686,9 +711,14 @@ function showConfirmation() {
 /* -------------------------------------------------------------------------
    Steps and rendering
    ------------------------------------------------------------------------- */
+/* Food vendors and market stalls both pick a category. Community groups
+   do not, so that step drops out of the flow for them. */
+function needsCategory() {
+  return state.vendorType === 'food' || state.vendorType === 'market';
+}
+
 function visibleSteps() {
-  // Only food vendors pick a category.
-  return STEPS.filter((s) => s !== 'category' || state.vendorType === 'food');
+  return STEPS.filter((s) => s !== 'category' || needsCategory());
 }
 
 function goTo(step) {
@@ -724,7 +754,7 @@ function render() {
 
   if (state.step === 'category') renderCategories();
   if (state.step === 'site') {
-    if (map) map.setVendorType(state.vendorType);
+    if (map) map.setVendorType(state.vendorType, state.stallSize);
     renderSiteChoice();
     renderMapMeta();
     renderSignInPrompt();
@@ -761,12 +791,27 @@ function renderCategories() {
   const host = document.getElementById('vs-categories');
   if (!host) return;
 
+  // Food vendors see food categories, market stalls see market ones.
+  const mine = categories.filter((c) => c.appliesTo === state.vendorType);
+
+  const heading = document.getElementById('vs-category-heading');
+  if (heading) {
+    heading.textContent = state.vendorType === 'market'
+      ? 'What do you sell?'
+      : 'Your food category';
+  }
+
   if (!categories.length) {
     host.innerHTML = '<p class="vs-muted">Loading categories…</p>';
     return;
   }
 
-  host.innerHTML = categories.map((c) => {
+  if (!mine.length) {
+    host.innerHTML = '<p class="vs-muted">No categories set up for this vendor type yet.</p>';
+    return;
+  }
+
+  host.innerHTML = mine.map((c) => {
     const full = (c.count || 0) >= c.limit;
     const selected = state.categoryId === c.id;
 
@@ -785,7 +830,7 @@ function renderCategories() {
   host.querySelectorAll('[data-category]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-category');
-      const cat = categories.find((c) => c.id === id);
+      const cat = mine.find((c) => c.id === id);
       state.categoryId = id;
       state.categoryName = cat ? cat.name : null;
       renderCategories();
@@ -814,24 +859,25 @@ function renderReview() {
   const host = document.getElementById('vs-review');
   if (!host) return;
 
-  const price = PRICING[state.vendorType] || PRICING.community;
+  const price = priceInfo();
 
   const rows = [
-    ['Vendor type', VENDOR_LABEL[state.vendorType] || '-'],
+    ['Vendor type', vendorLabel() || '-'],
     ['Business', state.business.name || '-'],
     ['Contact', state.business.contactName || '-'],
     ['Email', state.business.email || '-'],
     ['Phone', state.business.phone || '-'],
   ];
 
-  if (state.vendorType === 'food') {
-    rows.push(['Food category', state.categoryName || '-']);
+  if (needsCategory()) {
+    rows.push(['Category', state.categoryName || '-']);
   }
 
   rows.push(
     ['Frontage', state.setup.frontage ? `${state.setup.frontage} m` : '-'],
     ['Depth', state.setup.depth ? `${state.setup.depth} m` : '-'],
-    ['Power', state.setup.power || 'None'],
+    ['Own power', state.setup.ownPower || '-'],
+    ['Power and water', state.setup.selfSufficient ? 'Bringing my own' : 'Not confirmed'],
     ['Arrival', state.setup.arrivalTime || '-'],
     ['Documents', state.documents.length ? `${state.documents.length} attached` : 'None'],
     ['Site', state.siteLabel || 'Not chosen']
@@ -865,10 +911,13 @@ function wireStaticControls() {
   document.querySelectorAll('[data-vendor-type]').forEach((btn) => {
     btn.addEventListener('click', () => {
       state.vendorType = btn.getAttribute('data-vendor-type');
+      state.stallSize = btn.getAttribute('data-stall-size') || null;
+
       document.querySelectorAll('[data-vendor-type]').forEach((b) => {
         b.classList.toggle('is-selected', b === btn);
       });
-      if (map) map.setVendorType(state.vendorType);
+
+      if (map) map.setVendorType(state.vendorType, state.stallSize);
       setStepError('type', '');
       nextStep();
     });
@@ -966,9 +1015,11 @@ function collectStep(step) {
     state.setup = {
       frontage: val('vs-setup-frontage'),
       depth: val('vs-setup-depth'),
-      power: val('vs-setup-power'),
+      // All vendors run off their own power and water at this event, so
+      // what we record is what they are bringing, not what they want from us.
+      ownPower: val('vs-setup-own-power'),
       powerDetails: val('vs-setup-power-details'),
-      water: document.getElementById('vs-setup-water')?.checked || false,
+      selfSufficient: document.getElementById('vs-setup-selfsufficient')?.checked || false,
       vehicleOnSite: document.getElementById('vs-setup-vehicle')?.checked || false,
       arrivalTime: val('vs-setup-arrival'),
       notes: val('vs-setup-notes'),
@@ -1000,14 +1051,23 @@ function validateStep(step) {
     }
   }
 
-  if (step === 'category' && state.vendorType === 'food' && !state.categoryId) {
-    setStepError('category', 'Please choose a food category.');
+  if (step === 'category' && needsCategory() && !state.categoryId) {
+    setStepError('category', 'Please choose a category.');
     return false;
   }
 
   if (step === 'setup') {
     if (!val('vs-setup-frontage') || !val('vs-setup-depth')) {
       setStepError('setup', 'Please give us your frontage and depth in metres.');
+      return false;
+    }
+
+    // Every vendor brings their own power and water to this event, so we
+    // ask them to say plainly that they can.
+    const ack = document.getElementById('vs-setup-selfsufficient');
+    if (ack && !ack.checked) {
+      setStepError('setup',
+        'Please confirm you are bringing your own power and water.');
       return false;
     }
   }
