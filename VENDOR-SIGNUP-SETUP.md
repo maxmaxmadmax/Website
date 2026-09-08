@@ -115,8 +115,8 @@ the page compares the live count against the limit rather than storing a
 "full" flag.
 
 The check that counts is in `createCheckout`, immediately before Stripe is
-called. That is deliberate: vendors choose their site (step 3) before their
-category (step 4), so `holdSite` cannot be the last word on it - it only
+called. That is deliberate: vendors can go back and change their category
+after holding a site, so `holdSite` cannot be the last word on it - it only
 re-checks a category if the booking already has one. Two vendors sitting on the
 last space in a category would otherwise both be able to pay; whoever reaches
 checkout second is turned away instead.

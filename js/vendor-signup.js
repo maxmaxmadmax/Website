@@ -1,8 +1,8 @@
 /* --------------------------------------------------------------------------
    Eatz & Beatz - vendor signup flow
 
-   Vendor type -> event info and FAQs -> site on the map -> business,
-   category and setup -> documents -> review -> pay -> confirmation.
+   Vendor type -> event info and FAQs -> what you sell -> site on the map
+   -> business and setup -> documents -> review -> pay -> confirmation.
 
    Two things worth knowing if you come back to this later:
 
@@ -66,10 +66,11 @@ function vendorLabel() {
   return '';
 }
 
-/* The site is picked early, before we ask for business details, so vendors
-   can see what is left before filling anything in. Business, category and
-   setup are one step - they are all "tell us about your stall". */
-const STEPS = ['type', 'info', 'site', 'details', 'documents', 'review'];
+/* What you sell comes before the map, because a category that is already
+   full should stop a vendor before they get attached to a site. The site
+   then comes before business details, so they can see what is left without
+   filling anything in first. */
+const STEPS = ['type', 'info', 'category', 'site', 'details', 'documents', 'review'];
 
 /* -------------------------------------------------------------------------
    State
@@ -259,7 +260,7 @@ function subscribeCategories() {
       categories = [];
       snap.forEach((d) => categories.push({ id: d.id, ...d.data() }));
       categories.sort((a, b) => a.name.localeCompare(b.name));
-      if (state.step === 'details') renderCategories();
+      if (state.step === 'category') renderCategories();
     },
     (err) => console.error('categories listener', err)
   );
@@ -794,7 +795,7 @@ function render() {
 
   renderStepper(steps);
 
-  if (state.step === 'details') renderCategories();
+  if (state.step === 'category') renderCategories();
   if (state.step === 'site') {
     if (map) map.setVendorType(state.vendorType);
     renderSiteChoice();
@@ -812,6 +813,7 @@ function renderStepper(steps) {
   const names = {
     type: 'Vendor type',
     info: 'Event info',
+    category: 'What you sell',
     site: 'Choose your site',
     details: 'Business & setup',
     documents: 'Documents',
@@ -875,7 +877,7 @@ function renderCategories() {
       state.categoryId = id;
       state.categoryName = cat ? cat.name : null;
       renderCategories();
-      setStepError('details', '');
+      setStepError('category', '');
     });
   });
 }
@@ -1107,10 +1109,15 @@ function validateStep(step) {
     return false;
   }
 
-  /* Business, category and setup are one step now, so they share one error
-     line. Checked in the order they appear on the page, and the first thing
-     missing is scrolled to - otherwise on a long step the message can sit
-     off screen and look like nothing happened. */
+  if (step === 'category' && !state.categoryId) {
+    setStepError('category', 'Please choose a category.');
+    return false;
+  }
+
+  /* Business and setup share a step, so they share one error line. Checked
+     in the order they appear on the page, and the first thing missing is
+     scrolled to - otherwise on a long step the message can sit off screen
+     and look like nothing happened. */
   if (step === 'details') {
     const name = val('vs-biz-name');
     const contact = val('vs-biz-contact');
@@ -1123,10 +1130,6 @@ function validateStep(step) {
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return failDetails('That email address does not look right.', 'vs-biz-email');
-    }
-
-    if (!state.categoryId) {
-      return failDetails('Please choose a category.', 'vs-categories');
     }
 
     if (!val('vs-setup-frontage') || !val('vs-setup-depth')) {

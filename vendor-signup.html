@@ -248,7 +248,25 @@
         </div>
 
 
-        <!-- 3. CHOOSE YOUR SITE -------------------------------------------- -->
+        <!-- 3. WHAT YOU SELL ----------------------------------------------- -->
+        <div class="vs-step" data-step="category" hidden>
+            <h2 id="vs-category-heading">What do you sell?</h2>
+            <p class="vs-step-intro">
+                We limit how many vendors sell the same thing so everyone trades well.
+                Categories that are full are closed off.
+            </p>
+
+            <div class="vs-category-grid" id="vs-categories"></div>
+
+            <p class="vs-error" data-error="category" hidden></p>
+
+            <div class="vs-step-actions">
+                <button type="button" class="btn btn-outline" data-back>Back</button>
+                <button type="button" class="btn" data-next>Choose Your Site</button>
+            </div>
+        </div>
+
+        <!-- 4. CHOOSE YOUR SITE -------------------------------------------- -->
         <div class="vs-step" data-step="site" hidden>
             <h2>Choose your site</h2>
             <p class="vs-step-intro">
@@ -338,12 +356,12 @@
             </div>
         </div>
 
-        <!-- 4. BUSINESS INFO AND SETUP ------------------------------------ -->
+        <!-- 5. BUSINESS INFO AND SETUP ------------------------------------ -->
         <div class="vs-step" data-step="details" hidden>
             <h2>Your business and setup</h2>
             <p class="vs-step-intro">
-                Who is coming, what you are selling and what you are bringing.
-                All on one page so you are not clicking through four screens.
+                Who is coming and what you are bringing, on one page so you
+                are not clicking through three screens.
             </p>
 
             <h3 class="vs-sub">Your business</h3>
@@ -389,14 +407,6 @@
             </div>
 
 
-
-            <h3 class="vs-sub" id="vs-category-heading">Your category</h3>
-            <p class="vs-step-intro">
-                We limit how many vendors sell the same thing so everyone trades well.
-                Categories that are full are closed off.
-            </p>
-
-            <div class="vs-category-grid" id="vs-categories"></div>
 
 
 
@@ -487,7 +497,7 @@
             </div>
         </div>
 
-        <!-- 5. DOCUMENTS --------------------------------------------------- -->
+        <!-- 6. DOCUMENTS --------------------------------------------------- -->
         <div class="vs-step" data-step="documents" hidden>
             <h2>Your documents</h2>
             <p class="vs-step-intro">
@@ -525,7 +535,7 @@
             </div>
         </div>
 
-        <!-- 6. REVIEW AND PAY ---------------------------------------------- -->
+        <!-- 7. REVIEW AND PAY ---------------------------------------------- -->
         <div class="vs-step" data-step="review" hidden>
             <h2>Review and pay</h2>
             <p class="vs-step-intro">Check everything over before you pay.</p>
