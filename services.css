@@ -51,7 +51,13 @@
     overflow-x:auto;
     overflow-y:hidden;
     scroll-snap-type:x mandatory;
-    scroll-behavior:smooth;
+
+    /*  Deliberately NOT scroll-behavior:smooth. That would animate every
+        programmatic move, including the many small ones the wheel makes as
+        it glides, so each would be chasing the last and the whole thing
+        would feel like it was dragging. The arrows and labels ask for a
+        smooth scroll themselves, one call at a time, which is the only
+        place it is wanted.                                               */
 
     /* iOS: keep the swipe from dragging the whole page around */
     overscroll-behavior-x:contain;

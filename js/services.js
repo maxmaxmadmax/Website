@@ -37,6 +37,7 @@
     var prevBtn = page.querySelector('#sgs-prev');
     var nextBtn = page.querySelector('#sgs-next');
     var navButtons = Array.prototype.slice.call(page.querySelectorAll('[data-sgs-go]'));
+    var navList = page.querySelector('#sgs-nav-list');
     var compact = page.querySelector('#sgs-compact');
     var progress = page.querySelector('#sgs-progress-bar');
     var startBtn = page.querySelector('[data-sgs-start]');
@@ -107,9 +108,11 @@
             showing instead, there is nothing to line up with, so it goes
             back to even slices as a plain progress meter.                 */
         if (progress) {
-            var list = page.querySelector('#sgs-nav-list');
             var active = navButtons[i];
-            var labelsShown = list && getComputedStyle(list).display !== 'none';
+            /* offsetParent is null when an element is display:none, so this
+               says whether the labels are showing without the cost of
+               asking for computed styles on every frame. */
+            var labelsShown = navList && navList.offsetParent !== null;
 
             if (labelsShown && active) {
                 var barBox = progress.parentNode.getBoundingClientRect();
@@ -131,16 +134,24 @@
         return (n < 10 ? '0' : '') + n;
     }
 
-    /* Scroll events fire in bursts; only redraw once the run has settled. */
-    var settle;
+    /*  Scroll fires in bursts, and paint measures elements, so it is held to
+        one run per frame. Doing it on a timer instead meant the labels
+        lagged behind the picture; doing it on every event meant measuring
+        the page dozens of times a second while it was moving. */
+    var painting = false;
     track.addEventListener('scroll', function () {
-        clearTimeout(settle);
-        settle = setTimeout(paint, 60);
+        if (painting) { return; }
+        painting = true;
+        window.requestAnimationFrame(function () {
+            painting = false;
+            paint();
+        });
     }, { passive: true });
 
+    var resizeTimer;
     window.addEventListener('resize', function () {
-        clearTimeout(settle);
-        settle = setTimeout(function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
             paint();
             setUpVideo();
         }, 120);
@@ -189,18 +200,51 @@
     /* ---------------------------------------------------------------------
        Mouse wheel
 
-       While the slider fills the screen, a downward wheel moves to the next
-       slide instead of scrolling the page. The moment there is no next slide
-       the event is left alone, so the visitor carries straight on down to the
-       rest of the page and can scroll back up again the same way.
+       The picture glides sideways with the wheel, one to one, and settles
+       onto the nearest slide when you stop. It is not stepped: an earlier
+       version moved a whole slide per gesture and then ignored the wheel for
+       half a second so it would not run away on trackpad inertia, which made
+       the page feel like it was lagging behind the hand. Following the
+       gesture directly and letting it land afterwards is both smoother and
+       more responsive.
 
-       Only for mouse and trackpad. Touch is never touched - swiping is
-       already the right gesture there.
+       Snapping is switched off while the wheel is turning - with it left on,
+       the browser drags the track back to a slide edge between every event
+       and the movement stutters. It goes back on when the gesture ends,
+       which is what locks the slide into place.
+
+       The moment there is no next slide the event is left alone, so the
+       visitor carries straight on down the page and can scroll back up the
+       same way. Touch is never touched - swiping is already right there.
        --------------------------------------------------------------------- */
     var finePointer = window.matchMedia('(pointer: fine)').matches;
 
-    if (finePointer && !reduceMotion) {
-        var wheelLock = false;
+    if (finePointer) {
+        var gliding = false;
+        var settleTimer;
+        var glideFrom = 0;      // slide we set off from
+        var glideBy = 0;        // how far the gesture pushed, in pixels
+
+        var endGlide = function () {
+            gliding = false;
+            track.style.scrollSnapType = '';          // back to snapping
+
+            var landOn = currentIndex();
+
+            /*  A short flick still counts. Landing purely on whichever slide
+                is nearest means a small deliberate nudge slides the picture
+                a little and then puts it back, which feels like the page
+                ignored you - and on a mouse with notched wheel it takes
+                eight of them to get anywhere. So if the gesture had a clear
+                direction but has not carried far enough to change slide,
+                it goes one that way.                                     */
+            if (landOn === glideFrom && Math.abs(glideBy) > track.clientWidth * 0.07) {
+                landOn = glideFrom + (glideBy > 0 ? 1 : -1);
+            }
+
+            glideBy = 0;
+            goTo(landOn);
+        };
 
         track.addEventListener('wheel', function (ev) {
             // a genuine sideways gesture already does the right thing
@@ -218,19 +262,28 @@
 
             // nothing left that way? let the page have the scroll
             if ((goingDown && atEnd()) || (!goingDown && atStart())) {
+                if (gliding) { endGlide(); }
                 return;
             }
 
             ev.preventDefault();
 
-            // one slide per gesture, rather than flying through on inertia
-            if (wheelLock) {
-                return;
+            if (!gliding) {
+                gliding = true;
+                glideFrom = currentIndex();
+                glideBy = 0;
+                track.style.scrollSnapType = 'none';
             }
-            wheelLock = true;
-            setTimeout(function () { wheelLock = false; }, 620);
 
-            goTo(currentIndex() + (goingDown ? 1 : -1));
+            /*  A notched mouse wheel reports lines rather than pixels - 3 of
+                them per notch - so it is scaled to roughly what the browser
+                itself treats a line as.                                   */
+            var step = ev.deltaMode === 1 ? ev.deltaY * 40 : ev.deltaY;
+            track.scrollLeft += step;
+            glideBy += step;
+
+            clearTimeout(settleTimer);
+            settleTimer = setTimeout(endGlide, 110);
         }, { passive: false });
     }
 
