@@ -17,12 +17,14 @@ const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { defineSecret } = require('firebase-functions/params');
 const { setGlobalOptions } = require('firebase-functions/v2');
 const logger = require('firebase-functions/logger');
-const admin = require('firebase-admin');
+const { initializeApp } = require('firebase-admin/app');
+const { getFirestore, FieldValue, Timestamp } = require('firebase-admin/firestore');
+const { getAuth } = require('firebase-admin/auth');
 
 const layout = require('./lib/layout');
 
-admin.initializeApp();
-const db = admin.firestore();
+initializeApp();
+const db = getFirestore();
 
 // Sydney is the closest region to North Queensland that runs everything.
 setGlobalOptions({ region: 'australia-southeast1', maxInstances: 10 });
@@ -370,14 +372,14 @@ exports.holdSite = onCall(async (request) => {
     for (const ref of toRelease) {
       tx.update(ref, {
         status: 'available',
-        heldBy: admin.firestore.FieldValue.delete(),
-        holdExpiresAt: admin.firestore.FieldValue.delete(),
-        bookingId: admin.firestore.FieldValue.delete(),
+        heldBy: FieldValue.delete(),
+        holdExpiresAt: FieldValue.delete(),
+        bookingId: FieldValue.delete(),
       });
     }
 
     const holdMinutes = event.holdMinutes || 10;
-    const expiresAt = admin.firestore.Timestamp.fromMillis(now + holdMinutes * 60 * 1000);
+    const expiresAt = Timestamp.fromMillis(now + holdMinutes * 60 * 1000);
 
     for (const ref of wantedRefs) {
       tx.update(ref, {
@@ -402,7 +404,7 @@ exports.holdSite = onCall(async (request) => {
       amountCents,
       currency: event.currency || 'aud',
       holdExpiresAt: expiresAt,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
     return {
@@ -441,9 +443,9 @@ exports.releaseHold = onCall(async (request) => {
       if (site.status === 'held' && site.heldBy === uid) {
         tx.update(refs[i], {
           status: 'available',
-          heldBy: admin.firestore.FieldValue.delete(),
-          holdExpiresAt: admin.firestore.FieldValue.delete(),
-          bookingId: admin.firestore.FieldValue.delete(),
+          heldBy: FieldValue.delete(),
+          holdExpiresAt: FieldValue.delete(),
+          bookingId: FieldValue.delete(),
         });
       }
     });
@@ -569,7 +571,7 @@ exports.createCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request
     status: 'pending_payment',
     paymentStatus: 'unpaid',
     stripeSessionId: session.id,
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   });
 
   return { ok: true, url: session.url };
@@ -635,7 +637,7 @@ async function confirmBooking(bookingId, extra = {}) {
         status: 'needs_attention',
         paymentStatus: extra.paymentStatus || 'paid',
         problem: 'Site was taken before payment completed. Needs a new site or a refund.',
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
         ...stripeFields(extra),
       });
       logger.error('Site taken before payment settled', { bookingId, bayIds });
@@ -648,7 +650,7 @@ async function confirmBooking(bookingId, extra = {}) {
       const catSnap = await tx.get(catRef);
       if (catSnap.exists) {
         tx.update(catRef, {
-          count: admin.firestore.FieldValue.increment(1),
+          count: FieldValue.increment(1),
         });
       }
     }
@@ -657,8 +659,8 @@ async function confirmBooking(bookingId, extra = {}) {
       tx.update(ref, {
         status: 'booked',
         bookingId,
-        heldBy: admin.firestore.FieldValue.delete(),
-        holdExpiresAt: admin.firestore.FieldValue.delete(),
+        heldBy: FieldValue.delete(),
+        holdExpiresAt: FieldValue.delete(),
       });
     }
 
@@ -667,9 +669,9 @@ async function confirmBooking(bookingId, extra = {}) {
       paymentStatus: extra.paymentStatus || 'paid',
       countedCategoryId: booking.categoryId || null,
       reference: booking.reference || bookingReference(),
-      confirmedAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      holdExpiresAt: admin.firestore.FieldValue.delete(),
+      confirmedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      holdExpiresAt: FieldValue.delete(),
       ...stripeFields(extra),
     });
 
@@ -786,9 +788,9 @@ async function releaseBookingHold(bookingId) {
           siteSnap.data().bookingId === bookingId) {
         tx.update(refs[i], {
           status: 'available',
-          heldBy: admin.firestore.FieldValue.delete(),
-          holdExpiresAt: admin.firestore.FieldValue.delete(),
-          bookingId: admin.firestore.FieldValue.delete(),
+          heldBy: FieldValue.delete(),
+          holdExpiresAt: FieldValue.delete(),
+          bookingId: FieldValue.delete(),
         });
       }
     });
@@ -796,11 +798,11 @@ async function releaseBookingHold(bookingId) {
     tx.update(bookingRef, {
       status: 'draft',
       paymentStatus: 'none',
-      siteId: admin.firestore.FieldValue.delete(),
-      siteIds: admin.firestore.FieldValue.delete(),
-      siteLabel: admin.firestore.FieldValue.delete(),
-      holdExpiresAt: admin.firestore.FieldValue.delete(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      siteId: FieldValue.delete(),
+      siteIds: FieldValue.delete(),
+      siteLabel: FieldValue.delete(),
+      holdExpiresAt: FieldValue.delete(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
   });
 }
@@ -809,7 +811,7 @@ async function releaseBookingHold(bookingId) {
    expireHolds - every minute, hand back anything whose 10 minutes ran out.
    ------------------------------------------------------------------------- */
 exports.expireHolds = onSchedule('every 1 minutes', async () => {
-  const now = admin.firestore.Timestamp.now();
+  const now = Timestamp.now();
 
   const stale = await db
     .collectionGroup('sites')
@@ -834,9 +836,9 @@ exports.expireHolds = onSchedule('every 1 minutes', async () => {
 
         tx.update(doc.ref, {
           status: 'available',
-          heldBy: admin.firestore.FieldValue.delete(),
-          holdExpiresAt: admin.firestore.FieldValue.delete(),
-          bookingId: admin.firestore.FieldValue.delete(),
+          heldBy: FieldValue.delete(),
+          holdExpiresAt: FieldValue.delete(),
+          bookingId: FieldValue.delete(),
         });
 
         if (site.bookingId) {
@@ -846,9 +848,9 @@ exports.expireHolds = onSchedule('every 1 minutes', async () => {
             tx.update(bRef, {
               status: 'draft',
               paymentStatus: 'none',
-              siteId: admin.firestore.FieldValue.delete(),
-              siteLabel: admin.firestore.FieldValue.delete(),
-              holdExpiresAt: admin.firestore.FieldValue.delete(),
+              siteId: FieldValue.delete(),
+              siteLabel: FieldValue.delete(),
+              holdExpiresAt: FieldValue.delete(),
             });
           }
         }
@@ -881,7 +883,7 @@ exports.seedEvent = onCall(async (request) => {
   if (!existing.exists) {
     batch.set(eventRef, {
       ...layout.defaultEvent(),
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     });
   }
 
@@ -932,8 +934,8 @@ exports.setAdminRole = onCall(async (request) => {
   const { email, makeAdmin } = request.data || {};
   if (!email) throw new HttpsError('invalid-argument', 'Need an email address.');
 
-  const user = await admin.auth().getUserByEmail(email);
-  await admin.auth().setCustomUserClaims(user.uid, { admin: makeAdmin !== false });
+  const user = await getAuth().getUserByEmail(email);
+  await getAuth().setCustomUserClaims(user.uid, { admin: makeAdmin !== false });
 
   return { ok: true, uid: user.uid, admin: makeAdmin !== false };
 });
@@ -949,9 +951,9 @@ exports.adminSetSiteStatus = onCall(async (request) => {
 
   await siteRef(eventId, siteId).update({
     status,
-    heldBy: admin.firestore.FieldValue.delete(),
-    holdExpiresAt: admin.firestore.FieldValue.delete(),
-    bookingId: admin.firestore.FieldValue.delete(),
+    heldBy: FieldValue.delete(),
+    holdExpiresAt: FieldValue.delete(),
+    bookingId: FieldValue.delete(),
   });
 
   return { ok: true };
@@ -998,9 +1000,9 @@ exports.adminCancelBooking = onCall(async (request) => {
       if (siteSnap.exists && siteSnap.data().bookingId === bookingId) {
         tx.update(bayRefs[i], {
           status: 'available',
-          bookingId: admin.firestore.FieldValue.delete(),
-          heldBy: admin.firestore.FieldValue.delete(),
-          holdExpiresAt: admin.firestore.FieldValue.delete(),
+          bookingId: FieldValue.delete(),
+          heldBy: FieldValue.delete(),
+          holdExpiresAt: FieldValue.delete(),
         });
       }
     });
@@ -1009,15 +1011,15 @@ exports.adminCancelBooking = onCall(async (request) => {
       const catRef = categoryRef(booking.eventId, booking.countedCategoryId);
       const catSnap = await tx.get(catRef);
       if (catSnap.exists && catSnap.data().count > 0) {
-        tx.update(catRef, { count: admin.firestore.FieldValue.increment(-1) });
+        tx.update(catRef, { count: FieldValue.increment(-1) });
       }
     }
 
     tx.update(bRef, {
       status: 'cancelled',
-      cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
-      countedCategoryId: admin.firestore.FieldValue.delete(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      cancelledAt: FieldValue.serverTimestamp(),
+      countedCategoryId: FieldValue.delete(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
   });
 

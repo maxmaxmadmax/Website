@@ -21,12 +21,12 @@
    -------------------------------------------------------------------------- */
 
 export const firebaseConfig = {
-  apiKey: 'REPLACE_WITH_YOUR_API_KEY',
-  authDomain: 'REPLACE_WITH_YOUR_PROJECT.firebaseapp.com',
-  projectId: 'REPLACE_WITH_YOUR_PROJECT',
-  storageBucket: 'REPLACE_WITH_YOUR_PROJECT.firebasestorage.app',
-  messagingSenderId: 'REPLACE_WITH_YOUR_SENDER_ID',
-  appId: 'REPLACE_WITH_YOUR_APP_ID',
+  apiKey: 'AIzaSyCVWdD7fE24MuN-v5XQLObJbSHYRUbPlPY',
+  authDomain: 'soundzgood-8c86f.firebaseapp.com',
+  projectId: 'soundzgood-8c86f',
+  storageBucket: 'soundzgood-8c86f.firebasestorage.app',
+  messagingSenderId: '188284062614',
+  appId: '1:188284062614:web:5e9f6f64713fb2e02dabb7',
 };
 
 /* The region the Cloud Functions are deployed to. Matches
