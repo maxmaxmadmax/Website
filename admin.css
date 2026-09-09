@@ -944,6 +944,43 @@ body{
 
 
 /* --------------------------------------------------------------------------
+   EVENT CARDS
+   -------------------------------------------------------------------------- */
+.ad-ev-list{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
+    gap:14px;
+}
+
+.ad-ev{ padding:16px 18px 18px; }
+
+/* The active event is the one everything else on the page is about */
+.ad-ev.is-active{ border-color:var(--ad-orange); box-shadow:0 0 0 1px var(--ad-orange); }
+
+.ad-ev-head{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:10px;
+}
+
+.ad-ev-head h2{ font-size:1.1rem; margin:0 0 3px; letter-spacing:-.3px; }
+.ad-ev-head .ad-pill{ margin-left:auto; flex:0 0 auto; }
+.ad-ev-when{ margin:0; font-size:.82rem; color:var(--ad-muted); }
+
+.ad-ev .ad-kvs{ margin-bottom:14px; }
+.ad-ev .ad-kv dt{ flex-basis:98px; }
+.ad-ev .ad-actions-row{ margin-bottom:0; }
+
+.ad-ev code{
+    font-size:.8rem;
+    background:var(--ad-grey-bg);
+    padding:1px 5px;
+    border-radius:4px;
+}
+
+
+/* --------------------------------------------------------------------------
    COMING SOON
    -------------------------------------------------------------------------- */
 .ad-soon{

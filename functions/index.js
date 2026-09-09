@@ -1490,3 +1490,108 @@ exports.adminUpdateBooking = onCall(async (request) => {
   await db.collection('bookings').doc(bookingId).update(update);
   return { ok: true };
 });
+
+/* -------------------------------------------------------------------------
+   adminSaveEvent - create an event, or edit one.
+
+   Opening and closing vendor signup is this same function: status is what
+   holdSite already checks before it will give anybody a site, so closing
+   an event stops new bookings at the point that matters rather than only
+   hiding a button.
+
+   Creating does not lay out the ground. seedEvent does that, and it is
+   left separate because a new event usually wants a different map, and
+   quietly stamping the Bowen layout on it would be a guess.
+   ------------------------------------------------------------------------- */
+const EVENT_STATES = ['draft', 'open', 'closed', 'archived'];
+
+exports.adminSaveEvent = onCall(async (request) => {
+  requireAdmin(request);
+  const { eventId, create, fields } = request.data || {};
+
+  const id = String(eventId || '').trim();
+  if (!id) throw new HttpsError('invalid-argument', 'Missing event id.');
+
+  if (!/^[a-z0-9][a-z0-9-]{1,60}$/.test(id)) {
+    throw new HttpsError('invalid-argument',
+      'The id must be lower case letters, numbers and dashes.');
+  }
+
+  const f = fields || {};
+  const update = { updatedAt: FieldValue.serverTimestamp() };
+  const text = (v, max = 200) => String(v == null ? '' : v).trim().slice(0, max);
+
+  ['name', 'subtitle', 'dateISO', 'dateLabel', 'venue', 'location'].forEach((k) => {
+    if (f[k] !== undefined) update[k] = text(f[k]);
+  });
+
+  if (f.status !== undefined) {
+    if (!EVENT_STATES.includes(f.status)) {
+      throw new HttpsError('invalid-argument',
+        'Status must be one of: ' + EVENT_STATES.join(', '));
+    }
+    update.status = f.status;
+  }
+
+  const whole = (v, name, max) => {
+    const n = Number(v);
+    if (!Number.isInteger(n) || n < 0 || n > max) {
+      throw new HttpsError('invalid-argument', `${name} does not look right.`);
+    }
+    return n;
+  };
+
+  if (f.holdMinutes !== undefined) update.holdMinutes = whole(f.holdMinutes, 'Hold minutes', 240);
+  if (f.maxMarketBays !== undefined) update.maxMarketBays = whole(f.maxMarketBays, 'Max bays', 20);
+
+  if (f.pricing && typeof f.pricing === 'object') {
+    if (f.pricing.food !== undefined) {
+      update['pricing.food'] = whole(f.pricing.food, 'Food price', 10000000);
+    }
+    if (f.pricing.marketPerBay !== undefined) {
+      update['pricing.marketPerBay'] = whole(f.pricing.marketPerBay, 'Market price', 10000000);
+    }
+  }
+
+  const ref = db.collection('events').doc(id);
+  const snap = await ref.get();
+
+  if (create) {
+    if (snap.exists) throw new HttpsError('already-exists', 'An event with that id exists.');
+
+    await ref.set({
+      name: update.name || id,
+      subtitle: update.subtitle || '',
+      dateISO: update.dateISO || '',
+      dateLabel: update.dateLabel || '',
+      venue: update.venue || '',
+      location: update.location || '',
+
+      // New events start closed. Opening one is a decision, not a default.
+      status: update.status || 'draft',
+
+      currency: 'aud',
+      holdMinutes: update.holdMinutes != null ? update.holdMinutes : 10,
+      maxMarketBays: update.maxMarketBays != null ? update.maxMarketBays : 8,
+      marketTierSize: layout.MARKET_TIER_SIZE,
+      pricing: {
+        food: update['pricing.food'] != null ? update['pricing.food'] : 10000,
+        marketPerBay: update['pricing.marketPerBay'] != null
+          ? update['pricing.marketPerBay'] : 5000,
+      },
+      map: { width: layout.MAP_WIDTH, height: layout.MAP_HEIGHT },
+      landmarks: layout.defaultLandmarks ? layout.defaultLandmarks() : [],
+
+      createdAt: FieldValue.serverTimestamp(),
+      createdBy: actor(request).email || request.auth.uid,
+    });
+
+    logger.info('admin created event', { eventId: id });
+    return { ok: true, eventId: id, created: true };
+  }
+
+  if (!snap.exists) throw new HttpsError('not-found', 'Event not found.');
+
+  await ref.update(update);
+  return { ok: true, eventId: id, created: false };
+});

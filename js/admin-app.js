@@ -61,6 +61,7 @@ const state = {
 
   openBookingId: null,
   openSiteId: null,
+  editingEvent: null,
   noteDraft: '',
   addingVendor: false,
   ready: false,
@@ -196,9 +197,7 @@ function wireChrome() {
   }
 
   document.getElementById('ad-event-select').addEventListener('change', (ev) => {
-    state.activeEventId = ev.target.value;
-    subscribeToEvent();
-    render();
+    setActiveEvent(ev.target.value);
   });
 
   window.addEventListener('hashchange', routeFromHash);
@@ -1410,6 +1409,330 @@ function wireSitePanel() {
   guarded(unblock, () => runAction(unblock, 'adminSetSiteStatus', {
     eventId: state.activeEventId, siteId: site.id, status: 'available',
   }));
+}
+
+
+/* =========================================================================
+   EVENTS
+
+   Every event the site has run or is about to. One of them is the active
+   one, and everything else in here - the dashboard, the lists, the map -
+   is about whichever that is.
+
+   Opening and closing vendor signup lives here too, because it is a
+   property of the event. Closing one stops new bookings at the point that
+   matters: holdSite refuses to give out a site unless the event is open,
+   so it is not just a hidden button.
+   ========================================================================= */
+
+const EVENT_WORD = {
+  draft:    ['ad-pill-grey',  'Draft'],
+  open:     ['ad-pill-green', 'Signup open'],
+  closed:   ['ad-pill-amber', 'Signup closed'],
+  archived: ['ad-pill-grey',  'Archived'],
+};
+
+function eventPill(status) {
+  const [cls, label] = EVENT_WORD[status] || ['ad-pill-grey', status || '—'];
+  return `<span class="ad-pill ${cls}">${esc(label)}</span>`;
+}
+
+VIEWS.events = {
+  html() {
+    /*  Fill counts are only known for the active event - it is the one
+        whose sites and bookings are subscribed. The rest show a dash
+        rather than a wrong number. */
+    const activeFill = (() => {
+      const filled = state.sites.filter((s) =>
+        s.status === 'booked' || s.status === 'held').length;
+      return { filled, total: state.sites.length };
+    })();
+
+    return `
+      <div class="ad-page-head">
+        <div>
+          <h1>Events</h1>
+          <p>Pick which event the rest of the admin is about.</p>
+        </div>
+        <div class="ad-page-actions">
+          <button type="button" class="ad-btn ad-btn-orange" id="ad-ev-new">New event</button>
+        </div>
+      </div>
+
+      ${state.events.length ? `
+      <div class="ad-ev-list">
+        ${state.events.map((ev) => {
+          const active = ev.id === state.activeEventId;
+          const fill = active
+            ? `${activeFill.filled} of ${activeFill.total} sites`
+            : 'Select to see';
+
+          return `
+            <article class="ad-card ad-ev${active ? ' is-active' : ''}">
+              <header class="ad-ev-head">
+                <div>
+                  <h2>${esc(ev.name || ev.id)}</h2>
+                  <p class="ad-ev-when">
+                    ${esc(ev.dateLabel || ev.dateISO || 'No date set')}${
+                      ev.venue ? ' &middot; ' + esc(ev.venue) : ''}
+                  </p>
+                </div>
+                ${eventPill(ev.status)}
+              </header>
+
+              <dl class="ad-kvs">
+                ${row('Id', `<code>${esc(ev.id)}</code>`)}
+                ${row('Sites filled', esc(fill))}
+                ${row('Food stall', esc(money(ev.pricing && ev.pricing.food)))}
+                ${row('Market bay', esc(money(ev.pricing && ev.pricing.marketPerBay)))}
+              </dl>
+
+              <div class="ad-actions-row">
+                ${active
+                  ? `<span class="ad-pill ad-pill-blue">Active</span>`
+                  : `<button type="button" class="ad-btn" data-activate="${attr(ev.id)}">
+                       Make active
+                     </button>`}
+
+                <button type="button" class="ad-btn" data-edit-ev="${attr(ev.id)}">Edit</button>
+
+                ${ev.status === 'open'
+                  ? `<button type="button" class="ad-btn" data-close-ev="${attr(ev.id)}"
+                             data-confirm="Close vendor signup for ${attr(ev.name || ev.id)}? Nobody new can take a site.">
+                       Close signup
+                     </button>`
+                  : `<button type="button" class="ad-btn" data-open-ev="${attr(ev.id)}"
+                             data-confirm="Open vendor signup for ${attr(ev.name || ev.id)}?">
+                       Open signup
+                     </button>`}
+              </div>
+            </article>`;
+        }).join('')}
+      </div>` : `<p class="ad-empty">No events yet.</p>`}
+
+      <p class="ad-action-msg" id="ad-action-msg" hidden></p>
+
+      ${eventForm()}`;
+  },
+
+  wire() {
+    const guarded = (el, run) => el.addEventListener('click', () => {
+      const ask = el.getAttribute('data-confirm');
+      if (ask && !window.confirm(ask)) return;
+      run();
+    });
+
+    document.querySelectorAll('[data-activate]').forEach((el) => {
+      el.addEventListener('click', () => {
+        setActiveEvent(el.getAttribute('data-activate'));
+      });
+    });
+
+    document.querySelectorAll('[data-open-ev]').forEach((el) => guarded(el, () =>
+      runAction(el, 'adminSaveEvent', {
+        eventId: el.getAttribute('data-open-ev'), fields: { status: 'open' },
+      })));
+
+    document.querySelectorAll('[data-close-ev]').forEach((el) => guarded(el, () =>
+      runAction(el, 'adminSaveEvent', {
+        eventId: el.getAttribute('data-close-ev'), fields: { status: 'closed' },
+      })));
+
+    const newBtn = document.getElementById('ad-ev-new');
+    if (newBtn) newBtn.addEventListener('click', () => {
+      state.editingEvent = { creating: true };
+      render();
+    });
+
+    document.querySelectorAll('[data-edit-ev]').forEach((el) => {
+      el.addEventListener('click', () => {
+        state.editingEvent = { id: el.getAttribute('data-edit-ev') };
+        render();
+      });
+    });
+
+    wireEventForm();
+  },
+};
+
+/*  Switching event means new subscriptions and none of the old view's
+    scratch state, which was about a different event's vendors. */
+function setActiveEvent(id) {
+  state.activeEventId = id;
+  state.openBookingId = null;
+  state.openSiteId = null;
+
+  /*  Drop the old event's vendors and sites now rather than leaving them on
+      screen until the new subscription's first snapshot lands - a moment of
+      the wrong event's numbers is worse than a moment of none. */
+  state.bookings = [];
+  state.sites = [];
+  state.categories = [];
+
+  const picker = document.getElementById('ad-event-select');
+  if (picker) picker.value = id;
+
+  render();
+  subscribeToEvent();
+}
+
+function eventForm() {
+  const edit = state.editingEvent;
+  if (!edit) return '';
+
+  const ev = edit.creating
+    ? {}
+    : (state.events.find((e) => e.id === edit.id) || {});
+
+  const price = ev.pricing || {};
+  const dollars = (c) => (c == null ? '' : (c / 100).toFixed(2));
+
+  return `
+    <div class="ad-scrim" id="ad-ev-scrim"></div>
+    <div class="ad-modal" role="dialog" aria-label="Event details">
+      <form id="ad-ev-form">
+        <header class="ad-modal-head">
+          <h2>${edit.creating ? 'New event' : 'Edit event'}</h2>
+          <button type="button" class="ad-drawer-close" id="ad-ev-close"
+                  aria-label="Close">&times;</button>
+        </header>
+
+        <div class="ad-modal-body">
+          ${edit.creating ? `
+            <label for="ad-ev-id">Id</label>
+            <input id="ad-ev-id" required maxlength="60"
+                   placeholder="eatz-beatz-halloween-2027"
+                   pattern="[a-z0-9][a-z0-9-]{1,60}">
+            <p class="ad-seat-hint">
+              Lower case, numbers and dashes. It never changes, so make it one
+              you will still recognise in two years.
+            </p>` : ''}
+
+          <label for="ad-ev-name">Name</label>
+          <input id="ad-ev-name" required maxlength="120" value="${attr(ev.name || '')}">
+
+          <label for="ad-ev-subtitle">Subtitle</label>
+          <input id="ad-ev-subtitle" maxlength="200" value="${attr(ev.subtitle || '')}">
+
+          <label for="ad-ev-dateiso">Date</label>
+          <input id="ad-ev-dateiso" type="date" value="${attr((ev.dateISO || '').slice(0, 10))}">
+
+          <label for="ad-ev-datelabel">Date as written on the site</label>
+          <input id="ad-ev-datelabel" maxlength="120"
+                 placeholder="Saturday 31 October 2026"
+                 value="${attr(ev.dateLabel || '')}">
+
+          <label for="ad-ev-venue">Venue</label>
+          <input id="ad-ev-venue" maxlength="120" value="${attr(ev.venue || '')}">
+
+          <label for="ad-ev-location">Location</label>
+          <input id="ad-ev-location" maxlength="200" value="${attr(ev.location || '')}">
+
+          <label for="ad-ev-status">Vendor signup</label>
+          <select id="ad-ev-status">
+            ${Object.keys(EVENT_WORD).map((k) => `
+              <option value="${attr(k)}"${
+                (ev.status || 'draft') === k ? ' selected' : ''}>${esc(EVENT_WORD[k][1])}</option>`
+            ).join('')}
+          </select>
+
+          <label for="ad-ev-food">Food stall price</label>
+          <input id="ad-ev-food" type="number" min="0" step="0.01"
+                 value="${attr(dollars(price.food))}">
+
+          <label for="ad-ev-market">Market bay price</label>
+          <input id="ad-ev-market" type="number" min="0" step="0.01"
+                 value="${attr(dollars(price.marketPerBay))}">
+
+          <label for="ad-ev-bays">Most bays one market vendor may take</label>
+          <input id="ad-ev-bays" type="number" min="1" max="20"
+                 value="${attr(ev.maxMarketBays == null ? 8 : ev.maxMarketBays)}">
+
+          <label for="ad-ev-hold">Minutes a site is held during checkout</label>
+          <input id="ad-ev-hold" type="number" min="1" max="240"
+                 value="${attr(ev.holdMinutes == null ? 10 : ev.holdMinutes)}">
+
+          ${edit.creating ? `
+            <p class="ad-seat-hint" style="margin-top:14px">
+              This creates the event only. Laying out its sites is a separate
+              step - a new event usually wants a different map, and stamping
+              the Bowen layout on it would be a guess.
+            </p>` : ''}
+
+          <p class="ad-action-msg" id="ad-ev-msg" hidden></p>
+        </div>
+
+        <footer class="ad-modal-foot">
+          <button type="button" class="ad-btn" id="ad-ev-cancel">Cancel</button>
+          <button type="submit" class="ad-btn ad-btn-orange">
+            ${edit.creating ? 'Create event' : 'Save changes'}
+          </button>
+        </footer>
+      </form>
+    </div>`;
+}
+
+function wireEventForm() {
+  const edit = state.editingEvent;
+  if (!edit) return;
+
+  const close = () => { state.editingEvent = null; render(); };
+  ['ad-ev-close', 'ad-ev-cancel', 'ad-ev-scrim'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', close);
+  });
+
+  const form = document.getElementById('ad-ev-form');
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const val = (id) => {
+      const el = document.getElementById(id);
+      return el ? el.value.trim() : '';
+    };
+    // Money is entered in dollars and stored in cents, as everywhere else.
+    const cents = (id) => Math.round(Number(val(id) || 0) * 100);
+
+    const msg = document.getElementById('ad-ev-msg');
+    const submit = form.querySelector('[type="submit"]');
+
+    submit.disabled = true;
+    msg.hidden = false;
+    msg.className = 'ad-action-msg';
+    msg.textContent = 'Saving…';
+
+    const id = edit.creating ? val('ad-ev-id') : edit.id;
+
+    try {
+      await call('adminSaveEvent', {
+        eventId: id,
+        create: !!edit.creating,
+        fields: {
+          name: val('ad-ev-name'),
+          subtitle: val('ad-ev-subtitle'),
+          dateISO: val('ad-ev-dateiso'),
+          dateLabel: val('ad-ev-datelabel'),
+          venue: val('ad-ev-venue'),
+          location: val('ad-ev-location'),
+          status: val('ad-ev-status'),
+          maxMarketBays: Number(val('ad-ev-bays')) || 8,
+          holdMinutes: Number(val('ad-ev-hold')) || 10,
+          pricing: { food: cents('ad-ev-food'), marketPerBay: cents('ad-ev-market') },
+        },
+      });
+
+      state.editingEvent = null;
+      await loadEvents();
+      if (edit.creating) setActiveEvent(id);
+      else render();
+    } catch (err) {
+      msg.className = 'ad-action-msg is-bad';
+      msg.textContent = friendly(err);
+      submit.disabled = false;
+    }
+  });
 }
 
 

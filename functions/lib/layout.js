@@ -250,6 +250,7 @@ function defaultEvent() {
 module.exports = {
   MAP_WIDTH,
   MAP_HEIGHT,
+  MARKET_TIER_SIZE,
   defaultEvent,
   defaultSites,
   defaultCategories,
