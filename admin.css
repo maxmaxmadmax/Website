@@ -517,6 +517,145 @@ body{
 
 
 /* --------------------------------------------------------------------------
+   FILTER BAR
+   -------------------------------------------------------------------------- */
+.ad-filters{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:14px;
+}
+
+.ad-filters select,
+.ad-search{
+    font:inherit;
+    font-size:.85rem;
+    padding:8px 11px;
+    border:1px solid var(--ad-line);
+    border-radius:9px;
+    background:#fff;
+    color:var(--ad-text);
+}
+
+.ad-search{ flex:1 1 240px; min-width:0; }
+
+.ad-filters select:focus,
+.ad-search:focus{
+    outline:none;
+    border-color:var(--ad-orange);
+    box-shadow:0 0 0 3px var(--ad-orange-soft);
+}
+
+.ad-count{
+    align-self:center;
+    font-size:.85rem;
+    font-weight:600;
+    color:var(--ad-muted);
+}
+
+
+/* --------------------------------------------------------------------------
+   DETAIL DRAWER
+   Slides in from the right over the list, so the list keeps its scroll
+   position and its filters while one row is being looked at.
+   -------------------------------------------------------------------------- */
+.ad-scrim{
+    position:fixed;
+    inset:0;
+    background:rgba(10,12,16,.42);
+    z-index:50;
+}
+
+.ad-drawer{
+    position:fixed;
+    top:0;
+    right:0;
+    bottom:0;
+    width:min(520px, 100vw);
+    background:var(--ad-card);
+    z-index:51;
+    display:flex;
+    flex-direction:column;
+    box-shadow:-16px 0 44px rgba(0,0,0,.22);
+    animation:ad-slide-in .2s ease;
+}
+
+@keyframes ad-slide-in{ from{ transform:translateX(24px); opacity:0; } }
+
+@media (prefers-reduced-motion:reduce){
+    .ad-drawer{ animation:none; }
+}
+
+.ad-drawer-head{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    padding:18px 20px;
+    border-bottom:1px solid var(--ad-line);
+}
+
+.ad-drawer-head h2{ font-size:1.15rem; margin:0 0 7px; letter-spacing:-.3px; }
+.ad-drawer-head p{ margin:0; display:flex; gap:6px; flex-wrap:wrap; }
+
+.ad-drawer-close{
+    margin-left:auto;
+    border:0;
+    background:none;
+    font-size:1.7rem;
+    line-height:1;
+    color:var(--ad-muted);
+    cursor:pointer;
+    padding:0 4px;
+}
+
+.ad-drawer-close:hover{ color:var(--ad-text); }
+
+.ad-drawer-body{ padding:4px 20px 28px; overflow-y:auto; flex:1; }
+
+.ad-drawer-h{
+    font-size:.72rem;
+    font-weight:700;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--ad-muted);
+    margin:22px 0 8px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--ad-line);
+}
+
+.ad-drawer-text{ margin:0 0 4px; }
+
+.ad-kvs{ margin:0; }
+
+.ad-kv{
+    display:flex;
+    gap:12px;
+    padding:6px 0;
+    font-size:.86rem;
+}
+
+.ad-kv dt{
+    flex:0 0 128px;
+    color:var(--ad-muted);
+}
+
+.ad-kv dd{ margin:0; min-width:0; word-break:break-word; }
+
+.ad-kv a{ color:var(--ad-orange); }
+
+.ad-docs{ list-style:none; margin:0; padding:0; }
+
+.ad-docs li{
+    padding:9px 0;
+    border-bottom:1px solid var(--ad-line);
+}
+
+.ad-docs li:last-child{ border-bottom:0; }
+.ad-docs a{ color:var(--ad-orange); font-weight:600; text-decoration:none; }
+.ad-docs a:hover{ text-decoration:underline; }
+
+
+/* --------------------------------------------------------------------------
    COMING SOON
    -------------------------------------------------------------------------- */
 .ad-soon{

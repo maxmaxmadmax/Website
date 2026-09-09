@@ -494,7 +494,7 @@ VIEWS.dashboard = {
       <section class="ad-card ad-panel">
         <header class="ad-panel-head">
           <h2>Recent applications</h2>
-          <button type="button" class="ad-btn" data-goto="vendors">View all</button>
+          <button type="button" class="ad-btn" data-goto="applications">View all</button>
         </header>
         ${recent.length ? `
         <div class="ad-table-wrap">
@@ -523,13 +523,16 @@ VIEWS.dashboard = {
   },
 
   wire() {
-    const all = document.querySelector('[data-goto="vendors"]');
-    if (all) all.addEventListener('click', () => { location.hash = '#/vendors'; });
+    const all = document.querySelector('[data-goto="applications"]');
+    if (all) all.addEventListener('click', () => { location.hash = '#/applications'; });
 
-    document.querySelectorAll('[data-open]').forEach((row) => {
-      row.addEventListener('click', () => {
-        state.openBookingId = row.getAttribute('data-open');
-        location.hash = '#/vendors';
+    /*  Clicking a row hands over to the applications list with that one
+        already open - the full list is where the actions live, and every
+        row on the dashboard is in it whatever its status. */
+    document.querySelectorAll('[data-open]').forEach((r) => {
+      r.addEventListener('click', () => {
+        state.openBookingId = r.getAttribute('data-open');
+        location.hash = '#/applications';
       });
     });
   },
@@ -539,6 +542,322 @@ function pct(part, whole) {
   if (!whole) return '0%';
   return Math.round((part / whole) * 100) + '%';
 }
+
+/* =========================================================================
+   VENDOR AND APPLICATION LISTS
+
+   Two rail entries, one list. Applications is the working queue - everyone
+   still waiting on a decision or a payment. Vendors is the roster - who is
+   actually coming. They differ only in which rows they start with, so the
+   searching, filtering and detail panel below are shared.
+   ========================================================================= */
+
+/*  The bucket a row belongs in, worked out once so the filter, the pill and
+    the two lists all agree on what a booking is. */
+function bucket(b) {
+  if (b.reviewStatus === 'declined' || b.status === 'cancelled') return 'declined';
+  if (b.reviewStatus === 'waitlisted') return 'waitlisted';
+  if (b.status === 'confirmed') return 'confirmed';
+  if (b.reviewStatus === 'approved') return 'approved';
+  return 'pending';
+}
+
+/*  Filtering to Unpaid is somebody building a chase list, so a vendor who
+    was declined or has cancelled is neither paid nor unpaid - they drop out
+    of both. Same rule the dashboard counts by. */
+function paymentBucket(b) {
+  if (b.paymentStatus === 'paid' || b.paymentStatus === 'free') return 'paid';
+  if (bucket(b) === 'declined') return 'moot';
+  return 'unpaid';
+}
+
+/*  Everything a person might reasonably type into the search box, flattened
+    into one string per booking. */
+function haystack(b) {
+  const biz = b.business || {};
+  return [
+    biz.name, biz.contactName, biz.email, biz.phone,
+    b.reference, b.categoryName, b.siteLabel, b.vendorType,
+    (b.siteIds || []).join(' '),
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+
+function applyFilters(rows) {
+  const f = state.filters;
+  const term = f.search.trim().toLowerCase();
+
+  return rows.filter((b) => {
+    if (f.status !== 'all' && bucket(b) !== f.status) return false;
+    if (f.vendorType !== 'all' && b.vendorType !== f.vendorType) return false;
+    if (f.payment !== 'all' && paymentBucket(b) !== f.payment) return false;
+    if (term && !haystack(b).includes(term)) return false;
+    return true;
+  });
+}
+
+const STATUS_CHOICES = [
+  ['all', 'Any status'],
+  ['pending', 'Pending review'],
+  ['approved', 'Approved'],
+  ['confirmed', 'Confirmed'],
+  ['waitlisted', 'Waitlisted'],
+  ['declined', 'Declined'],
+];
+
+const TYPE_CHOICES = [['all', 'Any type'], ['food', 'Food'], ['market', 'Market']];
+
+const PAYMENT_CHOICES = [['all', 'Any payment'], ['paid', 'Paid'], ['unpaid', 'Unpaid']];
+
+function selectField(id, choices, current) {
+  return `<select id="${id}">${choices.map(([v, label]) =>
+    `<option value="${attr(v)}"${v === current ? ' selected' : ''}>${esc(label)}</option>`
+  ).join('')}</select>`;
+}
+
+function filterBar() {
+  const f = state.filters;
+  return `
+    <div class="ad-filters">
+      <input type="search" id="ad-search" class="ad-search"
+             placeholder="Search name, email, phone, site…"
+             value="${attr(f.search)}">
+      ${selectField('ad-f-status', STATUS_CHOICES, f.status)}
+      ${selectField('ad-f-type', TYPE_CHOICES, f.vendorType)}
+      ${selectField('ad-f-payment', PAYMENT_CHOICES, f.payment)}
+      <button type="button" class="ad-btn" id="ad-f-clear">Clear</button>
+    </div>`;
+}
+
+function wireFilters() {
+  const on = (id, key, evt) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener(evt, () => {
+      state.filters[key] = el.value;
+      render();
+      /*  render() rebuilds the box, so put the caret back where it was or
+          typing a second character would jump to the front. */
+      if (evt === 'input') {
+        const again = document.getElementById(id);
+        if (again) { again.focus(); again.setSelectionRange(again.value.length, again.value.length); }
+      }
+    });
+  };
+
+  on('ad-search', 'search', 'input');
+  on('ad-f-status', 'status', 'change');
+  on('ad-f-type', 'vendorType', 'change');
+  on('ad-f-payment', 'payment', 'change');
+
+  const clear = document.getElementById('ad-f-clear');
+  if (clear) clear.addEventListener('click', () => {
+    state.filters = { search: '', status: 'all', vendorType: 'all', payment: 'all' };
+    render();
+  });
+}
+
+function listTable(rows) {
+  if (!rows.length) {
+    return `<p class="ad-empty">Nothing matches those filters.</p>`;
+  }
+
+  return `
+    <div class="ad-table-wrap">
+      <table class="ad-table">
+        <thead><tr>
+          <th>Vendor</th><th>Type</th><th>Category</th><th>Site</th>
+          <th>Status</th><th>Payment</th><th>Applied</th>
+        </tr></thead>
+        <tbody>
+          ${rows.map((b) => `
+            <tr data-open="${attr(b.id)}">
+              <td>
+                <span class="ad-cell-strong">${esc(vendorName(b))}</span>
+                <span class="ad-cell-sub">${esc((b.business && b.business.email) || '')}</span>
+              </td>
+              <td>${typePill(b.vendorType)}</td>
+              <td class="ad-cell-muted">${esc(b.categoryName || '—')}</td>
+              <td>${esc(b.siteLabel || '—')}</td>
+              <td>${statusPill(b)}</td>
+              <td>${paymentPill(b)}</td>
+              <td class="ad-cell-muted">${esc(dateShort(b.createdAt))}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function wireRows() {
+  document.querySelectorAll('[data-open]').forEach((row) => {
+    row.addEventListener('click', () => {
+      state.openBookingId = row.getAttribute('data-open');
+      render();
+    });
+  });
+}
+
+/*  Both list views are the same page with a different starting set. */
+function listView(title, blurb, pick) {
+  return {
+    html() {
+      const rows = applyFilters(realApplications().filter(pick));
+      const total = realApplications().filter(pick).length;
+
+      return `
+        <div class="ad-page-head">
+          <div>
+            <h1>${esc(title)}</h1>
+            <p>${esc(blurb)}</p>
+          </div>
+          <div class="ad-page-actions">
+            <span class="ad-count">${rows.length}${
+              rows.length === total ? '' : ' of ' + total}</span>
+          </div>
+        </div>
+
+        ${filterBar()}
+
+        <section class="ad-card ad-panel">
+          ${listTable(rows)}
+        </section>
+
+        ${detailPanel()}`;
+    },
+
+    wire() {
+      wireFilters();
+      wireRows();
+      wireDetail();
+    },
+  };
+}
+
+VIEWS.applications = listView(
+  'Applications',
+  'Everyone who has applied, newest first.',
+  () => true
+);
+
+VIEWS.vendors = listView(
+  'Vendors',
+  'Who is actually coming - approved and confirmed only.',
+  (b) => ['approved', 'confirmed'].includes(bucket(b))
+);
+
+
+/* =========================================================================
+   DETAIL PANEL
+   Slides in over the list. Read only for now - the buttons that change an
+   application arrive with the admin functions in the next stage.
+   ========================================================================= */
+function row(label, value) {
+  return `<div class="ad-kv"><dt>${esc(label)}</dt><dd>${value}</dd></div>`;
+}
+
+function detailPanel() {
+  if (!state.openBookingId) return '';
+
+  const b = state.bookings.find((x) => x.id === state.openBookingId);
+  if (!b) return '';
+
+  const biz = b.business || {};
+  const setup = b.setup || {};
+  const docs = b.documents || [];
+  const sites = b.siteIds && b.siteIds.length ? b.siteIds.join(', ') : (b.siteId || '');
+
+  return `
+    <div class="ad-scrim" id="ad-scrim"></div>
+    <aside class="ad-drawer" id="ad-drawer" role="dialog" aria-label="Application detail">
+
+      <header class="ad-drawer-head">
+        <div>
+          <h2>${esc(vendorName(b))}</h2>
+          <p>${statusPill(b)} ${paymentPill(b)} ${typePill(b.vendorType)}</p>
+        </div>
+        <button type="button" class="ad-drawer-close" id="ad-drawer-close"
+                aria-label="Close">&times;</button>
+      </header>
+
+      <div class="ad-drawer-body">
+
+        <h3 class="ad-drawer-h">Contact</h3>
+        <dl class="ad-kvs">
+          ${row('Business', esc(biz.name || '—'))}
+          ${row('Contact name', esc(biz.contactName || '—'))}
+          ${row('Email', biz.email
+            ? `<a href="mailto:${attr(biz.email)}">${esc(biz.email)}</a>` : '—')}
+          ${row('Phone', biz.phone
+            ? `<a href="tel:${attr(biz.phone)}">${esc(biz.phone)}</a>` : '—')}
+          ${row('Socials', esc(biz.socials || '—'))}
+        </dl>
+
+        ${biz.description ? `
+          <h3 class="ad-drawer-h">What they do</h3>
+          <p class="ad-drawer-text">${esc(biz.description)}</p>` : ''}
+
+        <h3 class="ad-drawer-h">Site</h3>
+        <dl class="ad-kvs">
+          ${row('Category', esc(b.categoryName || '—'))}
+          ${row('Assigned site', esc(b.siteLabel || 'Not assigned'))}
+          ${row('Site IDs', esc(sites || '—'))}
+          ${row('Bays', esc(b.bayCount || 1))}
+          ${row('Frontage', esc(setup.frontage ? setup.frontage + ' m' : '—'))}
+          ${row('Depth', esc(setup.depth ? setup.depth + ' m' : '—'))}
+          ${row('Own power', setup.ownPower ? 'Yes' : 'No')}
+          ${row('Self sufficient', setup.selfSufficient ? 'Yes' : 'No')}
+          ${row('Vehicle on site', setup.vehicleOnSite ? 'Yes' : 'No')}
+          ${setup.notes ? row('Notes', esc(setup.notes)) : ''}
+        </dl>
+
+        <h3 class="ad-drawer-h">Money</h3>
+        <dl class="ad-kvs">
+          ${row('Fee', esc(money(b.amountCents)))}
+          ${row('Paid', esc(money(b.amountPaidCents)))}
+          ${row('Reference', esc(b.reference || '—'))}
+        </dl>
+
+        <h3 class="ad-drawer-h">Documents</h3>
+        ${docs.length ? `
+          <ul class="ad-docs">
+            ${docs.map((d) => `
+              <li>
+                <a href="${attr(d.url || '#')}" target="_blank" rel="noopener">
+                  ${esc(d.name || d.type || 'Document')}
+                </a>
+                <span class="ad-cell-sub">${esc(d.type || '')}</span>
+              </li>`).join('')}
+          </ul>` : `<p class="ad-drawer-text ad-cell-muted">None uploaded.</p>`}
+
+        <h3 class="ad-drawer-h">History</h3>
+        <dl class="ad-kvs">
+          ${row('Applied', esc(dateShort(b.createdAt)))}
+          ${row('Confirmed', esc(dateShort(b.confirmedAt)))}
+          ${row('Last change', esc(dateShort(b.updatedAt)))}
+        </dl>
+
+      </div>
+    </aside>`;
+}
+
+function wireDetail() {
+  const close = () => { state.openBookingId = null; render(); };
+
+  const btn = document.getElementById('ad-drawer-close');
+  if (btn) btn.addEventListener('click', close);
+
+  const scrim = document.getElementById('ad-scrim');
+  if (scrim) scrim.addEventListener('click', close);
+}
+
+/*  Escape closes the drawer from anywhere. Registered once, not per render,
+    or every redraw would stack another listener. */
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && state.openBookingId) {
+    state.openBookingId = null;
+    render();
+  }
+});
+
 
 /*  Handy when something looks wrong in here: __sgAdmin.state shows exactly
     what the page thinks it has, and render() redraws from it. Everything it
