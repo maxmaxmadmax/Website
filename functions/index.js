@@ -871,12 +871,33 @@ exports.expireHolds = onSchedule('every 1 minutes', async () => {
 /* Creates the event, its sites and its categories from the seed layout.
    Safe to run again - it will not overwrite sites that already exist. */
 exports.seedEvent = onCall(async (request) => {
-  requireAdmin(request);
-
   const eventId = (request.data && request.data.eventId) || 'eatz-beatz-halloween-2026';
 
   const eventRef = db.collection('events').doc(eventId);
   const existing = await eventRef.get();
+
+  /*  FIRST RUN ONLY.
+
+      Seeding normally needs an admin. But the very first seed cannot: an
+      admin is granted to a signed-in account, an account is created on the
+      vendor page, and the vendor page cannot be got through until there
+      are categories to choose from - which is what seeding creates. A
+      circle with no way in.
+
+      So the first seed, and only the first, is allowed without a sign-in:
+      when the event does not exist yet and the id is the one this site is
+      built around. The moment that document exists this is an admin-only
+      function again, for good. Nothing here reads or returns data, and it
+      writes the same fixed layout every time, so the worst an anonymous
+      call can do is create the layout we were going to create anyway. */
+  const bootstrapping =
+    !existing.exists && eventId === 'eatz-beatz-halloween-2026';
+
+  if (!bootstrapping) {
+    requireAdmin(request);
+  } else {
+    logger.warn('seedEvent ran without a sign-in - first run bootstrap', { eventId });
+  }
 
   const batch = db.batch();
 
