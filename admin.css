@@ -1,0 +1,574 @@
+/* ==========================================================================
+   SOUNDZGOOD ADMIN
+
+   The only stylesheet this page loads. style.css is deliberately left out:
+   the public site is dark, poster-styled marketing, and this is a working
+   tool - dark rail, light desk. Keeping them separate means nothing here
+   can reach the public pages and nothing there can reach this.
+
+   Everything is prefixed .ad- for the same reason.
+   ========================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/*  The gate and the shell are both display:grid, which beats the browser's
+    own [hidden] rule - without this they stack instead of swapping. */
+[hidden]{ display:none !important; }
+
+:root{
+    --ad-orange:#ff6b00;
+    --ad-orange-soft:#fff2e8;
+
+    --ad-ink:#12141a;          /* the rail */
+    --ad-ink-2:#1b1e26;        /* raised things on the rail */
+    --ad-ink-line:#282c37;
+
+    --ad-desk:#f4f5f7;         /* the working area */
+    --ad-card:#fff;
+    --ad-line:#e4e6eb;
+
+    --ad-text:#171a21;
+    --ad-muted:#6b7280;
+    --ad-faint:#9aa1ac;
+
+    --ad-green:#0f9d58;   --ad-green-bg:#e7f6ee;
+    --ad-amber:#b26a00;   --ad-amber-bg:#fdf0dc;
+    --ad-red:#c5322b;     --ad-red-bg:#fdecea;
+    --ad-blue:#2563eb;    --ad-blue-bg:#e8effd;
+    --ad-grey-bg:#eef0f3;
+
+    --ad-rail-w:236px;
+    --ad-radius:12px;
+    --ad-font:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+              Helvetica, Arial, sans-serif;
+}
+
+html, body{ height:100%; }
+
+body{
+    margin:0;
+    font-family:var(--ad-font);
+    font-size:14px;
+    line-height:1.5;
+    color:var(--ad-text);
+    background:var(--ad-desk);
+    -webkit-font-smoothing:antialiased;
+}
+
+
+/* --------------------------------------------------------------------------
+   SIGN IN
+   -------------------------------------------------------------------------- */
+.ad-gate{
+    min-height:100vh;
+    min-height:100svh;
+    display:grid;
+    place-items:center;
+    padding:24px;
+    background:radial-gradient(90% 70% at 50% 0%, #23262f 0%, var(--ad-ink) 70%);
+}
+
+.ad-gate-card{
+    width:100%;
+    max-width:380px;
+    background:var(--ad-card);
+    border-radius:16px;
+    padding:34px 30px;
+    box-shadow:0 24px 60px rgba(0,0,0,.4);
+}
+
+.ad-gate-brand{
+    font-size:.7rem;
+    font-weight:700;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--ad-orange);
+    margin:0 0 6px;
+}
+
+.ad-gate-card h1{
+    font-size:1.6rem;
+    margin:0 0 4px;
+    letter-spacing:-.4px;
+}
+
+.ad-gate-sub{
+    color:var(--ad-muted);
+    margin:0 0 22px;
+}
+
+.ad-gate-card label{
+    display:block;
+    font-size:.76rem;
+    font-weight:600;
+    color:var(--ad-muted);
+    margin:14px 0 6px;
+}
+
+.ad-gate-card input{
+    width:100%;
+    padding:11px 13px;
+    border:1px solid var(--ad-line);
+    border-radius:9px;
+    font:inherit;
+    background:#fff;
+    color:var(--ad-text);
+}
+
+.ad-gate-card input:focus{
+    outline:none;
+    border-color:var(--ad-orange);
+    box-shadow:0 0 0 3px var(--ad-orange-soft);
+}
+
+.ad-gate-card .ad-btn{ width:100%; margin-top:20px; }
+
+
+/* --------------------------------------------------------------------------
+   SHELL
+   -------------------------------------------------------------------------- */
+.ad-shell{
+    display:grid;
+    grid-template-columns:var(--ad-rail-w) minmax(0, 1fr);
+    min-height:100vh;
+    min-height:100svh;
+}
+
+/* ---- the rail ---- */
+.ad-rail{
+    background:var(--ad-ink);
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    position:sticky;
+    top:0;
+    height:100vh;
+    height:100svh;
+    overflow-y:auto;
+}
+
+.ad-brand{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    padding:20px 18px;
+    border-bottom:1px solid var(--ad-ink-line);
+}
+
+.ad-brand-mark{ width:30px; height:auto; }
+
+.ad-brand-name{
+    margin:0;
+    font-weight:700;
+    letter-spacing:.4px;
+    font-size:.94rem;
+}
+
+.ad-brand-sub{
+    margin:0;
+    font-size:.62rem;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--ad-faint);
+}
+
+.ad-nav{
+    padding:12px 10px;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+}
+
+.ad-nav-item{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    width:100%;
+    padding:9px 12px;
+    border:0;
+    border-radius:9px;
+    background:none;
+    color:#c7ccd6;
+    font:inherit;
+    font-size:.875rem;
+    text-align:left;
+    cursor:pointer;
+    transition:background .15s, color .15s;
+}
+
+.ad-nav-item:hover{ background:var(--ad-ink-2); color:#fff; }
+
+.ad-nav-item.is-active{
+    background:var(--ad-orange);
+    color:#fff;
+    font-weight:600;
+}
+
+.ad-nav-item.is-active .ad-ico{ opacity:1; }
+
+.ad-ico{
+    width:17px;
+    text-align:center;
+    opacity:.75;
+    font-size:.92rem;
+}
+
+.ad-nav-divider{
+    margin:14px 12px 4px;
+    font-size:.62rem;
+    font-weight:700;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:#5c6373;
+}
+
+.ad-nav-item[data-soon]{ color:#7f8797; }
+.ad-nav-item[data-soon]:hover{ color:#c7ccd6; }
+
+.ad-rail-foot{
+    border-top:1px solid var(--ad-ink-line);
+    padding:14px 16px 18px;
+}
+
+.ad-who{ display:flex; align-items:center; gap:10px; }
+
+.ad-avatar{
+    width:32px; height:32px;
+    border-radius:50%;
+    background:var(--ad-orange);
+    color:#fff;
+    display:grid;
+    place-items:center;
+    font-weight:700;
+    font-size:.8rem;
+    flex:0 0 auto;
+}
+
+.ad-who-name{
+    margin:0;
+    font-size:.8rem;
+    font-weight:600;
+    max-width:130px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.ad-who-role{ margin:0; font-size:.68rem; color:var(--ad-faint); }
+
+.ad-signout{
+    margin-top:12px;
+    width:100%;
+    padding:8px;
+    border:1px solid var(--ad-ink-line);
+    border-radius:8px;
+    background:none;
+    color:#c7ccd6;
+    font:inherit;
+    font-size:.8rem;
+    cursor:pointer;
+}
+
+.ad-signout:hover{ background:var(--ad-ink-2); color:#fff; }
+
+/* ---- main column ---- */
+.ad-main{ display:flex; flex-direction:column; min-width:0; }
+
+.ad-top{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:12px 24px;
+    background:var(--ad-card);
+    border-bottom:1px solid var(--ad-line);
+    position:sticky;
+    top:0;
+    z-index:5;
+}
+
+.ad-rail-toggle{
+    display:none;
+    border:1px solid var(--ad-line);
+    background:#fff;
+    border-radius:8px;
+    padding:7px 11px;
+    font-size:1rem;
+    cursor:pointer;
+}
+
+.ad-event-pick{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:.78rem;
+    color:var(--ad-muted);
+    font-weight:600;
+}
+
+.ad-event-pick select{
+    font:inherit;
+    font-size:.85rem;
+    font-weight:500;
+    color:var(--ad-text);
+    padding:7px 10px;
+    border:1px solid var(--ad-line);
+    border-radius:8px;
+    background:#fff;
+    max-width:320px;
+}
+
+.ad-top-link{
+    margin-left:auto;
+    font-size:.82rem;
+    color:var(--ad-muted);
+    text-decoration:none;
+    white-space:nowrap;
+}
+
+.ad-top-link:hover{ color:var(--ad-orange); }
+
+.ad-desk{ padding:24px; flex:1; min-width:0; }
+
+.ad-loading{ color:var(--ad-muted); }
+
+
+/* --------------------------------------------------------------------------
+   SHARED FURNITURE
+   -------------------------------------------------------------------------- */
+.ad-page-head{ margin-bottom:20px; display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap; }
+.ad-page-head h1{ font-size:1.5rem; margin:0 0 3px; letter-spacing:-.4px; }
+.ad-page-head p{ margin:0; color:var(--ad-muted); }
+.ad-page-actions{ margin-left:auto; display:flex; gap:8px; flex-wrap:wrap; }
+
+.ad-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    padding:9px 15px;
+    border:1px solid var(--ad-line);
+    border-radius:9px;
+    background:#fff;
+    color:var(--ad-text);
+    font:inherit;
+    font-size:.85rem;
+    font-weight:600;
+    cursor:pointer;
+    text-decoration:none;
+    white-space:nowrap;
+}
+
+.ad-btn:hover{ background:#f8f9fb; }
+.ad-btn:disabled{ opacity:.5; cursor:default; }
+
+.ad-btn-primary{
+    background:var(--ad-ink);
+    border-color:var(--ad-ink);
+    color:#fff;
+}
+.ad-btn-primary:hover{ background:#000; }
+
+.ad-btn-orange{
+    background:var(--ad-orange);
+    border-color:var(--ad-orange);
+    color:#fff;
+}
+.ad-btn-orange:hover{ background:#e85f00; }
+
+.ad-btn-danger{ color:var(--ad-red); border-color:#f2c6c3; background:#fff; }
+.ad-btn-danger:hover{ background:var(--ad-red-bg); }
+
+.ad-card{
+    background:var(--ad-card);
+    border:1px solid var(--ad-line);
+    border-radius:var(--ad-radius);
+}
+
+.ad-error{
+    background:var(--ad-red-bg);
+    color:var(--ad-red);
+    border:1px solid #f2c6c3;
+    border-radius:9px;
+    padding:10px 13px;
+    margin:14px 0 0;
+    font-size:.85rem;
+}
+
+.ad-empty{
+    padding:44px 20px;
+    text-align:center;
+    color:var(--ad-muted);
+}
+
+/* Status pills - one class per state so a table cell is one line of markup */
+.ad-pill{
+    display:inline-block;
+    padding:3px 9px;
+    border-radius:20px;
+    font-size:.72rem;
+    font-weight:600;
+    white-space:nowrap;
+}
+
+.ad-pill-green{ background:var(--ad-green-bg); color:var(--ad-green); }
+.ad-pill-amber{ background:var(--ad-amber-bg); color:var(--ad-amber); }
+.ad-pill-red{   background:var(--ad-red-bg);   color:var(--ad-red); }
+.ad-pill-blue{  background:var(--ad-blue-bg);  color:var(--ad-blue); }
+.ad-pill-grey{  background:var(--ad-grey-bg);  color:var(--ad-muted); }
+
+
+/* --------------------------------------------------------------------------
+   STAT CARDS
+   Auto-fit so the row reflows from eight across down to two without any
+   breakpoints of its own.
+   -------------------------------------------------------------------------- */
+.ad-stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(168px, 1fr));
+    gap:12px;
+    margin-bottom:22px;
+}
+
+.ad-stat{
+    background:var(--ad-card);
+    border:1px solid var(--ad-line);
+    border-radius:var(--ad-radius);
+    padding:15px 16px;
+    border-top:3px solid var(--ad-line);
+}
+
+.ad-stat.is-green{ border-top-color:var(--ad-green); }
+.ad-stat.is-amber{ border-top-color:var(--ad-amber); }
+.ad-stat.is-red{   border-top-color:var(--ad-red); }
+.ad-stat.is-blue{  border-top-color:var(--ad-blue); }
+
+.ad-stat-label{
+    margin:0;
+    font-size:.72rem;
+    font-weight:600;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--ad-muted);
+}
+
+.ad-stat-value{
+    margin:6px 0 2px;
+    font-size:1.85rem;
+    font-weight:700;
+    line-height:1;
+    letter-spacing:-1px;
+}
+
+.ad-stat-note{ margin:0; font-size:.74rem; color:var(--ad-faint); }
+
+
+/* --------------------------------------------------------------------------
+   PANELS AND TABLES
+   -------------------------------------------------------------------------- */
+.ad-panel{ overflow:hidden; }
+
+.ad-panel-head{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:14px 18px;
+    border-bottom:1px solid var(--ad-line);
+}
+
+.ad-panel-head h2{ font-size:1rem; margin:0; }
+.ad-panel-head .ad-btn{ margin-left:auto; padding:6px 12px; font-size:.8rem; }
+
+/* Tables scroll inside their own box so the page never scrolls sideways */
+.ad-table-wrap{ overflow-x:auto; }
+
+.ad-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:.85rem;
+}
+
+.ad-table th{
+    text-align:left;
+    padding:10px 18px;
+    font-size:.7rem;
+    font-weight:700;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--ad-muted);
+    background:#fafbfc;
+    border-bottom:1px solid var(--ad-line);
+    white-space:nowrap;
+}
+
+.ad-table td{
+    padding:11px 18px;
+    border-bottom:1px solid var(--ad-line);
+    vertical-align:middle;
+}
+
+.ad-table tbody tr:last-child td{ border-bottom:0; }
+
+.ad-table tbody tr[data-open]{ cursor:pointer; }
+.ad-table tbody tr[data-open]:hover{ background:#fafbfc; }
+
+.ad-cell-strong{ display:block; font-weight:600; }
+.ad-cell-sub{ display:block; font-size:.76rem; color:var(--ad-faint); }
+.ad-cell-muted{ color:var(--ad-muted); white-space:nowrap; }
+
+
+/* --------------------------------------------------------------------------
+   COMING SOON
+   -------------------------------------------------------------------------- */
+.ad-soon{
+    display:grid;
+    place-items:center;
+    min-height:60vh;
+    text-align:center;
+}
+
+.ad-soon-inner{ max-width:420px; }
+
+.ad-soon-mark{
+    width:64px; height:64px;
+    margin:0 auto 18px;
+    border-radius:16px;
+    background:var(--ad-orange-soft);
+    color:var(--ad-orange);
+    display:grid;
+    place-items:center;
+    font-size:1.6rem;
+}
+
+.ad-soon h1{ font-size:1.4rem; margin:0 0 8px; }
+.ad-soon p{ color:var(--ad-muted); margin:0; }
+
+
+/* --------------------------------------------------------------------------
+   RESPONSIVE
+   The rail slides over the desk rather than squeezing it.
+   -------------------------------------------------------------------------- */
+@media (max-width:900px){
+    .ad-shell{ grid-template-columns:1fr; }
+
+    .ad-rail{
+        position:fixed;
+        inset:0 auto 0 0;
+        width:var(--ad-rail-w);
+        z-index:40;
+        transform:translateX(-100%);
+        transition:transform .22s ease;
+        box-shadow:0 0 40px rgba(0,0,0,.4);
+    }
+
+    .ad-rail.is-open{ transform:translateX(0); }
+
+    .ad-rail-toggle{ display:block; }
+
+    .ad-desk{ padding:16px; }
+    .ad-top{ padding:10px 16px; }
+    .ad-top-link{ display:none; }
+}
+
+@media (prefers-reduced-motion:reduce){
+    .ad-rail{ transition:none; }
+}

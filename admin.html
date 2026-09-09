@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>SoundzGood Admin</title>
+
+<!-- Staff tool. Not for search engines, not in any public menu. -->
+<meta name="robots" content="noindex, nofollow">
+
+<link rel="icon" href="images/logo.png">
+
+<!--  admin.css only. The marketing stylesheet is deliberately NOT loaded
+      here: this is a different design language - dark rail, light desk -
+      and the two would fight each other. Keeping them apart also means
+      nothing done in here can reach the public site, and nothing done
+      there can reach this.                                             -->
+<link rel="stylesheet" href="admin.css">
+<script type="module" src="js/admin-app.js"></script>
+</head>
+
+<body>
+
+<!-- ==========================================================================
+     SIGN IN
+     Shown until an account with the admin claim is signed in. The claim is
+     what protects this, not the address - see js/admin-app.js.
+     ========================================================================== -->
+<div class="ad-gate" id="ad-gate">
+  <form class="ad-gate-card" id="ad-login">
+    <p class="ad-gate-brand">SoundzGood</p>
+    <h1>Admin</h1>
+    <p class="ad-gate-sub">Staff only.</p>
+
+    <label for="ad-email">Email</label>
+    <input type="email" id="ad-email" autocomplete="email" required>
+
+    <label for="ad-password">Password</label>
+    <input type="password" id="ad-password" autocomplete="current-password" required>
+
+    <p class="ad-error" id="ad-login-error" hidden></p>
+
+    <button type="submit" class="ad-btn ad-btn-primary" id="ad-login-submit">Sign In</button>
+  </form>
+</div>
+
+
+<!-- ==========================================================================
+     THE APP
+     ========================================================================== -->
+<div class="ad-shell" id="ad-shell" hidden>
+
+  <!-- ---- left rail ------------------------------------------------- -->
+  <aside class="ad-rail" id="ad-rail">
+
+    <div class="ad-brand">
+      <img src="images/logowhite.png" alt="" class="ad-brand-mark">
+      <div>
+        <p class="ad-brand-name">SoundzGood</p>
+        <p class="ad-brand-sub">Events &middot; Production &middot; Hire</p>
+      </div>
+    </div>
+
+    <!--  ADDING A SECTION
+          Add a button here and a matching panel in the main area. A
+          section with data-soon shows the Coming Soon screen instead,
+          so the menu can show where things are heading without
+          pretending they are built.                                 -->
+    <nav class="ad-nav" aria-label="Admin sections">
+      <button type="button" class="ad-nav-item" data-view="dashboard">
+        <span class="ad-ico" aria-hidden="true">▤</span> Dashboard
+      </button>
+      <button type="button" class="ad-nav-item" data-view="events">
+        <span class="ad-ico" aria-hidden="true">◈</span> Events
+      </button>
+      <button type="button" class="ad-nav-item" data-view="vendors">
+        <span class="ad-ico" aria-hidden="true">☰</span> Vendors
+      </button>
+      <button type="button" class="ad-nav-item" data-view="applications">
+        <span class="ad-ico" aria-hidden="true">✎</span> Applications
+      </button>
+      <button type="button" class="ad-nav-item" data-view="map">
+        <span class="ad-ico" aria-hidden="true">◱</span> Map &amp; Sites
+      </button>
+
+      <p class="ad-nav-divider">Coming soon</p>
+
+      <button type="button" class="ad-nav-item" data-view="messages" data-soon>
+        <span class="ad-ico" aria-hidden="true">✉</span> Messages
+      </button>
+      <button type="button" class="ad-nav-item" data-view="leads" data-soon>
+        <span class="ad-ico" aria-hidden="true">◎</span> Leads
+      </button>
+      <button type="button" class="ad-nav-item" data-view="customers" data-soon>
+        <span class="ad-ico" aria-hidden="true">☺</span> Customers
+      </button>
+      <button type="button" class="ad-nav-item" data-view="quotes" data-soon>
+        <span class="ad-ico" aria-hidden="true">$</span> Quotes
+      </button>
+      <button type="button" class="ad-nav-item" data-view="calendar" data-soon>
+        <span class="ad-ico" aria-hidden="true">▦</span> Calendar
+      </button>
+      <button type="button" class="ad-nav-item" data-view="reports" data-soon>
+        <span class="ad-ico" aria-hidden="true">◔</span> Reports
+      </button>
+      <button type="button" class="ad-nav-item" data-view="settings" data-soon>
+        <span class="ad-ico" aria-hidden="true">⚙</span> Settings
+      </button>
+    </nav>
+
+    <div class="ad-rail-foot">
+      <div class="ad-who">
+        <span class="ad-avatar" id="ad-avatar" aria-hidden="true"></span>
+        <div>
+          <p class="ad-who-name" id="ad-who-name">&nbsp;</p>
+          <p class="ad-who-role">Admin</p>
+        </div>
+      </div>
+      <button type="button" class="ad-signout" id="ad-signout">Log out</button>
+    </div>
+  </aside>
+
+  <!-- ---- main ------------------------------------------------------- -->
+  <div class="ad-main">
+
+    <header class="ad-top">
+      <button type="button" class="ad-rail-toggle" id="ad-rail-toggle"
+              aria-label="Show sections">☰</button>
+
+      <!--  Which event everything below is about. Every list, count and
+            site on the page is filtered by this.                      -->
+      <label class="ad-event-pick">
+        <span>Event</span>
+        <select id="ad-event-select"></select>
+      </label>
+
+      <a class="ad-top-link" href="/vendor-signup" target="_blank" rel="noopener">
+        View signup page ↗
+      </a>
+    </header>
+
+    <main class="ad-desk" id="ad-desk">
+      <p class="ad-loading" id="ad-boot">Loading…</p>
+    </main>
+  </div>
+</div>
+
+</body>
+</html>
