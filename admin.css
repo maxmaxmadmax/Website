@@ -435,6 +435,26 @@ body{
     border-radius:var(--ad-radius);
     padding:15px 16px;
     border-top:3px solid var(--ad-line);
+
+    /* most are divs, the ones that filter the list are buttons */
+    font:inherit;
+    text-align:left;
+    width:100%;
+    display:block;
+}
+
+.ad-stat.is-clickable{ cursor:pointer; }
+
+/*  Only the background moves on hover. Setting border-color here would
+    out-specify the .is-green / .is-amber top edge and grey it out. */
+.ad-stat.is-clickable:hover{
+    background:#fafbfc;
+    box-shadow:0 2px 8px rgba(0,0,0,.07);
+}
+
+.ad-stat.is-clickable:focus-visible{
+    outline:2px solid var(--ad-orange);
+    outline-offset:2px;
 }
 
 .ad-stat.is-green{ border-top-color:var(--ad-green); }

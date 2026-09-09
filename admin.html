@@ -68,17 +68,14 @@
           so the menu can show where things are heading without
           pretending they are built.                                 -->
     <nav class="ad-nav" aria-label="Admin sections">
-      <button type="button" class="ad-nav-item" data-view="dashboard">
-        <span class="ad-ico" aria-hidden="true">▤</span> Dashboard
-      </button>
-      <button type="button" class="ad-nav-item" data-view="events">
-        <span class="ad-ico" aria-hidden="true">◈</span> Events
-      </button>
       <button type="button" class="ad-nav-item" data-view="vendors">
         <span class="ad-ico" aria-hidden="true">☰</span> Vendors
       </button>
       <button type="button" class="ad-nav-item" data-view="applications">
         <span class="ad-ico" aria-hidden="true">✎</span> Applications
+      </button>
+      <button type="button" class="ad-nav-item" data-view="events">
+        <span class="ad-ico" aria-hidden="true">◈</span> Events
       </button>
       <button type="button" class="ad-nav-item" data-view="map">
         <span class="ad-ico" aria-hidden="true">◱</span> Map &amp; Sites
@@ -89,6 +86,12 @@
 
       <p class="ad-nav-divider">Coming soon</p>
 
+      <!--  The dashboard's numbers turned out to belong above the vendor
+            list rather than on a page of their own. It keeps its place in
+            the menu for whatever it becomes instead.                    -->
+      <button type="button" class="ad-nav-item" data-view="dashboard" data-soon>
+        <span class="ad-ico" aria-hidden="true">▤</span> Dashboard
+      </button>
       <button type="button" class="ad-nav-item" data-view="messages" data-soon>
         <span class="ad-ico" aria-hidden="true">✉</span> Messages
       </button>

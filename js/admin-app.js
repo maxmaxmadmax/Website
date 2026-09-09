@@ -42,7 +42,7 @@ const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
    ------------------------------------------------------------------------- */
 const state = {
   user: null,
-  view: 'dashboard',
+  view: 'vendors',
 
   activeEventId: defaultEventId,
 
@@ -206,10 +206,13 @@ function wireChrome() {
 /* -------------------------------------------------------------------------
    Routing
    ------------------------------------------------------------------------- */
-const BUILT = ['dashboard', 'events', 'vendors', 'applications', 'map', 'settings'];
+const BUILT = ['events', 'vendors', 'applications', 'map', 'settings'];
+
+/*  Vendors is where the work is, so it is what you land on. */
+const HOME = 'vendors';
 
 function routeFromHash() {
-  const want = (location.hash.replace('#/', '') || 'dashboard').split('?')[0];
+  const want = (location.hash.replace('#/', '') || HOME).split('?')[0];
   state.view = want;
   state.openBookingId = null;
 
@@ -436,109 +439,81 @@ function realApplications() {
 
 
 /* =========================================================================
-   DASHBOARD
+   THE NUMBERS
+
+   Where the event stands: how many have applied, how many are in, who has
+   paid, how much ground is left. It sits above the vendor list rather than
+   on a page of its own, because every one of these numbers is a count of
+   the rows underneath it - reading them apart from the list they describe
+   meant holding two screens in your head.
    ========================================================================= */
-VIEWS.dashboard = {
-  html() {
-    const apps = realApplications();
-    const ev = state.events.find((e) => e.id === state.activeEventId);
+function statsStrip() {
+  const apps = realApplications();
 
-    /*  Out of the running: turned away, or gone of their own accord. They
-        still show in the lists, but they are not pending anything and they
-        do not owe anybody money, so they are kept out of those counts. */
-    const isOut = (b) => b.reviewStatus === 'declined' || b.status === 'cancelled';
-    const live = apps.filter((b) => !isOut(b));
+  /*  Out of the running: turned away, or gone of their own accord. They
+      still show in the list, but they are not pending anything and they do
+      not owe anybody money, so they are kept out of those counts. */
+  const isOut = (b) => bucket(b) === 'declined';
+  const live = apps.filter((b) => !isOut(b));
 
-    const confirmed = live.filter((b) => b.status === 'confirmed').length;
-    const pending = live.filter((b) =>
-      !b.reviewStatus && b.status !== 'confirmed').length;
-    const declined = apps.filter(isOut).length;
+  const confirmed = live.filter((b) => b.status === 'confirmed').length;
+  const pending = live.filter((b) =>
+    !b.reviewStatus && b.status !== 'confirmed').length;
+  const declined = apps.filter(isOut).length;
 
-    const paid = live.filter((b) =>
-      b.paymentStatus === 'paid' || b.paymentStatus === 'free').length;
-    const unpaid = live.length - paid;
+  const paid = live.filter((b) =>
+    b.paymentStatus === 'paid' || b.paymentStatus === 'free').length;
+  const unpaid = live.length - paid;
 
-    const filled = state.sites.filter((s) =>
-      s.status === 'booked' || s.status === 'held').length;
-    const available = state.sites.filter((s) => s.status === 'available').length;
+  const filled = state.sites.filter((s) =>
+    s.status === 'booked' || s.status === 'held').length;
+  const available = state.sites.filter((s) => s.status === 'available').length;
 
-    const cards = [
-      ['Total applications', apps.length, 'all vendor types', ''],
-      ['Confirmed', confirmed, 'locked in', 'is-green'],
-      ['Pending review', pending, 'awaiting a decision', 'is-amber'],
-      ['Declined', declined, 'turned away or cancelled', 'is-red'],
-      ['Paid', paid, 'money received', 'is-green'],
-      ['Unpaid', unpaid, 'still owing', 'is-amber'],
-      ['Sites filled', filled, pct(filled, state.sites.length) + ' of the ground', 'is-blue'],
-      ['Sites available', available, 'still to sell', ''],
-    ];
+  /*  Each card filters the list below it to the rows it counts, so a number
+      that looks wrong is one click from the vendors behind it. The two site
+      cards count sites rather than vendors, so they do not filter. */
+  const cards = [
+    ['Total applications', apps.length, 'all vendor types', '', { status: 'all', payment: 'all' }],
+    ['Confirmed', confirmed, 'locked in', 'is-green', { status: 'confirmed' }],
+    ['Pending review', pending, 'awaiting a decision', 'is-amber', { status: 'pending' }],
+    ['Declined', declined, 'turned away or cancelled', 'is-red', { status: 'declined' }],
+    ['Paid', paid, 'money received', 'is-green', { payment: 'paid' }],
+    ['Unpaid', unpaid, 'still owing', 'is-amber', { payment: 'unpaid' }],
+    ['Sites filled', filled, pct(filled, state.sites.length) + ' of the ground', 'is-blue', null],
+    ['Sites available', available, 'still to sell', '', null],
+  ];
 
-    const recent = apps.slice(0, 8);
+  return `
+    <div class="ad-stats">
+      ${cards.map(([label, value, note, mod, filter]) => {
+        const inner = `
+          <p class="ad-stat-label">${esc(label)}</p>
+          <p class="ad-stat-value">${value}</p>
+          <p class="ad-stat-note">${esc(note)}</p>`;
 
-    return `
-      <div class="ad-page-head">
-        <div>
-          <h1>Dashboard</h1>
-          <p>${ev ? esc(ev.name || ev.id) : 'No event selected'}${
-            ev && ev.dateLabel ? ' &middot; ' + esc(ev.dateLabel) : ''}</p>
-        </div>
-      </div>
+        return filter
+          ? `<button type="button" class="ad-stat ${mod} is-clickable"
+                     data-stat="${attr(JSON.stringify(filter))}">${inner}</button>`
+          : `<div class="ad-stat ${mod}">${inner}</div>`;
+      }).join('')}
+    </div>`;
+}
 
-      <div class="ad-stats">
-        ${cards.map(([label, value, note, mod]) => `
-          <div class="ad-stat ${mod}">
-            <p class="ad-stat-label">${esc(label)}</p>
-            <p class="ad-stat-value">${value}</p>
-            <p class="ad-stat-note">${esc(note)}</p>
-          </div>`).join('')}
-      </div>
-
-      <section class="ad-card ad-panel">
-        <header class="ad-panel-head">
-          <h2>Recent applications</h2>
-          <button type="button" class="ad-btn" data-goto="applications">View all</button>
-        </header>
-        ${recent.length ? `
-        <div class="ad-table-wrap">
-          <table class="ad-table">
-            <thead><tr>
-              <th>Vendor</th><th>Type</th><th>Site</th>
-              <th>Status</th><th>Payment</th><th>Date</th>
-            </tr></thead>
-            <tbody>
-              ${recent.map((b) => `
-                <tr data-open="${attr(b.id)}">
-                  <td>
-                    <span class="ad-cell-strong">${esc(vendorName(b))}</span>
-                    <span class="ad-cell-sub">${esc((b.business && b.business.email) || '')}</span>
-                  </td>
-                  <td>${typePill(b.vendorType)}</td>
-                  <td>${esc(b.siteLabel || '—')}</td>
-                  <td>${statusPill(b)}</td>
-                  <td>${paymentPill(b)}</td>
-                  <td class="ad-cell-muted">${esc(dateShort(b.createdAt))}</td>
-                </tr>`).join('')}
-            </tbody>
-          </table>
-        </div>` : `<p class="ad-empty">No applications yet.</p>`}
-      </section>`;
-  },
-
-  wire() {
-    const all = document.querySelector('[data-goto="applications"]');
-    if (all) all.addEventListener('click', () => { location.hash = '#/applications'; });
-
-    /*  Clicking a row hands over to the applications list with that one
-        already open - the full list is where the actions live, and every
-        row on the dashboard is in it whatever its status. */
-    document.querySelectorAll('[data-open]').forEach((r) => {
-      r.addEventListener('click', () => {
-        state.openBookingId = r.getAttribute('data-open');
-        location.hash = '#/applications';
-      });
+function wireStats() {
+  document.querySelectorAll('[data-stat]').forEach((card) => {
+    card.addEventListener('click', () => {
+      const want = JSON.parse(card.getAttribute('data-stat'));
+      // A card sets only what it counts by and clears the rest.
+      state.filters = {
+        search: '',
+        vendorType: 'all',
+        status: want.status || 'all',
+        payment: want.payment || 'all',
+      };
+      render();
     });
-  },
-};
+  });
+}
 
 function pct(part, whole) {
   if (!whole) return '0%';
@@ -698,18 +673,21 @@ function wireRows() {
   });
 }
 
-/*  Both list views are the same page with a different starting set. */
-function listView(title, blurb, pick) {
+/*  Both list views are the same page with a different starting set, and
+    only the one that shows everybody carries the numbers. */
+function listView(title, blurb, pick, opts = {}) {
   return {
     html() {
       const rows = applyFilters(realApplications().filter(pick));
       const total = realApplications().filter(pick).length;
+      const ev = state.events.find((e) => e.id === state.activeEventId);
 
       return `
         <div class="ad-page-head">
           <div>
             <h1>${esc(title)}</h1>
-            <p>${esc(blurb)}</p>
+            <p>${esc(blurb)}${ev && opts.stats
+              ? ' &middot; ' + esc(ev.name || ev.id) : ''}</p>
           </div>
           <div class="ad-page-actions">
             <span class="ad-count">${rows.length}${
@@ -719,6 +697,8 @@ function listView(title, blurb, pick) {
             </button>
           </div>
         </div>
+
+        ${opts.stats ? statsStrip() : ''}
 
         ${filterBar()}
 
@@ -731,6 +711,7 @@ function listView(title, blurb, pick) {
     },
 
     wire() {
+      if (opts.stats) wireStats();
       wireFilters();
       wireRows();
       wireAddVendor();
@@ -851,16 +832,21 @@ function wireAddVendor() {
   });
 }
 
-VIEWS.applications = listView(
-  'Applications',
-  'Everyone who has applied, newest first.',
-  () => true
-);
-
+/*  Vendors is the whole picture - everybody, with the event's numbers above
+    them. Applications is the short list of people still waiting on a
+    decision, so it is somewhere to work through rather than somewhere to
+    look things up. Anyone already decided on is found in Vendors. */
 VIEWS.vendors = listView(
   'Vendors',
-  'Who is actually coming - approved and confirmed only.',
-  (b) => ['approved', 'confirmed'].includes(bucket(b))
+  'Everyone who has applied, newest first.',
+  () => true,
+  { stats: true }
+);
+
+VIEWS.applications = listView(
+  'Applications',
+  'Still waiting on a decision.',
+  (b) => ['pending', 'waitlisted'].includes(bucket(b))
 );
 
 
