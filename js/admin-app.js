@@ -345,6 +345,37 @@ function esc(value) {
   return d.innerHTML;
 }
 
+/*  A URL that came out of the database, checked before it is allowed to
+    become a link.
+
+    A vendor writes their own documents[] when they upload, so the url on
+    a document is theirs to choose. Dropping that straight into an href
+    lets them store javascript: and have it run in this page - which is
+    the one page in the site whose session carries the admin claim. One
+    click on an innocent looking "Public liability.pdf" and their code is
+    calling admin functions as you.
+
+    Only https to the project's own storage bucket gets to be a link.
+    Anything else is not a link at all, and says so. */
+const DOC_HOSTS = [
+  'firebasestorage.googleapis.com',
+  'storage.googleapis.com',
+  'soundzgood-8c86f.firebasestorage.app',
+];
+
+function safeUrl(value) {
+  if (!value) return null;
+  let u;
+  try {
+    u = new URL(String(value), location.origin);
+  } catch (err) {
+    return null;
+  }
+  if (u.protocol !== 'https:') return null;
+  if (!DOC_HOSTS.includes(u.hostname)) return null;
+  return u.href;
+}
+
 function attr(value) {
   return String(value == null ? '' : value).replace(/"/g, '&quot;');
 }
@@ -955,13 +986,18 @@ function detailPanel() {
         <h3 class="ad-drawer-h">Documents</h3>
         ${docs.length ? `
           <ul class="ad-docs">
-            ${docs.map((d) => `
+            ${docs.map((d) => {
+              const href = safeUrl(d.url);
+              const label = esc(d.name || d.type || 'Document');
+              return `
               <li>
-                <a href="${attr(d.url || '#')}" target="_blank" rel="noopener">
-                  ${esc(d.name || d.type || 'Document')}
-                </a>
+                ${href
+                  ? `<a href="${attr(href)}" target="_blank" rel="noopener noreferrer">${label}</a>`
+                  : `<span class="ad-doc-bad">${label}</span>
+                     <span class="ad-cell-sub">Not a file we uploaded - link withheld</span>`}
                 <span class="ad-cell-sub">${esc(d.type || '')}</span>
-              </li>`).join('')}
+              </li>`;
+            }).join('')}
           </ul>` : `<p class="ad-drawer-text ad-cell-muted">None uploaded.</p>`}
 
         <h3 class="ad-drawer-h">Internal notes</h3>

@@ -697,6 +697,9 @@ body{
 .ad-docs a{ color:var(--ad-orange); font-weight:600; text-decoration:none; }
 .ad-docs a:hover{ text-decoration:underline; }
 
+/* a document whose URL did not come from our own storage - shown, not linked */
+.ad-doc-bad{ font-weight:600; color:var(--ad-red); }
+
 
 /* --------------------------------------------------------------------------
    DRAWER ACTIONS

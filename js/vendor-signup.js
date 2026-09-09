@@ -51,10 +51,6 @@ function money(cents) {
   return cents === 0 ? 'Free' : `$${(cents / 100).toFixed(0)}`;
 }
 
-function priceLabel() {
-  return money(priceCents());
-}
-
 function vendorLabel() {
   if (state.vendorType === 'food') return 'Food Vendor (6 m x 3 m)';
 
