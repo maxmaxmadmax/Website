@@ -92,7 +92,7 @@ After that, remove the bootstrap variable and redeploy.
 
 ## 6. Create the event
 
-Open **`/vendor-admin`**, sign in, go to **Setup** and press
+Open **`/soundzgoodadminlogin`**, sign in, go to **Setup** and press
 **Seed Event Layout**. That writes:
 
 - the event (Eatz & Beatz Halloween Edition, 31 October 2026, Bowen Sports Complex)
@@ -173,8 +173,8 @@ the flow, and `holdSite` rejects any other type. SoundzGood runs the bar.
 | `js/vendor-signup.js` | the booking flow |
 | `js/vendor-map.js` | the site map, drawn as SVG from Firestore data |
 | `js/firebase-config.js` | **your config goes here** |
-| `vendor-admin.html` | staff dashboard, `noindex`, not in the menu |
-| `js/vendor-admin.js` | dashboard logic |
+| `soundzgoodadminlogin.html` | staff backend, `noindex`, not in the menu |
+| `js/admin.js` | backend logic |
 | `functions/index.js` | holds, checkout, webhook, admin actions |
 | `functions/lib/layout.js` | the seed layout for Bowen Sports Complex |
 | `firestore.rules` | who can read and write what |
