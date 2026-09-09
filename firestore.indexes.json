@@ -18,8 +18,14 @@
       ]
     },
     {
+      "_comment": [
+        "expireHolds sweeps every event at once with collectionGroup('sites'),",
+        "so this has to be COLLECTION_GROUP. It was COLLECTION, which builds a",
+        "perfectly good index that the query can never use - so expireHolds",
+        "failed every 60 seconds and abandoned sites were never handed back."
+      ],
       "collectionGroup": "sites",
-      "queryScope": "COLLECTION",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "holdExpiresAt", "order": "ASCENDING" }

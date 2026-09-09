@@ -899,12 +899,25 @@ exports.expireHolds = onSchedule('every 1 minutes', async () => {
   for (const doc of stale.docs) {
     try {
       await db.runTransaction(async (tx) => {
+        /*  EVERY READ FIRST.
+
+            A Firestore transaction will not accept a read after a write, so
+            the booking has to be fetched up here even though it is written
+            last. Updating the site first and then reading the booking threw
+            on every single site, which is why nothing was ever released. */
         const fresh = await tx.get(doc.ref);
         if (!fresh.exists) return;
 
         const site = fresh.data();
         if (site.status !== 'held') return;
         if (site.holdExpiresAt && site.holdExpiresAt.toMillis() > Date.now()) return;
+
+        const bRef = site.bookingId
+          ? db.collection('bookings').doc(site.bookingId)
+          : null;
+        const bSnap = bRef ? await tx.get(bRef) : null;
+
+        // ---- reads done, writes from here ----
 
         tx.update(doc.ref, {
           status: 'available',
@@ -913,23 +926,25 @@ exports.expireHolds = onSchedule('every 1 minutes', async () => {
           bookingId: FieldValue.delete(),
         });
 
-        if (site.bookingId) {
-          const bRef = db.collection('bookings').doc(site.bookingId);
-          const bSnap = await tx.get(bRef);
-          if (bSnap.exists && bSnap.data().status !== 'confirmed') {
-            tx.update(bRef, {
-              status: 'draft',
-              paymentStatus: 'none',
-              siteId: FieldValue.delete(),
-              siteLabel: FieldValue.delete(),
-              holdExpiresAt: FieldValue.delete(),
-            });
-          }
+        if (bSnap && bSnap.exists && bSnap.data().status !== 'confirmed') {
+          tx.update(bRef, {
+            status: 'draft',
+            paymentStatus: 'none',
+            siteId: FieldValue.delete(),
+            siteIds: FieldValue.delete(),
+            siteLabel: FieldValue.delete(),
+            holdExpiresAt: FieldValue.delete(),
+          });
         }
       });
       released++;
     } catch (err) {
-      logger.error('Could not release hold', { site: doc.ref.path, err });
+      /*  err on its own serialises to {} in structured logging, which is how
+          the read-after-write above stayed invisible. Log the message. */
+      logger.error('Could not release hold', {
+        site: doc.ref.path,
+        message: err && err.message,
+      });
     }
   }
 
@@ -1087,7 +1102,18 @@ exports.adminCancelBooking = onCall(async (request) => {
       : (booking.siteId ? [booking.siteId] : []);
 
     const bayRefs = bayIds.map((id) => siteRef(booking.eventId, id));
+
+    /*  Every read first - a transaction refuses a read that follows a write.
+        The category has to be fetched up here, before the bays are handed
+        back, or the whole cancel throws. */
     const baySnaps = await Promise.all(bayRefs.map((r) => tx.get(r)));
+
+    const catRef = booking.countedCategoryId
+      ? categoryRef(booking.eventId, booking.countedCategoryId)
+      : null;
+    const catSnap = catRef ? await tx.get(catRef) : null;
+
+    // ---- reads done, writes from here ----
 
     baySnaps.forEach((siteSnap, i) => {
       if (siteSnap.exists && siteSnap.data().bookingId === bookingId) {
@@ -1100,12 +1126,8 @@ exports.adminCancelBooking = onCall(async (request) => {
       }
     });
 
-    if (booking.countedCategoryId) {
-      const catRef = categoryRef(booking.eventId, booking.countedCategoryId);
-      const catSnap = await tx.get(catRef);
-      if (catSnap.exists && catSnap.data().count > 0) {
-        tx.update(catRef, { count: FieldValue.increment(-1) });
-      }
+    if (catSnap && catSnap.exists && catSnap.data().count > 0) {
+      tx.update(catRef, { count: FieldValue.increment(-1) });
     }
 
     tx.update(bRef, {
@@ -1168,14 +1190,23 @@ async function freeBaysInTx(tx, bookingId, booking) {
   });
 }
 
-/* Undo the category count when a booking stops being real. */
-async function uncountCategoryInTx(tx, booking) {
-  if (!booking.countedCategoryId) return;
+/*  Undo the category count when a booking stops being real.
+
+    Split in two on purpose. A Firestore transaction refuses a read that
+    follows a write, and freeing a vendor's bays is a write - so the read
+    has to be hoisted above it and only the write left behind. Callers do
+    the read first, then all their writes, then this. */
+async function readCategoryForUncount(tx, booking) {
+  if (!booking.countedCategoryId) return null;
   const ref = categoryRef(booking.eventId, booking.countedCategoryId);
   const snap = await tx.get(ref);
-  if (snap.exists && snap.data().count > 0) {
-    tx.update(ref, { count: FieldValue.increment(-1) });
-  }
+  return { ref, snap };
+}
+
+function writeUncount(tx, read) {
+  if (!read || !read.snap.exists) return;
+  if ((read.snap.data().count || 0) <= 0) return;
+  tx.update(read.ref, { count: FieldValue.increment(-1) });
 }
 
 /* -------------------------------------------------------------------------
@@ -1219,8 +1250,12 @@ exports.adminReviewBooking = onCall(async (request) => {
     else update.reviewReason = FieldValue.delete();
 
     if (decision === 'declined') {
+      /*  Category read before freeBaysInTx, because that frees the bays and
+          a transaction will not read after a write. */
+      const catRead = await readCategoryForUncount(tx, booking);
+
       await freeBaysInTx(tx, bookingId, booking);
-      await uncountCategoryInTx(tx, booking);
+      writeUncount(tx, catRead);
 
       update.status = 'cancelled';
       update.cancelledAt = FieldValue.serverTimestamp();
