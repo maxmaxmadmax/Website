@@ -36,18 +36,14 @@ async function init() {
   fb.a.onAuthStateChanged(fb.auth, async (user) => {
     if (!user) return showSignIn();
 
-    // The claim is what counts. Force a refresh so a newly granted admin
-    // does not have to sign out and back in.
-    const token = await user.getIdTokenResult(true);
+    /*  The form is mid-way through creating an account and granting it the
+        claim. Leave it alone - it finishes the job itself. Without this the
+        listener fires the moment the account exists, finds no claim on a
+        token minted a second earlier, and signs the account out from under
+        the very code that is busy making it an admin. */
+    if (busyCreating) return;
 
-    if (token.claims.admin !== true) {
-      showError('admin', 'That account is not an admin.');
-      await fb.a.signOut(fb.auth);
-      return;
-    }
-
-    showDashboard(user);
-    subscribeAll();
+    await admitOrReject(user);
   });
 }
 
@@ -72,6 +68,43 @@ async function loadFirebase() {
 
 /* signin | create - which the form is currently doing */
 let authMode = 'signin';
+
+/* True while the create-account flow is running, so the auth listener does
+   not sign the new account out before it has been granted its claim. */
+let busyCreating = false;
+
+/*  Let a signed-in account in, or turn it away.
+
+    If the claim is missing it tries once to grant it. That only succeeds
+    for an address on the bootstrap list, so a stranger still gets nothing -
+    but it means the first admin can be minted by signing in as well as by
+    creating an account, and an interrupted setup can be finished by simply
+    signing in again. */
+async function admitOrReject(user) {
+  let token = await user.getIdTokenResult(true);
+
+  if (token.claims.admin !== true) {
+    try {
+      await fb.fn.httpsCallable(fb.fns, 'setAdminRole')({
+        email: user.email,
+        makeAdmin: true,
+      });
+      token = await user.getIdTokenResult(true);
+    } catch (err) {
+      // not on the list, and not already an admin - nothing more to try
+    }
+  }
+
+  if (token.claims.admin !== true) {
+    showError('admin', 'That account is not an admin.');
+    await fb.a.signOut(fb.auth);
+    return false;
+  }
+
+  showDashboard(user);
+  subscribeAll();
+  return true;
+}
 
 function setAuthMode(mode) {
   authMode = mode;
@@ -114,32 +147,23 @@ function wire() {
 
     try {
       if (authMode === 'create') {
-        await fb.a.createUserWithEmailAndPassword(fb.auth, email, password);
+        busyCreating = true;
 
-        /*  Straight away, ask to be made an admin. This only succeeds for an
-            address on ADMIN_BOOTSTRAP_EMAILS, or for someone an existing
-            admin has already blessed - so a stranger who signs up here ends
-            up with an account and nothing else.
+        /*  The credential is held onto rather than reaching for
+            fb.auth.currentUser afterwards. currentUser can be null by then -
+            that is exactly what went wrong the first time this ran. */
+        const cred = await fb.a.createUserWithEmailAndPassword(fb.auth, email, password);
 
-            Then the ID token is refreshed by force: custom claims are baked
-            into the token when it is minted, so without this the browser
-            would carry a token that predates the claim and keep being told
-            it is not an admin until it happened to renew. */
-        try {
-          await fb.fn.httpsCallable(fb.fns, 'setAdminRole')({ email, makeAdmin: true });
-          await fb.auth.currentUser.getIdToken(true);
-        } catch (err) {
-          showError('admin',
-            'Account created, but it was not made an admin: ' +
-            (err.message || err) +
-            ' - the address may not be on the bootstrap list.');
-        }
+        busyCreating = false;
+        await admitOrReject(cred.user);
       } else {
-        await fb.a.signInWithEmailAndPassword(fb.auth, email, password);
+        const cred = await fb.a.signInWithEmailAndPassword(fb.auth, email, password);
+        await admitOrReject(cred.user);
       }
     } catch (err) {
       showError('admin', err.message);
     } finally {
+      busyCreating = false;
       setBusy('admin', false);
     }
   });
