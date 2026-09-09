@@ -527,6 +527,11 @@ exports.createCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request
 
   const amount = booking.amountCents ?? 0;
 
+  /*  What the vendor will see on their card statement and receipt. Read off
+      the event so it stays right when there is more than one. */
+  const eventSnapshot = await db.collection('events').doc(booking.eventId).get();
+  const eventForBooking = eventSnapshot.exists ? eventSnapshot.data() : {};
+
   // ---- Nothing to pay -----------------------------------------------------
   if (amount === 0) {
     await confirmBooking(bookingId, { paymentStatus: 'free' });
@@ -534,6 +539,39 @@ exports.createCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request
   }
 
   // ---- Paid: hand off to Stripe -----------------------------------------
+
+  /*  THE HOLD HAS TO OUTLIVE THE CHECKOUT SESSION.
+
+      The browsing hold is 10 minutes, which is right for somebody picking a
+      spot on the map. It is far too short once they are on Stripe's payment
+      page: Stripe will not accept an expires_at less than 30 minutes away,
+      so a 10 minute hold means expireHolds hands the site back while they
+      are still typing their card in. Somebody else takes it, the first
+      vendor pays anyway, and confirmBooking finds the site gone - money
+      taken, refund owed, and a vendor with nowhere to stand.
+
+      So the hold is pushed out past the session before the session is made.
+      Extending first means the site is never held for less time than the
+      vendor has to pay; if the Stripe call then fails, the site is simply
+      held a bit longer than needed and expireHolds tidies it up. */
+  const CHECKOUT_MINUTES = 30;             // Stripe's own minimum
+  const HOLD_MARGIN_MINUTES = 5;           // webhook and clock-skew slack
+
+  const sessionExpiresAt = Math.floor(Date.now() / 1000) + CHECKOUT_MINUTES * 60;
+  const holdUntil = Timestamp.fromMillis(
+    (sessionExpiresAt + HOLD_MARGIN_MINUTES * 60) * 1000
+  );
+
+  const bayIds = Array.isArray(booking.siteIds) && booking.siteIds.length
+    ? booking.siteIds
+    : [booking.siteId];
+
+  await Promise.all([
+    ...bayIds.map((id) =>
+      siteRef(booking.eventId, id).update({ holdExpiresAt: holdUntil })),
+    bookingRef.update({ holdExpiresAt: holdUntil }),
+  ]);
+
   const stripe = getStripe();
 
   const session = await stripe.checkout.sessions.create({
@@ -555,16 +593,18 @@ exports.createCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request
           product_data: {
             name: `${vendorTypeLabel(booking.vendorType)} site - ${booking.siteLabel}`
               + (categoryName ? ` (${categoryName})` : ''),
-            description: 'Eatz & Beatz Halloween Edition, Bowen Sports Complex, 31 October 2026',
+            // Read off the event, not hardcoded - a second event would
+            // otherwise sell sites described as the first one.
+            description: eventBlurb(eventForBooking),
           },
         },
       },
     ],
     success_url: `${SITE_URL}/vendor-signup?booking=${bookingId}&paid=1`,
     cancel_url: `${SITE_URL}/vendor-signup?booking=${bookingId}&cancelled=1`,
-    // Give Stripe a little less time than our hold so the two do not
-    // disagree about whether the site is still theirs.
-    expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+    // The hold above was already pushed out past this, so the site cannot
+    // be handed to somebody else while this session is still payable.
+    expires_at: sessionExpiresAt,
   });
 
   await bookingRef.update({
@@ -581,6 +621,12 @@ function vendorTypeLabel(type) {
   if (type === 'food') return 'Food vendor';
   if (type === 'market') return 'Market stall';
   return 'Community group';
+}
+
+/* One line naming the event, for the Stripe receipt. */
+function eventBlurb(event) {
+  const parts = [event.name, event.venue, event.dateLabel].filter(Boolean);
+  return parts.length ? parts.join(', ') : 'SoundzGood event';
 }
 
 /* -------------------------------------------------------------------------
@@ -718,11 +764,21 @@ exports.stripeWebhook = onRequest(
       return;
     }
 
+    const bookingOf = (session) =>
+      session.client_reference_id || session.metadata?.bookingId;
+
     try {
       switch (event.type) {
-        case 'checkout.session.completed': {
+        /*  A card pays straight away and arrives here already paid. A
+            delayed method - BECS direct debit, which is the common one in
+            Australia - arrives here unpaid and settles days later as
+            async_payment_succeeded. Both routes have to confirm, or the
+            money lands in the account and the vendor is never given their
+            site. */
+        case 'checkout.session.completed':
+        case 'checkout.session.async_payment_succeeded': {
           const session = event.data.object;
-          const bookingId = session.client_reference_id || session.metadata?.bookingId;
+          const bookingId = bookingOf(session);
 
           if (!bookingId) {
             logger.warn('Checkout completed with no booking reference', { id: session.id });
@@ -735,14 +791,30 @@ exports.stripeWebhook = onRequest(
               stripePaymentIntentId: session.payment_intent,
               amountPaidCents: session.amount_total,
             });
-            logger.info('Booking confirmed by webhook', { bookingId });
+            logger.info('Booking confirmed by webhook', { bookingId, via: event.type });
+          } else {
+            /*  Completed but not paid yet: a direct debit on its way. The
+                site stays held rather than being handed to somebody else
+                while their bank moves the money. */
+            logger.info('Checkout completed, payment still pending', {
+              bookingId, status: session.payment_status,
+            });
+          }
+          break;
+        }
+
+        /* Their bank refused it. The site goes back on the market. */
+        case 'checkout.session.async_payment_failed': {
+          const bookingId = bookingOf(event.data.object);
+          if (bookingId) {
+            await releaseBookingHold(bookingId);
+            logger.warn('Delayed payment failed, hold released', { bookingId });
           }
           break;
         }
 
         case 'checkout.session.expired': {
-          const session = event.data.object;
-          const bookingId = session.client_reference_id || session.metadata?.bookingId;
+          const bookingId = bookingOf(event.data.object);
           if (bookingId) {
             await releaseBookingHold(bookingId);
             logger.info('Checkout expired, hold released', { bookingId });
