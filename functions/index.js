@@ -1046,3 +1046,447 @@ exports.adminCancelBooking = onCall(async (request) => {
 
   return { ok: true };
 });
+
+
+/* =========================================================================
+   THE ADMIN BACKEND
+
+   Everything below is driven by /admin. None of it can be reached without
+   the admin claim, and none of it is used by the public signup page - the
+   vendor flow is untouched.
+
+   Two fields the public page never writes are added here:
+
+     reviewStatus   pending | approved | waitlisted | declined
+     notes[]        internal, staff only, never shown to the vendor
+
+   They are new rather than a change to status, so an application made
+   before any of this existed still reads correctly - it simply has no
+   review decision yet.
+   ========================================================================= */
+
+/* Who did it, for the audit trail on every admin change. */
+function actor(request) {
+  const t = (request.auth && request.auth.token) || {};
+  return { uid: request.auth.uid, email: t.email || null };
+}
+
+/*  Hands every bay a booking holds back to the floor. Must be called inside
+    a transaction, with the booking already read. */
+async function freeBaysInTx(tx, bookingId, booking) {
+  const bayIds = Array.isArray(booking.siteIds) && booking.siteIds.length
+    ? booking.siteIds
+    : (booking.siteId ? [booking.siteId] : []);
+
+  if (!bayIds.length) return;
+
+  const refs = bayIds.map((id) => siteRef(booking.eventId, id));
+  const snaps = await Promise.all(refs.map((r) => tx.get(r)));
+
+  snaps.forEach((snap, i) => {
+    // Only give back what this booking is actually holding.
+    if (snap.exists && snap.data().bookingId === bookingId) {
+      tx.update(refs[i], {
+        status: 'available',
+        bookingId: FieldValue.delete(),
+        heldBy: FieldValue.delete(),
+        holdExpiresAt: FieldValue.delete(),
+      });
+    }
+  });
+}
+
+/* Undo the category count when a booking stops being real. */
+async function uncountCategoryInTx(tx, booking) {
+  if (!booking.countedCategoryId) return;
+  const ref = categoryRef(booking.eventId, booking.countedCategoryId);
+  const snap = await tx.get(ref);
+  if (snap.exists && snap.data().count > 0) {
+    tx.update(ref, { count: FieldValue.increment(-1) });
+  }
+}
+
+/* -------------------------------------------------------------------------
+   adminReviewBooking - approve, waitlist, decline, or put back to pending.
+
+   Declining is the only decision that touches anything else: the site goes
+   back on the market and the category count comes down, because a declined
+   vendor is not taking up either. Approving is deliberately just a flag -
+   it does not confirm them or take their money, it says a human has looked
+   and said yes.
+   ------------------------------------------------------------------------- */
+const DECISIONS = ['pending', 'approved', 'waitlisted', 'declined'];
+
+exports.adminReviewBooking = onCall(async (request) => {
+  requireAdmin(request);
+  const { bookingId, decision, reason } = request.data || {};
+
+  if (!bookingId) throw new HttpsError('invalid-argument', 'Missing booking.');
+  if (!DECISIONS.includes(decision)) {
+    throw new HttpsError('invalid-argument',
+      'Decision must be one of: ' + DECISIONS.join(', '));
+  }
+
+  const who = actor(request);
+
+  await db.runTransaction(async (tx) => {
+    const ref = db.collection('bookings').doc(bookingId);
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new HttpsError('not-found', 'Booking not found.');
+
+    const booking = snap.data();
+
+    const update = {
+      reviewStatus: decision,
+      reviewedAt: FieldValue.serverTimestamp(),
+      reviewedBy: who.email || who.uid,
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+
+    if (reason) update.reviewReason = String(reason).slice(0, 500);
+    else update.reviewReason = FieldValue.delete();
+
+    if (decision === 'declined') {
+      await freeBaysInTx(tx, bookingId, booking);
+      await uncountCategoryInTx(tx, booking);
+
+      update.status = 'cancelled';
+      update.cancelledAt = FieldValue.serverTimestamp();
+      update.countedCategoryId = FieldValue.delete();
+      update.siteId = FieldValue.delete();
+      update.siteIds = FieldValue.delete();
+      update.siteLabel = FieldValue.delete();
+      update.holdExpiresAt = FieldValue.delete();
+    }
+
+    tx.update(ref, update);
+  });
+
+  logger.info('admin review', { bookingId, decision, by: who.email });
+  return { ok: true, decision };
+});
+
+/* -------------------------------------------------------------------------
+   adminSetPayment - mark somebody paid, unpaid, or in for free.
+
+   Marking a booking paid or free when it is holding a site confirms it
+   properly, through the same confirmBooking the Stripe webhook uses. That
+   way a vendor paid by bank transfer or waved in for free ends up in
+   exactly the same state as one who paid by card - counted, sites booked,
+   reference issued - instead of a second half-confirmed shape nothing
+   else understands.
+   ------------------------------------------------------------------------- */
+const PAYMENT_STATES = ['none', 'unpaid', 'paid', 'free'];
+
+exports.adminSetPayment = onCall(async (request) => {
+  requireAdmin(request);
+  const { bookingId, paymentStatus, amountPaidCents } = request.data || {};
+
+  if (!bookingId) throw new HttpsError('invalid-argument', 'Missing booking.');
+  if (!PAYMENT_STATES.includes(paymentStatus)) {
+    throw new HttpsError('invalid-argument',
+      'Payment status must be one of: ' + PAYMENT_STATES.join(', '));
+  }
+
+  const who = actor(request);
+  const ref = db.collection('bookings').doc(bookingId);
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'Booking not found.');
+
+  const booking = snap.data();
+  const settled = paymentStatus === 'paid' || paymentStatus === 'free';
+  const holdsSite = (booking.siteIds && booking.siteIds.length) || booking.siteId;
+
+  if (settled && booking.status !== 'confirmed' && holdsSite) {
+    const paid = amountPaidCents != null
+      ? Number(amountPaidCents)
+      : (paymentStatus === 'free' ? 0 : booking.amountCents || 0);
+
+    const result = await confirmBooking(bookingId, {
+      paymentStatus,
+      amountPaidCents: paid,
+    });
+
+    await ref.update({
+      paidBy: who.email || who.uid,
+      paidMarkedAt: FieldValue.serverTimestamp(),
+    });
+
+    logger.info('admin marked paid', { bookingId, paymentStatus, by: who.email });
+    return { ok: result.ok !== false, confirmed: result.ok !== false, ...result };
+  }
+
+  // Not settling, or nothing to confirm - just record the state.
+  const update = {
+    paymentStatus,
+    paidBy: who.email || who.uid,
+    paidMarkedAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  };
+  if (amountPaidCents != null) update.amountPaidCents = Number(amountPaidCents);
+
+  await ref.update(update);
+  return { ok: true, confirmed: false };
+});
+
+/* -------------------------------------------------------------------------
+   adminAddNote - an internal note. Vendors never see these.
+
+   Notes are appended rather than replaced, and carry who wrote them and
+   when, so the thread reads as a history instead of one field that keeps
+   being overwritten.
+   ------------------------------------------------------------------------- */
+exports.adminAddNote = onCall(async (request) => {
+  requireAdmin(request);
+  const { bookingId, text } = request.data || {};
+
+  if (!bookingId) throw new HttpsError('invalid-argument', 'Missing booking.');
+
+  const body = String(text || '').trim();
+  if (!body) throw new HttpsError('invalid-argument', 'Note is empty.');
+  if (body.length > 2000) {
+    throw new HttpsError('invalid-argument', 'Note is too long - 2000 characters max.');
+  }
+
+  const who = actor(request);
+
+  /*  serverTimestamp() is not allowed inside an array, so the note carries
+      a plain client-independent time taken here on the server. */
+  await db.collection('bookings').doc(bookingId).update({
+    notes: FieldValue.arrayUnion({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+      text: body,
+      by: who.email || who.uid,
+      at: Timestamp.now(),
+    }),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  return { ok: true };
+});
+
+/* -------------------------------------------------------------------------
+   adminAssignSite - put a vendor on a site, move them, or take the site
+   away and leave them unseated.
+
+   One transaction covers the lot: the old bays go back and the new ones
+   are taken together, so a move can never end up holding both or neither.
+   Pass an empty list to free them without giving them anywhere new.
+   ------------------------------------------------------------------------- */
+exports.adminAssignSite = onCall(async (request) => {
+  requireAdmin(request);
+  const { bookingId, siteIds } = request.data || {};
+
+  if (!bookingId) throw new HttpsError('invalid-argument', 'Missing booking.');
+
+  const wanted = Array.isArray(siteIds) ? siteIds.filter(Boolean) : [];
+  if (wanted.length > 8) {
+    throw new HttpsError('invalid-argument', 'Eight bays is the most anyone can have.');
+  }
+
+  const who = actor(request);
+
+  const label = await db.runTransaction(async (tx) => {
+    const bRef = db.collection('bookings').doc(bookingId);
+    const bSnap = await tx.get(bRef);
+    if (!bSnap.exists) throw new HttpsError('not-found', 'Booking not found.');
+
+    const booking = bSnap.data();
+    const eventId = booking.eventId;
+
+    /*  Every read has to happen before any write in a transaction, so the
+        new bays are read up front even though they are written last. */
+    const newRefs = wanted.map((id) => siteRef(eventId, id));
+    const newSnaps = await Promise.all(newRefs.map((r) => tx.get(r)));
+
+    newSnaps.forEach((snap, i) => {
+      if (!snap.exists) {
+        throw new HttpsError('not-found', `Site ${wanted[i]} does not exist.`);
+      }
+      const site = snap.data();
+      const takenBySomeoneElse =
+        (site.status === 'booked' || site.status === 'held') &&
+        site.bookingId !== bookingId;
+
+      if (takenBySomeoneElse) {
+        throw new HttpsError('failed-precondition',
+          `Site ${site.label || wanted[i]} already belongs to another vendor.`);
+      }
+      if (site.status === 'blocked') {
+        throw new HttpsError('failed-precondition',
+          `Site ${site.label || wanted[i]} is blocked off.`);
+      }
+    });
+
+    // Give back whatever they had that they are not keeping.
+    await freeBaysInTx(tx, bookingId, booking);
+
+    /*  A confirmed vendor stays booked on their new site. Anyone else is
+        seated but not yet paid for, so the site is held for them without
+        an expiry - an admin put them there, it should not time out. */
+    const seatedStatus = booking.status === 'confirmed' ? 'booked' : 'held';
+
+    newRefs.forEach((ref) => {
+      tx.update(ref, {
+        status: seatedStatus,
+        bookingId,
+        heldBy: booking.uid || null,
+        holdExpiresAt: FieldValue.delete(),
+      });
+    });
+
+    const labels = newSnaps
+      .map((s) => s.data().label)
+      .filter(Boolean)
+      .join(', ');
+
+    const update = {
+      seatedBy: who.email || who.uid,
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+
+    if (wanted.length) {
+      update.siteId = wanted[0];
+      update.siteIds = wanted;
+      update.siteLabel = labels;
+      update.siteType = newSnaps[0].data().type || null;
+      update.bayCount = wanted.length;
+    } else {
+      update.siteId = FieldValue.delete();
+      update.siteIds = FieldValue.delete();
+      update.siteLabel = FieldValue.delete();
+      update.bayCount = FieldValue.delete();
+    }
+
+    tx.update(bRef, update);
+    return labels;
+  });
+
+  logger.info('admin assigned site', { bookingId, siteIds: wanted, by: who.email });
+  return { ok: true, siteLabel: label };
+});
+
+/* -------------------------------------------------------------------------
+   adminCreateBooking - add a vendor by hand.
+
+   For the ones who ring up, catch someone at a market, or send an email
+   instead of using the form. The record it writes is the same shape the
+   public page writes, so it appears in every list and count alongside the
+   rest and can be seated and marked paid the same way.
+
+   uid is null: there is no vendor account behind it. Nothing here depends
+   on one, and if they later sign up the booking can be pointed at them.
+   ------------------------------------------------------------------------- */
+exports.adminCreateBooking = onCall(async (request) => {
+  requireAdmin(request);
+  const d = request.data || {};
+
+  const eventId = d.eventId;
+  if (!eventId) throw new HttpsError('invalid-argument', 'Missing event.');
+
+  const vendorType = d.vendorType;
+  if (!['food', 'market'].includes(vendorType)) {
+    throw new HttpsError('invalid-argument', 'Vendor type must be food or market.');
+  }
+
+  const name = String((d.business && d.business.name) || '').trim();
+  if (!name) throw new HttpsError('invalid-argument', 'A business name is needed.');
+
+  const eventSnap = await db.collection('events').doc(eventId).get();
+  if (!eventSnap.exists) throw new HttpsError('not-found', 'Event not found.');
+
+  const bayCount = Number(d.bayCount) || 1;
+  checkBayCount(eventSnap.data(), vendorType, bayCount);
+
+  const who = actor(request);
+  const biz = d.business || {};
+
+  const booking = {
+    uid: null,
+    eventId,
+    vendorType,
+    bayCount,
+
+    business: {
+      name,
+      contactName: String(biz.contactName || '').trim(),
+      email: String(biz.email || '').trim(),
+      phone: String(biz.phone || '').trim(),
+      socials: String(biz.socials || '').trim(),
+      description: String(biz.description || '').trim(),
+    },
+
+    categoryId: d.categoryId || null,
+    categoryName: d.categoryName || null,
+
+    setup: {},
+    documents: [],
+
+    amountCents: priceFor(eventSnap.data(), vendorType, bayCount),
+    amountPaidCents: 0,
+    currency: eventSnap.data().currency || 'aud',
+
+    // Added by a human who has already spoken to them, so it starts approved.
+    status: 'pending_payment',
+    paymentStatus: 'unpaid',
+    reviewStatus: 'approved',
+    reviewedBy: who.email || who.uid,
+    reviewedAt: FieldValue.serverTimestamp(),
+
+    reference: bookingReference(),
+    addedByAdmin: true,
+    addedBy: who.email || who.uid,
+
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  };
+
+  const ref = await db.collection('bookings').add(booking);
+
+  logger.info('admin added vendor', { bookingId: ref.id, name, by: who.email });
+  return { ok: true, bookingId: ref.id, reference: booking.reference };
+});
+
+/* -------------------------------------------------------------------------
+   adminUpdateBooking - correct a vendor's own details.
+
+   Contact details and setup notes only. Sites, money and status are not
+   editable here on purpose: each of those has its own function above that
+   keeps the sites, the counts and the booking in step with each other, and
+   letting them be written straight through would go around all of that.
+   ------------------------------------------------------------------------- */
+exports.adminUpdateBooking = onCall(async (request) => {
+  requireAdmin(request);
+  const { bookingId, business, setup } = request.data || {};
+
+  if (!bookingId) throw new HttpsError('invalid-argument', 'Missing booking.');
+
+  const update = {
+    updatedAt: FieldValue.serverTimestamp(),
+    editedBy: actor(request).email || request.auth.uid,
+  };
+
+  const text = (v, max = 400) => String(v == null ? '' : v).trim().slice(0, max);
+
+  if (business && typeof business === 'object') {
+    const fields = ['name', 'contactName', 'email', 'phone', 'socials', 'description'];
+    fields.forEach((k) => {
+      if (business[k] !== undefined) {
+        update[`business.${k}`] = text(business[k], k === 'description' ? 2000 : 400);
+      }
+    });
+  }
+
+  if (setup && typeof setup === 'object') {
+    ['frontage', 'depth'].forEach((k) => {
+      if (setup[k] !== undefined) update[`setup.${k}`] = Number(setup[k]) || null;
+    });
+    ['ownPower', 'selfSufficient', 'vehicleOnSite'].forEach((k) => {
+      if (setup[k] !== undefined) update[`setup.${k}`] = !!setup[k];
+    });
+    if (setup.notes !== undefined) update['setup.notes'] = text(setup.notes, 2000);
+  }
+
+  await db.collection('bookings').doc(bookingId).update(update);
+  return { ok: true };
+});

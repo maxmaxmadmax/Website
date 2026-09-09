@@ -656,6 +656,181 @@ body{
 
 
 /* --------------------------------------------------------------------------
+   DRAWER ACTIONS
+   -------------------------------------------------------------------------- */
+.ad-actions{
+    background:#fafbfc;
+    border:1px solid var(--ad-line);
+    border-radius:var(--ad-radius);
+    padding:14px 15px;
+    margin:16px 0 4px;
+}
+
+.ad-actions-h{
+    margin:0 0 8px;
+    font-size:.7rem;
+    font-weight:700;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--ad-muted);
+}
+
+.ad-actions-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:14px;
+}
+
+.ad-actions-row:last-of-type{ margin-bottom:0; }
+
+.ad-actions button.is-working{ opacity:.6; }
+
+.ad-action-msg{
+    margin:12px 0 0;
+    padding:8px 11px;
+    border-radius:8px;
+    font-size:.82rem;
+    background:var(--ad-grey-bg);
+    color:var(--ad-muted);
+}
+
+.ad-action-msg.is-ok{  background:var(--ad-green-bg); color:var(--ad-green); }
+.ad-action-msg.is-bad{ background:var(--ad-red-bg);   color:var(--ad-red); }
+
+
+/* ---- seating ---- */
+.ad-seat{ margin-bottom:14px; }
+
+.ad-seat select{
+    width:100%;
+    font:inherit;
+    font-size:.85rem;
+    padding:6px;
+    border:1px solid var(--ad-line);
+    border-radius:9px;
+    background:#fff;
+}
+
+.ad-seat select:focus{
+    outline:none;
+    border-color:var(--ad-orange);
+    box-shadow:0 0 0 3px var(--ad-orange-soft);
+}
+
+.ad-seat-hint{ margin:6px 0 10px; font-size:.76rem; color:var(--ad-faint); }
+
+
+/* ---- notes ---- */
+.ad-notes{ list-style:none; margin:0 0 14px; padding:0; }
+
+.ad-notes li{
+    background:#fafbfc;
+    border:1px solid var(--ad-line);
+    border-radius:9px;
+    padding:9px 11px;
+    margin-bottom:8px;
+}
+
+.ad-note-text{ margin:0 0 4px; font-size:.86rem; white-space:pre-wrap; }
+.ad-note-by{ margin:0; font-size:.72rem; color:var(--ad-faint); }
+
+.ad-note-form textarea{
+    width:100%;
+    font:inherit;
+    font-size:.86rem;
+    padding:9px 11px;
+    border:1px solid var(--ad-line);
+    border-radius:9px;
+    resize:vertical;
+    margin-bottom:8px;
+    background:#fff;
+    color:var(--ad-text);
+}
+
+.ad-note-form textarea:focus{
+    outline:none;
+    border-color:var(--ad-orange);
+    box-shadow:0 0 0 3px var(--ad-orange-soft);
+}
+
+
+/* --------------------------------------------------------------------------
+   MODAL
+   -------------------------------------------------------------------------- */
+.ad-modal{
+    position:fixed;
+    top:50%;
+    left:50%;
+    transform:translate(-50%, -50%);
+    width:min(520px, calc(100vw - 32px));
+    max-height:calc(100vh - 48px);
+    background:var(--ad-card);
+    border-radius:14px;
+    box-shadow:0 30px 70px rgba(0,0,0,.32);
+    z-index:51;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+}
+
+.ad-modal form{ display:flex; flex-direction:column; min-height:0; }
+
+.ad-modal-head{
+    display:flex;
+    align-items:center;
+    padding:16px 20px;
+    border-bottom:1px solid var(--ad-line);
+}
+
+.ad-modal-head h2{ font-size:1.1rem; margin:0; }
+.ad-modal-head .ad-drawer-close{ margin-left:auto; }
+
+.ad-modal-body{ padding:16px 20px; overflow-y:auto; }
+
+.ad-modal-body label{
+    display:block;
+    font-size:.76rem;
+    font-weight:600;
+    color:var(--ad-muted);
+    margin:12px 0 5px;
+}
+
+.ad-modal-body label:first-child{ margin-top:0; }
+
+.ad-modal-body input,
+.ad-modal-body select,
+.ad-modal-body textarea{
+    width:100%;
+    font:inherit;
+    font-size:.88rem;
+    padding:9px 11px;
+    border:1px solid var(--ad-line);
+    border-radius:9px;
+    background:#fff;
+    color:var(--ad-text);
+    resize:vertical;
+}
+
+.ad-modal-body input:focus,
+.ad-modal-body select:focus,
+.ad-modal-body textarea:focus{
+    outline:none;
+    border-color:var(--ad-orange);
+    box-shadow:0 0 0 3px var(--ad-orange-soft);
+}
+
+.ad-modal-foot{
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+    padding:14px 20px;
+    border-top:1px solid var(--ad-line);
+    background:#fafbfc;
+}
+
+
+/* --------------------------------------------------------------------------
    COMING SOON
    -------------------------------------------------------------------------- */
 .ad-soon{

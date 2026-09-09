@@ -70,6 +70,9 @@ service cloud.firestore {
         && !('amountCents' in request.resource.data)
         && !('siteId' in request.resource.data)
         && !('stripeSessionId' in request.resource.data)
+        // nor an approval or a staff note - both are set by admins only
+        && !('reviewStatus' in request.resource.data)
+        && !('notes' in request.resource.data)
         && request.resource.data.vendorType in ['food', 'market'];
 
       allow update: if signedIn()
@@ -81,6 +84,13 @@ service cloud.firestore {
         && !('amountCents' in request.resource.data)
         && !('siteId' in request.resource.data)
         && !('stripeSessionId' in request.resource.data)
+        // An admin decision and the staff notes may already be on the doc,
+        // so they are allowed to survive an edit - they just cannot be
+        // changed by the vendor. Nobody approves themselves.
+        && request.resource.data.get('reviewStatus', '')
+             == resource.data.get('reviewStatus', '')
+        && request.resource.data.get('notes', [])
+             == resource.data.get('notes', [])
         && request.resource.data.vendorType in ['food', 'market'];
 
       // Bookings are cancelled, never deleted, so there is an audit trail.

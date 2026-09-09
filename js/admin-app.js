@@ -60,6 +60,8 @@ const state = {
   },
 
   openBookingId: null,
+  noteDraft: '',
+  addingVendor: false,
   ready: false,
 };
 
@@ -712,6 +714,9 @@ function listView(title, blurb, pick) {
           <div class="ad-page-actions">
             <span class="ad-count">${rows.length}${
               rows.length === total ? '' : ' of ' + total}</span>
+            <button type="button" class="ad-btn ad-btn-orange" id="ad-add-open">
+              Add vendor
+            </button>
           </div>
         </div>
 
@@ -721,15 +726,129 @@ function listView(title, blurb, pick) {
           ${listTable(rows)}
         </section>
 
+        ${addVendorForm()}
         ${detailPanel()}`;
     },
 
     wire() {
       wireFilters();
       wireRows();
+      wireAddVendor();
       wireDetail();
     },
   };
+}
+
+/* -------------------------------------------------------------------------
+   Adding a vendor by hand.
+
+   For the ones who ring up or get caught at a market rather than filling
+   in the form. It asks for the least that makes a usable record - who they
+   are and what kind of stall - and leaves seating and payment to the same
+   drawer everyone else goes through, so there is only one way to do those.
+   ------------------------------------------------------------------------- */
+function addVendorForm() {
+  if (!state.addingVendor) return '';
+
+  return `
+    <div class="ad-scrim" id="ad-add-scrim"></div>
+    <div class="ad-modal" role="dialog" aria-label="Add a vendor">
+      <form id="ad-add-form">
+        <header class="ad-modal-head">
+          <h2>Add a vendor</h2>
+          <button type="button" class="ad-drawer-close" id="ad-add-close"
+                  aria-label="Close">&times;</button>
+        </header>
+
+        <div class="ad-modal-body">
+          <label for="ad-add-name">Business name</label>
+          <input id="ad-add-name" required maxlength="120">
+
+          <label for="ad-add-type">Vendor type</label>
+          <select id="ad-add-type">
+            <option value="food">Food</option>
+            <option value="market">Market</option>
+          </select>
+
+          <label for="ad-add-contact">Contact name</label>
+          <input id="ad-add-contact" maxlength="120">
+
+          <label for="ad-add-email">Email</label>
+          <input id="ad-add-email" type="email" maxlength="160">
+
+          <label for="ad-add-phone">Phone</label>
+          <input id="ad-add-phone" type="tel" maxlength="40">
+
+          <label for="ad-add-bays">Bays</label>
+          <input id="ad-add-bays" type="number" min="1" max="8" value="1">
+
+          <label for="ad-add-desc">What they do</label>
+          <textarea id="ad-add-desc" rows="3" maxlength="2000"></textarea>
+
+          <p class="ad-action-msg" id="ad-add-msg" hidden></p>
+        </div>
+
+        <footer class="ad-modal-foot">
+          <button type="button" class="ad-btn" id="ad-add-cancel">Cancel</button>
+          <button type="submit" class="ad-btn ad-btn-orange">Add vendor</button>
+        </footer>
+      </form>
+    </div>`;
+}
+
+function wireAddVendor() {
+  const open = document.getElementById('ad-add-open');
+  if (open) open.addEventListener('click', () => {
+    state.addingVendor = true;
+    render();
+  });
+
+  const close = () => { state.addingVendor = false; render(); };
+  ['ad-add-close', 'ad-add-cancel', 'ad-add-scrim'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', close);
+  });
+
+  const form = document.getElementById('ad-add-form');
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const val = (id) => (document.getElementById(id).value || '').trim();
+    const msg = document.getElementById('ad-add-msg');
+    const submit = form.querySelector('[type="submit"]');
+
+    submit.disabled = true;
+    msg.hidden = false;
+    msg.className = 'ad-action-msg';
+    msg.textContent = 'Adding…';
+
+    try {
+      const res = await call('adminCreateBooking', {
+        eventId: state.activeEventId,
+        vendorType: val('ad-add-type'),
+        bayCount: Number(val('ad-add-bays')) || 1,
+        business: {
+          name: val('ad-add-name'),
+          contactName: val('ad-add-contact'),
+          email: val('ad-add-email'),
+          phone: val('ad-add-phone'),
+          description: val('ad-add-desc'),
+        },
+      });
+
+      /*  Straight into their drawer - whoever added them almost always
+          wants to seat them next. */
+      state.addingVendor = false;
+      state.openBookingId = res.bookingId;
+      render();
+    } catch (err) {
+      msg.className = 'ad-action-msg is-bad';
+      msg.textContent = friendly(err);
+      submit.disabled = false;
+    }
+  });
 }
 
 VIEWS.applications = listView(
@@ -747,11 +866,38 @@ VIEWS.vendors = listView(
 
 /* =========================================================================
    DETAIL PANEL
-   Slides in over the list. Read only for now - the buttons that change an
-   application arrive with the admin functions in the next stage.
+   Slides in over the list, so the list keeps its filters and its place.
+
+   Nothing in here writes to Firestore directly. Every button calls an
+   admin Cloud Function, for the same reason the public page does: a
+   decision that frees a site or takes money has to happen in one server
+   side transaction, or two people clicking at once can leave the sites and
+   the bookings disagreeing about who is where.
    ========================================================================= */
 function row(label, value) {
   return `<div class="ad-kv"><dt>${esc(label)}</dt><dd>${value}</dd></div>`;
+}
+
+/*  Runs an admin function and shows what happened in the drawer. The live
+    subscription redraws the page on its own once Firestore comes back, so
+    there is nothing to refresh by hand. */
+async function runAction(button, name, data) {
+  const bar = document.getElementById('ad-action-msg');
+  const buttons = [...document.querySelectorAll('.ad-actions button, .ad-note-form button')];
+
+  buttons.forEach((b) => { b.disabled = true; });
+  if (button) button.classList.add('is-working');
+  if (bar) { bar.hidden = false; bar.className = 'ad-action-msg'; bar.textContent = 'Working…'; }
+
+  try {
+    await call(name, data);
+    if (bar) { bar.className = 'ad-action-msg is-ok'; bar.textContent = 'Saved.'; }
+  } catch (err) {
+    if (bar) { bar.className = 'ad-action-msg is-bad'; bar.textContent = friendly(err); }
+    buttons.forEach((b) => { b.disabled = false; });
+  }
+
+  if (button) button.classList.remove('is-working');
 }
 
 function detailPanel() {
@@ -780,6 +926,8 @@ function detailPanel() {
 
       <div class="ad-drawer-body">
 
+        ${actionBar(b)}
+
         <h3 class="ad-drawer-h">Contact</h3>
         <dl class="ad-kvs">
           ${row('Business', esc(biz.name || '—'))}
@@ -796,6 +944,7 @@ function detailPanel() {
           <p class="ad-drawer-text">${esc(biz.description)}</p>` : ''}
 
         <h3 class="ad-drawer-h">Site</h3>
+        ${sitePicker(b)}
         <dl class="ad-kvs">
           ${row('Category', esc(b.categoryName || '—'))}
           ${row('Assigned site', esc(b.siteLabel || 'Not assigned'))}
@@ -828,15 +977,129 @@ function detailPanel() {
               </li>`).join('')}
           </ul>` : `<p class="ad-drawer-text ad-cell-muted">None uploaded.</p>`}
 
+        <h3 class="ad-drawer-h">Internal notes</h3>
+        ${notesBlock(b)}
+
         <h3 class="ad-drawer-h">History</h3>
         <dl class="ad-kvs">
           ${row('Applied', esc(dateShort(b.createdAt)))}
           ${row('Confirmed', esc(dateShort(b.confirmedAt)))}
           ${row('Last change', esc(dateShort(b.updatedAt)))}
+          ${b.reviewedBy ? row('Reviewed by', esc(b.reviewedBy)) : ''}
+          ${b.addedByAdmin ? row('Added by', esc(b.addedBy || 'staff')) : ''}
         </dl>
 
       </div>
     </aside>`;
+}
+
+/* -------------------------------------------------------------------------
+   The decision and payment buttons.
+
+   The current state is not offered back as a button - approving somebody
+   who is already approved does nothing, and a row of buttons where one is
+   pointless is a row you have to read twice.
+   ------------------------------------------------------------------------- */
+function actionBar(b) {
+  const now = bucket(b);
+  const paid = paymentBucket(b) === 'paid';
+
+  const decide = [
+    ['approved', 'Approve', 'ad-btn-orange'],
+    ['waitlisted', 'Waitlist', ''],
+    ['declined', 'Decline', 'ad-btn-danger'],
+  ].filter(([value]) => value !== now);
+
+  /*  Declining hands the site back and drops the category count, which is
+      not obvious from a button called Decline, so it says so first. */
+  return `
+    <div class="ad-actions">
+      <p class="ad-actions-h">Decision</p>
+      <div class="ad-actions-row">
+        ${decide.map(([value, label, cls]) => `
+          <button type="button" class="ad-btn ${cls}"
+                  data-decide="${attr(value)}"
+                  ${value === 'declined' ? 'data-confirm="Decline this vendor? Their site goes back on the market."' : ''}>
+            ${esc(label)}
+          </button>`).join('')}
+        ${b.reviewStatus && now !== 'confirmed' ? `
+          <button type="button" class="ad-btn" data-decide="pending">Back to pending</button>` : ''}
+      </div>
+
+      <p class="ad-actions-h">Payment</p>
+      <div class="ad-actions-row">
+        ${!paid ? `
+          <button type="button" class="ad-btn ad-btn-primary" data-pay="paid"
+                  data-confirm="Mark as paid? If they are on a site this confirms their booking.">
+            Mark paid
+          </button>
+          <button type="button" class="ad-btn" data-pay="free"
+                  data-confirm="Let them in for free? If they are on a site this confirms their booking.">
+            Free entry
+          </button>` : `
+          <button type="button" class="ad-btn" data-pay="unpaid">Mark unpaid</button>`}
+      </div>
+
+      <p class="ad-action-msg" id="ad-action-msg" hidden></p>
+    </div>`;
+}
+
+/* -------------------------------------------------------------------------
+   Seating. Lists the sites this vendor could actually go on: the free ones
+   of the right kind, plus whatever they are already holding.
+   ------------------------------------------------------------------------- */
+function sitePicker(b) {
+  const wantType = b.vendorType === 'food' ? 'food' : 'market';
+  const theirs = new Set(b.siteIds && b.siteIds.length ? b.siteIds : (b.siteId ? [b.siteId] : []));
+
+  const options = state.sites.filter((s) =>
+    theirs.has(s.id) || (s.type === wantType && s.status === 'available'));
+
+  if (!options.length && !theirs.size) {
+    return `<p class="ad-drawer-text ad-cell-muted">No free ${esc(wantType)} sites left.</p>`;
+  }
+
+  return `
+    <div class="ad-seat">
+      <select id="ad-seat-pick" multiple size="${Math.min(8, Math.max(4, options.length))}"
+              aria-label="Sites for this vendor">
+        ${options.map((s) => `
+          <option value="${attr(s.id)}"${theirs.has(s.id) ? ' selected' : ''}>
+            ${esc(s.label)}${theirs.has(s.id) ? ' — theirs' : ''}
+          </option>`).join('')}
+      </select>
+      <p class="ad-seat-hint">Ctrl or Cmd click for more than one bay.</p>
+      <div class="ad-actions-row">
+        <button type="button" class="ad-btn ad-btn-primary" id="ad-seat-save">Save sites</button>
+        ${theirs.size ? `
+          <button type="button" class="ad-btn" id="ad-seat-free"
+                  data-confirm="Take their site away and leave them unseated?">
+            Free their site
+          </button>` : ''}
+      </div>
+    </div>`;
+}
+
+function notesBlock(b) {
+  const notes = Array.isArray(b.notes) ? [...b.notes] : [];
+  notes.sort((x, y) => secs(y.at) - secs(x.at));
+
+  return `
+    ${notes.length ? `
+      <ul class="ad-notes">
+        ${notes.map((n) => `
+          <li>
+            <p class="ad-note-text">${esc(n.text)}</p>
+            <p class="ad-note-by">${esc(n.by || 'staff')} &middot; ${esc(dateShort(n.at))}</p>
+          </li>`).join('')}
+      </ul>` : `<p class="ad-drawer-text ad-cell-muted">No notes yet.</p>`}
+
+    <form class="ad-note-form" id="ad-note-form">
+      <textarea id="ad-note-text" rows="2"
+                placeholder="Add a note - staff only, the vendor never sees this"
+      >${esc(state.noteDraft)}</textarea>
+      <button type="submit" class="ad-btn">Add note</button>
+    </form>`;
 }
 
 function wireDetail() {
@@ -847,6 +1110,65 @@ function wireDetail() {
 
   const scrim = document.getElementById('ad-scrim');
   if (scrim) scrim.addEventListener('click', close);
+
+  const id = state.openBookingId;
+  if (!id) return;
+
+  /*  data-confirm on a button means it does something a person would want
+      to be asked about first - freeing a site, taking money. */
+  const guarded = (el, run) => {
+    el.addEventListener('click', () => {
+      const ask = el.getAttribute('data-confirm');
+      if (ask && !window.confirm(ask)) return;
+      run();
+    });
+  };
+
+  document.querySelectorAll('[data-decide]').forEach((el) => {
+    guarded(el, () => runAction(el, 'adminReviewBooking', {
+      bookingId: id, decision: el.getAttribute('data-decide'),
+    }));
+  });
+
+  document.querySelectorAll('[data-pay]').forEach((el) => {
+    guarded(el, () => runAction(el, 'adminSetPayment', {
+      bookingId: id, paymentStatus: el.getAttribute('data-pay'),
+    }));
+  });
+
+  const save = document.getElementById('ad-seat-save');
+  if (save) save.addEventListener('click', () => {
+    const pick = document.getElementById('ad-seat-pick');
+    const chosen = [...pick.selectedOptions].map((o) => o.value);
+    if (!chosen.length) {
+      window.alert('Pick at least one site, or use Free their site.');
+      return;
+    }
+    runAction(save, 'adminAssignSite', { bookingId: id, siteIds: chosen });
+  });
+
+  const free = document.getElementById('ad-seat-free');
+  if (free) guarded(free, () =>
+    runAction(free, 'adminAssignSite', { bookingId: id, siteIds: [] }));
+
+  const noteForm = document.getElementById('ad-note-form');
+  const noteBox = document.getElementById('ad-note-text');
+
+  /*  A vendor saving their own page redraws this one, so a half typed note
+      is kept in state and put back rather than vanishing mid-sentence. */
+  if (noteBox) {
+    noteBox.addEventListener('input', () => { state.noteDraft = noteBox.value; });
+  }
+
+  if (noteForm) noteForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = noteBox.value.trim();
+    if (!text) return;
+    state.noteDraft = '';
+    await runAction(noteForm.querySelector('button'), 'adminAddNote', { bookingId: id, text });
+    const again = document.getElementById('ad-note-text');
+    if (again) again.value = '';
+  });
 }
 
 /*  Escape closes the drawer from anywhere. Registered once, not per render,
