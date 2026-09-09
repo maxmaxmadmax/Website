@@ -19,9 +19,10 @@
 
 <section class="section" style="padding-top:60px;">
 
-    <h2>Vendor Admin</h2>
+    <h2>SoundzGood Admin</h2>
     <p class="section-intro">
-        Eatz &amp; Beatz Halloween Edition &middot; Bowen Sports Complex
+        The backend for the whole site. Vendor bookings live here now;
+        quoting, leads and whatever comes next will sit alongside them.
     </p>
 
     <div class="vs-flow">
@@ -71,10 +72,10 @@
             <div class="vs-account" id="va-account"></div>
 
             <div class="va-tabs" id="va-tabs">
-                <button type="button" class="vs-auth-tab is-selected" data-tab="bookings">Bookings</button>
-                <button type="button" class="vs-auth-tab" data-tab="sites">Sites</button>
-                <button type="button" class="vs-auth-tab" data-tab="categories">Categories</button>
-                <button type="button" class="vs-auth-tab" data-tab="setup">Setup</button>
+                <button type="button" class="vs-auth-tab is-selected" data-tab="bookings">Vendor Bookings</button>
+                <button type="button" class="vs-auth-tab" data-tab="sites">Event Sites</button>
+                <button type="button" class="vs-auth-tab" data-tab="categories">Vendor Categories</button>
+                <button type="button" class="vs-auth-tab" data-tab="setup">Event Setup</button>
             </div>
 
             <!-- Bookings -->
@@ -95,7 +96,7 @@
 
             <!-- Categories -->
             <div class="vs-step va-panel" data-panel="categories" hidden>
-                <h2>Food categories</h2>
+                <h2>Vendor categories</h2>
                 <p class="vs-step-intro">
                     Raise a limit and the category reopens on its own - the signup page
                     compares the live count against the limit.
@@ -112,7 +113,7 @@
                     overwrite anything that already exists.
                 </p>
 
-                <p class="vs-busy" data-busy="admin" hidden>Working…</p>
+                <p class="vs-busy" data-busy="setup" hidden>Working…</p>
                 <p class="vs-error" data-error="setup" hidden></p>
                 <p id="va-seed-result" class="vs-muted"></p>
 

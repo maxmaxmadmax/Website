@@ -1,5 +1,5 @@
 /* --------------------------------------------------------------------------
-   Vendor admin dashboard
+   SoundzGood admin - the backend for the whole site
 
    Not linked from the public menu and marked noindex. Getting to the page is
    not what protects it - the Firestore rules and the Cloud Functions check
@@ -400,7 +400,7 @@ function renderCategories() {
    Seed
    ------------------------------------------------------------------------- */
 async function seedEvent() {
-  const busy = document.querySelector('[data-busy="admin"]');
+  const busy = document.querySelector('[data-busy="setup"]');
   const out = document.getElementById('va-seed-result');
 
   if (busy) busy.hidden = false;
