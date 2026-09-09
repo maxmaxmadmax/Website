@@ -60,6 +60,7 @@ const state = {
   },
 
   openBookingId: null,
+  openSiteId: null,
   noteDraft: '',
   addingVendor: false,
   ready: false,
@@ -883,7 +884,8 @@ function row(label, value) {
     there is nothing to refresh by hand. */
 async function runAction(button, name, data) {
   const bar = document.getElementById('ad-action-msg');
-  const buttons = [...document.querySelectorAll('.ad-actions button, .ad-note-form button')];
+  const buttons = [...document.querySelectorAll(
+    '.ad-actions button, .ad-actions-row button, .ad-note-form button')];
 
   buttons.forEach((b) => { b.disabled = true; });
   if (button) button.classList.add('is-working');
@@ -1179,6 +1181,236 @@ document.addEventListener('keydown', (e) => {
     render();
   }
 });
+
+
+/* =========================================================================
+   MAP AND SITES
+
+   The ground, drawn from the same x/y/w/h the public map uses, coloured by
+   what is happening on each site. Clicking one opens it: who is on it, and
+   the three things you can do to it - free it, block it off, or put an
+   unseated vendor on it.
+
+   This draws its own SVG rather than borrowing js/vendor-map.js. That one
+   is built for a vendor choosing a stall and knows nothing about who is
+   booked where; keeping them apart means a change made for the public map
+   cannot quietly break this one, and the other way round.
+   ========================================================================= */
+
+const SITE_FILL = {
+  available: '#e7f6ee',
+  held:      '#fdf0dc',
+  booked:    '#ffe3d2',
+  blocked:   '#e4e6eb',
+};
+
+const SITE_EDGE = {
+  available: '#0f9d58',
+  held:      '#b26a00',
+  booked:    '#ff6b00',
+  blocked:   '#9aa1ac',
+};
+
+/*  Site status is about the ground; the words admins use are about people.
+    Held by a vendor mid-checkout and held because staff seated them look
+    identical on the site document, so the booking decides the wording. */
+function siteWord(status) {
+  return { available: 'Available', held: 'Reserved',
+    booked: 'Confirmed', blocked: 'Blocked off' }[status] || status;
+}
+
+function bookingOnSite(site) {
+  if (!site.bookingId) return null;
+  return state.bookings.find((b) => b.id === site.bookingId) || null;
+}
+
+VIEWS.map = {
+  html() {
+    const ev = state.events.find((e) => e.id === state.activeEventId) || {};
+    const size = ev.map || { width: 760, height: 1420 };
+    const marks = ev.landmarks || [];
+
+    const tally = { available: 0, held: 0, booked: 0, blocked: 0 };
+    state.sites.forEach((s) => { tally[s.status] = (tally[s.status] || 0) + 1; });
+
+    const selected = state.sites.find((s) => s.id === state.openSiteId);
+
+    return `
+      <div class="ad-page-head">
+        <div>
+          <h1>Map &amp; Sites</h1>
+          <p>Click a site to see who is on it and move them.</p>
+        </div>
+      </div>
+
+      <div class="ad-legend">
+        ${['available', 'held', 'booked', 'blocked'].map((k) => `
+          <span class="ad-legend-item">
+            <span class="ad-swatch" style="background:${SITE_FILL[k]};border-color:${SITE_EDGE[k]}"></span>
+            ${esc(siteWord(k))} <strong>${tally[k] || 0}</strong>
+          </span>`).join('')}
+      </div>
+
+      <div class="ad-map-split">
+        <div class="ad-card ad-map-wrap">
+          <svg viewBox="0 0 ${size.width} ${size.height}" class="ad-map"
+               role="img" aria-label="Site map">
+            ${marks.map((m) => `
+              <g>
+                <rect x="${m.x}" y="${m.y}" width="${m.w}" height="${m.h}"
+                      rx="4" class="ad-mark ad-mark-${attr(m.kind)}"></rect>
+                ${m.label ? `<text x="${m.x + m.w / 2}" y="${m.y + m.h / 2 + 6}"
+                      class="ad-mark-label">${esc(m.label)}</text>` : ''}
+              </g>`).join('')}
+
+            ${state.sites.map((s) => {
+              const on = state.openSiteId === s.id;
+              const spin = s.rotate ? ` transform="rotate(${s.rotate} ${s.x + s.w / 2} ${s.y + s.h / 2})"` : '';
+              return `
+                <g class="ad-site${on ? ' is-on' : ''}" data-site="${attr(s.id)}"${spin}>
+                  <rect x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" rx="3"
+                        fill="${SITE_FILL[s.status] || '#fff'}"
+                        stroke="${SITE_EDGE[s.status] || '#ccc'}"
+                        stroke-width="${on ? 4 : 1.5}"></rect>
+                  <text x="${s.x + s.w / 2}" y="${s.y + s.h / 2 + 5}"
+                        class="ad-site-label">${esc(s.label)}</text>
+                </g>`;
+            }).join('')}
+          </svg>
+        </div>
+
+        <aside class="ad-card ad-site-panel">
+          ${selected ? sitePanel(selected) : `
+            <p class="ad-empty">Pick a site on the map.</p>`}
+        </aside>
+      </div>`;
+  },
+
+  wire() {
+    document.querySelectorAll('[data-site]').forEach((g) => {
+      g.addEventListener('click', () => {
+        const id = g.getAttribute('data-site');
+        state.openSiteId = state.openSiteId === id ? null : id;
+        render();
+      });
+    });
+
+    wireSitePanel();
+  },
+};
+
+function sitePanel(site) {
+  const on = bookingOnSite(site);
+
+  /*  Who could go here: anyone of the right kind who is not already seated
+      somewhere. Somebody already on another site is moved from their own
+      drawer instead, so a move is one action rather than a free and a
+      seat that could half fail. */
+  const candidates = realApplications().filter((b) =>
+    bucket(b) !== 'declined' &&
+    (b.vendorType === 'food' ? 'food' : 'market') === site.type &&
+    !(b.siteIds && b.siteIds.length) && !b.siteId);
+
+  return `
+    <header class="ad-site-panel-head">
+      <h2>${esc(site.label)}</h2>
+      <span class="ad-pill ${
+        site.status === 'available' ? 'ad-pill-green'
+        : site.status === 'held' ? 'ad-pill-amber'
+        : site.status === 'booked' ? 'ad-pill-red' : 'ad-pill-grey'
+      }">${esc(siteWord(site.status))}</span>
+    </header>
+
+    <dl class="ad-kvs">
+      ${row('Type', typePill(site.type))}
+      ${row('Column', esc(site.column || '—'))}
+      ${site.notes ? row('Notes', esc(site.notes)) : ''}
+    </dl>
+
+    ${on ? `
+      <h3 class="ad-drawer-h">Who is here</h3>
+      <p class="ad-site-who">
+        <button type="button" class="ad-linkish" data-open-booking="${attr(on.id)}">
+          ${esc(vendorName(on))}
+        </button>
+      </p>
+      <dl class="ad-kvs">
+        ${row('Contact', esc((on.business && on.business.email) || '—'))}
+        ${row('Status', statusPill(on))}
+        ${row('Payment', paymentPill(on))}
+      </dl>
+      <div class="ad-actions-row" style="margin-top:14px">
+        <button type="button" class="ad-btn ad-btn-danger" id="ad-site-unseat"
+                data-confirm="Take ${attr(vendorName(on))} off ${attr(site.label)}? They stay in the list, just without a site.">
+          Free this site
+        </button>
+      </div>`
+    : `
+      <h3 class="ad-drawer-h">Put someone here</h3>
+      ${candidates.length ? `
+        <select id="ad-site-who-pick">
+          <option value="">Choose a vendor…</option>
+          ${candidates.map((b) => `
+            <option value="${attr(b.id)}">${esc(vendorName(b))}</option>`).join('')}
+        </select>
+        <div class="ad-actions-row" style="margin-top:10px">
+          <button type="button" class="ad-btn ad-btn-primary" id="ad-site-seat">Assign</button>
+        </div>`
+      : `<p class="ad-drawer-text ad-cell-muted">
+           Nobody is waiting for a ${esc(site.type)} site.
+         </p>`}
+
+      <h3 class="ad-drawer-h">The site itself</h3>
+      <div class="ad-actions-row">
+        ${site.status === 'blocked'
+          ? `<button type="button" class="ad-btn" id="ad-site-open">Put back on the market</button>`
+          : `<button type="button" class="ad-btn" id="ad-site-block"
+                     data-confirm="Block ${attr(site.label)} off so nobody can book it?">
+               Block off
+             </button>`}
+      </div>`}
+
+    <p class="ad-action-msg" id="ad-action-msg" hidden></p>`;
+}
+
+function wireSitePanel() {
+  const site = state.sites.find((s) => s.id === state.openSiteId);
+  if (!site) return;
+
+  const guarded = (el, run) => el && el.addEventListener('click', () => {
+    const ask = el.getAttribute('data-confirm');
+    if (ask && !window.confirm(ask)) return;
+    run();
+  });
+
+  const jump = document.querySelector('[data-open-booking]');
+  if (jump) jump.addEventListener('click', () => {
+    state.openBookingId = jump.getAttribute('data-open-booking');
+    location.hash = '#/applications';
+  });
+
+  const unseat = document.getElementById('ad-site-unseat');
+  guarded(unseat, () => runAction(unseat, 'adminAssignSite', {
+    bookingId: site.bookingId, siteIds: [],
+  }));
+
+  const seat = document.getElementById('ad-site-seat');
+  if (seat) seat.addEventListener('click', () => {
+    const pick = document.getElementById('ad-site-who-pick');
+    if (!pick.value) { window.alert('Choose a vendor first.'); return; }
+    runAction(seat, 'adminAssignSite', { bookingId: pick.value, siteIds: [site.id] });
+  });
+
+  const block = document.getElementById('ad-site-block');
+  guarded(block, () => runAction(block, 'adminSetSiteStatus', {
+    eventId: state.activeEventId, siteId: site.id, status: 'blocked',
+  }));
+
+  const unblock = document.getElementById('ad-site-open');
+  guarded(unblock, () => runAction(unblock, 'adminSetSiteStatus', {
+    eventId: state.activeEventId, siteId: site.id, status: 'available',
+  }));
+}
 
 
 /*  Handy when something looks wrong in here: __sgAdmin.state shows exactly

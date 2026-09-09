@@ -831,6 +831,119 @@ body{
 
 
 /* --------------------------------------------------------------------------
+   THE MAP
+   -------------------------------------------------------------------------- */
+.ad-legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:16px;
+    margin-bottom:14px;
+    font-size:.82rem;
+    color:var(--ad-muted);
+}
+
+.ad-legend-item{ display:flex; align-items:center; gap:7px; }
+.ad-legend-item strong{ color:var(--ad-text); }
+
+.ad-swatch{
+    width:14px; height:14px;
+    border-radius:3px;
+    border:1.5px solid;
+    display:inline-block;
+}
+
+/*  Map beside its panel on a wide screen, stacked on a narrow one. The map
+    column is allowed to shrink; the panel keeps a workable width. */
+.ad-map-split{
+    display:grid;
+    grid-template-columns:minmax(0, 1fr) 320px;
+    gap:16px;
+    align-items:start;
+}
+
+@media (max-width:1080px){
+    .ad-map-split{ grid-template-columns:1fr; }
+}
+
+.ad-map-wrap{
+    padding:14px;
+    /* the ground is much taller than it is wide, so it scrolls in place
+       rather than making the whole page enormous */
+    max-height:78vh;
+    overflow:auto;
+}
+
+.ad-map{ width:100%; height:auto; display:block; }
+
+.ad-site{ cursor:pointer; }
+.ad-site rect{ transition:stroke-width .12s; }
+.ad-site:hover rect{ stroke-width:3; }
+
+.ad-site-label{
+    font-size:13px;
+    font-weight:600;
+    fill:#3a3f4a;
+    text-anchor:middle;
+    pointer-events:none;
+    font-family:var(--ad-font);
+}
+
+.ad-mark{ fill:#e9ebef; }
+.ad-mark-stage{ fill:#d8dce3; }
+.ad-mark-bar{ fill:#dfe3ea; }
+.ad-mark-entry{ fill:#dfe3ea; }
+.ad-mark-barrier{ fill:#c9ced7; }
+.ad-mark-path{ fill:#f0f1f4; }
+
+.ad-mark-label{
+    font-size:14px;
+    font-weight:700;
+    letter-spacing:1px;
+    fill:#8b919c;
+    text-anchor:middle;
+    pointer-events:none;
+    font-family:var(--ad-font);
+}
+
+.ad-site-panel{ padding:16px 18px 20px; position:sticky; top:88px; }
+
+.ad-site-panel-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:12px;
+}
+
+.ad-site-panel-head h2{ font-size:1.2rem; margin:0; }
+
+.ad-site-panel select{
+    width:100%;
+    font:inherit;
+    font-size:.85rem;
+    padding:8px 10px;
+    border:1px solid var(--ad-line);
+    border-radius:9px;
+    background:#fff;
+}
+
+.ad-site-who{ margin:0 0 10px; }
+
+.ad-linkish{
+    border:0;
+    background:none;
+    padding:0;
+    font:inherit;
+    font-size:1rem;
+    font-weight:600;
+    color:var(--ad-orange);
+    cursor:pointer;
+    text-align:left;
+}
+
+.ad-linkish:hover{ text-decoration:underline; }
+
+
+/* --------------------------------------------------------------------------
    COMING SOON
    -------------------------------------------------------------------------- */
 .ad-soon{
