@@ -183,39 +183,51 @@ function showPreviewBanner(message) {
 /* -------------------------------------------------------------------------
    Auth
    ------------------------------------------------------------------------- */
+/*  NOBODY MAKES AN ACCOUNT TO PAY.
+
+    A food truck filling in this form does not want a username and a
+    password, and asking for one before they can pick a site loses people
+    who were about to give us money.
+
+    So the browser signs itself in anonymously, silently, the moment the
+    page loads. The vendor never sees it. Nothing behind the form changes:
+    Firebase still issues a real uid, so requireAuth in the Cloud Functions
+    still passes, the Firestore rules still match the booking to its owner,
+    and a site is still held against a specific person - two vendors cannot
+    grab the same bay. It is the sign-up screen that goes, not the identity.
+
+    The cost is that the identity lives in this browser. Clear the browser
+    and the booking cannot be found from the vendor's side any more - which
+    is why the reference number is put in front of them at the end, their
+    email is on the record, and staff can always find them in /admin. */
 function watchAuth() {
   fb.a.onAuthStateChanged(fb.auth, (user) => {
     state.user = user;
     if (map) map.setUid(user ? user.uid : null);
-    renderAccountBar();
     if (user) loadExistingBooking();
     render();
+
+    if (!user) signInQuietly();
   });
 }
 
-async function signUp(email, password) {
-  const cred = await fb.a.createUserWithEmailAndPassword(fb.auth, email, password);
-  return cred.user;
-}
+let signingIn = false;
 
-async function signIn(email, password) {
-  const cred = await fb.a.signInWithEmailAndPassword(fb.auth, email, password);
-  return cred.user;
-}
+async function signInQuietly() {
+  if (signingIn) return;
+  signingIn = true;
 
-function renderAccountBar() {
-  const bar = document.getElementById('vs-account');
-  if (!bar) return;
-
-  if (state.user) {
-    bar.innerHTML = `
-      <span class="vs-account-email">Signed in as ${escapeHtml(state.user.email || 'vendor')}</span>
-      <button type="button" class="vs-link" id="vs-signout">Sign out</button>
-    `;
-    const btn = document.getElementById('vs-signout');
-    if (btn) btn.addEventListener('click', () => fb.a.signOut(fb.auth));
-  } else {
-    bar.innerHTML = '';
+  try {
+    await fb.a.signInAnonymously(fb.auth);
+  } catch (err) {
+    /*  The one failure a vendor could actually hit: anonymous sign-in
+        turned off on the project. Say something, rather than leaving the
+        Hold button quietly doing nothing forever. */
+    console.error('anonymous sign-in failed', err);
+    setStepError('site',
+      'Something went wrong getting you started. Please refresh and try again.');
+  } finally {
+    signingIn = false;
   }
 }
 
@@ -346,8 +358,13 @@ async function holdChosenSites() {
     return;
   }
 
+  /*  Anonymous sign-in normally lands long before anybody has read this
+      far, so this is the rare case of it not having come back yet - or
+      having failed. Nudge it along rather than telling them to do
+      something the page no longer asks for. */
   if (!state.user) {
-    setStepError('site', 'Please create an account or sign in before choosing a site.');
+    setStepError('site', 'Still getting set up - give it a second and try again.');
+    signInQuietly();
     return;
   }
 
@@ -510,7 +527,8 @@ async function uploadDocument(file, docType) {
   }
 
   if (!state.user) {
-    setStepError('documents', 'Please create an account or sign in before uploading.');
+    setStepError('documents', 'Still getting set up - give it a second and try again.');
+    signInQuietly();
     return;
   }
 
@@ -918,10 +936,12 @@ function renderSiteChoice() {
   }
 }
 
+/*  The sign-in panel is gone - see watchAuth. This is kept as a no-op
+    rather than chased through every call site, and hides the panel if an
+    old cached copy of the page is still serving it. */
 function renderSignInPrompt() {
   const wrap = document.getElementById('vs-auth');
-  if (!wrap) return;
-  wrap.hidden = state.preview || Boolean(state.user);
+  if (wrap) wrap.hidden = true;
 }
 
 function renderReview() {
@@ -1022,44 +1042,6 @@ function wireStaticControls() {
       fileInput.value = '';
     });
   }
-
-  // auth
-  const authForm = document.getElementById('vs-auth-form');
-  if (authForm) {
-    authForm.addEventListener('submit', async (ev) => {
-      ev.preventDefault();
-      const email = document.getElementById('vs-auth-email').value.trim();
-      const pw = document.getElementById('vs-auth-password').value;
-      const mode = authForm.getAttribute('data-mode') || 'signup';
-
-      setStepError('auth', '');
-      setBusy('auth', true);
-
-      try {
-        if (mode === 'signup') await signUp(email, pw);
-        else await signIn(email, pw);
-      } catch (err) {
-        setStepError('auth', friendlyError(err));
-      } finally {
-        setBusy('auth', false);
-      }
-    });
-  }
-
-  document.querySelectorAll('[data-auth-mode]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const mode = btn.getAttribute('data-auth-mode');
-      const form = document.getElementById('vs-auth-form');
-      if (form) form.setAttribute('data-mode', mode);
-
-      document.querySelectorAll('[data-auth-mode]').forEach((b) => {
-        b.classList.toggle('is-selected', b === btn);
-      });
-
-      const submit = document.getElementById('vs-auth-submit');
-      if (submit) submit.textContent = mode === 'signup' ? 'Create Account' : 'Sign In';
-    });
-  });
 
   // pay
   const payBtn = document.getElementById('vs-pay');
@@ -1200,16 +1182,15 @@ function friendlyError(err) {
 
   if (code.includes('already-exists')) return err.message;
   if (code.includes('resource-exhausted')) return err.message;
-  if (code.includes('email-already-in-use')) {
-    return 'That email already has an account. Switch to Sign In above.';
-  }
-  if (code.includes('weak-password')) return 'Please use at least 6 characters.';
   if (code.includes('invalid-email')) return 'That email address does not look right.';
-  if (code.includes('wrong-password') || code.includes('invalid-credential')) {
-    return 'Email or password was not right.';
-  }
   if (code.includes('permission-denied')) return 'You do not have permission to do that.';
-  if (code.includes('unauthenticated')) return 'Please sign in first.';
+
+  /*  There is no sign-in screen to send anybody to any more, so these two
+      mean the silent anonymous sign-in has not landed - a refresh is the
+      honest advice, not "sign in". */
+  if (code.includes('unauthenticated') || code.includes('admin-restricted-operation')) {
+    return 'Lost your place for a moment. Please refresh the page and try again.';
+  }
 
   return (err && err.message) || 'Something went wrong. Please try again.';
 }

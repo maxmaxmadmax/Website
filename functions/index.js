@@ -288,6 +288,47 @@ exports.holdSite = onCall(async (request) => {
       );
     }
 
+    /*  HOW MUCH GROUND ONE PERSON MAY SIT ON AT ONCE.
+
+        Above, this booking gives back whatever it held before, so no single
+        booking can creep. Nothing stopped somebody making a second booking
+        and holding eight more bays with it, then a third, until they were
+        sitting on the whole field and no real vendor could get in. Holds
+        expire after ten minutes, so it heals itself - but a script that
+        re-takes them every ten minutes keeps the event shut indefinitely.
+
+        That was always possible; it just needed a fresh email address each
+        time. Now that signing in costs nothing at all, it needs nothing.
+
+        So the limit is per person, not per booking: everything this uid is
+        already holding on other bookings counts against the same ceiling a
+        single booking gets. One vendor with one stall never notices. */
+    const others = await tx.get(
+      db.collection('bookings').where('uid', '==', uid)
+    );
+
+    let heldElsewhere = 0;
+    others.forEach((d) => {
+      if (d.id === bookingId) return;              // this booking, handled above
+      const b = d.data();
+      if (b.eventId !== eventId) return;           // a different event is their business
+      if (b.status === 'cancelled') return;
+      const ids = Array.isArray(b.siteIds) && b.siteIds.length
+        ? b.siteIds
+        : (b.siteId ? [b.siteId] : []);
+      heldElsewhere += ids.length;
+    });
+
+    const ceiling = Math.max(Number(event.maxMarketBays) || 8, uniqueIds.length);
+
+    if (heldElsewhere + uniqueIds.length > ceiling) {
+      logger.warn('hold ceiling hit', { uid, eventId, heldElsewhere, wanting: uniqueIds.length });
+      throw new HttpsError(
+        'resource-exhausted',
+        'You already have sites held on another application. Finish or cancel that one first.'
+      );
+    }
+
     /* Release waves. Bays carry a tier - the first three of each column are
        tier 1, the next three tier 2, and so on - and only the lowest tier
        that still has a free bay is open. That keeps the market filling from
@@ -437,17 +478,58 @@ exports.releaseHold = onCall(async (request) => {
     const refs = wanted.map((id) => siteRef(eventId, id));
     const snaps = await Promise.all(refs.map((r) => tx.get(r)));
 
+    const mine = [];
     snaps.forEach((snap, i) => {
       if (!snap.exists) return;
       const site = snap.data();
       if (site.status === 'held' && site.heldBy === uid) {
-        tx.update(refs[i], {
-          status: 'available',
-          heldBy: FieldValue.delete(),
-          holdExpiresAt: FieldValue.delete(),
-          bookingId: FieldValue.delete(),
-        });
+        mine.push({ ref: refs[i], bookingId: site.bookingId });
       }
+    });
+
+    if (!mine.length) return;
+
+    /*  The booking has to forget these sites too, not just the sites forget
+        the booking. Leaving siteIds behind on the booking leaves a vendor
+        looking like they are holding ground they gave back - which reads
+        wrong in the admin list, and counts against the per-person ceiling
+        in holdSite, locking them out of their own event.
+
+        Read the bookings before writing anything, as ever. */
+    const bookingIds = [...new Set(mine.map((m) => m.bookingId).filter(Boolean))];
+    const bookingRefs = bookingIds.map((id) => db.collection('bookings').doc(id));
+    const bookingSnaps = await Promise.all(bookingRefs.map((r) => tx.get(r)));
+
+    // ---- reads done, writes from here ----
+
+    mine.forEach(({ ref }) => {
+      tx.update(ref, {
+        status: 'available',
+        heldBy: FieldValue.delete(),
+        holdExpiresAt: FieldValue.delete(),
+        bookingId: FieldValue.delete(),
+      });
+    });
+
+    bookingSnaps.forEach((snap, i) => {
+      if (!snap.exists) return;
+      const b = snap.data();
+      if (b.uid !== uid) return;              // not theirs to touch
+      if (b.status === 'confirmed') return;   // paid for; leave it alone
+
+      const keeping = (Array.isArray(b.siteIds) ? b.siteIds : [b.siteId])
+        .filter(Boolean)
+        .filter((id) => !wanted.includes(id));
+
+      tx.update(bookingRefs[i], keeping.length
+        ? { siteId: keeping[0], siteIds: keeping, updatedAt: FieldValue.serverTimestamp() }
+        : {
+            siteId: FieldValue.delete(),
+            siteIds: FieldValue.delete(),
+            siteLabel: FieldValue.delete(),
+            holdExpiresAt: FieldValue.delete(),
+            updatedAt: FieldValue.serverTimestamp(),
+          });
     });
   });
 
@@ -1030,8 +1112,13 @@ exports.setAdminRole = onCall(async (request) => {
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
 
+  /*  An anonymous token has no email, so callerEmail is '' - and '' must
+      never match its way onto the bootstrap list. filter(Boolean) above
+      already strips blank entries, so an empty list cannot include '';
+      this makes that a rule rather than a happy accident, because the
+      whole internet holds a valid token now that anonymous sign-in is on. */
   const callerEmail = (request.auth?.token?.email || '').toLowerCase();
-  const callerIsBootstrap = bootstrap.includes(callerEmail);
+  const callerIsBootstrap = Boolean(callerEmail) && bootstrap.includes(callerEmail);
 
   if (!callerIsBootstrap) {
     requireAdmin(request);

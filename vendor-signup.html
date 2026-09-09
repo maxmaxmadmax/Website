@@ -83,7 +83,8 @@
 
     <div class="vs-flow">
 
-        <div class="vs-account" id="vs-account"></div>
+        <!-- the signed-in-as bar went with the account step -->
+
 
         <ol class="vs-stepper" id="vs-stepper"></ol>
 
@@ -300,39 +301,11 @@
                 one it is held for you for 10 minutes while you finish.
             </p>
 
-            <!-- sign in appears here, right where an account is first needed -->
-            <div class="vs-auth" id="vs-auth" hidden>
-                <h3>Create your vendor account</h3>
-                <p>
-                    So we can hold your site and you can come back to your booking later.
-                </p>
-
-                <div class="vs-auth-tabs">
-                    <button type="button" class="vs-auth-tab is-selected" data-auth-mode="signup">New vendor</button>
-                    <button type="button" class="vs-auth-tab" data-auth-mode="signin">I have an account</button>
-                </div>
-
-                <form id="vs-auth-form" data-mode="signup">
-                    <div class="vs-field-grid">
-                        <div class="vs-field">
-                            <label for="vs-auth-email">Email</label>
-                            <input type="email" id="vs-auth-email" autocomplete="email" required>
-                        </div>
-                        <div class="vs-field">
-                            <label for="vs-auth-password">Password</label>
-                            <input type="password" id="vs-auth-password" autocomplete="current-password"
-                                   minlength="6" required>
-                        </div>
-                    </div>
-
-                    <p class="vs-busy" data-busy="auth" hidden>Working…</p>
-                    <p class="vs-error" data-error="auth" hidden></p>
-
-                    <div class="vs-step-actions">
-                        <button type="submit" class="btn" id="vs-auth-submit">Create Account</button>
-                    </div>
-                </form>
-            </div>
+            <!--  There was a Create your vendor account panel here. Nobody
+                  should have to make an account to pay us: the browser signs
+                  itself in anonymously instead, so a site is still held
+                  against a specific person without anybody choosing a
+                  password. See watchAuth in js/vendor-signup.js.        -->
 
             <ul class="vs-legend">
                 <li><span class="vs-swatch is-available"></span> Available</li>
