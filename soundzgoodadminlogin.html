@@ -26,10 +26,22 @@
 
     <div class="vs-flow">
 
-        <!-- Sign in ---------------------------------------------------- -->
+        <!-- Sign in ----------------------------------------------------
+             Two modes, one form. Creating an account here grants nothing
+             on its own - the admin claim is only given to an address on
+             the bootstrap list in functions/.env, and only until that
+             address is taken off again. Anyone else who finds this page
+             and signs up gets an account with no access to anything.  -->
         <div class="vs-step" id="va-signin">
-            <h2>Sign in</h2>
-            <p class="vs-step-intro">Admin accounts only.</p>
+            <h2 id="va-mode-title">Sign in</h2>
+            <p class="vs-step-intro" id="va-mode-intro">Admin accounts only.</p>
+
+            <div class="vs-auth-tabs">
+                <button type="button" class="vs-auth-tab is-selected"
+                        data-mode="signin">Sign In</button>
+                <button type="button" class="vs-auth-tab"
+                        data-mode="create">Create Account</button>
+            </div>
 
             <form id="va-form">
                 <div class="vs-field-grid">
@@ -39,14 +51,16 @@
                     </div>
                     <div class="vs-field">
                         <label for="va-password">Password</label>
-                        <input type="password" id="va-password" autocomplete="current-password" required>
+                        <input type="password" id="va-password"
+                               autocomplete="current-password" required minlength="6">
                     </div>
                 </div>
 
+                <p class="vs-busy" data-busy="admin" hidden>Working…</p>
                 <p class="vs-error" data-error="admin" hidden></p>
 
                 <div class="vs-step-actions">
-                    <button type="submit" class="btn">Sign In</button>
+                    <button type="submit" class="btn" id="va-submit">Sign In</button>
                 </div>
             </form>
         </div>

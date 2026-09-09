@@ -70,19 +70,77 @@ async function loadFirebase() {
   };
 }
 
+/* signin | create - which the form is currently doing */
+let authMode = 'signin';
+
+function setAuthMode(mode) {
+  authMode = mode;
+
+  document.querySelectorAll('[data-mode]').forEach((b) =>
+    b.classList.toggle('is-selected', b.getAttribute('data-mode') === mode));
+
+  const creating = mode === 'create';
+
+  document.getElementById('va-mode-title').textContent =
+    creating ? 'Create your admin account' : 'Sign in';
+
+  document.getElementById('va-mode-intro').textContent = creating
+    ? 'Only an address on the bootstrap list becomes an admin. Anyone else ' +
+      'gets an account that can see nothing.'
+    : 'Admin accounts only.';
+
+  document.getElementById('va-submit').textContent =
+    creating ? 'Create Account' : 'Sign In';
+
+  document.getElementById('va-password').setAttribute(
+    'autocomplete', creating ? 'new-password' : 'current-password');
+
+  showError('admin', '');
+}
+
 function wire() {
+  document.querySelectorAll('[data-mode]').forEach((btn) => {
+    btn.addEventListener('click', () => setAuthMode(btn.getAttribute('data-mode')));
+  });
+
   const form = document.getElementById('va-form');
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     showError('admin', '');
+    setBusy('admin', true);
+
+    const email = document.getElementById('va-email').value.trim();
+    const password = document.getElementById('va-password').value;
+
     try {
-      await fb.a.signInWithEmailAndPassword(
-        fb.auth,
-        document.getElementById('va-email').value.trim(),
-        document.getElementById('va-password').value
-      );
+      if (authMode === 'create') {
+        await fb.a.createUserWithEmailAndPassword(fb.auth, email, password);
+
+        /*  Straight away, ask to be made an admin. This only succeeds for an
+            address on ADMIN_BOOTSTRAP_EMAILS, or for someone an existing
+            admin has already blessed - so a stranger who signs up here ends
+            up with an account and nothing else.
+
+            Then the ID token is refreshed by force: custom claims are baked
+            into the token when it is minted, so without this the browser
+            would carry a token that predates the claim and keep being told
+            it is not an admin until it happened to renew. */
+        try {
+          await fb.fn.httpsCallable(fb.fns, 'setAdminRole')({ email, makeAdmin: true });
+          await fb.auth.currentUser.getIdToken(true);
+        } catch (err) {
+          showError('admin',
+            'Account created, but it was not made an admin: ' +
+            (err.message || err) +
+            ' - the address may not be on the bootstrap list.');
+        }
+      } else {
+        await fb.a.signInWithEmailAndPassword(fb.auth, email, password);
+      }
     } catch (err) {
       showError('admin', err.message);
+    } finally {
+      setBusy('admin', false);
     }
   });
 
@@ -369,6 +427,16 @@ function showError(key, message) {
   if (!el) return;
   el.textContent = message || '';
   el.hidden = !message;
+}
+
+/* Signing in and creating an account both take a moment against a cold
+   function, so the form says it is doing something. */
+function setBusy(key, busy) {
+  const el = document.querySelector(`[data-busy="${key}"]`);
+  if (el) el.hidden = !busy;
+
+  const submit = document.getElementById('va-submit');
+  if (submit) submit.disabled = !!busy;
 }
 
 function escapeHtml(value) {
