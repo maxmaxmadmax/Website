@@ -36,13 +36,6 @@ async function init() {
   fb.a.onAuthStateChanged(fb.auth, async (user) => {
     if (!user) return showSignIn();
 
-    /*  The form is mid-way through creating an account and granting it the
-        claim. Leave it alone - it finishes the job itself. Without this the
-        listener fires the moment the account exists, finds no claim on a
-        token minted a second earlier, and signs the account out from under
-        the very code that is busy making it an admin. */
-    if (busyCreating) return;
-
     await admitOrReject(user);
   });
 }
@@ -65,13 +58,6 @@ async function loadFirebase() {
     fn: functions,
   };
 }
-
-/* signin | create - which the form is currently doing */
-let authMode = 'signin';
-
-/* True while the create-account flow is running, so the auth listener does
-   not sign the new account out before it has been granted its claim. */
-let busyCreating = false;
 
 /*  Let a signed-in account in, or turn it away.
 
@@ -106,36 +92,7 @@ async function admitOrReject(user) {
   return true;
 }
 
-function setAuthMode(mode) {
-  authMode = mode;
-
-  document.querySelectorAll('[data-mode]').forEach((b) =>
-    b.classList.toggle('is-selected', b.getAttribute('data-mode') === mode));
-
-  const creating = mode === 'create';
-
-  document.getElementById('va-mode-title').textContent =
-    creating ? 'Create your admin account' : 'Sign in';
-
-  document.getElementById('va-mode-intro').textContent = creating
-    ? 'Only an address on the bootstrap list becomes an admin. Anyone else ' +
-      'gets an account that can see nothing.'
-    : 'Admin accounts only.';
-
-  document.getElementById('va-submit').textContent =
-    creating ? 'Create Account' : 'Sign In';
-
-  document.getElementById('va-password').setAttribute(
-    'autocomplete', creating ? 'new-password' : 'current-password');
-
-  showError('admin', '');
-}
-
 function wire() {
-  document.querySelectorAll('[data-mode]').forEach((btn) => {
-    btn.addEventListener('click', () => setAuthMode(btn.getAttribute('data-mode')));
-  });
-
   const form = document.getElementById('va-form');
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
@@ -146,24 +103,14 @@ function wire() {
     const password = document.getElementById('va-password').value;
 
     try {
-      if (authMode === 'create') {
-        busyCreating = true;
-
-        /*  The credential is held onto rather than reaching for
-            fb.auth.currentUser afterwards. currentUser can be null by then -
-            that is exactly what went wrong the first time this ran. */
-        const cred = await fb.a.createUserWithEmailAndPassword(fb.auth, email, password);
-
-        busyCreating = false;
-        await admitOrReject(cred.user);
-      } else {
-        const cred = await fb.a.signInWithEmailAndPassword(fb.auth, email, password);
-        await admitOrReject(cred.user);
-      }
+      /*  The credential is held onto rather than reaching for
+          fb.auth.currentUser afterwards, which can be null by the time the
+          listener has had its say. */
+      const cred = await fb.a.signInWithEmailAndPassword(fb.auth, email, password);
+      await admitOrReject(cred.user);
     } catch (err) {
       showError('admin', err.message);
     } finally {
-      busyCreating = false;
       setBusy('admin', false);
     }
   });

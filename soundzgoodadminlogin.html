@@ -28,21 +28,21 @@
     <div class="vs-flow">
 
         <!-- Sign in ----------------------------------------------------
-             Two modes, one form. Creating an account here grants nothing
-             on its own - the admin claim is only given to an address on
-             the bootstrap list in functions/.env, and only until that
-             address is taken off again. Anyone else who finds this page
-             and signs up gets an account with no access to anything.  -->
+             Sign in only. There was a Create Account tab here while the
+             first admin was being made; it has gone now that one exists,
+             so this page offers a stranger nothing to interact with but a
+             password box.
+
+             TO ADD ANOTHER ADMIN LATER
+               1. put their address in ADMIN_BOOTSTRAP_EMAILS in
+                  functions/.env
+               2. firebase deploy --only functions:setAdminRole
+               3. have them sign in here once - signing in grants the claim
+                  to an address on that list
+               4. empty the list again and redeploy                     -->
         <div class="vs-step" id="va-signin">
             <h2 id="va-mode-title">Sign in</h2>
             <p class="vs-step-intro" id="va-mode-intro">Admin accounts only.</p>
-
-            <div class="vs-auth-tabs">
-                <button type="button" class="vs-auth-tab is-selected"
-                        data-mode="signin">Sign In</button>
-                <button type="button" class="vs-auth-tab"
-                        data-mode="create">Create Account</button>
-            </div>
 
             <form id="va-form">
                 <div class="vs-field-grid">
