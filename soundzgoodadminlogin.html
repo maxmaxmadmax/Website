@@ -1,132 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>SoundzGood Admin</title>
+<title>SoundzGood Admin has moved</title>
 
-    <!-- Staff tool, not for search engines and not in the public menu -->
-    <meta name="robots" content="noindex, nofollow">
+<!--  THIS PAGE HAS MOVED TO /admin
 
-    <link rel="icon" href="images/logo.png">
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="vendor-signup.css">
-    <script type="module" src="js/admin.js"></script>
+      This was the first admin page, built to make the very first admin
+      account before there was anywhere else to do it. Everything it did -
+      bookings, sites, categories, laying out an event - is in /admin now,
+      so it is a signpost rather than a page.
+
+      It is kept rather than deleted because the address is written down in
+      a few places and somebody will type it. A dead link would look like
+      the backend had gone.
+
+      GitHub Pages cannot send a real 301, so the redirect is done in the
+      browser. replace() rather than assign() so Back does not bounce
+      straight back here.                                              -->
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="refresh" content="0; url=/admin">
+<link rel="canonical" href="https://www.soundzgood.com.au/admin">
+
+<link rel="icon" href="images/logo.png">
+<link rel="stylesheet" href="admin.css">
+
+<script>
+  location.replace('/admin' + location.hash);
+</script>
 </head>
 
-<body class="vendor-signup">
-
-<section class="section" style="padding-top:60px;">
-
-    <h2>SoundzGood Admin</h2>
-    <p class="section-intro">
-        The backend for the whole site. Vendor bookings live here now;
-        quoting, leads and whatever comes next will sit alongside them.
+<body>
+<div class="ad-gate">
+  <div class="ad-gate-card">
+    <p class="ad-gate-brand">SoundzGood</p>
+    <h1>Admin has moved</h1>
+    <p class="ad-gate-sub">
+      The backend now lives at <strong>/admin</strong>. You should be on your
+      way there already.
     </p>
-
-    <div class="vs-flow">
-
-        <!-- Sign in ----------------------------------------------------
-             Sign in only. There was a Create Account tab here while the
-             first admin was being made; it has gone now that one exists,
-             so this page offers a stranger nothing to interact with but a
-             password box.
-
-             TO ADD ANOTHER ADMIN LATER
-               1. put their address in ADMIN_BOOTSTRAP_EMAILS in
-                  functions/.env
-               2. firebase deploy --only functions:setAdminRole
-               3. have them sign in here once - signing in grants the claim
-                  to an address on that list
-               4. empty the list again and redeploy                     -->
-        <div class="vs-step" id="va-signin">
-            <h2 id="va-mode-title">Sign in</h2>
-            <p class="vs-step-intro" id="va-mode-intro">Admin accounts only.</p>
-
-            <form id="va-form">
-                <div class="vs-field-grid">
-                    <div class="vs-field">
-                        <label for="va-email">Email</label>
-                        <input type="email" id="va-email" autocomplete="email" required>
-                    </div>
-                    <div class="vs-field">
-                        <label for="va-password">Password</label>
-                        <input type="password" id="va-password"
-                               autocomplete="current-password" required minlength="6">
-                    </div>
-                </div>
-
-                <p class="vs-busy" data-busy="admin" hidden>Working…</p>
-                <p class="vs-error" data-error="admin" hidden></p>
-
-                <div class="vs-step-actions">
-                    <button type="submit" class="btn" id="va-submit">Sign In</button>
-                </div>
-            </form>
-        </div>
-
-        <!-- Dashboard -------------------------------------------------- -->
-        <div id="va-dash" hidden>
-
-            <div class="vs-account" id="va-account"></div>
-
-            <div class="va-tabs" id="va-tabs">
-                <button type="button" class="vs-auth-tab is-selected" data-tab="bookings">Vendor Bookings</button>
-                <button type="button" class="vs-auth-tab" data-tab="sites">Event Sites</button>
-                <button type="button" class="vs-auth-tab" data-tab="categories">Vendor Categories</button>
-                <button type="button" class="vs-auth-tab" data-tab="setup">Event Setup</button>
-            </div>
-
-            <!-- Bookings -->
-            <div class="vs-step va-panel" data-panel="bookings">
-                <h2>Bookings</h2>
-                <p class="vs-step-intro" id="va-booking-summary"></p>
-                <div id="va-bookings"></div>
-            </div>
-
-            <!-- Sites -->
-            <div class="vs-step va-panel" data-panel="sites" hidden>
-                <h2>Sites</h2>
-                <p class="vs-step-intro">
-                    Free a site that is stuck, or block one off so nobody can book it.
-                </p>
-                <div id="va-sites"></div>
-            </div>
-
-            <!-- Categories -->
-            <div class="vs-step va-panel" data-panel="categories" hidden>
-                <h2>Vendor categories</h2>
-                <p class="vs-step-intro">
-                    Raise a limit and the category reopens on its own - the signup page
-                    compares the live count against the limit.
-                </p>
-                <div id="va-categories"></div>
-            </div>
-
-            <!-- Setup -->
-            <div class="vs-step va-panel" data-panel="setup" hidden>
-                <h2>Event setup</h2>
-                <p class="vs-step-intro">
-                    Creates the event, its sites and its food categories from the default
-                    Bowen Sports Complex layout. Safe to run more than once - it will not
-                    overwrite anything that already exists.
-                </p>
-
-                <p class="vs-busy" data-busy="setup" hidden>Working…</p>
-                <p class="vs-error" data-error="setup" hidden></p>
-                <p id="va-seed-result" class="vs-muted"></p>
-
-                <div class="vs-step-actions">
-                    <button type="button" class="btn" id="va-seed">Seed Event Layout</button>
-                </div>
-            </div>
-
-        </div>
-
-    </div>
-
-</section>
-
+    <a class="ad-btn ad-btn-primary" href="/admin">Go to the admin area</a>
+  </div>
+</div>
 </body>
 </html>

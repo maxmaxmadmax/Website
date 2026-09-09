@@ -478,6 +478,29 @@ body{
 .ad-panel-head h2{ font-size:1rem; margin:0; }
 .ad-panel-head .ad-btn{ margin-left:auto; padding:6px 12px; font-size:.8rem; }
 
+.ad-panel-intro{ padding:14px 18px 16px; }
+.ad-panel-intro p{ margin:0 0 8px; max-width:64ch; }
+.ad-panel-intro p:last-of-type{ margin-bottom:0; }
+
+.ad-limit{
+    width:78px;
+    font:inherit;
+    font-size:.85rem;
+    padding:6px 8px;
+    border:1px solid var(--ad-line);
+    border-radius:7px;
+    background:#fff;
+    color:var(--ad-text);
+}
+
+.ad-limit:focus{
+    outline:none;
+    border-color:var(--ad-orange);
+    box-shadow:0 0 0 3px var(--ad-orange-soft);
+}
+
+.ad-limit:disabled{ opacity:.5; }
+
 /* Tables scroll inside their own box so the page never scrolls sideways */
 .ad-table-wrap{ overflow-x:auto; }
 

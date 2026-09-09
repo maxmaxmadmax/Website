@@ -206,7 +206,7 @@ function wireChrome() {
 /* -------------------------------------------------------------------------
    Routing
    ------------------------------------------------------------------------- */
-const BUILT = ['dashboard', 'events', 'vendors', 'applications', 'map'];
+const BUILT = ['dashboard', 'events', 'vendors', 'applications', 'map', 'settings'];
 
 function routeFromHash() {
   const want = (location.hash.replace('#/', '') || 'dashboard').split('?')[0];
@@ -1734,6 +1734,163 @@ function wireEventForm() {
     }
   });
 }
+
+
+/* =========================================================================
+   SETTINGS
+
+   The two things the old /soundzgoodadminlogin page could do that nothing
+   else in here could: category limits, and laying out an event's ground.
+   Both are per-event and both are rare - you set them up once and mostly
+   leave them - so they live together away from the daily work.
+   ========================================================================= */
+VIEWS.settings = {
+  html() {
+    const ev = state.events.find((e) => e.id === state.activeEventId) || {};
+
+    /*  Food and market categories share one table, so the list says which
+        is which rather than leaving you to guess from the name. */
+    const ordered = [...state.categories].sort((a, b) =>
+      (a.appliesTo || '').localeCompare(b.appliesTo || '') ||
+      (a.name || '').localeCompare(b.name || ''));
+
+    return `
+      <div class="ad-page-head">
+        <div>
+          <h1>Settings</h1>
+          <p>${esc(ev.name || state.activeEventId || 'No event selected')}</p>
+        </div>
+      </div>
+
+      <section class="ad-card ad-panel" style="margin-bottom:16px">
+        <header class="ad-panel-head">
+          <h2>Vendor categories</h2>
+        </header>
+
+        <div class="ad-panel-intro">
+          <p>
+            How many of each kind of vendor may come. Raise a limit and the
+            category reopens on its own - the signup page compares the live
+            count against the limit, so there is nothing else to switch back on.
+          </p>
+        </div>
+
+        ${ordered.length ? `
+          <div class="ad-table-wrap">
+            <table class="ad-table">
+              <thead><tr>
+                <th>Category</th><th>For</th><th>Booked</th><th>Limit</th><th></th>
+              </tr></thead>
+              <tbody>
+                ${ordered.map((c) => {
+                  const count = c.count || 0;
+                  const full = c.limit != null && count >= c.limit;
+                  return `
+                    <tr>
+                      <td class="ad-cell-strong">${esc(c.name)}</td>
+                      <td>${typePill(c.appliesTo)}</td>
+                      <td class="ad-cell-muted">${count}</td>
+                      <td>
+                        <input type="number" min="0" class="ad-limit"
+                               value="${attr(c.limit == null ? '' : c.limit)}"
+                               data-limit="${attr(c.id)}"
+                               aria-label="Limit for ${attr(c.name)}">
+                      </td>
+                      <td>
+                        <span class="ad-pill ${full ? 'ad-pill-red' : 'ad-pill-green'}">
+                          ${full ? 'Full' : 'Open'}
+                        </span>
+                      </td>
+                    </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>` : `
+          <p class="ad-empty">
+            No categories yet. Lay out the event below and they come with it.
+          </p>`}
+      </section>
+
+      <section class="ad-card ad-panel">
+        <header class="ad-panel-head">
+          <h2>Event layout</h2>
+        </header>
+
+        <div class="ad-panel-intro">
+          <p>
+            Creates this event's sites and food categories from the default
+            Bowen Sports Complex layout. Safe to run more than once - it adds
+            what is missing and never overwrites what is there, so it cannot
+            wipe a site somebody is already booked on.
+          </p>
+          <p class="ad-cell-muted">
+            Currently ${state.sites.length} site${state.sites.length === 1 ? '' : 's'}
+            and ${state.categories.length}
+            categor${state.categories.length === 1 ? 'y' : 'ies'}.
+          </p>
+
+          <div class="ad-actions-row" style="margin-top:12px">
+            <button type="button" class="ad-btn ad-btn-primary" id="ad-seed">
+              Lay out this event
+            </button>
+          </div>
+
+          <p class="ad-action-msg" id="ad-action-msg" hidden></p>
+        </div>
+      </section>`;
+  },
+
+  wire() {
+    /*  A limit is saved on change rather than behind a Save button - there
+        is one number per row and no way to get it half right. */
+    document.querySelectorAll('[data-limit]').forEach((input) => {
+      input.addEventListener('change', async () => {
+        const bar = document.getElementById('ad-action-msg');
+        input.disabled = true;
+
+        try {
+          await call('adminSetCategoryLimit', {
+            eventId: state.activeEventId,
+            categoryId: input.getAttribute('data-limit'),
+            limit: Number(input.value),
+          });
+          if (bar) { bar.hidden = false; bar.className = 'ad-action-msg is-ok'; bar.textContent = 'Limit saved.'; }
+        } catch (err) {
+          if (bar) { bar.hidden = false; bar.className = 'ad-action-msg is-bad'; bar.textContent = friendly(err); }
+        }
+
+        input.disabled = false;
+      });
+    });
+
+    const seed = document.getElementById('ad-seed');
+    if (!seed) return;
+
+    seed.addEventListener('click', async () => {
+      if (!window.confirm('Lay out this event from the default layout? Nothing already there is overwritten.')) return;
+
+      const bar = document.getElementById('ad-action-msg');
+      seed.disabled = true;
+      bar.hidden = false;
+      bar.className = 'ad-action-msg';
+      bar.textContent = 'Working…';
+
+      try {
+        const d = await call('seedEvent', { eventId: state.activeEventId });
+        bar.className = 'ad-action-msg is-ok';
+        bar.textContent =
+          `${d.eventCreated ? 'Event created. ' : 'Event already existed. '}` +
+          `Added ${d.addedSites} site${d.addedSites === 1 ? '' : 's'} and ` +
+          `${d.addedCats} categor${d.addedCats === 1 ? 'y' : 'ies'}.`;
+      } catch (err) {
+        bar.className = 'ad-action-msg is-bad';
+        bar.textContent = friendly(err);
+      }
+
+      seed.disabled = false;
+    });
+  },
+};
 
 
 /*  Handy when something looks wrong in here: __sgAdmin.state shows exactly
