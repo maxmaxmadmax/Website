@@ -75,23 +75,46 @@ service cloud.firestore {
         && !('notes' in request.resource.data)
         && request.resource.data.vendorType in ['food', 'market'];
 
+      //  UPDATE IS ABOUT WHAT CHANGED, NOT WHAT IS PRESENT
+      //
+      //  This used to demand that a draft not contain amountCents or
+      //  siteId at all. That is right when the booking is first created,
+      //  and wrong for every update afterwards: holdSite puts both of
+      //  those on the document, and the vendor then fills in their
+      //  details and documents, which saves the draft again. The merged
+      //  document contains the fields the server just wrote, so the rule
+      //  refused - and no vendor could ever reach the payment page.
+      //
+      //  What actually matters is that the vendor cannot CHANGE any of
+      //  it. Everything the server owns has to come back untouched.
+      //  Editing stays open until the money is actually taken.
+      //
+      //  It used to require status == 'draft', which locked a vendor out
+      //  the moment they opened a checkout: go to Stripe, press back, fix
+      //  a typo, and the save is refused until the session expires half an
+      //  hour later - by which point they have given up. Nothing dangerous
+      //  is possible while pending_payment, because status itself and
+      //  everything else the server owns are locked below.
       allow update: if signedIn()
         && ownsDoc()
-        && resource.data.status == 'draft'
-        && request.resource.data.uid == resource.data.uid
-        && request.resource.data.status == 'draft'
-        && request.resource.data.paymentStatus == 'none'
-        && !('amountCents' in request.resource.data)
-        && !('siteId' in request.resource.data)
-        && !('stripeSessionId' in request.resource.data)
-        // An admin decision and the staff notes may already be on the doc,
-        // so they are allowed to survive an edit - they just cannot be
-        // changed by the vendor. Nobody approves themselves.
-        && request.resource.data.get('reviewStatus', '')
-             == resource.data.get('reviewStatus', '')
-        && request.resource.data.get('notes', [])
-             == resource.data.get('notes', [])
-        && request.resource.data.vendorType in ['food', 'market'];
+        && resource.data.status in ['draft', 'pending_payment']
+        && resource.data.paymentStatus in ['none', 'unpaid']
+        && request.resource.data.vendorType in ['food', 'market']
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+             // who they are, and where they are up to
+             'uid', 'status', 'paymentStatus',
+             // the money - set by holdSite, recomputed at checkout
+             'amountCents', 'bookingFeeCents', 'gstCents', 'totalCents',
+             'amountPaidCents', 'currency',
+             // the site - allocated in a transaction, never chosen here
+             'siteId', 'siteIds', 'siteLabel', 'siteType', 'holdExpiresAt',
+             // payment and confirmation
+             'stripeSessionId', 'stripePaymentIntentId', 'reference',
+             'countedCategoryId', 'confirmedAt', 'cancelledAt', 'problem',
+             // staff only - nobody approves themselves
+             'reviewStatus', 'reviewedAt', 'reviewedBy', 'reviewReason',
+             'notes', 'addedByAdmin', 'addedBy'
+           ]);
 
       // Bookings are cancelled, never deleted, so there is an audit trail.
       allow delete: if false;

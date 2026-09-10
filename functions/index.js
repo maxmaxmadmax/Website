@@ -674,12 +674,37 @@ exports.createCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request
   const eventSnapshot = await db.collection('events').doc(booking.eventId).get();
   const eventForBooking = eventSnapshot.exists ? eventSnapshot.data() : {};
 
-  /*  Worked out again here rather than trusting what is on the booking.
-      This is the moment money is decided, and the fields on the booking
-      were last written when the site was held - possibly at a different
-      fee, and in any case not somewhere to take a number from on trust. */
-  const money = feeBreakdown(eventForBooking, booking.amountCents ?? 0);
+  /*  THE PRICE IS DERIVED HERE, NOT READ OFF THE BOOKING.
+
+      amountCents on the document is written by holdSite and the Firestore
+      rules stop a vendor changing it. That is worth having, but it should
+      not be the only thing between somebody and a one dollar stall: a
+      single mistake in those rules would otherwise be worth real money.
+
+      So the site price is worked out again from the event's own pricing
+      and the number of bays they are actually holding, and the fee and GST
+      from that. Editing amountCents in a browser now achieves nothing,
+      because nothing here reads it. */
+  const heldBays = Array.isArray(booking.siteIds) && booking.siteIds.length
+    ? booking.siteIds.length
+    : (booking.siteId ? 1 : 0);
+
+  if (!heldBays) {
+    throw new HttpsError('failed-precondition', 'Choose a site first.');
+  }
+
+  const siteCents = priceFor(eventForBooking, booking.vendorType, heldBays);
+  const money = feeBreakdown(eventForBooking, siteCents);
   const amount = money.totalCents;
+
+  /*  If that disagrees with what the booking says, the booking is stale or
+      has been tampered with. The charge follows this figure either way;
+      the log is so it is visible if it ever happens. */
+  if (booking.amountCents != null && booking.amountCents !== siteCents) {
+    logger.warn('booking price did not match a fresh calculation', {
+      bookingId, onBooking: booking.amountCents, recomputed: siteCents,
+    });
+  }
 
   // ---- Nothing to pay -----------------------------------------------------
   if (amount === 0) {
