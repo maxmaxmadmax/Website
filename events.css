@@ -1,29 +1,39 @@
 /* ==========================================================================
-   EVENTS HUB - page specific styles
+   EVENTS PAGE
 
-   Loaded after style.css on /events and on the archived event pages, so
-   fonts, colours, buttons, page width and the responsive rules all still
-   come from style.css. This file only adds what the events hub needs.
+   Loaded on top of style.css by events.html only. Everything is prefixed
+   .ev- so none of it can reach another page.
 
-   Everything is prefixed .ev- so nothing here can reach another page. The
-   few exceptions are deliberate and named: .ticket-bar.is-archived and
-   .btn.is-done, which restyle existing components on an archived event
-   page only.
-
-   ADDING AN EVENT
-   You should not need to open this file to add an event. Copy a card in
-   events.html and change the words. Artwork comes from a --ev-art variable
-   set on the card itself.
+   The page is a hub: one full-height feature panel for the next event, a
+   teaser for the one after it, then a grid of cards for everything that
+   has already happened.
    ========================================================================== */
 
+/*  WHAT IS IN HERE
+      BASICS
+      SECTIONS
+      ARCHIVED STATE
+      CARDS
+      COUNTDOWN
+      FEATURE PANEL
+      TEASER
+      RESPONSIVE
+      FOOTER TWEAK
 
-/* --------------------------------------------------------------------------
-   1. THE PAGE HEADING
+    Sections run alphabetically apart from the pinned ones.
+    BASICS and SECTIONS are pinned above the rest because the panels
+    below them override those generic rules. RESPONSIVE and the footer
+    tweak are pinned last for the same reason, the other way round.
 
-   There is no visible EVENTS title any more - the featured event fills the
-   screen instead. This keeps the heading in the page for screen readers and
-   search engines without drawing it.
-   -------------------------------------------------------------------------- */
+    Rules inside a section stay in the order they were written. Sorting
+    those would change which rule wins when two carry the same weight.   */
+
+/* ==========================================================================
+   BASICS
+
+   The screen-reader-only helper, the status badges and the date and
+   place line. Small pieces used all over the page.
+   ========================================================================== */
 .ev-sr-only{
     position:absolute;
     width:1px;
@@ -38,9 +48,6 @@
 }
 
 
-/* --------------------------------------------------------------------------
-   2. SHARED PIECES - badges and the date/place line
-   -------------------------------------------------------------------------- */
 .ev-badge{
     display:inline-block;
     padding:6px 14px;
@@ -72,6 +79,12 @@
 .ev-meta-date{ color:var(--sg-gold); font-weight:bold; }
 .ev-meta-place{ color:var(--sg-dim); }
 
+/* ==========================================================================
+   SECTIONS
+
+   The generic wrapper and heading for a band of the page. Pinned above
+   the rest because the feature and teaser panels override it.
+   ========================================================================== */
 .ev-section{
     max-width:var(--sg-max-width);
     margin:auto;
@@ -81,13 +94,228 @@
     text-align:left;
 }
 
+/* ==========================================================================
+   ARCHIVED STATE
 
-/* --------------------------------------------------------------------------
-   3. THE FEATURED EVENT - a full height hero
+   What the ticket bar and its button look like once an event has been
+   and gone.
+   ========================================================================== */
+/* The sticky bar keeps its position but stops selling anything */
+.ticket-bar.is-archived{
+    background:#141414;
+    border-top:1px solid var(--sg-border);
+}
 
-   Whatever is on next fills the screen. The page carries on scrolling
-   normally underneath it; nothing is pinned.
-   -------------------------------------------------------------------------- */
+/* Reads as a statement, not a button you can press */
+.btn.is-done{
+    background:#1a1a1a;
+    border:1px solid #333;
+    color:var(--sg-dim);
+    cursor:default;
+}
+
+/* ==========================================================================
+   CARDS
+
+   The grid of past events. .is-nolink is for an event with nowhere to go
+   yet - it strips the hover and the button rather than offering a dead
+   link.
+   ========================================================================== */
+.ev-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));
+    gap:24px;
+    margin-top:26px;
+}
+
+.ev-card{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    border:1px solid var(--sg-border);
+    border-radius:18px;
+    background:var(--sg-panel);
+    transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+
+/*  One stretched link covers the whole card, so the entire card is
+    clickable while the page still has exactly one link per event.       */
+.ev-card-link{
+    position:absolute;
+    inset:0;
+    z-index:2;
+}
+
+.ev-card-art{
+    aspect-ratio:16 / 9;
+    background-image:var(--ev-art);
+    background-size:cover;
+    background-position:center;
+    /* Past events sit back: dimmer and less saturated than an upcoming one */
+    filter:brightness(.62) saturate(.72);
+    transition:filter .25s ease, transform .45s ease;
+}
+
+/*  For a card with only a logo rather than event artwork. Contained, not
+    cropped, on a dark tile.                                              */
+.ev-card-art.is-logo{
+    background-size:min(56%, 190px);
+    background-repeat:no-repeat;
+    background-color:#141414;
+    filter:brightness(.75);
+}
+
+.ev-card-body{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:12px;
+    padding:22px 22px 24px;
+    flex:1;
+}
+
+.ev-card-body h3{
+    font-family:var(--sg-font-display);
+    font-size:1.5rem;
+    letter-spacing:-.5px;
+    text-transform:uppercase;
+}
+
+.ev-card-artists{
+    color:var(--sg-dim);
+    font-size:.92rem;
+    line-height:1.65;
+}
+
+/*  Pushed to the bottom so the buttons line up across cards of different
+    heights.                                                              */
+.ev-card-btn{
+    margin-top:auto;
+    pointer-events:none;   /* the stretched link above does the clicking */
+    transition:background-color .25s ease, color .25s ease, border-color .25s ease;
+}
+
+.ev-card:hover{
+    transform:translateY(-4px);
+    border-color:#3a3a3a;
+    box-shadow:0 18px 40px rgba(0,0,0,.5);
+}
+
+.ev-card:hover .ev-card-art{
+    filter:brightness(.86) saturate(.95);
+    transform:scale(1.04);
+}
+
+.ev-card:hover .ev-card-btn{
+    background:var(--sg-orange);
+    border-color:var(--sg-orange);
+    color:#0a0a0a;
+}
+
+.ev-card:focus-within{
+    border-color:var(--sg-orange);
+}
+
+/*  A past event with no archive page yet. The card still shows - it just
+    does not pretend to go anywhere.                                      */
+.ev-card.is-nolink .ev-card-link{ display:none; }
+.ev-card.is-nolink{ cursor:default; }
+.ev-card.is-nolink:hover{ transform:none; box-shadow:none; }
+.ev-card.is-nolink .ev-card-btn{ opacity:.45; }
+.ev-card.is-nolink:hover .ev-card-btn{
+    background:transparent;
+    color:var(--sg-orange);
+    border-color:var(--sg-orange);
+}
+
+/* ==========================================================================
+   COUNTDOWN
+
+   Ticks down to the doors time in the data-doors attribute on the
+   markup. One value drives both the numbers and the line of text
+   underneath. When it reaches zero .is-open swaps the wording.
+   ========================================================================== */
+.ev-countdown{
+    margin-top:34px;
+}
+
+.ev-countdown-label{
+    font-family:var(--sg-font-accent);
+    font-size:.72rem;
+    font-weight:bold;
+    letter-spacing:.28em;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+    margin-bottom:14px;
+}
+
+.ev-countdown-units{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    list-style:none;
+    margin:0 0 12px;
+    padding:0;
+}
+
+.ev-countdown-units li{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+
+    min-width:74px;
+    padding:12px 10px;
+
+    background:rgba(0,0,0,.42);
+    border:1px solid var(--sg-border);
+    border-radius:12px;
+}
+
+.ev-countdown-units b{
+    font-family:var(--sg-font-display);
+    font-size:clamp(1.5rem, 3.4vw, 2.2rem);
+    line-height:1;
+    color:#fff;
+    /*  Tabular figures, so the seconds do not jog the box about as the
+        digits change width.                                             */
+    font-variant-numeric:tabular-nums;
+}
+
+.ev-countdown-units span{
+    font-family:var(--sg-font-accent);
+    font-size:.62rem;
+    font-weight:bold;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:var(--sg-dim);
+}
+
+.ev-countdown-when{
+    color:var(--sg-muted);
+    font-size:.9rem;
+}
+
+/* once the doors are open there is nothing left to count */
+.ev-countdown.is-open .ev-countdown-label{
+    color:var(--sg-orange);
+    font-size:.9rem;
+    letter-spacing:.2em;
+}
+
+
+/*  Full height, edge to edge, the same as the featured event above it. It
+    is the other half of the story - what is on next, and what is coming
+    after - so the two read as a pair rather than one hero and one card.  */
+
+/* ==========================================================================
+   FEATURE PANEL
+
+   The full-height panel for the next event. .is-halloween adds the
+   purple and the cobwebs, and it is scoped to this one panel so the
+   theme cannot leak into the rest of the page.
+   ========================================================================== */
 .ev-feature{
     position:relative;
     overflow:hidden;
@@ -205,87 +433,12 @@
     filter:drop-shadow(0 0 60px rgba(255,107,0,.32));
 }
 
+/* ==========================================================================
+   TEASER
 
-/* --------------------------------------------------------------------------
-   THE COUNTDOWN
-   -------------------------------------------------------------------------- */
-.ev-countdown{
-    margin-top:34px;
-}
-
-.ev-countdown-label{
-    font-family:var(--sg-font-accent);
-    font-size:.72rem;
-    font-weight:bold;
-    letter-spacing:.28em;
-    text-transform:uppercase;
-    color:var(--sg-gold);
-    margin-bottom:14px;
-}
-
-.ev-countdown-units{
-    display:flex;
-    flex-wrap:wrap;
-    gap:10px;
-    list-style:none;
-    margin:0 0 12px;
-    padding:0;
-}
-
-.ev-countdown-units li{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:4px;
-
-    min-width:74px;
-    padding:12px 10px;
-
-    background:rgba(0,0,0,.42);
-    border:1px solid var(--sg-border);
-    border-radius:12px;
-}
-
-.ev-countdown-units b{
-    font-family:var(--sg-font-display);
-    font-size:clamp(1.5rem, 3.4vw, 2.2rem);
-    line-height:1;
-    color:#fff;
-    /*  Tabular figures, so the seconds do not jog the box about as the
-        digits change width.                                             */
-    font-variant-numeric:tabular-nums;
-}
-
-.ev-countdown-units span{
-    font-family:var(--sg-font-accent);
-    font-size:.62rem;
-    font-weight:bold;
-    letter-spacing:.2em;
-    text-transform:uppercase;
-    color:var(--sg-dim);
-}
-
-.ev-countdown-when{
-    color:var(--sg-muted);
-    font-size:.9rem;
-}
-
-/* once the doors are open there is nothing left to count */
-.ev-countdown.is-open .ev-countdown-label{
-    color:var(--sg-orange);
-    font-size:.9rem;
-    letter-spacing:.2em;
-}
-
-
-/* --------------------------------------------------------------------------
-   4. NEXT SOUNDZGOOD TEASER
-   Festival-poster feel: artwork pushed out of focus, oversized wordmark,
-   one soft glow. No animation - it has to sit quietly under the real event.
-   -------------------------------------------------------------------------- */
-/*  Full height, edge to edge, the same as the featured event above it. It
-    is the other half of the story - what is on next, and what is coming
-    after - so the two read as a pair rather than one hero and one card.  */
+   The full-height panel for the event after next, deliberately quieter
+   than the feature panel above it.
+   ========================================================================== */
 .ev-teaser-wrap{
     padding:0;
     margin:0;
@@ -395,140 +548,15 @@
 }
 
 
-/* --------------------------------------------------------------------------
-   5. PREVIOUS EVENTS GRID
-   Muted next to the upcoming card, and lifting a little on hover.
-   -------------------------------------------------------------------------- */
 /*  auto-fit rather than auto-fill: with two events the pair spreads across
     the row instead of leaving an empty third column. Add a third and it
     becomes three columns on a wide screen on its own.                     */
-.ev-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));
-    gap:24px;
-    margin-top:26px;
-}
 
-.ev-card{
-    position:relative;
-    display:flex;
-    flex-direction:column;
-    overflow:hidden;
-    border:1px solid var(--sg-border);
-    border-radius:18px;
-    background:var(--sg-panel);
-    transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease;
-}
+/* ==========================================================================
+   RESPONSIVE
 
-/*  One stretched link covers the whole card, so the entire card is
-    clickable while the page still has exactly one link per event.       */
-.ev-card-link{
-    position:absolute;
-    inset:0;
-    z-index:2;
-}
-
-.ev-card-art{
-    aspect-ratio:16 / 9;
-    background-image:var(--ev-art);
-    background-size:cover;
-    background-position:center;
-    /* Past events sit back: dimmer and less saturated than an upcoming one */
-    filter:brightness(.62) saturate(.72);
-    transition:filter .25s ease, transform .45s ease;
-}
-
-/*  For a card with only a logo rather than event artwork. Contained, not
-    cropped, on a dark tile.                                              */
-.ev-card-art.is-logo{
-    background-size:min(56%, 190px);
-    background-repeat:no-repeat;
-    background-color:#141414;
-    filter:brightness(.75);
-}
-
-.ev-card-body{
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    gap:12px;
-    padding:22px 22px 24px;
-    flex:1;
-}
-
-.ev-card-body h3{
-    font-family:var(--sg-font-display);
-    font-size:1.5rem;
-    letter-spacing:-.5px;
-    text-transform:uppercase;
-}
-
-.ev-card-artists{
-    color:var(--sg-dim);
-    font-size:.92rem;
-    line-height:1.65;
-}
-
-/*  Pushed to the bottom so the buttons line up across cards of different
-    heights.                                                              */
-.ev-card-btn{
-    margin-top:auto;
-    pointer-events:none;   /* the stretched link above does the clicking */
-    transition:background-color .25s ease, color .25s ease, border-color .25s ease;
-}
-
-.ev-card:hover{
-    transform:translateY(-4px);
-    border-color:#3a3a3a;
-    box-shadow:0 18px 40px rgba(0,0,0,.5);
-}
-
-.ev-card:hover .ev-card-art{
-    filter:brightness(.86) saturate(.95);
-    transform:scale(1.04);
-}
-
-.ev-card:hover .ev-card-btn{
-    background:var(--sg-orange);
-    border-color:var(--sg-orange);
-    color:#0a0a0a;
-}
-
-.ev-card:focus-within{
-    border-color:var(--sg-orange);
-}
-
-/*  A past event with no archive page yet. The card still shows - it just
-    does not pretend to go anywhere.                                      */
-.ev-card.is-nolink .ev-card-link{ display:none; }
-.ev-card.is-nolink{ cursor:default; }
-.ev-card.is-nolink:hover{ transform:none; box-shadow:none; }
-.ev-card.is-nolink .ev-card-btn{ opacity:.45; }
-.ev-card.is-nolink:hover .ev-card-btn{
-    background:transparent;
-    color:var(--sg-orange);
-    border-color:var(--sg-orange);
-}
-
-/* The sticky bar keeps its position but stops selling anything */
-.ticket-bar.is-archived{
-    background:#141414;
-    border-top:1px solid var(--sg-border);
-}
-
-/* Reads as a statement, not a button you can press */
-.btn.is-done{
-    background:#1a1a1a;
-    border:1px solid #333;
-    color:var(--sg-dim);
-    cursor:default;
-}
-
-
-/* --------------------------------------------------------------------------
-   7. RESPONSIVE
-   -------------------------------------------------------------------------- */
-
+   Pinned last - these override everything above them.
+   ========================================================================== */
 /* Tablet: the hero stops being side by side */
 @media (max-width:900px){
     .ev-feature-inner{
@@ -595,19 +623,12 @@
     .ev-card:hover .ev-card-art{ transform:none; }
 }
 
+/* ==========================================================================
+   FOOTER TWEAK
 
-/* --------------------------------------------------------------------------
-   FOOTER TWEAK FOR THIS PAGE
-
-   The shared footer carries the sponsor strip on every page. It is hidden
-   here: this page is a list of events, and a band of white with other
-   businesses' logos across the middle of it breaks the run of dark event
-   artwork above.
-
-   Scoped to the body class rather than edited in components/footer.html,
-   so every other page still shows the sponsors. The same approach as
-   vendor-signup.css and the .home rule in style.css.
-   -------------------------------------------------------------------------- */
+   Pinned after RESPONSIVE so it still wins on a small screen.
+   ========================================================================== */
 body.events-page .footer-sponsors{
     display:none;
 }
+

@@ -1,23 +1,42 @@
 /* ==========================================================================
    SERVICES PAGE
 
-   Every rule in this file begins with #sg-services-page, so nothing here can
-   reach the homepage, events, vendor signup, contact, or any page added
-   later. The shared menu and footer sit outside that element and are left
-   completely alone.
+   Loaded on top of style.css by services.html only, and every rule is
+   scoped inside #sg-services-page. That scope is deliberate: the slider
+   restyles headings, buttons and layout heavily, and without it those
+   rules would follow the visitor to every other page.
 
-   Loaded after style.css, so the fonts and colours still come from there.
-
-   SLIDE PHOTOGRAPHY
-   A slide's picture is set on the element itself in services.html:
-
-       style="--sgs-img:url('images/services/festivals.jpg')"
-
-   If that file is not there the browser simply paints nothing for it and the
-   slide's gradient shows through, so a missing photo looks deliberate rather
-   than broken.
+   The page is a full-screen horizontal slider that advances itself, with
+   ordinary scrolling content underneath it.
    ========================================================================== */
 
+/*  WHAT IS IN HERE
+      STAGE AND TRACK
+      ARROWS AND NAV
+      BLOCKS BELOW
+      BUTTONS
+      CAPABILITY BAND
+      CLOSING CTA
+      SLIDE BACKGROUNDS
+      SLIDE CONTENT
+      RESPONSIVE
+      FOOTER TWEAK
+
+    Sections run alphabetically apart from the pinned ones.
+    STAGE AND TRACK is pinned first because every other section styles
+    something inside it. RESPONSIVE and the footer tweak are pinned last
+    because they override what is above them.
+
+    Rules inside a section stay in the order they were written. Sorting
+    those would change which rule wins when two carry the same weight.   */
+
+/* ==========================================================================
+   STAGE AND TRACK
+
+   The slider frame: the fixed-height stage, the scrolling track inside
+   it and the slides themselves. Pinned first because everything else
+   sits inside this.
+   ========================================================================== */
 #sg-services-page{
     /* Local tokens. Scoped to this element, so they cannot leak either. */
     --sgs-yellow:#ffb700;
@@ -32,9 +51,6 @@
 }
 
 
-/* --------------------------------------------------------------------------
-   1. THE SLIDER
-   -------------------------------------------------------------------------- */
 #sg-services-page .sgs-stage{
     position:relative;
     background:#000;
@@ -115,192 +131,13 @@
 /*  A different gradient per slide, so the page has some variety while the
     photography is still being collected - and so a photo dropped on top has
     something warm underneath it rather than flat black.                   */
-#sg-services-page .sgs-intro    { background-image:linear-gradient(135deg, #2a1403 0%, #0a0a0a 62%); }
-#sg-services-page .sgs-community{ background-image:linear-gradient(135deg, #2b1f08 0%, #0a0a0a 62%); }
-#sg-services-page .sgs-weddings { background-image:linear-gradient(135deg, #241528 0%, #0a0a0a 62%); }
-#sg-services-page .sgs-corporate{ background-image:linear-gradient(135deg, #0f2a18 0%, #0a0a0a 62%); }
-#sg-services-page .sgs-dj       { background-image:linear-gradient(135deg, #1c1c22 0%, #0a0a0a 62%); }
-#sg-services-page .sgs-festivals{ background-image:linear-gradient(135deg, #3a1d02 0%, #0a0a0a 62%); }
-#sg-services-page .sgs-screens  { background-image:linear-gradient(135deg, #0d2033 0%, #0a0a0a 62%); }
-#sg-services-page .sgs-trailer  { background-image:linear-gradient(135deg, #2b2205 0%, #0a0a0a 62%); }
-#sg-services-page .sgs-sporting { background-image:linear-gradient(135deg, #06231f 0%, #0a0a0a 62%); }
 
-#sg-services-page .sgs-video{
-    position:absolute;
-    inset:0;
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    z-index:0;
-}
+/* ==========================================================================
+   ARROWS AND NAV
 
-/*  Just enough wash to hold the words, and no more - the photography is
-    what sells this page, so most of the frame is left alone.
-
-    It only really darkens the left third, where the text sits. Across the
-    middle and right the picture is close to untouched. The two faint bands
-    top and bottom are only there so the menu and the slide labels stay
-    legible over a bright photo.                                          */
-#sg-services-page .sgs-scrim{
-    position:absolute;
-    inset:0;
-    z-index:1;
-    background:
-        linear-gradient(95deg,
-            rgba(0,0,0,.68) 0%,
-            rgba(0,0,0,.44) 34%,
-            rgba(0,0,0,.10) 64%,
-            rgba(0,0,0,.06) 100%),
-        linear-gradient(180deg,
-            rgba(0,0,0,.34) 0%,
-            transparent 20%,
-            transparent 66%,
-            rgba(0,0,0,.58) 100%);
-}
-
-#sg-services-page .sgs-content{
-    position:relative;
-    z-index:2;
-    width:100%;
-    max-width:var(--sg-max-width, 1200px);
-    margin:0 auto;
-    padding:0 6%;
-    /* clear of the menu at the top and the slide nav at the bottom */
-    padding-top:calc(var(--sg-nav-height, 88px) + 24px);
-    padding-bottom:190px;
-}
-
-#sg-services-page .sgs-eyebrow{
-    font-family:var(--sg-font-accent);
-    font-size:clamp(.72rem, 1.6vw, .9rem);
-    font-weight:bold;
-    letter-spacing:.42em;
-    text-transform:uppercase;
-    color:var(--sgs-yellow);
-    margin-bottom:14px;
-}
-
-#sg-services-page .sgs-title{
-    font-family:var(--sg-font-display);
-    font-size:clamp(2.6rem, 8.4vw, 6.6rem);
-    line-height:.92;
-    letter-spacing:-2px;
-    text-transform:uppercase;
-    color:#fff;
-    margin:0 0 22px;
-    text-shadow:0 6px 40px rgba(0,0,0,.6);
-
-    /*  Wide enough for the longest single word on any slide.
-        ENTERTAINMENT is 13 characters and was breaking across two lines at
-        14ch, which put a lone T underneath it. Every title sets its own
-        line breaks with <br>, so this only ever acts as a safety net.   */
-    max-width:16ch;
-    overflow-wrap:normal;
-    word-break:normal;
-}
-
-/*  The smaller lines carry their own shadow rather than leaning on the
-    scrim. That is what lets the wash stay light: the text holds up on its
-    own over a bright patch of photo, instead of the whole frame being
-    darkened to protect it.                                               */
-#sg-services-page .sgs-desc{
-    font-size:clamp(1rem, 2.1vw, 1.25rem);
-    line-height:1.6;
-    color:#eaeaea;
-    max-width:46ch;
-    margin-bottom:18px;
-    text-shadow:0 2px 14px rgba(0,0,0,.85);
-}
-
-#sg-services-page .sgs-line{
-    font-family:var(--sg-font-accent);
-    font-size:clamp(.72rem, 1.6vw, .86rem);
-    letter-spacing:.2em;
-    text-transform:uppercase;
-    color:#fff;
-    margin-bottom:10px;
-    text-shadow:0 2px 12px rgba(0,0,0,.9);
-}
-
-#sg-services-page .sgs-place{
-    font-family:var(--sg-font-accent);
-    font-size:clamp(.68rem, 1.5vw, .8rem);
-    letter-spacing:.28em;
-    text-transform:uppercase;
-    color:#c8c8c8;
-    margin-bottom:30px;
-    text-shadow:0 2px 12px rgba(0,0,0,.9);
-}
-
-#sg-services-page .sgs-eyebrow{
-    text-shadow:0 2px 12px rgba(0,0,0,.9);
-}
-
-#sg-services-page .sgs-actions{
-    display:flex;
-    flex-wrap:wrap;
-    gap:14px;
-    margin-top:26px;
-}
-
-
-/* --------------------------------------------------------------------------
-   2. BUTTONS
-   Named .sgs-btn rather than reusing .btn, so this page cannot drag the
-   site-wide button styling around with it.
-   -------------------------------------------------------------------------- */
-#sg-services-page .sgs-btn{
-    display:inline-block;
-    padding:16px 30px;
-    border-radius:50px;
-    border:2px solid transparent;
-
-    font-family:var(--sg-font-accent);
-    font-size:.8rem;
-    font-weight:bold;
-    letter-spacing:.18em;
-    text-transform:uppercase;
-    text-align:center;
-    text-decoration:none;
-    cursor:pointer;
-
-    transition:background-color .2s, color .2s, border-color .2s, transform .2s;
-}
-
-#sg-services-page .sgs-btn-primary{
-    background:var(--sgs-yellow);
-    border-color:var(--sgs-yellow);
-    color:#0a0a0a;
-}
-
-#sg-services-page .sgs-btn-primary:hover{
-    background:#ffc93a;
-    border-color:#ffc93a;
-    transform:translateY(-2px);
-}
-
-#sg-services-page .sgs-btn-ghost{
-    background:rgba(0,0,0,.35);
-    border-color:rgba(255,255,255,.55);
-    color:#fff;
-}
-
-#sg-services-page .sgs-btn-ghost:hover{
-    background:#fff;
-    border-color:#fff;
-    color:#0a0a0a;
-    transform:translateY(-2px);
-}
-
-#sg-services-page .sgs-btn:focus-visible{
-    outline:3px solid var(--sgs-yellow);
-    outline-offset:3px;
-}
-
-
-/* --------------------------------------------------------------------------
-   3. ARROWS
-   -------------------------------------------------------------------------- */
+   Moving between slides: the arrows, the list of slide names, the
+   compact counter on narrow screens and the progress bar.
+   ========================================================================== */
 #sg-services-page .sgs-arrow{
     position:absolute;
     top:50%;
@@ -355,9 +192,6 @@
 }
 
 
-/* --------------------------------------------------------------------------
-   4. SLIDE NAVIGATION
-   -------------------------------------------------------------------------- */
 #sg-services-page .sgs-nav{
     position:absolute;
     left:0;
@@ -438,11 +272,11 @@
     transition:width .35s ease, transform .35s ease;
 }
 
+/* ==========================================================================
+   BLOCKS BELOW
 
-
-/* --------------------------------------------------------------------------
-   5. THE PAGE BELOW THE SLIDER
-   -------------------------------------------------------------------------- */
+   The ordinary scrolling content under the slider.
+   ========================================================================== */
 #sg-services-page .sgs-block{
     padding:92px 6%;
     background:#0a0a0a;
@@ -484,12 +318,74 @@
     margin-bottom:18px;
 }
 
-/* --------------------------------------------------------------------------
-   THE CAPABILITY BAND
+/* ==========================================================================
+   BUTTONS
 
-   One compact band rather than a stack of sections: the pitch and the call
-   to action side by side, with a single row of what we bring underneath.
-   -------------------------------------------------------------------------- */
+   The slide buttons. Their own treatment rather than the site buttons,
+   because they sit on photographs.
+   ========================================================================== */
+#sg-services-page .sgs-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    margin-top:26px;
+}
+
+
+#sg-services-page .sgs-btn{
+    display:inline-block;
+    padding:16px 30px;
+    border-radius:50px;
+    border:2px solid transparent;
+
+    font-family:var(--sg-font-accent);
+    font-size:.8rem;
+    font-weight:bold;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    text-align:center;
+    text-decoration:none;
+    cursor:pointer;
+
+    transition:background-color .2s, color .2s, border-color .2s, transform .2s;
+}
+
+#sg-services-page .sgs-btn-primary{
+    background:var(--sgs-yellow);
+    border-color:var(--sgs-yellow);
+    color:#0a0a0a;
+}
+
+#sg-services-page .sgs-btn-primary:hover{
+    background:#ffc93a;
+    border-color:#ffc93a;
+    transform:translateY(-2px);
+}
+
+#sg-services-page .sgs-btn-ghost{
+    background:rgba(0,0,0,.35);
+    border-color:rgba(255,255,255,.55);
+    color:#fff;
+}
+
+#sg-services-page .sgs-btn-ghost:hover{
+    background:#fff;
+    border-color:#fff;
+    color:#0a0a0a;
+    transform:translateY(-2px);
+}
+
+#sg-services-page .sgs-btn:focus-visible{
+    outline:3px solid var(--sgs-yellow);
+    outline-offset:3px;
+}
+
+/* ==========================================================================
+   CAPABILITY BAND
+
+   The what-we-bring band, with its script accent and the list of
+   capabilities.
+   ========================================================================== */
 #sg-services-page .sgs-band{
     border-bottom:1px solid var(--sg-border, #222);
     padding-top:76px;
@@ -614,7 +510,11 @@
     transform:translateY(-3px);
 }
 
+/* ==========================================================================
+   CLOSING CTA
 
+   The area-served line and the closing call to action.
+   ========================================================================== */
 /* Service area and closing call to action --------------------------------- */
 #sg-services-page .sgs-area{
     background:#000;
@@ -639,11 +539,143 @@
     margin:0 auto 34px;
 }
 
+/* ==========================================================================
+   SLIDE BACKGROUNDS
 
-/* --------------------------------------------------------------------------
-   6. RESPONSIVE
-   -------------------------------------------------------------------------- */
+   One photograph per slide, plus the scrim that keeps the type readable
+   over it.
+   ========================================================================== */
+#sg-services-page .sgs-intro    { background-image:linear-gradient(135deg, #2a1403 0%, #0a0a0a 62%); }
+#sg-services-page .sgs-community{ background-image:linear-gradient(135deg, #2b1f08 0%, #0a0a0a 62%); }
+#sg-services-page .sgs-weddings { background-image:linear-gradient(135deg, #241528 0%, #0a0a0a 62%); }
+#sg-services-page .sgs-corporate{ background-image:linear-gradient(135deg, #0f2a18 0%, #0a0a0a 62%); }
+#sg-services-page .sgs-dj       { background-image:linear-gradient(135deg, #1c1c22 0%, #0a0a0a 62%); }
+#sg-services-page .sgs-festivals{ background-image:linear-gradient(135deg, #3a1d02 0%, #0a0a0a 62%); }
+#sg-services-page .sgs-screens  { background-image:linear-gradient(135deg, #0d2033 0%, #0a0a0a 62%); }
+#sg-services-page .sgs-trailer  { background-image:linear-gradient(135deg, #2b2205 0%, #0a0a0a 62%); }
+#sg-services-page .sgs-sporting { background-image:linear-gradient(135deg, #06231f 0%, #0a0a0a 62%); }
 
+#sg-services-page .sgs-video{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    z-index:0;
+}
+
+/*  Just enough wash to hold the words, and no more - the photography is
+    what sells this page, so most of the frame is left alone.
+
+    It only really darkens the left third, where the text sits. Across the
+    middle and right the picture is close to untouched. The two faint bands
+    top and bottom are only there so the menu and the slide labels stay
+    legible over a bright photo.                                          */
+#sg-services-page .sgs-scrim{
+    position:absolute;
+    inset:0;
+    z-index:1;
+    background:
+        linear-gradient(95deg,
+            rgba(0,0,0,.68) 0%,
+            rgba(0,0,0,.44) 34%,
+            rgba(0,0,0,.10) 64%,
+            rgba(0,0,0,.06) 100%),
+        linear-gradient(180deg,
+            rgba(0,0,0,.34) 0%,
+            transparent 20%,
+            transparent 66%,
+            rgba(0,0,0,.58) 100%);
+}
+
+/* ==========================================================================
+   SLIDE CONTENT
+
+   The wording on a slide: eyebrow, title, description and place line.
+   ========================================================================== */
+#sg-services-page .sgs-content{
+    position:relative;
+    z-index:2;
+    width:100%;
+    max-width:var(--sg-max-width, 1200px);
+    margin:0 auto;
+    padding:0 6%;
+    /* clear of the menu at the top and the slide nav at the bottom */
+    padding-top:calc(var(--sg-nav-height, 88px) + 24px);
+    padding-bottom:190px;
+}
+
+#sg-services-page .sgs-eyebrow{
+    font-family:var(--sg-font-accent);
+    font-size:clamp(.72rem, 1.6vw, .9rem);
+    font-weight:bold;
+    letter-spacing:.42em;
+    text-transform:uppercase;
+    color:var(--sgs-yellow);
+    margin-bottom:14px;
+}
+
+#sg-services-page .sgs-title{
+    font-family:var(--sg-font-display);
+    font-size:clamp(2.6rem, 8.4vw, 6.6rem);
+    line-height:.92;
+    letter-spacing:-2px;
+    text-transform:uppercase;
+    color:#fff;
+    margin:0 0 22px;
+    text-shadow:0 6px 40px rgba(0,0,0,.6);
+
+    /*  Wide enough for the longest single word on any slide.
+        ENTERTAINMENT is 13 characters and was breaking across two lines at
+        14ch, which put a lone T underneath it. Every title sets its own
+        line breaks with <br>, so this only ever acts as a safety net.   */
+    max-width:16ch;
+    overflow-wrap:normal;
+    word-break:normal;
+}
+
+/*  The smaller lines carry their own shadow rather than leaning on the
+    scrim. That is what lets the wash stay light: the text holds up on its
+    own over a bright patch of photo, instead of the whole frame being
+    darkened to protect it.                                               */
+#sg-services-page .sgs-desc{
+    font-size:clamp(1rem, 2.1vw, 1.25rem);
+    line-height:1.6;
+    color:#eaeaea;
+    max-width:46ch;
+    margin-bottom:18px;
+    text-shadow:0 2px 14px rgba(0,0,0,.85);
+}
+
+#sg-services-page .sgs-line{
+    font-family:var(--sg-font-accent);
+    font-size:clamp(.72rem, 1.6vw, .86rem);
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:#fff;
+    margin-bottom:10px;
+    text-shadow:0 2px 12px rgba(0,0,0,.9);
+}
+
+#sg-services-page .sgs-place{
+    font-family:var(--sg-font-accent);
+    font-size:clamp(.68rem, 1.5vw, .8rem);
+    letter-spacing:.28em;
+    text-transform:uppercase;
+    color:#c8c8c8;
+    margin-bottom:30px;
+    text-shadow:0 2px 12px rgba(0,0,0,.9);
+}
+
+#sg-services-page .sgs-eyebrow{
+    text-shadow:0 2px 12px rgba(0,0,0,.9);
+}
+
+/* ==========================================================================
+   RESPONSIVE
+
+   Pinned last - these override everything above them.
+   ========================================================================== */
 /* Tablet */
 @media (max-width:900px){
     #sg-services-page .sgs-content{
@@ -794,10 +826,6 @@
 }
 
 
-/* --------------------------------------------------------------------------
-   7. REDUCED MOTION
-   Snapping and arrows still work - they simply arrive instantly.
-   -------------------------------------------------------------------------- */
 @media (prefers-reduced-motion:reduce){
     #sg-services-page .sgs-track{
         scroll-behavior:auto;
@@ -814,19 +842,12 @@
     }
 }
 
+/* ==========================================================================
+   FOOTER TWEAK
 
-/* --------------------------------------------------------------------------
-   FOOTER TWEAK FOR THIS PAGE
-
-   The shared footer carries the sponsor strip on every page. It is hidden
-   here, where a band of white with other businesses' logos sits badly under
-   a page of full bleed event photography.
-
-   Tied to #sg-services-page rather than a body class, so it keeps this
-   file's rule that everything hangs off that one id. The footer is a
-   sibling of it, so the selector only ever matches on this page and
-   components/footer.html is left alone for every other one.
-   -------------------------------------------------------------------------- */
+   Pinned after RESPONSIVE so it still wins on a small screen.
+   ========================================================================== */
 #sg-services-page ~ #footer .footer-sponsors{
     display:none;
 }
+

@@ -55,74 +55,29 @@ body{
     -webkit-font-smoothing:antialiased;
 }
 
+/*  WHAT IS IN HERE
+      SHELL
+      SHARED FURNITURE
+      COMING SOON
+      DETAIL DRAWER
+      DRAWER ACTIONS
+      EVENT CARDS
+      FILTER BAR
+      MODAL
+      PANELS AND TABLES
+      SIGN IN
+      STAT CARDS
+      THE MAP
+      RESPONSIVE
 
-/* --------------------------------------------------------------------------
-   SIGN IN
-   -------------------------------------------------------------------------- */
-.ad-gate{
-    min-height:100vh;
-    min-height:100svh;
-    display:grid;
-    place-items:center;
-    padding:24px;
-    background:radial-gradient(90% 70% at 50% 0%, #23262f 0%, var(--ad-ink) 70%);
-}
+    Sections run alphabetically apart from the pinned ones.
+    SHELL and SHARED FURNITURE are pinned above the rest: they hold
+    the frame and the shared buttons, pills and tables that the later
+    sections override. RESPONSIVE is pinned last for the same reason -
+    it overrides everything above it.
 
-.ad-gate-card{
-    width:100%;
-    max-width:380px;
-    background:var(--ad-card);
-    border-radius:16px;
-    padding:34px 30px;
-    box-shadow:0 24px 60px rgba(0,0,0,.4);
-}
-
-.ad-gate-brand{
-    font-size:.7rem;
-    font-weight:700;
-    letter-spacing:.22em;
-    text-transform:uppercase;
-    color:var(--ad-orange);
-    margin:0 0 6px;
-}
-
-.ad-gate-card h1{
-    font-size:1.6rem;
-    margin:0 0 4px;
-    letter-spacing:-.4px;
-}
-
-.ad-gate-sub{
-    color:var(--ad-muted);
-    margin:0 0 22px;
-}
-
-.ad-gate-card label{
-    display:block;
-    font-size:.76rem;
-    font-weight:600;
-    color:var(--ad-muted);
-    margin:14px 0 6px;
-}
-
-.ad-gate-card input{
-    width:100%;
-    padding:11px 13px;
-    border:1px solid var(--ad-line);
-    border-radius:9px;
-    font:inherit;
-    background:#fff;
-    color:var(--ad-text);
-}
-
-.ad-gate-card input:focus{
-    outline:none;
-    border-color:var(--ad-orange);
-    box-shadow:0 0 0 3px var(--ad-orange-soft);
-}
-
-.ad-gate-card .ad-btn{ width:100%; margin-top:20px; }
-
+    Rules inside a section stay in the order they were written. Sorting
+    those would change which rule wins when two carry the same weight.   */
 
 /* --------------------------------------------------------------------------
    SHELL
@@ -332,7 +287,6 @@ body{
 
 .ad-loading{ color:var(--ad-muted); }
 
-
 /* --------------------------------------------------------------------------
    SHARED FURNITURE
    -------------------------------------------------------------------------- */
@@ -416,186 +370,31 @@ body{
 .ad-pill-blue{  background:var(--ad-blue-bg);  color:var(--ad-blue); }
 .ad-pill-grey{  background:var(--ad-grey-bg);  color:var(--ad-muted); }
 
-
 /* --------------------------------------------------------------------------
-   STAT CARDS
-   Auto-fit so the row reflows from eight across down to two without any
-   breakpoints of its own.
+   COMING SOON
    -------------------------------------------------------------------------- */
-.ad-stats{
+.ad-soon{
     display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(168px, 1fr));
-    gap:12px;
-    margin-bottom:22px;
+    place-items:center;
+    min-height:60vh;
+    text-align:center;
 }
 
-.ad-stat{
-    background:var(--ad-card);
-    border:1px solid var(--ad-line);
-    border-radius:var(--ad-radius);
-    padding:15px 16px;
-    border-top:3px solid var(--ad-line);
+.ad-soon-inner{ max-width:420px; }
 
-    /* most are divs, the ones that filter the list are buttons */
-    font:inherit;
-    text-align:left;
-    width:100%;
-    display:block;
+.ad-soon-mark{
+    width:64px; height:64px;
+    margin:0 auto 18px;
+    border-radius:16px;
+    background:var(--ad-orange-soft);
+    color:var(--ad-orange);
+    display:grid;
+    place-items:center;
+    font-size:1.6rem;
 }
 
-.ad-stat.is-clickable{ cursor:pointer; }
-
-/*  Only the background moves on hover. Setting border-color here would
-    out-specify the .is-green / .is-amber top edge and grey it out. */
-.ad-stat.is-clickable:hover{
-    background:#fafbfc;
-    box-shadow:0 2px 8px rgba(0,0,0,.07);
-}
-
-.ad-stat.is-clickable:focus-visible{
-    outline:2px solid var(--ad-orange);
-    outline-offset:2px;
-}
-
-.ad-stat.is-green{ border-top-color:var(--ad-green); }
-.ad-stat.is-amber{ border-top-color:var(--ad-amber); }
-.ad-stat.is-red{   border-top-color:var(--ad-red); }
-.ad-stat.is-blue{  border-top-color:var(--ad-blue); }
-
-.ad-stat-label{
-    margin:0;
-    font-size:.72rem;
-    font-weight:600;
-    letter-spacing:.05em;
-    text-transform:uppercase;
-    color:var(--ad-muted);
-}
-
-.ad-stat-value{
-    margin:6px 0 2px;
-    font-size:1.85rem;
-    font-weight:700;
-    line-height:1;
-    letter-spacing:-1px;
-}
-
-.ad-stat-note{ margin:0; font-size:.74rem; color:var(--ad-faint); }
-
-
-/* --------------------------------------------------------------------------
-   PANELS AND TABLES
-   -------------------------------------------------------------------------- */
-.ad-panel{ overflow:hidden; }
-
-.ad-panel-head{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    padding:14px 18px;
-    border-bottom:1px solid var(--ad-line);
-}
-
-.ad-panel-head h2{ font-size:1rem; margin:0; }
-.ad-panel-head .ad-btn{ margin-left:auto; padding:6px 12px; font-size:.8rem; }
-
-.ad-panel-intro{ padding:14px 18px 16px; }
-.ad-panel-intro p{ margin:0 0 8px; max-width:64ch; }
-.ad-panel-intro p:last-of-type{ margin-bottom:0; }
-
-.ad-limit{
-    width:78px;
-    font:inherit;
-    font-size:.85rem;
-    padding:6px 8px;
-    border:1px solid var(--ad-line);
-    border-radius:7px;
-    background:#fff;
-    color:var(--ad-text);
-}
-
-.ad-limit:focus{
-    outline:none;
-    border-color:var(--ad-orange);
-    box-shadow:0 0 0 3px var(--ad-orange-soft);
-}
-
-.ad-limit:disabled{ opacity:.5; }
-
-/* Tables scroll inside their own box so the page never scrolls sideways */
-.ad-table-wrap{ overflow-x:auto; }
-
-.ad-table{
-    width:100%;
-    border-collapse:collapse;
-    font-size:.85rem;
-}
-
-.ad-table th{
-    text-align:left;
-    padding:10px 18px;
-    font-size:.7rem;
-    font-weight:700;
-    letter-spacing:.06em;
-    text-transform:uppercase;
-    color:var(--ad-muted);
-    background:#fafbfc;
-    border-bottom:1px solid var(--ad-line);
-    white-space:nowrap;
-}
-
-.ad-table td{
-    padding:11px 18px;
-    border-bottom:1px solid var(--ad-line);
-    vertical-align:middle;
-}
-
-.ad-table tbody tr:last-child td{ border-bottom:0; }
-
-.ad-table tbody tr[data-open]{ cursor:pointer; }
-.ad-table tbody tr[data-open]:hover{ background:#fafbfc; }
-
-.ad-cell-strong{ display:block; font-weight:600; }
-.ad-cell-sub{ display:block; font-size:.76rem; color:var(--ad-faint); }
-.ad-cell-muted{ color:var(--ad-muted); white-space:nowrap; }
-
-
-/* --------------------------------------------------------------------------
-   FILTER BAR
-   -------------------------------------------------------------------------- */
-.ad-filters{
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    margin-bottom:14px;
-}
-
-.ad-filters select,
-.ad-search{
-    font:inherit;
-    font-size:.85rem;
-    padding:8px 11px;
-    border:1px solid var(--ad-line);
-    border-radius:9px;
-    background:#fff;
-    color:var(--ad-text);
-}
-
-.ad-search{ flex:1 1 240px; min-width:0; }
-
-.ad-filters select:focus,
-.ad-search:focus{
-    outline:none;
-    border-color:var(--ad-orange);
-    box-shadow:0 0 0 3px var(--ad-orange-soft);
-}
-
-.ad-count{
-    align-self:center;
-    font-size:.85rem;
-    font-weight:600;
-    color:var(--ad-muted);
-}
-
+.ad-soon h1{ font-size:1.4rem; margin:0 0 8px; }
+.ad-soon p{ color:var(--ad-muted); margin:0; }
 
 /* --------------------------------------------------------------------------
    DETAIL DRAWER
@@ -700,7 +499,6 @@ body{
 /* a document whose URL did not come from our own storage - shown, not linked */
 .ad-doc-bad{ font-weight:600; color:var(--ad-red); }
 
-
 /* --------------------------------------------------------------------------
    DRAWER ACTIONS
    -------------------------------------------------------------------------- */
@@ -800,6 +598,78 @@ body{
     box-shadow:0 0 0 3px var(--ad-orange-soft);
 }
 
+/* --------------------------------------------------------------------------
+   EVENT CARDS
+   -------------------------------------------------------------------------- */
+.ad-ev-list{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
+    gap:14px;
+}
+
+.ad-ev{ padding:16px 18px 18px; }
+
+/* The active event is the one everything else on the page is about */
+.ad-ev.is-active{ border-color:var(--ad-orange); box-shadow:0 0 0 1px var(--ad-orange); }
+
+.ad-ev-head{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:10px;
+}
+
+.ad-ev-head h2{ font-size:1.1rem; margin:0 0 3px; letter-spacing:-.3px; }
+.ad-ev-head .ad-pill{ margin-left:auto; flex:0 0 auto; }
+.ad-ev-when{ margin:0; font-size:.82rem; color:var(--ad-muted); }
+
+.ad-ev .ad-kvs{ margin-bottom:14px; }
+.ad-ev .ad-kv dt{ flex-basis:98px; }
+.ad-ev .ad-actions-row{ margin-bottom:0; }
+
+.ad-ev code{
+    font-size:.8rem;
+    background:var(--ad-grey-bg);
+    padding:1px 5px;
+    border-radius:4px;
+}
+
+/* --------------------------------------------------------------------------
+   FILTER BAR
+   -------------------------------------------------------------------------- */
+.ad-filters{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:14px;
+}
+
+.ad-filters select,
+.ad-search{
+    font:inherit;
+    font-size:.85rem;
+    padding:8px 11px;
+    border:1px solid var(--ad-line);
+    border-radius:9px;
+    background:#fff;
+    color:var(--ad-text);
+}
+
+.ad-search{ flex:1 1 240px; min-width:0; }
+
+.ad-filters select:focus,
+.ad-search:focus{
+    outline:none;
+    border-color:var(--ad-orange);
+    box-shadow:0 0 0 3px var(--ad-orange-soft);
+}
+
+.ad-count{
+    align-self:center;
+    font-size:.85rem;
+    font-weight:600;
+    color:var(--ad-muted);
+}
 
 /* --------------------------------------------------------------------------
    MODAL
@@ -875,6 +745,212 @@ body{
     background:#fafbfc;
 }
 
+/* --------------------------------------------------------------------------
+   PANELS AND TABLES
+   -------------------------------------------------------------------------- */
+.ad-panel{ overflow:hidden; }
+
+.ad-panel-head{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:14px 18px;
+    border-bottom:1px solid var(--ad-line);
+}
+
+.ad-panel-head h2{ font-size:1rem; margin:0; }
+.ad-panel-head .ad-btn{ margin-left:auto; padding:6px 12px; font-size:.8rem; }
+
+.ad-panel-intro{ padding:14px 18px 16px; }
+.ad-panel-intro p{ margin:0 0 8px; max-width:64ch; }
+.ad-panel-intro p:last-of-type{ margin-bottom:0; }
+
+.ad-limit{
+    width:78px;
+    font:inherit;
+    font-size:.85rem;
+    padding:6px 8px;
+    border:1px solid var(--ad-line);
+    border-radius:7px;
+    background:#fff;
+    color:var(--ad-text);
+}
+
+.ad-limit:focus{
+    outline:none;
+    border-color:var(--ad-orange);
+    box-shadow:0 0 0 3px var(--ad-orange-soft);
+}
+
+.ad-limit:disabled{ opacity:.5; }
+
+/* Tables scroll inside their own box so the page never scrolls sideways */
+.ad-table-wrap{ overflow-x:auto; }
+
+.ad-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:.85rem;
+}
+
+.ad-table th{
+    text-align:left;
+    padding:10px 18px;
+    font-size:.7rem;
+    font-weight:700;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--ad-muted);
+    background:#fafbfc;
+    border-bottom:1px solid var(--ad-line);
+    white-space:nowrap;
+}
+
+.ad-table td{
+    padding:11px 18px;
+    border-bottom:1px solid var(--ad-line);
+    vertical-align:middle;
+}
+
+.ad-table tbody tr:last-child td{ border-bottom:0; }
+
+.ad-table tbody tr[data-open]{ cursor:pointer; }
+.ad-table tbody tr[data-open]:hover{ background:#fafbfc; }
+
+.ad-cell-strong{ display:block; font-weight:600; }
+.ad-cell-sub{ display:block; font-size:.76rem; color:var(--ad-faint); }
+.ad-cell-muted{ color:var(--ad-muted); white-space:nowrap; }
+
+/* --------------------------------------------------------------------------
+   SIGN IN
+   -------------------------------------------------------------------------- */
+.ad-gate{
+    min-height:100vh;
+    min-height:100svh;
+    display:grid;
+    place-items:center;
+    padding:24px;
+    background:radial-gradient(90% 70% at 50% 0%, #23262f 0%, var(--ad-ink) 70%);
+}
+
+.ad-gate-card{
+    width:100%;
+    max-width:380px;
+    background:var(--ad-card);
+    border-radius:16px;
+    padding:34px 30px;
+    box-shadow:0 24px 60px rgba(0,0,0,.4);
+}
+
+.ad-gate-brand{
+    font-size:.7rem;
+    font-weight:700;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--ad-orange);
+    margin:0 0 6px;
+}
+
+.ad-gate-card h1{
+    font-size:1.6rem;
+    margin:0 0 4px;
+    letter-spacing:-.4px;
+}
+
+.ad-gate-sub{
+    color:var(--ad-muted);
+    margin:0 0 22px;
+}
+
+.ad-gate-card label{
+    display:block;
+    font-size:.76rem;
+    font-weight:600;
+    color:var(--ad-muted);
+    margin:14px 0 6px;
+}
+
+.ad-gate-card input{
+    width:100%;
+    padding:11px 13px;
+    border:1px solid var(--ad-line);
+    border-radius:9px;
+    font:inherit;
+    background:#fff;
+    color:var(--ad-text);
+}
+
+.ad-gate-card input:focus{
+    outline:none;
+    border-color:var(--ad-orange);
+    box-shadow:0 0 0 3px var(--ad-orange-soft);
+}
+
+.ad-gate-card .ad-btn{ width:100%; margin-top:20px; }
+
+/* --------------------------------------------------------------------------
+   STAT CARDS
+   Auto-fit so the row reflows from eight across down to two without any
+   breakpoints of its own.
+   -------------------------------------------------------------------------- */
+.ad-stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(168px, 1fr));
+    gap:12px;
+    margin-bottom:22px;
+}
+
+.ad-stat{
+    background:var(--ad-card);
+    border:1px solid var(--ad-line);
+    border-radius:var(--ad-radius);
+    padding:15px 16px;
+    border-top:3px solid var(--ad-line);
+
+    /* most are divs, the ones that filter the list are buttons */
+    font:inherit;
+    text-align:left;
+    width:100%;
+    display:block;
+}
+
+.ad-stat.is-clickable{ cursor:pointer; }
+
+/*  Only the background moves on hover. Setting border-color here would
+    out-specify the .is-green / .is-amber top edge and grey it out. */
+.ad-stat.is-clickable:hover{
+    background:#fafbfc;
+    box-shadow:0 2px 8px rgba(0,0,0,.07);
+}
+
+.ad-stat.is-clickable:focus-visible{
+    outline:2px solid var(--ad-orange);
+    outline-offset:2px;
+}
+
+.ad-stat.is-green{ border-top-color:var(--ad-green); }
+.ad-stat.is-amber{ border-top-color:var(--ad-amber); }
+.ad-stat.is-red{   border-top-color:var(--ad-red); }
+.ad-stat.is-blue{  border-top-color:var(--ad-blue); }
+
+.ad-stat-label{
+    margin:0;
+    font-size:.72rem;
+    font-weight:600;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--ad-muted);
+}
+
+.ad-stat-value{
+    margin:6px 0 2px;
+    font-size:1.85rem;
+    font-weight:700;
+    line-height:1;
+    letter-spacing:-1px;
+}
+
+.ad-stat-note{ margin:0; font-size:.74rem; color:var(--ad-faint); }
 
 /* --------------------------------------------------------------------------
    THE MAP
@@ -988,71 +1064,6 @@ body{
 
 .ad-linkish:hover{ text-decoration:underline; }
 
-
-/* --------------------------------------------------------------------------
-   EVENT CARDS
-   -------------------------------------------------------------------------- */
-.ad-ev-list{
-    display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
-    gap:14px;
-}
-
-.ad-ev{ padding:16px 18px 18px; }
-
-/* The active event is the one everything else on the page is about */
-.ad-ev.is-active{ border-color:var(--ad-orange); box-shadow:0 0 0 1px var(--ad-orange); }
-
-.ad-ev-head{
-    display:flex;
-    align-items:flex-start;
-    gap:12px;
-    margin-bottom:10px;
-}
-
-.ad-ev-head h2{ font-size:1.1rem; margin:0 0 3px; letter-spacing:-.3px; }
-.ad-ev-head .ad-pill{ margin-left:auto; flex:0 0 auto; }
-.ad-ev-when{ margin:0; font-size:.82rem; color:var(--ad-muted); }
-
-.ad-ev .ad-kvs{ margin-bottom:14px; }
-.ad-ev .ad-kv dt{ flex-basis:98px; }
-.ad-ev .ad-actions-row{ margin-bottom:0; }
-
-.ad-ev code{
-    font-size:.8rem;
-    background:var(--ad-grey-bg);
-    padding:1px 5px;
-    border-radius:4px;
-}
-
-
-/* --------------------------------------------------------------------------
-   COMING SOON
-   -------------------------------------------------------------------------- */
-.ad-soon{
-    display:grid;
-    place-items:center;
-    min-height:60vh;
-    text-align:center;
-}
-
-.ad-soon-inner{ max-width:420px; }
-
-.ad-soon-mark{
-    width:64px; height:64px;
-    margin:0 auto 18px;
-    border-radius:16px;
-    background:var(--ad-orange-soft);
-    color:var(--ad-orange);
-    display:grid;
-    place-items:center;
-    font-size:1.6rem;
-}
-
-.ad-soon h1{ font-size:1.4rem; margin:0 0 8px; }
-.ad-soon p{ color:var(--ad-muted); margin:0; }
-
-
 /* --------------------------------------------------------------------------
    RESPONSIVE
    The rail slides over the desk rather than squeezing it.
@@ -1082,3 +1093,4 @@ body{
 @media (prefers-reduced-motion:reduce){
     .ad-rail{ transition:none; }
 }
+

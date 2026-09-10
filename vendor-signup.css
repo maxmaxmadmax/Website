@@ -123,124 +123,89 @@
     stroke-width:1.4;
 }
 
+/*  WHAT IS IN HERE
+      DOCUMENTS
+      EVENT INFO AND FAQS
+      FOOD CATEGORIES
+      PREVIEW BANNER
+      REVIEW AND CONFIRMATION
+      STEP PANELS
+      STEPPER
+      THE MAP
+      VENDOR TYPE CHOICES
+      MOBILE
+      FOOTER TWEAK FOR THESE PAGES
+
+    Sections run alphabetically apart from the pinned ones.
+    MOBILE is pinned last because it overrides everything above it, and
+    the footer tweak sits after it so it wins on small screens too.
+
+    Rules inside a section stay in the order they were written. Sorting
+    those would change which rule wins when two carry the same weight.   */
 
 /* --------------------------------------------------------------------------
-   PREVIEW BANNER
-   Shown only while Firebase has not been connected.
+   DOCUMENTS
    -------------------------------------------------------------------------- */
-.vs-preview-banner{
-    background:#4a1d1d;
-    border-bottom:2px solid #7a2f2f;
-    color:#ffd9d9;
-    padding:14px 6%;
-    text-align:center;
-    font-size:.95rem;
+.vs-doc-list{
+    list-style:none;
+    margin-top:20px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
 }
 
-.vs-preview-banner strong{
-    color:#fff;
-}
-
-
-/* --------------------------------------------------------------------------
-   STEPPER
-   -------------------------------------------------------------------------- */
-.vs-stepper{
+.vs-doc{
     display:flex;
     flex-wrap:wrap;
-    justify-content:center;
-    gap:8px 6px;
-    list-style:none;
-    max-width:var(--sg-max-width);
-    margin:0 auto 34px;
-}
-
-.vs-stepper-item{
-    display:flex;
     align-items:center;
-    gap:8px;
-    padding:8px 14px;
-    border-radius:50px;
+    gap:8px 14px;
+    background:#0b0b0b;
     border:1px solid var(--sg-border);
-    background:var(--sg-panel);
-    color:var(--sg-dim);
-    font-size:.82rem;
+    border-radius:10px;
+    padding:12px 16px;
 }
 
-.vs-stepper-num{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:22px;
-    height:22px;
-    border-radius:50%;
-    background:#2a2a2a;
-    color:var(--sg-muted);
-    font-family:var(--sg-font-display);
+.vs-doc-type{
+    font-family:var(--sg-font-accent);
     font-size:.72rem;
-    flex:0 0 auto;
-}
-
-.vs-stepper-item.is-current{
-    border-color:var(--sg-orange);
-    color:#fff;
-}
-
-.vs-stepper-item.is-current .vs-stepper-num{
-    background:var(--sg-orange);
-    color:#fff;
-}
-
-.vs-stepper-item.is-done .vs-stepper-num{
-    background:var(--vs-available);
-    color:#fff;
-}
-
-
-/* --------------------------------------------------------------------------
-   STEP PANELS
-   -------------------------------------------------------------------------- */
-.vs-flow{
-    max-width:940px;
-    margin:auto;
-}
-
-.vs-step{
-    background:var(--sg-panel);
-    border:1px solid var(--sg-border);
-    border-radius:18px;
-    padding:34px 30px;
-}
-
-.vs-step h2{
-    text-align:left;
-    font-size:clamp(1.4rem, 3.4vw, 2rem);
-    margin-bottom:8px;
-}
-
-.vs-step-intro{
-    color:var(--sg-muted);
-    margin-bottom:26px;
-}
-
-/*  Business, category and setup share one step, so each gets a subheading
-    with a rule above it to break the page into obvious sections.          */
-.vs-sub{
-    font-family:var(--sg-font-display);
-    font-size:1.15rem;
-    letter-spacing:-.5px;
+    font-weight:bold;
+    letter-spacing:1.5px;
     text-transform:uppercase;
-    margin:38px 0 18px;
-    padding-top:26px;
-    border-top:1px solid var(--sg-border);
+    color:var(--sg-gold);
 }
 
-.vs-step > .vs-sub:first-of-type{
-    margin-top:0;
-    padding-top:0;
-    border-top:0;
+.vs-doc-name{
+    flex:1;
+    min-width:120px;
+    word-break:break-word;
 }
 
+.vs-doc-size{
+    color:var(--sg-dim);
+    font-size:.85rem;
+}
+
+.vs-doc-empty{
+    color:var(--sg-dim);
+    font-size:.92rem;
+}
+
+.vs-link{
+    background:none;
+    border:none;
+    color:var(--sg-orange);
+    cursor:pointer;
+    font-size:.9rem;
+    text-decoration:underline;
+    padding:4px;
+}
+
+.vs-file-row{
+    display:grid;
+    grid-template-columns:minmax(160px, 220px) 1fr;
+    gap:14px;
+    align-items:end;
+}
 
 /* --------------------------------------------------------------------------
    EVENT INFO AND FAQS
@@ -359,6 +324,540 @@
     color:var(--sg-dim);
 }
 
+/* --------------------------------------------------------------------------
+   FOOD CATEGORIES
+   -------------------------------------------------------------------------- */
+.vs-category-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));
+    gap:12px;
+}
+
+.vs-category{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:5px;
+
+    background:#0d0d0d;
+    border:2px solid var(--sg-border);
+    border-radius:12px;
+    padding:16px 18px;
+    color:#fff;
+    text-align:left;
+    cursor:pointer;
+    transition:border-color .2s, transform .2s;
+}
+
+.vs-category:hover:not(:disabled){
+    transform:translateY(-2px);
+    border-color:#4a2a06;
+}
+
+.vs-category.is-selected{
+    border-color:var(--sg-orange);
+    background:#170d02;
+}
+
+.vs-category-name{
+    font-family:var(--sg-font-display);
+    font-size:1rem;
+    letter-spacing:-.3px;
+    text-transform:uppercase;
+}
+
+.vs-category-count{
+    font-family:var(--sg-font-accent);
+    font-size:.78rem;
+    letter-spacing:1px;
+    color:var(--sg-dim);
+}
+
+.vs-category.is-full{
+    opacity:.55;
+    cursor:not-allowed;
+    border-color:#3a1414;
+}
+
+.vs-category-full{
+    position:absolute;
+    top:10px;
+    right:12px;
+    font-family:var(--sg-font-accent);
+    font-size:.66rem;
+    font-weight:bold;
+    letter-spacing:1.5px;
+    color:#ff8a8a;
+    background:#4a1d1d;
+    border-radius:4px;
+    padding:2px 6px;
+}
+
+/* --------------------------------------------------------------------------
+   PREVIEW BANNER
+   Shown only while Firebase has not been connected.
+   -------------------------------------------------------------------------- */
+.vs-preview-banner{
+    background:#4a1d1d;
+    border-bottom:2px solid #7a2f2f;
+    color:#ffd9d9;
+    padding:14px 6%;
+    text-align:center;
+    font-size:.95rem;
+}
+
+.vs-preview-banner strong{
+    color:#fff;
+}
+
+/* --------------------------------------------------------------------------
+   REVIEW AND CONFIRMATION
+   -------------------------------------------------------------------------- */
+.vs-summary-list{
+    display:grid;
+    gap:1px;
+    background:var(--sg-border);
+    border:1px solid var(--sg-border);
+    border-radius:12px;
+    overflow:hidden;
+}
+
+.vs-summary-list > div{
+    display:grid;
+    grid-template-columns:minmax(120px, 200px) 1fr;
+    gap:14px;
+    background:#0b0b0b;
+    padding:13px 18px;
+}
+
+.vs-summary-list dt{
+    font-family:var(--sg-font-accent);
+    font-size:.74rem;
+    font-weight:bold;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+    align-self:center;
+}
+
+.vs-summary-list dd{
+    color:#fff;
+    word-break:break-word;
+}
+
+.vs-total{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:20px;
+
+    margin-top:20px;
+    padding:20px 22px;
+    border-radius:12px;
+    background:linear-gradient(150deg, #241001, #0c0c0c);
+    border:1px solid #3a2000;
+}
+
+.vs-total span{
+    font-family:var(--sg-font-accent);
+    font-size:.8rem;
+    font-weight:bold;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+}
+
+.vs-total strong{
+    font-family:var(--sg-font-display);
+    font-size:2rem;
+    color:#fff;
+}
+
+.vs-confirming,
+.vs-confirmed{
+    max-width:760px;
+    margin:auto;
+    text-align:center;
+}
+
+.vs-confirm-card{
+    background:var(--sg-panel);
+    border:1px solid var(--sg-border);
+    border-top:4px solid var(--vs-available);
+    border-radius:18px;
+    padding:40px 32px;
+    text-align:left;
+}
+
+.vs-eyebrow{
+    font-family:var(--sg-font-accent);
+    font-size:.76rem;
+    font-weight:bold;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:var(--vs-slime);
+    margin-bottom:10px;
+}
+
+.vs-confirm-card h2{
+    text-align:left;
+    margin-bottom:10px;
+}
+
+.vs-confirm-ref{
+    font-family:var(--sg-font-accent);
+    letter-spacing:2px;
+    color:var(--sg-muted);
+    margin-bottom:24px;
+}
+
+.vs-confirm-note{
+    color:var(--sg-muted);
+    margin-top:22px;
+    font-size:.95rem;
+}
+
+.vs-spinner{
+    width:42px;
+    height:42px;
+    margin:0 auto 20px;
+    border:3px solid #2a2a2a;
+    border-top-color:var(--sg-orange);
+    border-radius:50%;
+    animation:vs-spin 1s linear infinite;
+}
+
+@keyframes vs-spin{
+    to{ transform:rotate(360deg); }
+}
+
+/* --------------------------------------------------------------------------
+   STEP PANELS
+   -------------------------------------------------------------------------- */
+.vs-flow{
+    max-width:940px;
+    margin:auto;
+}
+
+.vs-step{
+    background:var(--sg-panel);
+    border:1px solid var(--sg-border);
+    border-radius:18px;
+    padding:34px 30px;
+}
+
+.vs-step h2{
+    text-align:left;
+    font-size:clamp(1.4rem, 3.4vw, 2rem);
+    margin-bottom:8px;
+}
+
+.vs-step-intro{
+    color:var(--sg-muted);
+    margin-bottom:26px;
+}
+
+/*  Business, category and setup share one step, so each gets a subheading
+    with a rule above it to break the page into obvious sections.          */
+.vs-sub{
+    font-family:var(--sg-font-display);
+    font-size:1.15rem;
+    letter-spacing:-.5px;
+    text-transform:uppercase;
+    margin:38px 0 18px;
+    padding-top:26px;
+    border-top:1px solid var(--sg-border);
+}
+
+.vs-step > .vs-sub:first-of-type{
+    margin-top:0;
+    padding-top:0;
+    border-top:0;
+}
+
+/* --------------------------------------------------------------------------
+   STEPPER
+   -------------------------------------------------------------------------- */
+.vs-stepper{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:8px 6px;
+    list-style:none;
+    max-width:var(--sg-max-width);
+    margin:0 auto 34px;
+}
+
+.vs-stepper-item{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 14px;
+    border-radius:50px;
+    border:1px solid var(--sg-border);
+    background:var(--sg-panel);
+    color:var(--sg-dim);
+    font-size:.82rem;
+}
+
+.vs-stepper-num{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    background:#2a2a2a;
+    color:var(--sg-muted);
+    font-family:var(--sg-font-display);
+    font-size:.72rem;
+    flex:0 0 auto;
+}
+
+.vs-stepper-item.is-current{
+    border-color:var(--sg-orange);
+    color:#fff;
+}
+
+.vs-stepper-item.is-current .vs-stepper-num{
+    background:var(--sg-orange);
+    color:#fff;
+}
+
+.vs-stepper-item.is-done .vs-stepper-num{
+    background:var(--vs-available);
+    color:#fff;
+}
+
+/* --------------------------------------------------------------------------
+   THE MAP
+   -------------------------------------------------------------------------- */
+.vs-map-wrap{
+    position:relative;
+    background:#0b0b0b;
+    border:1px solid var(--sg-border);
+    border-radius:14px;
+    padding:14px;
+
+    /*  The site plan is portrait and tall. Drawn at full width it would be
+        around 1500px high, so it scrolls inside this box instead - never
+        on the page itself.                                              */
+    max-height:min(70vh, 780px);
+    overflow:auto;
+    overscroll-behavior:contain;
+}
+
+.vs-map{
+    /*  Sized so a market bay stays a 44px tap target. A bay is 56 units
+        tall in a 760 unit plan, so the plan has to be drawn at least
+        760 x 44 / 56 = 597px wide. Below that the bays get too small to
+        hit on a phone, and the numbers too small to read. The box above
+        scrolls, so this costs nothing but a swipe.                     */
+    min-width:620px;
+}
+
+.vmap-svg{
+    display:block;
+    width:100%;
+    height:auto;
+}
+
+.vs-map-hint{
+    color:var(--sg-dim);
+    font-size:.84rem;
+    margin-top:8px;
+}
+
+/* fixed furniture */
+.vmap-landmark rect{
+    fill:#151515;
+    stroke:#2b2b2b;
+    stroke-width:2;
+}
+
+.vmap-landmark-stage rect{
+    fill:#1d1030;
+    stroke:var(--vs-purple);
+}
+
+.vmap-landmark-bar rect{
+    fill:#221004;
+    stroke:#5a3a10;
+}
+
+.vmap-landmark-path rect{
+    fill:#101010;
+    stroke:#232323;
+    stroke-dasharray:6 6;
+}
+
+.vmap-landmark-text{
+    fill:#8a8a8a;
+    font-family:'Courier New', Courier, monospace;
+    font-size:13px;
+    letter-spacing:1.5px;
+}
+
+/* bookable sites */
+.vmap-site rect{
+    stroke-width:2.5;
+    transition:fill .15s, stroke .15s;
+}
+
+.vmap-site-label{
+    fill:#fff;
+    font-family:"Arial Black", Arial, sans-serif;
+    font-size:17px;
+    pointer-events:none;
+}
+
+.vmap-site-sub{
+    fill:rgba(255,255,255,.72);
+    font-family:'Courier New', Courier, monospace;
+    font-size:10px;
+    letter-spacing:1px;
+    pointer-events:none;
+}
+
+.vmap-site.is-available rect{ fill:#12310f; stroke:var(--vs-available); }
+.vmap-site.is-held rect{      fill:#33280a; stroke:var(--vs-held); }
+.vmap-site.is-booked rect{    fill:#2a0f0f; stroke:#8c3a3a; }
+.vmap-site.is-blocked rect{   fill:#161616; stroke:#3a3a3a; }
+.vmap-site.is-mine rect{      fill:#3a1e00; stroke:var(--vs-mine); }
+
+.vmap-site.is-selectable{ cursor:pointer; }
+
+.vmap-site.is-selectable:hover rect{
+    fill:#1b4a17;
+    stroke:#4caf50;
+}
+
+.vmap-site.is-selected rect{
+    fill:#4a2600;
+    stroke:var(--sg-orange);
+    stroke-width:4;
+}
+
+.vmap-site.is-locked .vmap-site-label{ fill:rgba(255,255,255,.5); }
+
+/*  Free, but not released yet - the bays in front of it have to go first.
+    Deliberately flatter than "booked" so it reads as "not now" rather than
+    "gone", and it goes back to green on its own once its wave opens.       */
+.vmap-site.is-not-open rect{
+    fill:#101010;
+    stroke:#2c2c2c;
+    stroke-dasharray:5 4;
+}
+
+.vmap-site.is-not-open .vmap-site-label,
+.vmap-site.is-not-open .vmap-site-sub{
+    fill:rgba(255,255,255,.3);
+}
+
+.vmap-site.is-wrong-type rect{
+    fill:#0f0f0f;
+    stroke:#242424;
+}
+
+.vmap-site.is-wrong-type .vmap-site-label,
+.vmap-site.is-wrong-type .vmap-site-sub{
+    fill:rgba(255,255,255,.24);
+}
+
+.vmap-site.is-selectable:focus-visible rect{
+    stroke:var(--sg-gold);
+    stroke-width:4;
+}
+
+/* legend */
+.vs-legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 20px;
+    margin:18px 0 6px;
+    list-style:none;
+}
+
+.vs-legend li{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:var(--sg-muted);
+    font-size:.86rem;
+}
+
+.vs-swatch{
+    width:16px;
+    height:16px;
+    border-radius:4px;
+    border:2px solid;
+    flex:0 0 auto;
+}
+
+.vs-swatch.is-available{ background:#12310f; border-color:var(--vs-available); }
+.vs-swatch.is-held{      background:#33280a; border-color:var(--vs-held); }
+.vs-swatch.is-booked{    background:#2a0f0f; border-color:#8c3a3a; }
+.vs-swatch.is-blocked{   background:#161616; border-color:#3a3a3a; }
+.vs-swatch.is-mine{      background:#3a1e00; border-color:var(--vs-mine); }
+.vs-swatch.is-not-open{  background:#101010; border-color:#2c2c2c; }
+
+/*  Instructions above the plan. Worth spelling out, because tapping several
+    bays to build a shape is not something people expect from a map.        */
+.vs-map-intro{
+    margin:14px 0 0;
+    color:var(--sg-muted);
+    font-size:.92rem;
+    line-height:1.6;
+}
+
+.vs-map-intro strong{
+    color:var(--sg-gold);
+}
+
+.vs-map-intro-sub{
+    color:var(--sg-dim);
+    font-size:.86rem;
+}
+
+/*  Nothing is held until this is pressed, so it only appears once bays
+    have been picked.                                                       */
+.vs-site-confirm{
+    margin-top:14px;
+}
+
+.vs-site-choice{
+    margin-top:14px;
+    padding:12px 16px;
+    border-radius:10px;
+    background:#0b0b0b;
+    border:1px solid var(--sg-border);
+    color:var(--sg-dim);
+}
+
+.vs-site-choice.is-chosen{
+    border-color:var(--sg-orange);
+    color:#fff;
+}
+
+.vs-hold-timer{
+    margin-top:10px;
+    font-family:var(--sg-font-accent);
+    font-size:.85rem;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+}
+
+.vs-hold-timer.is-expired{
+    color:#ff8a8a;
+}
+
+.vs-map-counts{
+    color:var(--sg-dim);
+    font-size:.88rem;
+    margin-top:4px;
+}
 
 /* --------------------------------------------------------------------------
    VENDOR TYPE CHOICES
@@ -650,521 +1149,6 @@
     flex:0 0 auto;
 }
 
-
-/* --------------------------------------------------------------------------
-   FOOD CATEGORIES
-   -------------------------------------------------------------------------- */
-.vs-category-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));
-    gap:12px;
-}
-
-.vs-category{
-    position:relative;
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    gap:5px;
-
-    background:#0d0d0d;
-    border:2px solid var(--sg-border);
-    border-radius:12px;
-    padding:16px 18px;
-    color:#fff;
-    text-align:left;
-    cursor:pointer;
-    transition:border-color .2s, transform .2s;
-}
-
-.vs-category:hover:not(:disabled){
-    transform:translateY(-2px);
-    border-color:#4a2a06;
-}
-
-.vs-category.is-selected{
-    border-color:var(--sg-orange);
-    background:#170d02;
-}
-
-.vs-category-name{
-    font-family:var(--sg-font-display);
-    font-size:1rem;
-    letter-spacing:-.3px;
-    text-transform:uppercase;
-}
-
-.vs-category-count{
-    font-family:var(--sg-font-accent);
-    font-size:.78rem;
-    letter-spacing:1px;
-    color:var(--sg-dim);
-}
-
-.vs-category.is-full{
-    opacity:.55;
-    cursor:not-allowed;
-    border-color:#3a1414;
-}
-
-.vs-category-full{
-    position:absolute;
-    top:10px;
-    right:12px;
-    font-family:var(--sg-font-accent);
-    font-size:.66rem;
-    font-weight:bold;
-    letter-spacing:1.5px;
-    color:#ff8a8a;
-    background:#4a1d1d;
-    border-radius:4px;
-    padding:2px 6px;
-}
-
-
-/* --------------------------------------------------------------------------
-   DOCUMENTS
-   -------------------------------------------------------------------------- */
-.vs-doc-list{
-    list-style:none;
-    margin-top:20px;
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-}
-
-.vs-doc{
-    display:flex;
-    flex-wrap:wrap;
-    align-items:center;
-    gap:8px 14px;
-    background:#0b0b0b;
-    border:1px solid var(--sg-border);
-    border-radius:10px;
-    padding:12px 16px;
-}
-
-.vs-doc-type{
-    font-family:var(--sg-font-accent);
-    font-size:.72rem;
-    font-weight:bold;
-    letter-spacing:1.5px;
-    text-transform:uppercase;
-    color:var(--sg-gold);
-}
-
-.vs-doc-name{
-    flex:1;
-    min-width:120px;
-    word-break:break-word;
-}
-
-.vs-doc-size{
-    color:var(--sg-dim);
-    font-size:.85rem;
-}
-
-.vs-doc-empty{
-    color:var(--sg-dim);
-    font-size:.92rem;
-}
-
-.vs-link{
-    background:none;
-    border:none;
-    color:var(--sg-orange);
-    cursor:pointer;
-    font-size:.9rem;
-    text-decoration:underline;
-    padding:4px;
-}
-
-.vs-file-row{
-    display:grid;
-    grid-template-columns:minmax(160px, 220px) 1fr;
-    gap:14px;
-    align-items:end;
-}
-
-
-/* --------------------------------------------------------------------------
-   THE MAP
-   -------------------------------------------------------------------------- */
-.vs-map-wrap{
-    position:relative;
-    background:#0b0b0b;
-    border:1px solid var(--sg-border);
-    border-radius:14px;
-    padding:14px;
-
-    /*  The site plan is portrait and tall. Drawn at full width it would be
-        around 1500px high, so it scrolls inside this box instead - never
-        on the page itself.                                              */
-    max-height:min(70vh, 780px);
-    overflow:auto;
-    overscroll-behavior:contain;
-}
-
-.vs-map{
-    /*  Sized so a market bay stays a 44px tap target. A bay is 56 units
-        tall in a 760 unit plan, so the plan has to be drawn at least
-        760 x 44 / 56 = 597px wide. Below that the bays get too small to
-        hit on a phone, and the numbers too small to read. The box above
-        scrolls, so this costs nothing but a swipe.                     */
-    min-width:620px;
-}
-
-.vmap-svg{
-    display:block;
-    width:100%;
-    height:auto;
-}
-
-.vs-map-hint{
-    color:var(--sg-dim);
-    font-size:.84rem;
-    margin-top:8px;
-}
-
-/* fixed furniture */
-.vmap-landmark rect{
-    fill:#151515;
-    stroke:#2b2b2b;
-    stroke-width:2;
-}
-
-.vmap-landmark-stage rect{
-    fill:#1d1030;
-    stroke:var(--vs-purple);
-}
-
-.vmap-landmark-bar rect{
-    fill:#221004;
-    stroke:#5a3a10;
-}
-
-.vmap-landmark-path rect{
-    fill:#101010;
-    stroke:#232323;
-    stroke-dasharray:6 6;
-}
-
-.vmap-landmark-text{
-    fill:#8a8a8a;
-    font-family:'Courier New', Courier, monospace;
-    font-size:13px;
-    letter-spacing:1.5px;
-}
-
-/* bookable sites */
-.vmap-site rect{
-    stroke-width:2.5;
-    transition:fill .15s, stroke .15s;
-}
-
-.vmap-site-label{
-    fill:#fff;
-    font-family:"Arial Black", Arial, sans-serif;
-    font-size:17px;
-    pointer-events:none;
-}
-
-.vmap-site-sub{
-    fill:rgba(255,255,255,.72);
-    font-family:'Courier New', Courier, monospace;
-    font-size:10px;
-    letter-spacing:1px;
-    pointer-events:none;
-}
-
-.vmap-site.is-available rect{ fill:#12310f; stroke:var(--vs-available); }
-.vmap-site.is-held rect{      fill:#33280a; stroke:var(--vs-held); }
-.vmap-site.is-booked rect{    fill:#2a0f0f; stroke:#8c3a3a; }
-.vmap-site.is-blocked rect{   fill:#161616; stroke:#3a3a3a; }
-.vmap-site.is-mine rect{      fill:#3a1e00; stroke:var(--vs-mine); }
-
-.vmap-site.is-selectable{ cursor:pointer; }
-
-.vmap-site.is-selectable:hover rect{
-    fill:#1b4a17;
-    stroke:#4caf50;
-}
-
-.vmap-site.is-selected rect{
-    fill:#4a2600;
-    stroke:var(--sg-orange);
-    stroke-width:4;
-}
-
-.vmap-site.is-locked .vmap-site-label{ fill:rgba(255,255,255,.5); }
-
-/*  Free, but not released yet - the bays in front of it have to go first.
-    Deliberately flatter than "booked" so it reads as "not now" rather than
-    "gone", and it goes back to green on its own once its wave opens.       */
-.vmap-site.is-not-open rect{
-    fill:#101010;
-    stroke:#2c2c2c;
-    stroke-dasharray:5 4;
-}
-
-.vmap-site.is-not-open .vmap-site-label,
-.vmap-site.is-not-open .vmap-site-sub{
-    fill:rgba(255,255,255,.3);
-}
-
-.vmap-site.is-wrong-type rect{
-    fill:#0f0f0f;
-    stroke:#242424;
-}
-
-.vmap-site.is-wrong-type .vmap-site-label,
-.vmap-site.is-wrong-type .vmap-site-sub{
-    fill:rgba(255,255,255,.24);
-}
-
-.vmap-site.is-selectable:focus-visible rect{
-    stroke:var(--sg-gold);
-    stroke-width:4;
-}
-
-/* legend */
-.vs-legend{
-    display:flex;
-    flex-wrap:wrap;
-    gap:10px 20px;
-    margin:18px 0 6px;
-    list-style:none;
-}
-
-.vs-legend li{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    color:var(--sg-muted);
-    font-size:.86rem;
-}
-
-.vs-swatch{
-    width:16px;
-    height:16px;
-    border-radius:4px;
-    border:2px solid;
-    flex:0 0 auto;
-}
-
-.vs-swatch.is-available{ background:#12310f; border-color:var(--vs-available); }
-.vs-swatch.is-held{      background:#33280a; border-color:var(--vs-held); }
-.vs-swatch.is-booked{    background:#2a0f0f; border-color:#8c3a3a; }
-.vs-swatch.is-blocked{   background:#161616; border-color:#3a3a3a; }
-.vs-swatch.is-mine{      background:#3a1e00; border-color:var(--vs-mine); }
-.vs-swatch.is-not-open{  background:#101010; border-color:#2c2c2c; }
-
-/*  Instructions above the plan. Worth spelling out, because tapping several
-    bays to build a shape is not something people expect from a map.        */
-.vs-map-intro{
-    margin:14px 0 0;
-    color:var(--sg-muted);
-    font-size:.92rem;
-    line-height:1.6;
-}
-
-.vs-map-intro strong{
-    color:var(--sg-gold);
-}
-
-.vs-map-intro-sub{
-    color:var(--sg-dim);
-    font-size:.86rem;
-}
-
-/*  Nothing is held until this is pressed, so it only appears once bays
-    have been picked.                                                       */
-.vs-site-confirm{
-    margin-top:14px;
-}
-
-.vs-site-choice{
-    margin-top:14px;
-    padding:12px 16px;
-    border-radius:10px;
-    background:#0b0b0b;
-    border:1px solid var(--sg-border);
-    color:var(--sg-dim);
-}
-
-.vs-site-choice.is-chosen{
-    border-color:var(--sg-orange);
-    color:#fff;
-}
-
-.vs-hold-timer{
-    margin-top:10px;
-    font-family:var(--sg-font-accent);
-    font-size:.85rem;
-    letter-spacing:1.5px;
-    text-transform:uppercase;
-    color:var(--sg-gold);
-}
-
-.vs-hold-timer.is-expired{
-    color:#ff8a8a;
-}
-
-.vs-map-counts{
-    color:var(--sg-dim);
-    font-size:.88rem;
-    margin-top:4px;
-}
-
-
-/* --------------------------------------------------------------------------
-   INLINE SIGN IN
-   -------------------------------------------------------------------------- */
-.vs-auth{
-    background:#0b0b0b;
-    border:1px solid var(--vs-purple);
-    border-radius:14px;
-    padding:24px 22px;
-    margin-bottom:24px;
-}
-
-.vs-auth h3{
-    font-family:var(--sg-font-display);
-    font-size:1.1rem;
-    letter-spacing:-.5px;
-    text-transform:uppercase;
-    margin-bottom:8px;
-}
-
-.vs-auth p{
-    color:var(--sg-muted);
-    font-size:.92rem;
-    margin-bottom:16px;
-}
-
-
-/* --------------------------------------------------------------------------
-   REVIEW AND CONFIRMATION
-   -------------------------------------------------------------------------- */
-.vs-summary-list{
-    display:grid;
-    gap:1px;
-    background:var(--sg-border);
-    border:1px solid var(--sg-border);
-    border-radius:12px;
-    overflow:hidden;
-}
-
-.vs-summary-list > div{
-    display:grid;
-    grid-template-columns:minmax(120px, 200px) 1fr;
-    gap:14px;
-    background:#0b0b0b;
-    padding:13px 18px;
-}
-
-.vs-summary-list dt{
-    font-family:var(--sg-font-accent);
-    font-size:.74rem;
-    font-weight:bold;
-    letter-spacing:1.5px;
-    text-transform:uppercase;
-    color:var(--sg-gold);
-    align-self:center;
-}
-
-.vs-summary-list dd{
-    color:#fff;
-    word-break:break-word;
-}
-
-.vs-total{
-    display:flex;
-    align-items:baseline;
-    justify-content:space-between;
-    gap:20px;
-
-    margin-top:20px;
-    padding:20px 22px;
-    border-radius:12px;
-    background:linear-gradient(150deg, #241001, #0c0c0c);
-    border:1px solid #3a2000;
-}
-
-.vs-total span{
-    font-family:var(--sg-font-accent);
-    font-size:.8rem;
-    font-weight:bold;
-    letter-spacing:2px;
-    text-transform:uppercase;
-    color:var(--sg-gold);
-}
-
-.vs-total strong{
-    font-family:var(--sg-font-display);
-    font-size:2rem;
-    color:#fff;
-}
-
-.vs-confirming,
-.vs-confirmed{
-    max-width:760px;
-    margin:auto;
-    text-align:center;
-}
-
-.vs-confirm-card{
-    background:var(--sg-panel);
-    border:1px solid var(--sg-border);
-    border-top:4px solid var(--vs-available);
-    border-radius:18px;
-    padding:40px 32px;
-    text-align:left;
-}
-
-.vs-eyebrow{
-    font-family:var(--sg-font-accent);
-    font-size:.76rem;
-    font-weight:bold;
-    letter-spacing:3px;
-    text-transform:uppercase;
-    color:var(--vs-slime);
-    margin-bottom:10px;
-}
-
-.vs-confirm-card h2{
-    text-align:left;
-    margin-bottom:10px;
-}
-
-.vs-confirm-ref{
-    font-family:var(--sg-font-accent);
-    letter-spacing:2px;
-    color:var(--sg-muted);
-    margin-bottom:24px;
-}
-
-.vs-confirm-note{
-    color:var(--sg-muted);
-    margin-top:22px;
-    font-size:.95rem;
-}
-
-.vs-spinner{
-    width:42px;
-    height:42px;
-    margin:0 auto 20px;
-    border:3px solid #2a2a2a;
-    border-top-color:var(--sg-orange);
-    border-radius:50%;
-    animation:vs-spin 1s linear infinite;
-}
-
-@keyframes vs-spin{
-    to{ transform:rotate(360deg); }
-}
-
-
 /* --------------------------------------------------------------------------
    MOBILE
    -------------------------------------------------------------------------- */
@@ -1236,7 +1220,6 @@
     .vs-type:hover .vs-type-art{ transform:translateX(-50%); }
 }
 
-
 /* --------------------------------------------------------------------------
    FOOTER TWEAK FOR THESE PAGES
 
@@ -1252,3 +1235,4 @@
 body.vendor-signup .footer-sponsors{
     display:none;
 }
+
