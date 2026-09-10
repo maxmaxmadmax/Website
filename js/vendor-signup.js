@@ -80,12 +80,20 @@ function feeBreakdown(siteCents) {
 }
 
 /*  Whole dollars where it is round, cents where it is not - $100 rather
-    than $100.00, but $115.49 rather than $115. */
+    than $100.00, but $115.49 rather than $115. Right for a headline price
+    on a card. */
 function money(cents) {
   if (cents === 0) return 'Free';
   return cents % 100 === 0
     ? `$${(cents / 100).toFixed(0)}`
     : `$${(cents / 100).toFixed(2)}`;
+}
+
+/*  Always two decimals, for the cost breakdown. A column reading $50,
+    $2.99, $5.30 looks like a mistake even when it is not - the figures
+    have to line up under each other to be checkable. */
+function exact(cents) {
+  return `$${((cents || 0) / 100).toFixed(2)}`;
 }
 
 function vendorLabel() {
@@ -1022,11 +1030,24 @@ function renderReview() {
     </dl>
 
     ${b.totalCents ? `
-      <dl class="vs-summary-list vs-costs">
-        <div><dt>Site fee</dt><dd>${money(b.siteCents)}</dd></div>
-        <div><dt>Booking fee (4% + $0.99)</dt><dd>${money(b.bookingFeeCents)}</dd></div>
-        <div><dt>GST (10%)</dt><dd>${money(b.gstCents)}</dd></div>
-      </dl>` : ''}
+      <div class="vs-costs">
+        <div class="vs-cost">
+          <span>Site fee</span>
+          <span class="vs-cost-amt">${exact(b.siteCents)}</span>
+        </div>
+        <div class="vs-cost">
+          <span>Booking fee <em>4% + $0.99</em></span>
+          <span class="vs-cost-amt">${exact(b.bookingFeeCents)}</span>
+        </div>
+        <div class="vs-cost is-subtotal">
+          <span>Subtotal</span>
+          <span class="vs-cost-amt">${exact(b.siteCents + b.bookingFeeCents)}</span>
+        </div>
+        <div class="vs-cost">
+          <span>GST <em>10% of ${exact(b.siteCents + b.bookingFeeCents)}</em></span>
+          <span class="vs-cost-amt">${exact(b.gstCents)}</span>
+        </div>
+      </div>` : ''}
 
     <div class="vs-total">
       <span>Total${b.totalCents ? ' to pay' : ''}</span>

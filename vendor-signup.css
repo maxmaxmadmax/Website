@@ -1052,16 +1052,58 @@
 
 /*  The cost breakdown above the total: quieter than the summary rows, so
     the eye still lands on the total underneath. */
+/*  THE COST BREAKDOWN
+
+    Deliberately not styled like the summary rows above it. Those are form
+    answers read back; this is a receipt, and dressing it in the same gold
+    monospace labels made it look like more of the form.
+
+    So: quiet sentence-case labels, figures in a right-aligned column that
+    line up under each other, and the workings in small print beside the
+    label rather than crammed into it. "Booking fee (4% + $0.99)" wrapped
+    onto two lines and looked broken.                                    */
 .vs-costs{
-    margin-top:14px;
-    padding-top:6px;
-    border-top:1px solid rgba(255,255,255,.08);
+    margin-top:22px;
+    padding-top:16px;
+    border-top:1px solid var(--sg-border);
 }
 
-.vs-costs dt,
-.vs-costs dd{
-    font-size:.9rem;
-    opacity:.85;
+.vs-cost{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:20px;
+    padding:7px 0;
+    font-size:.94rem;
+    color:var(--sg-muted);
+}
+
+/*  The workings, so a vendor with a calculator can see where the GST came
+    from. It is 10% of the subtotal, not of the site fee, and without this
+    the number looks wrong. */
+.vs-cost em{
+    display:inline-block;
+    margin-left:6px;
+    font-style:normal;
+    font-size:.8rem;
+    color:var(--sg-dim);
+    white-space:nowrap;
+}
+
+/*  tabular-nums keeps the digits the same width so the column is straight
+    even with different amounts in it. */
+.vs-cost-amt{
+    font-variant-numeric:tabular-nums;
+    font-feature-settings:"tnum";
+    color:#fff;
+    white-space:nowrap;
+}
+
+.vs-cost.is-subtotal{
+    margin-top:4px;
+    padding-top:12px;
+    border-top:1px solid rgba(255,255,255,.07);
+    color:#fff;
 }
 
 /* Two options rather than four, so give them room */

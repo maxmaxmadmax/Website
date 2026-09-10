@@ -795,7 +795,13 @@ exports.createCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request
           unit_amount: money.gstCents,
           product_data: {
             name: 'GST (10%)',
-            description: 'Goods and services tax',
+            /*  Say what it is 10% OF. Stripe shows the three lines but no
+                subtotal, so on its own $5.30 is neither a tenth of the
+                $50 site nor of the $58.29 total, and it reads like an
+                error to anybody who checks it. */
+            description: 'Goods and services tax - 10% of '
+              + `$${((money.siteCents + money.bookingFeeCents) / 100).toFixed(2)}`
+              + ' (site fee plus booking fee)',
           },
         },
       },
