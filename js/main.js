@@ -29,7 +29,27 @@ document.addEventListener('DOMContentLoaded', function () {
     loadComponent('footer', '/components/footer.html');
     initScrapbookAnimation();
     initTicketBar();
+    initEnquiryPrefill();
 });
+
+/* Carries an artist's name from the entertainment page into the contact
+   form, so "Enquire about Cat 5" arrives as an enquiry that already says
+   who it is about instead of an empty box.
+
+   Does nothing anywhere else - it needs both the ?about= parameter and a
+   contact form on the page to do anything at all. */
+function initEnquiryPrefill() {
+    var form = document.querySelector('.contact-form');
+    if (!form) return;
+
+    var about = new URLSearchParams(window.location.search).get('about');
+    if (!about) return;
+
+    var message = form.querySelector('[name="message"]');
+    if (!message || message.value.trim() !== '') return;
+
+    message.value = 'I would like to enquire about booking ' + about + '.';
+}
 
 /* Publishes the real height of the menu as --sg-nav-height.
 

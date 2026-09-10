@@ -1,0 +1,718 @@
+/* ==========================================================================
+   SOUNDZGOOD ENTERTAINMENT - page specific styles
+
+   Loaded after style.css, so the fonts, colours and buttons all come from
+   there. Everything below is scoped to #sg-ent-page, so nothing here can
+   leak onto another page even where a class name is generic.
+
+   WHAT IS IN HERE
+     ACT TYPE BAR
+     BANDS - RECOMMEND AND PRODUCTION
+     FILTERS
+     HERO
+     PANEL
+     SECTION HEAD
+     TALENT CARDS
+     MOBILE
+
+   Sections run alphabetically. MOBILE is pinned last because it overrides
+   everything above it.
+   ========================================================================== */
+
+#sg-ent-page{
+    /*  One accent for the whole page, so a rebrand is a single line. */
+    --ent-line:#242424;
+    --ent-card:#141414;
+}
+
+/*  Images are named by the markup as --ent-img and used as a background,
+    never as an <img>. A path that turns out to be missing then leaves the
+    gradient underneath showing rather than drawing a broken image icon. */
+#sg-ent-page .sr-only{
+    position:absolute;
+    width:1px; height:1px;
+    margin:-1px; padding:0;
+    overflow:hidden;
+    clip:rect(0 0 0 0);
+    white-space:nowrap;
+}
+
+
+/* --------------------------------------------------------------------------
+   ACT TYPE BAR
+   -------------------------------------------------------------------------- */
+#sg-ent-page .ent-types{
+    display:grid;
+    grid-auto-flow:column;
+    grid-auto-columns:1fr;
+
+    background:#0c0c0c;
+    border-top:1px solid var(--ent-line);
+    border-bottom:1px solid var(--ent-line);
+    overflow-x:auto;
+}
+
+#sg-ent-page .ent-type{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+
+    min-width:120px;
+    padding:20px 12px;
+
+    background:none;
+    border:0;
+    border-right:1px solid var(--ent-line);
+    border-top:2px solid transparent;
+    border-bottom:2px solid transparent;
+
+    color:var(--sg-dim);
+    font-family:var(--sg-font-accent);
+    font-size:.7rem;
+    font-weight:bold;
+    letter-spacing:1.6px;
+    text-transform:uppercase;
+    text-align:center;
+    cursor:pointer;
+    transition:color .2s, background .2s;
+}
+
+#sg-ent-page .ent-type:last-child{ border-right:0; }
+
+#sg-ent-page .ent-type svg{
+    width:26px;
+    height:26px;
+    fill:currentColor;
+}
+
+#sg-ent-page .ent-type:hover{
+    color:#fff;
+    background:rgba(255,255,255,.03);
+}
+
+/*  The chosen one gets a rule top and bottom rather than a fill, so the bar
+    still reads as one strip rather than a row of buttons.               */
+#sg-ent-page .ent-type.is-on{
+    color:var(--sg-gold);
+    background:rgba(255,183,0,.06);
+    border-top-color:var(--sg-gold);
+    border-bottom-color:var(--sg-gold);
+}
+
+
+/* --------------------------------------------------------------------------
+   BANDS - RECOMMEND AND PRODUCTION
+   -------------------------------------------------------------------------- */
+#sg-ent-page .ent-band{
+    position:relative;
+    overflow:hidden;
+    padding:56px 6%;
+    border-top:1px solid var(--ent-line);
+}
+
+#sg-ent-page .ent-band-media{
+    position:absolute;
+    inset:0;
+    background:
+        linear-gradient(90deg, rgba(6,6,6,.96) 30%, rgba(6,6,6,.55) 100%),
+        var(--ent-img, linear-gradient(120deg, #2a1201, #0a0a0a 70%));
+    background-size:cover;
+    background-position:center;
+}
+
+#sg-ent-page .ent-recommend .ent-band-media{
+    --ent-img:url('images/entertainment/recommend.webp');
+}
+
+#sg-ent-page .ent-production .ent-band-media{
+    --ent-img:url('images/entertainment/production.webp');
+}
+
+#sg-ent-page .ent-band-inner{
+    position:relative;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:32px;
+    max-width:var(--sg-max-width);
+    margin:auto;
+}
+
+#sg-ent-page .ent-band-copy{
+    flex:1 1 340px;
+    max-width:520px;
+}
+
+#sg-ent-page .ent-band-copy h2{
+    text-align:left;
+    font-size:clamp(1.5rem, 3.4vw, 2.1rem);
+    text-transform:uppercase;
+    margin-bottom:12px;
+}
+
+#sg-ent-page .ent-band-copy p{
+    color:var(--sg-muted);
+    margin-bottom:22px;
+    max-width:44ch;
+}
+
+/*  The six occasions. A strip of equal cells with hairlines between them,
+    which is why they are a grid and not a flex row - flex would give the
+    long labels more room than the short ones and the rules would wander. */
+#sg-ent-page .ent-occasions{
+    display:grid;
+    grid-template-columns:repeat(6, minmax(96px, 1fr));
+    list-style:none;
+    margin:0;
+
+    background:rgba(10,10,10,.72);
+    border:1px solid var(--ent-line);
+    border-radius:12px;
+    overflow:hidden;
+}
+
+#sg-ent-page .ent-occasions li{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+
+    padding:20px 10px;
+    border-right:1px solid var(--ent-line);
+
+    color:var(--sg-muted);
+    font-family:var(--sg-font-accent);
+    font-size:.66rem;
+    font-weight:bold;
+    letter-spacing:1.4px;
+    text-transform:uppercase;
+    text-align:center;
+}
+
+#sg-ent-page .ent-occasions li:last-child{ border-right:0; }
+
+#sg-ent-page .ent-occasions svg{
+    width:24px;
+    height:24px;
+    fill:currentColor;
+    color:var(--sg-gold);
+}
+
+#sg-ent-page .ent-pillars{
+    list-style:none;
+    margin:0;
+    text-align:right;
+
+    font-family:var(--sg-font-accent);
+    font-size:.72rem;
+    font-weight:bold;
+    letter-spacing:2.4px;
+    text-transform:uppercase;
+    color:var(--sg-muted);
+    line-height:2.1;
+}
+
+
+/* --------------------------------------------------------------------------
+   FILTERS
+   -------------------------------------------------------------------------- */
+#sg-ent-page .ent-filters{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:28px;
+}
+
+#sg-ent-page .ent-select select,
+#sg-ent-page .ent-search input{
+    width:100%;
+    padding:12px 14px;
+    background:#101010;
+    border:1px solid var(--ent-line);
+    border-radius:10px;
+    color:#fff;
+    font-family:var(--sg-font);
+    font-size:.9rem;
+}
+
+#sg-ent-page .ent-select{ flex:0 1 190px; }
+
+#sg-ent-page .ent-select select{
+    cursor:pointer;
+    appearance:none;
+    /* the chevron, drawn rather than loaded */
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--sg-dim) 50%),
+        linear-gradient(135deg, var(--sg-dim) 50%, transparent 50%);
+    background-position:
+        calc(100% - 18px) calc(50% + 1px),
+        calc(100% - 13px) calc(50% + 1px);
+    background-size:5px 5px, 5px 5px;
+    background-repeat:no-repeat;
+    padding-right:36px;
+}
+
+#sg-ent-page .ent-search{
+    position:relative;
+    flex:1 1 260px;
+    display:flex;
+    align-items:center;
+}
+
+#sg-ent-page .ent-search svg{
+    position:absolute;
+    left:14px;
+    width:17px;
+    height:17px;
+    color:var(--sg-dim);
+    pointer-events:none;
+}
+
+#sg-ent-page .ent-search input{ padding-left:40px; }
+
+#sg-ent-page .ent-select select:focus,
+#sg-ent-page .ent-search input:focus{
+    outline:none;
+    border-color:var(--sg-orange);
+}
+
+
+/* --------------------------------------------------------------------------
+   HERO
+   -------------------------------------------------------------------------- */
+#sg-ent-page .ent-hero{
+    position:relative;
+    overflow:hidden;
+    min-height:min(58vh, 460px);
+    display:flex;
+    align-items:center;
+}
+
+#sg-ent-page .ent-hero-media{
+    position:absolute;
+    inset:0;
+    background:
+        linear-gradient(90deg, rgba(5,5,5,.94) 26%, rgba(5,5,5,.35) 78%),
+        var(--ent-img, linear-gradient(120deg, #3a1a02, #0a0a0a 72%));
+    background-size:cover;
+    background-position:center;
+    --ent-img:url('images/entertainment/hero.webp');
+}
+
+#sg-ent-page .ent-hero-inner{
+    position:relative;
+    width:100%;
+    max-width:var(--sg-max-width);
+    margin:auto;
+    padding:64px 6%;
+}
+
+#sg-ent-page .ent-hero h1{
+    font-family:var(--sg-font-display);
+    font-size:clamp(2.1rem, 6vw, 4.2rem);
+    line-height:.98;
+    letter-spacing:-1.5px;
+    text-transform:uppercase;
+    margin-bottom:22px;
+}
+
+#sg-ent-page .ent-hero-types{
+    font-family:var(--sg-font-accent);
+    font-size:clamp(.7rem, 1.6vw, .84rem);
+    font-weight:bold;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:#fff;
+    margin-bottom:6px;
+}
+
+#sg-ent-page .ent-hero-kicker{
+    font-family:var(--sg-font-accent);
+    font-size:clamp(.66rem, 1.5vw, .78rem);
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--sg-muted);
+    margin-bottom:28px;
+}
+
+/*  The handwritten line in the corner. Decorative, so it is aria-hidden in
+    the markup and simply disappears when there is no room for it.      */
+#sg-ent-page .ent-hero-script{
+    position:absolute;
+    right:5%;
+    bottom:12%;
+    margin:0;
+    font-family:var(--sg-font-script);
+    font-size:clamp(1.3rem, 2.6vw, 2.1rem);
+    line-height:1.25;
+    text-align:center;
+    color:#fff;
+    opacity:.92;
+    pointer-events:none;
+}
+
+#sg-ent-page .ent-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+}
+
+
+/* --------------------------------------------------------------------------
+   PANEL
+   -------------------------------------------------------------------------- */
+#sg-ent-page .ent-panel{
+    width:min(560px, 92vw);
+    padding:0;
+    border:1px solid var(--ent-line);
+    border-radius:16px;
+    background:var(--ent-card);
+    color:#fff;
+    overflow:hidden;
+}
+
+#sg-ent-page .ent-panel::backdrop{
+    background:rgba(0,0,0,.72);
+}
+
+#sg-ent-page .ent-panel-close{
+    position:absolute;
+    top:12px;
+    right:12px;
+    z-index:2;
+
+    width:34px;
+    height:34px;
+    display:grid;
+    place-items:center;
+
+    background:rgba(0,0,0,.55);
+    border:1px solid var(--ent-line);
+    border-radius:50%;
+    color:#fff;
+    font-size:1.3rem;
+    line-height:1;
+    cursor:pointer;
+}
+
+#sg-ent-page .ent-panel-close:hover{ border-color:var(--sg-orange); color:var(--sg-orange); }
+
+#sg-ent-page .ent-panel-media{
+    height:190px;
+    background:
+        linear-gradient(to top, rgba(10,10,10,.9), rgba(10,10,10,.3)),
+        var(--ent-img, linear-gradient(140deg, #2a1201, #0a0a0a 70%));
+    background-size:cover;
+    background-position:center;
+    display:grid;
+    place-items:center;
+}
+
+#sg-ent-page .ent-panel-body{ padding:22px; }
+
+#sg-ent-page .ent-panel-body h3{
+    font-family:var(--sg-font-display);
+    font-size:1.5rem;
+    text-transform:uppercase;
+    letter-spacing:-.5px;
+    margin:10px 0 18px;
+}
+
+#sg-ent-page .ent-panel-body h4{
+    font-family:var(--sg-font-accent);
+    font-size:.68rem;
+    font-weight:bold;
+    letter-spacing:1.6px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+    margin-bottom:5px;
+}
+
+#sg-ent-page .ent-panel-body p{
+    color:var(--sg-muted);
+    margin-bottom:16px;
+}
+
+
+/* --------------------------------------------------------------------------
+   SECTION HEAD
+   -------------------------------------------------------------------------- */
+#sg-ent-page .ent-section{
+    max-width:var(--sg-max-width);
+    margin:auto;
+    padding:56px 6%;
+}
+
+#sg-ent-page .ent-head{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:14px 24px;
+    margin-bottom:26px;
+}
+
+#sg-ent-page .ent-head h2{
+    text-align:left;
+    margin:0;
+    font-size:clamp(1.7rem, 4vw, 2.6rem);
+    text-transform:uppercase;
+}
+
+#sg-ent-page .ent-head-rule{
+    flex:0 1 90px;
+    height:1px;
+    background:var(--sg-dim);
+    opacity:.5;
+}
+
+#sg-ent-page .ent-head-blurb{
+    flex:1 1 320px;
+    margin:0;
+    color:var(--sg-muted);
+    font-family:var(--sg-font-accent);
+    font-size:.72rem;
+    letter-spacing:1.2px;
+    text-transform:uppercase;
+    line-height:1.9;
+}
+
+#sg-ent-page .ent-pager{
+    display:flex;
+    gap:8px;
+    margin-left:auto;
+}
+
+#sg-ent-page .ent-arrow{
+    width:38px;
+    height:38px;
+    display:grid;
+    place-items:center;
+
+    background:none;
+    border:1px solid var(--ent-line);
+    border-radius:50%;
+    color:#fff;
+    font-size:1.2rem;
+    line-height:1;
+    cursor:pointer;
+    transition:border-color .2s, color .2s, opacity .2s;
+}
+
+#sg-ent-page .ent-arrow:hover:not(:disabled){
+    border-color:var(--sg-orange);
+    color:var(--sg-orange);
+}
+
+#sg-ent-page .ent-arrow:disabled{
+    opacity:.35;
+    cursor:default;
+}
+
+#sg-ent-page .ent-count{
+    margin-top:20px;
+    color:var(--sg-dim);
+    font-size:.82rem;
+}
+
+#sg-ent-page .ent-empty{
+    padding:38px 20px;
+    text-align:center;
+    color:var(--sg-muted);
+    background:#101010;
+    border:1px solid var(--ent-line);
+    border-radius:14px;
+}
+
+#sg-ent-page .ent-empty a{ color:var(--sg-orange); }
+
+
+/* --------------------------------------------------------------------------
+   TALENT CARDS
+   -------------------------------------------------------------------------- */
+#sg-ent-page .ent-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(230px, 1fr));
+    gap:18px;
+}
+
+#sg-ent-page .ent-card{
+    display:flex;
+    flex-direction:column;
+    background:var(--ent-card);
+    border:1px solid var(--ent-line);
+    border-radius:14px;
+    overflow:hidden;
+    transition:border-color .25s, transform .25s;
+}
+
+#sg-ent-page .ent-card:hover{
+    border-color:#3a3a3a;
+    transform:translateY(-3px);
+}
+
+#sg-ent-page .ent-card-media{
+    position:relative;
+    height:170px;
+    display:grid;
+    place-items:center;
+
+    background:
+        var(--ent-img, none),
+        linear-gradient(140deg, #2b1a3d, #0d0d0d 72%);
+    background-size:cover;
+    background-position:center;
+}
+
+/*  The glyph is the stand-in for a photo that is not there yet. Once one
+    loads it sits behind it, so it is dimmed rather than hidden - which
+    also means a dark photo still has something in the middle of it.   */
+#sg-ent-page .ent-card-glyph{
+    width:46px;
+    height:46px;
+    fill:#fff;
+    opacity:.16;
+}
+
+#sg-ent-page .ent-badge{
+    position:absolute;
+    left:10px;
+    bottom:10px;
+
+    padding:5px 10px;
+    border-radius:6px;
+    background:var(--sg-gold);
+    color:#140800;
+
+    font-family:var(--sg-font-accent);
+    font-size:.62rem;
+    font-weight:bold;
+    letter-spacing:1.2px;
+    text-transform:uppercase;
+}
+
+#sg-ent-page .ent-card-body{
+    display:flex;
+    flex-direction:column;
+    flex:1;
+    padding:16px;
+}
+
+#sg-ent-page .ent-card-body h3{
+    font-family:var(--sg-font-display);
+    font-size:1.1rem;
+    letter-spacing:-.4px;
+    text-transform:uppercase;
+    margin-bottom:8px;
+}
+
+#sg-ent-page .ent-card-genres{
+    margin:0 0 12px;
+    color:var(--sg-gold);
+    font-family:var(--sg-font-accent);
+    font-size:.68rem;
+    font-weight:bold;
+    letter-spacing:1.2px;
+    text-transform:uppercase;
+}
+
+#sg-ent-page .ent-card-genres i{ font-style:normal; opacity:.6; }
+
+#sg-ent-page .ent-card-events{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:6px 8px;
+    margin:0 0 16px;
+    color:var(--sg-muted);
+    font-size:.8rem;
+}
+
+#sg-ent-page .ent-card-events svg{
+    width:20px;
+    height:20px;
+    flex:0 0 auto;
+    fill:currentColor;
+    opacity:.75;
+}
+
+#sg-ent-page .ent-view{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    width:100%;
+    margin-top:auto;
+    padding:11px 14px;
+
+    background:#1c1c1c;
+    border:1px solid var(--ent-line);
+    border-radius:9px;
+    color:#fff;
+
+    font-family:var(--sg-font-accent);
+    font-size:.68rem;
+    font-weight:bold;
+    letter-spacing:1.4px;
+    text-transform:uppercase;
+    cursor:pointer;
+    transition:background .2s, border-color .2s, color .2s;
+}
+
+#sg-ent-page .ent-view:hover{
+    background:var(--sg-orange);
+    border-color:var(--sg-orange);
+    color:#140800;
+}
+
+
+/* --------------------------------------------------------------------------
+   MOBILE
+   -------------------------------------------------------------------------- */
+@media (max-width:900px){
+    /*  The bar stops trying to fit seven cells across and scrolls sideways
+        instead, which is readable where seven squeezed cells are not. */
+    #sg-ent-page .ent-types{
+        grid-auto-columns:minmax(108px, auto);
+        justify-content:start;
+    }
+
+    #sg-ent-page .ent-occasions{
+        grid-template-columns:repeat(3, 1fr);
+    }
+
+    /*  With three per row the right-hand rule of the third cell sits on the
+        edge of the box and reads as a stray line. */
+    #sg-ent-page .ent-occasions li:nth-child(3n){ border-right:0; }
+
+    #sg-ent-page .ent-pillars{ text-align:left; }
+}
+
+@media (max-width:768px){
+    #sg-ent-page .ent-hero-script{ display:none; }
+
+    #sg-ent-page .ent-hero-inner,
+    #sg-ent-page .ent-section,
+    #sg-ent-page .ent-band{ padding-left:5%; padding-right:5%; }
+
+    #sg-ent-page .ent-section,
+    #sg-ent-page .ent-band{ padding-top:40px; padding-bottom:40px; }
+
+    #sg-ent-page .ent-grid{
+        grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));
+        gap:12px;
+    }
+
+    #sg-ent-page .ent-card-media{ height:130px; }
+
+    #sg-ent-page .ent-select{ flex:1 1 140px; }
+
+    #sg-ent-page .ent-pager{ margin-left:0; }
+}
+
+@media (prefers-reduced-motion:reduce){
+    #sg-ent-page .ent-card:hover{ transform:none; }
+}

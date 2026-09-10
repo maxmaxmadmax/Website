@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>SoundzGood Entertainment | DJs, Bands &amp; Live Music North Queensland</title>
+  <meta name="description" content="Book DJs, solo artists, duos, bands, MCs and kids entertainment through SoundzGood Entertainment. Local talent for weddings, festivals, pubs, clubs and corporate events across Bowen, the Whitsundays and North Queensland.">
+
+  <!-- Facebook / Messenger sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="SoundzGood Whitsundays">
+  <meta property="og:title" content="SoundzGood Entertainment | DJs, Bands &amp; Live Music">
+  <meta property="og:description" content="A curated line up of DJs, musicians, bands and performers ready to bring your event to life.">
+  <meta property="og:url" content="https://www.soundzgood.com.au/entertainment">
+  <meta property="og:image" content="https://www.soundzgood.com.au/images/og-soundzgood.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="SoundzGood Whitsundays">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" href="images/logo.png">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="entertainment.css">
+  <script src="js/main.js" defer></script>
+  <script src="js/entertainment.js" defer></script>
+</head>
+
+<body>
+
+<div id="navbar"></div>
+
+<!-- ==========================================================================
+     SOUNDZGOOD ENTERTAINMENT
+
+     Everything below the shared menu lives inside #sg-ent-page. Every rule in
+     entertainment.css and every listener in js/entertainment.js is scoped to
+     that id, so nothing here can reach another page.
+
+     THE ROSTER
+     The talent is not written out below - it lives in one array at the top of
+     js/entertainment.js and the cards are built from it. Adding an act is one
+     object in that list; the filters, the search and the counts all pick it
+     up on their own.
+
+     ARTIST PHOTOGRAPHY
+     Each act names its own picture in that same list:
+
+         photo: 'images/talent/jake-smith.webp'
+
+     Drop a file at that path and the card uses it. Until then the card shows
+     its own gradient and the act-type glyph, so a roster with no photos yet
+     still looks finished rather than broken. Portrait-ish, about 900px wide,
+     is plenty.
+     ========================================================================== -->
+<main id="sg-ent-page">
+
+  <!-- HERO ------------------------------------------------------------- -->
+  <header class="ent-hero">
+    <div class="ent-hero-media" aria-hidden="true"></div>
+
+    <div class="ent-hero-inner">
+      <h1>Entertainment<br>for every<br>occasion.</h1>
+
+      <p class="ent-hero-types" id="ent-hero-types"></p>
+      <p class="ent-hero-kicker">Local talent. Unforgettable events.</p>
+
+      <div class="ent-hero-actions">
+        <a class="btn ent-btn" href="#ent-talent">Browse the Talent <span aria-hidden="true">&#8594;</span></a>
+      </div>
+    </div>
+
+    <p class="ent-hero-script" aria-hidden="true">Good Music<br>Brings People<br>Together</p>
+  </header>
+
+  <!--  ACT TYPE BAR
+
+        Built by js/entertainment.js from the roster, so a tab only appears
+        for an act type that actually has somebody in it. Add a kids act and
+        the Kids Entertainment tab turns up on its own; take the last band
+        away and that tab goes.
+
+        It sets the same act-type filter the dropdown below does, and the two
+        are kept in step by the script - two controls that disagreed about
+        what was being shown would be worse than either on its own.
+
+        A div and not a <nav>. style.css styles the bare nav element for the
+        site menu - position:absolute, full width, its own padding and z-index
+        - and a second <nav> on the page picks all of that up and lands on top
+        of the hero. These are filter controls rather than navigation, so a
+        group is the more honest element anyway.                          -->
+  <div class="ent-types" id="ent-types" role="group" aria-label="Filter by act type"></div>
+
+  <!-- THE ROSTER ------------------------------------------------------- -->
+  <section class="ent-section" id="ent-talent">
+
+    <div class="ent-head">
+      <h2>Meet the Talent</h2>
+      <span class="ent-head-rule" aria-hidden="true"></span>
+
+      <p class="ent-head-blurb">
+        A curated line up of DJs, musicians, bands and performers ready to
+        bring your event to life.<br>
+        Filter by category or event type to find the perfect fit.
+      </p>
+
+      <div class="ent-pager">
+        <button type="button" class="ent-arrow" id="ent-prev" aria-label="Previous page of talent">
+          <span aria-hidden="true">&#8249;</span>
+        </button>
+        <button type="button" class="ent-arrow" id="ent-next" aria-label="Next page of talent">
+          <span aria-hidden="true">&#8250;</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="ent-filters">
+      <label class="ent-select">
+        <span class="sr-only">Act type</span>
+        <select id="ent-filter-act"><option value="all">All Act Types</option></select>
+      </label>
+
+      <label class="ent-select">
+        <span class="sr-only">Genre</span>
+        <select id="ent-filter-genre"><option value="all">All Genres</option></select>
+      </label>
+
+      <label class="ent-select">
+        <span class="sr-only">Event type</span>
+        <select id="ent-filter-event"><option value="all">All Event Types</option></select>
+      </label>
+
+      <label class="ent-search">
+        <span class="sr-only">Search artists</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16 16 4.5 4.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        <input type="search" id="ent-search" placeholder="Search artists..." autocomplete="off">
+      </label>
+    </div>
+
+    <!-- Built by js/entertainment.js from the roster -->
+    <div class="ent-grid" id="ent-grid"></div>
+
+    <p class="ent-empty" id="ent-empty" hidden>
+      Nothing matches that. Try clearing a filter, or
+      <a href="#ent-recommend">ask us for a recommendation</a>.
+    </p>
+
+    <p class="ent-count" id="ent-count" aria-live="polite"></p>
+  </section>
+
+  <!-- RECOMMENDATION BAND ---------------------------------------------- -->
+  <section class="ent-band ent-recommend" id="ent-recommend">
+    <div class="ent-band-media" aria-hidden="true"></div>
+
+    <div class="ent-band-inner">
+      <div class="ent-band-copy">
+        <h2>Find the right talent for your event</h2>
+        <p>
+          Not sure who to book? Tell us a few details and we'll recommend the
+          best DJs, musicians or performers for your event, style and budget.
+        </p>
+        <a class="btn ent-btn" href="/contact">Get a Recommendation <span aria-hidden="true">&#8594;</span></a>
+      </div>
+
+      <ul class="ent-occasions">
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="14" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="m9 5 3 4 3-4z"/></svg>
+          Weddings
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3v7a4 4 0 008 0V3z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 14v7M8 21h8" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          Corporate Events
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 17h18z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4v13" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          Festivals
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16l-8 8z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 12v8M8 20h8" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          Pubs &amp; Clubs
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 19c0-3.3 2.7-5 6-5s6 1.7 6 5z"/><path d="M14.5 19c0-2.4 1.4-4 3.5-4s3.5 1.6 3.5 4z"/></svg>
+          Private Parties
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          Community Events
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- PRODUCTION BAND -------------------------------------------------- -->
+  <section class="ent-band ent-production">
+    <div class="ent-band-media" aria-hidden="true"></div>
+
+    <div class="ent-band-inner">
+      <div class="ent-band-copy">
+        <h2>Need production too?</h2>
+        <p>
+          SoundzGood can provide the full package &mdash; artists, sound,
+          lighting, staging and event production.
+        </p>
+        <a class="btn ent-btn" href="/services">Learn More <span aria-hidden="true">&#8594;</span></a>
+      </div>
+
+      <ul class="ent-pillars">
+        <li>Events</li>
+        <li>People</li>
+        <li>Production</li>
+        <li>Community</li>
+      </ul>
+    </div>
+  </section>
+
+  <!--  ARTIST PANEL
+
+        Opened by "View profile" on a card. A native <dialog>, so Escape and
+        the backdrop close it without a line of script, and focus is trapped
+        for free.                                                          -->
+  <dialog class="ent-panel" id="ent-panel" aria-label="Artist details">
+    <button type="button" class="ent-panel-close" id="ent-panel-close" aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+    <div id="ent-panel-body"></div>
+  </dialog>
+
+</main>
+
+<div id="footer"></div>
+
+</body>
+</html>

@@ -30,7 +30,21 @@
             </ul>
         </li>
 
-        <li><a href="/services">Hire Us</a></li>
+        <!--  Hire Us carries a submenu the same way Events does. js/main.js
+              loops over every .has-sub, so a second one needs no script
+              changes - only the markup below.                          -->
+        <li class="has-sub">
+            <a href="/services">Hire Us</a>
+
+            <button type="button" class="sub-toggle"
+                    aria-expanded="false" aria-label="Show more under Hire Us">
+                <span aria-hidden="true">&#9662;</span>
+            </button>
+
+            <ul class="subnav">
+                <li><a href="/entertainment">SoundzGood Entertainment</a></li>
+            </ul>
+        </li>
         <li><a href="/contact">Contact</a></li>
         <!--  The class is here so the whole item can be hidden on a phone,
               not just the link inside it. Hiding only the link left an
