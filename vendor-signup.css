@@ -544,6 +544,29 @@
     color:var(--sg-dim);
 }
 
+/*  The headline price is the site only, so say so right underneath it
+    rather than letting the fee turn up as a surprise at the payment page. */
+.vs-type-fees{
+    display:block;
+    font-size:.78rem;
+    color:var(--sg-dim);
+    margin:-2px 0 6px;
+}
+
+/*  The cost breakdown above the total: quieter than the summary rows, so
+    the eye still lands on the total underneath. */
+.vs-costs{
+    margin-top:14px;
+    padding-top:6px;
+    border-top:1px solid rgba(255,255,255,.08);
+}
+
+.vs-costs dt,
+.vs-costs dd{
+    font-size:.9rem;
+    opacity:.85;
+}
+
 /* Two options rather than four, so give them room */
 .vs-type-grid.is-two{
     grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));

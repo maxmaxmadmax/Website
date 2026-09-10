@@ -978,7 +978,11 @@ function detailPanel() {
 
         <h3 class="ad-drawer-h">Money</h3>
         <dl class="ad-kvs">
-          ${row('Fee', esc(money(b.amountCents)))}
+          ${row('Site fee', esc(money(b.amountCents)))}
+          ${b.bookingFeeCents != null ? row('Booking fee', esc(money(b.bookingFeeCents))) : ''}
+          ${b.gstCents != null ? row('GST', esc(money(b.gstCents))) : ''}
+          ${row('Total', `<strong>${esc(money(
+            b.totalCents != null ? b.totalCents : b.amountCents))}</strong>`)}
           ${row('Paid', esc(money(b.amountPaidCents)))}
           ${row('Reference', esc(b.reference || '—'))}
         </dl>

@@ -47,8 +47,45 @@ function priceCents() {
   return 0;
 }
 
+/*  WHAT THEY ACTUALLY PAY - shown before they commit to anything.
+
+    Mirrors feeBreakdown() in functions/index.js. That one decides the
+    charge; this one only decides what the page says. If the two ever
+    disagree the vendor is quoted wrong, which is bad enough on its own,
+    so keep them in step.
+
+        fee   = 4% of the site price, plus 99c
+        GST   = 10% of (site + fee)
+
+    A free site stays free - no fee, no GST. */
+const FEE_PERCENT = 0.04;
+const FEE_FIXED_CENTS = 99;
+const GST_RATE = 0.10;
+
+function feeBreakdown(siteCents) {
+  const site = Math.max(0, Math.round(Number(siteCents) || 0));
+  if (site === 0) {
+    return { siteCents: 0, bookingFeeCents: 0, gstCents: 0, totalCents: 0 };
+  }
+
+  const bookingFeeCents = Math.round(site * FEE_PERCENT) + FEE_FIXED_CENTS;
+  const gstCents = Math.round((site + bookingFeeCents) * GST_RATE);
+
+  return {
+    siteCents: site,
+    bookingFeeCents,
+    gstCents,
+    totalCents: site + bookingFeeCents + gstCents,
+  };
+}
+
+/*  Whole dollars where it is round, cents where it is not - $100 rather
+    than $100.00, but $115.49 rather than $115. */
 function money(cents) {
-  return cents === 0 ? 'Free' : `$${(cents / 100).toFixed(0)}`;
+  if (cents === 0) return 'Free';
+  return cents % 100 === 0
+    ? `$${(cents / 100).toFixed(0)}`
+    : `$${(cents / 100).toFixed(2)}`;
 }
 
 function vendorLabel() {
@@ -906,14 +943,18 @@ function renderSiteChoice() {
   const heldIds = state.siteIds.join(',');
   const sameAsHeld = held && chosen.map((s) => s.id).join(',') === heldIds;
 
+  /*  Site fee here, not the total. This line is about comparing one site
+      against another while they are picking, and the fee and GST are the
+      same whichever they choose - the review step spells the whole lot
+      out before they pay. */
   if (sameAsHeld) {
-    out.textContent = `Held for you: site ${state.siteLabel} · ${money(priceCents())}`;
+    out.textContent = `Held for you: site ${state.siteLabel} · ${money(priceCents())} site fee`;
   } else if (chosen.length) {
     const n = chosen.length;
     const size = state.vendorType === 'market'
       ? ` (${n} bay${n > 1 ? 's' : ''} · ${n * 3} m x 3 m)`
       : ' (6 m x 3 m)';
-    out.textContent = `Picked: ${pendingLabel()}${size} · ${money(pendingPriceCents())}`;
+    out.textContent = `Picked: ${pendingLabel()}${size} · ${money(pendingPriceCents())} site fee`;
   } else if (held) {
     out.textContent = `Held for you: site ${state.siteLabel}`;
   } else {
@@ -967,6 +1008,12 @@ function renderReview() {
     ['Site', state.siteLabel || 'Not chosen']
   );
 
+  /*  The breakdown is spelled out here rather than only at Stripe. A
+      vendor should never meet a number on the payment page they have not
+      already seen, and a business claiming the GST back needs to see it
+      on its own. */
+  const b = feeBreakdown(cents);
+
   host.innerHTML = `
     <dl class="vs-summary-list">
       ${rows.map(([k, v]) => `
@@ -974,15 +1021,24 @@ function renderReview() {
       `).join('')}
     </dl>
 
+    ${b.totalCents ? `
+      <dl class="vs-summary-list vs-costs">
+        <div><dt>Site fee</dt><dd>${money(b.siteCents)}</dd></div>
+        <div><dt>Booking fee (4% + $0.99)</dt><dd>${money(b.bookingFeeCents)}</dd></div>
+        <div><dt>GST (10%)</dt><dd>${money(b.gstCents)}</dd></div>
+      </dl>` : ''}
+
     <div class="vs-total">
-      <span>Total</span>
-      <strong>${money(cents)}${cents ? ' AUD' : ''}</strong>
+      <span>Total${b.totalCents ? ' to pay' : ''}</span>
+      <strong>${money(b.totalCents)}${b.totalCents ? ' AUD' : ''}</strong>
     </div>
   `;
 
   const payBtn = document.getElementById('vs-pay');
   if (payBtn) {
-    payBtn.textContent = cents === 0 ? 'Confirm Booking' : `Pay ${money(cents)} and Book`;
+    payBtn.textContent = b.totalCents === 0
+      ? 'Confirm Booking'
+      : `Pay ${money(b.totalCents)} and Book`;
     payBtn.disabled = !state.siteLabel;
   }
 }

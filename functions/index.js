@@ -145,6 +145,60 @@ function priceFor(event, vendorType, bayCount) {
   return perBay * bayCount;
 }
 
+/* -------------------------------------------------------------------------
+   WHAT A VENDOR ACTUALLY PAYS
+
+   The site price is GST exclusive. On top of it go a booking fee, which
+   covers the card charges and the running costs of all this, and then GST
+   on the two of them together.
+
+       fee   = 4% of the site price, plus 99c a transaction
+       GST   = 10% of (site + fee)
+       total = site + fee + GST
+
+   A $100 food site therefore comes to $115.49, of which $10.50 is GST.
+
+   The percentage is taken off the site price only, never off the GST -
+   charging a percentage on top of tax is the sort of thing a vendor works
+   out with a calculator and remembers.
+
+   THIS IS THE ONLY PLACE THESE NUMBERS LIVE. The vendor page works out the
+   same figures to show people before they commit, but nothing it says is
+   trusted: the total is recomputed here when the checkout session is made,
+   so a tampered browser cannot change the price.
+
+   Defaults can be overridden per event, so a fee can change without a
+   deploy.
+   ------------------------------------------------------------------------- */
+const FEE_PERCENT = 0.04;
+const FEE_FIXED_CENTS = 99;
+const GST_RATE = 0.10;
+
+function feeBreakdown(event, siteCents) {
+  const site = Math.max(0, Math.round(Number(siteCents) || 0));
+
+  /*  A free site stays free. Charging 99c and GST on a site given away
+      would make "free" a lie and is not worth the 99c. */
+  if (site === 0) {
+    return { siteCents: 0, bookingFeeCents: 0, gstCents: 0, totalCents: 0 };
+  }
+
+  const fees = (event && event.fees) || {};
+  const pct = fees.percent != null ? Number(fees.percent) : FEE_PERCENT;
+  const fixed = fees.fixedCents != null ? Number(fees.fixedCents) : FEE_FIXED_CENTS;
+  const gstRate = fees.gstRate != null ? Number(fees.gstRate) : GST_RATE;
+
+  const bookingFeeCents = Math.round(site * pct) + fixed;
+  const gstCents = Math.round((site + bookingFeeCents) * gstRate);
+
+  return {
+    siteCents: site,
+    bookingFeeCents,
+    gstCents,
+    totalCents: site + bookingFeeCents + gstCents,
+  };
+}
+
 /* True when a site is there to be taken - free, or already held by the
    person asking, or holding an expired hold nobody has tidied up yet. */
 function siteIsFree(site, uid, now) {
@@ -435,6 +489,11 @@ exports.holdSite = onCall(async (request) => {
     const siteLabel = wanted.map((s) => s.label).join(' + ');
     const amountCents = priceFor(event, booking.vendorType, bayCount);
 
+    /*  Worked out as soon as the price is known, so the review screen, the
+        admin list and the receipt all quote the same figures. Recomputed
+        again at checkout, which is the one that decides what is charged. */
+    const money = feeBreakdown(event, amountCents);
+
     tx.update(bookingRef, {
       siteId: heldIds[0],     // first bay, kept for anything reading one id
       siteIds: heldIds,       // every bay this booking holds
@@ -442,7 +501,10 @@ exports.holdSite = onCall(async (request) => {
       siteType: wantedType,
       bayCount,               // set from the bays taken, never from the client
       categoryName,
-      amountCents,
+      amountCents,                                 // the site itself, ex GST
+      bookingFeeCents: money.bookingFeeCents,
+      gstCents: money.gstCents,
+      totalCents: money.totalCents,                // what they actually pay
       currency: event.currency || 'aud',
       holdExpiresAt: expiresAt,
       updatedAt: FieldValue.serverTimestamp(),
@@ -607,12 +669,17 @@ exports.createCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request
     return category.name;
   });
 
-  const amount = booking.amountCents ?? 0;
-
   /*  What the vendor will see on their card statement and receipt. Read off
       the event so it stays right when there is more than one. */
   const eventSnapshot = await db.collection('events').doc(booking.eventId).get();
   const eventForBooking = eventSnapshot.exists ? eventSnapshot.data() : {};
+
+  /*  Worked out again here rather than trusting what is on the booking.
+      This is the moment money is decided, and the fields on the booking
+      were last written when the site was held - possibly at a different
+      fee, and in any case not somewhere to take a number from on trust. */
+  const money = feeBreakdown(eventForBooking, booking.amountCents ?? 0);
+  const amount = money.totalCents;
 
   // ---- Nothing to pay -----------------------------------------------------
   if (amount === 0) {
@@ -666,18 +733,44 @@ exports.createCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request
       siteId: booking.siteId,
       uid,
     },
+    /*  Three lines, not one total. These vendors are businesses claiming
+        the GST back, so the receipt has to show the GST on its own to work
+        as a tax invoice - and a fee that turns up as part of one lump is
+        how you get an argument at the gate. */
     line_items: [
       {
         quantity: 1,
         price_data: {
           currency: booking.currency || 'aud',
-          unit_amount: amount,
+          unit_amount: money.siteCents,
           product_data: {
             name: `${vendorTypeLabel(booking.vendorType)} site - ${booking.siteLabel}`
               + (categoryName ? ` (${categoryName})` : ''),
             // Read off the event, not hardcoded - a second event would
             // otherwise sell sites described as the first one.
             description: eventBlurb(eventForBooking),
+          },
+        },
+      },
+      {
+        quantity: 1,
+        price_data: {
+          currency: booking.currency || 'aud',
+          unit_amount: money.bookingFeeCents,
+          product_data: {
+            name: 'Booking fee',
+            description: 'Card processing and online booking costs',
+          },
+        },
+      },
+      {
+        quantity: 1,
+        price_data: {
+          currency: booking.currency || 'aud',
+          unit_amount: money.gstCents,
+          product_data: {
+            name: 'GST (10%)',
+            description: 'Goods and services tax',
           },
         },
       },
@@ -693,6 +786,10 @@ exports.createCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request
     status: 'pending_payment',
     paymentStatus: 'unpaid',
     stripeSessionId: session.id,
+    // the figures actually sent to Stripe, so the record matches the receipt
+    bookingFeeCents: money.bookingFeeCents,
+    gstCents: money.gstCents,
+    totalCents: money.totalCents,
     updatedAt: FieldValue.serverTimestamp(),
   });
 
@@ -1392,9 +1489,15 @@ exports.adminSetPayment = onCall(async (request) => {
   const holdsSite = (booking.siteIds && booking.siteIds.length) || booking.siteId;
 
   if (settled && booking.status !== 'confirmed' && holdsSite) {
+    /*  Default to the full total - fee and GST included - because that is
+        what would have landed in the account if they paid by transfer.
+        amountCents alone would quietly under-record every offline payment
+        and leave the GST owing invisible. */
     const paid = amountPaidCents != null
       ? Number(amountPaidCents)
-      : (paymentStatus === 'free' ? 0 : booking.amountCents || 0);
+      : (paymentStatus === 'free'
+          ? 0
+          : (booking.totalCents != null ? booking.totalCents : booking.amountCents || 0));
 
     const result = await confirmBooking(bookingId, {
       paymentStatus,
@@ -1595,6 +1698,14 @@ exports.adminCreateBooking = onCall(async (request) => {
   const who = actor(request);
   const biz = d.business || {};
 
+  /*  A vendor added by hand is charged the same way as one who came
+      through the form. If they end up paying by bank transfer it is the
+      total that lands in the account, so that is what the booking says. */
+  const manualMoney = feeBreakdown(
+    eventSnap.data(),
+    priceFor(eventSnap.data(), vendorType, bayCount)
+  );
+
   const booking = {
     uid: null,
     eventId,
@@ -1616,7 +1727,10 @@ exports.adminCreateBooking = onCall(async (request) => {
     setup: {},
     documents: [],
 
-    amountCents: priceFor(eventSnap.data(), vendorType, bayCount),
+    amountCents: manualMoney.siteCents,
+    bookingFeeCents: manualMoney.bookingFeeCents,
+    gstCents: manualMoney.gstCents,
+    totalCents: manualMoney.totalCents,
     amountPaidCents: 0,
     currency: eventSnap.data().currency || 'aud',
 
