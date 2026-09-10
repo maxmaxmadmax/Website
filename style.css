@@ -1,25 +1,60 @@
 /* ==========================================================================
    SOUNDZGOOD WHITSUNDAYS - MAIN STYLESHEET
-   --------------------------------------------------------------------------
-   Sections:
-     1.  Colours & fonts (edit these to restyle the whole site)
-     2.  Base + reset
-     3.  Buttons
-     4.  Navigation
-     5.  Footer
-     6.  Generic page sections
-     7.  Home page
-     8.  Events page
-     9.  Services page
-     10. Contact page
-     11. Optional / legacy classes
+
+   Loaded by every public page. Three pages then load a second sheet of
+   their own on top of this one:
+
+       services.html       services.css
+       events.html         events.css
+       vendor-signup.html  vendor-signup.css
+
+   /admin is deliberately not one of them - it loads admin.css alone, so
+   nothing in here can reach it and nothing there can reach the site.
+
+   TO RESTYLE THE WHOLE SITE, start in TOKENS. Every colour, font and
+   measurement is a custom property there, and changing one changes it
+   everywhere it is used.
    ========================================================================== */
+
+/*  WHAT IS IN HERE
+      TOKENS
+      BASE
+      LAYOUT
+      ACTS
+      BUTTONS
+      CLOSING BANNER
+      CONTACT
+      DETAIL CARDS
+      EVENT COPY
+      EVENT FLOW
+      EVENT HERO
+      FEATURED EVENT
+      FOOTER
+      HERO
+      LINEUP
+      NAVIGATION
+      SCROLL ANIMATIONS
+      SPONSOR FEATURE
+      SPONSORS
+      STEPS
+      TICKET BAR
+      WEEKEND
+      RESPONSIVE
+
+    Sections run alphabetically, except TOKENS and BASE which have to come
+    first and RESPONSIVE which has to come last - the cascade depends on
+    those three staying where they are.
+
+    Rules inside a section are left in the order they were written. Sorting
+    those would change which rule wins when two have equal weight.        */
 
 
 /* ==========================================================================
-   1. COLOURS & FONTS
-   ========================================================================== */
+   TOKENS
 
+   Every colour, font and measurement the site uses, in one place. Change
+   a value here and it changes everywhere.
+   ========================================================================== */
 :root{
     --sg-orange:#ff6b00;
     --sg-orange-bright:#ff8c00;
@@ -54,9 +89,11 @@
 
 
 /* ==========================================================================
-   2. BASE + RESET
-   ========================================================================== */
+   BASE
 
+   The reset and the raw element styles - what an h2 or a paragraph looks
+   like before any class touches it.
+   ========================================================================== */
 *{
     margin:0;
     padding:0;
@@ -91,14 +128,8 @@ h1,h2,h3,h4,h5{
 }
 
 h1,
-
-
 h2,
-
-
 .detail-card p,
-
-
 .featured-event h2{
     font-family:var(--sg-font-display);
     letter-spacing:-.5px;
@@ -111,382 +142,11 @@ p, h1, h2, h3, h4, h5, li, a{
 
 
 /* ==========================================================================
-   3. BUTTONS
+   LAYOUT
+
+   The section wrapper, page headers and the feature and call-to-action
+   rows. The primitives most pages are built from.
    ========================================================================== */
-
-.btn{
-    display:inline-block;
-
-    background:var(--sg-orange);
-    color:#fff;
-
-    padding:16px 36px;
-    border-radius:50px;
-    border:2px solid var(--sg-orange);
-
-    font-family:var(--sg-font-accent);
-    font-weight:bold;
-    font-size:1rem;
-    letter-spacing:1px;
-    text-transform:uppercase;
-    text-decoration:none;
-    text-align:center;
-
-    /* Comfortable tap target on phones */
-    min-height:52px;
-
-    cursor:pointer;
-    transition:transform .25s, background .25s;
-}
-
-.btn:hover,
-.btn:focus-visible{
-    transform:translateY(-3px);
-}
-
-.btn-outline{
-    background:transparent;
-    color:#fff;
-    border:2px solid var(--sg-orange);
-}
-
-.btn-outline:hover,
-.btn-outline:focus-visible{
-    background:var(--sg-orange);
-}
-
-/* Extra-loud version used for the main ticket links */
-.btn-ticket{
-    background:var(--sg-orange-bright);
-    border-color:var(--sg-orange-bright);
-    font-size:1.15rem;
-    padding:18px 46px;
-    box-shadow:0 0 24px rgba(255,140,0,.45);
-}
-
-.buttons{
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    gap:18px;
-}
-
-/* Visible keyboard focus ring on every interactive element */
-a:focus-visible,
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible{
-    outline:3px solid var(--sg-gold);
-    outline-offset:3px;
-}
-
-
-/* ==========================================================================
-   4. NAVIGATION
-   Menu content lives in components/navbar.html
-   ========================================================================== */
-
-nav{
-    position:absolute;
-    top:0;
-    left:0;
-    width:100%;
-    z-index:100;
-
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:20px;
-
-    padding:20px 40px;
-
-    background:linear-gradient(
-        to bottom,
-        rgba(0,0,0,.55),
-        rgba(0,0,0,0)
-    );
-}
-
-.logo a{
-    color:#fff;
-    font-size:26px;
-    font-weight:700;
-    letter-spacing:3px;
-    text-decoration:none;
-}
-
-.Nav a{
-    display:block;
-    padding:0; /* logo shouldn't inherit the menu link padding */
-    border-bottom:none;
-}
-
-.Nav img{
-    height:45px;
-    width:auto;
-    display:block;
-}
-
-nav ul{
-    display:flex;
-    align-items:center;
-    gap:32px;
-    list-style:none;
-}
-
-nav a{
-    display:inline-block;
-    padding:10px 2px;
-
-    color:#fff;
-    font-size:.95rem;
-    letter-spacing:1px;
-    text-decoration:none;
-    text-transform:uppercase;
-
-    border-bottom:2px solid transparent;
-    transition:color .25s, border-color .25s;
-}
-
-nav a:hover{
-    color:var(--sg-gold);
-}
-
-/* Current page - set automatically by js/main.js */
-nav a.active{
-    color:var(--sg-orange);
-    border-bottom-color:var(--sg-orange);
-    font-weight:bold;
-}
-
-/* --------------------------------------------------------------------------
-   MENU SUBMENU
-
-   Events carries a dropdown. It opens on hover on a computer, on keyboard
-   focus for anyone tabbing through, and from the small arrow on a touch
-   screen, where hover does not exist.
-
-   All new rules - nothing above this is changed.
-   -------------------------------------------------------------------------- */
-nav .has-sub{
-    position:relative;
-    display:flex;
-    align-items:center;
-    gap:4px;
-}
-
-nav .sub-toggle{
-    background:none;
-    border:0;
-    padding:10px 2px;
-    color:#fff;
-    font-size:.7rem;
-    line-height:1;
-    cursor:pointer;
-    transition:color .25s, transform .25s;
-}
-
-nav .sub-toggle:hover{
-    color:var(--sg-gold);
-}
-
-nav .has-sub.is-open .sub-toggle span{
-    display:inline-block;
-    transform:rotate(180deg);
-}
-
-nav .subnav{
-    position:absolute;
-    top:100%;
-    left:0;
-    z-index:110;
-
-    display:block;
-    min-width:210px;
-    padding:8px;
-    margin:0;
-
-    background:rgba(12,12,12,.97);
-    border:1px solid var(--sg-border);
-    border-radius:12px;
-    box-shadow:0 18px 40px rgba(0,0,0,.55);
-
-    /*  Kept in the page rather than display:none, so it can fade and so
-        the links stay reachable by keyboard while it is opening.      */
-    opacity:0;
-    visibility:hidden;
-    transform:translateY(-6px);
-    transition:opacity .18s, transform .18s, visibility .18s;
-}
-
-nav .has-sub:hover .subnav,
-nav .has-sub:focus-within .subnav,
-nav .has-sub.is-open .subnav{
-    opacity:1;
-    visibility:visible;
-    transform:translateY(0);
-}
-
-nav .subnav li{
-    display:block;
-}
-
-nav .subnav a{
-    display:block;
-    padding:10px 12px;
-    border-radius:8px;
-    border-bottom:0;
-    font-size:.85rem;
-    letter-spacing:.5px;
-    white-space:nowrap;
-}
-
-nav .subnav a:hover{
-    background:rgba(255,255,255,.07);
-    color:var(--sg-gold);
-}
-
-/*  The parent is marked when the page you are on lives under it, so the
-    menu still shows where you are while the dropdown is shut.          */
-nav .has-sub.has-active > a{
-    color:var(--sg-orange);
-    border-bottom-color:var(--sg-orange);
-    font-weight:bold;
-}
-
-
-/* "Buy Tickets" pill inside the menu */
-nav a.nav-ticket{
-    background:var(--sg-orange);
-    border:2px solid var(--sg-orange);
-    border-radius:50px;
-    padding:10px 22px;
-    font-weight:bold;
-}
-
-nav a.nav-ticket:hover{
-    background:transparent;
-    color:#fff;
-}
-
-nav a.nav-ticket.active{
-    border-bottom-color:var(--sg-orange);
-}
-
-
-/*  HOME PAGE MENU
-    The hero is left clean, then the menu slides in as a fixed bar once
-    you reach the next event section. It has to be fixed rather than
-    absolute, otherwise it would sit at the top of the document and be
-    out of sight by the time it is wanted.
-    js/main.js adds and removes .is-tucked.                             */
-.home nav{
-    position:fixed;
-    background:rgba(10,10,10,.94);
-    backdrop-filter:blur(8px);
-    border-bottom:1px solid var(--sg-border);
-    transition:opacity .35s ease, transform .4s ease, visibility .4s;
-}
-
-.home nav.is-tucked{
-    opacity:0;
-    visibility:hidden;
-    transform:translateY(-105%);
-    pointer-events:none;
-}
-
-/* The sponsors are event sponsors, so they stay on the event page */
-.home .footer-sponsors{
-    display:none;
-}
-
-
-/* ==========================================================================
-   5. FOOTER
-   Footer content lives in components/footer.html
-   ========================================================================== */
-
-.footer{
-    background:#0a0a0a;
-    border-top:1px solid var(--sg-border);
-}
-
-.footer-content{
-    max-width:var(--sg-max-width);
-    margin:auto;
-    padding:60px 6%;
-
-    display:grid;
-    grid-template-columns:2fr 1fr 1fr;
-    gap:50px;
-}
-
-.footer-logo h2{
-    color:var(--sg-orange);
-    margin-bottom:15px;
-    letter-spacing:2px;
-}
-
-.footer-logo p{
-    color:var(--sg-dim);
-}
-
-.footer-links,
-.footer-contact{
-    display:flex;
-    flex-direction:column;
-}
-
-.footer-links h3,
-.footer-contact h3{
-    margin-bottom:18px;
-    font-size:1.05rem;
-}
-
-.footer-links a{
-    color:var(--sg-dim);
-    text-decoration:none;
-    padding:9px 0; /* keeps the tap target 44px tall */
-    transition:color .25s;
-}
-
-.footer-links a:hover{
-    color:var(--sg-orange);
-}
-
-.footer-contact p{
-    color:var(--sg-dim);
-    margin-bottom:10px;
-}
-
-.footer-contact a{
-    display:inline-block;
-    padding:9px 0; /* keeps the tap target 44px tall */
-    color:var(--sg-dim);
-    text-decoration:none;
-}
-
-.footer-contact a:hover{
-    color:var(--sg-orange);
-}
-
-.footer-bottom{
-    border-top:1px solid var(--sg-border);
-    text-align:center;
-    padding:20px;
-}
-
-.footer-bottom p{
-    color:#666;
-    font-size:.9rem;
-}
-
-
-/* ==========================================================================
-   6. GENERIC PAGE SECTIONS
-   ========================================================================== */
-
 .section{
     padding:80px 6%;
 }
@@ -585,483 +245,11 @@ nav a.nav-ticket.active{
 
 
 /* ==========================================================================
-   7. HOME PAGE
+   ACTS
+
+   One block per artist: name, cut-out photo, biography and video,
+   alternating left and right down the page.
    ========================================================================== */
-
-.hero{
-    position:relative;
-    min-height:100vh;
-    min-height:100svh;
-    overflow:hidden;
-
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-.hero-video{
-    position:absolute;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    z-index:0;
-}
-
-.hero .overlay{
-    position:absolute;
-    inset:0;
-    background:rgba(0,0,0,.5);
-    z-index:1;
-}
-
-.hero-content{
-    position:relative;
-    z-index:2;
-    text-align:center;
-    padding:120px 20px 60px;
-
-    width:100%;
-    max-width:900px;
-    min-width:0;
-}
-
-.hero-logo{
-    width:min(340px, 70%);
-    height:auto;
-    margin-bottom:24px;
-}
-
-.hero-content h1{
-    font-size:clamp(2.6rem, 8vw, 5rem);
-    margin-bottom:20px;
-    line-height:1;
-}
-
-
-/* Featured event panel */
-/*  The event artwork sits behind this panel, under a dark wash so the
-    heading, details and buttons stay readable over it.                 */
-.featured-event{
-    position:relative;
-    overflow:hidden;
-
-    /*  The picture behind the next event. This was the SoundzGood 2.0
-        poster, which was right while 2.0 was the next event and wrong the
-        moment it was not - its lineup and sponsor logos were sitting
-        behind an Eatz & Beatz announcement.
-
-        A photograph rather than poster artwork now, so it keeps working
-        whatever the next event turns out to be. This one is our own
-        trailer stage, and at 1536px wide it is the sharpest of the set -
-        the box is over 1100px across, so a smaller picture goes soft.
-        Change the file below when there is artwork for the event being
-        promoted.                                                       */
-    background-color:#000;
-    background-image:
-        linear-gradient(rgba(0,0,0,.74), rgba(0,0,0,.86)),
-        url("images/services/trailer-stage.webp");
-    background-size:cover;
-    background-position:center;
-
-    border:1px solid #3a2000;
-    border-radius:18px;
-    max-width:var(--sg-max-width);
-    margin:auto;
-    padding:50px 40px;
-    text-align:center;
-}
-
-.featured-event .eyebrow{
-    font-family:var(--sg-font-accent);
-    letter-spacing:3px;
-    text-transform:uppercase;
-    color:var(--sg-gold);
-    font-size:.85rem;
-    margin-bottom:12px;
-}
-
-.featured-event h2{
-    font-size:clamp(2.2rem, 7vw, 4.2rem);
-    margin-bottom:6px;
-    text-transform:uppercase;
-    letter-spacing:2px;
-}
-
-/*  The edition, on its own line under the event name. Together on one line
-    they ran to four lines on a phone, which broke the name across two of
-    them.                                                                */
-.featured-event .event-subtitle{
-    font-family:var(--sg-font-display);
-    font-size:clamp(1.1rem, 3.2vw, 1.8rem);
-    letter-spacing:1px;
-    text-transform:uppercase;
-    color:var(--sg-orange);
-    margin-bottom:24px;
-}
-
-.event-facts{
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    gap:14px 40px;
-    list-style:none;
-    margin-bottom:32px;
-}
-
-.event-facts li{
-    font-family:var(--sg-font-accent);
-    letter-spacing:1px;
-    text-transform:uppercase;
-    color:var(--sg-muted);
-    font-size:.95rem;
-}
-
-.event-facts li strong{
-    display:block;
-    color:#fff;
-    font-size:1.1rem;
-}
-
-
-/* ==========================================================================
-   8. EVENTS PAGE
-   ========================================================================== */
-
-.event-hero{
-    position:relative;
-    min-height:100vh;
-    min-height:100svh;
-    overflow:hidden;
-
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-}
-
-/*  Poster-style hero: an orange sunset sky with the video showing through
-    underneath as a silhouette, exactly like the artwork.                 */
-.event-hero .overlay{
-    position:absolute;
-    inset:0;
-    background:
-        linear-gradient(
-            to bottom,
-            rgba(247,168,63,.97) 0%,
-            rgba(244,150,52,.95) 38%,
-            rgba(235,118,34,.86) 62%,
-            rgba(198,84,20,.72) 80%,
-            rgba(60,24,6,.86) 93%,
-            rgba(0,0,0,.95) 100%
-        );
-    z-index:1;
-}
-
-.event-hero .overlay::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    background-image:var(--sg-grain);
-    opacity:.12;
-    mix-blend-mode:overlay;
-}
-
-.event-hero-content{
-    position:relative;
-    z-index:2;
-    /*  Everything in this hero is sized in vh so the whole poster always
-        fits the screen without scrolling, on any height of display.
-        The top clears the menu, whose real height js/main.js publishes as
-        --sg-nav-height - so adding a menu item cannot land on the logo. */
-    padding:calc(var(--sg-nav-height, 88px) + 8px) 20px 1.4vh;
-
-    width:100%;
-    max-width:960px;
-    min-width:0; /* lets long titles wrap instead of widening the page */
-}
-
-/* The event logo carries the sun, palms and wordmark in one file */
-.event-logo-heading{
-    margin:0;
-}
-
-/* Sized against viewport height, not width, so the logo, the lineup, the
-   date and the ticket button all fit on the first screen together. */
-.event-logo{
-    display:block;
-    height:clamp(140px, 44vh, 660px);
-    width:auto;
-    max-width:94%;
-    margin:0 auto 1.5vh;
-}
-
-
-/* Hero sits on the orange sky, so its type goes black like the poster */
-.event-hero-content{
-    color:#000;
-}
-
-.event-hero .poster-tagline{
-    color:#000;
-}
-
-.event-headline-date{
-    font-family:var(--sg-font-display);
-    font-size:clamp(1.4rem, min(4.3vh, 5.2vw), 3.4rem);
-    line-height:1;
-    letter-spacing:-1.5px;
-    text-transform:uppercase;
-    margin:1.8vh 0 .8vh;
-    color:#000;
-}
-
-.event-hero .event-date{
-    font-family:var(--sg-font);
-    font-weight:bold;
-    font-size:clamp(.7rem, min(1.75vh, 2.1vw), 1.05rem);
-    letter-spacing:.2em;
-    text-indent:.2em;
-    text-transform:uppercase;
-    color:#000;
-    margin:0;
-}
-
-/* Venue sits in a black box with orange type */
-.event-hero .event-location{
-    display:inline-block;
-    background:#000;
-    color:var(--sg-orange-bright);
-    border-radius:8px;
-    padding:13px 30px;
-
-    font-family:var(--sg-font-display);
-    font-size:clamp(.72rem, min(1.85vh, 2.4vw), 1.25rem);
-    letter-spacing:1.5px;
-    padding:1.2vh 3vh;
-    margin:1.2vh 0 0;
-    text-shadow:none;
-}
-
-/* Black ticket button reads best against the orange sky */
-.event-hero .btn-ticket{
-    background:#000;
-    border-color:#000;
-    color:#fff;
-    box-shadow:0 10px 30px rgba(0,0,0,.35);
-}
-
-.event-hero .btn-ticket:hover{
-    background:#1a1a1a;
-}
-
-
-.event-hero h1{
-    font-size:clamp(2.8rem, 11vw, 7rem);
-    margin-bottom:14px;
-    text-transform:uppercase;
-    letter-spacing:2px;
-    line-height:.95;
-}
-
-.event-location{
-    font-size:clamp(1.05rem, 3vw, 1.8rem);
-    font-weight:bold;
-    letter-spacing:2px;
-    text-transform:uppercase;
-}
-
-.event-date{
-    margin:12px 0 28px;
-    color:#eee;
-    font-family:var(--sg-font-accent);
-    letter-spacing:2px;
-    font-size:clamp(.9rem, 2.6vw, 1.1rem);
-    text-transform:uppercase;
-}
-
-/* Sticky ticket bar - keeps GET TICKETS reachable down the whole page */
-.ticket-bar{
-    position:sticky;
-    top:0;
-    z-index:90;
-
-    background:rgba(10,10,10,.96);
-    border-top:1px solid #2a1600;
-    border-bottom:1px solid #2a1600;
-    backdrop-filter:blur(6px);
-
-    display:flex;
-    flex-wrap:wrap;
-    align-items:center;
-    justify-content:center;
-    gap:14px 28px;
-
-    padding:14px 6%;
-
-    transition:opacity .3s ease, transform .35s ease, visibility .35s;
-}
-
-/* Hidden by js/main.js once the checkout section is on screen, since the
-   real ticket form is right there. */
-.ticket-bar.is-hidden{
-    opacity:0;
-    visibility:hidden;
-    transform:translateY(-100%);
-    pointer-events:none;
-}
-
-.ticket-bar p{
-    font-family:var(--sg-font-accent);
-    letter-spacing:2px;
-    text-transform:uppercase;
-    font-size:.9rem;
-    color:var(--sg-muted);
-    margin:0;
-}
-
-.ticket-bar .btn{
-    padding:12px 30px;
-    min-height:46px;
-}
-
-/* Event detail cards */
-.detail-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
-    gap:20px;
-    max-width:var(--sg-max-width);
-    margin:auto;
-}
-
-.detail-card{
-    background:var(--sg-panel);
-    border:1px solid var(--sg-border);
-    border-radius:14px;
-    padding:28px 22px;
-    text-align:center;
-}
-
-.detail-card h3{
-    font-family:var(--sg-font-accent);
-    font-size:.8rem;
-    letter-spacing:2px;
-    text-transform:uppercase;
-    color:var(--sg-gold);
-    margin-bottom:10px;
-}
-
-.detail-card p{
-    font-size:1.15rem;
-    font-weight:bold;
-}
-
-/* Lineup */
-.lineup{
-    position:relative;
-    padding:56px 6% 40px;
-    text-align:center;
-}
-
-/* Sunburst rays behind the LINEUP title */
-.lineup::before{
-    content:"";
-    position:absolute;
-    top:-40px;
-    left:50%;
-    transform:translateX(-50%);
-    width:min(1000px, 150vw);
-    aspect-ratio:1;
-    background:repeating-conic-gradient(
-        from 0deg,
-        rgba(0,0,0,.075) 0deg 5deg,
-        transparent 5deg 11deg
-    );
-    -webkit-mask-image:radial-gradient(circle, #000 12%, transparent 62%);
-    mask-image:radial-gradient(circle, #000 12%, transparent 62%);
-    pointer-events:none;
-    z-index:0;
-}
-
-.lineup > *{
-    position:relative;
-    z-index:1;
-}
-
-.lineup h2{
-    font-size:clamp(2.8rem, 11vw, 7rem);
-    text-transform:uppercase;
-    letter-spacing:-2px;
-    margin-bottom:10px;
-}
-
-/*  THE LINEUP WALL
-    Festival-poster style: all the names in one centred typographic block,
-    separated by diamonds and wrapping naturally across lines.           */
-
-.lineup-wall{
-    max-width:920px;
-    margin:1.8vh auto 0;
-}
-
-/* One line of the billing */
-.lw-line{
-    display:flex;
-    flex-wrap:wrap;
-    align-items:center;
-    justify-content:center;
-    gap:.1em .55em;   /* the space either side of the sun */
-
-    margin:0 0 .5vh;
-    line-height:1.1;
-}
-
-.lw-line:last-child{
-    margin-bottom:0;
-}
-
-.lw-name{
-    font-family:var(--sg-font-display);
-    font-size:clamp(1rem, min(3.3vh, 3.8vw), 2.85rem);
-    text-transform:uppercase;
-    letter-spacing:-.5px;
-    color:#000;
-    white-space:nowrap;
-
-    /* soft lift, so the type sits on the sunset instead of looking flat */
-    text-shadow:0 3px 14px rgba(90, 30, 0, .22);
-}
-
-/* The long billing line is set smaller, the way posters size a long name */
-.lw-line-sm .lw-name{
-    font-size:clamp(.78rem, min(2.5vh, 2.7vw), 1.85rem);
-    letter-spacing:0;
-}
-
-/*  Separator: the SoundzGood sun, drawn in CSS so there is no image file.
-    Change the colour on background-color below.                         */
-.lw-sep{
-    --sun-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='%23000' stroke-width='2.1' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='4' fill='%23000'/%3E%3Cline x1='12' y1='1.8' x2='12' y2='4.2'/%3E%3Cline x1='12' y1='19.8' x2='12' y2='22.2'/%3E%3Cline x1='1.8' y1='12' x2='4.2' y2='12'/%3E%3Cline x1='19.8' y1='12' x2='22.2' y2='12'/%3E%3Cline x1='4.8' y1='4.8' x2='6.5' y2='6.5'/%3E%3Cline x1='17.5' y1='17.5' x2='19.2' y2='19.2'/%3E%3Cline x1='4.8' y1='19.2' x2='6.5' y2='17.5'/%3E%3Cline x1='17.5' y1='6.5' x2='19.2' y2='4.8'/%3E%3C/g%3E%3C/svg%3E");
-
-    display:inline-block;
-    width:clamp(13px, 1.9vw, 24px);
-    aspect-ratio:1;
-    flex:0 0 auto;
-
-    background-color:#000;
-    -webkit-mask:var(--sun-icon) center / contain no-repeat;
-    mask:var(--sun-icon) center / contain no-repeat;
-
-    opacity:.75;
-}
-
-
-
-/*  THE LINEUP FLOW
-    No boxes - one continuous sunset that runs from one act straight into
-    the next, separated only by a hand-drawn wave.                        */
-
 .acts{
     max-width:var(--sg-max-width);
     margin:20px auto 0;
@@ -1228,91 +416,226 @@ nav a.nav-ticket.active{
 
 /*  Each act flies in from its own side, tilted back in 3D and blurred,
     then slaps flat onto the page and settles slightly crooked.          */
-.has-scroll-anim .act{
-    opacity:0;
-    transform-origin:center bottom;
-    will-change:transform, opacity;
-    transform:
-        perspective(1100px)
-        translate3d(-90px, 120px, 0)
-        rotateX(52deg)
-        rotate(-14deg)
-        scale(.55);
-    filter:blur(8px);
-    transition:
-        opacity .45s ease,
-        transform 1s cubic-bezier(.16, 1.42, .3, 1),
-        filter .55s ease;
+
+
+/* ==========================================================================
+   BUTTONS
+
+   One button, three treatments: solid, outline, and the ticket button
+   that carries the event accent.
+   ========================================================================== */
+.btn{
+    display:inline-block;
+
+    background:var(--sg-orange);
+    color:#fff;
+
+    padding:16px 36px;
+    border-radius:50px;
+    border:2px solid var(--sg-orange);
+
+    font-family:var(--sg-font-accent);
+    font-weight:bold;
+    font-size:1rem;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    text-decoration:none;
+    text-align:center;
+
+    /* Comfortable tap target on phones */
+    min-height:52px;
+
+    cursor:pointer;
+    transition:transform .25s, background .25s;
 }
 
-.has-scroll-anim .act:nth-of-type(even){
-    transform:
-        perspective(1100px)
-        translate3d(90px, 120px, 0)
-        rotateX(52deg)
-        rotate(14deg)
-        scale(.55);
+.btn:hover,
+.btn:focus-visible{
+    transform:translateY(-3px);
 }
 
-/*  Landed - flat.
-    The acts are tall now that each carries a biography, and a resting
-    tilt on a very tall block swings its top edge a long way sideways,
-    pushing the copy off a narrow screen. The crooked scrapbook look is
-    kept on the cut-out itself instead, further down.                   */
-.has-scroll-anim .act.is-visible,
-.has-scroll-anim .act:nth-of-type(even).is-visible{
-    opacity:1;
-    will-change:auto; /* release the GPU hint once it has landed */
-    transform:
-        perspective(1100px)
-        translate3d(0, 0, 0)
-        rotateX(0deg)
-        rotate(0deg)
-        scale(1);
-    filter:blur(0);
+.btn-outline{
+    background:transparent;
+    color:#fff;
+    border:2px solid var(--sg-orange);
 }
 
-/* The cut-out is stuck down a beat after the name, with its own kick */
-.has-scroll-anim .artist-photo{
-    opacity:0;
-    transform:translateY(60px) rotate(-11deg) scale(.72);
-    transition:
-        opacity .5s ease .22s,
-        transform .9s cubic-bezier(.16, 1.55, .3, 1) .22s;
+.btn-outline:hover,
+.btn-outline:focus-visible{
+    background:var(--sg-orange);
 }
 
-.has-scroll-anim .act:nth-of-type(even) .artist-photo{
-    transform:translateY(60px) rotate(11deg) scale(.72);
+/* Extra-loud version used for the main ticket links */
+.btn-ticket{
+    background:var(--sg-orange-bright);
+    border-color:var(--sg-orange-bright);
+    font-size:1.15rem;
+    padding:18px 46px;
+    box-shadow:0 0 24px rgba(255,140,0,.45);
 }
 
-/* The cut-out keeps the pasted-crooked look. It is small, so tilting it
-   only moves it a few pixels - unlike tilting the whole act. */
-.has-scroll-anim .act.is-visible .artist-photo{
-    opacity:1;
-    transform:translateY(0) rotate(-2.5deg) scale(1);
+.buttons{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:18px;
 }
 
-.has-scroll-anim .act:nth-of-type(even).is-visible .artist-photo{
-    transform:translateY(0) rotate(2.5deg) scale(1);
-}
-
-/* Dividers sweep open between the acts */
-.has-scroll-anim .act-wave{
-    opacity:0;
-    transform:scaleX(.15);
-    transform-origin:center;
-    transition:
-        opacity .5s ease,
-        transform .8s cubic-bezier(.16, 1.3, .3, 1);
-}
-
-.has-scroll-anim .act-wave.is-visible{
-    opacity:1;
-    transform:scaleX(1);
+/* Visible keyboard focus ring on every interactive element */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible{
+    outline:3px solid var(--sg-gold);
+    outline-offset:3px;
 }
 
 
-/* Event description */
+/* ==========================================================================
+   CLOSING BANNER
+
+   The full-width image that closes an event page.
+   ========================================================================== */
+.closing-banner{
+    background:#000;
+    padding:0;
+    line-height:0; /* removes the gap under an inline image */
+}
+
+.closing-banner img{
+    display:block;
+    width:100%;
+    height:auto;
+}
+
+
+/*  THE EVENT FLOW
+    One continuous sunset running behind several sections at once, so the
+    page reads as a single scene instead of separate boxes. It starts warm
+    at the top and sinks into black at the bottom.                        */
+
+
+/* ==========================================================================
+   CONTACT
+
+   The contact page: details on one side, form on the other.
+   ========================================================================== */
+.header-content .buttons{
+    margin-top:28px;
+}
+
+
+.contact-wrapper{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:60px;
+    max-width:var(--sg-max-width);
+    margin:auto;
+}
+
+.contact-info h2{
+    margin-bottom:20px;
+    text-align:left;
+}
+
+.contact-info p{
+    color:var(--sg-muted);
+}
+
+.contact-item{
+    margin-top:28px;
+}
+
+.contact-item h3{
+    color:var(--sg-orange);
+    margin-bottom:8px;
+    font-size:1rem;
+    letter-spacing:1px;
+    text-transform:uppercase;
+}
+
+.contact-item a{
+    color:#fff;
+    text-decoration:none;
+}
+
+.contact-item a:hover{
+    color:var(--sg-orange);
+}
+
+.contact-form{
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+}
+
+.contact-form input,
+.contact-form select,
+.contact-form textarea{
+    padding:15px;
+    border-radius:8px;
+    background:var(--sg-panel);
+    color:#fff;
+    border:1px solid var(--sg-border);
+    font-family:var(--sg-font);
+    font-size:1rem;
+    width:100%;
+}
+
+.contact-form textarea{
+    resize:vertical;
+}
+
+.contact-form .btn{
+    border:none;
+    width:100%;
+}
+
+
+/* ==========================================================================
+   DETAIL CARDS
+
+   The grid of what-you-need-to-know cards under an event hero.
+   ========================================================================== */
+.detail-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
+    gap:20px;
+    max-width:var(--sg-max-width);
+    margin:auto;
+}
+
+.detail-card{
+    background:var(--sg-panel);
+    border:1px solid var(--sg-border);
+    border-radius:14px;
+    padding:28px 22px;
+    text-align:center;
+}
+
+.detail-card h3{
+    font-family:var(--sg-font-accent);
+    font-size:.8rem;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+    margin-bottom:10px;
+}
+
+.detail-card p{
+    font-size:1.15rem;
+    font-weight:bold;
+}
+
+/* Lineup */
+
+
+/* ==========================================================================
+   EVENT COPY
+
+   Body copy on an event page, plus the scrolling announcement strip.
+   ========================================================================== */
 .event-copy{
     max-width:760px;
     margin:auto;
@@ -1355,191 +678,14 @@ nav a.nav-ticket.active{
 }
 
 /* Sponsors */
-.sponsors{
-    display:flex;
-    align-items:center;
-    flex-wrap:wrap;
-    gap:30px 44px;
-    justify-content:center;
-}
-
-.sponsors a{
-    display:inline-flex;
-    align-items:center;
-    padding:8px;
-}
-
-.sponsors img{
-    height:60px;
-    width:auto;
-    max-width:180px;
-    object-fit:contain;
-    transition:transform .25s;
-}
-
-.sponsors a:hover img{
-    transform:scale(1.06);
-}
-
-/* Humanitix embedded checkout */
-.checkout-embed{
-    max-width:900px;
-    margin:auto;
-}
-
-.checkout-embed iframe{
-    width:100%;
-    min-height:600px;
-    border:0;
-    border-radius:14px;
-}
 
 
-/*  MAKE A WEEKEND OF IT
-    Travel-brochure treatment: the photography does the selling, with the
-    copy sitting over it. Aimed at people driving in from out of town.   */
+/* ==========================================================================
+   EVENT FLOW
 
-.weekend-section{
-    background:
-        radial-gradient(120% 90% at 50% 0%, #1b1005 0%, #0a0a0a 62%);
-}
-
-.weekend-eyebrow{
-    font-family:var(--sg-font-accent);
-    font-size:.78rem;
-    font-weight:bold;
-    letter-spacing:4px;
-    text-transform:uppercase;
-    color:var(--sg-gold);
-    text-align:center;
-    margin-bottom:12px;
-}
-
-.weekend-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
-    gap:26px;
-    max-width:var(--sg-max-width);
-    margin:auto;
-}
-
-/* The whole card is the link */
-.weekend-card{
-    position:relative;
-    display:block;
-    min-height:420px;
-    border-radius:20px;
-    overflow:hidden;
-    text-decoration:none;
-    border:1px solid var(--sg-border);
-    transition:transform .3s, border-color .3s;
-}
-
-.weekend-card:hover,
-.weekend-card:focus-visible{
-    transform:translateY(-6px);
-    border-color:#4a2a06;
-}
-
-.weekend-card img{
-    position:absolute;
-    inset:0;
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    transition:transform .6s ease;
-}
-
-.weekend-card:hover img{
-    transform:scale(1.06);
-}
-
-/* Scrim so the copy stays readable over the photo */
-.weekend-card-body{
-    position:relative;
-    z-index:1;
-    height:100%;
-    min-height:420px;
-
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    justify-content:flex-end;
-    gap:10px;
-
-    padding:32px 30px 30px;
-    background:linear-gradient(
-        to bottom,
-        rgba(0,0,0,0) 30%,
-        rgba(0,0,0,.72) 68%,
-        rgba(0,0,0,.92) 100%
-    );
-}
-
-.weekend-card-body h3{
-    font-family:var(--sg-font-display);
-    font-size:clamp(1.5rem, 3.4vw, 2.1rem);
-    letter-spacing:-.5px;
-    text-transform:uppercase;
-    color:#fff;
-}
-
-.weekend-card-body p{
-    color:var(--sg-muted);
-    max-width:44ch;
-}
-
-.weekend-cta{
-    display:inline-flex;
-    align-items:center;
-    gap:.5em;
-
-    font-family:var(--sg-font-accent);
-    font-size:.85rem;
-    font-weight:bold;
-    letter-spacing:2px;
-    text-transform:uppercase;
-    color:var(--sg-orange-bright);
-    margin-top:6px;
-}
-
-.weekend-cta::after{
-    content:"\2192"; /* arrow */
-    transition:transform .25s;
-}
-
-.weekend-card:hover .weekend-cta::after{
-    transform:translateX(5px);
-}
-
-/* Practical travel note for people coming in from out of town */
-.weekend-note{
-    max-width:640px;
-    margin:32px auto 0;
-    text-align:center;
-    color:var(--sg-dim);
-    font-size:.92rem;
-}
-
-
-/* Full-width artwork that closes the page */
-.closing-banner{
-    background:#000;
-    padding:0;
-    line-height:0; /* removes the gap under an inline image */
-}
-
-.closing-banner img{
-    display:block;
-    width:100%;
-    height:auto;
-}
-
-
-/*  THE EVENT FLOW
-    One continuous sunset running behind several sections at once, so the
-    page reads as a single scene instead of separate boxes. It starts warm
-    at the top and sinks into black at the bottom.                        */
+   The sunset-coloured band near the foot of an event page, with its palm
+   silhouettes.
+   ========================================================================== */
 .event-flow{
     position:relative;
     background:linear-gradient(
@@ -1695,12 +841,831 @@ nav a.nav-ticket.active{
 }
 
 
-
 /*  SPONSOR WALL
     The sponsor logos are mostly dark artwork on a white background, so they
     sit on a white panel. On black they would show up as white boxes.       */
 
 /* Orange sunset band, sitting between the weekend section and the checkout */
+
+
+/* ==========================================================================
+   EVENT HERO
+
+   The poster-style header on an event page. Heavier and louder than the
+   homepage hero on purpose.
+   ========================================================================== */
+.event-hero{
+    position:relative;
+    min-height:100vh;
+    min-height:100svh;
+    overflow:hidden;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+}
+
+/*  Poster-style hero: an orange sunset sky with the video showing through
+    underneath as a silhouette, exactly like the artwork.                 */
+.event-hero .overlay{
+    position:absolute;
+    inset:0;
+    background:
+        linear-gradient(
+            to bottom,
+            rgba(247,168,63,.97) 0%,
+            rgba(244,150,52,.95) 38%,
+            rgba(235,118,34,.86) 62%,
+            rgba(198,84,20,.72) 80%,
+            rgba(60,24,6,.86) 93%,
+            rgba(0,0,0,.95) 100%
+        );
+    z-index:1;
+}
+
+.event-hero .overlay::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background-image:var(--sg-grain);
+    opacity:.12;
+    mix-blend-mode:overlay;
+}
+
+.event-hero-content{
+    position:relative;
+    z-index:2;
+    /*  Everything in this hero is sized in vh so the whole poster always
+        fits the screen without scrolling, on any height of display.
+        The top clears the menu, whose real height js/main.js publishes as
+        --sg-nav-height - so adding a menu item cannot land on the logo. */
+    padding:calc(var(--sg-nav-height, 88px) + 8px) 20px 1.4vh;
+
+    width:100%;
+    max-width:960px;
+    min-width:0; /* lets long titles wrap instead of widening the page */
+}
+
+/* The event logo carries the sun, palms and wordmark in one file */
+.event-logo-heading{
+    margin:0;
+}
+
+/* Sized against viewport height, not width, so the logo, the lineup, the
+   date and the ticket button all fit on the first screen together. */
+.event-logo{
+    display:block;
+    height:clamp(140px, 44vh, 660px);
+    width:auto;
+    max-width:94%;
+    margin:0 auto 1.5vh;
+}
+
+
+/* Hero sits on the orange sky, so its type goes black like the poster */
+.event-hero-content{
+    color:#000;
+}
+
+.event-hero .poster-tagline{
+    color:#000;
+}
+
+.event-headline-date{
+    font-family:var(--sg-font-display);
+    font-size:clamp(1.4rem, min(4.3vh, 5.2vw), 3.4rem);
+    line-height:1;
+    letter-spacing:-1.5px;
+    text-transform:uppercase;
+    margin:1.8vh 0 .8vh;
+    color:#000;
+}
+
+.event-hero .event-date{
+    font-family:var(--sg-font);
+    font-weight:bold;
+    font-size:clamp(.7rem, min(1.75vh, 2.1vw), 1.05rem);
+    letter-spacing:.2em;
+    text-indent:.2em;
+    text-transform:uppercase;
+    color:#000;
+    margin:0;
+}
+
+/* Venue sits in a black box with orange type */
+.event-hero .event-location{
+    display:inline-block;
+    background:#000;
+    color:var(--sg-orange-bright);
+    border-radius:8px;
+    padding:13px 30px;
+
+    font-family:var(--sg-font-display);
+    font-size:clamp(.72rem, min(1.85vh, 2.4vw), 1.25rem);
+    letter-spacing:1.5px;
+    padding:1.2vh 3vh;
+    margin:1.2vh 0 0;
+    text-shadow:none;
+}
+
+/* Black ticket button reads best against the orange sky */
+.event-hero .btn-ticket{
+    background:#000;
+    border-color:#000;
+    color:#fff;
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+}
+
+.event-hero .btn-ticket:hover{
+    background:#1a1a1a;
+}
+
+
+.event-hero h1{
+    font-size:clamp(2.8rem, 11vw, 7rem);
+    margin-bottom:14px;
+    text-transform:uppercase;
+    letter-spacing:2px;
+    line-height:.95;
+}
+
+.event-location{
+    font-size:clamp(1.05rem, 3vw, 1.8rem);
+    font-weight:bold;
+    letter-spacing:2px;
+    text-transform:uppercase;
+}
+
+.event-date{
+    margin:12px 0 28px;
+    color:#eee;
+    font-family:var(--sg-font-accent);
+    letter-spacing:2px;
+    font-size:clamp(.9rem, 2.6vw, 1.1rem);
+    text-transform:uppercase;
+}
+
+/* Sticky ticket bar - keeps GET TICKETS reachable down the whole page */
+
+
+/* ==========================================================================
+   FEATURED EVENT
+
+   The next-event panel on the homepage, with its date and location
+   facts.
+   ========================================================================== */
+.featured-event{
+    position:relative;
+    overflow:hidden;
+
+    /*  The picture behind the next event. This was the SoundzGood 2.0
+        poster, which was right while 2.0 was the next event and wrong the
+        moment it was not - its lineup and sponsor logos were sitting
+        behind an Eatz & Beatz announcement.
+
+        A photograph rather than poster artwork now, so it keeps working
+        whatever the next event turns out to be. This one is our own
+        trailer stage, and at 1536px wide it is the sharpest of the set -
+        the box is over 1100px across, so a smaller picture goes soft.
+        Change the file below when there is artwork for the event being
+        promoted.                                                       */
+    background-color:#000;
+    background-image:
+        linear-gradient(rgba(0,0,0,.74), rgba(0,0,0,.86)),
+        url("images/services/trailer-stage.webp");
+    background-size:cover;
+    background-position:center;
+
+    border:1px solid #3a2000;
+    border-radius:18px;
+    max-width:var(--sg-max-width);
+    margin:auto;
+    padding:50px 40px;
+    text-align:center;
+}
+
+.featured-event .eyebrow{
+    font-family:var(--sg-font-accent);
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+    font-size:.85rem;
+    margin-bottom:12px;
+}
+
+.featured-event h2{
+    font-size:clamp(2.2rem, 7vw, 4.2rem);
+    margin-bottom:6px;
+    text-transform:uppercase;
+    letter-spacing:2px;
+}
+
+/*  The edition, on its own line under the event name. Together on one line
+    they ran to four lines on a phone, which broke the name across two of
+    them.                                                                */
+.featured-event .event-subtitle{
+    font-family:var(--sg-font-display);
+    font-size:clamp(1.1rem, 3.2vw, 1.8rem);
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color:var(--sg-orange);
+    margin-bottom:24px;
+}
+
+.event-facts{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:14px 40px;
+    list-style:none;
+    margin-bottom:32px;
+}
+
+.event-facts li{
+    font-family:var(--sg-font-accent);
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color:var(--sg-muted);
+    font-size:.95rem;
+}
+
+.event-facts li strong{
+    display:block;
+    color:#fff;
+    font-size:1.1rem;
+}
+
+
+/* ==========================================================================
+   FOOTER
+
+   Shared by every page. Injected from components/footer.html, so this
+   markup is not in any page source.
+   ========================================================================== */
+.footer{
+    background:#0a0a0a;
+    border-top:1px solid var(--sg-border);
+}
+
+.footer-content{
+    max-width:var(--sg-max-width);
+    margin:auto;
+    padding:60px 6%;
+
+    display:grid;
+    grid-template-columns:2fr 1fr 1fr;
+    gap:50px;
+}
+
+.footer-logo h2{
+    color:var(--sg-orange);
+    margin-bottom:15px;
+    letter-spacing:2px;
+}
+
+.footer-logo p{
+    color:var(--sg-dim);
+}
+
+.footer-links,
+.footer-contact{
+    display:flex;
+    flex-direction:column;
+}
+
+.footer-links h3,
+.footer-contact h3{
+    margin-bottom:18px;
+    font-size:1.05rem;
+}
+
+.footer-links a{
+    color:var(--sg-dim);
+    text-decoration:none;
+    padding:9px 0; /* keeps the tap target 44px tall */
+    transition:color .25s;
+}
+
+.footer-links a:hover{
+    color:var(--sg-orange);
+}
+
+.footer-contact p{
+    color:var(--sg-dim);
+    margin-bottom:10px;
+}
+
+.footer-contact a{
+    display:inline-block;
+    padding:9px 0; /* keeps the tap target 44px tall */
+    color:var(--sg-dim);
+    text-decoration:none;
+}
+
+.footer-contact a:hover{
+    color:var(--sg-orange);
+}
+
+.footer-bottom{
+    border-top:1px solid var(--sg-border);
+    text-align:center;
+    padding:20px;
+}
+
+.footer-bottom p{
+    color:#666;
+    font-size:.9rem;
+}
+
+
+/* ==========================================================================
+   HERO
+
+   The homepage hero: full-bleed video, dark overlay, logo and buttons on
+   top.
+   ========================================================================== */
+.hero{
+    position:relative;
+    min-height:100vh;
+    min-height:100svh;
+    overflow:hidden;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.hero-video{
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    z-index:0;
+}
+
+.hero .overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,.5);
+    z-index:1;
+}
+
+.hero-content{
+    position:relative;
+    z-index:2;
+    text-align:center;
+    padding:120px 20px 60px;
+
+    width:100%;
+    max-width:900px;
+    min-width:0;
+}
+
+.hero-logo{
+    width:min(340px, 70%);
+    height:auto;
+    margin-bottom:24px;
+}
+
+.hero-content h1{
+    font-size:clamp(2.6rem, 8vw, 5rem);
+    margin-bottom:20px;
+    line-height:1;
+}
+
+
+/* Featured event panel */
+/*  The event artwork sits behind this panel, under a dark wash so the
+    heading, details and buttons stay readable over it.                 */
+
+
+/* ==========================================================================
+   LINEUP
+
+   The wall of artist names, sized to fill the width regardless of how
+   long the names are.
+   ========================================================================== */
+.lineup{
+    position:relative;
+    padding:56px 6% 40px;
+    text-align:center;
+}
+
+/* Sunburst rays behind the LINEUP title */
+.lineup::before{
+    content:"";
+    position:absolute;
+    top:-40px;
+    left:50%;
+    transform:translateX(-50%);
+    width:min(1000px, 150vw);
+    aspect-ratio:1;
+    background:repeating-conic-gradient(
+        from 0deg,
+        rgba(0,0,0,.075) 0deg 5deg,
+        transparent 5deg 11deg
+    );
+    -webkit-mask-image:radial-gradient(circle, #000 12%, transparent 62%);
+    mask-image:radial-gradient(circle, #000 12%, transparent 62%);
+    pointer-events:none;
+    z-index:0;
+}
+
+.lineup > *{
+    position:relative;
+    z-index:1;
+}
+
+.lineup h2{
+    font-size:clamp(2.8rem, 11vw, 7rem);
+    text-transform:uppercase;
+    letter-spacing:-2px;
+    margin-bottom:10px;
+}
+
+/*  THE LINEUP WALL
+    Festival-poster style: all the names in one centred typographic block,
+    separated by diamonds and wrapping naturally across lines.           */
+
+.lineup-wall{
+    max-width:920px;
+    margin:1.8vh auto 0;
+}
+
+/* One line of the billing */
+.lw-line{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:center;
+    gap:.1em .55em;   /* the space either side of the sun */
+
+    margin:0 0 .5vh;
+    line-height:1.1;
+}
+
+.lw-line:last-child{
+    margin-bottom:0;
+}
+
+.lw-name{
+    font-family:var(--sg-font-display);
+    font-size:clamp(1rem, min(3.3vh, 3.8vw), 2.85rem);
+    text-transform:uppercase;
+    letter-spacing:-.5px;
+    color:#000;
+    white-space:nowrap;
+
+    /* soft lift, so the type sits on the sunset instead of looking flat */
+    text-shadow:0 3px 14px rgba(90, 30, 0, .22);
+}
+
+/* The long billing line is set smaller, the way posters size a long name */
+.lw-line-sm .lw-name{
+    font-size:clamp(.78rem, min(2.5vh, 2.7vw), 1.85rem);
+    letter-spacing:0;
+}
+
+/*  Separator: the SoundzGood sun, drawn in CSS so there is no image file.
+    Change the colour on background-color below.                         */
+.lw-sep{
+    --sun-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='%23000' stroke-width='2.1' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='4' fill='%23000'/%3E%3Cline x1='12' y1='1.8' x2='12' y2='4.2'/%3E%3Cline x1='12' y1='19.8' x2='12' y2='22.2'/%3E%3Cline x1='1.8' y1='12' x2='4.2' y2='12'/%3E%3Cline x1='19.8' y1='12' x2='22.2' y2='12'/%3E%3Cline x1='4.8' y1='4.8' x2='6.5' y2='6.5'/%3E%3Cline x1='17.5' y1='17.5' x2='19.2' y2='19.2'/%3E%3Cline x1='4.8' y1='19.2' x2='6.5' y2='17.5'/%3E%3Cline x1='17.5' y1='6.5' x2='19.2' y2='4.8'/%3E%3C/g%3E%3C/svg%3E");
+
+    display:inline-block;
+    width:clamp(13px, 1.9vw, 24px);
+    aspect-ratio:1;
+    flex:0 0 auto;
+
+    background-color:#000;
+    -webkit-mask:var(--sun-icon) center / contain no-repeat;
+    mask:var(--sun-icon) center / contain no-repeat;
+
+    opacity:.75;
+}
+
+
+/*  THE LINEUP FLOW
+    No boxes - one continuous sunset that runs from one act straight into
+    the next, separated only by a hand-drawn wave.                        */
+
+
+/* ==========================================================================
+   NAVIGATION
+
+   The bar, the hover dropdown under Events, and the tucking behaviour on
+   the homepage where the nav sits over the hero. The menu items
+   themselves live in components/navbar.html, not in any page.
+   ========================================================================== */
+nav{
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    z-index:100;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:20px;
+
+    padding:20px 40px;
+
+    background:linear-gradient(
+        to bottom,
+        rgba(0,0,0,.55),
+        rgba(0,0,0,0)
+    );
+}
+
+.logo a{
+    color:#fff;
+    font-size:26px;
+    font-weight:700;
+    letter-spacing:3px;
+    text-decoration:none;
+}
+
+.Nav a{
+    display:block;
+    padding:0; /* logo shouldn't inherit the menu link padding */
+    border-bottom:none;
+}
+
+.Nav img{
+    height:45px;
+    width:auto;
+    display:block;
+}
+
+nav ul{
+    display:flex;
+    align-items:center;
+    gap:32px;
+    list-style:none;
+}
+
+nav a{
+    display:inline-block;
+    padding:10px 2px;
+
+    color:#fff;
+    font-size:.95rem;
+    letter-spacing:1px;
+    text-decoration:none;
+    text-transform:uppercase;
+
+    border-bottom:2px solid transparent;
+    transition:color .25s, border-color .25s;
+}
+
+nav a:hover{
+    color:var(--sg-gold);
+}
+
+/* Current page - set automatically by js/main.js */
+nav a.active{
+    color:var(--sg-orange);
+    border-bottom-color:var(--sg-orange);
+    font-weight:bold;
+}
+
+nav .has-sub{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:4px;
+}
+
+nav .sub-toggle{
+    background:none;
+    border:0;
+    padding:10px 2px;
+    color:#fff;
+    font-size:.7rem;
+    line-height:1;
+    cursor:pointer;
+    transition:color .25s, transform .25s;
+}
+
+nav .sub-toggle:hover{
+    color:var(--sg-gold);
+}
+
+nav .has-sub.is-open .sub-toggle span{
+    display:inline-block;
+    transform:rotate(180deg);
+}
+
+nav .subnav{
+    position:absolute;
+    top:100%;
+    left:0;
+    z-index:110;
+
+    display:block;
+    min-width:210px;
+    padding:8px;
+    margin:0;
+
+    background:rgba(12,12,12,.97);
+    border:1px solid var(--sg-border);
+    border-radius:12px;
+    box-shadow:0 18px 40px rgba(0,0,0,.55);
+
+    /*  Kept in the page rather than display:none, so it can fade and so
+        the links stay reachable by keyboard while it is opening.      */
+    opacity:0;
+    visibility:hidden;
+    transform:translateY(-6px);
+    transition:opacity .18s, transform .18s, visibility .18s;
+}
+
+nav .has-sub:hover .subnav,
+nav .has-sub:focus-within .subnav,
+nav .has-sub.is-open .subnav{
+    opacity:1;
+    visibility:visible;
+    transform:translateY(0);
+}
+
+nav .subnav li{
+    display:block;
+}
+
+nav .subnav a{
+    display:block;
+    padding:10px 12px;
+    border-radius:8px;
+    border-bottom:0;
+    font-size:.85rem;
+    letter-spacing:.5px;
+    white-space:nowrap;
+}
+
+nav .subnav a:hover{
+    background:rgba(255,255,255,.07);
+    color:var(--sg-gold);
+}
+
+/*  The parent is marked when the page you are on lives under it, so the
+    menu still shows where you are while the dropdown is shut.          */
+nav .has-sub.has-active > a{
+    color:var(--sg-orange);
+    border-bottom-color:var(--sg-orange);
+    font-weight:bold;
+}
+
+
+/* "Buy Tickets" pill inside the menu */
+nav a.nav-ticket{
+    background:var(--sg-orange);
+    border:2px solid var(--sg-orange);
+    border-radius:50px;
+    padding:10px 22px;
+    font-weight:bold;
+}
+
+nav a.nav-ticket:hover{
+    background:transparent;
+    color:#fff;
+}
+
+nav a.nav-ticket.active{
+    border-bottom-color:var(--sg-orange);
+}
+
+
+/*  HOME PAGE MENU
+    The hero is left clean, then the menu slides in as a fixed bar once
+    you reach the next event section. It has to be fixed rather than
+    absolute, otherwise it would sit at the top of the document and be
+    out of sight by the time it is wanted.
+    js/main.js adds and removes .is-tucked.                             */
+.home nav{
+    position:fixed;
+    background:rgba(10,10,10,.94);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--sg-border);
+    transition:opacity .35s ease, transform .4s ease, visibility .4s;
+}
+
+.home nav.is-tucked{
+    opacity:0;
+    visibility:hidden;
+    transform:translateY(-105%);
+    pointer-events:none;
+}
+
+/* The sponsors are event sponsors, so they stay on the event page */
+.home .footer-sponsors{
+    display:none;
+}
+
+
+/* ==========================================================================
+   SCROLL ANIMATIONS
+
+   js/main.js puts .has-scroll-anim on <html> and .is-visible on each
+   block as it comes into view. Everything here is gated on that class,
+   so with JavaScript off the page simply renders, fully visible, with no
+   animation.
+   ========================================================================== */
+.has-scroll-anim .act{
+    opacity:0;
+    transform-origin:center bottom;
+    will-change:transform, opacity;
+    transform:
+        perspective(1100px)
+        translate3d(-90px, 120px, 0)
+        rotateX(52deg)
+        rotate(-14deg)
+        scale(.55);
+    filter:blur(8px);
+    transition:
+        opacity .45s ease,
+        transform 1s cubic-bezier(.16, 1.42, .3, 1),
+        filter .55s ease;
+}
+
+.has-scroll-anim .act:nth-of-type(even){
+    transform:
+        perspective(1100px)
+        translate3d(90px, 120px, 0)
+        rotateX(52deg)
+        rotate(14deg)
+        scale(.55);
+}
+
+/*  Landed - flat.
+    The acts are tall now that each carries a biography, and a resting
+    tilt on a very tall block swings its top edge a long way sideways,
+    pushing the copy off a narrow screen. The crooked scrapbook look is
+    kept on the cut-out itself instead, further down.                   */
+.has-scroll-anim .act.is-visible,
+.has-scroll-anim .act:nth-of-type(even).is-visible{
+    opacity:1;
+    will-change:auto; /* release the GPU hint once it has landed */
+    transform:
+        perspective(1100px)
+        translate3d(0, 0, 0)
+        rotateX(0deg)
+        rotate(0deg)
+        scale(1);
+    filter:blur(0);
+}
+
+/* The cut-out is stuck down a beat after the name, with its own kick */
+.has-scroll-anim .artist-photo{
+    opacity:0;
+    transform:translateY(60px) rotate(-11deg) scale(.72);
+    transition:
+        opacity .5s ease .22s,
+        transform .9s cubic-bezier(.16, 1.55, .3, 1) .22s;
+}
+
+.has-scroll-anim .act:nth-of-type(even) .artist-photo{
+    transform:translateY(60px) rotate(11deg) scale(.72);
+}
+
+/* The cut-out keeps the pasted-crooked look. It is small, so tilting it
+   only moves it a few pixels - unlike tilting the whole act. */
+.has-scroll-anim .act.is-visible .artist-photo{
+    opacity:1;
+    transform:translateY(0) rotate(-2.5deg) scale(1);
+}
+
+.has-scroll-anim .act:nth-of-type(even).is-visible .artist-photo{
+    transform:translateY(0) rotate(2.5deg) scale(1);
+}
+
+/* Dividers sweep open between the acts */
+.has-scroll-anim .act-wave{
+    opacity:0;
+    transform:scaleX(.15);
+    transform-origin:center;
+    transition:
+        opacity .5s ease,
+        transform .8s cubic-bezier(.16, 1.3, .3, 1);
+}
+
+.has-scroll-anim .act-wave.is-visible{
+    opacity:1;
+    transform:scaleX(1);
+}
+
+
+/* Event description */
+
+
+/* ==========================================================================
+   SPONSOR FEATURE
+
+   The larger sponsor panel, with its own button treatments so the
+   buttons stay readable on the lighter background.
+   ========================================================================== */
 .sponsor-feature{
     position:relative;
     padding:70px 6%;
@@ -1817,6 +1782,61 @@ nav a.nav-ticket.active{
 }
 
 
+/* ==========================================================================
+   SPONSORS
+
+   The sponsor logo row and the ticket checkout embed.
+   ========================================================================== */
+.sponsors{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:30px 44px;
+    justify-content:center;
+}
+
+.sponsors a{
+    display:inline-flex;
+    align-items:center;
+    padding:8px;
+}
+
+.sponsors img{
+    height:60px;
+    width:auto;
+    max-width:180px;
+    object-fit:contain;
+    transition:transform .25s;
+}
+
+.sponsors a:hover img{
+    transform:scale(1.06);
+}
+
+/* Humanitix embedded checkout */
+.checkout-embed{
+    max-width:900px;
+    margin:auto;
+}
+
+.checkout-embed iframe{
+    width:100%;
+    min-height:600px;
+    border:0;
+    border-radius:14px;
+}
+
+
+/*  MAKE A WEEKEND OF IT
+    Travel-brochure treatment: the photography does the selling, with the
+    copy sitting over it. Aimed at people driving in from out of town.   */
+
+
+/* ==========================================================================
+   STEPS
+
+   Numbered how-it-works steps.
+   ========================================================================== */
 .step{
     text-align:center;
 }
@@ -1859,87 +1879,199 @@ nav a.nav-ticket.active{
 }
 
 /* Buttons in a page header (services hero) */
-.header-content .buttons{
-    margin-top:28px;
-}
 
 
 /* ==========================================================================
-   10. CONTACT PAGE
-   ========================================================================== */
+   TICKET BAR
 
-.contact-wrapper{
+   The sticky buy-tickets strip that appears once the hero has scrolled
+   past.
+   ========================================================================== */
+.ticket-bar{
+    position:sticky;
+    top:0;
+    z-index:90;
+
+    background:rgba(10,10,10,.96);
+    border-top:1px solid #2a1600;
+    border-bottom:1px solid #2a1600;
+    backdrop-filter:blur(6px);
+
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:center;
+    gap:14px 28px;
+
+    padding:14px 6%;
+
+    transition:opacity .3s ease, transform .35s ease, visibility .35s;
+}
+
+/* Hidden by js/main.js once the checkout section is on screen, since the
+   real ticket form is right there. */
+.ticket-bar.is-hidden{
+    opacity:0;
+    visibility:hidden;
+    transform:translateY(-100%);
+    pointer-events:none;
+}
+
+.ticket-bar p{
+    font-family:var(--sg-font-accent);
+    letter-spacing:2px;
+    text-transform:uppercase;
+    font-size:.9rem;
+    color:var(--sg-muted);
+    margin:0;
+}
+
+.ticket-bar .btn{
+    padding:12px 30px;
+    min-height:46px;
+}
+
+/* Event detail cards */
+
+
+/* ==========================================================================
+   WEEKEND
+
+   The make-a-weekend-of-it cards - accommodation and things to do around
+   the event.
+   ========================================================================== */
+.weekend-section{
+    background:
+        radial-gradient(120% 90% at 50% 0%, #1b1005 0%, #0a0a0a 62%);
+}
+
+.weekend-eyebrow{
+    font-family:var(--sg-font-accent);
+    font-size:.78rem;
+    font-weight:bold;
+    letter-spacing:4px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+    text-align:center;
+    margin-bottom:12px;
+}
+
+.weekend-grid{
     display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:60px;
+    grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
+    gap:26px;
     max-width:var(--sg-max-width);
     margin:auto;
 }
 
-.contact-info h2{
-    margin-bottom:20px;
-    text-align:left;
-}
-
-.contact-info p{
-    color:var(--sg-muted);
-}
-
-.contact-item{
-    margin-top:28px;
-}
-
-.contact-item h3{
-    color:var(--sg-orange);
-    margin-bottom:8px;
-    font-size:1rem;
-    letter-spacing:1px;
-    text-transform:uppercase;
-}
-
-.contact-item a{
-    color:#fff;
+/* The whole card is the link */
+.weekend-card{
+    position:relative;
+    display:block;
+    min-height:420px;
+    border-radius:20px;
+    overflow:hidden;
     text-decoration:none;
+    border:1px solid var(--sg-border);
+    transition:transform .3s, border-color .3s;
 }
 
-.contact-item a:hover{
-    color:var(--sg-orange);
+.weekend-card:hover,
+.weekend-card:focus-visible{
+    transform:translateY(-6px);
+    border-color:#4a2a06;
 }
 
-.contact-form{
+.weekend-card img{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    transition:transform .6s ease;
+}
+
+.weekend-card:hover img{
+    transform:scale(1.06);
+}
+
+/* Scrim so the copy stays readable over the photo */
+.weekend-card-body{
+    position:relative;
+    z-index:1;
+    height:100%;
+    min-height:420px;
+
     display:flex;
     flex-direction:column;
-    gap:15px;
+    align-items:flex-start;
+    justify-content:flex-end;
+    gap:10px;
+
+    padding:32px 30px 30px;
+    background:linear-gradient(
+        to bottom,
+        rgba(0,0,0,0) 30%,
+        rgba(0,0,0,.72) 68%,
+        rgba(0,0,0,.92) 100%
+    );
 }
 
-.contact-form input,
-.contact-form select,
-.contact-form textarea{
-    padding:15px;
-    border-radius:8px;
-    background:var(--sg-panel);
+.weekend-card-body h3{
+    font-family:var(--sg-font-display);
+    font-size:clamp(1.5rem, 3.4vw, 2.1rem);
+    letter-spacing:-.5px;
+    text-transform:uppercase;
     color:#fff;
-    border:1px solid var(--sg-border);
-    font-family:var(--sg-font);
-    font-size:1rem;
-    width:100%;
 }
 
-.contact-form textarea{
-    resize:vertical;
+.weekend-card-body p{
+    color:var(--sg-muted);
+    max-width:44ch;
 }
 
-.contact-form .btn{
-    border:none;
-    width:100%;
+.weekend-cta{
+    display:inline-flex;
+    align-items:center;
+    gap:.5em;
+
+    font-family:var(--sg-font-accent);
+    font-size:.85rem;
+    font-weight:bold;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--sg-orange-bright);
+    margin-top:6px;
 }
 
+.weekend-cta::after{
+    content:"\2192"; /* arrow */
+    transition:transform .25s;
+}
+
+.weekend-card:hover .weekend-cta::after{
+    transform:translateX(5px);
+}
+
+/* Practical travel note for people coming in from out of town */
+.weekend-note{
+    max-width:640px;
+    margin:32px auto 0;
+    text-align:center;
+    color:var(--sg-dim);
+    font-size:.92rem;
+}
+
+
+/* Full-width artwork that closes the page */
 
 
 /* ==========================================================================
-   12. RESPONSIVE - TABLET & MOBILE
-   ========================================================================== */
+   RESPONSIVE
 
+   Kept last on purpose. These override what is above them, so moving
+   this block higher would stop it working.
+   ========================================================================== */
 @media (max-width:900px){
 
     .contact-wrapper{
@@ -2252,9 +2384,8 @@ nav a.nav-ticket.active{
     }
 
     .btn:hover,
-
-
     .sponsors a:hover img{
         transform:none;
     }
 }
+
