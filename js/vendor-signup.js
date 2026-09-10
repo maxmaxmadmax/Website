@@ -135,6 +135,10 @@ const state = {
   holdExpiresAt: null,
   user: null,
   confirmed: null,
+
+  /* the event document, so the review step can name the event they are
+     buying into rather than repeating it in the markup */
+  event: null,
 };
 
 let fb = null;          // firebase handles once loaded
@@ -283,6 +287,7 @@ function subscribeSites() {
   onSnapshot(doc(fb.db, 'events', eventId), (snap) => {
     if (!snap.exists()) return;
     const ev = snap.data();
+    state.event = ev;
     map.setLayout({
       mapSize: ev.map || { width: 1000, height: 700 },
       landmarks: ev.landmarks || [],
@@ -989,82 +994,169 @@ function renderSignInPrompt() {
   if (wrap) wrap.hidden = true;
 }
 
+/*  THE REVIEW STEP
+
+    Laid out like a checkout rather than a form summary, because that is
+    what it is: an itemised order, what it comes to, and one button.
+
+    The event sits alongside it so a vendor can see what they are paying
+    into without scrolling back up. There is no artwork file for Eatz &
+    Beatz, so the card draws its own - a gradient and the same pumpkin the
+    hero uses - rather than shipping another image.
+    ------------------------------------------------------------------------- */
 function renderReview() {
   const host = document.getElementById('vs-review');
   if (!host) return;
 
-  const cents = priceCents();
+  const b = feeBreakdown(priceCents());
+  const ev = state.event || {};
+  const bays = state.vendorType === 'market' ? (state.bayCount || 1) : 1;
 
-  const rows = [
-    ['Vendor type', vendorLabel() || '-'],
-    ['Business', state.business.name || '-'],
-    ['Contact', state.business.contactName || '-'],
-    ['Email', state.business.email || '-'],
-    ['Phone', state.business.phone || '-'],
-    ['Social media', state.business.socials || '-'],
+  /*  The site line, priced per bay so the sum is visible: two bays at $50
+      reads as 2 x $50.00 = $100.00 rather than an unexplained $100. */
+  const perBay = bays > 1 ? Math.round(b.siteCents / bays) : b.siteCents;
+
+  const orderRows = [
+    {
+      item: state.vendorType === 'market' ? 'Market bay' : 'Food vendor site',
+      detail: [state.siteLabel, state.categoryName].filter(Boolean).join(' &middot; ') || 'Not chosen',
+      price: exact(perBay),
+      qty: String(bays),
+      total: exact(b.siteCents),
+    },
+    {
+      item: 'Booking fee',
+      detail: 'Card processing and online booking costs',
+      price: '',
+      qty: '',
+      total: exact(b.bookingFeeCents),
+    },
+    {
+      item: 'GST',
+      detail: `10% of ${exact(b.siteCents + b.bookingFeeCents)}`,
+      price: '',
+      qty: '',
+      total: exact(b.gstCents),
+    },
   ];
 
-  rows.push(['Category', state.categoryName || '-']);
-
-  rows.push(
-    ['Frontage', state.setup.frontage ? `${state.setup.frontage} m` : '-'],
-    ['Depth', state.setup.depth ? `${state.setup.depth} m` : '-'],
-    ['Power', state.setup.ownPower || '-'],
-    ['Power and water', state.setup.selfSufficient ? 'Bringing my own' : 'Not confirmed'],
-    ['Vehicle on site', state.setup.vehicleOnSite ? 'Yes' : 'No'],
-    ['Documents', state.documents.length ? `${state.documents.length} attached` : 'None'],
-    ['Site', state.siteLabel || 'Not chosen']
-  );
-
-  /*  The breakdown is spelled out here rather than only at Stripe. A
-      vendor should never meet a number on the payment page they have not
-      already seen, and a business claiming the GST back needs to see it
-      on its own. */
-  const b = feeBreakdown(cents);
+  const details = [
+    ['Business', state.business.name],
+    ['Contact', state.business.contactName],
+    ['Email', state.business.email],
+    ['Phone', state.business.phone],
+    ['Social media', state.business.socials],
+    ['Frontage', state.setup.frontage ? `${state.setup.frontage} m` : ''],
+    ['Depth', state.setup.depth ? `${state.setup.depth} m` : ''],
+    ['Power', state.setup.ownPower],
+    ['Power and water', state.setup.selfSufficient ? 'Bringing my own' : ''],
+    ['Vehicle on site', state.setup.vehicleOnSite ? 'Yes' : ''],
+    ['Documents', state.documents.length ? `${state.documents.length} attached` : ''],
+  ].filter(([, v]) => v);
 
   host.innerHTML = `
-    <dl class="vs-summary-list">
-      ${rows.map(([k, v]) => `
-        <div><dt>${escapeHtml(k)}</dt><dd>${escapeHtml(String(v))}</dd></div>
-      `).join('')}
-    </dl>
+    <div class="vs-checkout">
 
-    <!--  One panel, not two. The breakdown and the figure it adds up to
-          belong together - split across two boxes, the total read as a
-          separate claim rather than the sum of the lines above it.    -->
-    <div class="vs-total">
-      ${b.totalCents ? `
-        <div class="vs-costs">
-          <div class="vs-cost">
-            <span>Site fee</span>
-            <span class="vs-cost-amt">${exact(b.siteCents)}</span>
+      <div class="vs-order">
+        <header class="vs-order-head">
+          <div>
+            <h3>Your booking</h3>
+            <p>Check it over, then pay to lock the site in.</p>
           </div>
-          <div class="vs-cost">
-            <span>Booking fee <em>4% + $0.99</em></span>
-            <span class="vs-cost-amt">${exact(b.bookingFeeCents)}</span>
-          </div>
-          <div class="vs-cost is-subtotal">
-            <span>Subtotal</span>
-            <span class="vs-cost-amt">${exact(b.siteCents + b.bookingFeeCents)}</span>
-          </div>
-          <div class="vs-cost">
-            <span>GST <em>10% of ${exact(b.siteCents + b.bookingFeeCents)}</em></span>
-            <span class="vs-cost-amt">${exact(b.gstCents)}</span>
-          </div>
-        </div>` : ''}
+          <button type="button" class="vs-order-edit" data-goto-step="details">Edit</button>
+        </header>
 
-      <div class="vs-total-row">
-        <span>Total${b.totalCents ? ' to pay' : ''}</span>
-        <strong>${money(b.totalCents)}${b.totalCents ? ' AUD' : ''}</strong>
+        <div class="vs-order-table-wrap">
+          <table class="vs-order-table">
+            <thead>
+              <tr><th>Item</th><th>Details</th><th>Price</th><th>Qty</th><th>Total</th></tr>
+            </thead>
+            <tbody>
+              ${orderRows.map((r) => `
+                <tr>
+                  <td data-th="Item"><strong>${escapeHtml(r.item)}</strong></td>
+                  <td data-th="Details" class="vs-order-detail">${r.detail}</td>
+                  <td data-th="Price">${r.price}</td>
+                  <td data-th="Qty">${r.qty}</td>
+                  <td data-th="Total"><strong>${r.total}</strong></td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="vs-total">
+          <div class="vs-total-row">
+            <span>Total to pay</span>
+            <strong>${money(b.totalCents)}${b.totalCents ? ' AUD' : ''}</strong>
+          </div>
+        </div>
+
+        <ul class="vs-trust">
+          <li>
+            <span class="vs-trust-ico" aria-hidden="true">&#128274;</span>
+            <b>Secure payment</b><span>Handled by Stripe. We never see your card.</span>
+          </li>
+          <li>
+            <span class="vs-trust-ico" aria-hidden="true">&#9993;</span>
+            <b>Instant confirmation</b><span>Emailed to you the moment it clears.</span>
+          </li>
+          <li>
+            <span class="vs-trust-ico" aria-hidden="true">&#9733;</span>
+            <b>A local event</b><span>Run in Bowen, for Bowen.</span>
+          </li>
+        </ul>
       </div>
+
+      <aside class="vs-aside">
+        <div class="vs-event-card">
+          <div class="vs-event-art" aria-hidden="true">
+            <svg viewBox="0 0 64 64" class="vs-event-pumpkin">
+              <path d="M32 14c-2 0-3 2-3 4-8-3-16 3-16 14 0 12 8 20 19 20 11 0 19-8 19-20 0-11-8-17-16-14 0-2-1-4-3-4z"
+                    fill="#ff6b00"/>
+              <path d="M32 14c-1 0-2-4 1-8" stroke="#4caf50" stroke-width="3" fill="none" stroke-linecap="round"/>
+            </svg>
+          </div>
+
+          <div class="vs-event-body">
+            <h4>${escapeHtml(ev.name || 'Eatz & Beatz')}</h4>
+            ${ev.subtitle ? `<p class="vs-event-sub">${escapeHtml(ev.subtitle)}</p>` : ''}
+            <dl class="vs-event-facts">
+              <div><dt>When</dt><dd>${escapeHtml(ev.dateLabel || '')}</dd></div>
+              <div><dt>Where</dt><dd>${escapeHtml([ev.venue, ev.location].filter(Boolean).join(', '))}</dd></div>
+              <div><dt>Your site</dt><dd>${escapeHtml(state.siteLabel || 'Not chosen')}</dd></div>
+            </dl>
+          </div>
+        </div>
+
+        <div class="vs-help-card">
+          <h4>Need a hand?</h4>
+          <p>The event details and the questions vendors usually ask are on step two.</p>
+          <button type="button" class="vs-help-link" data-goto-step="info">Event info &amp; FAQs</button>
+        </div>
+      </aside>
     </div>
+
+    ${details.length ? `
+      <details class="vs-yourdetails">
+        <summary>Your details<span>${details.length} items</span></summary>
+        <dl class="vs-summary-list">
+          ${details.map(([k, v]) => `
+            <div><dt>${escapeHtml(k)}</dt><dd>${escapeHtml(String(v))}</dd></div>`).join('')}
+        </dl>
+      </details>` : ''}
   `;
+
+  /*  Both cards can send somebody back a step. Wired here rather than in
+      wireStaticControls because this markup is rebuilt every render. */
+  host.querySelectorAll('[data-goto-step]').forEach((btn) => {
+    btn.addEventListener('click', () => goTo(btn.getAttribute('data-goto-step')));
+  });
 
   const payBtn = document.getElementById('vs-pay');
   if (payBtn) {
     payBtn.textContent = b.totalCents === 0
-      ? 'Confirm Booking'
-      : `Pay ${money(b.totalCents)} and Book`;
+      ? 'Confirm booking'
+      : `Pay ${money(b.totalCents)} AUD and book`;
     payBtn.disabled = !state.siteLabel;
   }
 }

@@ -446,6 +446,267 @@
     word-break:break-word;
 }
 
+/* ==========================================================================
+   REVIEW - THE CHECKOUT
+
+   Laid out like a checkout rather than a form summary: an itemised order
+   on the left, the event it buys into on the right, and one button.
+   ========================================================================== */
+.vs-checkout{
+    display:grid;
+    grid-template-columns:minmax(0, 1fr) 300px;
+    gap:22px;
+    align-items:start;
+}
+
+.vs-order{ min-width:0; }
+
+.vs-order-head{
+    display:flex;
+    align-items:flex-start;
+    gap:16px;
+    margin-bottom:16px;
+}
+
+.vs-order-head h3{
+    font-family:var(--sg-font-display);
+    font-size:1.25rem;
+    letter-spacing:-.4px;
+    text-transform:uppercase;
+    margin:0 0 4px;
+}
+
+.vs-order-head p{ margin:0; color:var(--sg-muted); font-size:.92rem; }
+
+.vs-order-edit{
+    margin-left:auto;
+    flex:0 0 auto;
+    padding:8px 16px;
+    border:1px solid var(--sg-border);
+    border-radius:50px;
+    background:none;
+    color:var(--sg-text);
+    font-family:var(--sg-font-accent);
+    font-size:.72rem;
+    font-weight:bold;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    cursor:pointer;
+}
+
+.vs-order-edit:hover{ border-color:var(--sg-orange); color:var(--sg-orange); }
+
+
+/* ---- the itemised order ---- */
+.vs-order-table-wrap{
+    border:1px solid var(--sg-border);
+    border-radius:12px;
+    overflow:hidden;
+}
+
+.vs-order-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:.92rem;
+    table-layout:fixed;   /* or the item names get squeezed to one word a line */
+}
+
+/*  Item names read as names, not as a stack of single words. Details take
+    whatever is left; the three money columns only need room for a figure. */
+.vs-order-table th:nth-child(1){ width:26%; }
+.vs-order-table th:nth-child(3){ width:14%; }
+.vs-order-table th:nth-child(4){ width:8%; }
+.vs-order-table th:nth-child(5){ width:16%; }
+
+.vs-order-table td:nth-child(1) strong{ display:block; line-height:1.25; }
+
+.vs-order-table th{
+    text-align:left;
+    padding:12px 16px;
+    background:#0b0b0b;
+    border-bottom:1px solid var(--sg-border);
+
+    font-family:var(--sg-font-accent);
+    font-size:.68rem;
+    font-weight:bold;
+    letter-spacing:1.6px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+}
+
+.vs-order-table td{
+    padding:14px 16px;
+    border-bottom:1px solid var(--sg-border);
+    vertical-align:top;
+}
+
+.vs-order-table tr:last-child td{ border-bottom:0; }
+
+/* money right, so the figures line up and can be added up by eye */
+.vs-order-table th:nth-child(3),
+.vs-order-table th:nth-child(4),
+.vs-order-table th:nth-child(5),
+.vs-order-table td:nth-child(3),
+.vs-order-table td:nth-child(4),
+.vs-order-table td:nth-child(5){
+    text-align:right;
+    white-space:nowrap;
+    font-variant-numeric:tabular-nums;
+    font-feature-settings:"tnum";
+}
+
+.vs-order-detail{ color:var(--sg-muted); }
+
+
+/* ---- the reassurance row ---- */
+.vs-trust{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+    gap:14px;
+    list-style:none;
+    margin:18px 0 0;
+    padding:0;
+}
+
+.vs-trust li{
+    display:grid;
+    grid-template-columns:auto 1fr;
+    grid-template-rows:auto auto;
+    column-gap:10px;
+    align-items:center;
+    font-size:.82rem;
+}
+
+.vs-trust-ico{ grid-row:1 / span 2; font-size:1.2rem; opacity:.9; }
+.vs-trust b{ color:#fff; font-size:.86rem; }
+.vs-trust span:not(.vs-trust-ico){ color:var(--sg-dim); }
+
+
+/* ---- the event alongside ---- */
+.vs-aside{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    min-width:0;
+}
+
+.vs-event-card,
+.vs-help-card{
+    background:var(--sg-panel-light);
+    border:1px solid var(--sg-border);
+    border-radius:12px;
+    overflow:hidden;
+}
+
+/*  No artwork file exists for this event, so the card draws its own out of
+    a gradient and the same pumpkin the hero uses. One less thing to
+    download, and it cannot end up out of date. */
+.vs-event-art{
+    height:110px;
+    display:grid;
+    place-items:center;
+    background:
+        radial-gradient(80% 120% at 50% 120%, var(--vs-purple) 0%, transparent 60%),
+        linear-gradient(160deg, #2a1206, #0b0b0b);
+    border-bottom:1px solid var(--sg-border);
+}
+
+.vs-event-pumpkin{ width:52px; height:52px; }
+
+.vs-event-body{ padding:16px 18px 18px; }
+
+.vs-event-body h4{
+    font-family:var(--sg-font-display);
+    font-size:1.1rem;
+    letter-spacing:-.3px;
+    text-transform:uppercase;
+    margin:0;
+}
+
+.vs-event-sub{
+    margin:2px 0 14px;
+    color:var(--sg-orange);
+    font-family:var(--sg-font-display);
+    font-size:.88rem;
+    text-transform:uppercase;
+}
+
+.vs-event-facts{ margin:0; }
+
+.vs-event-facts > div{
+    padding:8px 0;
+    border-top:1px solid var(--sg-border);
+}
+
+.vs-event-facts dt{
+    font-family:var(--sg-font-accent);
+    font-size:.64rem;
+    font-weight:bold;
+    letter-spacing:1.6px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+    margin-bottom:3px;
+}
+
+.vs-event-facts dd{ margin:0; font-size:.88rem; }
+
+.vs-help-card{ padding:16px 18px; }
+
+.vs-help-card h4{
+    font-family:var(--sg-font-display);
+    font-size:.95rem;
+    text-transform:uppercase;
+    margin:0 0 6px;
+}
+
+.vs-help-card p{ margin:0 0 12px; color:var(--sg-muted); font-size:.86rem; }
+
+.vs-help-link{
+    border:0;
+    background:none;
+    padding:0;
+    font:inherit;
+    font-size:.86rem;
+    font-weight:bold;
+    color:var(--sg-orange);
+    cursor:pointer;
+    text-align:left;
+}
+
+.vs-help-link:hover{ text-decoration:underline; }
+
+
+/* ---- their own details, folded away ---- */
+.vs-yourdetails{
+    margin-top:22px;
+    border:1px solid var(--sg-border);
+    border-radius:12px;
+    overflow:hidden;
+}
+
+.vs-yourdetails summary{
+    padding:14px 18px;
+    cursor:pointer;
+    list-style:none;
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    font-family:var(--sg-font-accent);
+    font-size:.72rem;
+    font-weight:bold;
+    letter-spacing:1.6px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+}
+
+.vs-yourdetails summary::-webkit-details-marker{ display:none; }
+.vs-yourdetails summary span{ margin-left:auto; color:var(--sg-dim); letter-spacing:1px; }
+.vs-yourdetails summary::after{ content:'+'; color:var(--sg-dim); font-size:1.1rem; }
+.vs-yourdetails[open] summary::after{ content:'\\2212'; }
+.vs-yourdetails .vs-summary-list{ margin:0; border-top:1px solid var(--sg-border); }
+
+
 /*  THE COST PANEL
 
     The breakdown and the total it adds up to sit in one box. Split across
@@ -1244,6 +1505,56 @@
         align-items:flex-start;
         gap:6px;
     }
+
+    /* the event card drops under the order rather than squeezing beside it */
+    .vs-checkout{ grid-template-columns:1fr; }
+
+    /*  A five column table does not fit a phone, and side-scrolling money
+        is horrible. Each row becomes its own little block with the column
+        name in front of the value, from the data-th on each cell. */
+    .vs-order-table thead{
+        position:absolute;
+        width:1px; height:1px;
+        margin:-1px; padding:0;
+        overflow:hidden; clip:rect(0 0 0 0);
+        white-space:nowrap;
+    }
+
+    .vs-order-table,
+    .vs-order-table tbody,
+    .vs-order-table tr,
+    .vs-order-table td{ display:block; width:100%; }
+
+    .vs-order-table tr{
+        padding:12px 4px;
+        border-bottom:1px solid var(--sg-border);
+    }
+
+    .vs-order-table tr:last-child{ border-bottom:0; }
+
+    .vs-order-table td{
+        display:flex;
+        justify-content:space-between;
+        gap:16px;
+        padding:4px 12px;
+        border:0;
+        text-align:right;
+    }
+
+    .vs-order-table td::before{
+        content:attr(data-th);
+        font-family:var(--sg-font-accent);
+        font-size:.66rem;
+        font-weight:bold;
+        letter-spacing:1.4px;
+        text-transform:uppercase;
+        color:var(--sg-gold);
+        text-align:left;
+        flex:0 0 auto;
+    }
+
+    /* a blank price or qty is noise on a phone */
+    .vs-order-table td:empty{ display:none; }
 
     .vs-web{
         width:88px;
