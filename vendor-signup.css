@@ -23,6 +23,14 @@
     --vs-mine:var(--sg-orange);
 }
 
+/*  The flow hides steps with the hidden attribute, and several of them are
+    also given a display by a rule in here. Any author display beats the
+    browser's own [hidden] rule, so without this a hidden step or the
+    confirmation panel renders anyway and stacks under the live one.
+
+    Same trap as admin.css. Keep this above everything that sets display. */
+.vendor-signup [hidden]{ display:none !important; }
+
 
 /* --------------------------------------------------------------------------
    HERO
@@ -127,10 +135,12 @@
       DOCUMENTS
       EVENT INFO AND FAQS
       FOOD CATEGORIES
+      ONE STEP, ONE SCREEN
       PREVIEW BANNER
       REVIEW AND CONFIRMATION
+      REVIEW - THE CHECKOUT
       STEP PANELS
-      STEPPER
+      PROGRESS HEADER
       THE MAP
       VENDOR TYPE CHOICES
       MOBILE
@@ -392,6 +402,168 @@
     background:#4a1d1d;
     border-radius:4px;
     padding:2px 6px;
+}
+
+/* --------------------------------------------------------------------------
+   ONE STEP, ONE SCREEN
+
+   The flow fills the viewport and the page itself never scrolls. A vendor
+   answers what is in front of them and presses on; nothing important can be
+   hiding below the fold, because there is no below the fold.
+
+   Where a step genuinely has more in it than a screen holds - the event
+   info and its FAQs, business details on a small phone - the PANEL scrolls
+   inside its own frame rather than the page moving underneath it. The
+   progress bar and the buttons stay put either way, which is the part that
+   actually matters.
+
+   dvh rather than vh: on a phone, 100vh is the viewport with the browser
+   chrome hidden, so a vh-sized screen is always slightly too tall and the
+   page scrolls by exactly the height of the address bar. vh stays first as
+   the fallback for anything that does not know dvh.
+   -------------------------------------------------------------------------- */
+/*  height, not min-height. A min-height lets the box grow when the contents
+    are taller than the screen, which is exactly the case that has to scroll
+    the panel instead - a flex child only shrinks if the parent has a size
+    it cannot exceed.                                                      */
+#vs-flow{
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    height:100dvh;
+    padding:28px 6%;
+}
+
+.vs-flow{
+    display:flex;
+    flex-direction:column;
+    flex:1 1 auto;
+    min-height:0;          /* lets the step shrink instead of overflowing */
+    width:100%;
+    max-width:940px;
+    margin:auto;
+}
+
+.vs-progress{ flex:0 0 auto; }
+
+/*  The visible step takes what is left and scrolls its own contents. Hidden
+    steps are display:none, so only ever one of these is in the flex line. */
+.vs-step{
+    flex:1 1 auto;
+    min-height:0;
+    overflow-y:auto;
+    overscroll-behavior:contain;   /* stops a bounce scrolling the page */
+}
+
+/*  A step shorter than the screen should sit at the top of its frame, not
+    stretch its contents to fill it. */
+.vs-step > :last-child{ margin-bottom:0; }
+
+/*  Step one is the shop window and gets centred in whatever room is left,
+    so the two cards sit in the middle of the screen rather than riding up
+    under the progress bar on a tall monitor. */
+.vs-step[data-step="type"]{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+}
+
+/*  The map needs its own height to be usable and is the one place where
+    squeezing to fit makes the step worse, so it keeps a floor and scrolls. */
+.vs-step[data-step="site"] .vs-map-wrap{ min-height:320px; }
+
+/*  The confirmation screens replace the step rather than sitting in one, so
+    they centre themselves in the same frame. */
+.vs-confirming,
+.vs-confirmed{
+    flex:1 1 auto;
+    min-height:0;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+}
+
+
+
+
+/* --------------------------------------------------------------------------
+   FORM FIELDS - matches the existing contact form styling
+   -------------------------------------------------------------------------- */
+.vs-field-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
+    gap:16px;
+}
+
+.vs-field{
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+}
+
+.vs-field.is-wide{
+    grid-column:1 / -1;
+}
+
+.vs-field label{
+    font-family:var(--sg-font-accent);
+    font-size:.74rem;
+    font-weight:bold;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+}
+
+.vs-field input,
+.vs-field select,
+.vs-field textarea{
+    padding:14px;
+    border-radius:8px;
+    background:#0b0b0b;
+    color:#fff;
+    border:1px solid var(--sg-border);
+    font-family:var(--sg-font);
+    font-size:1rem;
+    width:100%;
+}
+
+.vs-field textarea{
+    resize:vertical;
+}
+
+.vs-field-hint{
+    color:var(--sg-dim);
+    font-size:.82rem;
+}
+
+.vs-check{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:var(--sg-muted);
+}
+
+/* Something the vendor must read before ticking the box under it */
+.vs-notice{
+    background:rgba(107,63,160,.14);
+    border:1px solid var(--vs-purple);
+    border-left:4px solid var(--vs-purple);
+    border-radius:10px;
+    padding:14px 18px;
+    margin-bottom:12px;
+    color:var(--sg-muted);
+    font-size:.94rem;
+}
+
+.vs-notice strong{
+    color:#fff;
+}
+
+.vs-check input{
+    width:20px;
+    height:20px;
+    flex:0 0 auto;
 }
 
 /* --------------------------------------------------------------------------
@@ -1198,22 +1370,33 @@
 
 /* --------------------------------------------------------------------------
    VENDOR TYPE CHOICES
+
+   Two cards that have to answer "which one am I?" in a glance and then be
+   pressed. Each carries its own accent through a pair of custom properties,
+   so the market card is purple everywhere - art, price, ticks, button -
+   without a second copy of every rule.
    -------------------------------------------------------------------------- */
 .vs-type-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));
-    gap:16px;
+    grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
+    gap:18px;
+}
+
+/* Two options rather than four, so give them room */
+.vs-type-grid.is-two{
+    grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
 }
 
 /*  The photo fills the card and the wording sits on it, over a scrim dark
-    enough that the text stays readable whatever the photo turns out to be.
-    Content is bottom-aligned so the two cards line up even when one has
-    more words than the other.                                             */
+    enough that the text stays readable whatever the photo turns out to be. */
 .vs-type{
+    --vs-type-accent:var(--sg-orange);
+    --vs-type-glow:rgba(255,107,0,.35);
+    --vs-type-cta-bg:var(--sg-orange);
+    --vs-type-cta-ink:#140800;
+
     position:relative;
     display:flex;
-    align-items:flex-end;
-    min-height:340px;
     overflow:hidden;
 
     text-align:left;
@@ -1226,11 +1409,22 @@
     transition:border-color .25s, transform .25s, box-shadow .25s;
 }
 
+.vs-type[data-vendor-type="market"]{
+    --vs-type-accent:#a77dff;
+    --vs-type-glow:rgba(124,77,255,.35);
+    --vs-type-cta-bg:#7c4dff;
+    --vs-type-cta-ink:#fff;
+}
+
 .vs-type-bg{
     position:absolute;
     inset:0;
     overflow:hidden;
     background:linear-gradient(155deg, #2a1201, #0a0a0a 62%);
+}
+
+.vs-type[data-vendor-type="market"] .vs-type-bg{
+    background:linear-gradient(155deg, #1d0f2c, #0a0a0a 62%);
 }
 
 .vs-type-bg img{
@@ -1241,69 +1435,66 @@
     transition:transform .5s ease;
 }
 
-/*  The scrim. Solid at the bottom where the words are, clear at the top so
-    the photo still reads as a photo.                                      */
+/*  The scrim. Nearly solid low down where the words are, clearer at the top
+    so the photo still reads as a photo behind the icon.                   */
 .vs-type-bg::after{
     content:'';
     position:absolute;
     inset:0;
     background:linear-gradient(
         to top,
-        rgba(0,0,0,.94) 0%,
-        rgba(0,0,0,.82) 28%,
-        rgba(0,0,0,.42) 58%,
-        rgba(0,0,0,.15) 100%
+        rgba(0,0,0,.95) 0%,
+        rgba(0,0,0,.9) 40%,
+        rgba(0,0,0,.55) 72%,
+        rgba(0,0,0,.25) 100%
     );
 }
 
+/*  The body flows normally and reserves room at the top for the icon, which
+    is positioned over the photo. That way the card is as tall as its own
+    words rather than a fixed height guessed in advance - which matters now
+    the whole step has to fit one screen.                                  */
 .vs-type-body{
     position:relative;
-    display:block;
+    display:flex;
+    flex-direction:column;
     width:100%;
-    padding:26px 24px 24px;
+    padding:132px 22px 20px;
 }
 
-/*  Line art shown until a real photo is saved, so an empty card still
-    looks like a choice rather than a mistake. The card starts on
-    .no-photo and the image removes it once it has loaded - the other way
-    round (onerror) leaves the card blank whenever the photo simply never
-    starts loading, which is what happens on a step that is hidden.        */
+/*  Line art shown until a real photo is saved, so an empty card still looks
+    like a choice rather than a mistake. The card starts on .no-photo and the
+    image removes it once it has loaded - the other way round (onerror)
+    leaves the card blank whenever the photo simply never starts loading,
+    which is what happens on a step that is hidden.                        */
 .vs-type-art{
     display:none;
     position:absolute;
-    top:34px;
+    top:26px;
     left:50%;
     transform:translateX(-50%);
-    width:min(58%, 190px);
+    width:min(44%, 148px);
     fill:none;
-    stroke:var(--sg-orange);
+    stroke:var(--vs-type-accent);
     stroke-width:2.5;
     stroke-linejoin:round;
-    opacity:.5;
+    opacity:.65;
     transition:opacity .25s, transform .5s ease;
 }
 
 .vs-type.no-photo .vs-type-bg img{ display:none; }
 .vs-type.no-photo .vs-type-art{ display:block; }
 
-.vs-type[data-vendor-type="market"] .vs-type-bg{
-    background:linear-gradient(155deg, #1d0f2c, #0a0a0a 62%);
-}
-
-.vs-type[data-vendor-type="market"] .vs-type-art{
-    stroke:var(--vs-purple-light, #b98cff);
-}
-
 .vs-type:hover{
     transform:translateY(-4px);
-    border-color:#5a3308;
+    border-color:var(--vs-type-accent);
     box-shadow:0 18px 40px rgba(0,0,0,.55);
 }
 
 .vs-type:hover .vs-type-bg img{ transform:scale(1.06); }
 
 .vs-type:hover .vs-type-art{
-    opacity:.75;
+    opacity:.9;
     transform:translateX(-50%) translateY(-4px);
 }
 
@@ -1313,12 +1504,12 @@
 }
 
 .vs-type.is-selected{
-    border-color:var(--sg-orange);
-    box-shadow:0 0 0 1px var(--sg-orange), 0 18px 40px rgba(0,0,0,.55);
+    border-color:var(--vs-type-accent);
+    box-shadow:0 0 0 1px var(--vs-type-accent), 0 18px 40px rgba(0,0,0,.55);
 }
 
-/*  Tick badge on the chosen card - colour alone should not be the only
-    thing saying which one is picked.                                      */
+/*  Tick badge on the chosen card - colour alone should not be the only thing
+    saying which one is picked.                                            */
 .vs-type.is-selected::after{
     content:'\2713';
     position:absolute;
@@ -1329,7 +1520,7 @@
     display:grid;
     place-items:center;
     border-radius:50%;
-    background:var(--sg-orange);
+    background:var(--vs-type-accent);
     color:#0a0a0a;
     font-size:1.05rem;
     font-weight:bold;
@@ -1337,36 +1528,22 @@
 
 .vs-type-name{
     display:block;
+    text-align:center;
     font-family:var(--sg-font-display);
-    font-size:1.15rem;
+    font-size:1.2rem;
     letter-spacing:-.5px;
     text-transform:uppercase;
-    margin-bottom:6px;
 }
 
 .vs-type-price{
     display:block;
+    text-align:center;
     font-family:var(--sg-font-display);
-    font-size:1.6rem;
-    color:var(--sg-orange);
-    margin-bottom:8px;
-}
-
-.vs-type-desc{
-    display:block;
-    color:var(--sg-muted);
-    font-size:.9rem;
-}
-
-.vs-type-size{
-    display:block;
-    font-family:var(--sg-font-accent);
-    font-size:.74rem;
-    font-weight:bold;
-    letter-spacing:1.5px;
-    text-transform:uppercase;
-    color:var(--sg-gold);
-    margin-bottom:8px;
+    font-size:2.5rem;
+    line-height:1.1;
+    letter-spacing:-1.5px;
+    color:var(--vs-type-accent);
+    margin-top:6px;
 }
 
 .vs-type-per{
@@ -1378,157 +1555,80 @@
     color:var(--sg-dim);
 }
 
-/*  The headline price is the site only, so say so right underneath it
-    rather than letting the fee turn up as a surprise at the payment page. */
+/*  The headline price is the site only. The reference design this was drawn
+    from said "incl. GST" under the figure, which would be wrong here - a
+    $100 site is $115.49 once the booking fee and GST are on it. So this
+    says what is actually still to come.                                   */
 .vs-type-fees{
     display:block;
+    text-align:center;
     font-size:.78rem;
     color:var(--sg-dim);
-    margin:-2px 0 6px;
+    margin-top:2px;
 }
 
-/*  The cost breakdown above the total: quieter than the summary rows, so
-    the eye still lands on the total underneath. */
-/*  THE COST BREAKDOWN
-
-    Deliberately not styled like the summary rows above it. Those are form
-    answers read back; this is a receipt, and dressing it in the same gold
-    monospace labels made it look like more of the form.
-
-    So: quiet sentence-case labels, figures in a right-aligned column that
-    line up under each other, and the workings in small print beside the
-    label rather than crammed into it. "Booking fee (4% + $0.99)" wrapped
-    onto two lines and looked broken.                                    */
-/*  Inside the gradient panel, so no border above it and a rule underneath
-    separating the workings from the figure they come to. */
-.vs-costs{
-    margin-bottom:16px;
-    padding-bottom:16px;
-    border-bottom:1px solid rgba(255,255,255,.12);
-}
-
-.vs-cost{
-    display:flex;
-    align-items:baseline;
-    justify-content:space-between;
-    gap:20px;
-    padding:7px 0;
-    font-size:.94rem;
+.vs-type-desc{
+    display:block;
+    text-align:center;
     color:var(--sg-muted);
+    font-size:.9rem;
+    margin-top:12px;
 }
 
-/*  The workings, so a vendor with a calculator can see where the GST came
-    from. It is 10% of the subtotal, not of the site fee, and without this
-    the number looks wrong. */
-.vs-cost em{
-    display:inline-block;
-    margin-left:6px;
-    font-style:normal;
-    font-size:.8rem;
-    color:var(--sg-dim);
-    white-space:nowrap;
-}
-
-/*  tabular-nums keeps the digits the same width so the column is straight
-    even with different amounts in it. */
-.vs-cost-amt{
-    font-variant-numeric:tabular-nums;
-    font-feature-settings:"tnum";
-    color:#fff;
-    white-space:nowrap;
-}
-
-.vs-cost.is-subtotal{
-    margin-top:4px;
-    padding-top:12px;
-    border-top:1px solid rgba(255,255,255,.07);
-    color:#fff;
-}
-
-/* Two options rather than four, so give them room */
-.vs-type-grid.is-two{
-    grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
-}
-
-
-/* --------------------------------------------------------------------------
-   FORM FIELDS - matches the existing contact form styling
-   -------------------------------------------------------------------------- */
-.vs-field-grid{
+/*  What you get, one line each. Ticks in the card's own accent so the two
+    cards stay told apart even this far down.                              */
+.vs-type-list{
     display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
-    gap:16px;
+    gap:9px;
+    margin:16px 0 20px;   /* the bottom half is the gap above the button */
 }
 
-.vs-field{
+.vs-type-list > span{
     display:flex;
-    flex-direction:column;
-    gap:7px;
+    align-items:flex-start;
+    gap:9px;
+    color:var(--sg-muted);
+    font-size:.88rem;
+    line-height:1.4;
 }
 
-.vs-field.is-wide{
-    grid-column:1 / -1;
-}
-
-.vs-field label{
-    font-family:var(--sg-font-accent);
-    font-size:.74rem;
+.vs-type-list i{
+    flex:0 0 auto;
+    font-style:normal;
     font-weight:bold;
-    letter-spacing:2px;
-    text-transform:uppercase;
-    color:var(--sg-gold);
+    color:var(--vs-type-accent);
 }
 
-.vs-field input,
-.vs-field select,
-.vs-field textarea{
-    padding:14px;
-    border-radius:8px;
-    background:#0b0b0b;
-    color:#fff;
-    border:1px solid var(--sg-border);
-    font-family:var(--sg-font);
-    font-size:1rem;
-    width:100%;
-}
+/*  Looks like a button, is a span. The whole card is already the button and
+    a nested one would be invalid markup and unclickable - but without
+    something button-shaped at the bottom the card does not read as pressable.
 
-.vs-field textarea{
-    resize:vertical;
-}
-
-.vs-field-hint{
-    color:var(--sg-dim);
-    font-size:.82rem;
-}
-
-.vs-check{
+    margin-top:auto pins it to the foot, so the two cards line up even when
+    one has more words than the other.                                     */
+.vs-type-cta{
     display:flex;
     align-items:center;
-    gap:10px;
-    color:var(--sg-muted);
+    justify-content:center;
+    gap:9px;
+    margin-top:auto;
+    padding:13px 18px;
+
+    border-radius:11px;
+    background:var(--vs-type-cta-bg);
+    color:var(--vs-type-cta-ink);
+
+    font-family:var(--sg-font-display);
+    font-size:.95rem;
+    letter-spacing:-.2px;
+    transition:box-shadow .25s, transform .25s;
 }
 
-/* Something the vendor must read before ticking the box under it */
-.vs-notice{
-    background:rgba(107,63,160,.14);
-    border:1px solid var(--vs-purple);
-    border-left:4px solid var(--vs-purple);
-    border-radius:10px;
-    padding:14px 18px;
-    margin-bottom:12px;
-    color:var(--sg-muted);
-    font-size:.94rem;
+.vs-type:hover .vs-type-cta{
+    box-shadow:0 8px 22px var(--vs-type-glow);
 }
 
-.vs-notice strong{
-    color:#fff;
-}
+.vs-type-cta i{ font-style:normal; }
 
-.vs-check input{
-    width:20px;
-    height:20px;
-    flex:0 0 auto;
-}
 
 /* --------------------------------------------------------------------------
    MOBILE
@@ -1540,7 +1640,7 @@
     }
 
     .vs-step{
-        padding:26px 20px;
+        padding:20px 16px;
         border-radius:14px;
     }
 
@@ -1589,18 +1689,46 @@
 
     /*  Shorter cards on a phone, where they stack and two full-height
         tiles would push the second one well below the fold.            */
-    .vs-type{
-        min-height:252px;
-    }
+    /*  Two rich cards will not both fit a phone screen no matter how they
+        are cut, so on a phone the icon band shrinks hard and the card is
+        allowed to be as tall as its words. The step panel scrolls inside
+        its own frame if it has to; the page still does not.            */
+    .vs-type-grid{ gap:12px; }
 
+    /*  The icon band is the biggest thing that can give on a phone. It drops
+        to a small badge so both cards clear an 812pt screen without the
+        wording having to shrink to match. The photo, when there is one,
+        fills the whole card behind this anyway - the band is only where the
+        text is told not to start.                                       */
     .vs-type-body{
-        padding:20px 18px 18px;
+        padding:48px 16px 12px;
     }
 
     .vs-type-art{
-        top:24px;
-        width:min(46%, 132px);
+        top:8px;
+        width:min(20%, 46px);
     }
+
+    .vs-type-price{ font-size:1.9rem; }
+    .vs-type-list{ margin:10px 0 14px; gap:6px; }
+    .vs-type-list > span{ font-size:.83rem; }
+    .vs-type-cta{ padding:11px 16px; font-size:.9rem; }
+
+    /*  The tagline repeats what the ticks underneath already say, and on a
+        phone the two cards need every line they can give back.         */
+    .vs-type-desc{ display:none; }
+
+    .vs-step-intro{ margin-bottom:18px; }
+
+    /*  On step one the two cards already say what this sentence says - the
+        price is on each of them and the map is in the ticks. Dropping it is
+        two lines back, which is the difference between both cards fitting a
+        phone screen and not.                                            */
+    .vs-step[data-step="type"] .vs-step-intro{ display:none; }
+
+    /*  Steps get their air back on a phone, where the panel scrolls anyway
+        and cramping it only makes the form harder to fill in.          */
+    #vs-flow{ padding:20px 5%; }
 }
 
 @media (prefers-reduced-motion:reduce){
