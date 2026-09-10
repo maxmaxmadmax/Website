@@ -553,6 +553,345 @@
     becomes three columns on a wide screen on its own.                     */
 
 /* ==========================================================================
+   FRIDAY NIGHTS RESIDENCY
+
+   The weekly night at the Grand View Hotel. The whole thing is one section
+   in events.html with a `hidden` attribute on it, so taking it down is
+   deleting one word rather than commenting out a block of markup.
+
+   Nothing in here sets `display` on .ev-residency itself. An author display
+   beats the browser's own [hidden] rule, and a section that ignored the
+   attribute meant to hide it would be a trap for whoever came next. The
+   guard below makes that safe for anything added later too.
+   ========================================================================== */
+.events-page [hidden]{ display:none !important; }
+
+.ev-residency{
+    --ev-res-line:#282828;
+    border-top:1px solid var(--ev-res-line);
+}
+
+/* ---- the banner ---- */
+.ev-res-hero{
+    position:relative;
+    overflow:hidden;
+    min-height:min(56vh, 420px);
+    display:flex;
+    align-items:center;
+}
+
+/*  The photo is a background rather than an <img>, so a file that is not
+    there yet leaves the gradient showing instead of a broken image. Swap
+    the url in --ev-art when you have one. */
+.ev-res-hero-media{
+    position:absolute;
+    inset:0;
+    background:
+        linear-gradient(90deg, rgba(6,6,6,.95) 26%, rgba(6,6,6,.4) 78%),
+        linear-gradient(120deg, #2a1436, #0a0a0a 70%);
+    background-size:cover;
+    background-position:center;
+}
+
+.ev-res-hero-inner{
+    position:relative;
+    width:100%;
+    max-width:var(--sg-max-width);
+    margin:auto;
+    padding:52px 6%;
+}
+
+.ev-res-kicker,
+.ev-res-label{
+    font-family:var(--sg-font-accent);
+    font-size:.7rem;
+    font-weight:bold;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+    margin-bottom:10px;
+}
+
+.ev-res-name{
+    font-family:var(--sg-font-display);
+    font-size:clamp(2.2rem, 6.5vw, 4.4rem);
+    line-height:.94;
+    letter-spacing:-1.5px;
+    text-transform:uppercase;
+    margin-bottom:10px;
+}
+
+.ev-res-venue{
+    font-family:var(--sg-font-accent);
+    font-size:clamp(.72rem, 1.7vw, .92rem);
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:#fff;
+    margin-bottom:20px;
+}
+
+.ev-res-copy{
+    color:var(--sg-muted);
+    line-height:1.7;
+    margin-bottom:26px;
+}
+
+/*  The three facts. Sized to their content rather than stretched, so the
+    long label and the short one still line their icons up.              */
+.ev-res-facts{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(160px, max-content));
+    gap:14px 34px;
+    list-style:none;
+    margin:0 0 26px;
+}
+
+.ev-res-facts li{
+    display:flex;
+    align-items:center;
+    gap:11px;
+}
+
+.ev-res-facts svg{
+    width:22px;
+    height:22px;
+    flex:0 0 auto;
+    fill:currentColor;
+    color:var(--sg-gold);
+}
+
+.ev-res-facts span{
+    display:grid;
+    font-family:var(--sg-font-accent);
+    font-size:.66rem;
+    letter-spacing:1.4px;
+    text-transform:uppercase;
+    color:var(--sg-dim);
+    line-height:1.7;
+}
+
+.ev-res-facts b{ color:#fff; font-weight:bold; }
+
+.ev-res-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    background:var(--sg-gold);
+    color:#140800;
+    border-color:var(--sg-gold);
+}
+
+.ev-res-btn:hover{ background:#ffc933; border-color:#ffc933; color:#140800; }
+
+/*  The handwritten line in the corner. Decorative, aria-hidden in the
+    markup, and it simply goes when there is no room for it.            */
+.ev-res-script{
+    position:absolute;
+    right:5%;
+    bottom:14%;
+    margin:0;
+    font-family:var(--sg-font-script);
+    font-size:clamp(1.2rem, 2.4vw, 2rem);
+    line-height:1.25;
+    text-align:center;
+    color:#fff;
+    opacity:.9;
+    pointer-events:none;
+}
+
+/* ---- line up and venue ---- */
+.ev-res-body{
+    display:grid;
+    grid-template-columns:minmax(0, 1fr) 300px;
+    gap:26px;
+    align-items:start;
+
+    max-width:var(--sg-max-width);
+    margin:auto;
+    padding:36px 6%;
+}
+
+.ev-fri-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));
+    gap:14px;
+    margin-bottom:16px;
+}
+
+.ev-fri{
+    background:#121212;
+    border:1px solid var(--ev-res-line);
+    border-radius:12px;
+    overflow:hidden;
+    transition:border-color .25s, transform .25s;
+}
+
+.ev-fri:hover{ border-color:var(--sg-gold); transform:translateY(-3px); }
+
+.ev-fri-art{
+    position:relative;
+    height:130px;
+    background:
+        var(--ev-art, none),
+        linear-gradient(140deg, #33184a, #0d0d0d 72%);
+    background-size:cover;
+    background-position:center;
+}
+
+.ev-fri-date{
+    position:absolute;
+    top:10px;
+    left:10px;
+
+    padding:5px 9px;
+    border-radius:5px;
+    background:rgba(0,0,0,.72);
+    border:1px solid var(--sg-gold);
+    color:var(--sg-gold);
+
+    font-family:var(--sg-font-accent);
+    font-size:.6rem;
+    font-weight:bold;
+    letter-spacing:1.2px;
+    text-transform:uppercase;
+}
+
+.ev-fri-body{ padding:13px 14px 15px; }
+
+.ev-fri-body h3{
+    font-family:var(--sg-font-display);
+    font-size:1rem;
+    letter-spacing:-.4px;
+    text-transform:uppercase;
+    margin-bottom:5px;
+}
+
+.ev-fri-body p{
+    margin:0;
+    color:var(--sg-gold);
+    font-family:var(--sg-font-accent);
+    font-size:.63rem;
+    font-weight:bold;
+    letter-spacing:1.1px;
+    text-transform:uppercase;
+}
+
+.ev-res-link{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding-bottom:4px;
+    border-bottom:1px solid var(--sg-dim);
+
+    color:#fff;
+    font-family:var(--sg-font-accent);
+    font-size:.66rem;
+    font-weight:bold;
+    letter-spacing:1.6px;
+    text-transform:uppercase;
+}
+
+.ev-res-link:hover{ color:var(--sg-gold); border-bottom-color:var(--sg-gold); }
+
+.ev-venue{
+    background:#121212;
+    border:1px solid var(--ev-res-line);
+    border-radius:12px;
+    padding:0 0 16px;
+    overflow:hidden;
+}
+
+.ev-venue-art{
+    height:150px;
+    background:linear-gradient(140deg, #33184a, #0d0d0d 72%);
+    background-size:cover;
+    background-position:center;
+    margin-bottom:16px;
+}
+
+.ev-venue h3{
+    font-family:var(--sg-font-display);
+    font-size:1.05rem;
+    letter-spacing:-.4px;
+    text-transform:uppercase;
+    margin:0 16px 8px;
+}
+
+.ev-venue > p{
+    margin:0 16px 16px;
+    color:var(--sg-muted);
+    font-size:.88rem;
+    line-height:1.65;
+}
+
+.ev-venue-points{
+    list-style:none;
+    margin:0;
+    border-top:1px solid var(--ev-res-line);
+}
+
+.ev-venue-points li{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    padding:11px 16px;
+    border-bottom:1px solid var(--ev-res-line);
+
+    color:var(--sg-muted);
+    font-family:var(--sg-font-accent);
+    font-size:.64rem;
+    font-weight:bold;
+    letter-spacing:1.3px;
+    text-transform:uppercase;
+}
+
+.ev-venue-points li:last-child{ border-bottom:0; }
+
+.ev-venue-points svg{
+    width:20px;
+    height:20px;
+    flex:0 0 auto;
+    fill:currentColor;
+    color:var(--sg-gold);
+}
+
+/* ---- book a DJ ---- */
+.ev-res-cta{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:24px;
+
+    padding:34px 6%;
+    background:#0b0b0b;
+    border-top:1px solid var(--ev-res-line);
+}
+
+.ev-res-cta > div{ max-width:560px; }
+
+.ev-res-cta h3{
+    font-family:var(--sg-font-display);
+    font-size:clamp(1.4rem, 3.4vw, 2.1rem);
+    letter-spacing:-.8px;
+    text-transform:uppercase;
+    margin-bottom:8px;
+}
+
+.ev-res-cta-copy{
+    margin:0;
+    color:var(--sg-muted);
+}
+
+/*  Tablet and down: the venue card drops under the line up rather than
+    squeezing beside it. */
+@media (max-width:900px){
+    .ev-res-body{ grid-template-columns:1fr; }
+    .ev-res-script{ display:none; }
+}
+
+
+/* ==========================================================================
    RESPONSIVE
 
    Pinned last - these override everything above them.

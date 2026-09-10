@@ -92,13 +92,18 @@
     background:rgba(255,255,255,.03);
 }
 
-/*  The chosen one gets a rule top and bottom rather than a fill, so the bar
-    still reads as one strip rather than a row of buttons.               */
+/*  The chosen one is boxed rather than filled. An outline reads as "this
+    one" without turning the strip into a row of solid buttons, and it
+    survives on top of the dark bar where a tint alone is easy to miss.
+
+    The box is drawn with an inset shadow rather than a border, so the cell
+    does not change size when it is picked and the ones either side stay
+    where they were.                                                     */
 #sg-ent-page .ent-type.is-on{
     color:var(--sg-gold);
     background:rgba(255,183,0,.06);
-    border-top-color:var(--sg-gold);
-    border-bottom-color:var(--sg-gold);
+    box-shadow:inset 0 0 0 1px var(--sg-gold);
+    border-radius:4px;
 }
 
 
@@ -361,6 +366,70 @@
     gap:10px;
 }
 
+#sg-ent-page .ent-hero-actions{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:18px 26px;
+}
+
+/*  The play control. A ring and two lines of text rather than a second
+    solid button - there is one primary action on this hero and it is
+    "browse the talent"; the reel is an aside, and two filled buttons side
+    by side made them argue.                                             */
+#sg-ent-page .ent-play{
+    display:inline-flex;
+    align-items:center;
+    gap:13px;
+    padding:0;
+    background:none;
+    border:0;
+    color:#fff;
+    text-align:left;
+    cursor:pointer;
+}
+
+#sg-ent-page .ent-play-ring{
+    display:grid;
+    place-items:center;
+    width:44px;
+    height:44px;
+    flex:0 0 auto;
+    border:1px solid rgba(255,255,255,.55);
+    border-radius:50%;
+    transition:border-color .2s, background .2s;
+}
+
+#sg-ent-page .ent-play-ring svg{ width:18px; height:18px; fill:currentColor; }
+
+#sg-ent-page .ent-play-label{
+    font-family:var(--sg-font-accent);
+    font-size:.68rem;
+    font-weight:bold;
+    letter-spacing:1.6px;
+    text-transform:uppercase;
+    line-height:1.6;
+}
+
+#sg-ent-page .ent-play:hover{ color:var(--sg-orange); }
+
+#sg-ent-page .ent-play:hover .ent-play-ring{
+    border-color:var(--sg-orange);
+    background:rgba(255,107,0,.12);
+}
+
+/* ---- the reel ---- */
+#sg-ent-page .ent-video{
+    width:min(900px, 94vw);
+    background:#000;
+}
+
+#sg-ent-page .ent-video video{
+    display:block;
+    width:100%;
+    max-height:80vh;
+}
+
 
 /* --------------------------------------------------------------------------
    PANEL
@@ -533,9 +602,12 @@
 /* --------------------------------------------------------------------------
    TALENT CARDS
    -------------------------------------------------------------------------- */
+/*  200px rather than 230: the reference sits four cards across a desktop,
+    and at 230 the fourth dropped to a second row on anything under about
+    1200px wide.                                                        */
 #sg-ent-page .ent-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(230px, 1fr));
+    grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));
     gap:18px;
 }
 
@@ -584,8 +656,8 @@
 
     padding:5px 10px;
     border-radius:6px;
-    background:var(--sg-gold);
-    color:#140800;
+    background:var(--sg-orange);
+    color:#150700;
 
     font-family:var(--sg-font-accent);
     font-size:.62rem;
@@ -611,7 +683,7 @@
 
 #sg-ent-page .ent-card-genres{
     margin:0 0 12px;
-    color:var(--sg-gold);
+    color:var(--sg-orange);
     font-family:var(--sg-font-accent);
     font-size:.68rem;
     font-weight:bold;

@@ -139,6 +139,168 @@
 </section>
 
 
+<!-- ==========================================================================
+     2b. FRIDAY NIGHTS RESIDENCY - THE GRAND VIEW HOTEL
+
+     TO SHOW OR HIDE THE WHOLE THING
+     Delete the word `hidden` on the <section> below to publish it. Put it
+     back to take it down. That is the only switch - no CSS, no JavaScript,
+     and nothing else on the page moves when it goes.
+
+     It ships hidden because the four Fridays underneath are placeholders.
+     Put the real dates and the real DJ on each card first, then unhide.
+
+     ADDING A FRIDAY
+     Copy one <article class="ev-fri"> block and change the words. The date
+     tab, the name and the styles are all just text. The photo is set on the
+     card itself:
+
+         style="--ev-art:url('images/talent/dj-maxx.webp')"
+
+     A card with no photo yet shows its gradient instead, so an unfilled
+     line up still looks finished rather than broken.
+
+     If there is no line up to show at all, put `hidden` on the
+     .ev-fri-lineup block and the rest of the section carries on without it.
+     ========================================================================== -->
+<section class="ev-residency" aria-labelledby="ev-res-name" hidden>
+
+  <!-- THE BANNER -->
+  <div class="ev-res-hero">
+    <div class="ev-res-hero-media" aria-hidden="true"></div>
+
+    <div class="ev-res-hero-inner">
+      <p class="ev-res-kicker">Weekly Residency</p>
+
+      <h2 class="ev-res-name" id="ev-res-name">Friday<br>Nights</h2>
+      <p class="ev-res-venue">at the Grand View Hotel</p>
+
+      <p class="ev-res-copy">
+        Good music. Great people. Every Friday.<br>
+        SoundzGood DJs on rotation all night long<br>
+        at the Grand View Hotel, Bowen.
+      </p>
+
+      <ul class="ev-res-facts">
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          <span><b>Every Friday Night</b>From 6pm &ndash; late</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-7.6 7-12a7 7 0 10-14 0c0 4.4 7 12 7 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2.5"/></svg>
+          <span><b>Grand View Hotel</b>Bowen, QLD</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16l-8 8z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 12v8M8 20h8" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          <span><b>Good Music</b>Better people</span>
+        </li>
+      </ul>
+
+      <a class="btn ev-res-btn" href="#ev-fri-lineup">
+        View This Week's DJ <span aria-hidden="true">&#8594;</span>
+      </a>
+    </div>
+
+    <p class="ev-res-script" aria-hidden="true">See Our<br>DJs in<br>Action</p>
+  </div>
+
+  <!-- THE LINE UP AND THE VENUE -->
+  <div class="ev-res-body">
+
+    <div class="ev-fri-lineup" id="ev-fri-lineup">
+      <p class="ev-res-label">Upcoming Friday Line Up</p>
+
+      <div class="ev-fri-grid">
+        <article class="ev-fri">
+          <div class="ev-fri-art" aria-hidden="true"><span class="ev-fri-date">Fri 00 Mmm</span></div>
+          <div class="ev-fri-body">
+            <h3>DJ Name</h3>
+            <p>Style &middot; Style &middot; Style</p>
+          </div>
+        </article>
+
+        <article class="ev-fri">
+          <div class="ev-fri-art" aria-hidden="true"><span class="ev-fri-date">Fri 00 Mmm</span></div>
+          <div class="ev-fri-body">
+            <h3>DJ Name</h3>
+            <p>Style &middot; Style &middot; Style</p>
+          </div>
+        </article>
+
+        <article class="ev-fri">
+          <div class="ev-fri-art" aria-hidden="true"><span class="ev-fri-date">Fri 00 Mmm</span></div>
+          <div class="ev-fri-body">
+            <h3>DJ Name</h3>
+            <p>Style &middot; Style &middot; Style</p>
+          </div>
+        </article>
+
+        <article class="ev-fri">
+          <div class="ev-fri-art" aria-hidden="true"><span class="ev-fri-date">Fri 00 Mmm</span></div>
+          <div class="ev-fri-body">
+            <h3>DJ Name</h3>
+            <p>Style &middot; Style &middot; Style</p>
+          </div>
+        </article>
+      </div>
+
+      <a class="ev-res-link" href="/entertainment">
+        View Our Full DJ Roster <span aria-hidden="true">&#8594;</span>
+      </a>
+    </div>
+
+    <!--  THE VENUE
+          The photo goes on the element below as --ev-art. Until there is
+          one it shows its gradient, the same as every other card here. -->
+    <aside class="ev-venue">
+      <div class="ev-venue-art" aria-hidden="true"></div>
+
+      <h3>The Grand View Hotel</h3>
+      <p>
+        Bowen&rsquo;s iconic local. Great drinks, good vibes and the best DJs
+        in the Whitsundays &mdash; every Friday night.
+      </p>
+
+      <ul class="ev-venue-points">
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16l-8 8z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 12v8M8 20h8" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          Great Drinks
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6.5" cy="17" r="3"/><circle cx="16.5" cy="15" r="3"/><path d="M9 17V6l10.5-2v11" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          Live DJs Every Friday
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 19c0-3.3 2.7-5 6-5s6 1.7 6 5z"/><path d="M14.5 19c0-2.4 1.4-4 3.5-4s3.5 1.6 3.5 4z"/></svg>
+          Locals &amp; Visitors
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-7.6 7-12a7 7 0 10-14 0c0 4.4 7 12 7 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2.5"/></svg>
+          Bowen, QLD
+        </li>
+      </ul>
+    </aside>
+  </div>
+
+  <!-- BOOK A DJ -->
+  <div class="ev-res-cta">
+    <div>
+      <p class="ev-res-label">Planning an event?</p>
+      <h3>Book one of our DJs</h3>
+      <p class="ev-res-cta-copy">
+        Bring the SoundzGood vibe to your next event. Weddings, parties,
+        corporate and more.
+      </p>
+    </div>
+
+    <a class="btn ev-res-btn" href="/entertainment">
+      Browse Our DJs <span aria-hidden="true">&#8594;</span>
+    </a>
+  </div>
+
+</section>
+
+
 <!-- 3. NEXT SOUNDZGOOD - TEASER ------------------------------------------ -->
 <section class="ev-teaser-wrap">
 

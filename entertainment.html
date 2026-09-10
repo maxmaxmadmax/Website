@@ -67,6 +67,16 @@
 
       <div class="ent-hero-actions">
         <a class="btn ent-btn" href="#ent-talent">Browse the Talent <span aria-hidden="true">&#8594;</span></a>
+
+        <!--  Plays videos/hero-720.mp4, the same reel the services page
+              uses. The 720 cut rather than the 1080 - it is half the file
+              for a clip that opens in a box, not full screen.          -->
+        <button type="button" class="ent-play" id="ent-play">
+          <span class="ent-play-ring" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M9 6.5v11l9-5.5z"/></svg>
+          </span>
+          <span class="ent-play-label">Watch our<br>entertainment</span>
+        </button>
       </div>
     </div>
 
@@ -224,6 +234,16 @@
       <span aria-hidden="true">&times;</span>
     </button>
     <div id="ent-panel-body"></div>
+  </dialog>
+
+  <!--  The reel. `preload="none"` matters: without it the browser starts
+        pulling a 3.8MB file on page load for a video most visitors will
+        never open.                                                       -->
+  <dialog class="ent-panel ent-video" id="ent-video" aria-label="SoundzGood entertainment reel">
+    <button type="button" class="ent-panel-close" id="ent-video-close" aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+    <video id="ent-video-el" controls playsinline preload="none" src="videos/hero-720.mp4"></video>
   </dialog>
 
 </main>

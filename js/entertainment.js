@@ -359,6 +359,34 @@
 
     panelClose.addEventListener('click', closePanel);
 
+    /*  The reel. Closing has to pause it as well as hide it - a dialog that
+        is shut carries on playing, so the sound follows you down the page. */
+    var play      = document.getElementById('ent-play');
+    var video     = document.getElementById('ent-video');
+    var videoEl   = document.getElementById('ent-video-el');
+    var videoShut = document.getElementById('ent-video-close');
+
+    if (play && video && videoEl) {
+        var closeVideo = function () {
+            videoEl.pause();
+            if (typeof video.close === 'function') video.close();
+            else video.removeAttribute('open');
+        };
+
+        play.addEventListener('click', function () {
+            if (typeof video.showModal === 'function') video.showModal();
+            else video.setAttribute('open', '');
+            videoEl.play().catch(function () { /* autoplay blocked - the controls are there */ });
+        });
+
+        videoShut.addEventListener('click', closeVideo);
+        video.addEventListener('click', function (ev) {
+            if (ev.target === video) closeVideo();
+        });
+        /* Escape closes a dialog on its own, but does not pause the video. */
+        video.addEventListener('close', function () { videoEl.pause(); });
+    }
+
     /* Clicking the backdrop closes it. The dialog fills its own box, so a
        click that lands on the dialog itself came from outside the content. */
     panel.addEventListener('click', function (ev) {
