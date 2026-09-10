@@ -297,15 +297,29 @@
     align-items:center;
 }
 
+/*  The reel sits behind everything, cropped to fill whatever shape the hero
+    ends up. object-fit does the cropping, so the middle of the frame stays
+    in the middle at any width.                                          */
+#sg-ent-page .ent-hero-video{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+
+/*  The scrim over it. Heavy on the left where the words are, clearer on the
+    right so the footage still reads as footage.
+
+    No image of its own any more - the video is the picture. It kept a
+    gradient underneath so the hero still looks deliberate for the moment
+    before the clip starts, and for anyone whose browser will not play it. */
 #sg-ent-page .ent-hero-media{
     position:absolute;
     inset:0;
     background:
         linear-gradient(90deg, rgba(5,5,5,.94) 26%, rgba(5,5,5,.35) 78%),
-        var(--ent-img, linear-gradient(120deg, #3a1a02, #0a0a0a 72%));
-    background-size:cover;
-    background-position:center;
-    --ent-img:url('images/entertainment/hero.webp');
+        linear-gradient(120deg, #3a1a02, #0a0a0a 72%);
 }
 
 #sg-ent-page .ent-hero-inner{

@@ -57,6 +57,25 @@
 
   <!-- HERO ------------------------------------------------------------- -->
   <header class="ent-hero">
+
+    <!--  THE HERO REEL
+
+          Deliberately the same two files, the same breakpoint and the same
+          poster the homepage uses. Most visitors arrive there first, so by
+          the time they reach this page the browser already has the file and
+          this costs them nothing. Pointing at a different cut would have
+          thrown that away and made it a second download.
+
+          preload="none" keeps it out of the way of first paint - the poster
+          shows immediately and the clip follows. Both files are silent and
+          30fps.                                                          -->
+    <video class="ent-hero-video" id="ent-hero-video" aria-hidden="true"
+           autoplay muted loop playsinline preload="none"
+           poster="images/bowen.jpeg">
+      <source src="videos/hero-720.mp4" type="video/mp4" media="(max-width: 900px)">
+      <source src="videos/hero-1080.mp4" type="video/mp4">
+    </video>
+
     <div class="ent-hero-media" aria-hidden="true"></div>
 
     <div class="ent-hero-inner">
@@ -236,14 +255,20 @@
     <div id="ent-panel-body"></div>
   </dialog>
 
-  <!--  The reel. `preload="none"` matters: without it the browser starts
-        pulling a 3.8MB file on page load for a video most visitors will
-        never open.                                                       -->
+  <!--  The reel, played properly and with sound rather than as wallpaper.
+
+        Same two sources and the same breakpoint as the hero above, so it is
+        the same file the browser already fetched for the background -
+        opening this costs nothing. A different cut here would have meant a
+        second download of the same footage.                             -->
   <dialog class="ent-panel ent-video" id="ent-video" aria-label="SoundzGood entertainment reel">
     <button type="button" class="ent-panel-close" id="ent-video-close" aria-label="Close">
       <span aria-hidden="true">&times;</span>
     </button>
-    <video id="ent-video-el" controls playsinline preload="none" src="videos/hero-720.mp4"></video>
+    <video id="ent-video-el" controls playsinline preload="none">
+      <source src="videos/hero-720.mp4" type="video/mp4" media="(max-width: 900px)">
+      <source src="videos/hero-1080.mp4" type="video/mp4">
+    </video>
   </dialog>
 
 </main>

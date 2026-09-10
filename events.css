@@ -711,11 +711,19 @@
     padding:36px 6%;
 }
 
+/*  Four across, fixed rather than auto-fit. The line up shares its row with
+    a 300px venue card, so auto-fit was measuring against a much narrower
+    column than the page width suggests and dropping the fourth Friday onto
+    a line of its own. Two up on a phone, where four would be unreadable. */
 .ev-fri-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));
+    grid-template-columns:repeat(2, minmax(0, 1fr));
     gap:14px;
     margin-bottom:16px;
+}
+
+@media (min-width:901px){
+    .ev-fri-grid{ grid-template-columns:repeat(4, minmax(0, 1fr)); }
 }
 
 .ev-fri{

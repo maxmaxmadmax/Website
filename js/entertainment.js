@@ -359,6 +359,17 @@
 
     panelClose.addEventListener('click', closePanel);
 
+    /*  Somebody who has asked their system for less motion should not get a
+        looping clip behind the headline. Pausing rather than hiding leaves
+        the poster frame showing, so the hero still has a picture in it. */
+    var heroVideo = document.getElementById('ent-hero-video');
+    if (heroVideo &&
+        window.matchMedia &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        heroVideo.removeAttribute('autoplay');
+        heroVideo.pause();
+    }
+
     /*  The reel. Closing has to pause it as well as hide it - a dialog that
         is shut carries on playing, so the sound follows you down the page. */
     var play      = document.getElementById('ent-play');
