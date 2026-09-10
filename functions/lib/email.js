@@ -36,8 +36,13 @@ const SELLER = {
 const OFFICE_COPY = process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au';
 
 function transport() {
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const user = (process.env.SMTP_USER || '').trim();
+
+  /*  Google shows an app password as four groups of four - "abcd efgh ijkl
+      mnop" - and that is what lands on the clipboard. SMTP wants the
+      sixteen characters on their own, so strip the spaces here rather
+      than relying on whoever stored the secret to have done it. */
+  const pass = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
 
   if (!user || !pass) return null;
 
@@ -229,7 +234,10 @@ async function sendBookingEmails(booking, bookingId, event) {
 
   const from = `${SELLER.name} <${SELLER.email}>`;
   const to = (booking.business || {}).email;
-  const results = { vendor: false, office: false };
+  /*  Failures are collected as well as logged. Cloud Logging can run a
+      couple of minutes behind, which is a long time to wait to find out
+      why an invoice did not go, and the caller may want to say. */
+  const results = { vendor: false, office: false, errors: [] };
 
   if (to) {
     try {
@@ -244,8 +252,15 @@ async function sendBookingEmails(booking, bookingId, event) {
       results.vendor = true;
     } catch (err) {
       logger.error('vendor confirmation email failed', {
-        bookingId, to, message: err && err.message,
+        bookingId,
+        to,
+        /*  Not 'message' - the logger uses that key for the log line itself,
+            so the SMTP error was being overwritten by our own text. */
+        smtpError: err && err.message,
+        smtpCode: err && (err.code || err.responseCode),
+        smtpResponse: err && err.response,
       });
+      results.errors.push('vendor: ' + (err && err.message));
     }
   } else {
     logger.warn('booking has no email address, cannot send confirmation', { bookingId });
@@ -261,7 +276,13 @@ async function sendBookingEmails(booking, bookingId, event) {
     });
     results.office = true;
   } catch (err) {
-    logger.error('office copy email failed', { bookingId, message: err && err.message });
+    logger.error('office copy email failed', {
+      bookingId,
+      smtpError: err && err.message,
+      smtpCode: err && (err.code || err.responseCode),
+      smtpResponse: err && err.response,
+    });
+    results.errors.push('office: ' + (err && err.message));
   }
 
   return { sent: results.vendor || results.office, ...results };
