@@ -449,248 +449,280 @@
 /* ==========================================================================
    REVIEW - THE CHECKOUT
 
-   Laid out like a checkout rather than a form summary: an itemised order
-   on the left, the event it buys into on the right, and one button.
+   One column of small cards, one idea each: what you are buying, what it
+   costs, and who takes the money. Same layout at every width, because a
+   checkout is read top to bottom and most vendors fill this in on a phone.
+
+   This replaced a five column table beside a sidebar. The table had to be
+   rebuilt into labelled blocks below 768px to be readable at all, so the
+   desktop and the phone were really two designs to keep in step.
    ========================================================================== */
-.vs-checkout{
-    display:grid;
-    grid-template-columns:minmax(0, 1fr) 300px;
-    gap:22px;
-    align-items:start;
-}
 
-.vs-order{ min-width:0; }
-
-.vs-order-head{
-    display:flex;
-    align-items:flex-start;
-    gap:16px;
-    margin-bottom:16px;
-}
-
-.vs-order-head h3{
-    font-family:var(--sg-font-display);
-    font-size:1.25rem;
-    letter-spacing:-.4px;
-    text-transform:uppercase;
-    margin:0 0 4px;
-}
-
-.vs-order-head p{ margin:0; color:var(--sg-muted); font-size:.92rem; }
-
-.vs-order-edit{
-    margin-left:auto;
-    flex:0 0 auto;
-    padding:8px 16px;
-    border:1px solid var(--sg-border);
-    border-radius:50px;
+/*  The checkout brings its own cards, so the step panel underneath steps
+    back - otherwise every card is a box inside another box.             */
+.vs-step.is-checkout{
     background:none;
-    color:var(--sg-text);
+    border:0;
+    padding:0;
+}
+
+/*  The heading sits over the cards, so it is held to the same column. */
+.vs-step.is-checkout > h2,
+.vs-step.is-checkout > .vs-step-intro,
+.vs-step.is-checkout > .vs-busy,
+.vs-step.is-checkout > .vs-error{
+    max-width:560px;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+.vs-checkout{
+    /*  The section behind this is --sg-panel, so the cards have to be a
+        shade lighter than the page rather than the same colour.        */
+    --vs-card:#181818;
+    --vs-line:#2b2b2b;
+
+    display:grid;
+    gap:14px;
+    max-width:560px;
+    margin:0 auto;
+}
+
+.vs-card{
+    background:var(--vs-card);
+    border:1px solid var(--vs-line);
+    border-radius:16px;
+    padding:20px;
+}
+
+.vs-card h3{
+    margin:0;
+    font-family:var(--sg-font-display);
+    font-size:1.2rem;
+    letter-spacing:-.3px;
+    color:#fff;
+}
+
+.vs-card-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+}
+
+/*  The event line sits under the whole header rather than inside it. Beside
+    the Edit button it only had half the card to wrap in, and a long event
+    name and date ran to three lines.                                     */
+.vs-card-sub{
+    margin:8px 0 0;
+    color:var(--sg-muted);
+    font-size:.85rem;
+    line-height:1.45;
+}
+
+/* ---- the Edit booking button ---- */
+.vs-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    flex:0 0 auto;
+    padding:8px 14px;
+    border-radius:50px;
+    border:1px solid var(--vs-line);
+    background:#1f1f1f;
+    color:#fff;
+    font-size:.82rem;
+    cursor:pointer;
+    transition:border-color .2s, color .2s;
+}
+
+.vs-pill:hover{ border-color:var(--sg-orange); color:var(--sg-orange); }
+.vs-pill-ico{ width:14px; height:14px; fill:currentColor; }
+
+/* ---- the thing being bought ---- */
+.vs-lineitem{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin-top:18px;
+}
+
+.vs-lineitem-ico{
+    flex:0 0 auto;
+    display:grid;
+    place-items:center;
+    width:52px;
+    height:52px;
+    border-radius:12px;
+    background:rgba(255,107,0,.12);
+    color:var(--sg-orange);
+}
+
+.vs-lineitem-ico svg{ width:30px; height:30px; fill:currentColor; }
+
+.vs-lineitem-txt{ display:grid; gap:3px; min-width:0; }
+.vs-lineitem-txt strong{ color:#fff; font-size:1rem; }
+.vs-lineitem-txt > span{ color:var(--sg-muted); font-size:.85rem; }
+
+/*  PRICE / QTY / TOTAL across the foot of the booking card. Equal thirds
+    under a rule, which reads as a receipt line without needing a table
+    and its five columns to say it.                                     */
+.vs-figures{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:10px;
+    margin:18px 0 0;
+    padding-top:16px;
+    border-top:1px solid var(--vs-line);
+}
+
+.vs-figures > div:nth-child(2){ text-align:center; }
+.vs-figures > div:last-child{ text-align:right; }
+
+.vs-figures dt{
     font-family:var(--sg-font-accent);
-    font-size:.72rem;
+    font-size:.66rem;
     font-weight:bold;
     letter-spacing:1.5px;
     text-transform:uppercase;
+    color:var(--sg-dim);
+    margin-bottom:5px;
+}
+
+.vs-figures dd{ margin:0; color:#fff; font-size:.95rem; }
+.vs-figures dd.is-strong{ font-weight:bold; }
+
+/* ---- what it comes to ---- */
+.vs-sum{
+    display:grid;
+    gap:11px;
+    margin:16px 0 0;
+}
+
+.vs-sum > div{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+}
+
+.vs-sum dt{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    color:var(--sg-muted);
+    font-size:.92rem;
+}
+
+.vs-sum dd{ margin:0; color:#fff; font-size:.92rem; }
+
+/*  A tooltip would be unreachable on a phone, so the (i) opens a line of
+    text under the list instead of hovering over it.                    */
+.vs-info{
+    width:16px;
+    height:16px;
+    padding:0;
+    border-radius:50%;
+    border:1px solid var(--sg-dim);
+    background:none;
+    color:var(--sg-dim);
+    font-family:var(--sg-font-accent);
+    font-size:.62rem;
+    line-height:1;
     cursor:pointer;
 }
 
-.vs-order-edit:hover{ border-color:var(--sg-orange); color:var(--sg-orange); }
+.vs-info:hover{ border-color:var(--sg-orange); color:var(--sg-orange); }
 
-
-/* ---- the itemised order ---- */
-.vs-order-table-wrap{
-    border:1px solid var(--sg-border);
-    border-radius:12px;
-    overflow:hidden;
-}
-
-.vs-order-table{
-    width:100%;
-    border-collapse:collapse;
-    font-size:.92rem;
-    table-layout:fixed;   /* or the item names get squeezed to one word a line */
-}
-
-/*  Item names read as names, not as a stack of single words. Details take
-    whatever is left; the three money columns only need room for a figure. */
-.vs-order-table th:nth-child(1){ width:26%; }
-.vs-order-table th:nth-child(3){ width:14%; }
-.vs-order-table th:nth-child(4){ width:8%; }
-.vs-order-table th:nth-child(5){ width:16%; }
-
-.vs-order-table td:nth-child(1) strong{ display:block; line-height:1.25; }
-
-.vs-order-table th{
-    text-align:left;
-    padding:12px 16px;
-    background:#0b0b0b;
-    border-bottom:1px solid var(--sg-border);
-
-    font-family:var(--sg-font-accent);
-    font-size:.68rem;
-    font-weight:bold;
-    letter-spacing:1.6px;
-    text-transform:uppercase;
-    color:var(--sg-gold);
-}
-
-.vs-order-table td{
-    padding:14px 16px;
-    border-bottom:1px solid var(--sg-border);
-    vertical-align:top;
-}
-
-.vs-order-table tr:last-child td{ border-bottom:0; }
-
-/* money right, so the figures line up and can be added up by eye */
-.vs-order-table th:nth-child(3),
-.vs-order-table th:nth-child(4),
-.vs-order-table th:nth-child(5),
-.vs-order-table td:nth-child(3),
-.vs-order-table td:nth-child(4),
-.vs-order-table td:nth-child(5){
-    text-align:right;
-    white-space:nowrap;
-    font-variant-numeric:tabular-nums;
-    font-feature-settings:"tnum";
-}
-
-.vs-order-detail{ color:var(--sg-muted); }
-
-
-/* ---- the reassurance row ---- */
-.vs-trust{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
-    gap:14px;
-    list-style:none;
-    margin:18px 0 0;
-    padding:0;
-}
-
-.vs-trust li{
-    display:grid;
-    grid-template-columns:auto 1fr;
-    grid-template-rows:auto auto;
-    column-gap:10px;
-    align-items:center;
+.vs-info-note{
+    margin:12px 0 0;
+    padding:11px 13px;
+    border-radius:9px;
+    background:#0d0d0d;
+    border:1px solid var(--vs-line);
+    color:var(--sg-muted);
     font-size:.82rem;
+    line-height:1.6;
 }
 
-.vs-trust-ico{ grid-row:1 / span 2; font-size:1.2rem; opacity:.9; }
-.vs-trust b{ color:#fff; font-size:.86rem; }
-.vs-trust span:not(.vs-trust-ico){ color:var(--sg-dim); }
-
-
-/* ---- the event alongside ---- */
-.vs-aside{
+/*  The total, ruled off from the lines it sums. Orange on both halves -
+    it is the one number anybody actually checks.                       */
+.vs-sum-total{
     display:flex;
-    flex-direction:column;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:16px;
+    margin-top:16px;
+    padding-top:15px;
+    border-top:1px solid var(--vs-line);
+}
+
+.vs-sum-total span{
+    font-family:var(--sg-font-display);
+    font-size:1.05rem;
+    letter-spacing:-.2px;
+    color:var(--sg-orange);
+}
+
+.vs-sum-total strong{
+    font-family:var(--sg-font-display);
+    font-size:1.55rem;
+    letter-spacing:-.5px;
+    color:var(--sg-orange);
+}
+
+/* ---- who takes the money ---- */
+.vs-secure-head{
+    display:flex;
+    align-items:center;
     gap:14px;
-    min-width:0;
 }
 
-.vs-event-card,
-.vs-help-card{
-    background:var(--sg-panel-light);
-    border:1px solid var(--sg-border);
-    border-radius:12px;
-    overflow:hidden;
-}
-
-/*  No artwork file exists for this event, so the card draws its own out of
-    a gradient and the same pumpkin the hero uses. One less thing to
-    download, and it cannot end up out of date. */
-.vs-event-art{
-    height:110px;
+.vs-secure-ico{
+    flex:0 0 auto;
     display:grid;
     place-items:center;
-    background:
-        radial-gradient(80% 120% at 50% 120%, var(--vs-purple) 0%, transparent 60%),
-        linear-gradient(160deg, #2a1206, #0b0b0b);
-    border-bottom:1px solid var(--sg-border);
-}
-
-.vs-event-pumpkin{ width:52px; height:52px; }
-
-.vs-event-body{ padding:16px 18px 18px; }
-
-.vs-event-body h4{
-    font-family:var(--sg-font-display);
-    font-size:1.1rem;
-    letter-spacing:-.3px;
-    text-transform:uppercase;
-    margin:0;
-}
-
-.vs-event-sub{
-    margin:2px 0 14px;
-    color:var(--sg-orange);
-    font-family:var(--sg-font-display);
-    font-size:.88rem;
-    text-transform:uppercase;
-}
-
-.vs-event-facts{ margin:0; }
-
-.vs-event-facts > div{
-    padding:8px 0;
-    border-top:1px solid var(--sg-border);
-}
-
-.vs-event-facts dt{
-    font-family:var(--sg-font-accent);
-    font-size:.64rem;
-    font-weight:bold;
-    letter-spacing:1.6px;
-    text-transform:uppercase;
-    color:var(--sg-gold);
-    margin-bottom:3px;
-}
-
-.vs-event-facts dd{ margin:0; font-size:.88rem; }
-
-.vs-help-card{ padding:16px 18px; }
-
-.vs-help-card h4{
-    font-family:var(--sg-font-display);
-    font-size:.95rem;
-    text-transform:uppercase;
-    margin:0 0 6px;
-}
-
-.vs-help-card p{ margin:0 0 12px; color:var(--sg-muted); font-size:.86rem; }
-
-.vs-help-link{
-    border:0;
-    background:none;
-    padding:0;
-    font:inherit;
-    font-size:.86rem;
-    font-weight:bold;
-    color:var(--sg-orange);
-    cursor:pointer;
-    text-align:left;
-}
-
-.vs-help-link:hover{ text-decoration:underline; }
-
-
-/* ---- their own details, folded away ---- */
-.vs-yourdetails{
-    margin-top:22px;
-    border:1px solid var(--sg-border);
+    width:42px;
+    height:42px;
     border-radius:12px;
-    overflow:hidden;
+    background:rgba(255,107,0,.12);
+    color:var(--sg-orange);
 }
+
+.vs-secure-ico svg{ width:22px; height:22px; fill:currentColor; }
+
+.vs-secure-head > span:last-child{ display:grid; gap:3px; }
+.vs-secure-head strong{ color:#fff; font-size:.95rem; }
+.vs-secure-head > span:last-child > span{ color:var(--sg-muted); font-size:.84rem; }
+
+.vs-secure-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 18px;
+    list-style:none;
+    margin:16px 0 0;
+    padding:16px 0 0;
+    border-top:1px solid var(--vs-line);
+}
+
+.vs-secure-row li{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    color:var(--sg-dim);
+    font-size:.78rem;
+}
+
+/* ---- their own answers, folded away ---- */
+.vs-yourdetails{ padding:0; overflow:hidden; }
 
 .vs-yourdetails summary{
-    padding:14px 18px;
-    cursor:pointer;
-    list-style:none;
     display:flex;
     align-items:center;
     gap:10px;
+    padding:16px 20px;
+    cursor:pointer;
+    list-style:none;
 
     font-family:var(--sg-font-accent);
     font-size:.72rem;
@@ -703,43 +735,63 @@
 .vs-yourdetails summary::-webkit-details-marker{ display:none; }
 .vs-yourdetails summary span{ margin-left:auto; color:var(--sg-dim); letter-spacing:1px; }
 .vs-yourdetails summary::after{ content:'+'; color:var(--sg-dim); font-size:1.1rem; }
-.vs-yourdetails[open] summary::after{ content:'\\2212'; }
-.vs-yourdetails .vs-summary-list{ margin:0; border-top:1px solid var(--sg-border); }
+.vs-yourdetails[open] summary::after{ content:'\2212'; }
 
-
-/*  THE COST PANEL
-
-    The breakdown and the total it adds up to sit in one box. Split across
-    two, the total read as a separate claim rather than the sum of the
-    lines above it.                                                      */
-.vs-total{
-    margin-top:20px;
-    padding:20px 22px;
-    border-radius:12px;
-    background:linear-gradient(150deg, #241001, #0c0c0c);
-    border:1px solid #3a2000;
+.vs-yourdetails .vs-summary-list{
+    margin:0;
+    border:0;
+    border-top:1px solid var(--vs-line);
+    border-radius:0;
 }
 
-.vs-total-row{
+.vs-checkout-foot{
+    margin:2px 0 0;
+    text-align:center;
+    color:var(--sg-dim);
+    font-size:.84rem;
+}
+
+.vs-help-link{
+    padding:0;
+    border:0;
+    background:none;
+    color:var(--sg-orange);
+    font:inherit;
+    text-decoration:underline;
+    cursor:pointer;
+}
+
+/*  THE PAY BAR
+
+    Pinned to the foot of the viewport so the amount and the button stay
+    on screen however far down the cards somebody has scrolled. Sticky
+    rather than fixed, so it comes to rest at the end of the step instead
+    of hovering over the site footer for the rest of the page.          */
+.vs-paybar{
+    display:block;
+    position:sticky;
+    bottom:0;
+    z-index:5;
+    max-width:560px;
+    margin:22px auto 0;
+    padding:14px 0 18px;
+    background:linear-gradient(to top, var(--sg-panel) 62%, rgba(17,17,17,0));
+}
+
+.vs-paybar .btn{
     display:flex;
-    align-items:baseline;
-    justify-content:space-between;
-    gap:20px;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    width:100%;
+    max-width:none;
 }
 
-.vs-total-row span{
-    font-family:var(--sg-font-accent);
-    font-size:.8rem;
-    font-weight:bold;
-    letter-spacing:2px;
-    text-transform:uppercase;
-    color:var(--sg-gold);
-}
-
-.vs-total-row strong{
-    font-family:var(--sg-font-display);
-    font-size:2rem;
-    color:#fff;
+/*  The arrow only belongs on a button that can actually be pressed. */
+#vs-pay:not(:disabled)::after{
+    content:'\2192';
+    font-size:1.1em;
+    line-height:1;
 }
 
 .vs-confirming,
@@ -845,58 +897,75 @@
 }
 
 /* --------------------------------------------------------------------------
-   STEPPER
+   PROGRESS HEADER
+
+   A back link, a step counter and one segment per step.
+
+   This replaced a row of seven labelled pills. The labels needed the full
+   desktop width to be readable, and below 768px they were hidden, which
+   left seven bare numbers telling nobody anything. A bar that fills reads
+   the same at any width.
    -------------------------------------------------------------------------- */
-.vs-stepper{
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    gap:8px 6px;
-    list-style:none;
-    max-width:var(--sg-max-width);
-    margin:0 auto 34px;
+.vs-progress{
+    margin:0 auto 26px;
 }
 
-.vs-stepper-item{
+/*  The checkout holds itself to a 560px reading column, so the bar above it
+    comes in to match rather than running the full width of the flow. Every
+    other step fills the panel, so the bar fills it too.
+
+    If :has() is not supported the bar simply stays wide, which is the old
+    behaviour and no worse than it was.                                   */
+.vs-flow:has(> .vs-step.is-checkout:not([hidden])) > .vs-progress{
+    max-width:560px;
+}
+
+.vs-progress-top{
     display:flex;
     align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    min-height:34px;   /* holds its place on step one, where there is no back */
+    margin-bottom:12px;
+}
+
+.vs-progress-back{
+    display:inline-flex;
+    align-items:center;
     gap:8px;
-    padding:8px 14px;
-    border-radius:50px;
-    border:1px solid var(--sg-border);
-    background:var(--sg-panel);
+    padding:0;
+    border:0;
+    background:none;
+    color:#fff;
+    font:inherit;
+    font-size:.95rem;
+    cursor:pointer;
+    transition:color .2s;
+}
+
+.vs-progress-back:hover{ color:var(--sg-orange); }
+
+.vs-progress-count{
     color:var(--sg-dim);
     font-size:.82rem;
 }
 
-.vs-stepper-num{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:22px;
-    height:22px;
-    border-radius:50%;
-    background:#2a2a2a;
-    color:var(--sg-muted);
-    font-family:var(--sg-font-display);
-    font-size:.72rem;
-    flex:0 0 auto;
+/*  One segment per step rather than a single striped bar, so how far
+    along you are is countable at a glance and not judged by eye.       */
+.vs-progress-bar{
+    display:flex;
+    gap:6px;
 }
 
-.vs-stepper-item.is-current{
-    border-color:var(--sg-orange);
-    color:#fff;
+.vs-progress-bar span{
+    flex:1 1 0;
+    height:4px;
+    border-radius:3px;
+    background:#2b2b2b;
+    transition:background .25s;
 }
 
-.vs-stepper-item.is-current .vs-stepper-num{
-    background:var(--sg-orange);
-    color:#fff;
-}
-
-.vs-stepper-item.is-done .vs-stepper-num{
-    background:var(--vs-available);
-    color:#fff;
-}
+.vs-progress-bar span.is-on{ background:var(--sg-orange); }
 
 /* --------------------------------------------------------------------------
    THE MAP
@@ -1489,72 +1558,29 @@
         gap:4px;
     }
 
-    .vs-stepper-name{
-        display:none;   /* numbers only, so the stepper stays one row */
+    /*  The checkout is already one column, so a phone only needs it
+        tighter - there is no second layout to switch to.               */
+    .vs-checkout{ gap:12px; }
+
+    .vs-card{
+        padding:16px;
+        border-radius:14px;
     }
 
-    .vs-stepper-item{
-        padding:7px 10px;
+    /*  The Edit button stays beside the heading rather than stacking under
+        it - the card title is short and the pill is small, so a phone has
+        room for both, and dropping it pushed the line item down the page. */
+    .vs-card-head{ gap:10px; }
+
+    .vs-pill{
+        padding:7px 12px;
+        font-size:.78rem;
     }
 
-    /*  The total stacks under its label on a phone. It is .vs-total-row
-        that is the flex container now, not .vs-total - that became the
-        panel holding the breakdown as well. */
-    .vs-total-row{
-        flex-direction:column;
-        align-items:flex-start;
-        gap:6px;
-    }
+    .vs-secure-row{ gap:8px 14px; }
+    .vs-secure-row li{ font-size:.74rem; }
 
-    /* the event card drops under the order rather than squeezing beside it */
-    .vs-checkout{ grid-template-columns:1fr; }
-
-    /*  A five column table does not fit a phone, and side-scrolling money
-        is horrible. Each row becomes its own little block with the column
-        name in front of the value, from the data-th on each cell. */
-    .vs-order-table thead{
-        position:absolute;
-        width:1px; height:1px;
-        margin:-1px; padding:0;
-        overflow:hidden; clip:rect(0 0 0 0);
-        white-space:nowrap;
-    }
-
-    .vs-order-table,
-    .vs-order-table tbody,
-    .vs-order-table tr,
-    .vs-order-table td{ display:block; width:100%; }
-
-    .vs-order-table tr{
-        padding:12px 4px;
-        border-bottom:1px solid var(--sg-border);
-    }
-
-    .vs-order-table tr:last-child{ border-bottom:0; }
-
-    .vs-order-table td{
-        display:flex;
-        justify-content:space-between;
-        gap:16px;
-        padding:4px 12px;
-        border:0;
-        text-align:right;
-    }
-
-    .vs-order-table td::before{
-        content:attr(data-th);
-        font-family:var(--sg-font-accent);
-        font-size:.66rem;
-        font-weight:bold;
-        letter-spacing:1.4px;
-        text-transform:uppercase;
-        color:var(--sg-gold);
-        text-align:left;
-        flex:0 0 auto;
-    }
-
-    /* a blank price or qty is noise on a phone */
-    .vs-order-table td:empty{ display:none; }
+    .vs-yourdetails summary{ padding:14px 16px; }
 
     .vs-web{
         width:88px;

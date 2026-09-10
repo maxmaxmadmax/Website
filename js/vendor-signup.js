@@ -870,28 +870,42 @@ function render() {
   if (state.step === 'documents') renderDocumentList();
 }
 
+/*  THE STEP HEADER
+
+    A back link, a step counter and one segment per step. This replaced a
+    row of seven labelled pills: the labels needed the full desktop width
+    to be readable, and on a phone they collapsed to seven bare numbers,
+    which told nobody anything. A filling bar reads the same at any size.
+
+    It is rebuilt on every render, so the back link is wired here rather
+    than in wireStaticControls - a listener attached at load would be
+    thrown away with the markup on the first step change. That is also
+    why it uses its own attribute instead of [data-back].               */
 function renderStepper(steps) {
   const host = document.getElementById('vs-stepper');
   if (!host) return;
 
-  const names = {
-    type: 'Vendor type',
-    info: 'Event info',
-    category: 'What you sell',
-    site: 'Choose your site',
-    details: 'Business & setup',
-    documents: 'Documents',
-    review: 'Review & pay',
-  };
-
   const current = steps.indexOf(state.step);
+  const total = steps.length;
 
-  host.innerHTML = steps.map((s, i) => `
-    <li class="vs-stepper-item ${i === current ? 'is-current' : ''} ${i < current ? 'is-done' : ''}">
-      <span class="vs-stepper-num">${i + 1}</span>
-      <span class="vs-stepper-name">${names[s]}</span>
-    </li>
-  `).join('');
+  host.innerHTML = `
+    <div class="vs-progress-top">
+      ${current > 0
+        ? `<button type="button" class="vs-progress-back" data-progress-back>
+             <span aria-hidden="true">&#8592;</span> Back
+           </button>`
+        : '<span></span>'}
+      <span class="vs-progress-count">Step ${current + 1} of ${total}</span>
+    </div>
+
+    <div class="vs-progress-bar" role="progressbar" aria-label="Signup progress"
+         aria-valuemin="1" aria-valuemax="${total}" aria-valuenow="${current + 1}">
+      ${steps.map((s, i) => `<span class="${i <= current ? 'is-on' : ''}"></span>`).join('')}
+    </div>
+  `;
+
+  const back = host.querySelector('[data-progress-back]');
+  if (back) back.addEventListener('click', prevStep);
 }
 
 function renderCategories() {
@@ -996,49 +1010,58 @@ function renderSignInPrompt() {
 
 /*  THE REVIEW STEP
 
-    Laid out like a checkout rather than a form summary, because that is
-    what it is: an itemised order, what it comes to, and one button.
+    A stack of small cards, one idea each: what you are buying, what it
+    costs, and who takes the money. Everything is one column at every
+    width, because a checkout is read top to bottom and most vendors fill
+    this in on a phone anyway.
 
-    The event sits alongside it so a vendor can see what they are paying
-    into without scrolling back up. There is no artwork file for Eatz &
-    Beatz, so the card draws its own - a gradient and the same pumpkin the
-    hero uses - rather than shipping another image.
+    This replaced a five column table beside a sidebar. The table had to
+    be rebuilt into labelled blocks below 768px to be readable at all, so
+    the desktop and phone layouts were really two designs to keep in step.
     ------------------------------------------------------------------------- */
+
+/*  The little glyph in front of the line item. Drawn rather than loaded -
+    two icons are not worth an image request, and these inherit the text
+    colour so they never look pasted on. */
+const ITEM_ICONS = {
+  food: `<svg viewBox="0 0 120 80" aria-hidden="true">
+           <path d="M14 54V30h48l14 12v12z"/>
+           <path d="M62 30h10l14 12H62z"/>
+           <circle cx="34" cy="58" r="6"/>
+           <circle cx="76" cy="58" r="6"/>
+           <path d="M10 26h60l-4-8H14z"/>
+         </svg>`,
+  market: `<svg viewBox="0 0 120 80" aria-hidden="true">
+             <path d="M18 34h84v30H18z"/>
+             <path d="M14 18h92l10 16H4z"/>
+             <path d="M34 44h24v20H34z"/>
+           </svg>`,
+};
+
 function renderReview() {
   const host = document.getElementById('vs-review');
   if (!host) return;
 
   const b = feeBreakdown(priceCents());
   const ev = state.event || {};
-  const bays = state.vendorType === 'market' ? (state.bayCount || 1) : 1;
+  const isMarket = state.vendorType === 'market';
+  const bays = isMarket ? (state.bayCount || 1) : 1;
 
-  /*  The site line, priced per bay so the sum is visible: two bays at $50
-      reads as 2 x $50.00 = $100.00 rather than an unexplained $100. */
+  /*  Priced per bay so the sum is visible: two bays at $50 reads as
+      2 x $50.00 = $100.00 rather than an unexplained $100. */
   const perBay = bays > 1 ? Math.round(b.siteCents / bays) : b.siteCents;
 
-  const orderRows = [
-    {
-      item: state.vendorType === 'market' ? 'Market bay' : 'Food vendor site',
-      detail: [state.siteLabel, state.categoryName].filter(Boolean).join(' &middot; ') || 'Not chosen',
-      price: exact(perBay),
-      qty: String(bays),
-      total: exact(b.siteCents),
-    },
-    {
-      item: 'Booking fee',
-      detail: 'Card processing and online booking costs',
-      price: '',
-      qty: '',
-      total: exact(b.bookingFeeCents),
-    },
-    {
-      item: 'GST',
-      detail: `10% of ${exact(b.siteCents + b.bookingFeeCents)}`,
-      price: '',
-      qty: '',
-      total: exact(b.gstCents),
-    },
-  ];
+  const itemName = isMarket
+    ? `Market bay${bays > 1 ? 's' : ''}`
+    : 'Food vendor site';
+
+  const itemSub = [state.siteLabel, state.categoryName]
+    .filter(Boolean).map(escapeHtml).join(' &middot; ') || 'No site chosen yet';
+
+  /*  The event line under the card title. It is the one thing the old
+      sidebar carried that is not repeated anywhere else on this step. */
+  const eventLine = [ev.name || 'Eatz & Beatz', ev.dateLabel]
+    .filter(Boolean).map(escapeHtml).join(' &middot; ');
 
   const details = [
     ['Business', state.business.name],
@@ -1057,106 +1080,125 @@ function renderReview() {
   host.innerHTML = `
     <div class="vs-checkout">
 
-      <div class="vs-order">
-        <header class="vs-order-head">
-          <div>
-            <h3>Your booking</h3>
-            <p>Check it over, then pay to lock the site in.</p>
-          </div>
-          <button type="button" class="vs-order-edit" data-goto-step="details">Edit</button>
+      <!-- WHAT YOU ARE BUYING -->
+      <section class="vs-card">
+        <header class="vs-card-head">
+          <h3>Your Booking</h3>
+          <button type="button" class="vs-pill" data-goto-step="details">
+            <svg viewBox="0 0 24 24" aria-hidden="true" class="vs-pill-ico">
+              <path d="M4 20h4l10-10-4-4L4 16z"/>
+              <path d="M14 6l4 4 2-2-4-4z"/>
+            </svg>
+            Edit booking
+          </button>
         </header>
 
-        <div class="vs-order-table-wrap">
-          <table class="vs-order-table">
-            <thead>
-              <tr><th>Item</th><th>Details</th><th>Price</th><th>Qty</th><th>Total</th></tr>
-            </thead>
-            <tbody>
-              ${orderRows.map((r) => `
-                <tr>
-                  <td data-th="Item"><strong>${escapeHtml(r.item)}</strong></td>
-                  <td data-th="Details" class="vs-order-detail">${r.detail}</td>
-                  <td data-th="Price">${r.price}</td>
-                  <td data-th="Qty">${r.qty}</td>
-                  <td data-th="Total"><strong>${r.total}</strong></td>
-                </tr>`).join('')}
-            </tbody>
-          </table>
+        ${eventLine ? `<p class="vs-card-sub">${eventLine}</p>` : ''}
+
+        <div class="vs-lineitem">
+          <span class="vs-lineitem-ico" aria-hidden="true">
+            ${ITEM_ICONS[state.vendorType] || ITEM_ICONS.food}
+          </span>
+          <span class="vs-lineitem-txt">
+            <strong>${escapeHtml(itemName)}</strong>
+            <span>${itemSub}</span>
+          </span>
         </div>
 
-        <div class="vs-total">
-          <div class="vs-total-row">
-            <span>Total to pay</span>
-            <strong>${money(b.totalCents)}${b.totalCents ? ' AUD' : ''}</strong>
-          </div>
-        </div>
-
-        <ul class="vs-trust">
-          <li>
-            <span class="vs-trust-ico" aria-hidden="true">&#128274;</span>
-            <b>Secure payment</b><span>Handled by Stripe. We never see your card.</span>
-          </li>
-          <li>
-            <span class="vs-trust-ico" aria-hidden="true">&#9993;</span>
-            <b>Instant confirmation</b><span>Emailed to you the moment it clears.</span>
-          </li>
-          <li>
-            <span class="vs-trust-ico" aria-hidden="true">&#9733;</span>
-            <b>A local event</b><span>Run in Bowen, for Bowen.</span>
-          </li>
-        </ul>
-      </div>
-
-      <aside class="vs-aside">
-        <div class="vs-event-card">
-          <div class="vs-event-art" aria-hidden="true">
-            <svg viewBox="0 0 64 64" class="vs-event-pumpkin">
-              <path d="M32 14c-2 0-3 2-3 4-8-3-16 3-16 14 0 12 8 20 19 20 11 0 19-8 19-20 0-11-8-17-16-14 0-2-1-4-3-4z"
-                    fill="#ff6b00"/>
-              <path d="M32 14c-1 0-2-4 1-8" stroke="#4caf50" stroke-width="3" fill="none" stroke-linecap="round"/>
-            </svg>
-          </div>
-
-          <div class="vs-event-body">
-            <h4>${escapeHtml(ev.name || 'Eatz & Beatz')}</h4>
-            ${ev.subtitle ? `<p class="vs-event-sub">${escapeHtml(ev.subtitle)}</p>` : ''}
-            <dl class="vs-event-facts">
-              <div><dt>When</dt><dd>${escapeHtml(ev.dateLabel || '')}</dd></div>
-              <div><dt>Where</dt><dd>${escapeHtml([ev.venue, ev.location].filter(Boolean).join(', '))}</dd></div>
-              <div><dt>Your site</dt><dd>${escapeHtml(state.siteLabel || 'Not chosen')}</dd></div>
-            </dl>
-          </div>
-        </div>
-
-        <div class="vs-help-card">
-          <h4>Need a hand?</h4>
-          <p>The event details and the questions vendors usually ask are on step two.</p>
-          <button type="button" class="vs-help-link" data-goto-step="info">Event info &amp; FAQs</button>
-        </div>
-      </aside>
-    </div>
-
-    ${details.length ? `
-      <details class="vs-yourdetails">
-        <summary>Your details<span>${details.length} items</span></summary>
-        <dl class="vs-summary-list">
-          ${details.map(([k, v]) => `
-            <div><dt>${escapeHtml(k)}</dt><dd>${escapeHtml(String(v))}</dd></div>`).join('')}
+        <dl class="vs-figures">
+          <div><dt>Price</dt><dd>${exact(perBay)}</dd></div>
+          <div><dt>Qty</dt><dd>${bays}</dd></div>
+          <div><dt>Total</dt><dd class="is-strong">${exact(b.siteCents)}</dd></div>
         </dl>
-      </details>` : ''}
+      </section>
+
+      <!-- WHAT IT COSTS -->
+      <section class="vs-card">
+        <h3>Price Summary</h3>
+
+        <dl class="vs-sum">
+          <div><dt>Site total</dt><dd>${exact(b.siteCents)}</dd></div>
+          <div>
+            <dt>Booking fee
+              <button type="button" class="vs-info" data-info
+                      aria-expanded="false" aria-label="What is the booking fee?">i</button>
+            </dt>
+            <dd>${exact(b.bookingFeeCents)}</dd>
+          </div>
+          <div><dt>GST (10%)</dt><dd>${exact(b.gstCents)}</dd></div>
+        </dl>
+
+        <p class="vs-info-note" data-info-note hidden>
+          4% of the site price plus 99c, which covers the card processing and
+          running the booking system. It is charged once, not per bay.
+        </p>
+
+        <div class="vs-sum-total">
+          <span>Total to pay</span>
+          <strong>${b.totalCents === 0 ? 'Free' : exact(b.totalCents)}</strong>
+        </div>
+      </section>
+
+      <!-- WHO TAKES THE MONEY -->
+      <section class="vs-card vs-secure">
+        <div class="vs-secure-head">
+          <span class="vs-secure-ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M7 10V7a5 5 0 0110 0v3" fill="none" stroke="currentColor" stroke-width="2"/>
+              <rect x="4" y="10" width="16" height="10" rx="2"/>
+            </svg>
+          </span>
+          <span>
+            <strong>Secure payment via Stripe</strong>
+            <span>Your information is encrypted and secure.</span>
+          </span>
+        </div>
+
+        <ul class="vs-secure-row">
+          <li><span aria-hidden="true">&#128737;</span> Safe &amp; secure</li>
+          <li><span aria-hidden="true">&#128179;</span> All major cards</li>
+          <li><span aria-hidden="true">&#127807;</span> Supports local events</li>
+        </ul>
+      </section>
+
+      ${details.length ? `
+        <details class="vs-card vs-yourdetails">
+          <summary>Your details<span>${details.length} items</span></summary>
+          <dl class="vs-summary-list">
+            ${details.map(([k, v]) => `
+              <div><dt>${escapeHtml(k)}</dt><dd>${escapeHtml(String(v))}</dd></div>`).join('')}
+          </dl>
+        </details>` : ''}
+
+      <p class="vs-checkout-foot">
+        Questions? The event details and the ones vendors usually ask are on
+        <button type="button" class="vs-help-link" data-goto-step="info">step two</button>.
+      </p>
+    </div>
   `;
 
-  /*  Both cards can send somebody back a step. Wired here rather than in
-      wireStaticControls because this markup is rebuilt every render. */
+  /*  Wired here rather than in wireStaticControls because this markup is
+      rebuilt on every render. */
   host.querySelectorAll('[data-goto-step]').forEach((btn) => {
     btn.addEventListener('click', () => goTo(btn.getAttribute('data-goto-step')));
   });
+
+  /*  The (i) beside the booking fee. A tooltip would be unreachable on a
+      phone, so it opens a line of text instead. */
+  const info = host.querySelector('[data-info]');
+  const note = host.querySelector('[data-info-note]');
+  if (info && note) {
+    info.addEventListener('click', () => {
+      note.hidden = !note.hidden;
+      info.setAttribute('aria-expanded', String(!note.hidden));
+    });
+  }
 
   const payBtn = document.getElementById('vs-pay');
   if (payBtn) {
     payBtn.textContent = b.totalCents === 0
       ? 'Confirm booking'
-      : `Pay ${money(b.totalCents)} AUD and book`;
+      : `Pay ${exact(b.totalCents)} AUD`;
     payBtn.disabled = !state.siteLabel;
   }
 }

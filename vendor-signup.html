@@ -86,7 +86,9 @@
         <!-- the signed-in-as bar went with the account step -->
 
 
-        <ol class="vs-stepper" id="vs-stepper"></ol>
+        <!--  Back link, step counter and a segment bar. Filled by
+              renderStepper() on every render.                          -->
+        <div class="vs-progress" id="vs-stepper"></div>
 
         <!-- 1. VENDOR TYPE ------------------------------------------------- -->
         <div class="vs-step" data-step="type">
@@ -542,17 +544,19 @@
         </div>
 
         <!-- 7. REVIEW AND PAY ---------------------------------------------- -->
-        <div class="vs-step" data-step="review" hidden>
-            <h2>Review and pay</h2>
-            <p class="vs-step-intro">Check everything over before you pay.</p>
+        <div class="vs-step is-checkout" data-step="review" hidden>
+            <h2>Review &amp; Pay</h2>
+            <p class="vs-step-intro">Check your booking details before payment.</p>
 
             <div id="vs-review"></div>
 
             <p class="vs-busy" data-busy="review" hidden>Taking you to checkout…</p>
             <p class="vs-error" data-error="review" hidden></p>
 
-            <div class="vs-step-actions">
-                <button type="button" class="btn btn-outline" data-back>Back</button>
+            <!--  One button, full width, pinned to the bottom of the screen.
+                  Back lives in the step header now, so it is not repeated
+                  here - the only thing left to do on this step is pay.   -->
+            <div class="vs-step-actions vs-paybar">
                 <button type="button" class="btn btn-ticket" id="vs-pay">Pay and Book</button>
             </div>
         </div>
