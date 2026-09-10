@@ -9,6 +9,28 @@
    To change the menu or footer, edit the files in the components folder.
    -------------------------------------------------------------------------- */
 
+/*  The asset version, read back off this script's own src.
+
+    Every page loads this as js/main.js?v=N (see tools/bump-assets.js), so
+    the number is already here and does not need writing down a second
+    time. The menu and footer are fetched by this file rather than linked
+    by the page, so they would otherwise keep their own stale copy for the
+    ten minutes GitHub Pages caches them - which is exactly the bug the
+    version is there to stop.
+
+    Empty when the script is loaded without one, in which case the two
+    fetches below behave as they always did. */
+var SG_VERSION = (function () {
+    var el = document.currentScript ||
+             document.querySelector('script[src*="main.js"]');
+    var found = el && el.src.match(/[?&]v=([^&]+)/);
+    return found ? found[1] : '';
+}());
+
+function versioned(url) {
+    return SG_VERSION ? url + '?v=' + encodeURIComponent(SG_VERSION) : url;
+}
+
 /* Turn the scrapbook scroll animation on. This runs straight away (before the
    page is painted) so nothing flashes into view first. If the browser is too
    old, or the visitor prefers less motion, the class is removed again below
@@ -20,13 +42,13 @@ if (supportsScrollAnimation()) {
 document.addEventListener('DOMContentLoaded', function () {
     /* Absolute paths, so a page in a subfolder - an archived event, for
        example - still finds the menu and footer. */
-    loadComponent('navbar', '/components/navbar.html', function () {
+    loadComponent('navbar', versioned('/components/navbar.html'), function () {
         highlightCurrentPage();
         initSubmenus();
         initHomeNav();
         trackNavHeight();
     });
-    loadComponent('footer', '/components/footer.html');
+    loadComponent('footer', versioned('/components/footer.html'));
     initScrapbookAnimation();
     initTicketBar();
     initEnquiryPrefill();
