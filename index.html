@@ -31,8 +31,26 @@
 <!-- HERO ---------------------------------------------------------------- -->
 <section class="hero">
 
-    <video autoplay muted loop playsinline class="hero-video" poster="images/bowen.jpeg">
-        <source src="videos/hero.mp4" type="video/mp4">
+    <!--  TWO SIZES OF THE SAME CLIP
+
+          A phone gets the 720p one at 3.7 MB, a desktop the 1080p at
+          7.2 MB. The browser picks by the media query and only downloads
+          the one it picked.
+
+          The small one is listed FIRST on purpose. A browser that ignores
+          media on a video source takes whichever comes first, so the worst
+          case is everybody gets 720p - which is fine behind the overlay,
+          and far better than everybody getting the big file.
+
+          Both are silent and 30fps. The original was 120fps with an audio
+          track on a muted video, which is where most of the 17.7 MB went.
+
+          preload="none" keeps the video out of the way of first paint -
+          the poster shows immediately and the clip follows.              -->
+    <video autoplay muted loop playsinline preload="none"
+           class="hero-video" poster="images/bowen.jpeg">
+        <source src="videos/hero-720.mp4" type="video/mp4" media="(max-width: 900px)">
+        <source src="videos/hero-1080.mp4" type="video/mp4">
     </video>
 
     <div class="overlay"></div>
