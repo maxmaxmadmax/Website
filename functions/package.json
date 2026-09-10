@@ -7,7 +7,7 @@
     "node": "22"
   },
   "scripts": {
-    "lint": "node --check index.js && node --check lib/layout.js",
+    "lint": "node --check index.js && node --check lib/layout.js && node --check lib/email.js",
     "serve": "firebase emulators:start --only functions,firestore,auth,storage",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log"
@@ -15,6 +15,7 @@
   "dependencies": {
     "firebase-admin": "^14.3.0",
     "firebase-functions": "^7.3.2",
-    "stripe": "^22.6.1"
+    "stripe": "^22.6.1",
+    "nodemailer": "^6.9.16"
   }
 }

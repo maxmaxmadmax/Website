@@ -22,6 +22,7 @@ const { getFirestore, FieldValue, Timestamp } = require('firebase-admin/firestor
 const { getAuth } = require('firebase-admin/auth');
 
 const layout = require('./lib/layout');
+const { sendBookingEmails } = require('./lib/email');
 
 initializeApp();
 const db = getFirestore();
@@ -33,6 +34,12 @@ setGlobalOptions({ region: 'australia-southeast1', maxInstances: 10 });
    `firebase functions:secrets:set STRIPE_SECRET_KEY` and friends. */
 const STRIPE_SECRET_KEY = defineSecret('STRIPE_SECRET_KEY');
 const STRIPE_WEBHOOK_SECRET = defineSecret('STRIPE_WEBHOOK_SECRET');
+
+/*  Google Workspace SMTP, for the booking confirmations. SMTP_PASS is an
+    app password, not the account password - Google will not accept the
+    account password from a script with 2FA on. */
+const SMTP_USER = defineSecret('SMTP_USER');
+const SMTP_PASS = defineSecret('SMTP_PASS');
 
 /* Where to send people back to after Stripe. Set with
    `firebase functions:config` style env var, or leave the default. */
@@ -607,7 +614,9 @@ exports.releaseHold = onCall(async (request) => {
    Paid bookings get a Stripe Checkout session; the booking is only marked
    paid later by the webhook.
    ------------------------------------------------------------------------- */
-exports.createCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
+exports.createCheckout = onCall(
+  { secrets: [STRIPE_SECRET_KEY, SMTP_USER, SMTP_PASS] },
+  async (request) => {
   const uid = requireAuth(request);
   const { bookingId } = request.data || {};
 
@@ -708,7 +717,7 @@ exports.createCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request
 
   // ---- Nothing to pay -----------------------------------------------------
   if (amount === 0) {
-    await confirmBooking(bookingId, { paymentStatus: 'free' });
+    await confirmAndNotify(bookingId, { paymentStatus: 'free' });
     return { ok: true, free: true };
   }
 
@@ -846,6 +855,53 @@ function eventBlurb(event) {
    Safe to call twice: if the booking is already confirmed it does nothing,
    which matters because Stripe can deliver a webhook more than once.
    ------------------------------------------------------------------------- */
+/*  CONFIRM, THEN TELL PEOPLE.
+
+    Everything calls this rather than confirmBooking directly, so there is
+    one path from "the money arrived" to "the vendor has their invoice".
+
+    The email goes out after the transaction has committed, never inside
+    it. A transaction can be retried, and sending mail from something that
+    might run twice is how a vendor ends up with four receipts.
+
+    It also cannot fail the booking. By the time we are here the money is
+    taken and the site is theirs; a mail server having a bad afternoon is a
+    nuisance, losing that is not. Every failure is logged and swallowed.
+
+    Sent once: confirmationEmailAt is stamped on the booking, and Stripe
+    delivering the same webhook twice finds it already set.
+    ------------------------------------------------------------------------- */
+async function confirmAndNotify(bookingId, extra = {}) {
+  const result = await confirmBooking(bookingId, extra);
+
+  // nothing was confirmed - a duplicate webhook, or a site taken first
+  if (!result || result.ok === false || result.alreadyConfirmed) return result;
+
+  try {
+    const ref = db.collection('bookings').doc(bookingId);
+    const snap = await ref.get();
+    if (!snap.exists) return result;
+
+    const booking = snap.data();
+    if (booking.confirmationEmailAt) return result;   // already told them
+
+    const evSnap = await db.collection('events').doc(booking.eventId).get();
+    const event = evSnap.exists ? evSnap.data() : {};
+
+    const sent = await sendBookingEmails(booking, bookingId, event);
+
+    if (sent.sent) {
+      await ref.update({ confirmationEmailAt: FieldValue.serverTimestamp() });
+    }
+  } catch (err) {
+    logger.error('confirmation email step failed, booking is still confirmed', {
+      bookingId, message: err && err.message,
+    });
+  }
+
+  return result;
+}
+
 async function confirmBooking(bookingId, extra = {}) {
   return db.runTransaction(async (tx) => {
     const bookingRef = db.collection('bookings').doc(bookingId);
@@ -950,7 +1006,7 @@ function stripeFields(extra) {
    by hand, so nothing is confirmed on the strength of it.
    ------------------------------------------------------------------------- */
 exports.stripeWebhook = onRequest(
-  { secrets: [STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET], cors: false },
+  { secrets: [STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, SMTP_USER, SMTP_PASS], cors: false },
   async (req, res) => {
     if (req.method !== 'POST') {
       res.status(405).send('Method not allowed');
@@ -996,7 +1052,7 @@ exports.stripeWebhook = onRequest(
           }
 
           if (session.payment_status === 'paid') {
-            await confirmBooking(bookingId, {
+            await confirmAndNotify(bookingId, {
               paymentStatus: 'paid',
               stripePaymentIntentId: session.payment_intent,
               amountPaidCents: session.amount_total,
@@ -1500,7 +1556,7 @@ exports.adminReviewBooking = onCall(async (request) => {
    ------------------------------------------------------------------------- */
 const PAYMENT_STATES = ['none', 'unpaid', 'paid', 'free'];
 
-exports.adminSetPayment = onCall(async (request) => {
+exports.adminSetPayment = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
   requireAdmin(request);
   const { bookingId, paymentStatus, amountPaidCents } = request.data || {};
 
@@ -1530,7 +1586,7 @@ exports.adminSetPayment = onCall(async (request) => {
           ? 0
           : (booking.totalCents != null ? booking.totalCents : booking.amountCents || 0));
 
-    const result = await confirmBooking(bookingId, {
+    const result = await confirmAndNotify(bookingId, {
       paymentStatus,
       amountPaidCents: paid,
     });
