@@ -107,3 +107,25 @@
 
     start();
 }());
+
+/*  The reel behind the Friday Nights banner.
+
+    Its own block rather than part of the countdown above - that one bails
+    out early when there is no countdown on the page, which would take this
+    with it.
+
+    Somebody who has asked their system for less motion should not get a
+    looping clip behind a headline. Pausing rather than hiding leaves the
+    poster frame showing, so the banner still has a picture in it.       */
+(function () {
+    'use strict';
+
+    var video = document.getElementById('ev-res-video');
+    if (!video) return;
+
+    if (window.matchMedia &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        video.removeAttribute('autoplay');
+        video.pause();
+    }
+}());

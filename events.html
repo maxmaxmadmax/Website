@@ -166,8 +166,28 @@
      ========================================================================== -->
 <section class="ev-residency" aria-labelledby="ev-res-name">
 
-  <!-- THE BANNER -->
+  <!--  THE BANNER
+
+        There is no "view this week's DJ" button on it any more. The whole
+        section is one screen now, so that button scrolled to a line up
+        already in view - and it was the 80px that stopped everything
+        fitting.                                                        -->
   <div class="ev-res-hero">
+
+    <!--  Same two files, same breakpoint and same poster as the homepage
+          hero and the entertainment page. That is the point: by the time
+          anyone reaches this the browser already holds the file, so the
+          banner costs nothing. A different cut would have made it another
+          download of the same footage.
+
+          preload="none" so the poster paints first and the clip follows. -->
+    <video class="ev-res-video" id="ev-res-video" aria-hidden="true"
+           autoplay muted loop playsinline preload="none"
+           poster="images/bowen.jpeg">
+      <source src="videos/hero-720.mp4" type="video/mp4" media="(max-width: 900px)">
+      <source src="videos/hero-1080.mp4" type="video/mp4">
+    </video>
+
     <div class="ev-res-hero-media" aria-hidden="true"></div>
 
     <div class="ev-res-hero-inner">
@@ -197,9 +217,6 @@
         </li>
       </ul>
 
-      <a class="btn ev-res-btn" href="#ev-fri-lineup">
-        View This Week's DJ <span aria-hidden="true">&#8594;</span>
-      </a>
     </div>
 
     <p class="ev-res-script" aria-hidden="true">See Our<br>DJs in<br>Action</p>
