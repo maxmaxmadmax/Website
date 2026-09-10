@@ -289,12 +289,15 @@
 /* --------------------------------------------------------------------------
    HERO
    -------------------------------------------------------------------------- */
+/*  The gradient lives here, behind the video, not on the scrim above it.
+    It is opaque, and on the scrim it covered the clip completely.      */
 #sg-ent-page .ent-hero{
     position:relative;
     overflow:hidden;
     min-height:min(58vh, 460px);
     display:flex;
     align-items:center;
+    background:linear-gradient(120deg, #3a1a02, #0a0a0a 72%);
 }
 
 /*  The reel sits behind everything, cropped to fill whatever shape the hero
@@ -317,9 +320,7 @@
 #sg-ent-page .ent-hero-media{
     position:absolute;
     inset:0;
-    background:
-        linear-gradient(90deg, rgba(5,5,5,.94) 26%, rgba(5,5,5,.35) 78%),
-        linear-gradient(120deg, #3a1a02, #0a0a0a 72%);
+    background:linear-gradient(90deg, rgba(5,5,5,.94) 26%, rgba(5,5,5,.35) 78%);
 }
 
 #sg-ent-page .ent-hero-inner{

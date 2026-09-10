@@ -574,12 +574,15 @@
 
 
 /* ---- the banner ---- */
+/*  The gradient lives here, behind the video, not on the scrim above it.
+    It is opaque, and on the scrim it covered the clip completely.      */
 .ev-res-hero{
     position:relative;
     overflow:hidden;
     min-height:min(56vh, 420px);
     display:flex;
     align-items:center;
+    background:linear-gradient(120deg, #2a1436, #0a0a0a 70%);
 }
 
 /*  The photo is a background rather than an <img>, so a file that is not
@@ -602,9 +605,7 @@
 .ev-res-hero-media{
     position:absolute;
     inset:0;
-    background:
-        linear-gradient(90deg, rgba(6,6,6,.95) 26%, rgba(6,6,6,.4) 78%),
-        linear-gradient(120deg, #2a1436, #0a0a0a 70%);
+    background:linear-gradient(90deg, rgba(6,6,6,.95) 26%, rgba(6,6,6,.4) 78%);
 }
 
 .ev-res-hero-inner{
