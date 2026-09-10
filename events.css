@@ -510,16 +510,6 @@
     border-color:var(--sg-orange);
 }
 
-
-/* --------------------------------------------------------------------------
-   6. ARCHIVED EVENT PAGES
-   Small changes to existing components on a past event page. Both are
-   scoped to a class that only an archived page carries.
-   -------------------------------------------------------------------------- */
-.ev-archive-flag{
-    margin-bottom:18px;
-}
-
 /* The sticky bar keeps its position but stops selling anything */
 .ticket-bar.is-archived{
     background:#141414;
@@ -532,54 +522,6 @@
     border:1px solid #333;
     color:var(--sg-dim);
     cursor:default;
-}
-
-.ev-gallery{
-    display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
-    gap:16px;
-    max-width:var(--sg-max-width);
-    margin:auto;
-}
-
-.ev-gallery figure{
-    margin:0;
-    border-radius:14px;
-    overflow:hidden;
-    background:var(--sg-panel);
-    border:1px solid var(--sg-border);
-}
-
-.ev-gallery img{
-    width:100%;
-    height:100%;
-    aspect-ratio:4 / 3;
-    object-fit:cover;
-    display:block;
-}
-
-.ev-gallery figcaption{
-    padding:12px 14px;
-    color:var(--sg-dim);
-    font-size:.86rem;
-}
-
-/*  Shown while there is nothing to show. Same shape as the aftermovie
-    placeholder so an empty page still looks laid out.                    */
-.ev-gallery-empty,
-.ev-aftermovie{
-    max-width:760px;
-    margin:auto;
-    padding:44px 24px;
-    border:1px dashed #2e2e2e;
-    border-radius:16px;
-    background:var(--sg-panel);
-    color:var(--sg-dim);
-    text-align:center;
-}
-
-.ev-back-strip{
-    text-align:center;
 }
 
 

@@ -142,8 +142,6 @@
 }
 
 
-
-
 /* --------------------------------------------------------------------------
    STEPPER
    -------------------------------------------------------------------------- */
@@ -571,9 +569,6 @@
 .vs-type-grid.is-two{
     grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
 }
-
-
-
 
 
 /* --------------------------------------------------------------------------
@@ -1047,38 +1042,6 @@
     margin-bottom:16px;
 }
 
-.vs-auth-tabs{
-    display:flex;
-    gap:8px;
-    margin-bottom:16px;
-}
-
-.vs-auth-tab{
-    background:#141414;
-    border:1px solid var(--sg-border);
-    color:var(--sg-muted);
-    border-radius:50px;
-    padding:8px 18px;
-    cursor:pointer;
-    font-size:.88rem;
-}
-
-.vs-auth-tab.is-selected{
-    border-color:var(--sg-orange);
-    color:#fff;
-}
-
-.vs-account{
-    display:flex;
-    flex-wrap:wrap;
-    align-items:center;
-    justify-content:center;
-    gap:12px;
-    color:var(--sg-dim);
-    font-size:.88rem;
-    margin-bottom:20px;
-}
-
 
 /* --------------------------------------------------------------------------
    REVIEW AND CONFIRMATION
@@ -1199,102 +1162,6 @@
 
 @keyframes vs-spin{
     to{ transform:rotate(360deg); }
-}
-
-
-/* --------------------------------------------------------------------------
-   ADMIN DASHBOARD
-   Staff only, so plain and dense rather than styled up.
-   -------------------------------------------------------------------------- */
-.va-tabs{
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    justify-content:center;
-    margin-bottom:22px;
-}
-
-.va-panel{
-    margin-bottom:20px;
-}
-
-.va-table-wrap{
-    overflow-x:auto;   /* wide tables scroll in here, never on the page */
-}
-
-.va-table{
-    width:100%;
-    border-collapse:collapse;
-    font-size:.9rem;
-    min-width:640px;
-}
-
-.va-table th,
-.va-table td{
-    text-align:left;
-    padding:11px 12px;
-    border-bottom:1px solid var(--sg-border);
-    vertical-align:top;
-}
-
-.va-table th{
-    font-family:var(--sg-font-accent);
-    font-size:.72rem;
-    font-weight:bold;
-    letter-spacing:1.5px;
-    text-transform:uppercase;
-    color:var(--sg-gold);
-    white-space:nowrap;
-}
-
-.va-table td{
-    color:var(--sg-muted);
-}
-
-.va-table tr.is-flagged td{
-    background:#2a1010;
-}
-
-.va-sub{
-    display:block;
-    color:var(--sg-dim);
-    font-size:.8rem;
-}
-
-.va-status{
-    display:inline-block;
-    padding:3px 9px;
-    border-radius:50px;
-    font-size:.74rem;
-    font-family:var(--sg-font-accent);
-    letter-spacing:1px;
-    text-transform:uppercase;
-    background:#242424;
-    color:var(--sg-muted);
-    white-space:nowrap;
-}
-
-.va-status.is-confirmed,
-.va-status.is-available{ background:#12310f; color:#9ade95; }
-
-.va-status.is-pending_payment,
-.va-status.is-held{ background:#33280a; color:#f0c860; }
-
-.va-status.is-booked,
-.va-status.is-needs_attention{ background:#3a1414; color:#ff9d9d; }
-
-.va-status.is-cancelled,
-.va-status.is-blocked{ background:#1c1c1c; color:#8a8a8a; }
-
-.va-limit{
-    width:76px;
-    padding:7px 10px;
-    border-radius:7px;
-    background:#0b0b0b;
-    color:#fff;
-    border:1px solid var(--sg-border);
-    font-family:var(--sg-font);
-    font-size:.9rem;
 }
 
 

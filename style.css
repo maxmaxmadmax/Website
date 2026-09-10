@@ -90,11 +90,15 @@ h1,h2,h3,h4,h5{
     line-height:1.15;
 }
 
-/* Big statement headings use the heavy poster-style type */
-h1, h2,
-.artist-card h3,
-.split-card h3,
+h1,
+
+
+h2,
+
+
 .detail-card p,
+
+
 .featured-event h2{
     font-family:var(--sg-font-display);
     letter-spacing:-.5px;
@@ -487,10 +491,6 @@ nav a.nav-ticket.active{
     padding:80px 6%;
 }
 
-.section-inner{
-    max-width:var(--sg-max-width);
-    margin:auto;
-}
 
 .section h2{
     margin-bottom:20px;
@@ -511,9 +511,6 @@ nav a.nav-ticket.active{
     background:var(--sg-panel);
 }
 
-.center-text{
-    text-align:center;
-}
 
 /* Page headers (services / contact) */
 .page-header{
@@ -527,13 +524,6 @@ nav a.nav-ticket.active{
     background:linear-gradient(140deg, #1a0d00 0%, #000 55%, #150a00 100%);
 }
 
-.header-video{
-    position:absolute;
-    inset:0;
-    width:100%;
-    height:100%;
-    object-fit:cover;
-}
 
 .header-overlay{
     position:absolute;
@@ -561,19 +551,6 @@ nav a.nav-ticket.active{
     font-size:1.05rem;
 }
 
-/* Simple image grid */
-.gallery{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));
-    gap:20px;
-}
-
-.gallery img{
-    width:100%;
-    height:250px;
-    object-fit:cover;
-    border-radius:12px;
-}
 
 /* Simple text grid */
 .features{
@@ -662,48 +639,6 @@ nav a.nav-ticket.active{
     line-height:1;
 }
 
-.hero-tagline{
-    font-family:var(--sg-font-accent);
-    font-size:clamp(.95rem, 2.5vw, 1.2rem);
-    letter-spacing:3px;
-    text-transform:uppercase;
-    color:var(--sg-muted);
-    margin-bottom:32px;
-}
-
-/* The two sides of SoundzGood */
-.split-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
-    gap:30px;
-    max-width:var(--sg-max-width);
-    margin:auto;
-}
-
-.split-card{
-    background:var(--sg-panel);
-    border:1px solid var(--sg-border);
-    border-top:4px solid var(--sg-orange);
-    border-radius:16px;
-    padding:40px 34px;
-
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    gap:16px;
-}
-
-.split-card h3{
-    font-size:1.5rem;
-    letter-spacing:1px;
-    text-transform:uppercase;
-    color:var(--sg-orange);
-}
-
-.split-card p{
-    color:var(--sg-muted);
-    flex:1;
-}
 
 /* Featured event panel */
 /*  The event artwork sits behind this panel, under a dark wash so the
@@ -862,11 +797,6 @@ nav a.nav-ticket.active{
     margin:0 auto 1.5vh;
 }
 
-.event-hero-logo{
-    width:min(230px, 55%);
-    height:auto;
-    margin-bottom:18px;
-}
 
 /* Hero sits on the orange sky, so its type goes black like the poster */
 .event-hero-content{
@@ -926,14 +856,6 @@ nav a.nav-ticket.active{
     background:#1a1a1a;
 }
 
-.presented{
-    font-family:var(--sg-font-accent);
-    letter-spacing:3px;
-    font-size:.8rem;
-    text-transform:uppercase;
-    color:var(--sg-gold);
-    margin-bottom:14px;
-}
 
 .event-hero h1{
     font-size:clamp(2.8rem, 11vw, 7rem);
@@ -1134,38 +1056,6 @@ nav a.nav-ticket.active{
     opacity:.75;
 }
 
-/* Date and venue pills, like the ones on the poster */
-.lineup-pill{
-    display:inline-block;
-    font-family:var(--sg-font-display);
-    font-size:clamp(.85rem, 2.4vw, 1.35rem);
-    letter-spacing:1px;
-    text-transform:uppercase;
-    padding:12px 26px;
-    border-radius:8px;
-}
-
-.lineup-pill-date{
-    border:3px solid #000;
-    background:rgba(255,255,255,.28);
-    color:#000;
-    margin-bottom:8px;
-}
-
-.lineup-pill-venue{
-    background:#000;
-    color:#fff;
-    margin-top:30px;
-}
-
-.lineup-support{
-    color:var(--sg-sand);
-    font-family:var(--sg-font-display);
-    font-size:clamp(.8rem, 2vw, 1.2rem);
-    letter-spacing:1px;
-    text-transform:uppercase;
-    text-shadow:0 2px 5px rgba(0,0,0,.3);
-}
 
 
 /*  THE LINEUP FLOW
@@ -1421,10 +1311,6 @@ nav a.nav-ticket.active{
     transform:scaleX(1);
 }
 
-.diamond{
-    color:var(--sg-orange);
-    padding:0 12px;
-}
 
 /* Event description */
 .event-copy{
@@ -1508,31 +1394,6 @@ nav a.nav-ticket.active{
     border-radius:14px;
 }
 
-/* "Make a weekend of it" tagline */
-.weekend-tagline{
-    font-family:var(--sg-font-script);
-    font-size:clamp(1.6rem, 6vw, 3rem);
-    font-weight:400;
-    font-style:italic;
-    line-height:1.1;
-    text-align:center;
-    letter-spacing:.02em;
-
-    text-shadow:
-        0 0 6px rgba(255,138,0,.85),
-        0 0 14px rgba(255,102,0,.65),
-        0 0 28px rgba(255,72,0,.35);
-
-    -webkit-text-stroke:.4px rgba(255,179,64,.65);
-}
-
-.weekend-links{
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    gap:18px;
-    margin-top:28px;
-}
 
 /*  MAKE A WEEKEND OF IT
     Travel-brochure treatment: the photography does the selling, with the
@@ -1661,18 +1522,6 @@ nav a.nav-ticket.active{
 }
 
 
-/* Event banner used in place of individual sponsor logos */
-.sponsor-banner{
-    display:block;
-    width:100%;
-    max-width:var(--sg-max-width);
-    height:auto;
-    margin:auto;
-    border-radius:16px;
-    border:3px solid #000;
-    box-shadow:0 18px 46px rgba(80,28,0,.42);
-}
-
 /* Full-width artwork that closes the page */
 .closing-banner{
     background:#000;
@@ -1686,74 +1535,6 @@ nav a.nav-ticket.active{
     height:auto;
 }
 
-
-/* ==========================================================================
-   8b. SUNSET STYLING  (from the SoundzGood 2.0 poster artwork)
-   Warm gradient panels with bold black type, grain texture and
-   hand-drawn sun / palm / seagull line motifs.
-   ========================================================================== */
-
-/* Put class="sunset" on a section to give it the poster treatment */
-.sunset{
-    position:relative;
-    background:linear-gradient(
-        180deg,
-        var(--sg-sun-top) 0%,
-        var(--sg-sun-mid) 55%,
-        var(--sg-sun-deep) 100%
-    );
-    color:#000;
-    overflow:hidden;
-}
-
-/* Grain texture layer */
-.sunset::before{
-    content:"";
-    position:absolute;
-    inset:0;
-    background-image:var(--sg-grain);
-    opacity:.16;
-    mix-blend-mode:multiply;
-    pointer-events:none;
-}
-
-.sunset > *{
-    position:relative;
-    z-index:1;
-}
-
-.sunset h2,
-.sunset h3,
-.sunset h5,
-.sunset p{
-    color:#000;
-}
-
-.sunset .section-intro{
-    color:rgba(0,0,0,.72);
-}
-
-/* Buttons sitting on a sunset panel go solid black, like the poster type */
-.sunset .btn{
-    background:#000;
-    border-color:#000;
-    color:#fff;
-}
-
-.sunset .btn:hover{
-    background:#1a1a1a;
-}
-
-.sunset .btn-outline{
-    background:transparent;
-    color:#000;
-    border-color:#000;
-}
-
-.sunset .btn-outline:hover{
-    background:#000;
-    color:#fff;
-}
 
 /*  THE EVENT FLOW
     One continuous sunset running behind several sections at once, so the
@@ -1796,9 +1577,6 @@ nav a.nav-ticket.active{
     padding-bottom:44px;
 }
 
-.event-flow .sun-motif{
-    margin-bottom:10px;
-}
 
 .event-flow h2,
 .event-flow h3,
@@ -1897,32 +1675,6 @@ nav a.nav-ticket.active{
     color:#fff;
 }
 
-/* Hand-drawn sun + palms motif (inline SVG, no extra image to load) */
-.sun-motif{
-    display:block;
-    width:min(190px, 52%);
-    height:auto;
-    margin:0 auto 18px;
-}
-
-.sun-motif path,
-.sun-motif line,
-.sun-motif circle{
-    stroke:currentColor;
-    fill:none;
-    stroke-width:7;
-    stroke-linecap:round;
-}
-
-/* Light motif over dark video heroes, black motif on sunset panels */
-.event-hero .sun-motif{
-    color:#fff;
-    opacity:.95;
-}
-
-.sunset .sun-motif{
-    color:#000;
-}
 
 /*  Poster tagline: LIVE MUSIC / FOOD / BAR / DJS
     Set light and widely tracked, so it reads as a fine line against the
@@ -1942,18 +1694,6 @@ nav a.nav-ticket.active{
     margin-bottom:0;
 }
 
-/* Sponsor bar on solid black, mirroring the base of the poster */
-.sponsor-bar{
-    background:#000;
-    padding:44px 6%;
-    border-top:1px solid var(--sg-border);
-}
-
-.sponsor-bar h2{
-    font-size:clamp(1.1rem, 3vw, 1.5rem);
-    letter-spacing:3px;
-    margin-bottom:28px;
-}
 
 
 /*  SPONSOR WALL
@@ -1997,27 +1737,6 @@ nav a.nav-ticket.active{
     margin-bottom:38px;
 }
 
-.sponsor-panel{
-    max-width:var(--sg-max-width);
-    margin:auto;
-    background:#fff;
-    border-radius:22px;
-    padding:50px 44px;
-    box-shadow:0 20px 60px rgba(0,0,0,.5);
-}
-
-.sponsor-panel h2{
-    color:#000;
-    font-size:clamp(1.4rem, 4vw, 2.2rem);
-    letter-spacing:1px;
-    margin-bottom:8px;
-}
-
-.sponsor-panel .section-intro{
-    color:rgba(0,0,0,.6);
-    margin-bottom:38px;
-    font-size:.95rem;
-}
 
 .sponsor-grid{
     display:grid;
@@ -2098,319 +1817,10 @@ nav a.nav-ticket.active{
 }
 
 
-/* ==========================================================================
-   9. SERVICES PAGE
-   ========================================================================== */
-
-.service-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
-    gap:26px;
-    max-width:var(--sg-max-width);
-    margin:auto;
-}
-
-.service-card{
-    background:var(--sg-panel);
-    padding:34px 30px;
-    border-radius:14px;
-    border:1px solid var(--sg-border);
-    border-left:4px solid var(--sg-orange);
-    transition:transform .25s, border-color .25s;
-}
-
-.service-card:hover{
-    transform:translateY(-4px);
-    border-left-color:var(--sg-gold);
-}
-
-.service-card h3{
-    color:var(--sg-orange);
-    margin-bottom:14px;
-    font-size:1.2rem;
-    letter-spacing:1px;
-    text-transform:uppercase;
-}
-
-.service-card p{
-    color:var(--sg-muted);
-}
-
-
-/*  ABOUT BLOCK  */
-.about-wrap{
-    max-width:820px;
-    margin:auto;
-    text-align:center;
-}
-
-.about-wrap p{
-    color:var(--sg-muted);
-    margin-bottom:18px;
-}
-
-.about-wrap .about-lead{
-    color:#fff;
-    font-size:clamp(1.05rem, 2.4vw, 1.25rem);
-}
-
-.about-buttons{
-    margin-top:30px;
-}
-
-
-/*  FEATURE BAND
-    A short statement on the sunset, used to break up the page.         */
-.feature-band{
-    position:relative;
-    overflow:hidden;
-    padding:64px 6%;
-    text-align:center;
-
-    background:linear-gradient(
-        180deg,
-        var(--sg-sun-top) 0%,
-        var(--sg-sun-mid) 55%,
-        var(--sg-sun-deep) 100%
-    );
-}
-
-.feature-band::before{
-    content:"";
-    position:absolute;
-    inset:0;
-    background-image:var(--sg-grain);
-    opacity:.16;
-    mix-blend-mode:multiply;
-    pointer-events:none;
-}
-
-.feature-band > *{
-    position:relative;
-    z-index:1;
-}
-
-.feature-band h2{
-    color:#000;
-    margin-bottom:14px;
-}
-
-.feature-band p{
-    max-width:640px;
-    margin:auto;
-    color:rgba(0,0,0,.72);
-}
-
-
-/*  SERVICE LIST
-    Fourteen services with long equipment lists. Kept as native
-    accordions so everything is on the page and searchable, without the
-    page becoming an unreadable wall of text.                           */
-.service-list{
-    max-width:var(--sg-max-width);
-    margin:auto;
-    border-top:1px solid var(--sg-border);
-}
-
-.service-item{
-    border-bottom:1px solid var(--sg-border);
-}
-
-.service-item summary{
-    display:flex;
-    flex-wrap:wrap;
-    align-items:baseline;
-    gap:4px 18px;
-
-    padding:24px 44px 24px 4px;
-    position:relative;
-    cursor:pointer;
-    list-style:none;           /* hides the default arrow */
-    transition:color .2s;
-}
-
-.service-item summary::-webkit-details-marker{
-    display:none;              /* Safari */
-}
-
-/* plus sign that becomes a minus when open */
-.service-item summary::after{
-    content:"";
-    position:absolute;
-    top:50%;
-    right:6px;
-    width:16px;
-    height:16px;
-    margin-top:-8px;
-
-    background:
-        linear-gradient(var(--sg-orange), var(--sg-orange)) center/16px 2px no-repeat,
-        linear-gradient(var(--sg-orange), var(--sg-orange)) center/2px 16px no-repeat;
-    transition:transform .25s;
-}
-
-.service-item[open] summary::after{
-    background:
-        linear-gradient(var(--sg-orange), var(--sg-orange)) center/16px 2px no-repeat;
-    transform:rotate(180deg);
-}
-
-.service-name{
-    font-family:var(--sg-font-display);
-    font-size:clamp(1.15rem, 2.6vw, 1.6rem);
-    letter-spacing:-.5px;
-    text-transform:uppercase;
-    color:#fff;
-}
-
-.service-item[open] .service-name,
-.service-item summary:hover .service-name{
-    color:var(--sg-orange);
-}
-
-.service-tagline{
-    font-family:var(--sg-font-accent);
-    font-size:.76rem;
-    font-weight:bold;
-    letter-spacing:2px;
-    text-transform:uppercase;
-    color:var(--sg-gold);
-}
-
-.service-body{
-    padding:0 4px 30px;
-    max-width:820px;
-}
-
-.service-body p{
-    color:var(--sg-muted);
-    margin-bottom:14px;
-}
-
-.service-body .list-heading{
-    color:#fff;
-    font-weight:bold;
-    margin-top:20px;
-    margin-bottom:12px;
-}
-
-.service-body .btn{
-    margin-top:22px;
-}
-
-/* Equipment lists, set in columns so they do not run down the page */
-.tick-list{
-    list-style:none;
-    columns:2;
-    column-gap:34px;
-    margin-bottom:18px;
-}
-
-.tick-list li{
-    color:var(--sg-muted);
-    padding-left:22px;
-    margin-bottom:9px;
-    break-inside:avoid;
-    position:relative;
-}
-
-.tick-list li::before{
-    content:"";
-    position:absolute;
-    left:0;
-    top:.55em;
-    width:8px;
-    height:8px;
-    border-radius:50%;
-    background:var(--sg-orange);
-}
-
-
-/*  TAG LIST
-    Short items shown as pills - events supported, service area.        */
-.tag-list{
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    gap:10px;
-    list-style:none;
-    max-width:900px;
-    margin:auto;
-}
-
-.tag-list li{
-    background:var(--sg-panel);
-    border:1px solid var(--sg-border);
-    border-radius:50px;
-    padding:10px 20px;
-    color:var(--sg-muted);
-    font-size:.92rem;
-}
-
-.service-note{
-    color:var(--sg-dim);
-    margin-top:26px;
-    font-size:.95rem;
-}
-
-
-/*  WHY SOUNDZGOOD  */
-.why-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
-    gap:30px;
-    max-width:var(--sg-max-width);
-    margin:auto;
-}
-
-.why-item h3{
-    font-family:var(--sg-font-display);
-    font-size:1.15rem;
-    letter-spacing:-.5px;
-    text-transform:uppercase;
-    color:var(--sg-orange);
-    margin-bottom:10px;
-}
-
-.why-item p{
-    color:var(--sg-muted);
-}
-
-/* Checklist of what to send with an enquiry */
-.checklist{
-    max-width:720px;
-    margin:auto;
-}
-
-
-/*  NUMBERED STEPS  */
-.steps-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
-    gap:34px 30px;
-    max-width:var(--sg-max-width);
-    margin:auto;
-}
-
 .step{
     text-align:center;
 }
 
-.step-number{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:56px;
-    height:56px;
-    border-radius:50%;
-
-    background:var(--sg-orange);
-    color:#fff;
-    font-family:var(--sg-font-display);
-    font-size:1.4rem;
-
-    margin-bottom:18px;
-}
 
 .step h3{
     font-family:var(--sg-font-display);
@@ -2525,77 +1935,6 @@ nav a.nav-ticket.active{
 }
 
 
-/* ==========================================================================
-   11. OPTIONAL / LEGACY CLASSES
-   Kept so older snippets still style correctly if reused.
-   ========================================================================== */
-
-.event-card{
-    display:flex;
-    gap:40px;
-    align-items:center;
-}
-
-.event-card img{
-    width:50%;
-    border-radius:12px;
-}
-
-.event-info{
-    flex:1;
-}
-
-.feature-event{
-    display:grid;
-    grid-template-columns:1.2fr 1fr;
-    gap:50px;
-    align-items:center;
-}
-
-.feature-event img{
-    width:100%;
-    border-radius:18px;
-}
-
-.feature-event h3{
-    font-size:clamp(2rem, 5vw, 4rem);
-    color:var(--sg-gold);
-    margin-bottom:20px;
-}
-
-.feature-event p{
-    color:var(--sg-muted);
-    margin-bottom:30px;
-}
-
-.image-card{
-    position:relative;
-}
-
-.image-text{
-    position:absolute;
-    top:50%;
-    left:50%;
-    transform:translate(-50%,-50%);
-    color:#fff;
-    text-align:center;
-    z-index:2;
-}
-
-.subscribe-form{
-    max-width:600px;
-    margin:auto;
-    display:flex;
-    flex-direction:column;
-    gap:15px;
-}
-
-.subscribe-form input{
-    padding:15px;
-    border:none;
-    border-radius:8px;
-}
-
 
 /* ==========================================================================
    12. RESPONSIVE - TABLET & MOBILE
@@ -2613,9 +1952,6 @@ nav a.nav-ticket.active{
         gap:36px;
     }
 
-    .feature-event{
-        grid-template-columns:1fr;
-    }
 }
 
 @media (max-width:768px){
@@ -2700,10 +2036,6 @@ nav a.nav-ticket.active{
         padding:calc(var(--sg-nav-height, 84px) + 10px) 20px 3.5vh;
     }
 
-    .event-hero-logo{
-        width:min(120px, 34%);
-        margin-bottom:12px;
-    }
 
     /* Height-driven (never width) so the square logo keeps its shape */
     .event-logo{
@@ -2767,18 +2099,6 @@ nav a.nav-ticket.active{
         margin:10px 0 22px;
     }
 
-    /* Equipment lists go to a single column on a phone */
-    .tick-list{
-        columns:1;
-    }
-
-    .service-item summary{
-        padding:20px 38px 20px 2px;
-    }
-
-    .feature-band{
-        padding:52px 6%;
-    }
 
     .act{
         padding:32px 0;
@@ -2885,15 +2205,6 @@ nav a.nav-ticket.active{
         gap:16px 26px;
     }
 
-    .split-card{
-        padding:32px 24px;
-        align-items:center;
-        text-align:center;
-    }
-
-    .split-card .btn{
-        align-self:center;
-    }
 
     .contact-info h2{
         text-align:center;
@@ -2915,17 +2226,6 @@ nav a.nav-ticket.active{
         max-width:140px;
     }
 
-    .gallery img{
-        height:200px;
-    }
-
-    .event-card{
-        flex-direction:column;
-    }
-
-    .event-card img{
-        width:100%;
-    }
 }
 
 @media (max-width:400px){
@@ -2935,10 +2235,6 @@ nav a.nav-ticket.active{
         padding:50px 5%;
     }
 
-    .artist-card{
-        padding:26px 18px;
-        min-height:auto;
-    }
 }
 
 
@@ -2956,8 +2252,8 @@ nav a.nav-ticket.active{
     }
 
     .btn:hover,
-    .artist-card:hover,
-    .service-card:hover,
+
+
     .sponsors a:hover img{
         transform:none;
     }
