@@ -1029,29 +1029,34 @@ function renderReview() {
       `).join('')}
     </dl>
 
-    ${b.totalCents ? `
-      <div class="vs-costs">
-        <div class="vs-cost">
-          <span>Site fee</span>
-          <span class="vs-cost-amt">${exact(b.siteCents)}</span>
-        </div>
-        <div class="vs-cost">
-          <span>Booking fee <em>4% + $0.99</em></span>
-          <span class="vs-cost-amt">${exact(b.bookingFeeCents)}</span>
-        </div>
-        <div class="vs-cost is-subtotal">
-          <span>Subtotal</span>
-          <span class="vs-cost-amt">${exact(b.siteCents + b.bookingFeeCents)}</span>
-        </div>
-        <div class="vs-cost">
-          <span>GST <em>10% of ${exact(b.siteCents + b.bookingFeeCents)}</em></span>
-          <span class="vs-cost-amt">${exact(b.gstCents)}</span>
-        </div>
-      </div>` : ''}
-
+    <!--  One panel, not two. The breakdown and the figure it adds up to
+          belong together - split across two boxes, the total read as a
+          separate claim rather than the sum of the lines above it.    -->
     <div class="vs-total">
-      <span>Total${b.totalCents ? ' to pay' : ''}</span>
-      <strong>${money(b.totalCents)}${b.totalCents ? ' AUD' : ''}</strong>
+      ${b.totalCents ? `
+        <div class="vs-costs">
+          <div class="vs-cost">
+            <span>Site fee</span>
+            <span class="vs-cost-amt">${exact(b.siteCents)}</span>
+          </div>
+          <div class="vs-cost">
+            <span>Booking fee <em>4% + $0.99</em></span>
+            <span class="vs-cost-amt">${exact(b.bookingFeeCents)}</span>
+          </div>
+          <div class="vs-cost is-subtotal">
+            <span>Subtotal</span>
+            <span class="vs-cost-amt">${exact(b.siteCents + b.bookingFeeCents)}</span>
+          </div>
+          <div class="vs-cost">
+            <span>GST <em>10% of ${exact(b.siteCents + b.bookingFeeCents)}</em></span>
+            <span class="vs-cost-amt">${exact(b.gstCents)}</span>
+          </div>
+        </div>` : ''}
+
+      <div class="vs-total-row">
+        <span>Total${b.totalCents ? ' to pay' : ''}</span>
+        <strong>${money(b.totalCents)}${b.totalCents ? ' AUD' : ''}</strong>
+      </div>
     </div>
   `;
 

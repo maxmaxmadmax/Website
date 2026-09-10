@@ -446,12 +446,12 @@
     word-break:break-word;
 }
 
-.vs-total{
-    display:flex;
-    align-items:baseline;
-    justify-content:space-between;
-    gap:20px;
+/*  THE COST PANEL
 
+    The breakdown and the total it adds up to sit in one box. Split across
+    two, the total read as a separate claim rather than the sum of the
+    lines above it.                                                      */
+.vs-total{
     margin-top:20px;
     padding:20px 22px;
     border-radius:12px;
@@ -459,7 +459,14 @@
     border:1px solid #3a2000;
 }
 
-.vs-total span{
+.vs-total-row{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:20px;
+}
+
+.vs-total-row span{
     font-family:var(--sg-font-accent);
     font-size:.8rem;
     font-weight:bold;
@@ -468,7 +475,7 @@
     color:var(--sg-gold);
 }
 
-.vs-total strong{
+.vs-total-row strong{
     font-family:var(--sg-font-display);
     font-size:2rem;
     color:#fff;
@@ -1062,10 +1069,12 @@
     line up under each other, and the workings in small print beside the
     label rather than crammed into it. "Booking fee (4% + $0.99)" wrapped
     onto two lines and looked broken.                                    */
+/*  Inside the gradient panel, so no border above it and a rule underneath
+    separating the workings from the figure they come to. */
 .vs-costs{
-    margin-top:22px;
-    padding-top:16px;
-    border-top:1px solid var(--sg-border);
+    margin-bottom:16px;
+    padding-bottom:16px;
+    border-bottom:1px solid rgba(255,255,255,.12);
 }
 
 .vs-cost{
@@ -1227,7 +1236,10 @@
         padding:7px 10px;
     }
 
-    .vs-total{
+    /*  The total stacks under its label on a phone. It is .vs-total-row
+        that is the flex container now, not .vs-total - that became the
+        panel holding the breakdown as well. */
+    .vs-total-row{
         flex-direction:column;
         align-items:flex-start;
         gap:6px;
