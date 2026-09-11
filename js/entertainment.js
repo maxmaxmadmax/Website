@@ -168,10 +168,11 @@
 
         return '' +
         '<article class="ent-card" data-act="' + esc(t.act) + '">' +
-          '<div class="ent-card-media"' + media + '>' +
+          '<button type="button" class="ent-card-media" data-slug="' + esc(t.slug) + '"' +
+            media + ' aria-label="More about ' + esc(t.name) + '">' +
             '<svg class="ent-card-glyph" viewBox="0 0 24 24" aria-hidden="true">' + glyph + '</svg>' +
             '<span class="ent-badge">' + esc(actLabel) + '</span>' +
-          '</div>' +
+          '</button>' +
 
           '<div class="ent-card-body">' +
             '<h3>' + esc(t.name) + '</h3>' +
@@ -194,9 +195,14 @@
                 '</p>'
               : '') +
 
-            '<button type="button" class="ent-view" data-slug="' + esc(t.slug) + '">' +
-              'View Profile <span aria-hidden="true">&#8594;</span>' +
-            '</button>' +
+            /*  A link, not a button, because it goes somewhere. It carries
+                the act's name, and js/main.js fills the contact form in
+                from it - so the enquiry arrives already saying who it is
+                about rather than as an empty box. */
+            '<a class="ent-view" href="/contact?about=' +
+              encodeURIComponent(t.name) + '">' +
+              'Make Enquiry <span aria-hidden="true">&#8594;</span>' +
+            '</a>' +
           '</div>' +
         '</article>';
     }
@@ -264,7 +270,7 @@
 
               '<a class="btn ent-btn" href="/contact?about=' +
                 encodeURIComponent(t.name) + '">' +
-                'Enquire about ' + esc(t.name) + ' <span aria-hidden="true">&#8594;</span>' +
+                'Make Enquiry <span aria-hidden="true">&#8594;</span>' +
               '</a>' +
             '</div>';
 
@@ -361,8 +367,8 @@
         rebuilt on every filter change, and listeners on them would go with
         them. */
     grid.addEventListener('click', function (ev) {
-        var btn = ev.target.closest ? ev.target.closest('.ent-view') : null;
-        if (btn) openPanel(btn.getAttribute('data-slug'));
+        var media = ev.target.closest ? ev.target.closest('.ent-card-media') : null;
+        if (media) openPanel(media.getAttribute('data-slug'));
     });
 
     panelClose.addEventListener('click', closePanel);

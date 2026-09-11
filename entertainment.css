@@ -659,6 +659,17 @@
     display:grid;
     place-items:center;
 
+    /*  It is a <button> now - the picture opens the artist panel, since the
+        action underneath it goes off to the contact form instead. Stripped
+        back to looking like the picture it was.                         */
+    width:100%;
+    padding:0;
+    border:0;
+    cursor:pointer;
+    font:inherit;
+    color:inherit;
+    text-align:inherit;
+
     background:
         var(--ent-img, none),
         linear-gradient(140deg, #2b1a3d, #0d0d0d 72%);
@@ -676,6 +687,15 @@
     opacity:.16;
 }
 
+/*  Outlined rather than filled. A solid orange block sat on top of the
+    photograph and was the first thing the eye landed on - louder than the
+    artist, which is the wrong way round on a card whose job is to sell the
+    artist.
+
+    It still needs to be readable over whatever is behind it, so there is a
+    dark wash under the outline rather than nothing at all. backdrop-filter
+    blurs what shows through where the browser supports it; where it does
+    not, the wash on its own is enough.                                   */
 #sg-ent-page .ent-badge{
     position:absolute;
     left:10px;
@@ -683,8 +703,11 @@
 
     padding:5px 10px;
     border-radius:6px;
-    background:var(--sg-orange);
-    color:#150700;
+    background:rgba(10,10,10,.45);
+    border:1px solid var(--sg-orange);
+    color:var(--sg-orange);
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
 
     font-family:var(--sg-font-accent);
     font-size:.62rem;
@@ -738,7 +761,15 @@
     opacity:.75;
 }
 
+#sg-ent-page .ent-card-media:focus-visible{
+    outline:2px solid var(--sg-orange);
+    outline-offset:-3px;
+}
+
+/*  A link now rather than a button, so it needs the link underline taken
+    off and the block shape put back on.                                */
 #sg-ent-page .ent-view{
+    text-decoration:none;
     display:flex;
     align-items:center;
     justify-content:center;
