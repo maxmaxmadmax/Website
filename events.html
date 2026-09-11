@@ -20,10 +20,10 @@
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="style.css?v=23">
-  <link rel="stylesheet" href="events.css?v=23">
-  <script src="js/main.js?v=23" defer></script>
-  <script src="js/events.js?v=23" defer></script>
+  <link rel="stylesheet" href="style.css?v=24">
+  <link rel="stylesheet" href="events.css?v=24">
+  <script src="js/main.js?v=24" defer></script>
+  <script src="js/events.js?v=24" defer></script>
 </head>
 
 <!-- the class is what events.css hangs the footer tweak off -->
@@ -414,6 +414,225 @@
     </article>
 
   </div>
+
+</section>
+
+<!-- 5. ANNUAL EVENTS -------------------------------------------------------
+
+     The events SoundzGood works on every year, most recently completed
+     first. This is a different claim to Previous Events above: those are
+     SoundzGood's own shows, these are other people's events we turn up and
+     work on.
+
+     THE ORDER
+     Newest at the front, so the top of the row is always the one we just
+     did. That means the order has to be nudged once a year - when Carols
+     comes around in December it moves from the back of the row to the
+     front. The data-when attribute on each card is there to make that
+     obvious: read down the row and the dates should run backwards.
+
+     WHICH DATES ARE CONFIRMED
+     Marked on each card. Four are checked against a public source, the
+     rest are the month the event usually falls in and want a look over -
+     they are wrong-able, and a wrong date on our own site is worse than a
+     vague one, so anything unconfirmed says only the month.
+
+     PHOTOGRAPHS
+     Each card takes its picture the same way the cards above do:
+
+         style="--ev-art:url('images/annual/don-river-dash.jpg')"
+
+     None of those files exist yet, so every card currently shows its dark
+     tile. Drop a landscape photo at the path and the card picks it up -
+     about 1200px wide is plenty at this size. Adding one to some cards and
+     not others looks fine; they are all the same shape either way.
+
+     ADDING OR REMOVING ONE
+     Copy a card, put it in date order, done. The arrows count the cards
+     themselves - nothing has a number in it that needs keeping in step. -->
+<section class="section ev-section ev-annual" aria-labelledby="ev-annual-h">
+
+  <div class="ev-annual-head">
+    <div>
+      <h2 id="ev-annual-h">Every Year</h2>
+      <p class="section-intro">The events we work on, year in year out.</p>
+    </div>
+
+    <!--  A div rather than a <nav>: style.css styles the bare nav element
+          for the site menu, and that would land on this as well.        -->
+    <div class="ev-annual-arrows" role="group" aria-label="Scroll annual events">
+      <button type="button" class="ev-arrow" data-ev-annual="-1"
+              aria-label="Previous events">
+        <span aria-hidden="true">&#8249;</span>
+      </button>
+      <button type="button" class="ev-arrow" data-ev-annual="1"
+              aria-label="More events">
+        <span aria-hidden="true">&#8250;</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="ev-annual-view" id="ev-annual-view">
+    <ul class="ev-annual-track" id="ev-annual-track">
+
+      <!-- 1 ----------------------------------------------------------------- -->
+      <li class="ev-annual-card" data-when="2026-09-06"
+          style="--ev-art:url('images/annual/don-river-dash.jpg')">
+        <div class="ev-annual-art" aria-hidden="true"></div>
+        <div class="ev-annual-body">
+          <span class="ev-badge is-past">Every Year</span>
+          <h3>Don River Dash</h3>
+          <p class="ev-meta">
+            <span class="ev-meta-date">September 2026</span>
+            <span class="ev-meta-place">Bowen</span>
+          </p>
+        </div>
+      </li>
+
+      <!-- 2 ----------------------------------------------------------------- -->
+      <li class="ev-annual-card" data-when="2026-08"
+          style="--ev-art:url('images/annual/bshs-musical.jpg')">
+        <div class="ev-annual-art" aria-hidden="true"></div>
+        <div class="ev-annual-body">
+          <span class="ev-badge is-past">Every Year</span>
+          <h3>BSHS Musical</h3>
+          <p class="ev-meta">
+            <span class="ev-meta-date">School of Rock, 2026</span>
+            <span class="ev-meta-place">Bowen State High School</span>
+          </p>
+        </div>
+      </li>
+
+      <!-- 3 ----------------------------------------------------------------- -->
+      <li class="ev-annual-card" data-when="2026-07-26"
+          style="--ev-art:url('images/annual/stonka-fishing-challenge.jpg')">
+        <div class="ev-annual-art" aria-hidden="true"></div>
+        <div class="ev-annual-body">
+          <span class="ev-badge is-past">Every Year</span>
+          <h3>Stonka Fishing Challenge</h3>
+          <p class="ev-meta">
+            <span class="ev-meta-date">July 2026</span>
+            <span class="ev-meta-place">Cape Gloucester</span>
+          </p>
+        </div>
+      </li>
+
+      <!-- 4 ----------------------------------------------------------------- -->
+      <li class="ev-annual-card" data-when="2026-07-05"
+          style="--ev-art:url('images/annual/naidoc-day.jpg')">
+        <div class="ev-annual-art" aria-hidden="true"></div>
+        <div class="ev-annual-body">
+          <span class="ev-badge is-past">Every Year</span>
+          <h3>NAIDOC Day</h3>
+          <p class="ev-meta">
+            <span class="ev-meta-date">July 2026</span>
+            <span class="ev-meta-place">Bowen</span>
+          </p>
+        </div>
+      </li>
+
+      <!-- 5 ----------------------------------------------------------------- -->
+      <li class="ev-annual-card" data-when="2026-06-12"
+          style="--ev-art:url('images/annual/multicultural-festival.jpg')">
+        <div class="ev-annual-art" aria-hidden="true"></div>
+        <div class="ev-annual-body">
+          <span class="ev-badge is-past">Every Year</span>
+          <h3>Multicultural Festival</h3>
+          <p class="ev-meta">
+            <span class="ev-meta-date">June 2026</span>
+            <span class="ev-meta-place">Bowen Foreshore</span>
+          </p>
+        </div>
+      </li>
+
+      <!-- 6 ----------------------------------------------------------------- -->
+      <li class="ev-annual-card" data-when="2026-05"
+          style="--ev-art:url('images/annual/tour-de-cure.jpg')">
+        <div class="ev-annual-art" aria-hidden="true"></div>
+        <div class="ev-annual-body">
+          <span class="ev-badge is-past">Every Year</span>
+          <h3>Tour de Cure</h3>
+          <p class="ev-meta">
+            <span class="ev-meta-date">2026</span>
+            <span class="ev-meta-place">Bowen</span>
+          </p>
+        </div>
+      </li>
+
+      <!-- 7 ----------------------------------------------------------------- -->
+      <li class="ev-annual-card" data-when="2026-04"
+          style="--ev-art:url('images/annual/gumlu-growers-ball.jpg')">
+        <div class="ev-annual-art" aria-hidden="true"></div>
+        <div class="ev-annual-body">
+          <span class="ev-badge is-past">Every Year</span>
+          <h3>Gumlu Growers Ball</h3>
+          <p class="ev-meta">
+            <span class="ev-meta-date">2026</span>
+            <span class="ev-meta-place">Gumlu</span>
+          </p>
+        </div>
+      </li>
+
+      <!-- 8 ----------------------------------------------------------------- -->
+      <li class="ev-annual-card" data-when="2026-03"
+          style="--ev-art:url('images/annual/paradise-country.jpg')">
+        <div class="ev-annual-art" aria-hidden="true"></div>
+        <div class="ev-annual-body">
+          <span class="ev-badge is-past">Every Year</span>
+          <h3>Paradise Country</h3>
+          <p class="ev-meta">
+            <span class="ev-meta-date">2026</span>
+            <span class="ev-meta-place">Bowen</span>
+          </p>
+        </div>
+      </li>
+
+      <!-- 9 ----------------------------------------------------------------- -->
+      <li class="ev-annual-card" data-when="2026-02"
+          style="--ev-art:url('images/annual/pink-stumps.jpg')">
+        <div class="ev-annual-art" aria-hidden="true"></div>
+        <div class="ev-annual-body">
+          <span class="ev-badge is-past">Every Year</span>
+          <h3>Pink Stumps</h3>
+          <p class="ev-meta">
+            <span class="ev-meta-date">2026</span>
+            <span class="ev-meta-place">Bowen</span>
+          </p>
+        </div>
+      </li>
+
+      <!-- 10 ---------------------------------------------------------------- -->
+      <li class="ev-annual-card" data-when="2026-01"
+          style="--ev-art:url('images/annual/tones-and-i.jpg')">
+        <div class="ev-annual-art" aria-hidden="true"></div>
+        <div class="ev-annual-body">
+          <span class="ev-badge is-past">Every Year</span>
+          <h3>Tones &amp; I</h3>
+          <p class="ev-meta">
+            <span class="ev-meta-date">2026</span>
+            <span class="ev-meta-place">Bowen</span>
+          </p>
+        </div>
+      </li>
+
+      <!-- 11 ---------------------------------------------------------------- -->
+      <li class="ev-annual-card" data-when="2025-12"
+          style="--ev-art:url('images/annual/community-carols.jpg')">
+        <div class="ev-annual-art" aria-hidden="true"></div>
+        <div class="ev-annual-body">
+          <span class="ev-badge is-past">Every Year</span>
+          <h3>Community Carols</h3>
+          <p class="ev-meta">
+            <span class="ev-meta-date">December 2025</span>
+            <span class="ev-meta-place">Whitsunday Regional Council</span>
+          </p>
+        </div>
+      </li>
+
+    </ul>
+  </div>
+
+  <p class="ev-annual-count" id="ev-annual-count" aria-live="polite"></p>
 
 </section>
 

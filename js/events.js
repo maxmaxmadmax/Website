@@ -129,3 +129,94 @@
         video.pause();
     }
 }());
+
+
+/* --------------------------------------------------------------------------
+   THE ANNUAL EVENTS ROW
+
+   Pages the row of annual events four at a time. All it does is count the
+   cards, work out how many pages that makes, and set a number on the track
+   - the CSS turns that number into the movement. There is no measuring, so
+   nothing here depends on the row having been laid out or painted yet.
+
+   HOW MANY FIT is not a number in here: it is --ev-an-per in events.css,
+   which the media queries change with the window. Reading it back means the
+   arrows agree with what is actually on screen at any width, and adding a
+   breakpoint to the stylesheet needs no change to this file.
+
+   WITHOUT JAVASCRIPT the row shows its first four cards and the arrows do
+   nothing. That is a worse version of this section rather than a broken
+   one, which is the right way round for something this far down the page.
+   -------------------------------------------------------------------------- */
+(function () {
+    'use strict';
+
+    var section = document.querySelector('.ev-annual');
+    if (!section) return;
+
+    var track = document.getElementById('ev-annual-track');
+    var count = document.getElementById('ev-annual-count');
+    if (!track) return;
+
+    var cards = track.querySelectorAll('.ev-annual-card').length;
+    if (!cards) return;
+
+    var arrows = Array.prototype.slice.call(
+        section.querySelectorAll('[data-ev-annual]')
+    );
+
+    var page = 0;
+
+    function perView() {
+        var raw = window.getComputedStyle(section)
+            .getPropertyValue('--ev-an-per');
+        var n = parseInt(raw, 10);
+        return n > 0 ? n : 1;
+    }
+
+    function pages() {
+        return Math.max(1, Math.ceil(cards / perView()));
+    }
+
+    function paint() {
+        var last = pages() - 1;
+
+        /*  A window that has just got wider can leave us past the end, on a
+            page that no longer exists. Pull back rather than showing a row
+            of nothing.                                                    */
+        if (page > last) page = last;
+        if (page < 0) page = 0;
+
+        track.style.setProperty('--ev-an-page', page);
+
+        arrows.forEach(function (btn) {
+            var dir = parseInt(btn.getAttribute('data-ev-annual'), 10);
+            btn.disabled = dir < 0 ? page === 0 : page === last;
+        });
+
+        if (count) {
+            var per = perView();
+            var first = page * per + 1;
+            var lastCard = Math.min(cards, first + per - 1);
+
+            count.textContent = last === 0
+                ? ''
+                : (first === lastCard
+                    ? first + ' of ' + cards
+                    : first + '\u2013' + lastCard + ' of ' + cards);
+        }
+    }
+
+    arrows.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            page += parseInt(btn.getAttribute('data-ev-annual'), 10) || 0;
+            paint();
+        });
+    });
+
+    /*  Resizing changes how many fit, which changes how many pages there
+        are. Cheap enough to just redo the sums.                          */
+    window.addEventListener('resize', paint);
+
+    paint();
+}());
