@@ -535,22 +535,114 @@
     border-top:1px solid var(--sg-border, #222);
 }
 
+/*  THE CLOSING CALL TO ACTION
+
+    It was centred, on a flat gradient, with the copy and the button stacked
+    down the middle of a lot of empty black. It read as a full stop rather
+    than an invitation.
+
+    Now it is a band: the ask on the left over a photograph, and the three
+    things somebody wants to know before they get in touch on the right.  */
 #sg-services-page .sgs-cta{
-    text-align:center;
-    background:
-        radial-gradient(90% 120% at 50% 0%, #2a1403 0%, #0a0a0a 58%),
-        #0a0a0a;
+    position:relative;
+    overflow:hidden;
+    text-align:left;
     border-top:1px solid var(--sg-border, #222);
-    padding-top:104px;
-    padding-bottom:104px;
+    padding-top:52px;
+    padding-bottom:52px;
+}
+
+/*  The photograph, behind everything. A background rather than an <img>,
+    so a file that is not there yet leaves the gradient showing instead of
+    a broken image.                                                      */
+#sg-services-page .sgs-cta-media{
+    position:absolute;
+    inset:0;
+    --sgs-cta-img:url('images/services/cta.webp');
+    background:
+        linear-gradient(90deg, rgba(8,8,8,.95) 26%, rgba(8,8,8,.55) 70%, rgba(8,8,8,.8) 100%),
+        var(--sgs-cta-img, none),
+        radial-gradient(90% 120% at 20% 0%, #2a1403 0%, #0a0a0a 58%);
+    background-size:cover;
+    background-position:center;
+}
+
+#sg-services-page .sgs-cta-inner{
+    position:relative;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:34px 48px;
 }
 
 #sg-services-page .sgs-cta-copy{
+    flex:1 1 420px;
+    max-width:560px;
+}
+
+/*  Smaller than the headings above it, and deliberately. At the page's
+    normal h2 size this one ran to two lines and the band grew to 424px -
+    a closing invitation should be a band you pass through, not another
+    full screen.                                                        */
+#sg-services-page .sgs-cta h2{
+    text-align:left;
+    font-size:clamp(1.5rem, 3vw, 2rem);
+    margin-bottom:10px;
+}
+
+/*  One word in the accent. The heading is a question, and colouring the
+    noun it turns on makes it read as one rather than as a banner.      */
+#sg-services-page .sgs-cta h2 span{ color:var(--sg-orange, #ff6b00); }
+
+#sg-services-page .sgs-cta-lead{
     color:var(--sg-muted, #d0d0d0);
-    font-size:1.08rem;
-    line-height:1.75;
-    max-width:52ch;
-    margin:0 auto 34px;
+    font-size:1rem;
+    line-height:1.7;
+    max-width:50ch;
+    margin:0 0 24px;
+}
+
+/*  The three assurances. A column on a wide screen, beside the ask rather
+    than under it, so the band stays one line of thought.               */
+#sg-services-page .sgs-assurances{
+    display:grid;
+    gap:16px;
+    list-style:none;
+    margin:0;
+    padding:0;
+    flex:0 1 auto;
+}
+
+#sg-services-page .sgs-assurances li{
+    display:flex;
+    align-items:center;
+    gap:11px;
+
+    color:var(--sg-muted, #d0d0d0);
+    font-family:var(--sg-font-accent);
+    font-size:.72rem;
+    font-weight:bold;
+    letter-spacing:1.4px;
+    text-transform:uppercase;
+    white-space:nowrap;
+}
+
+#sg-services-page .sgs-assurances svg{
+    width:22px;
+    height:22px;
+    flex:0 0 auto;
+    fill:none;
+    stroke:var(--sgs-yellow);
+    stroke-width:1.8;
+    stroke-linejoin:round;
+    stroke-linecap:round;
+}
+
+#sg-services-page .sgs-cta .sgs-btn-primary{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
 }
 
 /* ==========================================================================
@@ -1020,8 +1112,16 @@
     }
 
     #sg-services-page .sgs-cta{
-        padding-top:72px;
-        padding-bottom:72px;
+        padding-top:52px;
+        padding-bottom:52px;
+    }
+
+    /*  The assurances drop under the ask and lie flat, rather than keeping
+        a tall thin column beside it that would squeeze the heading. */
+    #sg-services-page .sgs-assurances{
+        grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
+        gap:12px 22px;
+        width:100%;
     }
 }
 
