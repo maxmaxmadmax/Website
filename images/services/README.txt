@@ -5,15 +5,21 @@ One photo per slide. The name each slide looks for is set on the slide
 itself in services.html, so if you swap in a different name or format,
 change it there to match.
 
-    community-events.webp     Community Events slide
+In the order the slides run:
+
     weddings.webp             Weddings slide
     corporate-functions.webp  Corporate Functions slide
+    dj-entertainment.webp     DJ Entertainment slide
+    private-functions.webp    Private Functions slide   <- still to come
+    community-events.webp     Community Events slide
     festivals.webp            Festivals slide
+    sporting-events.webp      Sporting Events slide
     big-screens.webp          Big Screens slide
     trailer-stage.webp        Trailer Stage slide
-    sporting-events.webp      Sporting Events slide
 
-All seven are in place. The Intro slide has no photo - it runs
+Eight of the nine are in place. Private Functions is a new slide and has no
+photo yet, so it shows its own gradient - which looks deliberate rather
+than broken. Drop a file at that name and it picks it up. The Intro slide has no photo - it runs
 videos/hero.mp4 on a large screen and a gradient everywhere else.
 
 REPLACING ONE WITH A SHARPER COPY

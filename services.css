@@ -560,14 +560,15 @@
    over it.
    ========================================================================== */
 #sg-services-page .sgs-intro    { background-image:linear-gradient(135deg, #2a1403 0%, #0a0a0a 62%); }
-#sg-services-page .sgs-community{ background-image:linear-gradient(135deg, #2b1f08 0%, #0a0a0a 62%); }
 #sg-services-page .sgs-weddings { background-image:linear-gradient(135deg, #241528 0%, #0a0a0a 62%); }
 #sg-services-page .sgs-corporate{ background-image:linear-gradient(135deg, #0f2a18 0%, #0a0a0a 62%); }
 #sg-services-page .sgs-dj       { background-image:linear-gradient(135deg, #1c1c22 0%, #0a0a0a 62%); }
+#sg-services-page .sgs-functions{ background-image:linear-gradient(135deg, #2d1030 0%, #0a0a0a 62%); }
+#sg-services-page .sgs-community{ background-image:linear-gradient(135deg, #2b1f08 0%, #0a0a0a 62%); }
 #sg-services-page .sgs-festivals{ background-image:linear-gradient(135deg, #3a1d02 0%, #0a0a0a 62%); }
+#sg-services-page .sgs-sporting { background-image:linear-gradient(135deg, #06231f 0%, #0a0a0a 62%); }
 #sg-services-page .sgs-screens  { background-image:linear-gradient(135deg, #0d2033 0%, #0a0a0a 62%); }
 #sg-services-page .sgs-trailer  { background-image:linear-gradient(135deg, #2b2205 0%, #0a0a0a 62%); }
-#sg-services-page .sgs-sporting { background-image:linear-gradient(135deg, #06231f 0%, #0a0a0a 62%); }
 
 #sg-services-page .sgs-video{
     position:absolute;
