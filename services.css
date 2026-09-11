@@ -945,7 +945,12 @@
     gap:10px 0;
     list-style:none;
     margin:0;
-    padding:0 6% 44px;
+
+    /*  No side padding of its own. The section around it already carries
+        6%, and adding a second helping pushed this row in past the
+        headline above it - visibly out of line with everything else in
+        the band.                                                        */
+    padding:0 0 44px;
 
     max-width:var(--sg-max-width, 1200px);
     margin-left:auto;
