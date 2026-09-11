@@ -64,13 +64,29 @@ function initEnquiryPrefill() {
     var form = document.querySelector('.contact-form');
     if (!form) return;
 
-    var about = new URLSearchParams(window.location.search).get('about');
-    if (!about) return;
+    var params = new URLSearchParams(window.location.search);
+    var about = params.get('about');
+    var note = params.get('note');
+    var email = params.get('email');
 
     var message = form.querySelector('[name="message"]');
-    if (!message || message.value.trim() !== '') return;
 
-    message.value = 'I would like to enquire about booking ' + about + '.';
+    /*  Two ways in. ?about= is the entertainment page sending an artist's
+        name; ?note= is a page that has already written the sentence -
+        the gig guide, where "booking a gig guide listing" would be the
+        wrong words. Only ever fills a box the visitor has not typed in. */
+    if (message && message.value.trim() === '') {
+        if (note) {
+            message.value = note;
+        } else if (about) {
+            message.value = 'I would like to enquire about booking ' + about + '.';
+        }
+    }
+
+    if (email) {
+        var box = form.querySelector('[name="email"]');
+        if (box && box.value.trim() === '') box.value = email;
+    }
 }
 
 /* Publishes the real height of the menu as --sg-nav-height.

@@ -20,9 +20,9 @@ import {
   functionsRegion,
   eventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=27';
+} from './firebase-config.js?v=28';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=27';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=28';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 

@@ -1,0 +1,690 @@
+/* ==========================================================================
+   THE GIG GUIDE
+
+   Everything here is scoped to #sg-gig-guide, so none of it can reach
+   another page. The page is hidden for now - see the note at the top of
+   gig-guide.html for how to publish it.
+   ========================================================================== */
+
+/*  [hidden] loses to any author display rule, and this page sets display
+    on the things it hides. Without this the empty state is always on.   */
+#sg-gig-guide [hidden]{ display:none !important; }
+
+#sg-gig-guide{
+    background:#0a0a0a;
+}
+
+#sg-gig-guide .gg-sr-only{
+    position:absolute;
+    width:1px; height:1px;
+    padding:0; margin:-1px;
+    overflow:hidden;
+    clip:rect(0 0 0 0);
+    white-space:nowrap;
+    border:0;
+}
+
+/* ==========================================================================
+   HERO
+   ========================================================================== */
+#sg-gig-guide .gg-hero{
+    position:relative;
+    display:flex;
+    align-items:flex-end;
+    min-height:min(62vh, 560px);
+    padding:calc(var(--sg-nav-height, 80px) + 40px) 20px 44px;
+    overflow:hidden;
+    /*  The fallback sits behind the video, never over it. Stack it on top
+        and the clip plays underneath an opaque gradient, which is exactly
+        how the other heroes on this site broke.                         */
+    background:linear-gradient(120deg, #2a1403 0%, #0a0a0a 64%);
+}
+
+#sg-gig-guide .gg-hero-video{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    z-index:0;
+}
+
+#sg-gig-guide .gg-hero-scrim{
+    position:absolute;
+    inset:0;
+    z-index:1;
+    background:
+        linear-gradient(90deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,.55) 52%, rgba(0,0,0,.7) 100%),
+        linear-gradient(180deg, rgba(0,0,0,.5) 0%, rgba(0,0,0,.2) 40%, #0a0a0a 100%);
+}
+
+#sg-gig-guide .gg-hero-inner{
+    position:relative;
+    z-index:2;
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:30px;
+    width:100%;
+    max-width:var(--sg-max-width);
+    margin:auto;
+}
+
+#sg-gig-guide .gg-eyebrow{
+    color:var(--sg-gold);
+    font-family:var(--sg-font-accent);
+    font-size:.72rem;
+    font-weight:bold;
+    letter-spacing:.28em;
+    text-transform:uppercase;
+    margin-bottom:12px;
+}
+
+#sg-gig-guide .gg-title{
+    font-family:var(--sg-font-display);
+    font-size:clamp(2.6rem, 7vw, 5rem);
+    line-height:.9;
+    letter-spacing:-2px;
+    text-transform:uppercase;
+    margin:0;
+}
+
+#sg-gig-guide .gg-title span{ color:var(--sg-gold); }
+
+#sg-gig-guide .gg-lead{
+    margin-top:18px;
+    color:#ddd;
+    line-height:1.65;
+}
+
+/*  The handwritten line. Decoration, and marked aria-hidden in the markup
+    - read aloud it is four nouns in the middle of the headline.         */
+#sg-gig-guide .gg-script{
+    font-family:var(--sg-font-script);
+    font-size:clamp(1.1rem, 2vw, 1.6rem);
+    line-height:1.15;
+    text-align:right;
+    color:#fff;
+    flex-shrink:0;
+}
+
+#sg-gig-guide .gg-script::after{
+    content:"";
+    display:block;
+    width:54px;
+    height:3px;
+    margin:10px 0 0 auto;
+    border-radius:2px;
+    background:var(--sg-gold);
+}
+
+/* ==========================================================================
+   FILTERS
+   ========================================================================== */
+#sg-gig-guide .gg-filters{
+    border-bottom:1px solid var(--sg-border);
+    background:#0c0c0c;
+}
+
+#sg-gig-guide .gg-filters-inner{
+    max-width:var(--sg-max-width);
+    margin:auto;
+    padding:22px 20px 20px;
+}
+
+#sg-gig-guide .gg-filter-row{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+}
+
+#sg-gig-guide .gg-search{
+    flex:1 1 320px;
+    min-width:0;
+}
+
+#sg-gig-guide .gg-search input,
+#sg-gig-guide .gg-select select{
+    width:100%;
+    padding:13px 16px;
+    border:1px solid var(--sg-border);
+    border-radius:10px;
+    background:var(--sg-panel);
+    color:#fff;
+    font-family:var(--sg-font);
+    font-size:.92rem;
+}
+
+#sg-gig-guide .gg-select{ flex:0 1 210px; }
+
+#sg-gig-guide .gg-search input:focus,
+#sg-gig-guide .gg-select select:focus{
+    outline:none;
+    border-color:var(--sg-orange);
+}
+
+#sg-gig-guide .gg-pills,
+#sg-gig-guide .gg-places{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px;
+    margin-top:16px;
+}
+
+#sg-gig-guide .gg-pill{
+    padding:9px 18px;
+    border:1px solid var(--sg-border);
+    border-radius:999px;
+    background:var(--sg-panel);
+    color:#ccc;
+    font-family:var(--sg-font);
+    font-size:.76rem;
+    font-weight:bold;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    cursor:pointer;
+    transition:background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+
+#sg-gig-guide .gg-pill:hover{ border-color:#444; color:#fff; }
+
+#sg-gig-guide .gg-pill.is-on{
+    background:var(--sg-gold);
+    border-color:var(--sg-gold);
+    color:#0a0a0a;
+}
+
+#sg-gig-guide .gg-places-label{
+    color:var(--sg-dim);
+    font-family:var(--sg-font-accent);
+    font-size:.7rem;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    margin-right:4px;
+}
+
+/*  The locations read as a line of links rather than a second row of
+    pills - two identical pill rows stacked is a wall of lozenges.      */
+#sg-gig-guide .gg-place{
+    padding:4px 2px;
+    border:0;
+    background:none;
+    color:var(--sg-dim);
+    font-family:var(--sg-font-accent);
+    font-size:.72rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    cursor:pointer;
+    transition:color .2s ease;
+}
+
+#sg-gig-guide .gg-place:hover{ color:#fff; }
+#sg-gig-guide .gg-place.is-on{ color:var(--sg-gold); font-weight:bold; }
+
+/* ==========================================================================
+   A BAND OF CARDS
+   ========================================================================== */
+#sg-gig-guide .gg-band{
+    padding:clamp(44px, 6vw, 72px) 0;
+}
+
+#sg-gig-guide .gg-band.is-alt{
+    background:#0d0d0d;
+    border-top:1px solid var(--sg-border);
+    border-bottom:1px solid var(--sg-border);
+}
+
+#sg-gig-guide .gg-band-inner{
+    max-width:var(--sg-max-width);
+    margin:auto;
+    padding:0 20px;
+}
+
+#sg-gig-guide .gg-band-head{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:20px;
+    flex-wrap:wrap;
+    margin-bottom:26px;
+}
+
+#sg-gig-guide .gg-band-head h2{
+    font-family:var(--sg-font-display);
+    font-size:clamp(1.7rem, 3.4vw, 2.4rem);
+    letter-spacing:-1px;
+    text-transform:uppercase;
+    text-align:left;
+    margin:0;
+}
+
+#sg-gig-guide .gg-band-sub{
+    margin-top:6px;
+    color:var(--sg-dim);
+    font-size:.92rem;
+}
+
+#sg-gig-guide .gg-arrows{ display:flex; gap:10px; }
+
+#sg-gig-guide .gg-arrow{
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    border:1px solid var(--sg-border);
+    background:var(--sg-panel);
+    color:#fff;
+    font-size:1.5rem;
+    line-height:1;
+    cursor:pointer;
+    transition:background-color .2s ease, border-color .2s ease,
+               color .2s ease, opacity .2s ease;
+}
+
+#sg-gig-guide .gg-arrow:hover:not(:disabled){
+    background:var(--sg-orange);
+    border-color:var(--sg-orange);
+    color:#0a0a0a;
+}
+
+#sg-gig-guide .gg-arrow:disabled{ opacity:.28; cursor:default; }
+
+/*  The weekend row is a plain grid that wraps - however many are on, they
+    all show. The highlights row below pages instead.                    */
+#sg-gig-guide .gg-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(250px, 1fr));
+    gap:20px;
+}
+
+#sg-gig-guide .gg-view{
+    --gg-per:4;
+    overflow:hidden;
+    padding:8px 0;
+    margin:-8px 0;
+}
+
+#sg-gig-guide .gg-track{
+    --gg-page:0;
+    --gg-gap:20px;
+    display:grid;
+    grid-auto-flow:column;
+    grid-auto-columns:calc((100% - (var(--gg-per) - 1) * var(--gg-gap)) / var(--gg-per));
+    gap:var(--gg-gap);
+    transform:translateX(calc(var(--gg-page) * (-100% - var(--gg-gap))));
+    transition:transform .5s cubic-bezier(.22,.61,.36,1);
+}
+
+#sg-gig-guide .gg-empty{
+    padding:26px 0;
+    color:var(--sg-dim);
+    font-size:.95rem;
+}
+
+/* ==========================================================================
+   A CARD
+   Photograph on top with the date over it, the words underneath on the
+   panel. A card with no photo shows its tile, which is why an unphotographed
+   listing still looks finished.
+   ========================================================================== */
+#sg-gig-guide .gg-card{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    border:1px solid var(--sg-border);
+    border-radius:14px;
+    background:var(--sg-panel);
+    transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+
+#sg-gig-guide .gg-card:hover{
+    transform:translateY(-4px);
+    border-color:#3a3a3a;
+    box-shadow:0 18px 40px rgba(0,0,0,.5);
+}
+
+#sg-gig-guide .gg-card-art{
+    aspect-ratio:16 / 10;
+    background-color:#161616;
+    background-image:var(--gg-art);
+    background-size:cover;
+    background-position:center;
+    filter:brightness(.8);
+    transition:filter .25s ease;
+}
+
+#sg-gig-guide .gg-card:hover .gg-card-art{ filter:brightness(1); }
+
+#sg-gig-guide .gg-chip{
+    position:absolute;
+    top:12px;
+    left:12px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    min-width:52px;
+    padding:8px 8px 7px;
+    border:1px solid rgba(255,255,255,.16);
+    border-radius:10px;
+    background:rgba(8,8,8,.88);
+    line-height:1;
+}
+
+#sg-gig-guide .gg-chip i{
+    font-style:normal;
+    font-family:var(--sg-font-accent);
+    font-size:.58rem;
+    letter-spacing:.12em;
+    color:var(--sg-dim);
+}
+
+#sg-gig-guide .gg-chip b{
+    font-family:var(--sg-font-display);
+    font-size:1.35rem;
+    letter-spacing:-.5px;
+    margin:3px 0 2px;
+}
+
+/*  An event with no date yet. The year goes in the chip on its own, so
+    the card still has the same shape as the ones around it.            */
+#sg-gig-guide .gg-chip.is-tba b{
+    font-size:.95rem;
+    margin:0;
+    color:var(--sg-gold);
+}
+
+#sg-gig-guide .gg-card-body{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:7px;
+    padding:16px 16px 18px;
+    flex:1;
+}
+
+#sg-gig-guide .gg-card-body h3{
+    font-family:var(--sg-font-display);
+    font-size:1.02rem;
+    line-height:1.2;
+    letter-spacing:-.3px;
+    text-transform:uppercase;
+    margin:0 0 2px;
+}
+
+/*  The pin and the clock are drawn here rather than sat in the markup on
+    every card. Masks rather than images, so they take the colour of the
+    text beside them.                                                    */
+#sg-gig-guide .gg-where,
+#sg-gig-guide .gg-when{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    margin:0;
+    font-size:.82rem;
+}
+
+#sg-gig-guide .gg-where{ color:#ddd; }
+#sg-gig-guide .gg-when{ color:var(--sg-gold); }
+
+#sg-gig-guide .gg-where::before,
+#sg-gig-guide .gg-when::before{
+    content:"";
+    width:12px;
+    height:13px;
+    flex-shrink:0;
+    background-color:currentColor;
+    -webkit-mask:var(--gg-icon) center / contain no-repeat;
+    mask:var(--gg-icon) center / contain no-repeat;
+}
+
+#sg-gig-guide .gg-where::before{
+    --gg-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z'/%3E%3C/svg%3E");
+}
+
+#sg-gig-guide .gg-when::before{
+    --gg-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm1-13h-2v6l5 3 1-1.7-4-2.3z'/%3E%3C/svg%3E");
+}
+
+#sg-gig-guide .gg-tags{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    list-style:none;
+    margin:8px 0 0;
+    padding:0;
+}
+
+#sg-gig-guide .gg-tags li{
+    padding:5px 10px;
+    border:1px solid rgba(255,255,255,.16);
+    border-radius:999px;
+    background:rgba(255,255,255,.05);
+    color:#ccc;
+    font-size:.6rem;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    white-space:nowrap;
+}
+
+/* ==========================================================================
+   WHERE THE LISTINGS COME FROM
+   ========================================================================== */
+#sg-gig-guide .gg-sources{
+    padding:0 20px clamp(40px, 5vw, 60px);
+}
+
+#sg-gig-guide .gg-sources-inner{
+    display:flex;
+    align-items:center;
+    gap:clamp(20px, 4vw, 48px);
+    flex-wrap:wrap;
+    max-width:var(--sg-max-width);
+    margin:auto;
+    padding:26px clamp(20px, 3vw, 34px);
+    border:1px solid var(--sg-border);
+    border-radius:16px;
+    background:var(--sg-panel);
+}
+
+#sg-gig-guide .gg-sources-label{
+    color:var(--sg-dim);
+    font-family:var(--sg-font-accent);
+    font-size:.68rem;
+    line-height:1.7;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    flex-shrink:0;
+}
+
+#sg-gig-guide .gg-sources-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:clamp(18px, 3vw, 40px);
+    list-style:none;
+    margin:0;
+    padding:0;
+    flex:1 1 auto;
+    color:#fff;
+    font-family:var(--sg-font-display);
+    font-size:.9rem;
+    letter-spacing:-.2px;
+    text-transform:uppercase;
+}
+
+#sg-gig-guide .gg-sources-note{
+    flex:1 1 260px;
+    color:var(--sg-dim);
+    font-size:.76rem;
+    line-height:1.6;
+}
+
+/* ==========================================================================
+   THE TWO ASKS
+   ========================================================================== */
+#sg-gig-guide .gg-panels{
+    padding:0 20px clamp(50px, 6vw, 80px);
+}
+
+#sg-gig-guide .gg-panels-inner{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
+    gap:20px;
+    max-width:var(--sg-max-width);
+    margin:auto;
+}
+
+#sg-gig-guide .gg-panel{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:12px;
+    padding:26px 24px 28px;
+    border:1px solid var(--sg-border);
+    border-radius:16px;
+    background:var(--sg-panel);
+}
+
+#sg-gig-guide .gg-panel h2{
+    font-family:var(--sg-font-display);
+    font-size:1.25rem;
+    letter-spacing:-.4px;
+    text-transform:uppercase;
+    text-align:left;
+    margin:0;
+}
+
+#sg-gig-guide .gg-panel p{
+    color:var(--sg-dim);
+    font-size:.9rem;
+    line-height:1.6;
+}
+
+#sg-gig-guide .gg-panel-icon{ font-size:1.6rem; }
+
+#sg-gig-guide .gg-panel .btn{ margin-top:auto; }
+
+#sg-gig-guide .gg-subscribe{
+    display:flex;
+    gap:10px;
+    width:100%;
+    margin-top:auto;
+    flex-wrap:wrap;
+}
+
+#sg-gig-guide .gg-subscribe input{
+    flex:1 1 150px;
+    min-width:0;
+    padding:13px 15px;
+    border:1px solid var(--sg-border);
+    border-radius:10px;
+    background:#0c0c0c;
+    color:#fff;
+    font-family:var(--sg-font);
+}
+
+#sg-gig-guide .gg-subscribe input:focus{
+    outline:none;
+    border-color:var(--sg-orange);
+}
+
+/*  The third panel is a poster rather than another box of text. It carries
+    the same gradient as the hero so the page ends where it began.       */
+#sg-gig-guide .gg-panel.is-art{
+    justify-content:flex-end;
+    min-height:210px;
+    border:0;
+    background:
+        linear-gradient(180deg, rgba(0,0,0,.25) 0%, rgba(0,0,0,.85) 100%),
+        linear-gradient(120deg, #3a1d02 0%, #0a0a0a 70%);
+}
+
+#sg-gig-guide .gg-panel-art-words{
+    font-family:var(--sg-font-display);
+    font-size:1.5rem;
+    line-height:1.1;
+    letter-spacing:-.8px;
+    text-transform:uppercase;
+    color:#fff;
+}
+
+#sg-gig-guide .gg-panel-art-words span{ color:var(--sg-gold); }
+
+/* ==========================================================================
+   CLOSING BAND
+   ========================================================================== */
+#sg-gig-guide .gg-cta{
+    position:relative;
+    padding:clamp(56px, 8vw, 96px) 20px;
+    border-top:1px solid var(--sg-border);
+    background:
+        linear-gradient(90deg, rgba(0,0,0,.92) 0%, rgba(0,0,0,.55) 70%),
+        linear-gradient(120deg, #2a1403 0%, #0a0a0a 64%);
+}
+
+#sg-gig-guide .gg-cta-inner{
+    max-width:var(--sg-max-width);
+    margin:auto;
+}
+
+#sg-gig-guide .gg-cta h2{
+    font-family:var(--sg-font-display);
+    font-size:clamp(2rem, 5vw, 3.4rem);
+    line-height:.94;
+    letter-spacing:-1.5px;
+    text-transform:uppercase;
+    text-align:left;
+    margin:0;
+}
+
+#sg-gig-guide .gg-cta h2 span{ color:var(--sg-gold); }
+
+#sg-gig-guide .gg-cta p{
+    margin:18px 0 24px;
+    color:#ddd;
+    line-height:1.65;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width:1100px){
+    #sg-gig-guide .gg-view{ --gg-per:3; }
+}
+
+@media (max-width:900px){
+    /*  The handwriting is the first thing to go: beside a headline this
+        size on a narrow screen it is two columns fighting for the width. */
+    #sg-gig-guide .gg-script{ display:none; }
+}
+
+@media (max-width:820px){
+    #sg-gig-guide .gg-view{ --gg-per:2; }
+    #sg-gig-guide .gg-select{ flex:1 1 160px; }
+}
+
+@media (max-width:560px){
+    #sg-gig-guide .gg-view{ --gg-per:1; }
+
+    #sg-gig-guide .gg-grid{
+        grid-template-columns:1fr;
+    }
+
+    #sg-gig-guide .gg-places{
+        /*  Seven locations will not fit, so they scroll sideways rather
+            than stacking into a paragraph of links.                    */
+        flex-wrap:nowrap;
+        overflow-x:auto;
+        padding-bottom:6px;
+    }
+
+    #sg-gig-guide .gg-place{ white-space:nowrap; }
+}
+
+@media (prefers-reduced-motion:reduce){
+    #sg-gig-guide .gg-track,
+    #sg-gig-guide .gg-card,
+    #sg-gig-guide .gg-card-art{ transition:none; }
+
+    #sg-gig-guide .gg-card:hover{ transform:none; }
+}

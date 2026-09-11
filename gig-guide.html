@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>What&rsquo;s On Gig Guide | SoundzGood Whitsundays</title>
+  <meta name="description" content="Live music, events, markets and festivals across Bowen, Airlie Beach and the Whitsundays.">
+
+  <!--  NOT PUBLISHED YET
+
+        This page is off the site: it is not in the menu, not in
+        sitemap.xml, and not linked from anywhere. The line below tells
+        search engines to leave it alone as well, so nobody finds it by
+        searching while it is still being filled in.
+
+        TO PUBLISH IT
+          1. delete the robots line below
+          2. add it to sitemap.xml
+          3. add a link to it in components/navbar.html
+        Nothing else here changes.                                      -->
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="icon" href="images/logo.png">
+  <link rel="stylesheet" href="style.css?v=28">
+  <link rel="stylesheet" href="gig-guide.css?v=28">
+  <script src="js/main.js?v=28" defer></script>
+  <script src="js/gig-guide.js?v=28" defer></script>
+</head>
+
+<body>
+
+<div id="navbar"></div>
+
+<!-- ==========================================================================
+     THE GIG GUIDE
+
+     Everything below lives inside #sg-gig-guide. Every rule in gig-guide.css
+     and every listener in js/gig-guide.js is scoped to that id, so nothing
+     here can reach another page.
+
+     WHERE THE EVENTS ARE
+     Not in this file. They are one list at the top of js/gig-guide.js, and
+     everything on the page is built from it - the cards, the counts, what
+     the filters match. Add an event there and it appears here.
+
+     There are three in it at the moment, which are the three we can stand
+     behind. A guide wants dozens, and they have to come from somewhere real
+     - the venues, the council, Tourism Whitsundays - rather than be made up
+     to fill the page out. That is the work left on this page.
+     ========================================================================== -->
+<main id="sg-gig-guide">
+
+  <!-- 1. HERO ------------------------------------------------------------ -->
+  <section class="gg-hero">
+
+    <!--  The same clip the home page hero uses. It is already in the
+          browser's cache by the time anybody gets here, so it costs
+          nothing to show it again.                                     -->
+    <video class="gg-hero-video" id="gg-hero-video"
+           data-src="videos/hero-1080.mp4"
+           muted loop playsinline preload="none" aria-hidden="true"></video>
+
+    <div class="gg-hero-scrim"></div>
+
+    <div class="gg-hero-inner">
+      <div class="gg-hero-body">
+        <p class="gg-eyebrow">Bowen &amp; The Whitsundays</p>
+
+        <h1 class="gg-title">What&rsquo;s On<br><span>Gig Guide</span></h1>
+
+        <p class="gg-lead">
+          Live music, events, markets, festivals and more.<br>
+          Your guide to what&rsquo;s happening across North Queensland.
+        </p>
+      </div>
+
+      <p class="gg-script" aria-hidden="true">Good<br>Events<br>Brighter<br>People</p>
+    </div>
+
+  </section>
+
+
+  <!-- 2. FILTERS ---------------------------------------------------------
+       Every control here is wired to the same list. Nothing filters the
+       page server side, because there is no server - it is all the one
+       array in js/gig-guide.js being sifted.
+
+       The controls work without JavaScript in the sense that they do not
+       break the page: the full list renders from the markup up, and these
+       simply do nothing. -->
+  <section class="gg-filters" aria-label="Filter events">
+
+    <div class="gg-filters-inner">
+
+      <div class="gg-filter-row">
+        <label class="gg-search">
+          <span class="gg-sr-only">Search events, artists, venues</span>
+          <input type="search" id="gg-search" placeholder="Search events, artists, venues&hellip;">
+        </label>
+
+        <label class="gg-select">
+          <span class="gg-sr-only">When</span>
+          <select id="gg-when">
+            <option value="weekend">This Weekend</option>
+            <option value="7">Next 7 Days</option>
+            <option value="30">Next 30 Days</option>
+            <option value="all" selected>Everything Coming Up</option>
+          </select>
+        </label>
+
+        <label class="gg-select">
+          <span class="gg-sr-only">Where</span>
+          <select id="gg-where">
+            <option value="all">All Locations</option>
+            <option value="bowen">Bowen</option>
+            <option value="airlie">Airlie Beach</option>
+            <option value="proserpine">Proserpine</option>
+            <option value="collinsville">Collinsville</option>
+            <option value="whitsundays">Whitsundays</option>
+            <option value="surrounding">Surrounding Areas</option>
+          </select>
+        </label>
+      </div>
+
+      <!--  The pills and the two menus above are the same three filters,
+            not six. Whichever one is touched, the others are brought into
+            line - a guide that says "Bowen" in one place and "All
+            Locations" in another is worse than having one of them.    -->
+      <div class="gg-pills" role="group" aria-label="Event type">
+        <button type="button" class="gg-pill is-on" data-gg-cat="all">All</button>
+        <button type="button" class="gg-pill" data-gg-cat="live">Live Music</button>
+        <button type="button" class="gg-pill" data-gg-cat="dj">DJ</button>
+        <button type="button" class="gg-pill" data-gg-cat="family">Family</button>
+        <button type="button" class="gg-pill" data-gg-cat="markets">Markets</button>
+        <button type="button" class="gg-pill" data-gg-cat="festivals">Festivals</button>
+        <button type="button" class="gg-pill" data-gg-cat="sport">Sport</button>
+        <button type="button" class="gg-pill" data-gg-cat="community">Community</button>
+        <button type="button" class="gg-pill" data-gg-cat="food">Food &amp; Drink</button>
+        <button type="button" class="gg-pill" data-gg-cat="arts">Arts &amp; Culture</button>
+      </div>
+
+      <div class="gg-places" role="group" aria-label="Location">
+        <span class="gg-places-label">Locations:</span>
+        <button type="button" class="gg-place is-on" data-gg-place="all">All</button>
+        <button type="button" class="gg-place" data-gg-place="bowen">Bowen</button>
+        <button type="button" class="gg-place" data-gg-place="airlie">Airlie Beach</button>
+        <button type="button" class="gg-place" data-gg-place="proserpine">Proserpine</button>
+        <button type="button" class="gg-place" data-gg-place="collinsville">Collinsville</button>
+        <button type="button" class="gg-place" data-gg-place="whitsundays">Whitsundays</button>
+        <button type="button" class="gg-place" data-gg-place="surrounding">Surrounding Areas</button>
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- 3. THIS WEEKEND ----------------------------------------------------- -->
+  <section class="gg-band" aria-labelledby="gg-weekend-h">
+    <div class="gg-band-inner">
+
+      <div class="gg-band-head">
+        <div>
+          <h2 id="gg-weekend-h">This Weekend</h2>
+          <p class="gg-band-sub">The best gigs and events happening soon.</p>
+        </div>
+
+        <!--  There is no calendar page yet, so this is not a link to one.
+              When there is, put it back as:
+              <a class="gg-more" href="/calendar">View Full Calendar</a>  -->
+      </div>
+
+      <div class="gg-grid" id="gg-weekend-grid"></div>
+
+      <p class="gg-empty" id="gg-weekend-empty" hidden></p>
+
+    </div>
+  </section>
+
+
+  <!-- 4. UPCOMING HIGHLIGHTS ---------------------------------------------- -->
+  <section class="gg-band is-alt" aria-labelledby="gg-upcoming-h">
+    <div class="gg-band-inner">
+
+      <div class="gg-band-head">
+        <div>
+          <h2 id="gg-upcoming-h">Upcoming Highlights</h2>
+          <p class="gg-band-sub">A few bigger events on the horizon.</p>
+        </div>
+
+        <!--  A div rather than a <nav>: style.css styles the bare nav
+              element for the site menu, and that would land on this. -->
+        <div class="gg-arrows" role="group" aria-label="Scroll upcoming events">
+          <button type="button" class="gg-arrow" data-gg-page="-1"
+                  aria-label="Previous events">
+            <span aria-hidden="true">&#8249;</span>
+          </button>
+          <button type="button" class="gg-arrow" data-gg-page="1"
+                  aria-label="More events">
+            <span aria-hidden="true">&#8250;</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="gg-view" id="gg-upcoming-view">
+        <div class="gg-track" id="gg-upcoming-grid"></div>
+      </div>
+
+      <p class="gg-empty" id="gg-upcoming-empty" hidden></p>
+
+    </div>
+  </section>
+
+
+  <!-- 5. WHERE THE LISTINGS COME FROM -------------------------------------
+       Worth saying out loud. A guide nobody can see the workings of is
+       just a list of claims, and naming the sources is also what makes it
+       fair to be listing other people's events at all. -->
+  <section class="gg-sources" aria-label="Where our listings come from">
+    <div class="gg-sources-inner">
+
+      <p class="gg-sources-label">Events<br>sourced from</p>
+
+      <ul class="gg-sources-list">
+        <li>Tourism Whitsundays</li>
+        <li>Whitsunday Regional Council</li>
+        <li>Local Venues</li>
+        <li>And More</li>
+      </ul>
+
+      <p class="gg-sources-note">
+        Event information is sourced from official event listings, venue
+        websites and trusted local partners. Always check with the organiser
+        before you travel.
+      </p>
+
+    </div>
+  </section>
+
+
+  <!-- 6. THE TWO ASKS ----------------------------------------------------- -->
+  <section class="gg-panels" aria-label="Add your event or subscribe">
+    <div class="gg-panels-inner">
+
+      <article class="gg-panel">
+        <span class="gg-panel-icon" aria-hidden="true">&#128197;</span>
+        <h2>List Your Event</h2>
+        <p>
+          Got a gig, market, fundraiser or community event? Send it to the
+          gig guide &mdash; it&rsquo;s free.
+        </p>
+        <!--  Goes to the contact form with the subject already written, so
+              it arrives as a listing rather than an unlabelled enquiry. -->
+        <a class="btn btn-ticket"
+           href="/contact?note=I%20would%20like%20to%20list%20an%20event%20in%20the%20gig%20guide.">
+          Submit Your Event
+        </a>
+      </article>
+
+      <article class="gg-panel">
+        <span class="gg-panel-icon" aria-hidden="true">&#9993;</span>
+        <h2>Never Miss a Gig</h2>
+        <p>Get the weekend gig guide straight to your inbox.</p>
+
+        <!--  THIS IS NOT A MAILING LIST YET
+
+              There is nothing behind it - no list, no sending. Rather than
+              a box that swallows an address and does nothing, the form
+              carries what is typed to the contact page, where it arrives
+              as a real message we can answer by hand.
+
+              When there is a mailing list, replace this whole form with
+              that provider's embed code.                               -->
+        <form class="gg-subscribe" id="gg-subscribe">
+          <label class="gg-sr-only" for="gg-email">Your email address</label>
+          <input type="email" id="gg-email" name="email" required
+                 placeholder="Your email address">
+          <button type="submit" class="btn btn-ticket">Subscribe</button>
+        </form>
+      </article>
+
+      <article class="gg-panel is-art">
+        <p class="gg-panel-art-words">
+          Good<br>Events<br>Bring People<br><span>Together.</span>
+        </p>
+      </article>
+
+    </div>
+  </section>
+
+
+  <!-- 7. CLOSING BAND ------------------------------------------------------ -->
+  <section class="gg-cta">
+    <div class="gg-cta-inner">
+      <h2>Making<br><span>Events Happen</span></h2>
+
+      <p>
+        From community events to major productions &mdash;<br>
+        see SoundzGood in action across North Queensland.
+      </p>
+
+      <a class="btn btn-ticket" href="/events">View Our Event Work</a>
+    </div>
+  </section>
+
+</main>
+
+<div id="footer"></div>
+
+</body>
+</html>
