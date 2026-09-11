@@ -26,6 +26,16 @@
     --ent-card:#141414;
 }
 
+/*  Several things on this page are hidden by setting the hidden attribute
+    from the script, and several of them are also given a display by a rule
+    below. Any author display beats the browser's own [hidden] rule, so
+    without this they stay on screen - the act-type bar is display:grid and
+    ignored being hidden outright.
+
+    Third time this has caught us out on this site, after admin.css and
+    vendor-signup.css. Keep it above everything that sets display.       */
+#sg-ent-page [hidden]{ display:none !important; }
+
 /*  Images are named by the markup as --ent-img and used as a background,
     never as an <img>. A path that turns out to be missing then leaves the
     gradient underneath showing rather than drawing a broken image icon. */

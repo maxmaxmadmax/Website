@@ -72,22 +72,32 @@
           photo:'images/talent/nina-sinclair.jpg' },
         { slug:'dj-charley-templar', name:'DJ Charley Templar', act:'dj',   genres:[], events:[],
           photo:'images/talent/dj-charley-templar.jpg' },
-        { slug:'kriss-kross',        name:'Kriss Kross',        act:'dj',   genres:[], events:[] },
+        { slug:'kriss-kross',        name:'Kriss Kross',        act:'dj',   genres:[], events:[],
+          photo:'images/talent/kriss-kross.jpg' },
         { slug:'alex-emrik',         name:'Alex Emrik',         act:'dj',   genres:[], events:[],
           photo:'images/talent/alex-emrik.jpg' },
         { slug:'dj-powerboi',        name:'DJ PowerBoi',        act:'dj',   genres:[], events:[],
           photo:'images/talent/dj-powerboi.jpg' },
 
-        /* ---- Solo artists ---- */
+        /*  THE SOLO ARTISTS AND BANDS ARE PARKED, NOT GONE
+
+            Showing the DJs on their own for now. These are kept here rather
+            than deleted so putting them back is uncommenting, not typing
+            seven names out again from memory.
+
+            Take the comment off and they reappear - and so do the Solo
+            Artists and Bands tabs, the act-type dropdown and the line under
+            the headline, all of which are built from this list.
+
         { slug:'sam-mckann',         name:'Sam McKann',         act:'solo', genres:[], events:[] },
         { slug:'samantha-roberts',   name:'Samantha Roberts',   act:'solo', genres:[], events:[] },
         { slug:'pluto-tango',        name:'Pluto Tango',        act:'solo', genres:[], events:[] },
         { slug:'jacob-biermann',     name:'Jacob Biermann',     act:'solo', genres:[], events:[] },
 
-        /* ---- Bands ---- */
         { slug:'zed-charles-bo-river-band', name:'Zed Charles & The Bo River Band', act:'band', genres:[], events:[] },
         { slug:'headrush',           name:'Headrush',           act:'band', genres:[], events:[] },
         { slug:'cat-5',              name:'Cat 5',              act:'band', genres:[], events:[] }
+        */
     ];
 
     /*  Paths are written out rather than derived from the slug. Deriving
@@ -313,7 +323,15 @@
         '<path d="M3 19c0-3.3 2.7-5 6-5s6 1.7 6 5z"/>' +
         '<path d="M14.5 19c0-2.4 1.4-4 3.5-4s3.5 1.6 3.5 4z"/>';
 
+    /*  With only one kind of act on the roster there is nothing to filter
+        between: "All Talent" and "DJs" would be two controls showing the
+        same eight cards. The bar and the act dropdown both come off, and
+        both come back on their own the moment a second act type appears. */
+    var oneActTypeOnly = usedActs.length < 2;
+
     var typesBar = document.getElementById('ent-types');
+    if (oneActTypeOnly) { typesBar.hidden = true; }
+
     typesBar.innerHTML =
         '<button type="button" class="ent-type is-on" data-act="all">' +
           '<svg viewBox="0 0 24 24" aria-hidden="true">' + ALL_GLYPH + '</svg>' +
@@ -333,6 +351,10 @@
         heroTypes.innerHTML = usedActs.map(function (key) {
             return esc(ACT_TYPES[key] + (key === 'kids' ? '' : 's'));
         }).join(' &nbsp;|&nbsp; ');
+    }
+
+    if (oneActTypeOnly) {
+        selAct.closest('.ent-select').hidden = true;
     }
 
     fillSelect(selAct, usedActs, 'All Act Types');
