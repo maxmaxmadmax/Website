@@ -172,7 +172,8 @@
             : '';
 
         return '' +
-        '<article class="ent-card" data-act="' + esc(t.act) + '"' + media + '>' +
+        '<article class="ent-card' + (t.photo ? ' has-photo' : '') +
+          '" data-act="' + esc(t.act) + '"' + media + '>' +
 
           /*  The picture fills the card and this sits over all of it, so
               clicking anywhere on the photograph opens the artist panel.

@@ -690,15 +690,20 @@
     text-align:inherit;
 }
 
-/*  The glyph is the stand-in for a photo that is not there yet. Once one
-    loads it sits behind it, so it is dimmed rather than hidden - which
-    also means a dark photo still has something in the middle of it.   */
+/*  The stand-in for a photograph that is not there yet, and only that.
+
+    It used to stay on at low opacity once a photo loaded, on the theory
+    that a dark picture still wanted something in the middle of it. In
+    practice it was a headphone watermark sitting over somebody's face. A
+    card with a photograph has no need of a symbol for one.             */
 #sg-ent-page .ent-card-glyph{
     width:46px;
     height:46px;
     fill:#fff;
     opacity:.16;
 }
+
+#sg-ent-page .ent-card.has-photo .ent-card-glyph{ display:none; }
 
 /*  Outlined rather than filled. A solid orange block sat on top of the
     photograph and was the first thing the eye landed on - louder than the
