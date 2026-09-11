@@ -486,13 +486,15 @@
 
 #sg-ent-page .ent-panel-close:hover{ border-color:var(--sg-orange); color:var(--sg-orange); }
 
+/*  Wider and shallower than the card, so it crops harder still - 12% keeps
+    the face in a band under a third of the photograph's height. */
 #sg-ent-page .ent-panel-media{
     height:190px;
     background:
         linear-gradient(to top, rgba(10,10,10,.9), rgba(10,10,10,.3)),
         var(--ent-img, linear-gradient(140deg, #2a1201, #0a0a0a 70%));
     background-size:cover;
-    background-position:center;
+    background-position:center 12%;
     display:grid;
     place-items:center;
 }
@@ -642,6 +644,15 @@
     transform:translateY(-3px);
 }
 
+/*  THE CROP
+
+    Artist photographs are portraits, and this box is landscape - so most of
+    the picture is cropped away. Centred, it kept the middle: DJ Maxx's card
+    showed his chest and the decks, with his face cut off above the frame.
+
+    18% from the top instead, which is where a head is in a portrait. Set
+    once here rather than per artist, because it is true of every photograph
+    of a person standing up.                                              */
 #sg-ent-page .ent-card-media{
     position:relative;
     height:170px;
@@ -652,7 +663,7 @@
         var(--ent-img, none),
         linear-gradient(140deg, #2b1a3d, #0d0d0d 72%);
     background-size:cover;
-    background-position:center;
+    background-position:center 18%;
 }
 
 /*  The glyph is the stand-in for a photo that is not there yet. Once one

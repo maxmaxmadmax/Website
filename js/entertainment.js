@@ -11,13 +11,25 @@
    to be one of the keys in ACT_TYPES.
 
    PHOTOS
-   `photo` is a path, not a file that has to exist. If it is missing the
-   card falls back to its own gradient and the act-type glyph, so a roster
-   with no photos yet still looks finished. Save them as
+   An act with no `photo` asks for no picture at all - the card falls back
+   to its own gradient and the act-type glyph, so a roster with none yet
+   still looks finished. Add the line when a file exists.
 
-       images/talent/<slug>.webp
+   Size them on the way in rather than dropping the original in:
 
-   portrait-ish, about 900px wide.
+       powershell -File tools/fit-logo.ps1 -In "...photo.png" -Name dj-maxx `
+                  -OutDir images	alent -MaxWidth 480 -MaxHeight 900 -Quality 76
+
+   480px wide is about twice the size a card ever draws one, which is what
+   a retina screen wants and no more. DJ Maxx's original was 1122x1402 and
+   1.8MB; that command made it 40KB.
+
+   THEY ARE CROPPED HARD
+   The card is landscape and these are portraits, so most of the picture is
+   thrown away. The CSS crops from 18% down rather than from the middle,
+   because that is where a head is - centred, DJ Maxx's card showed his
+   chest and the decks. Worth knowing when choosing a shot: frame the face
+   in the upper third and it will survive.
    ========================================================================== */
 (function () {
     'use strict';
@@ -50,7 +62,8 @@
         known to be true.                                                 */
     var TALENT = [
         /* ---- DJs ---- */
-        { slug:'dj-maxx',            name:'DJ Maxx',            act:'dj',   genres:[], events:[] },
+        { slug:'dj-maxx',            name:'DJ Maxx',            act:'dj',   genres:[], events:[],
+          photo:'images/talent/dj-maxx.jpg' },
         { slug:'dj-tao',             name:'DJ Tao',             act:'dj',   genres:[], events:[] },
         { slug:'dj-karma',           name:'DJ Karma',           act:'dj',   genres:[], events:[] },
         { slug:'nina-sinclare',      name:'Nina Sinclare',      act:'dj',   genres:[], events:[] },
@@ -71,15 +84,10 @@
         { slug:'cat-5',              name:'Cat 5',              act:'band', genres:[], events:[] }
     ];
 
-    /*  No `photo` on an act means no picture is asked for at all, which is
-        why none of the above has one yet. Deriving the path from the slug
-        instead looked tidier but fired a 404 for every act on every view -
-        fifteen failed requests to end up showing the gradient we would have
-        shown anyway. Add the line when the file exists:
-
-            { slug:'dj-maxx', name:'DJ Maxx', act:'dj',
-              photo:'images/talent/dj-maxx.webp', genres:[], events:[] },
-     */
+    /*  Paths are written out rather than derived from the slug. Deriving
+        them looked tidier but fired a 404 for every act without a file, on
+        every view - fourteen failed requests to end up showing the gradient
+        we would have shown anyway. */
 
     var PER_PAGE = 8;
 
