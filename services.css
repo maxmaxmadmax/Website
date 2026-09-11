@@ -686,6 +686,188 @@
 }
 
 /* ==========================================================================
+   TRUSTED BY
+
+   A pale band, deliberately. Partner logos are drawn to sit on white and
+   most arrive as dark marks on a transparent background - on the black
+   page they would simply disappear.
+   ========================================================================== */
+#sg-services-page .sgs-trusted{
+    background:#fff;
+    color:#111;
+    padding-top:64px;
+    padding-bottom:56px;
+}
+
+#sg-services-page .sgs-trusted h2{
+    color:#111;
+    margin-bottom:12px;
+}
+
+#sg-services-page .sgs-kicker-dark{
+    color:#d95b00;   /* the site orange darkened enough to read on white */
+}
+
+#sg-services-page .sgs-trusted-lead{
+    color:#444;
+    font-size:1rem;
+    line-height:1.7;
+    max-width:58ch;
+    margin:0 0 40px;
+}
+
+/*  The strip. auto-fit rather than a fixed six, so the row stays even
+    whether there are four logos or nine, and the hairlines between them
+    land in the right places at every width.                            */
+#sg-services-page .sgs-logos{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
+    list-style:none;
+    margin:0;
+    padding:0;
+    border-top:1px solid #e4e4e4;
+    border-bottom:1px solid #e4e4e4;
+}
+
+#sg-services-page .sgs-logo{
+    display:grid;
+    place-items:center;
+    min-height:104px;
+    padding:18px 16px;
+    border-right:1px solid #e4e4e4;
+}
+
+#sg-services-page .sgs-logo:last-child{ border-right:0; }
+
+/*  THE BOX EVERY LOGO IS DRAWN IN
+
+    Fixed on both edges and object-fit:contain, so a mark of any shape or
+    size lands inside the same space without stretching and without pushing
+    the row about. A tall crest and a long wordmark both sit correctly.
+
+    It also means a logo that arrives far too large is still drawn at the
+    right size - it just costs the visitor the whole file to do it, which is
+    what tools/fit-logo.ps1 is for.                                      */
+#sg-services-page .sgs-logo img{
+    display:block;
+    max-width:170px;
+    max-height:60px;
+    width:auto;
+    height:auto;
+    object-fit:contain;
+}
+
+/*  The fallback name, hidden while there is a picture. The onerror in the
+    markup removes the image and adds .is-missing, so a logo that has not
+    been supplied yet reads as a name rather than a broken image icon.  */
+#sg-services-page .sgs-logo span{ display:none; }
+
+#sg-services-page .sgs-logo.is-missing span{
+    display:block;
+    text-align:center;
+    color:#666;
+    font-family:var(--sg-font-accent);
+    font-size:.68rem;
+    font-weight:bold;
+    letter-spacing:1.2px;
+    text-transform:uppercase;
+    line-height:1.5;
+}
+
+
+/* ==========================================================================
+   OUR REGION
+
+   The truck band. A photograph with the words over the left of it and the
+   places we travel to across the bottom.
+   ========================================================================== */
+#sg-services-page .sgs-region{
+    position:relative;
+    overflow:hidden;
+    padding-top:0;
+    padding-bottom:0;
+    border-top:1px solid var(--sg-border, #222);
+}
+
+/*  The photo is a background rather than an <img>, so the band still looks
+    deliberate before the file exists - the gradient underneath shows
+    instead of a broken image.                                          */
+#sg-services-page .sgs-region-media{
+    position:absolute;
+    inset:0;
+    background:
+        linear-gradient(90deg, rgba(5,5,5,.92) 20%, rgba(5,5,5,.35) 62%, rgba(5,5,5,.6) 100%),
+        var(--sgs-region-img, none),
+        linear-gradient(120deg, #12202e, #0a0a0a 70%);
+    background-size:cover;
+    background-position:center;
+}
+
+#sg-services-page .sgs-region{
+    --sgs-region-img:url('images/services/region.webp');
+}
+
+#sg-services-page .sgs-region-inner{
+    position:relative;
+    padding-top:84px;
+    padding-bottom:64px;
+}
+
+#sg-services-page .sgs-region h2{
+    margin-bottom:16px;
+}
+
+#sg-services-page .sgs-region-lead{
+    color:var(--sg-muted, #d0d0d0);
+    font-size:1rem;
+    line-height:1.75;
+    max-width:44ch;
+    margin:0;
+}
+
+/*  The places, across the foot of the picture. A flex row with dots between
+    rather than a list with bullets, so it reads as one line of travel
+    rather than eight separate facts.                                    */
+#sg-services-page .sgs-places{
+    position:relative;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:10px 0;
+    list-style:none;
+    margin:0;
+    padding:0 6% 44px;
+
+    max-width:var(--sg-max-width, 1200px);
+    margin-left:auto;
+    margin-right:auto;
+
+    font-family:var(--sg-font-accent);
+    font-size:.72rem;
+    font-weight:bold;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:#fff;
+}
+
+#sg-services-page .sgs-places li{
+    display:flex;
+    align-items:center;
+}
+
+#sg-services-page .sgs-places li::after{
+    content:'';
+    width:5px;
+    height:5px;
+    margin:0 18px;
+    border-radius:50%;
+    background:var(--sgs-yellow);
+}
+
+#sg-services-page .sgs-places li:last-child::after{ display:none; }
+
+
+/* ==========================================================================
    RESPONSIVE
 
    Pinned last - these override everything above them.

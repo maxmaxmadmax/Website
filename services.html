@@ -20,10 +20,10 @@
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="style.css?v=2">
-  <link rel="stylesheet" href="services.css?v=2">
-  <script src="js/main.js?v=2" defer></script>
-  <script src="js/services.js?v=2" defer></script>
+  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="services.css?v=3">
+  <script src="js/main.js?v=3" defer></script>
+  <script src="js/services.js?v=3" defer></script>
 </head>
 
 <body>
@@ -364,22 +364,105 @@
     </div>
   </section>
 
-  <!-- SERVICE AREA ------------------------------------------------------ -->
-  <section class="sgs-block sgs-area">
+  <!-- TRUSTED BY -------------------------------------------------------- -->
+  <!--  A pale band, on purpose. Partner logos are drawn to sit on white and
+        most arrive as dark marks on a transparent background; dropped onto
+        the black page they would be invisible.
+
+        ADDING OR CHANGING A LOGO
+        Copy one <li> and change the file name and the two bits of text. The
+        image is given a fixed box by the CSS and told to fit inside it, so a
+        logo that arrives far too large is still drawn at the right size -
+        it just costs more to download than it needed to. See
+        images/partners/README.txt for what to export.
+
+        The <span> is the fallback. It is hidden while the picture is there
+        and takes over if the file is missing, so a name that has not been
+        supplied yet reads as a name rather than a broken image.        -->
+  <section class="sgs-block sgs-trusted">
     <div class="sgs-wrap">
-      <h2>Event Production Across North Queensland</h2>
-      <div class="sgs-copy">
-        <p>
-          SoundzGood is based in Bowen and provides event production, PA
-          systems, lighting, LED screens, staging and technical support across
-          the Whitsundays and North Queensland.
-        </p>
-        <p>
-          We regularly work across Bowen, Airlie Beach, Proserpine, Mackay,
-          Townsville, Collinsville and the surrounding regional areas.
-        </p>
-      </div>
+
+      <p class="sgs-kicker sgs-kicker-dark">Trusted By</p>
+      <h2>Trusted Across North Queensland.</h2>
+      <p class="sgs-trusted-lead">
+        Councils, venues, event organisers and community groups trust
+        SoundzGood to deliver exceptional events, every time.
+      </p>
+
+      <ul class="sgs-logos">
+        <li class="sgs-logo">
+          <img src="images/partners/whitsunday-regional-council.png"
+               alt="Whitsunday Regional Council" loading="lazy" decoding="async"
+               onerror="this.closest('.sgs-logo').classList.add('is-missing');this.remove();">
+          <span>Whitsunday Regional Council</span>
+        </li>
+
+        <li class="sgs-logo">
+          <img src="images/partners/grand-view-hotel.png"
+               alt="Grand View Hotel" loading="lazy" decoding="async"
+               onerror="this.closest('.sgs-logo').classList.add('is-missing');this.remove();">
+          <span>Grand View Hotel</span>
+        </li>
+
+        <li class="sgs-logo">
+          <img src="images/partners/cape-gloucester-eco-resort.png"
+               alt="Cape Gloucester Eco Resort" loading="lazy" decoding="async"
+               onerror="this.closest('.sgs-logo').classList.add('is-missing');this.remove();">
+          <span>Cape Gloucester Eco Resort</span>
+        </li>
+
+        <li class="sgs-logo">
+          <img src="images/partners/stonka-fishing-challenge.png"
+               alt="Stonka Fishing Challenge" loading="lazy" decoding="async"
+               onerror="this.closest('.sgs-logo').classList.add('is-missing');this.remove();">
+          <span>Stonka Fishing Challenge</span>
+        </li>
+
+        <li class="sgs-logo">
+          <img src="images/partners/don-river-dash.png"
+               alt="Don River Dash" loading="lazy" decoding="async"
+               onerror="this.closest('.sgs-logo').classList.add('is-missing');this.remove();">
+          <span>Don River Dash</span>
+        </li>
+
+        <li class="sgs-logo">
+          <img src="images/partners/merinda-village-hotel.png"
+               alt="Merinda Village Hotel" loading="lazy" decoding="async"
+               onerror="this.closest('.sgs-logo').classList.add('is-missing');this.remove();">
+          <span>Merinda Village Hotel</span>
+        </li>
+      </ul>
+
     </div>
+  </section>
+
+  <!-- OUR REGION -------------------------------------------------------- -->
+  <!--  The photo is a background rather than an <img>, so the band still
+        looks deliberate before the file exists - it falls back to a dark
+        gradient instead of a broken image. Save yours as
+        images/services/region.webp, landscape, around 2000px wide.      -->
+  <section class="sgs-block sgs-region">
+    <div class="sgs-region-media" aria-hidden="true"></div>
+
+    <div class="sgs-wrap sgs-region-inner">
+      <p class="sgs-kicker">Our Region</p>
+      <h2>Based in Bowen.<br>Built to Travel.</h2>
+      <p class="sgs-region-lead">
+        We deliver community events and regional productions across North
+        Queensland &mdash; from local gatherings to large-scale events.
+      </p>
+    </div>
+
+    <ul class="sgs-places">
+      <li>Bowen</li>
+      <li>Whitsundays</li>
+      <li>Airlie Beach</li>
+      <li>Proserpine</li>
+      <li>Mackay</li>
+      <li>Townsville</li>
+      <li>Collinsville</li>
+      <li>Regional QLD</li>
+    </ul>
   </section>
 
   <!-- FINAL CTA --------------------------------------------------------- -->
