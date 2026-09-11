@@ -64,7 +64,8 @@
         /* ---- DJs ---- */
         { slug:'dj-maxx',            name:'DJ Maxx',            act:'dj',   genres:[], events:[],
           photo:'images/talent/dj-maxx.jpg' },
-        { slug:'dj-tao',             name:'DJ Tao',             act:'dj',   genres:[], events:[] },
+        { slug:'lucas',              name:'Lucas',              act:'dj',   genres:[], events:[],
+          photo:'images/talent/lucas.jpg' },
         { slug:'dj-karma',           name:'DJ Karma',           act:'dj',   genres:[], events:[],
           photo:'images/talent/dj-karma.jpg' },
         { slug:'nina-sinclair',      name:'Nina Sinclair',      act:'dj',   genres:[], events:[],
