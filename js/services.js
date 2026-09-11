@@ -5,10 +5,15 @@
    stops immediately if that element is not on the page, so this script can
    never touch another page even though it sits in the shared js folder.
 
-   The slider itself is a plain horizontally scrolling element with CSS snap
-   points (see services.css). Swiping, trackpad gestures, dragging the
-   scrollbar and the keyboard all work without any of this. What is added
-   here is the polish on top:
+   The slider is a horizontally scrolling element that the visitor cannot
+   scroll themselves - it is overflow:hidden, and it moves only when this
+   file animates its scrollLeft. A trackpad reading a little sideways drift
+   in a downward swipe used to feed it to the track, and scrolling down the
+   page over the banner stuttered and fought back. It is driven by its
+   arrows, its labels and the keyboard now, and scrolling past it does
+   nothing at all.
+
+   What this file does:
 
      - stepping the banner along on its own every couple of seconds
      - arrows, and disabling them at either end
@@ -52,11 +57,81 @@
     /* ---------------------------------------------------------------------
        Moving between slides
        --------------------------------------------------------------------- */
+    /*  The glide is done here rather than by the browser.
+
+        scrollTo's own behavior:'smooth' is ignored on a box the visitor
+        cannot scroll, and the track is overflow:hidden precisely so they
+        cannot. Setting scrollLeft directly does work, so the movement is
+        animated frame by frame instead.
+
+        Any move cancels the one before it, so pressing an arrow twice
+        quickly goes to the second slide rather than having two animations
+        fighting over the same property. */
+    var SLIDE_MS = 420;
+    var gliding = null;
+    var glideTo = null;
+
+    /*  requestAnimationFrame does not run while the tab is in the
+        background, so a glide that started just before the visitor switched
+        away would be frozen part-way when they came back - half a slide
+        showing, which looks broken. Landing it immediately instead. */
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden && gliding !== null) {
+            window.cancelAnimationFrame(gliding);
+            gliding = null;
+            if (glideTo !== null) { track.scrollLeft = glideTo; }
+        }
+    });
+
     function goTo(index, instant) {
         var i = Math.max(0, Math.min(slides.length - 1, index));
-        track.scrollTo({
-            left: slides[i].offsetLeft,
-            behavior: (instant || reduceMotion) ? 'auto' : 'smooth'
+        var to = slides[i].offsetLeft;
+
+        if (gliding) {
+            window.cancelAnimationFrame(gliding);
+            gliding = null;
+        }
+        glideTo = to;
+
+        if (instant || reduceMotion) {
+            track.scrollLeft = to;
+            paint();
+            return;
+        }
+
+        var from = track.scrollLeft;
+        var travel = to - from;
+        if (!travel) { return; }
+
+        var started = window.performance.now();
+
+        gliding = window.requestAnimationFrame(function frame(now) {
+            var p = Math.min(1, (now - started) / SLIDE_MS);
+
+            /* ease in out - slow at both ends, quick through the middle */
+            var eased = p < 0.5
+                ? 2 * p * p
+                : 1 - Math.pow(-2 * p + 2, 2) / 2;
+
+            track.scrollLeft = from + travel * eased;
+
+            if (p < 1) {
+                gliding = window.requestAnimationFrame(frame);
+            } else {
+                gliding = null;
+                track.scrollLeft = to;   /* land exactly, not a fraction off */
+            }
+
+            /*  Repainted here rather than left to the track's scroll event.
+
+                The labels, the counter and the two arrows used to be updated
+                only when that event fired, which made them depend on the
+                browser choosing to dispatch it. It does not always: a
+                background tab has no rendering step, so no scroll event, and
+                the arrows would still be showing the state from before the
+                move. Since this code is the thing doing the scrolling, it can
+                simply say so. */
+            paint();
         });
     }
 
@@ -249,25 +324,30 @@
         timer = null;
     }
 
-    /* Called whenever the visitor moves the banner themselves. */
+    /*  Called whenever the visitor moves the banner themselves - an arrow, a
+        label, the keyboard. Five seconds is long enough to read the slide
+        you asked for without the banner overruling you, and short enough
+        that it picks itself back up rather than sitting there. */
+    var HOLD = 5000;
+
     function holdAuto() {
-        heldUntil = Date.now() + DWELL * 2;
+        heldUntil = Date.now() + HOLD;
     }
 
     if (!reduceMotion) {
         var stageEl = page.querySelector('#sgs-stage');
 
-        ['pointerenter', 'focusin'].forEach(function (name) {
-            stageEl.addEventListener(name, function () { paused = true; });
-        });
+        /*  Keyboard focus still parks it, because somebody tabbing through
+            the labels needs it to hold still while they read.
 
-        ['pointerleave', 'focusout'].forEach(function (name) {
-            stageEl.addEventListener(name, function () { paused = false; });
-        });
-
-        // a swipe or a drag of the track counts as taking over
-        stageEl.addEventListener('pointerdown', holdAuto);
-        stageEl.addEventListener('touchstart', holdAuto, { passive: true });
+            Hovering no longer does. It used to, and it meant a mouse left
+            resting anywhere over the banner stopped it for good - which
+            reads as broken rather than considerate now the banner is driven
+            entirely by its buttons. Pressing one holds it for five seconds
+            and then it carries on, which is the pause that was actually
+            wanted.                                                       */
+        stageEl.addEventListener('focusin', function () { paused = true; });
+        stageEl.addEventListener('focusout', function () { paused = false; });
 
         document.addEventListener('visibilitychange', function () {
             if (document.hidden) { stopAuto(); } else { startAuto(); }
@@ -282,51 +362,6 @@
             startAuto();
         }
     }
-
-    /* ---------------------------------------------------------------------
-       The menu button
-
-       Every page carries the same menu, and its button sells tickets. On
-       this page there is nothing to buy - someone here is pricing an event
-       - so it asks for a quote instead.
-
-       Done from this file rather than by editing components/navbar.html,
-       because that file is shared: changing it would change the button on
-       the homepage, the events page and everywhere else. This script only
-       ever runs on the services page, so the change cannot reach them.
-
-       The menu is fetched and dropped in by js/main.js after this runs, so
-       there may be nothing to change yet - hence watching for it to arrive
-       and giving up quietly if it never does.
-       --------------------------------------------------------------------- */
-    (function swapMenuButton() {
-        var host = document.getElementById('navbar');
-        if (!host) { return; }
-
-        var apply = function () {
-            var btn = host.querySelector('.nav-ticket');
-            if (!btn) { return false; }
-
-            btn.textContent = 'Get a Quote';
-            btn.setAttribute('href', '/contact');
-            btn.removeAttribute('target');
-            btn.removeAttribute('rel');
-            return true;
-        };
-
-        if (apply()) { return; }
-
-        if (!('MutationObserver' in window)) { return; }
-
-        var watcher = new MutationObserver(function () {
-            if (apply()) { watcher.disconnect(); }
-        });
-        watcher.observe(host, { childList: true, subtree: true });
-
-        // the menu is a small local file; if it has not arrived by now it
-        // is not coming, and the page is fine without the change
-        setTimeout(function () { watcher.disconnect(); }, 8000);
-    }());
 
     /* ---------------------------------------------------------------------
        The hero video

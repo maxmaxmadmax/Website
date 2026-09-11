@@ -56,27 +56,35 @@
     background:#000;
 }
 
-/*  A plain horizontally scrolling element with snap points. Touch, trackpad
-    and keyboard all work natively - the script adds arrows and the wheel
-    behaviour on top, so the slider still works if it never loads.
-
-    Vertical scrolling is never captured here: the track only scrolls on its
-    own axis, so the page keeps moving down normally.                      */
+/*  A horizontally scrolling element with snap points, moved only by the
+    script. The visitor cannot scroll it themselves - see the note on
+    overflow below - so the arrows, the labels and the keyboard are the way
+    through it, and scrolling down the page over it does nothing.          */
 #sg-services-page .sgs-track{
     display:flex;
-    overflow-x:auto;
+
+    /*  hidden, not auto. The track still scrolls - scrollTo() from the
+        arrows, the labels and the keyboard works exactly as before - but
+        the visitor cannot scroll it themselves.
+
+        auto meant a trackpad reading a fraction of sideways movement in a
+        downward swipe fed it to the track, and snap then pulled the slide
+        back into place. Scrolling down the page over the banner stuttered
+        and fought back. The banner is driven by its buttons now, so
+        scrolling past it does nothing at all.                           */
+    overflow-x:hidden;
     overflow-y:hidden;
-    scroll-snap-type:x mandatory;
 
-    /*  Deliberately NOT scroll-behavior:smooth. That would animate every
-        programmatic move, including the many small ones the wheel makes as
-        it glides, so each would be chasing the last and the whole thing
-        would feel like it was dragging. The arrows and labels ask for a
-        smooth scroll themselves, one call at a time, which is the only
-        place it is wanted.                                               */
+    /*  No scroll snapping. Snap exists to catch a user's swipe and tidy it
+        onto a slide - and there are no swipes to catch any more. Worse, it
+        is mandatory: it rejects any scroll position that is not a snap
+        point, so it would undo every intermediate frame of the animation in
+        services.js and the banner would never move at all.               */
 
-    /* iOS: keep the swipe from dragging the whole page around */
-    overscroll-behavior-x:contain;
+    /*  No scroll-behavior:smooth either, and scrollTo's own smooth option
+        does nothing on a box the user cannot scroll - the browser simply
+        ignores it. services.js animates scrollLeft frame by frame instead,
+        which it has to do anyway to keep control of the timing.          */
 
     /* the scrollbar would cut across the photography */
     scrollbar-width:none;
@@ -94,11 +102,8 @@
     position:relative;
     flex:0 0 100%;
     width:100%;
-    scroll-snap-align:start;
-    /*  No scroll-snap-stop:always here. It forces the scroll to halt on
-        every single slide, so a firm swipe that should carry you a few
-        along stops dead on the next one - which reads as the page getting
-        stuck. Without it, momentum carries and it still lands on a slide. */
+    /*  No scroll-snap-align. The track no longer snaps - see the note on
+        it above.                                                         */
 
     display:flex;
     align-items:center;
@@ -410,8 +415,17 @@
     font-size:1rem;
     line-height:1.75;
     max-width:56ch;
-    margin:0;
+    margin:0 0 14px;
 }
+
+/*  The last one carries no gap, so the block still sits flush against
+    whatever follows it however many paragraphs it grows to. */
+#sg-services-page .sgs-band-lead:last-of-type{ margin-bottom:0; }
+
+/*  The full stops are the accent. Two short sentences with a coloured beat
+    between them reads as a statement; the same words in one flat colour
+    read as a sentence that happens to be large.                        */
+#sg-services-page .sgs-band-copy h2 span{ color:var(--sg-gold); }
 
 /*  Outlined rather than filled, so the yellow reads as a line of type on a
     dark band instead of a second solid block competing with the slider. */

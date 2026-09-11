@@ -1520,7 +1520,7 @@ nav .has-sub.has-active > a{
 
 
 /* "Buy Tickets" pill inside the menu */
-nav a.nav-ticket{
+nav a.nav-cta{
     background:var(--sg-orange);
     border:2px solid var(--sg-orange);
     border-radius:50px;
@@ -1528,12 +1528,12 @@ nav a.nav-ticket{
     font-weight:bold;
 }
 
-nav a.nav-ticket:hover{
+nav a.nav-cta:hover{
     background:transparent;
     color:#fff;
 }
 
-nav a.nav-ticket.active{
+nav a.nav-cta.active{
     border-bottom-color:var(--sg-orange);
 }
 
@@ -2088,9 +2088,7 @@ nav a.nav-ticket.active{
 
 @media (max-width:768px){
 
-    /* Nav stays a transparent overlay on the hero, the same as desktop.
-       The small nav logo is hidden here because the big hero logo sits
-       directly beneath it - show it again by deleting the .Nav rule. */
+    /* Nav stays a transparent overlay on the hero, the same as desktop. */
     nav{
         flex-direction:column;
         gap:6px;
@@ -2103,20 +2101,20 @@ nav a.nav-ticket.active{
         border-bottom:none;
     }
 
-    nav .Nav{
-        display:none;
-    }
+    /*  The logo stays visible on a phone. It used to be hidden here, on the
+        grounds that the big hero logo sat directly beneath it - which is
+        true on the homepage and nowhere else. It is now the only way back
+        to the homepage from anywhere, since the menu has no Home item, so
+        hiding it would strand people.                                    */
 
-    /* One row of links only. The sticky ticket bar sits directly below the
-       hero and follows you down the page, so the menu does not need its
-       own ticket button here - and the hero gets the space back.
+    /*  The button used to be hidden here, because it sold tickets and the
+        sticky ticket bar below the hero was already doing that job. It is
+        Contact now and there is no sticky bar behind it, so hiding it would
+        leave no way to reach Contact from the menu at all. It stays.     */
 
-       The whole list item goes, not just the link: an empty item still
-       wrapped onto a second row and left the menu taller than it looked. */
-    nav a.nav-ticket,
-    nav li.nav-ticket-item{
-        display:none;
-    }
+    /* The menu is long enough on a phone without spelling the brand out
+       twice; the logo above it already says who this is. */
+    nav .nav-long{ display:none; }
 
     /* A bigger area to hit for the dropdown arrow, without making the
        menu item any wider. */
@@ -2140,12 +2138,12 @@ nav a.nav-ticket.active{
         letter-spacing:0;
     }
 
-    nav a.nav-ticket{
+    nav a.nav-cta{
         padding:11px 20px;
     }
 
     .Nav img{
-        height:32px;
+        height:28px;
     }
 
     /* Hero no longer sits under an overlapping nav, so trim the top padding */

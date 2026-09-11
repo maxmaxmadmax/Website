@@ -2,6 +2,10 @@
   SHARED MENU - used by every page.
   Edit this one file to change the menu everywhere.
   The current page is highlighted automatically by js/main.js
+
+  There is no Home item. The logo is the way back, which is what people
+  reach for anyway, and it buys the three real destinations the room to be
+  named properly rather than abbreviated.
 -->
 <nav>
     <div class="Nav">
@@ -11,49 +15,40 @@
     </div>
 
     <ul>
-        <li><a href="/">Home</a></li>
-
-        <!--  Events carries a submenu. It opens on hover on a computer, and
-              the little arrow opens it on a touch screen, where there is no
-              hover to speak of. Add another <li> inside .subnav to put more
-              under it - js/main.js needs no changes.                     -->
+        <!--  Attend Events carries a submenu. It opens on hover on a
+              computer, and the little arrow opens it on a touch screen,
+              where there is no hover to speak of. Add another <li> inside
+              .subnav to put more under it - js/main.js needs no changes. -->
         <li class="has-sub">
-            <a href="/events">Events</a>
+            <a href="/events">Attend Events</a>
 
             <button type="button" class="sub-toggle"
-                    aria-expanded="false" aria-label="Show more under Events">
+                    aria-expanded="false" aria-label="Show more under Attend Events">
                 <span aria-hidden="true">&#9662;</span>
             </button>
 
             <ul class="subnav">
-                <li><a href="/vendor-signup">Vendor Application</a></li>
+                <li><a href="/vendor-signup">Become a Vendor</a></li>
             </ul>
         </li>
 
-        <!--  Hire Us carries a submenu the same way Events does. js/main.js
-              loops over every .has-sub, so a second one needs no script
-              changes - only the markup below.                          -->
-        <li class="has-sub">
-            <a href="/services">Hire Us</a>
+        <li><a href="/services">Hire SoundzGood</a></li>
+        <!--  "SoundzGood" is dropped on a phone, where the full name pushed the
+              menu onto a third row. Same link, same destination - the word is
+              only hidden where there is no room for it.                  -->
+        <li><a href="/entertainment"><span class="nav-long">SoundzGood </span>Entertainment</a></li>
 
-            <button type="button" class="sub-toggle"
-                    aria-expanded="false" aria-label="Show more under Hire Us">
-                <span aria-hidden="true">&#9662;</span>
-            </button>
+        <!--  The one coloured button in the menu. It used to sell tickets,
+              and the services page rewrote it into a quote request; now it
+              is Contact on every page, which is where both of those were
+              trying to send people anyway.
 
-            <ul class="subnav">
-                <li><a href="/entertainment">SoundzGood Entertainment</a></li>
-            </ul>
-        </li>
-        <li><a href="/contact">Contact</a></li>
-        <!--  The class is here so the whole item can be hidden on a phone,
-              not just the link inside it. Hiding only the link left an
-              empty list item that still wrapped onto a second row and made
-              the menu taller than it looked.                           -->
-        <li class="nav-ticket-item">
-            <a class="nav-ticket"
-               href="https://events.humanitix.com/soundzgood-2-0-bowen"
-               target="_blank" rel="noopener">Buy Tickets</a>
+              The class is on the list item as well as the link so the whole
+              item can be styled or hidden together - hiding only the link
+              once left an empty item that still wrapped onto a second row
+              and made the menu taller than it looked.                   -->
+        <li class="nav-cta-item">
+            <a class="nav-cta" href="/contact">Contact</a>
         </li>
     </ul>
 </nav>
