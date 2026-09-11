@@ -1,0 +1,14 @@
+# SoundzGood Whitsundays
+#
+# Everything public is crawlable. The two admin screens are not - they are
+# behind a Firebase login and a custom claim, so this is tidiness rather
+# than security. Never rely on robots.txt to keep anything private: it is a
+# request, it is public, and it names the very things it asks crawlers to
+# skip.
+
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /soundzgoodadminlogin
+
+Sitemap: https://www.soundzgood.com.au/sitemap.xml
