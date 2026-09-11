@@ -898,22 +898,83 @@
     border-top:1px solid var(--sg-border, #222);
 }
 
-/*  The photo is a background rather than an <img>, so the band still looks
-    deliberate before the file exists - the gradient underneath shows
-    instead of a broken image.                                          */
+/*  THE SPLIT
+
+    Where the cursor is, as a percentage across the band. 50% until the
+    mouse arrives, and 50% is where it stays on a touch screen or for
+    anyone who has asked for less motion - the band reads perfectly well
+    cut down the middle.                                                 */
+#sg-services-page .sgs-region{
+    --sgs-split:50%;
+}
+
 #sg-services-page .sgs-region-media{
     position:absolute;
     inset:0;
-    background:
-        linear-gradient(90deg, rgba(5,5,5,.92) 20%, rgba(5,5,5,.35) 62%, rgba(5,5,5,.6) 100%),
-        var(--sgs-region-img, none),
-        linear-gradient(120deg, #12202e, #0a0a0a 70%);
+    overflow:hidden;
+}
+
+#sg-services-page .sgs-region-half{
+    position:absolute;
+    inset:0;
     background-size:cover;
     background-position:center;
 }
 
+/*  The outback fills the whole width. The coast is laid over it and clipped
+    to the split, so the cursor wipes between the two rather than fading
+    one into the other - a hard edge reads as two places, a fade reads as
+    a mistake.                                                           */
+#sg-services-page .sgs-region-half.is-outback{
+    background-image:
+        var(--sgs-outback, none),
+        linear-gradient(120deg, #3a2109, #0a0a0a 70%);
+}
+
+#sg-services-page .sgs-region-half.is-coast{
+    background-image:
+        var(--sgs-coast, none),
+        linear-gradient(120deg, #12202e, #0a0a0a 70%);
+    clip-path:inset(0 calc(100% - var(--sgs-split)) 0 0);
+}
+
+/*  The seam. A hairline rather than a bar - it marks the join without
+    turning into a piece of furniture.                                   */
+#sg-services-page .sgs-region-seam{
+    position:absolute;
+    top:0;
+    bottom:0;
+    left:var(--sgs-split);
+    width:1px;
+    background:rgba(255,255,255,.45);
+    transform:translateX(-0.5px);
+}
+
+/*  THE OVERLAY
+
+    Above both halves, not on them, so the words are equally readable
+    whichever picture happens to be underneath at the time. Heavier on the
+    left where the headline sits, and it keeps a floor across the whole
+    band so the right-hand label stays legible over bright sky.         */
+#sg-services-page .sgs-region-media::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    /*  Two gradients stacked, so they compound - .55 over .85 is not .85,
+        it is .93. The first pass was dark enough to lose the picture
+        entirely, which defeats putting one there.
+
+        Heavy only where the headline actually sits, light across the
+        middle where the photograph is the point, and a low wash along the
+        bottom so the two labels stay readable over bright sand.        */
+    background:
+        linear-gradient(90deg, rgba(5,5,5,.88) 12%, rgba(5,5,5,.34) 52%, rgba(5,5,5,.28) 100%),
+        linear-gradient(to top, rgba(5,5,5,.62), rgba(5,5,5,0) 46%);
+}
+
 #sg-services-page .sgs-region{
-    --sgs-region-img:url('images/services/region.webp');
+    --sgs-coast:url('images/services/region-coast.jpg');
+    --sgs-outback:url('images/services/region-outback.jpg');
 }
 
 #sg-services-page .sgs-region-inner{
@@ -942,7 +1003,8 @@
     display:flex;
     flex-wrap:wrap;
     align-items:center;
-    gap:10px 0;
+    justify-content:space-between;
+    gap:10px 24px;
     list-style:none;
     margin:0;
 
@@ -964,21 +1026,23 @@
     color:#fff;
 }
 
+/*  One label per half, pushed to opposite ends so each sits under the
+    picture it names. No dots between them any more - there are two things
+    now, not a list of eight.                                            */
 #sg-services-page .sgs-places li{
     display:flex;
     align-items:center;
+    gap:10px;
 }
 
-#sg-services-page .sgs-places li::after{
+#sg-services-page .sgs-places li::before{
     content:'';
     width:5px;
     height:5px;
-    margin:0 18px;
+    flex:0 0 auto;
     border-radius:50%;
     background:var(--sgs-yellow);
 }
-
-#sg-services-page .sgs-places li:last-child::after{ display:none; }
 
 
 /* ==========================================================================

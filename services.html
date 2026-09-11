@@ -20,10 +20,10 @@
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="style.css?v=19">
-  <link rel="stylesheet" href="services.css?v=19">
-  <script src="js/main.js?v=19" defer></script>
-  <script src="js/services.js?v=19" defer></script>
+  <link rel="stylesheet" href="style.css?v=20">
+  <link rel="stylesheet" href="services.css?v=20">
+  <script src="js/main.js?v=20" defer></script>
+  <script src="js/services.js?v=20" defer></script>
 </head>
 
 <body>
@@ -473,7 +473,21 @@
         gradient instead of a broken image. Save yours as
         images/services/region.webp, landscape, around 2000px wide.      -->
   <section class="sgs-block sgs-region">
-    <div class="sgs-region-media" aria-hidden="true"></div>
+    <!--  TWO PLACES, ONE BAND
+
+          The outback fills the whole width and the coast is laid over it,
+          clipped to wherever the cursor is. Moving the mouse wipes between
+          them, which is the point: one business, two very different rooms
+          to work in.
+
+          Both halves are decorative - the words below name each place - so
+          the whole thing is aria-hidden and the effect is never the only
+          way the information is available.                              -->
+    <div class="sgs-region-media" aria-hidden="true">
+      <span class="sgs-region-half is-outback"></span>
+      <span class="sgs-region-half is-coast"></span>
+      <span class="sgs-region-seam"></span>
+    </div>
 
     <div class="sgs-wrap sgs-region-inner">
       <p class="sgs-kicker">Our Region</p>
@@ -484,8 +498,10 @@
       </p>
     </div>
 
+    <!--  One label under each half, so the words say which picture is
+          which rather than leaving it to be guessed.                    -->
     <ul class="sgs-places">
-      <li>Whitsundays &amp; Whitsunday Islands</li>
+      <li>Whitsundays &amp; The Whitsunday Islands</li>
       <li>Regional &amp; Outback Queensland</li>
     </ul>
   </section>

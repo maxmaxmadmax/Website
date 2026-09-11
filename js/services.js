@@ -410,3 +410,143 @@
         setUpVideo();
     });
 }());
+
+/* --------------------------------------------------------------------------
+   THE REGION SPLIT
+
+   Two photographs in one band - the coast on the left, the outback on the
+   right - joined at --sgs-split. The coast layer is clipped to that, so
+   moving the split wipes between them.
+
+   It does two things:
+
+     1. Introduces itself. The first time the band scrolls into view the
+        split sweeps slowly left to right, which is the only way somebody
+        learns there are two pictures rather than one. It runs once.
+
+     2. Follows the cursor afterwards, easing toward it rather than
+        snapping - a wipe that jumps to wherever the mouse is reads as a
+        glitch; one that chases it reads as a material. Taking the pointer
+        away leaves it where it was put.
+
+   Its own block rather than part of the slider above, which bails out
+   early when there is no slider on the page and would take this with it.
+
+   WHAT IT DOES NOT DO
+   Nothing at all for anyone who has asked for less motion - the band sits
+   at 50% and reads perfectly well cut down the middle. On a touch screen
+   the intro still runs, because it is the only way those visitors see both
+   pictures, but there is no cursor to follow afterwards.
+
+   The split is decoration either way: the two labels underneath name both
+   places, so nobody has to move a mouse to find out what they are seeing.
+   -------------------------------------------------------------------------- */
+(function () {
+    'use strict';
+
+    var band = document.querySelector('#sg-services-page .sgs-region');
+    if (!band) return;
+
+    var mq = window.matchMedia;
+    if (mq && mq('(prefers-reduced-motion: reduce)').matches) return;
+
+    var canHover = !mq || !mq('(hover: none)').matches;
+
+    var INTRO_FROM = 12;
+    var INTRO_TO = 88;
+    var INTRO_MS = 2600;
+
+    /*  How hard the split is pulled toward the cursor each frame. Low
+        enough to read as easing, high enough that it is clearly following
+        you rather than wandering off on its own. */
+    var CHASE = 0.14;
+
+    var current = 50;
+    var target = 50;
+    var frame = null;
+    var introUntil = 0;          /* while set, the intro owns the split */
+
+    function paint() {
+        band.style.setProperty('--sgs-split', current.toFixed(2) + '%');
+    }
+
+    function run() {
+        if (frame === null) frame = window.requestAnimationFrame(step);
+    }
+
+    function step(now) {
+        frame = null;
+
+        if (introUntil) {
+            var left = introUntil - now;
+
+            if (left <= 0) {
+                introUntil = 0;
+                current = INTRO_TO;
+                target = INTRO_TO;   /* the cursor takes over from here */
+                paint();
+                return;
+            }
+
+            var p = 1 - (left / INTRO_MS);
+            /* ease in out - slow at both ends, quicker through the middle */
+            var eased = p < 0.5
+                ? 2 * p * p
+                : 1 - Math.pow(-2 * p + 2, 2) / 2;
+
+            current = INTRO_FROM + (INTRO_TO - INTRO_FROM) * eased;
+            paint();
+            run();
+            return;
+        }
+
+        var diff = target - current;
+
+        if (Math.abs(diff) < 0.08) {
+            current = target;
+            paint();
+            return;              /* settled - stop asking for frames */
+        }
+
+        current += diff * CHASE;
+        paint();
+        run();
+    }
+
+    /*  The intro waits until the band is actually on screen. Running it on
+        page load means it has been and gone long before anybody scrolls
+        this far down, which is the same as not having one.               */
+    function startIntro() {
+        current = INTRO_FROM;
+        target = INTRO_TO;
+        introUntil = window.performance.now() + INTRO_MS;
+        paint();
+        run();
+    }
+
+    if ('IntersectionObserver' in window) {
+        var watcher = new IntersectionObserver(function (entries) {
+            if (!entries[0].isIntersecting) return;
+            watcher.disconnect();        /* once, not every time it scrolls past */
+            startIntro();
+        }, { threshold: 0.4 });
+        watcher.observe(band);
+    } else {
+        startIntro();
+    }
+
+    if (!canHover) return;
+
+    band.addEventListener('mousemove', function (ev) {
+        /*  The cursor interrupts the intro rather than fighting it. Somebody
+            who has already reached for the mouse does not need to be shown
+            what the band does. */
+        introUntil = 0;
+
+        var box = band.getBoundingClientRect();
+        var pct = ((ev.clientX - box.left) / box.width) * 100;
+
+        target = Math.max(0, Math.min(100, pct));
+        run();
+    });
+}());
