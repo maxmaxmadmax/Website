@@ -23,6 +23,12 @@
     for a logo with something underneath it that should not be there - a
     date, a tagline, a strapline too small to read at this size.
 
+    IT DOES ARTIST PHOTOGRAPHS TOO
+    The same job with a different target and somewhere else to land:
+
+        powershell -File tools/fit-logo.ps1 -In "...\maxx.jpg" -Name dj-maxx `
+                   -OutDir images\talent -MaxWidth 600 -MaxHeight 800
+
     FORMAT IS CHOSEN, NOT ASSUMED
     A logo with transparency is saved as PNG, because JPG cannot hold it and
     would fill it with white - which looks right on today's white band and
@@ -39,7 +45,8 @@ param(
     [double]$KeepTop = 1.0,
     [switch]$Trim,
     [int]$MaxWidth = 400,
-    [int]$MaxHeight = 120
+    [int]$MaxHeight = 120,
+    [string]$OutDir = 'images\partners'
 )
 
 Add-Type -AssemblyName System.Drawing
@@ -47,7 +54,7 @@ Add-Type -AssemblyName System.Drawing
 if (-not (Test-Path $In)) { Write-Error "No such file: $In"; exit 1 }
 
 $root = Split-Path -Parent $PSScriptRoot
-$outDir = Join-Path $root 'images\partners'
+$outDir = Join-Path $root $OutDir
 if (-not (Test-Path $outDir)) { New-Item -ItemType Directory -Path $outDir | Out-Null }
 
 $src = [System.Drawing.Image]::FromFile($In)

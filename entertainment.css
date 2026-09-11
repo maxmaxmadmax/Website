@@ -14,6 +14,7 @@
      SECTION HEAD
      TALENT CARDS
      MOBILE
+     FOOTER TWEAK
 
    Sections run alphabetically. MOBILE is pinned last because it overrides
    everything above it.
@@ -802,4 +803,21 @@
 
 @media (prefers-reduced-motion:reduce){
     #sg-ent-page .ent-card:hover{ transform:none; }
+}
+
+
+/* ==========================================================================
+   FOOTER TWEAK
+
+   The shared footer carries the "Proudly Supported By" strip on every
+   page. It is hidden here: those are event sponsors, and this page is
+   already a wall of other people's logos and faces - a second band of
+   unrelated marks underneath it says nothing and dilutes the roster.
+
+   Pinned after MOBILE so it still wins on a small screen. The strip itself
+   is untouched in components/footer.html, so the pages that want it keep
+   it.
+   ========================================================================== */
+#sg-ent-page ~ #footer .footer-sponsors{
+    display:none;
 }
