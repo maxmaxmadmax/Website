@@ -751,16 +751,12 @@
 /*  The smaller lines carry their own shadow rather than leaning on the
     scrim. That is what lets the wash stay light: the text holds up on its
     own over a bright patch of photo, instead of the whole frame being
-    darkened to protect it.                                               */
-#sg-services-page .sgs-desc{
-    font-size:clamp(1rem, 2.1vw, 1.25rem);
-    line-height:1.6;
-    color:#eaeaea;
-    max-width:46ch;
-    margin-bottom:18px;
-    text-shadow:0 2px 14px rgba(0,0,0,.85);
-}
+    darkened to protect it.
 
+    The sentence of description that used to sit above this line is gone -
+    a heading, a sentence, a list and a button was four things competing on
+    one photograph, and the list says what the sentence said in a quarter
+    of the space.                                                         */
 #sg-services-page .sgs-line{
     font-family:var(--sg-font-accent);
     font-size:clamp(.72rem, 1.6vw, .86rem);
@@ -1148,10 +1144,6 @@
         font-size:clamp(1.9rem, 8.4vw, 3.2rem);
         letter-spacing:-1px;
         margin-bottom:16px;
-    }
-
-    #sg-services-page .sgs-desc{
-        font-size:1rem;
     }
 
     /* full width, easy to hit with a thumb */
