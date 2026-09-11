@@ -136,7 +136,7 @@
 
    Pages the row of annual events four at a time. All it does is count the
    cards, work out how many pages that makes, and set a number on the track
-   - the CSS turns that number into the movement. There is no measuring, so
+   - the CSS turns that number into the movement. Nothing is measured, so
    nothing here depends on the row having been laid out or painted yet.
 
    HOW MANY FIT is not a number in here: it is --ev-an-per in events.css,
@@ -144,9 +144,14 @@
    arrows agree with what is actually on screen at any width, and adding a
    breakpoint to the stylesheet needs no change to this file.
 
-   WITHOUT JAVASCRIPT the row shows its first four cards and the arrows do
-   nothing. That is a worse version of this section rather than a broken
-   one, which is the right way round for something this far down the page.
+   The dashes are built here rather than sat in the markup because how many
+   there are depends on how many fit, which depends on the window. Eleven
+   cards is three pages on a desktop and eleven on a phone.
+
+   WITHOUT JAVASCRIPT the row shows its first four cards, the arrows do
+   nothing and there are no dashes. That is a smaller version of this
+   section rather than a broken one, which is the right way round for
+   something this far down the page.
    -------------------------------------------------------------------------- */
 (function () {
     'use strict';
@@ -155,10 +160,11 @@
     if (!section) return;
 
     var track = document.getElementById('ev-annual-track');
+    var dots = document.getElementById('ev-annual-dots');
     var count = document.getElementById('ev-annual-count');
     if (!track) return;
 
-    var cards = track.querySelectorAll('.ev-annual-card').length;
+    var cards = track.querySelectorAll('.ev-an-card').length;
     if (!cards) return;
 
     var arrows = Array.prototype.slice.call(
@@ -166,6 +172,7 @@
     );
 
     var page = 0;
+    var built = 0;          /* how many dashes are in the DOM right now */
 
     function perView() {
         var raw = window.getComputedStyle(section)
@@ -178,8 +185,29 @@
         return Math.max(1, Math.ceil(cards / perView()));
     }
 
+    /*  Rebuilt only when the number has actually changed - a resize that
+        does not cross a breakpoint should not throw the dashes away and
+        make new ones.                                                    */
+    function buildDots(total) {
+        if (!dots || built === total) return;
+        built = total;
+        dots.innerHTML = '';
+
+        if (total < 2) return;   /* one page needs no page indicator */
+
+        for (var i = 0; i < total; i++) {
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.setAttribute('role', 'tab');
+            b.setAttribute('data-ev-page', i);
+            b.setAttribute('aria-label', 'Page ' + (i + 1) + ' of ' + total);
+            dots.appendChild(b);
+        }
+    }
+
     function paint() {
-        var last = pages() - 1;
+        var total = pages();
+        var last = total - 1;
 
         /*  A window that has just got wider can leave us past the end, on a
             page that no longer exists. Pull back rather than showing a row
@@ -194,16 +222,22 @@
             btn.disabled = dir < 0 ? page === 0 : page === last;
         });
 
+        buildDots(total);
+
+        if (dots) {
+            Array.prototype.forEach.call(dots.children, function (b, i) {
+                b.setAttribute('aria-selected', i === page ? 'true' : 'false');
+            });
+        }
+
         if (count) {
             var per = perView();
             var first = page * per + 1;
             var lastCard = Math.min(cards, first + per - 1);
 
-            count.textContent = last === 0
-                ? ''
-                : (first === lastCard
-                    ? first + ' of ' + cards
-                    : first + '\u2013' + lastCard + ' of ' + cards);
+            count.textContent = first === lastCard
+                ? first + ' of ' + cards
+                : first + '–' + lastCard + ' of ' + cards;
         }
     }
 
@@ -213,6 +247,18 @@
             paint();
         });
     });
+
+    /*  One listener on the strip rather than one per dash, so the dashes
+        can be thrown away and rebuilt without taking their handlers with
+        them.                                                             */
+    if (dots) {
+        dots.addEventListener('click', function (ev) {
+            var b = ev.target.closest('[data-ev-page]');
+            if (!b) return;
+            page = parseInt(b.getAttribute('data-ev-page'), 10) || 0;
+            paint();
+        });
+    }
 
     /*  Resizing changes how many fit, which changes how many pages there
         are. Cheap enough to just redo the sums.                          */
