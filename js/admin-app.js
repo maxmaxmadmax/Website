@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=28';
+} from './firebase-config.js?v=29';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -1863,6 +1863,35 @@ VIEWS.settings = {
 
           <p class="ad-action-msg" id="ad-action-msg" hidden></p>
         </div>
+      </section>
+
+      <section class="ad-card ad-panel" style="margin-top:16px">
+        <header class="ad-panel-head">
+          <h2>Gig guide</h2>
+        </header>
+
+        <div class="ad-panel-intro">
+          <p>
+            The gig guide finds what is on around Bowen and the Whitsundays
+            by itself, at four every morning, by reading the event data other
+            listing sites publish for machines. This button does that run now
+            rather than waiting for the morning - worth pressing after adding
+            a source, or when something has just been announced.
+          </p>
+          <p class="ad-cell-muted">
+            It reads only the pages that have changed since the last run, so
+            it usually takes a few seconds. The very first run has nothing to
+            compare against and takes about five minutes.
+          </p>
+
+          <div class="ad-actions-row" style="margin-top:12px">
+            <button type="button" class="ad-btn ad-btn-primary" id="ad-sync-gigs">
+              Refresh the gig guide
+            </button>
+          </div>
+
+          <p class="ad-action-msg" id="ad-gig-msg" hidden></p>
+        </div>
       </section>`;
   },
 
@@ -1888,6 +1917,36 @@ VIEWS.settings = {
         input.disabled = false;
       });
     });
+
+    /*  The gig guide run. Slow enough that the button has to say so - a
+        cold run is five minutes, and a button that looks stuck for five
+        minutes gets pressed again.                                      */
+    const sync = document.getElementById('ad-sync-gigs');
+    if (sync) {
+      sync.addEventListener('click', async () => {
+        const bar = document.getElementById('ad-gig-msg');
+        sync.disabled = true;
+        bar.hidden = false;
+        bar.className = 'ad-action-msg';
+        bar.textContent = 'Looking… this can take a few minutes the first time.';
+
+        try {
+          const d = await call('syncGigGuideNow', {});
+          bar.className = 'ad-action-msg is-ok';
+          bar.textContent =
+            `${d.events} event${d.events === 1 ? '' : 's'} listed` +
+            ` (${d.pagesRead} page${d.pagesRead === 1 ? '' : 's'} read,` +
+            ` ${d.fromCache} unchanged` +
+            `${d.removed ? `, ${d.removed} removed` : ''}).` +
+            `${d.errors && d.errors.length ? ` ${d.errors.length} source problem${d.errors.length === 1 ? '' : 's'}: ${d.errors[0]}` : ''}`;
+        } catch (err) {
+          bar.className = 'ad-action-msg is-bad';
+          bar.textContent = friendly(err);
+        }
+
+        sync.disabled = false;
+      });
+    }
 
     const seed = document.getElementById('ad-seed');
     if (!seed) return;

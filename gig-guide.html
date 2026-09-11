@@ -22,10 +22,10 @@
   <meta name="robots" content="noindex, nofollow">
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="style.css?v=28">
-  <link rel="stylesheet" href="gig-guide.css?v=28">
-  <script src="js/main.js?v=28" defer></script>
-  <script src="js/gig-guide.js?v=28" defer></script>
+  <link rel="stylesheet" href="style.css?v=29">
+  <link rel="stylesheet" href="gig-guide.css?v=29">
+  <script src="js/main.js?v=29" defer></script>
+  <script src="js/gig-guide.js?v=29" defer></script>
 </head>
 
 <body>
@@ -174,6 +174,11 @@
       <div class="gg-grid" id="gg-weekend-grid"></div>
 
       <p class="gg-empty" id="gg-weekend-empty" hidden></p>
+
+      <!--  Filled in by the script once it knows when the listings were
+            last checked. Hidden until then rather than claiming a
+            freshness it cannot prove.                                  -->
+      <p class="gg-updated" id="gg-updated" hidden></p>
 
     </div>
   </section>

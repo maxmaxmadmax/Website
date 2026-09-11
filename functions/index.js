@@ -1990,3 +1990,55 @@ exports.adminSaveEvent = onCall(async (request) => {
   await ref.update(update);
   return { ok: true, eventId: id, created: false };
 });
+
+/* -------------------------------------------------------------------------
+   THE GIG GUIDE
+
+   Goes and finds what is on around Bowen and the Whitsundays once a day and
+   writes it into Firestore, which is where /gig-guide reads it from. All of
+   the work is in lib/gig-sources.js (where the events come from, and the
+   rules it follows) and lib/gig-store.js (making the database match).
+
+   FOUR IN THE MORNING, Queensland time. Nothing else runs then, the sites
+   being read are idle, and it means the guide is right before anybody is
+   awake to look at it.
+
+   NINE MINUTES, because the very first run has no cache and reads every
+   event page the sources list - about eight hundred of them, five minutes
+   measured. Every run after that reads only what changed, which took seven
+   seconds. The timeout is there for the cold start, not the daily cost.
+   ------------------------------------------------------------------------- */
+const { syncGigs } = require('./lib/gig-store');
+
+exports.syncGigGuide = onSchedule(
+  {
+    schedule: '0 4 * * *',
+    timeZone: 'Australia/Brisbane',
+    timeoutSeconds: 540,
+    memory: '512MiB',
+  },
+  async () => {
+    await syncGigs(db);
+  },
+);
+
+/*  The same thing on demand, for an admin who has just added a source and
+    does not want to wait until four in the morning to find out whether it
+    works. Admin only: it is a few hundred outbound requests, not something
+    a passer by should be able to set off.                                */
+exports.syncGigGuideNow = onCall(
+  { timeoutSeconds: 540, memory: '512MiB' },
+  async (request) => {
+    if (!request.auth || !request.auth.token || request.auth.token.admin !== true) {
+      throw new HttpsError('permission-denied', 'Admins only.');
+    }
+
+    const status = await syncGigs(db);
+
+    /*  serverTimestamp() comes back as a sentinel rather than a time, so
+        it is dropped instead of being sent to the browser as an object
+        that looks like a date and is not.                              */
+    delete status.ranAt;
+    return status;
+  },
+);

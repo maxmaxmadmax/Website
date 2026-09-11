@@ -81,6 +81,22 @@ var GG_LISTINGS = [
 /* ==========================================================================
    Everything below builds the page. You should not have to touch it to add
    an event.
+
+   WHERE THE REST OF THE EVENTS COME FROM
+
+   The list above is the hand written one - our own residency and our own
+   events. Everything else arrives from the database, put there once a day
+   by the syncGigGuide function, which reads the schema.org Event markup
+   that other event sites publish for machines. See
+   functions/lib/gig-sources.js for which sites, and the rules it follows.
+
+   The two are merged here rather than in the database on purpose: ours are
+   in the file where anybody can edit them without a login, and theirs are
+   never mixed in with ours, so a bad run can never eat our own listings.
+
+   If the database is unreachable the page still works - it shows the hand
+   written list and says so. A gig guide that renders nothing because a
+   network call failed is worse than a short one.
    ========================================================================== */
 (function () {
     'use strict';
@@ -191,11 +207,82 @@ var GG_LISTINGS = [
             tags: ev.tags || [],
             img: ev.img || '',
             big: !!ev.big,
-            dateText: ev.dateText || ''
+            dateText: ev.dateText || '',
+            url: ev.url || '',
+            source: ev.source || ''
         };
     }
 
     var events = expand();
+
+    /* ----------------------------------------------------------------------
+       THE FOUND EVENTS
+
+       Read straight from Firestore over its REST interface rather than by
+       loading the Firebase library. This page only ever reads one small
+       public collection, and the library is a hundred kilobytes to do that.
+       The key below is the same public web key that is already in
+       js/firebase-config.js - a Firebase web key is an identifier, not a
+       password, and what protects the data is firestore.rules, which allow
+       the world to read gigs and nobody to write them.
+       ---------------------------------------------------------------------- */
+    var PROJECT = 'soundzgood-8c86f';
+    var WEB_KEY = 'AIzaSyCVWdD7fE24MuN-v5XQLObJbSHYRUbPlPY';
+    var REST = 'https://firestore.googleapis.com/v1/projects/' + PROJECT +
+               '/databases/(default)/documents/';
+
+    /*  Firestore hands back every value wrapped in its type -
+        {stringValue:'Bowen'} - which is no use to the rest of this file. */
+    function plain(fields) {
+        var out = {};
+        Object.keys(fields || {}).forEach(function (k) {
+            var v = fields[k];
+            out[k] = v.stringValue !== undefined ? v.stringValue
+                   : v.integerValue !== undefined ? parseInt(v.integerValue, 10)
+                   : v.timestampValue !== undefined ? v.timestampValue
+                   : v.booleanValue !== undefined ? v.booleanValue
+                   : '';
+        });
+        return out;
+    }
+
+    function loadFound() {
+        return fetch(REST + 'gigs?pageSize=300&key=' + WEB_KEY)
+            .then(function (r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(function (body) {
+                return (body.documents || []).map(function (doc) {
+                    var d = plain(doc.fields);
+
+                    return occurrence({
+                        name: d.name,
+                        time: d.time,
+                        venue: d.venue + (d.suburb && d.venue.indexOf(d.suburb) < 0
+                                            ? ', ' + d.suburb : ''),
+                        area: d.area,
+                        /*  No categories from a source that does not
+                            publish any. They match the All pill and
+                            nothing else, which is honest - better than
+                            filing a trivia night under Live Music.     */
+                        cats: [],
+                        tags: [],
+                        url: d.url,
+                        source: d.source
+                    }, d.start ? parseDay(d.start) : null);
+                });
+            });
+    }
+
+    /*  Says where the listings came from and when, under the weekend row.
+        A guide that does not say when it last looked is asking to be
+        trusted blindly.                                                  */
+    function loadStatus() {
+        return fetch(REST + 'gigGuide/status?key=' + WEB_KEY)
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (body) { return body ? plain(body.fields) : null; });
+    }
 
     /* ----------------------------------------------------------------------
        FILTERING
@@ -271,6 +358,20 @@ var GG_LISTINGS = [
                           return '<li>' + esc(t) + '</li>';
                       }).join('') +
                       '</ul>'
+                    : '') +
+
+                /*  Everything found elsewhere carries a way back to where
+                    it was found. The details on the card are the four
+                    facts; anything more - the price, the lineup, whether
+                    it is still on - belongs to whoever is running it, and
+                    this is how somebody gets to them.
+                    rel=noopener because it opens in a new tab; nofollow
+                    because these are listings, not endorsements.       */
+                (ev.url
+                    ? '<a class="gg-via" href="' + esc(ev.url) + '"' +
+                      ' target="_blank" rel="noopener nofollow">' +
+                      (ev.source ? 'Details via ' + esc(ev.source) : 'Event details') +
+                      '</a>'
                     : '') +
               '</div>' +
             '</article>';
@@ -460,5 +561,41 @@ var GG_LISTINGS = [
         if (playing && playing.catch) playing.catch(function () {});
     }
 
+    /*  The hand written list is drawn first so the page is never empty
+        while the network is thinking about it, then redrawn once the
+        found events arrive. If that call fails the page keeps what it
+        already has and says where it stands.                          */
     draw();
+
+    loadFound().then(function (found) {
+        if (!found.length) return;
+
+        events = expand().concat(found).sort(function (a, b) {
+            if (!a.day && !b.day) return 0;
+            if (!a.day) return 1;
+            if (!b.day) return -1;
+            return a.day - b.day;
+        });
+
+        draw();
+        return loadStatus();
+    }).then(function (status) {
+        if (!status || !status.ranAt) return;
+
+        var when = new Date(status.ranAt);
+        if (isNaN(when)) return;
+
+        var note = document.getElementById('gg-updated');
+        if (!note) return;
+
+        note.textContent = 'Listings checked ' +
+            when.toLocaleDateString('en-AU', {
+                day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit'
+            }) + '. Always check with the organiser before you travel.';
+        note.hidden = false;
+    }).catch(function (err) {
+        /*  Not a silent failure and not a broken page: the hand written
+            listings are already on screen.                             */
+        if (window.console) console.warn('gig guide: found events unavailable', err);
+    });
 }());

@@ -688,3 +688,29 @@
 
     #sg-gig-guide .gg-card:hover{ transform:none; }
 }
+
+/*  The link back to wherever an event was found, and the line saying when
+    the guide last went looking. Both are quiet - they are the workings,
+    not the listing.                                                      */
+#sg-gig-guide .gg-via{
+    margin-top:10px;
+    color:var(--sg-dim);
+    font-size:.7rem;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    text-decoration:none;
+    border-bottom:1px solid #333;
+    transition:color .2s ease, border-color .2s ease;
+}
+
+#sg-gig-guide .gg-via:hover{
+    color:var(--sg-orange);
+    border-color:var(--sg-orange);
+}
+
+#sg-gig-guide .gg-updated{
+    margin-top:20px;
+    color:var(--sg-dim);
+    font-size:.76rem;
+    letter-spacing:.04em;
+}

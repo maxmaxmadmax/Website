@@ -121,6 +121,28 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------
+    // The gig guide
+    //
+    // Public read: it is a listing of what is on, and the whole point is
+    // that anybody can see it. Never writable from a browser - every one
+    // of these is written by the syncGigGuide function using the Admin
+    // SDK, which bypasses these rules. A gig guide anybody could post
+    // into would last about a week.
+    // ---------------------------------------------------------------
+    match /gigs/{gigId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /gigGuide/{docId} {
+      // status says when the guide last ran, so the page can show how
+      // fresh it is. cache is 200KB of working state that no browser has
+      // any use for, so it stays closed.
+      allow read: if docId == 'status';
+      allow write: if false;
+    }
+
+    // ---------------------------------------------------------------
     // Anything not named above is closed.
     // ---------------------------------------------------------------
     match /{document=**} {
