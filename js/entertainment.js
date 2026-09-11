@@ -65,12 +65,17 @@
         { slug:'dj-maxx',            name:'DJ Maxx',            act:'dj',   genres:[], events:[],
           photo:'images/talent/dj-maxx.jpg' },
         { slug:'dj-tao',             name:'DJ Tao',             act:'dj',   genres:[], events:[] },
-        { slug:'dj-karma',           name:'DJ Karma',           act:'dj',   genres:[], events:[] },
-        { slug:'nina-sinclare',      name:'Nina Sinclare',      act:'dj',   genres:[], events:[] },
-        { slug:'dj-charley-templar', name:'DJ Charley Templar', act:'dj',   genres:[], events:[] },
+        { slug:'dj-karma',           name:'DJ Karma',           act:'dj',   genres:[], events:[],
+          photo:'images/talent/dj-karma.jpg' },
+        { slug:'nina-sinclair',      name:'Nina Sinclair',      act:'dj',   genres:[], events:[],
+          photo:'images/talent/nina-sinclair.jpg' },
+        { slug:'dj-charley-templar', name:'DJ Charley Templar', act:'dj',   genres:[], events:[],
+          photo:'images/talent/dj-charley-templar.jpg' },
         { slug:'kriss-kross',        name:'Kriss Kross',        act:'dj',   genres:[], events:[] },
-        { slug:'alex-emrik',         name:'Alex Emrik',         act:'dj',   genres:[], events:[] },
-        { slug:'dj-powerboi',        name:'DJ PowerBoi',        act:'dj',   genres:[], events:[] },
+        { slug:'alex-emrik',         name:'Alex Emrik',         act:'dj',   genres:[], events:[],
+          photo:'images/talent/alex-emrik.jpg' },
+        { slug:'dj-powerboi',        name:'DJ PowerBoi',        act:'dj',   genres:[], events:[],
+          photo:'images/talent/dj-powerboi.jpg' },
 
         /* ---- Solo artists ---- */
         { slug:'sam-mckann',         name:'Sam McKann',         act:'solo', genres:[], events:[] },
@@ -167,14 +172,21 @@
             : '';
 
         return '' +
-        '<article class="ent-card" data-act="' + esc(t.act) + '">' +
+        '<article class="ent-card" data-act="' + esc(t.act) + '"' + media + '>' +
+
+          /*  The picture fills the card and this sits over all of it, so
+              clicking anywhere on the photograph opens the artist panel.
+              It holds the glyph shown when there is no photograph.      */
           '<button type="button" class="ent-card-media" data-slug="' + esc(t.slug) + '"' +
-            media + ' aria-label="More about ' + esc(t.name) + '">' +
+            ' aria-label="More about ' + esc(t.name) + '">' +
             '<svg class="ent-card-glyph" viewBox="0 0 24 24" aria-hidden="true">' + glyph + '</svg>' +
-            '<span class="ent-badge">' + esc(actLabel) + '</span>' +
           '</button>' +
 
+          /*  The words sit on the photograph rather than in a solid strip
+              underneath it, over a gradient that fades up out of the
+              picture.                                                   */
           '<div class="ent-card-body">' +
+            '<span class="ent-badge">' + esc(actLabel) + '</span>' +
             '<h3>' + esc(t.name) + '</h3>' +
 
             /*  Both lines are left out entirely when there is nothing to put

@@ -629,10 +629,32 @@
     gap:18px;
 }
 
+/*  THE PHOTOGRAPH IS THE CARD
+
+    It used to sit in a strip across the top with the name and the button in
+    a solid panel underneath. Now it fills the whole thing and the words sit
+    over it, which is what makes the card about the artist rather than about
+    the box the artist is in.
+
+    THE CROP
+    These are portraits and this is a tall box, but still a crop - centred,
+    DJ Maxx's card showed his chest and the decks with his face cut off
+    above the frame. 18% from the top is where a head is in a portrait. Set
+    once here, because it is true of every photograph of a person standing
+    up.                                                                   */
 #sg-ent-page .ent-card{
+    position:relative;
     display:flex;
     flex-direction:column;
-    background:var(--ent-card);
+    justify-content:flex-end;
+    min-height:310px;
+
+    background:
+        var(--ent-img, none),
+        linear-gradient(140deg, #2b1a3d, #0d0d0d 72%);
+    background-size:cover;
+    background-position:center 18%;
+
     border:1px solid var(--ent-line);
     border-radius:14px;
     overflow:hidden;
@@ -644,37 +666,28 @@
     transform:translateY(-3px);
 }
 
-/*  THE CROP
+/*  Covers the whole card, under the words, so clicking anywhere on the
+    photograph opens the artist panel. It carries no picture of its own any
+    more - it is a hit area, and the holder of the stand-in glyph.
 
-    Artist photographs are portraits, and this box is landscape - so most of
-    the picture is cropped away. Centred, it kept the middle: DJ Maxx's card
-    showed his chest and the decks, with his face cut off above the frame.
-
-    18% from the top instead, which is where a head is in a portrait. Set
-    once here rather than per artist, because it is true of every photograph
-    of a person standing up.                                              */
+    The padding pushes the glyph up out of the area the words cover, so it
+    is centred in the part of the card you can actually see.             */
 #sg-ent-page .ent-card-media{
-    position:relative;
-    height:170px;
+    position:absolute;
+    inset:0;
+    z-index:1;
+
     display:grid;
     place-items:center;
+    padding-bottom:96px;
 
-    /*  It is a <button> now - the picture opens the artist panel, since the
-        action underneath it goes off to the contact form instead. Stripped
-        back to looking like the picture it was.                         */
     width:100%;
-    padding:0;
+    background:none;
     border:0;
     cursor:pointer;
     font:inherit;
     color:inherit;
     text-align:inherit;
-
-    background:
-        var(--ent-img, none),
-        linear-gradient(140deg, #2b1a3d, #0d0d0d 72%);
-    background-size:cover;
-    background-position:center 18%;
 }
 
 /*  The glyph is the stand-in for a photo that is not there yet. Once one
@@ -697,10 +710,8 @@
     blurs what shows through where the browser supports it; where it does
     not, the wash on its own is enough.                                   */
 #sg-ent-page .ent-badge{
-    position:absolute;
-    left:10px;
-    bottom:10px;
-
+    align-self:flex-start;
+    margin-bottom:10px;
     padding:5px 10px;
     border-radius:6px;
     background:rgba(10,10,10,.45);
@@ -716,11 +727,26 @@
     text-transform:uppercase;
 }
 
+/*  Over the photograph rather than under it. The gradient fades up out of
+    the picture so the words have something solid behind them without the
+    card turning back into a panel with a lid on it.
+
+    Above the hit area in the stacking order, so the enquiry link is
+    clickable - the picture button covers the whole card underneath.     */
 #sg-ent-page .ent-card-body{
+    position:relative;
+    z-index:2;
+
     display:flex;
     flex-direction:column;
-    flex:1;
-    padding:16px;
+    padding:64px 16px 16px;
+
+    background:linear-gradient(
+        to top,
+        rgba(8,8,8,.95) 28%,
+        rgba(8,8,8,.78) 58%,
+        rgba(8,8,8,0) 100%
+    );
 }
 
 #sg-ent-page .ent-card-body h3{
@@ -836,7 +862,8 @@
         gap:12px;
     }
 
-    #sg-ent-page .ent-card-media{ height:130px; }
+    #sg-ent-page .ent-card{ min-height:250px; }
+    #sg-ent-page .ent-card-media{ padding-bottom:80px; }
 
     #sg-ent-page .ent-select{ flex:1 1 140px; }
 

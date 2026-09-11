@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=10';
+} from './firebase-config.js?v=11';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
