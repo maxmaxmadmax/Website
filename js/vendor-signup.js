@@ -20,9 +20,9 @@ import {
   functionsRegion,
   eventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=15';
+} from './firebase-config.js?v=16';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=15';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=16';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -900,7 +900,7 @@ function renderStepper(steps) {
 
     <div class="vs-progress-bar" role="progressbar" aria-label="Signup progress"
          aria-valuemin="1" aria-valuemax="${total}" aria-valuenow="${current + 1}">
-      ${steps.map((s, i) => `<span class="${i <= current ? 'is-on' : ''}"></span>`).join('')}
+      <span style="width:${(((current + 1) / total) * 100).toFixed(2)}%"></span>
     </div>
   `;
 

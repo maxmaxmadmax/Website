@@ -1078,8 +1078,14 @@
    left seven bare numbers telling nobody anything. A bar that fills reads
    the same at any width.
    -------------------------------------------------------------------------- */
+/*  margin:0 0, not 0 auto.
+
+    This is a flex item in a column, and auto side margins on one of those
+    override the default stretch and shrink it to its own content. The bar
+    was collapsing to 79px - seven four-pixel dots huddled under the step
+    count instead of a progress bar across the page.                     */
 .vs-progress{
-    margin:0 auto 26px;
+    margin:0 0 26px;
 }
 
 /*  The checkout holds itself to a 560px reading column, so the bar above it
@@ -1122,22 +1128,25 @@
     font-size:.82rem;
 }
 
-/*  One segment per step rather than a single striped bar, so how far
-    along you are is countable at a glance and not judged by eye.       */
+/*  The same bar the services slider uses: one hairline track with a
+    coloured marker sliding along it, rather than seven separate segments.
+
+    A row of segments counts the steps, which the "Step 3 of 7" line above
+    already does in words. The track says how far along you are, which the
+    words do not, and it is the treatment the rest of the site uses.     */
 .vs-progress-bar{
-    display:flex;
-    gap:6px;
+    height:2px;
+    background:rgba(255,255,255,.18);
+    border-radius:2px;
+    overflow:hidden;
 }
 
 .vs-progress-bar span{
-    flex:1 1 0;
-    height:4px;
-    border-radius:3px;
-    background:#2b2b2b;
-    transition:background .25s;
+    display:block;
+    height:100%;
+    background:var(--sg-gold);
+    transition:width .35s ease;
 }
-
-.vs-progress-bar span.is-on{ background:var(--sg-orange); }
 
 /* --------------------------------------------------------------------------
    THE MAP
