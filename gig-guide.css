@@ -684,3 +684,17 @@
     font-size:.76rem;
     letter-spacing:.04em;
 }
+
+/* ==========================================================================
+   FOOTER TWEAK
+
+   No sponsor logos under this page. They are the SoundzGood 2.0 sponsors,
+   and this page is a listing of other people's events - a white strip of
+   our sponsors under somebody else's gig reads as though they sponsored
+   it. The events page hides them for the same reason.
+
+   Last in the file so it still wins on a small screen.
+   ========================================================================== */
+body.gig-guide-page .footer-sponsors{
+    display:none;
+}
