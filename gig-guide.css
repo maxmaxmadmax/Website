@@ -581,7 +581,14 @@
     background:
         linear-gradient(90deg, rgba(0,0,0,.94) 0%, rgba(0,0,0,.8) 42%,
                                rgba(0,0,0,.45) 72%, rgba(0,0,0,.6) 100%),
-        url('images/services/trailer-stage.webp') center / cover no-repeat,
+        /*  75% down, not centred. The photograph is 1536x1024 and the
+            SoundzGood 2.0 banner sits about 64% of the way down it, so
+            centring the picture in a band this wide and shallow cuts the
+            banner off along the bottom edge. At 75% the band lands in the
+            middle of the strip: the visible slice works out at roughly
+            400-890 of the original's 1024, and the banner occupies
+            590-720 of that.                                             */
+        url('images/services/trailer-stage.webp') 50% 75% / cover no-repeat,
         linear-gradient(120deg, #2a1403 0%, #0a0a0a 64%);
 }
 
