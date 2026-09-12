@@ -561,12 +561,27 @@
 /* ==========================================================================
    CLOSING BAND
    ========================================================================== */
+/*  The trailer stage behind it - the same photograph the services page
+    uses for that slide, so it is already in the browser's cache for
+    anybody who has been there, and there is no second copy of it in the
+    repository.
+
+    Dark on the left where the words are and open on the right where the
+    stage is, rather than one flat wash over the whole thing: the point of
+    putting a photograph here is that you can see it.
+
+    The gradients are listed before the image on purpose. A background
+    stacks first-on-top, so the image has to come last or it covers the
+    scrim and the type goes unreadable over it - which is exactly how the
+    heroes on this site broke, twice.                                    */
 #sg-gig-guide .gg-cta{
     position:relative;
     padding:clamp(56px, 8vw, 96px) 20px;
     border-top:1px solid var(--sg-border);
     background:
-        linear-gradient(90deg, rgba(0,0,0,.92) 0%, rgba(0,0,0,.55) 70%),
+        linear-gradient(90deg, rgba(0,0,0,.94) 0%, rgba(0,0,0,.8) 42%,
+                               rgba(0,0,0,.45) 72%, rgba(0,0,0,.6) 100%),
+        url('images/services/trailer-stage.webp') center / cover no-repeat,
         linear-gradient(120deg, #2a1403 0%, #0a0a0a 64%);
 }
 
