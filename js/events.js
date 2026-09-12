@@ -129,3 +129,57 @@
         video.pause();
     }
 }());
+
+
+/* --------------------------------------------------------------------------
+   WHAT'S ON THIS WEEKEND
+
+   The strip under the featured event. It asks js/weekend.js for the
+   listings and for which days count as this weekend, so it can never
+   disagree with /gig-guide about either.
+
+   THE SECTION STARTS HIDDEN and is only shown once there is something to
+   put in it. That way round on purpose: this is a bonus on the events
+   page, not the point of it, and a heading with an apology under it is
+   worse than no heading. A failed network call leaves the page exactly as
+   it was.
+   -------------------------------------------------------------------------- */
+(function () {
+    'use strict';
+
+    var section = document.getElementById('ev-weekend');
+    var grid = document.getElementById('ev-weekend-grid');
+    var when = document.getElementById('ev-weekend-when');
+
+    if (!section || !grid || !window.SGWeekend) return;
+
+    var W = window.SGWeekend;
+    var range = W.weekendRange();
+
+    /*  "Friday 12 - Sunday 14 September", or with both months named when
+        the weekend straddles the end of one.                            */
+    function saying() {
+        var same = range.start.getMonth() === range.end.getMonth();
+        var day = { weekday: 'long', day: 'numeric' };
+        var full = { weekday: 'long', day: 'numeric', month: 'long' };
+
+        return range.start.toLocaleDateString('en-AU', same ? day : full) +
+               ' \u2013 ' +
+               range.end.toLocaleDateString('en-AU', full);
+    }
+
+    W.loadGigs().then(function (rows) {
+        var onNow = rows.filter(function (ev) {
+            return W.isThisWeekend(ev.day, range);
+        });
+
+        if (!onNow.length) return;
+
+        grid.innerHTML = onNow.map(W.card).join('');
+        if (when) when.textContent = saying();
+        section.hidden = false;
+    }).catch(function (err) {
+        /*  Left hidden. Nothing on the page depends on it.             */
+        if (window.console) console.warn('weekend strip unavailable', err);
+    });
+}());

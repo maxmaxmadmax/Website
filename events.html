@@ -20,10 +20,14 @@
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="style.css?v=39">
-  <link rel="stylesheet" href="events.css?v=39">
-  <script src="js/main.js?v=39" defer></script>
-  <script src="js/events.js?v=39" defer></script>
+  <link rel="stylesheet" href="style.css?v=40">
+  <!--  The event card is shared with /gig-guide, so its styles live in
+        their own file rather than in either page's.                  -->
+  <link rel="stylesheet" href="gig-card.css?v=40">
+  <link rel="stylesheet" href="events.css?v=40">
+  <script src="js/main.js?v=40" defer></script>
+  <script src="js/weekend.js?v=40" defer></script>
+  <script src="js/events.js?v=40" defer></script>
 </head>
 
 <!-- the class is what events.css hangs the footer tweak off -->
@@ -135,6 +139,42 @@
     </div>
 
   </div>
+
+</section>
+
+
+<!-- 2a. WHAT'S ON THIS WEEKEND ----------------------------------------------
+
+     The same listings as /gig-guide, narrowed to the weekend we are
+     standing in. Not a copy of that page: the cards, the reading of them
+     and the working out of which days count as the weekend are all in
+     js/weekend.js, which both pages use. Two copies of "which days are
+     the weekend" disagree within a month and then somebody drives to a
+     gig on the wrong day.
+
+     Nothing here is typed in. It is found overnight by the syncGigGuide
+     function and it changes on its own.
+
+     IF THERE IS NOTHING ON, THE WHOLE SECTION GOES. Not an empty row with
+     an apology under it - on the events page this is a bonus, and a bonus
+     that has nothing to say should not take up the screen. js/events.js
+     hides it.
+     ------------------------------------------------------------------- -->
+<section class="section ev-section ev-weekend" id="ev-weekend" hidden
+         aria-labelledby="ev-weekend-h">
+
+  <div class="ev-weekend-head">
+    <div>
+      <h2 id="ev-weekend-h">What&rsquo;s On This Weekend</h2>
+      <p class="section-intro" id="ev-weekend-when"></p>
+    </div>
+
+    <a class="btn btn-outline ev-weekend-more" href="/gig-guide">
+      Full Gig Guide
+    </a>
+  </div>
+
+  <div class="ev-weekend-grid" id="ev-weekend-grid"></div>
 
 </section>
 

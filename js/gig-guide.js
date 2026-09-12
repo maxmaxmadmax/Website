@@ -132,25 +132,9 @@ var GG_LISTINGS = [
 
     var today = midnight(new Date());
 
-    /*  The coming weekend, Friday through Sunday. On a Saturday that is
-        this weekend, not next - somebody reading it on Saturday morning
-        wants tonight, not six days away.                                */
-    function weekendRange() {
-        var dow = today.getDay();                 /* 0 Sun ... 6 Sat */
-        var start = new Date(today);
-
-        if (dow === 0) {
-            start.setDate(start.getDate() - 2);   /* Sunday: the weekend it is in */
-        } else if (dow === 6) {
-            start.setDate(start.getDate() - 1);   /* Saturday: likewise */
-        } else {
-            start.setDate(start.getDate() + (5 - dow));  /* the Friday ahead */
-        }
-
-        var end = new Date(start);
-        end.setDate(end.getDate() + 2);
-        return { start: start, end: end };
-    }
+    /*  Both of these come from js/weekend.js now, which /events uses as
+        well. One definition of which days are the weekend.              */
+    var weekendRange = window.SGWeekend.weekendRange;
 
     /* ----------------------------------------------------------------------
        THE LIST
@@ -218,76 +202,23 @@ var GG_LISTINGS = [
     /* ----------------------------------------------------------------------
        THE FOUND EVENTS
 
-       Read straight from Firestore over its REST interface rather than by
-       loading the Firebase library. This page only ever reads one small
-       public collection, and the library is a hundred kilobytes to do that.
-       The key below is the same public web key that is already in
-       js/firebase-config.js - a Firebase web key is an identifier, not a
-       password, and what protects the data is firestore.rules, which allow
-       the world to read gigs and nobody to write them.
+       Everything the syncGigGuide function found overnight, read from
+       Firestore by js/weekend.js - the same call the This Weekend strip on
+       /events makes, so the two pages can never show different listings.
        ---------------------------------------------------------------------- */
-    var PROJECT = 'soundzgood-8c86f';
-    var WEB_KEY = 'AIzaSyCVWdD7fE24MuN-v5XQLObJbSHYRUbPlPY';
-    var REST = 'https://firestore.googleapis.com/v1/projects/' + PROJECT +
-               '/databases/(default)/documents/';
-
-    /*  Firestore hands back every value wrapped in its type -
-        {stringValue:'Bowen'} - which is no use to the rest of this file. */
-    function plain(fields) {
-        var out = {};
-        Object.keys(fields || {}).forEach(function (k) {
-            var v = fields[k];
-            out[k] = v.stringValue !== undefined ? v.stringValue
-                   : v.integerValue !== undefined ? parseInt(v.integerValue, 10)
-                   : v.timestampValue !== undefined ? v.timestampValue
-                   : v.booleanValue !== undefined ? v.booleanValue
-                   : '';
-        });
-        return out;
-    }
-
     function loadFound() {
-        return fetch(REST + 'gigs?pageSize=300&key=' + WEB_KEY)
-            .then(function (r) {
-                if (!r.ok) throw new Error('HTTP ' + r.status);
-                return r.json();
-            })
-            .then(function (body) {
-                return (body.documents || []).map(function (doc) {
-                    var d = plain(doc.fields);
-
-                    return occurrence({
-                        name: d.name,
-                        time: d.time,
-                        venue: d.venue + (d.suburb && d.venue.indexOf(d.suburb) < 0
-                                            ? ', ' + d.suburb : ''),
-                        area: d.area,
-                        /*  No categories from a source that does not
-                            publish any. They match the All pill and
-                            nothing else, which is honest - better than
-                            filing a trivia night under Live Music.     */
-                        cats: [],
-                        tags: [],
-                        /*  Loaded from wherever the organiser keeps it
-                            rather than copied onto our server. A card
-                            whose picture will not load shows its dark
-                            tile, same as one that never had a picture. */
-                        img: d.image,
-                        url: d.url,
-                        source: d.source
-                    }, d.start ? parseDay(d.start) : null);
-                });
+        return window.SGWeekend.loadGigs().then(function (rows) {
+            return rows.map(function (r) {
+                /*  No categories from a source that does not publish any.
+                    They match the All pill and nothing else, which is
+                    honest - better than filing a trivia night under Live
+                    Music.                                               */
+                return occurrence(r, r.day);
             });
+        });
     }
 
-    /*  Says where the listings came from and when, under the weekend row.
-        A guide that does not say when it last looked is asking to be
-        trusted blindly.                                                  */
-    function loadStatus() {
-        return fetch(REST + 'gigGuide/status?key=' + WEB_KEY)
-            .then(function (r) { return r.ok ? r.json() : null; })
-            .then(function (body) { return body ? plain(body.fields) : null; });
-    }
+    var loadStatus = window.SGWeekend.loadStatus;
 
     /* ----------------------------------------------------------------------
        FILTERING
@@ -326,61 +257,9 @@ var GG_LISTINGS = [
     /* ----------------------------------------------------------------------
        DRAWING
        ---------------------------------------------------------------------- */
-    function chip(ev) {
-        if (!ev.day) {
-            return '<span class="gg-chip is-tba"><b>' +
-                   (ev.dateText || 'TBA') + '</b></span>';
-        }
-
-        return '<span class="gg-chip">' +
-               '<i>' + DAYS[ev.day.getDay()].toUpperCase() + '</i>' +
-               '<b>' + ev.day.getDate() + '</b>' +
-               '<i>' + MONTHS[ev.day.getMonth()].toUpperCase() + '</i>' +
-               '</span>';
-    }
-
-    function esc(s) {
-        return String(s)
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
-
-    function card(ev) {
-        var art = ev.img
-            ? ' style="--gg-art:url(\'' + ev.img + '\')"'
-            : '';
-
-        return '' +
-            '<article class="gg-card"' + art + '>' +
-              '<div class="gg-card-art" aria-hidden="true"></div>' +
-              chip(ev) +
-              '<div class="gg-card-body">' +
-                '<h3>' + esc(ev.name) + '</h3>' +
-                (ev.venue ? '<p class="gg-where">' + esc(ev.venue) + '</p>' : '') +
-                (ev.time ? '<p class="gg-when">' + esc(ev.time) + '</p>' : '') +
-                (ev.tags.length
-                    ? '<ul class="gg-tags">' +
-                      ev.tags.map(function (t) {
-                          return '<li>' + esc(t) + '</li>';
-                      }).join('') +
-                      '</ul>'
-                    : '') +
-
-                /*  Everything found elsewhere carries a way back to where
-                    it was found. The details on the card are the four
-                    facts; anything more - the price, the lineup, whether
-                    it is still on - belongs to whoever is running it, and
-                    this is how somebody gets to them.
-                    rel=noopener because it opens in a new tab; nofollow
-                    because these are listings, not endorsements.       */
-                (ev.url
-                    ? '<a class="gg-via" href="' + esc(ev.url) + '"' +
-                      ' target="_blank" rel="noopener nofollow">' +
-                      (ev.source ? 'Details via ' + esc(ev.source) : 'Event details') +
-                      '</a>'
-                    : '') +
-              '</div>' +
-            '</article>';
-    }
+    /*  Drawing a card is shared too - see js/weekend.js. Both pages
+        show the same card, so there is one of it.                      */
+    var card = window.SGWeekend.card;
 
     var weekendGrid = document.getElementById('gg-weekend-grid');
     var weekendEmpty = document.getElementById('gg-weekend-empty');
