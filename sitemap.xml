@@ -33,6 +33,16 @@
     <priority>0.8</priority>
   </url>
 
+  <!--  Changes every day on its own, which is what changefreq is for -
+        the listings are refreshed by the syncGigGuide function each
+        morning, so this really is daily rather than aspirationally so. -->
+  <url>
+    <loc>https://www.soundzgood.com.au/gig-guide</loc>
+    <lastmod>2026-09-12</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
   <url>
     <loc>https://www.soundzgood.com.au/events</loc>
     <lastmod>2026-09-11</lastmod>

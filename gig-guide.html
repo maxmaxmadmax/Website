@@ -4,28 +4,65 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>What&rsquo;s On Gig Guide | SoundzGood Whitsundays</title>
-  <meta name="description" content="Live music, events, markets and festivals across Bowen, Airlie Beach and the Whitsundays.">
+  <!--  WHAT THIS PAGE IS TRYING TO BE FOUND FOR
 
-  <!--  NOT PUBLISHED YET
+        "What's on in the Whitsundays". The title leads with that phrase
+        rather than with our name, because somebody searching it has not
+        heard of us - they want to know what is on this weekend. The name
+        goes at the end where it belongs.
 
-        This page is off the site: it is not in the menu, not in
-        sitemap.xml, and not linked from anywhere. The line below tells
-        search engines to leave it alone as well, so nobody finds it by
-        searching while it is still being filled in.
+        The same words are the h1 and the opening line further down. Not
+        stuffing: it is genuinely what the page is, and a page whose title
+        and heading disagree gets trusted less, not more.                -->
+  <title>What&rsquo;s On in the Whitsundays | Gig Guide &amp; Events Calendar</title>
+  <meta name="description" content="What&rsquo;s on in the Whitsundays this weekend - live music, markets, festivals and community events across Airlie Beach, Bowen, Proserpine and the Whitsunday Islands. Updated daily.">
 
-        TO PUBLISH IT
-          1. delete the robots line below
-          2. add it to sitemap.xml
-          3. add a link to it in components/navbar.html
-        Nothing else here changes.                                      -->
-  <meta name="robots" content="noindex, nofollow">
+  <!-- Facebook / Messenger sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="SoundzGood Whitsundays">
+  <meta property="og:title" content="What&rsquo;s On in the Whitsundays | Gig Guide">
+  <meta property="og:description" content="Live music, markets, festivals and community events across Airlie Beach, Bowen, Proserpine and the Whitsundays. Updated daily.">
+  <meta property="og:url" content="https://www.soundzgood.com.au/gig-guide">
+  <meta property="og:image" content="https://www.soundzgood.com.au/images/og-soundzgood.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="SoundzGood Whitsundays">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!--  Google reads this directly. It says what the page is, who keeps it
+        and which places it covers - the islands named one by one, because
+        somebody searching for Hamilton Island is not searching for a
+        region. Same reasoning as the block on the home page.            -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "What's On in the Whitsundays",
+    "description": "A guide to live music, markets, festivals and community events across the Whitsundays and North Queensland, updated daily.",
+    "url": "https://www.soundzgood.com.au/gig-guide",
+    "inLanguage": "en-AU",
+    "about": [
+      { "@type": "Place", "name": "The Whitsundays" },
+      { "@type": "Place", "name": "Airlie Beach" },
+      { "@type": "Place", "name": "Bowen" },
+      { "@type": "Place", "name": "Proserpine" },
+      { "@type": "Place", "name": "Cannonvale" },
+      { "@type": "Place", "name": "Collinsville" },
+      { "@type": "Place", "name": "Hamilton Island" }
+    ],
+    "publisher": {
+      "@type": "Organization",
+      "name": "SoundzGood Whitsundays",
+      "url": "https://www.soundzgood.com.au/"
+    }
+  }
+  </script>
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="style.css?v=35">
-  <link rel="stylesheet" href="gig-guide.css?v=35">
-  <script src="js/main.js?v=35" defer></script>
-  <script src="js/gig-guide.js?v=35" defer></script>
+  <link rel="stylesheet" href="style.css?v=36">
+  <link rel="stylesheet" href="gig-guide.css?v=36">
+  <script src="js/main.js?v=36" defer></script>
+  <script src="js/gig-guide.js?v=36" defer></script>
 </head>
 
 <!-- the class is what gig-guide.css hangs the footer tweak off -->
@@ -45,10 +82,10 @@
      everything on the page is built from it - the cards, the counts, what
      the filters match. Add an event there and it appears here.
 
-     There are three in it at the moment, which are the three we can stand
-     behind. A guide wants dozens, and they have to come from somewhere real
-     - the venues, the council, Tourism Whitsundays - rather than be made up
-     to fill the page out. That is the work left on this page.
+     That list is ours - our residency and our own events. Everything else
+     is found automatically each morning by the syncGigGuide function and
+     read from Firestore; see functions/lib/gig-sources.js for where from
+     and the rules it follows.
      ========================================================================== -->
 <main id="sg-gig-guide">
 
@@ -66,13 +103,17 @@
 
     <div class="gg-hero-inner">
       <div class="gg-hero-body">
-        <p class="gg-eyebrow">Bowen &amp; The Whitsundays</p>
+        <p class="gg-eyebrow">The Whitsundays Gig Guide</p>
 
-        <h1 class="gg-title">What&rsquo;s On<br><span>Gig Guide</span></h1>
+        <!--  The heading is the search somebody actually types. "Gig
+              Guide" moved up into the line above it, which loses nothing
+              - the page is obviously a gig guide once you can see it. -->
+        <h1 class="gg-title">What&rsquo;s On<br><span>In The Whitsundays</span></h1>
 
         <p class="gg-lead">
-          Live music, events, markets, festivals and more.<br>
-          Your guide to what&rsquo;s happening across North Queensland.
+          Live music, markets, festivals and community events across Airlie
+          Beach, Bowen, Proserpine and the Whitsunday Islands.<br>
+          Updated every morning.
         </p>
       </div>
 
@@ -219,58 +260,7 @@
   </section>
 
 
-  <!-- 5. THE TWO ASKS ----------------------------------------------------- -->
-  <section class="gg-panels" aria-label="Add your event or subscribe">
-    <div class="gg-panels-inner">
-
-      <article class="gg-panel">
-        <span class="gg-panel-icon" aria-hidden="true">&#128197;</span>
-        <h2>List Your Event</h2>
-        <p>
-          Got a gig, market, fundraiser or community event? Send it to the
-          gig guide &mdash; it&rsquo;s free.
-        </p>
-        <!--  Goes to the contact form with the subject already written, so
-              it arrives as a listing rather than an unlabelled enquiry. -->
-        <a class="btn btn-ticket"
-           href="/contact?note=I%20would%20like%20to%20list%20an%20event%20in%20the%20gig%20guide.">
-          Submit Your Event
-        </a>
-      </article>
-
-      <article class="gg-panel">
-        <span class="gg-panel-icon" aria-hidden="true">&#9993;</span>
-        <h2>Never Miss a Gig</h2>
-        <p>Get the weekend gig guide straight to your inbox.</p>
-
-        <!--  THIS IS NOT A MAILING LIST YET
-
-              There is nothing behind it - no list, no sending. Rather than
-              a box that swallows an address and does nothing, the form
-              carries what is typed to the contact page, where it arrives
-              as a real message we can answer by hand.
-
-              When there is a mailing list, replace this whole form with
-              that provider's embed code.                               -->
-        <form class="gg-subscribe" id="gg-subscribe">
-          <label class="gg-sr-only" for="gg-email">Your email address</label>
-          <input type="email" id="gg-email" name="email" required
-                 placeholder="Your email address">
-          <button type="submit" class="btn btn-ticket">Subscribe</button>
-        </form>
-      </article>
-
-      <article class="gg-panel is-art">
-        <p class="gg-panel-art-words">
-          Good<br>Events<br>Bring People<br><span>Together.</span>
-        </p>
-      </article>
-
-    </div>
-  </section>
-
-
-  <!-- 6. CLOSING BAND ------------------------------------------------------ -->
+  <!-- 5. CLOSING BAND ------------------------------------------------------ -->
   <section class="gg-cta">
     <div class="gg-cta-inner">
       <h2>Making<br><span>Events Happen</span></h2>
