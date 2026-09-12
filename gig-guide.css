@@ -579,8 +579,12 @@
     padding:clamp(56px, 8vw, 96px) 20px;
     border-top:1px solid var(--sg-border);
     background:
-        linear-gradient(90deg, rgba(0,0,0,.94) 0%, rgba(0,0,0,.8) 42%,
-                               rgba(0,0,0,.45) 72%, rgba(0,0,0,.6) 100%),
+        /*  Only as dark as the words need. Heavy behind the headline on
+            the left, gone by the middle so the stage is a photograph
+            rather than a shape, and a touch back at the right edge to
+            stop the balloons fizzing against the page.                 */
+        linear-gradient(90deg, rgba(0,0,0,.82) 0%, rgba(0,0,0,.58) 40%,
+                               rgba(0,0,0,.18) 70%, rgba(0,0,0,.3) 100%),
         /*  75% down, not centred. The photograph is 1536x1024 and the
             SoundzGood 2.0 banner sits about 64% of the way down it, so
             centring the picture in a band this wide and shallow cuts the
