@@ -17,11 +17,15 @@
       nothing here breaks.
 
    2. FACTS, NOT WRITING.
-      What comes back is the name, the date, the venue and the link. Not
-      their description, not their photographs. A date and a venue are
-      facts about the world; the paragraph somebody wrote about their gig
-      is theirs. This keeps the guide on the right side of that line, and
-      has the happy side effect of keeping it small and fast.
+      What comes back is the name, the date, the venue, the link and the
+      address of the event's picture. Not their description. A date and a
+      venue are facts about the world; the paragraph somebody wrote about
+      their gig is theirs.
+
+      The picture is a link to where it already lives, never a copy on our
+      server - the difference between pointing at somebody's poster and
+      taking a copy of it. It also means an organiser who changes their
+      artwork changes it here.
 
    3. EVERY EVENT KEEPS ITS SOURCE.
       Each one carries where it came from and a link back, and the guide
@@ -52,6 +56,7 @@
          venue:  'Barker Park',
          suburb: 'Bowen',
          url:    'https://...',          the event's own page
+         image:  'https://...',          '' if they publish none
          source: 'Events on the Horizon'
        }
    ========================================================================== */
@@ -69,6 +74,10 @@ const TIMEOUT_MS = 15000;
     anybody's server - a full run is a few dozen requests spread over
     about half a minute, once a day.                                     */
 const CONCURRENCY = 6;
+
+/*  Bump when the shape of what is taken off a page changes. See the note
+    where it is used.                                                    */
+const CACHE_VERSION = 2;
 
 
 /* --------------------------------------------------------------------------
@@ -207,8 +216,31 @@ function normalise(node, source, url) {
         venue: String(place.name || '').replace(/\s+/g, ' ').trim(),
         suburb: String(address.addressLocality || '').replace(/\s+/g, ' ').trim(),
         url: String(node.url || url || ''),
+        image: pictureFrom(node),
         source: source,
     };
+}
+
+/*  THE EVENT'S OWN PICTURE.
+
+    Kept as a link to where it already lives rather than copied onto our
+    server. That is the difference between pointing at somebody's poster
+    and taking a copy of it, and it is also why an organiser who changes
+    their artwork changes it here too.
+
+    schema.org allows three shapes for this - a string, a list of strings,
+    or an ImageObject - so all three are unwrapped. Anything that is not a
+    plain https link is dropped: a card with no picture looks fine, and a
+    broken one does not.                                                 */
+function pictureFrom(node) {
+    let raw = node.image;
+
+    if (Array.isArray(raw)) raw = raw[0];
+    if (raw && typeof raw === 'object') raw = raw.url || raw.contentUrl;
+    if (typeof raw !== 'string') return '';
+
+    raw = raw.trim();
+    return /^https:\/\//.test(raw) ? raw : '';
 }
 
 
@@ -279,7 +311,12 @@ async function eventsOnTheHorizon(area, report, cache, nextCache) {
     const stale = posts.filter((post) => {
         const had = cache[post.id];
 
-        if (had && had.m === post.modified) {
+        /*  CACHE_VERSION is bumped whenever what we take off a page
+            changes - the pictures were added after the first run, and
+            without this every cached event would have kept the shape it
+            was read in and no picture would ever have appeared. Bumping
+            it costs one slow run and then it is warm again.           */
+        if (had && had.m === post.modified && had.v === CACHE_VERSION) {
             nextCache[post.id] = had;
             if (had.e) report.cached++;
             return false;
@@ -301,7 +338,7 @@ async function eventsOnTheHorizon(area, report, cache, nextCache) {
         /*  A page with nothing usable on it is remembered as nothing
             usable, so it is not read again tomorrow for the same
             answer.                                                    */
-        nextCache[post.id] = { m: post.modified, e: event };
+        nextCache[post.id] = { m: post.modified, v: CACHE_VERSION, e: event };
 
         return event || { __skipped: true };
     });
@@ -310,7 +347,7 @@ async function eventsOnTheHorizon(area, report, cache, nextCache) {
         read. The cached half costs nothing.                            */
     posts.forEach((post) => {
         const had = cache[post.id];
-        if (had && had.m === post.modified && had.e) results.push(had.e);
+        if (had && had.m === post.modified && had.v === CACHE_VERSION && had.e) results.push(had.e);
     });
 
     results.forEach((row) => {

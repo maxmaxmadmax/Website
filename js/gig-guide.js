@@ -268,6 +268,11 @@ var GG_LISTINGS = [
                             filing a trivia night under Live Music.     */
                         cats: [],
                         tags: [],
+                        /*  Loaded from wherever the organiser keeps it
+                            rather than copied onto our server. A card
+                            whose picture will not load shows its dark
+                            tile, same as one that never had a picture. */
+                        img: d.image,
                         url: d.url,
                         source: d.source
                     }, d.start ? parseDay(d.start) : null);

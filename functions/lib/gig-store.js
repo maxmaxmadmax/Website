@@ -94,6 +94,7 @@ async function syncGigs(db) {
                 suburb: ev.suburb || '',
                 area: ev.area || '',
                 url: ev.url || '',
+                image: ev.image || '',
                 source: ev.source || '',
                 updatedAt: FieldValue.serverTimestamp(),
             },
