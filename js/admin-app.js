@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=48';
+} from './firebase-config.js?v=49';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -64,7 +64,8 @@ const state = {
   bookingOpen: null,
   bookEditing: false,
   bookDraft: {},
-  bookFilter: { text: '', when: 'upcoming', venue: 'all' },
+  bookFilter: { text: '', tab: 'upcoming' },
+  showRoster: false,
   sites: [],
   categories: [],
 
@@ -413,6 +414,18 @@ function render() {
   }
 
   desk.innerHTML = view.html();
+
+  /*  The bookings view lays itself out to the height of the desk rather
+      than to its content, so the desk has to know it is showing it. */
+  desk.classList.toggle('is-bookings', state.view === 'entertainment');
+  desk.classList.toggle('show-roster',
+    state.view === 'entertainment' && state.showRoster);
+
+  /*  The page can only be one screen tall if the shell is, and that is
+      three boxes above the desk - see the note in admin.css.         */
+  document.body.classList.toggle('ad-fit',
+    state.view === 'entertainment' && !state.showRoster);
+
   if (view.wire) view.wire();
 }
 
@@ -1917,16 +1930,25 @@ VIEWS.entertainment = {
           <p>Who is playing at the Grand View Hotel and everywhere else.</p>
         </div>
 
-        <button type="button" class="ad-btn ad-btn-orange" id="ad-book-new">
-          + New booking
-        </button>
+        <div class="ad-page-actions">
+          <!--  The roster is reference rather than the day's work, and it
+                is the thing that stops this page fitting on a screen. So
+                it is folded away, and this opens it.                 -->
+          <button type="button" class="ad-btn" id="ad-roster-toggle">
+            ${state.showRoster ? 'Hide the roster' : 'The roster'}
+          </button>
+
+          <button type="button" class="ad-btn ad-btn-orange" id="ad-book-new">
+            + New booking
+          </button>
+        </div>
       </div>
 
-      <div class="ad-stats">
-        ${statTile('Upcoming shows', upcoming.length, 'still to come', 'is-blue')}
-        ${statTile('Confirmed', confirmed.length, 'locked in', 'is-green')}
-        ${statTile('Pending', pending.length, 'not confirmed yet', 'is-amber')}
-        ${statTile('Acts on roster', acts.length, 'bookable today', '')}
+      <div class="ad-bstats">
+        ${statTile('Upcoming Shows', upcoming.length, '', 'blue')}
+        ${statTile('Confirmed', confirmed.length, '', 'green')}
+        ${statTile('Pending', pending.length, '', 'amber')}
+        ${statTile('Acts on Roster', acts.length, '', 'grey')}
       </div>
 
       <div class="ad-book-split">
@@ -1934,28 +1956,19 @@ VIEWS.entertainment = {
         ${bookingPanel(picked)}
       </div>
 
-      <section class="ad-card ad-panel" style="margin-top:16px">
-        <header class="ad-panel-head">
-          <h2>Bookings</h2>
-        </header>
+      <section class="ad-card ad-book-list">
 
-        <div class="ad-filters">
-          <input type="search" id="ad-book-search" placeholder="Search act or venue…"
-                 value="${attr(state.bookFilter.text)}" aria-label="Search bookings">
+        <div class="ad-book-tabs">
+          <div class="ad-tabs" role="group" aria-label="Which bookings">
+            ${BOOK_TABS.map((t) => `
+              <button type="button" class="ad-tab${state.bookFilter.tab === t.key ? ' is-on' : ''}"
+                      data-book-tab="${attr(t.key)}">${esc(t.label)}</button>`).join('')}
+          </div>
 
-          <select id="ad-book-when" aria-label="Which bookings">
-            <option value="upcoming"${state.bookFilter.when === 'upcoming' ? ' selected' : ''}>Upcoming</option>
-            <option value="all"${state.bookFilter.when === 'all' ? ' selected' : ''}>All bookings</option>
-            <option value="past"${state.bookFilter.when === 'past' ? ' selected' : ''}>Past</option>
-          </select>
-
-          <select id="ad-book-venue-filter" aria-label="Which venue">
-            <option value="all">All venues</option>
-            ${venuesKnown().map((v) => `
-              <option value="${attr(v)}"${state.bookFilter.venue === v ? ' selected' : ''}>${esc(v)}</option>`).join('')}
-          </select>
+          <input type="search" id="ad-book-search" class="ad-book-search"
+                 placeholder="Search bookings…" value="${attr(state.bookFilter.text)}"
+                 aria-label="Search bookings">
         </div>
-
         ${shown.length ? `
           <div class="ad-table-wrap">
             <table class="ad-table">
@@ -2112,45 +2125,97 @@ function bookingPanel(b) {
 
   const act = acts.find((t) => t.slug === b.slug) || {};
   const status = b.status || 'confirmed';
+  const photo = venuePhoto(b.venue);
 
   return `
     <section class="ad-card ad-book-panel">
-      <div class="ad-book-head">
-        <h3>${esc(prettyDate(b.date))}</h3>
-        <span class="ad-pill ${status === 'pending' ? 'ad-pill-amber' : 'ad-pill-green'}">
-          ${status === 'pending' ? 'Pending' : 'Confirmed'}
-        </span>
+      ${photo ? `<div class="ad-book-photo" aria-hidden="true"
+                      style="background-image:url('/${attr(photo)}')"></div>` : ''}
+
+      <div class="ad-book-inner">
+        <div class="ad-book-head">
+          <div>
+            <h3>${esc(prettyDate(b.date))}</h3>
+            <span class="ad-pill ${status === 'pending' ? 'ad-pill-amber' : 'ad-pill-green'}">
+              ${status === 'pending' ? 'Pending' : 'Confirmed'}
+            </span>
+          </div>
+
+          <button type="button" class="ad-btn" data-book-edit="${attr(b.id)}">Edit</button>
+        </div>
+
+        <div class="ad-book-split-2">
+          <dl class="ad-book-facts">
+            <dt>${ICON.act}Act</dt>
+            <dd>
+              <span class="ad-act">
+                <span class="ad-act-face"
+                      style="${act.photo ? `background-image:url('/${attr(act.photo)}')` : ''}"></span>
+                ${esc(act.name || b.slug)}
+              </span>
+            </dd>
+
+            <dt>${ICON.time}Time</dt><dd>${esc(b.time || '—')}</dd>
+            <dt>${ICON.place}Venue</dt><dd>${esc(b.venue || '—')}</dd>
+            ${b.notes ? `<dt>${ICON.note}Notes</dt><dd>${esc(b.notes)}</dd>` : ''}
+          </dl>
+
+          <div class="ad-book-actions">
+            <!--  Opens the mail app with the booking already written out.
+                  A real thing that works today - the site cannot send mail
+                  itself yet, and a button that silently sends nothing would
+                  be worse than this.                                    -->
+            <a class="ad-btn ad-btn-primary" href="${attr(mailtoFor(b, act))}">
+              Send details
+            </a>
+
+            <!--  Puts the same act on the same night next week, which is
+                  what a residency is and most of this diary.          -->
+            <button type="button" class="ad-btn" data-book-repeat="${attr(b.id)}">
+              Repeat next week
+            </button>
+
+            <button type="button" class="ad-btn ad-btn-danger" data-book-remove="${attr(b.id)}">
+              Remove
+            </button>
+          </div>
+        </div>
+
+        <p class="ad-action-msg" id="ad-book-msg" hidden></p>
       </div>
-
-      <dl class="ad-book-facts">
-        <dt>Act</dt>
-        <dd>
-          <span class="ad-act">
-            <span class="ad-act-face"
-                  style="${act.photo ? `background-image:url('/${attr(act.photo)}')` : ''}"></span>
-            ${esc(act.name || b.slug)}
-          </span>
-        </dd>
-
-        <dt>Time</dt><dd>${esc(b.time || '—')}</dd>
-        <dt>Venue</dt><dd>${esc(b.venue || '—')}</dd>
-        ${b.notes ? `<dt>Notes</dt><dd>${esc(b.notes)}</dd>` : ''}
-      </dl>
-
-      <div class="ad-actions-row">
-        <button type="button" class="ad-btn ad-btn-primary" data-book-edit="${attr(b.id)}">Edit</button>
-        <!--  Puts the same act on the same night next week, which is what
-              a residency is and what most of this diary is.            -->
-        <button type="button" class="ad-btn" data-book-repeat="${attr(b.id)}">Repeat next week</button>
-      </div>
-
-      <p class="ad-action-msg" id="ad-book-msg" hidden></p>
     </section>`;
 }
 
+/*  Small icons for the facts list. Inline rather than a font or a sprite:
+    there are four of them and they never change.                      */
+const ICON = {
+  act: '<svg viewBox="0 0 24 24"><circle cx="6.5" cy="17" r="3"/><circle cx="16.5" cy="15" r="3"/><path d="M9 17V6l10.5-2v11"/></svg>',
+  time: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.5l3.5 2"/></svg>',
+  place: '<svg viewBox="0 0 24 24"><path d="M12 21s7-7 7-11a7 7 0 10-14 0c0 4 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+  note: '<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>',
+};
+
+/*  The booking, written out for whoever is playing it. mailto rather than
+    a send, because the mail path is not working yet - this opens their own
+    mail app with it all filled in, which needs nothing from us.        */
+function mailtoFor(b, act) {
+  const lines = [
+    `Act: ${act.name || b.slug}`,
+    `Date: ${prettyDate(b.date)}`,
+    `Time: ${b.time || 'TBC'}`,
+    `Venue: ${b.venue || 'TBC'}`,
+    b.notes ? `Notes: ${b.notes}` : '',
+    '',
+    'SoundzGood Events & Production',
+  ].filter(Boolean).join('\n');
+
+  return 'mailto:?subject=' +
+    encodeURIComponent(`Booking - ${act.name || b.slug}, ${prettyDate(b.date)}`) +
+    '&body=' + encodeURIComponent(lines);
+}
 function rosterPanel(acts) {
   return `
-    <section class="ad-card ad-panel" style="margin-top:16px">
+    <section class="ad-card ad-panel ad-roster">
       <header class="ad-panel-head">
         <h2>The roster</h2>
       </header>
@@ -2211,14 +2276,49 @@ function rosterPanel(acts) {
     </section>`;
 }
 
-function statTile(label, value, note, mod) {
+/*  The four counts. An icon in a tinted square, the number, then what it
+    counts - read in that order at a glance, which is the only way a row of
+    numbers like this is ever read.                                      */
+function statTile(label, value, note, tone) {
   return `
-    <div class="ad-stat ${mod}">
-      <p class="ad-stat-label">${esc(label)}</p>
-      <p class="ad-stat-value">${value}</p>
-      <p class="ad-stat-note">${esc(note)}</p>
+    <div class="ad-bstat">
+      <span class="ad-bstat-icon is-${tone}" aria-hidden="true">${STAT_ICONS[tone] || ''}</span>
+      <span class="ad-bstat-text">
+        <span class="ad-bstat-value">${value}</span>
+        <span class="ad-bstat-label">${esc(label)}</span>
+      </span>
     </div>`;
 }
+
+const STAT_ICONS = {
+  blue: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  green: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>',
+  amber: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.5l3.5 2"/></svg>',
+  grey: '<svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19c0-3 2.4-4.8 5.5-4.8s5.5 1.8 5.5 4.8"/><circle cx="17" cy="10" r="2.6"/><path d="M15 19c0-2.2 1.3-3.6 3.2-3.6S21.4 16.8 21.4 19"/></svg>',
+};
+
+/*  A photograph of the venue, where we have one. The pub is the whole
+    point of most of this diary, so the panel leads with it rather than
+    with a line of text saying where it is.                              */
+const VENUE_PHOTOS = {
+  'grand view': 'images/venues/grand-view-hotel.jpg',
+};
+
+function venuePhoto(venue) {
+  const key = Object.keys(VENUE_PHOTOS)
+    .find((k) => String(venue || '').toLowerCase().includes(k));
+  return key ? VENUE_PHOTOS[key] : '';
+}
+
+/*  The four ways of looking at the diary, as the tabs across the top of
+    the table. Venue tabs match loosely, so "Grand View Hotel, Bowen" and
+    "Grand View" are the same pub.                                     */
+const BOOK_TABS = [
+  { key: 'upcoming', label: 'Upcoming' },
+  { key: 'all', label: 'All Bookings' },
+  { key: 'grand-view', label: 'Grand View Hotel' },
+  { key: 'other', label: 'Other Venues' },
+];
 
 function venuesKnown() {
   const seen = {};
@@ -2232,9 +2332,11 @@ function filteredBookings() {
   const text = (f.text || '').trim().toLowerCase();
 
   return state.schedule.filter((b) => {
-    if (f.when === 'upcoming' && b.date < today) return false;
-    if (f.when === 'past' && b.date >= today) return false;
-    if (f.venue !== 'all' && b.venue !== f.venue) return false;
+    const atPub = /grand view/i.test(b.venue || '');
+
+    if (f.tab === 'upcoming' && b.date < today) return false;
+    if (f.tab === 'grand-view' && !atPub) return false;
+    if (f.tab === 'other' && atPub) return false;
 
     if (text) {
       const act = state.talent.find((t) => t.slug === b.slug) || {};
@@ -2244,7 +2346,6 @@ function filteredBookings() {
     return true;
   });
 }
-
 function isoDay(d) {
   return d.getFullYear() + '-' +
          String(d.getMonth() + 1).padStart(2, '0') + '-' +
@@ -2419,23 +2520,21 @@ function wireEntertainment() {
     });
   }
 
-  const when = document.getElementById('ad-book-when');
-  if (when) {
-    when.addEventListener('change', () => {
-      state.bookFilter.when = when.value;
+  document.querySelectorAll('[data-book-tab]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.bookFilter.tab = btn.getAttribute('data-book-tab');
       render();
     });
-  }
-
-  const venueSel = document.getElementById('ad-book-venue-filter');
-  if (venueSel) {
-    venueSel.addEventListener('change', () => {
-      state.bookFilter.venue = venueSel.value;
-      render();
-    });
-  }
-
+  });
   /* the roster */
+  const rosterBtn = document.getElementById('ad-roster-toggle');
+  if (rosterBtn) {
+    rosterBtn.addEventListener('click', () => {
+      state.showRoster = !state.showRoster;
+      render();
+    });
+  }
+
   const add = document.getElementById('ad-act-add');
   if (add) {
     add.addEventListener('click', async () => {
