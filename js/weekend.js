@@ -135,6 +135,26 @@
             });
     }
 
+    /*  Any small public collection, as plain objects with their document
+        id attached. Used for the Friday Nights line up; the gigs above
+        get their own reader because they need shaping.                  */
+    function loadCollection(name) {
+        return fetch(REST + encodeURIComponent(name) + '?pageSize=200&key=' + WEB_KEY)
+            .then(function (r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(function (body) {
+                return (body.documents || []).map(function (doc) {
+                    var out = plain(doc.fields);
+                    /*  ".../documents/fridayNights/2026-09-18" - the id is
+                        the date, which is what the caller looks up by. */
+                    out.id = doc.name.split('/').pop();
+                    return out;
+                });
+            });
+    }
+
     function loadStatus() {
         return fetch(REST + 'gigGuide/status?key=' + WEB_KEY)
             .then(function (r) { return r.ok ? r.json() : null; })
@@ -195,6 +215,7 @@
         weekendRange: weekendRange,
         isThisWeekend: isThisWeekend,
         loadGigs: loadGigs,
+        loadCollection: loadCollection,
         loadStatus: loadStatus,
         card: card,
         esc: esc,

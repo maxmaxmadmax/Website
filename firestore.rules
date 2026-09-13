@@ -134,6 +134,22 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ---------------------------------------------------------------
+    // Friday Nights
+    //
+    // Who is playing at the Grand View on a given Friday. One document
+    // per date, the id being the date: fridayNights/2026-09-18
+    //
+    // Public read, because it is printed on the events page. Written from
+    // the admin page rather than by a function - there is nothing to
+    // check and nothing to get wrong that an admin cannot see in front of
+    // them, so a callable would be ceremony.
+    // ---------------------------------------------------------------
+    match /fridayNights/{friday} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /gigGuide/{docId} {
       // status says when the guide last ran, so the page can show how
       // fresh it is. cache is 200KB of working state that no browser has

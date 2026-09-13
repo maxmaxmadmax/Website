@@ -131,55 +131,240 @@
 }());
 
 
+/* ==========================================================================
+   THE FRIDAY NIGHTS LINE UP
+
+   ==========================================================================
+   NAMING A DJ - two ways, and the first one wins
+   ==========================================================================
+
+   1. ADMIN -> SETTINGS -> FRIDAY NIGHTS. Pick the DJ against the date and
+      it saves. This is the one to use: no deploy, no code, and it is there
+      for whoever is on the desk rather than for whoever has the repository.
+
+   2. THE LIST BELOW, for a Friday somebody wants locked in before the
+      admin page is next opened. Anything set in admin overrides it.
+
+   Both are optional. A Friday named in neither says the DJ is still to be
+   announced, which is true, and the card still looks finished.
+
+   THE DATES ARE NOT IN EITHER. They are worked out from today, four
+   Fridays ahead, so the list rolls itself forward every week. It used to
+   be four dates typed into the HTML, which is why it sat there showing a
+   Friday that had already been.
+   ========================================================================== */
+var EV_FRIDAYS = {
+    '2026-09-18': 'kriss-kross',
+    '2026-09-25': 'dj-charley-templar'
+};
+
+(function () {
+    'use strict';
+
+    var grid = document.getElementById('ev-fri-grid');
+    if (!grid) return;
+
+    var HOW_MANY = 4;
+    var roster = window.SG_ROSTER_BY_SLUG || {};
+
+    function esc(s) {
+        return String(s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    /*  The next four Fridays, today included if today is a Friday - the
+        night is still ahead of you at breakfast.                        */
+    function fridays() {
+        var out = [];
+        var d = new Date();
+        d = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        d.setDate(d.getDate() + ((5 - d.getDay() + 7) % 7));
+
+        for (var i = 0; i < HOW_MANY; i++) {
+            out.push(new Date(d));
+            d.setDate(d.getDate() + 7);
+        }
+        return out;
+    }
+
+    function key(d) {
+        return d.getFullYear() + '-' +
+               String(d.getMonth() + 1).padStart(2, '0') + '-' +
+               String(d.getDate()).padStart(2, '0');
+    }
+
+    function label(d) {
+        var W = window.SGWeekend;
+        return 'Fri ' + d.getDate() + ' ' + (W ? W.MONTHS[d.getMonth()] : '');
+    }
+
+    function card(d, booked) {
+        var act = booked && roster[booked.slug];
+        var name = (act && act.name) || (booked && booked.name) || 'DJ To Be Announced';
+        var note = (booked && booked.note) || 'SoundzGood DJs on rotation';
+        var art = act && act.photo
+            ? ' style="--ev-art:url(\'' + esc(act.photo) + '\')"'
+            : '';
+
+        return '' +
+            '<article class="ev-fri"' + art + '>' +
+              '<div class="ev-fri-art" aria-hidden="true">' +
+                '<span class="ev-fri-date">' + esc(label(d)) + '</span>' +
+              '</div>' +
+              '<div class="ev-fri-body">' +
+                '<h3>' + esc(name) + '</h3>' +
+                '<p>' + esc(note) + '</p>' +
+              '</div>' +
+            '</article>';
+    }
+
+    var nights = fridays();
+
+    function draw(booked) {
+        grid.innerHTML = nights.map(function (d) {
+            return card(d, booked[key(d)]);
+        }).join('');
+    }
+
+    /*  Drawn once from the list above so the dates are right immediately,
+        then again if Firestore has anything to say. A failed call leaves
+        the dates correct and the DJs unnamed, which is the honest state
+        rather than a broken one.                                        */
+    var fallback = {};
+    Object.keys(EV_FRIDAYS).forEach(function (k) {
+        fallback[k] = { slug: EV_FRIDAYS[k] };
+    });
+
+    draw(fallback);
+
+    if (!window.SGWeekend) return;
+
+    window.SGWeekend.loadCollection('fridayNights').then(function (rows) {
+        var booked = {};
+        Object.keys(fallback).forEach(function (k) { booked[k] = fallback[k]; });
+
+        rows.forEach(function (row) {
+            /*  A row with no DJ on it is somebody clearing a Friday, and
+                that has to beat the fallback or it could never be undone
+                from admin.                                              */
+            booked[row.id] = row.slug || row.name
+                ? { slug: row.slug, name: row.name, note: row.note }
+                : null;
+        });
+
+        draw(booked);
+    }).catch(function (err) {
+        if (window.console) console.warn('friday nights unavailable', err);
+    });
+}());
+
+
 /* --------------------------------------------------------------------------
-   WHAT'S ON THIS WEEKEND
+   WHAT'S ON THIS WEEK
 
-   The strip under the featured event. It asks js/weekend.js for the
-   listings and for which days count as this weekend, so it can never
-   disagree with /gig-guide about either.
+   The strip under Friday Nights: the next seven days of listings, four on
+   screen with an arrow for the rest.
 
-   THE SECTION STARTS HIDDEN and is only shown once there is something to
-   put in it. That way round on purpose: this is a bonus on the events
-   page, not the point of it, and a heading with an apology under it is
-   worse than no heading. A failed network call leaves the page exactly as
-   it was.
+   Seven days rather than the weekend. On a Sunday afternoon a weekend-only
+   strip is down to whatever is left of today, which is a thin thing to put
+   on the page - and somebody reading on Sunday is mostly wondering about
+   the week ahead anyway.
+
+   The listings and the cards come from js/weekend.js, the same as
+   /gig-guide, so the two pages can never draw the same gig differently.
+
+   THE SECTION STARTS HIDDEN and only appears once there is something in
+   it. This is a bonus on the events page, not the point of it, and a
+   heading with an apology under it is worse than no heading. A failed
+   network call leaves the page exactly as it was.
    -------------------------------------------------------------------------- */
 (function () {
     'use strict';
 
     var section = document.getElementById('ev-weekend');
-    var grid = document.getElementById('ev-weekend-grid');
+    var view = document.getElementById('ev-weekend-view');
+    var track = document.getElementById('ev-weekend-grid');
     var when = document.getElementById('ev-weekend-when');
 
-    if (!section || !grid || !window.SGWeekend) return;
+    if (!section || !track || !window.SGWeekend) return;
 
     var W = window.SGWeekend;
-    var range = W.weekendRange();
+    var DAYS_AHEAD = 7;
 
-    /*  "Friday 12 - Sunday 14 September", or with both months named when
-        the weekend straddles the end of one.                            */
+    var from = W.today();
+    var to = new Date(from);
+    to.setDate(to.getDate() + DAYS_AHEAD - 1);
+
+    var page = 0;
+    var arrows = Array.prototype.slice.call(section.querySelectorAll('[data-ev-wk]'));
+
+    /*  "Sunday 13 - Saturday 19 September", with both months named when
+        the week straddles the end of one.                               */
     function saying() {
-        var same = range.start.getMonth() === range.end.getMonth();
-        var day = { weekday: 'long', day: 'numeric' };
+        var same = from.getMonth() === to.getMonth();
+        var short = { weekday: 'long', day: 'numeric' };
         var full = { weekday: 'long', day: 'numeric', month: 'long' };
 
-        return range.start.toLocaleDateString('en-AU', same ? day : full) +
-               ' \u2013 ' +
-               range.end.toLocaleDateString('en-AU', full);
+        return from.toLocaleDateString('en-AU', same ? short : full) +
+               ' \u2013 ' + to.toLocaleDateString('en-AU', full);
+    }
+
+    function perView() {
+        if (!view) return 1;
+        var n = parseInt(
+            window.getComputedStyle(view).getPropertyValue('--ev-wk-per'), 10
+        );
+        return n > 0 ? n : 1;
+    }
+
+    function pages(count) {
+        return Math.max(1, Math.ceil(count / perView()));
+    }
+
+    function paint(count) {
+        var last = pages(count) - 1;
+
+        /*  A window that has just got wider can leave us past the end, on
+            a page that no longer exists.                                */
+        if (page > last) page = last;
+        if (page < 0) page = 0;
+
+        track.style.setProperty('--ev-wk-page', page);
+
+        arrows.forEach(function (btn) {
+            var dir = parseInt(btn.getAttribute('data-ev-wk'), 10);
+            btn.disabled = dir < 0 ? page === 0 : page === last;
+        });
+
+        /*  Both arrows off means one page, and two dead controls say
+            nothing worth the space.                                     */
+        arrows.forEach(function (btn) {
+            btn.closest('.ev-wk-arrows').hidden = last === 0;
+        });
     }
 
     W.loadGigs().then(function (rows) {
-        var onNow = rows.filter(function (ev) {
-            return W.isThisWeekend(ev.day, range);
+        var soon = rows.filter(function (ev) {
+            return ev.day && ev.day >= from && ev.day <= to;
         });
 
-        if (!onNow.length) return;
+        if (!soon.length) return;
 
-        grid.innerHTML = onNow.map(W.card).join('');
+        track.innerHTML = soon.map(W.card).join('');
         if (when) when.textContent = saying();
         section.hidden = false;
+
+        arrows.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                page += parseInt(btn.getAttribute('data-ev-wk'), 10) || 0;
+                paint(soon.length);
+            });
+        });
+
+        window.addEventListener('resize', function () { paint(soon.length); });
+        paint(soon.length);
     }).catch(function (err) {
         /*  Left hidden. Nothing on the page depends on it.             */
-        if (window.console) console.warn('weekend strip unavailable', err);
+        if (window.console) console.warn('this week strip unavailable', err);
     });
 }());

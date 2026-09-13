@@ -20,14 +20,17 @@
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="style.css?v=40">
+  <link rel="stylesheet" href="style.css?v=41">
   <!--  The event card is shared with /gig-guide, so its styles live in
         their own file rather than in either page's.                  -->
-  <link rel="stylesheet" href="gig-card.css?v=40">
-  <link rel="stylesheet" href="events.css?v=40">
-  <script src="js/main.js?v=40" defer></script>
-  <script src="js/weekend.js?v=40" defer></script>
-  <script src="js/events.js?v=40" defer></script>
+  <link rel="stylesheet" href="gig-card.css?v=41">
+  <link rel="stylesheet" href="events.css?v=41">
+  <script src="js/main.js?v=41" defer></script>
+  <!--  roster.js names the DJs on the Friday Nights cards; it is the same
+        list the entertainment page and the admin dropdown read.     -->
+  <script src="js/roster.js?v=41" defer></script>
+  <script src="js/weekend.js?v=41" defer></script>
+  <script src="js/events.js?v=41" defer></script>
 </head>
 
 <!-- the class is what events.css hangs the footer tweak off -->
@@ -143,42 +146,6 @@
 </section>
 
 
-<!-- 2a. WHAT'S ON THIS WEEKEND ----------------------------------------------
-
-     The same listings as /gig-guide, narrowed to the weekend we are
-     standing in. Not a copy of that page: the cards, the reading of them
-     and the working out of which days count as the weekend are all in
-     js/weekend.js, which both pages use. Two copies of "which days are
-     the weekend" disagree within a month and then somebody drives to a
-     gig on the wrong day.
-
-     Nothing here is typed in. It is found overnight by the syncGigGuide
-     function and it changes on its own.
-
-     IF THERE IS NOTHING ON, THE WHOLE SECTION GOES. Not an empty row with
-     an apology under it - on the events page this is a bonus, and a bonus
-     that has nothing to say should not take up the screen. js/events.js
-     hides it.
-     ------------------------------------------------------------------- -->
-<section class="section ev-section ev-weekend" id="ev-weekend" hidden
-         aria-labelledby="ev-weekend-h">
-
-  <div class="ev-weekend-head">
-    <div>
-      <h2 id="ev-weekend-h">What&rsquo;s On This Weekend</h2>
-      <p class="section-intro" id="ev-weekend-when"></p>
-    </div>
-
-    <a class="btn btn-outline ev-weekend-more" href="/gig-guide">
-      Full Gig Guide
-    </a>
-  </div>
-
-  <div class="ev-weekend-grid" id="ev-weekend-grid"></div>
-
-</section>
-
-
 <!-- ==========================================================================
      2b. FRIDAY NIGHTS RESIDENCY - THE GRAND VIEW HOTEL
 
@@ -196,7 +163,7 @@
      tab, the name and the styles are all just text. The photo is set on the
      card itself:
 
-         style="--ev-art:url('images/talent/dj-maxx.webp')"
+         style="--ev-art:url('images/talent/maxzi.jpg')"
 
      A card with no photo yet shows its gradient instead, so an unfilled
      line up still looks finished rather than broken.
@@ -268,39 +235,17 @@
     <div class="ev-fri-lineup" id="ev-fri-lineup">
       <p class="ev-res-label">Upcoming Friday Line Up</p>
 
-      <div class="ev-fri-grid">
-        <article class="ev-fri">
-          <div class="ev-fri-art" aria-hidden="true"><span class="ev-fri-date">Fri 11 Sep</span></div>
-          <div class="ev-fri-body">
-            <h3>DJ To Be Announced</h3>
-            <p>SoundzGood DJs on rotation</p>
-          </div>
-        </article>
+      <!--  BUILT BY js/events.js, NOT TYPED IN HERE
 
-        <article class="ev-fri">
-          <div class="ev-fri-art" aria-hidden="true"><span class="ev-fri-date">Fri 18 Sep</span></div>
-          <div class="ev-fri-body">
-            <h3>DJ To Be Announced</h3>
-            <p>SoundzGood DJs on rotation</p>
-          </div>
-        </article>
+            The four dates are worked out from today, so the list rolls
+            itself forward every week and can never show a Friday that has
+            been - which is exactly what it used to do.
 
-        <article class="ev-fri">
-          <div class="ev-fri-art" aria-hidden="true"><span class="ev-fri-date">Fri 25 Sep</span></div>
-          <div class="ev-fri-body">
-            <h3>DJ To Be Announced</h3>
-            <p>SoundzGood DJs on rotation</p>
-          </div>
-        </article>
-
-        <article class="ev-fri">
-          <div class="ev-fri-art" aria-hidden="true"><span class="ev-fri-date">Fri 2 Oct</span></div>
-          <div class="ev-fri-body">
-            <h3>DJ To Be Announced</h3>
-            <p>SoundzGood DJs on rotation</p>
-          </div>
-        </article>
-      </div>
+            Who is playing comes from Firestore, set in Admin under
+            Settings. Anything not set there falls back to the short list
+            at the top of js/events.js, and anything set in neither says
+            the DJ is still to be announced, which is true.            -->
+      <div class="ev-fri-grid" id="ev-fri-grid"></div>
 
       <a class="ev-res-link" href="/entertainment">
         View Our Full DJ Roster <span aria-hidden="true">&#8594;</span>
@@ -354,6 +299,63 @@
     <a class="btn ev-res-btn" href="/entertainment">
       Browse Our DJs <span aria-hidden="true">&#8594;</span>
     </a>
+  </div>
+
+</section>
+
+
+<!-- 2c. WHAT'S ON THIS WEEK -------------------------------------------------
+
+     The next seven days of listings, four on screen at a time with an
+     arrow for the rest.
+
+     The same listings as /gig-guide. Not a copy of that page: reading them
+     and drawing a card both live in js/weekend.js, which the guide uses
+     too, so the two can never show the same gig differently.
+
+     Nothing here is typed in. It is found overnight by the syncGigGuide
+     function and it changes on its own.
+
+     IF THERE IS NOTHING ON, THE WHOLE SECTION GOES. Not an empty row with
+     an apology under it - on the events page this is a bonus, and a bonus
+     with nothing to say should not take up the screen. js/events.js hides
+     it.
+     ------------------------------------------------------------------- -->
+<section class="section ev-section ev-weekend" id="ev-weekend" hidden
+         aria-labelledby="ev-weekend-h">
+
+  <div class="ev-weekend-head">
+    <div>
+      <h2 id="ev-weekend-h">What&rsquo;s On This Week</h2>
+      <p class="section-intro" id="ev-weekend-when"></p>
+    </div>
+
+    <div class="ev-weekend-actions">
+      <!--  A div rather than a <nav>: style.css styles the bare nav element
+            for the site menu, and that would land on this.            -->
+      <div class="ev-wk-arrows" role="group" aria-label="Scroll this week's events">
+        <button type="button" class="ev-wk-arrow" data-ev-wk="-1"
+                aria-label="Previous events">
+          <span aria-hidden="true">&#8249;</span>
+        </button>
+        <button type="button" class="ev-wk-arrow" data-ev-wk="1"
+                aria-label="More events">
+          <span aria-hidden="true">&#8250;</span>
+        </button>
+      </div>
+
+      <a class="btn btn-outline ev-weekend-more" href="/gig-guide">
+        Full Gig Guide
+      </a>
+    </div>
+  </div>
+
+  <!--  Pages four at a time the same way the annual row on /services does:
+        the track is a grid sized against its own window, so it is exactly
+        one window wide however many cards hang out of it, and one page is
+        exactly -100%. No width is ever measured.                       -->
+  <div class="ev-wk-view" id="ev-weekend-view">
+    <div class="ev-wk-track" id="ev-weekend-grid"></div>
   </div>
 
 </section>

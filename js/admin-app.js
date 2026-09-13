@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=40';
+} from './firebase-config.js?v=41';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -48,6 +48,11 @@ const state = {
 
   events: [],
   bookings: [],
+
+  /*  Which DJ is on which Friday, keyed by date. Filled in when the
+      settings view is opened - it is four lines of data and nothing
+      else on the desk needs it.                                     */
+  fridays: {},
   sites: [],
   categories: [],
 
@@ -119,6 +124,43 @@ async function loadFirebase() {
     f: firestore,
     fn: functions,
   };
+}
+
+/*  The next eight Fridays from today, as { key, label } - the same
+    dates the events page works out for itself, so the two lists line up
+    without either being told about the other.                          */
+function nextFridays(howMany) {
+  const out = [];
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + ((5 - d.getDay() + 7) % 7));
+
+  for (let i = 0; i < howMany; i++) {
+    out.push({
+      key: d.getFullYear() + '-' +
+           String(d.getMonth() + 1).padStart(2, '0') + '-' +
+           String(d.getDate()).padStart(2, '0'),
+      label: d.toLocaleDateString('en-AU',
+        { weekday: 'short', day: 'numeric', month: 'short' }),
+    });
+    d.setDate(d.getDate() + 7);
+  }
+  return out;
+}
+
+/*  Reads the saved line up. Called before the settings view is drawn so
+    the dropdowns come up already showing who is booked.                */
+async function loadFridays() {
+  const { collection, getDocs } = fb.f;
+
+  try {
+    const snap = await getDocs(collection(fb.db, 'fridayNights'));
+    state.fridays = {};
+    snap.forEach((doc) => { state.fridays[doc.id] = doc.data().slug || ''; });
+  } catch (err) {
+    /*  An unreadable line up is empty dropdowns, not a broken page. */
+    state.fridays = {};
+  }
 }
 
 /* Call an admin Cloud Function. */
@@ -220,6 +262,14 @@ function routeFromHash() {
     b.classList.toggle('is-active', b.getAttribute('data-view') === want));
 
   render();
+
+  /*  Settings is the only view that needs the Friday line up, so it is
+      fetched on arrival rather than kept in sync all the time. Drawn
+      again once it lands - the panel is already on screen by then, with
+      its dropdowns unset for the half second it takes.                */
+  if (want === 'settings') {
+    loadFridays().then(() => { if (state.view === 'settings') render(); });
+  }
 }
 
 /* -------------------------------------------------------------------------
@@ -1867,6 +1917,50 @@ VIEWS.settings = {
 
       <section class="ad-card ad-panel" style="margin-top:16px">
         <header class="ad-panel-head">
+          <h2>Friday Nights</h2>
+        </header>
+
+        <div class="ad-panel-intro">
+          <p>
+            Who is playing at the Grand View on each of the next eight
+            Fridays. Pick a DJ and it saves - the events page picks it up
+            straight away, and a Friday left as To Be Announced says exactly
+            that rather than guessing.
+          </p>
+          <p class="ad-cell-muted">
+            The list of DJs is the entertainment roster. Add an act there and
+            it appears here.
+          </p>
+
+          <div class="ad-table-wrap" style="margin-top:12px">
+            <table class="ad-table">
+              <thead><tr><th>Friday</th><th>DJ</th></tr></thead>
+              <tbody>
+                ${nextFridays(8).map((f) => `
+                  <tr>
+                    <td class="ad-cell-strong">${esc(f.label)}</td>
+                    <td>
+                      <select class="ad-limit" data-friday="${attr(f.key)}"
+                              aria-label="DJ for ${attr(f.label)}">
+                        <option value="">DJ To Be Announced</option>
+                        ${(window.SG_ROSTER || []).map((t) => `
+                          <option value="${attr(t.slug)}"
+                            ${state.fridays[f.key] === t.slug ? 'selected' : ''}>
+                            ${esc(t.name)}
+                          </option>`).join('')}
+                      </select>
+                    </td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <p class="ad-action-msg" id="ad-friday-msg" hidden></p>
+        </div>
+      </section>
+
+      <section class="ad-card ad-panel" style="margin-top:16px">
+        <header class="ad-panel-head">
           <h2>Gig guide</h2>
         </header>
 
@@ -1915,6 +2009,36 @@ VIEWS.settings = {
         }
 
         input.disabled = false;
+      });
+    });
+
+    /*  A DJ is saved the moment it is picked. One value per row, nothing
+        to get half right, and the same shape as the category limits above. */
+    document.querySelectorAll('[data-friday]').forEach((select) => {
+      select.addEventListener('change', async () => {
+        const bar = document.getElementById('ad-friday-msg');
+        const day = select.getAttribute('data-friday');
+        select.disabled = true;
+
+        try {
+          await fb.f.setDoc(
+            fb.f.doc(fb.db, 'fridayNights', day),
+            { slug: select.value, updatedAt: fb.f.serverTimestamp() }
+          );
+
+          state.fridays[day] = select.value;
+
+          const who = select.options[select.selectedIndex].textContent.trim();
+          bar.hidden = false;
+          bar.className = 'ad-action-msg is-ok';
+          bar.textContent = select.value ? `Saved - ${who}.` : 'Cleared.';
+        } catch (err) {
+          bar.hidden = false;
+          bar.className = 'ad-action-msg is-bad';
+          bar.textContent = friendly(err);
+        }
+
+        select.disabled = false;
       });
     });
 
