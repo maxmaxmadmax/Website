@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=52';
+} from './firebase-config.js?v=53';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2125,6 +2125,16 @@ function bookingPanel(b) {
           </select>
         </label>
 
+        <!--  A residency is the same act on the same night for weeks at a
+              time, which is most of this diary. Booking it a week at a
+              time is the same eight clicks over and over.            -->
+        <label class="ad-field">Repeat
+          <select id="ad-f-repeat">
+            ${REPEATS.map((r) => `
+              <option value="${r.weeks}">${esc(r.label)}</option>`).join('')}
+          </select>
+        </label>
+
         <label class="ad-field">Notes
           <textarea id="ad-f-notes" rows="2">${esc(draft.notes || '')}</textarea>
         </label>
@@ -2328,6 +2338,18 @@ function venuePhoto(venue) {
 /*  The four ways of looking at the diary, as the tabs across the top of
     the table. Venue tabs match loosely, so "Grand View Hotel, Bowen" and
     "Grand View" are the same pub.                                     */
+/*  How many weeks a booking can be laid down in one go. Twenty-six is
+    half a year, which is longer than any pub has ever committed to a
+    residency - and everything laid down is editable one night at a time
+    afterwards, so a long run costs nothing if it changes.             */
+const REPEATS = [
+  { weeks: 1, label: 'Just this night' },
+  { weeks: 4, label: 'Weekly, 4 weeks' },
+  { weeks: 8, label: 'Weekly, 8 weeks' },
+  { weeks: 13, label: 'Weekly, 3 months' },
+  { weeks: 26, label: 'Weekly, 6 months' },
+];
+
 const BOOK_TABS = [
   { key: 'upcoming', label: 'Upcoming' },
   { key: 'all', label: 'All Bookings' },
@@ -2471,35 +2493,54 @@ function wireEntertainment() {
       if (!date) { say('ad-book-msg', 'Pick a date.', false); return; }
       if (!slug) { say('ad-book-msg', 'Pick an act.', false); return; }
 
-      const row = {
-        date,
+      const base = {
         slug,
         venue: document.getElementById('ad-f-venue').value.trim(),
         time: document.getElementById('ad-f-time').value.trim(),
         status: document.getElementById('ad-f-status').value,
         notes: document.getElementById('ad-f-notes').value.trim(),
-        updatedAt: fb.f.serverTimestamp(),
       };
+
+      const weeks = parseInt(document.getElementById('ad-f-repeat').value, 10) || 1;
 
       save.disabled = true;
 
       try {
-        const id = bookingId(date, slug);
         const old = state.bookDraft.id;
+        const made = [];
 
-        await fb.f.setDoc(fb.f.doc(fb.db, 'talentSchedule', id), row);
+        /*  One write per night. A batch would be tidier, but this is at
+            most twenty-six of them once in a while, and doing them one at
+            a time means a failure halfway leaves the nights already
+            written standing rather than rolling the lot back.        */
+        const p = date.split('-');
+        for (let i = 0; i < weeks; i++) {
+          const night = isoDay(new Date(+p[0], +p[1] - 1, +p[2] + (i * 7)));
+          const id = bookingId(night, slug);
+
+          await fb.f.setDoc(fb.f.doc(fb.db, 'talentSchedule', id), {
+            ...base,
+            date: night,
+            updatedAt: fb.f.serverTimestamp(),
+          });
+
+          made.push({ id, date: night });
+        }
 
         /*  Moving a booking to another night or another act changes its
             id, so the one it used to be has to go or there would be two. */
-        if (old && old !== id) {
+        if (old && !made.some((m) => m.id === old)) {
           await fb.f.deleteDoc(fb.f.doc(fb.db, 'talentSchedule', old));
         }
-
         await loadSchedule();
         state.bookEditing = false;
-        state.bookingOpen = id;
+        state.bookingOpen = made[0].id;
         render();
-        say('ad-book-msg', 'Saved.', true);
+
+        say('ad-book-msg', made.length === 1
+          ? 'Saved.'
+          : `${made.length} nights booked, through ${prettyDate(made[made.length - 1].date)}.`,
+          true);
       } catch (err) {
         say('ad-book-msg', friendly(err), false);
         save.disabled = false;
