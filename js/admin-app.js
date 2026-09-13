@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=46';
+} from './firebase-config.js?v=47';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -56,6 +56,15 @@ const state = {
       arrival there rather than kept in sync everywhere.             */
   talent: [],
   schedule: [],
+
+  /*  The bookings desk: which month the calendar is on, which booking the
+      panel is showing, whether it is being edited, and the filters under
+      the table.                                                       */
+  bookMonth: new Date(),
+  bookingOpen: null,
+  bookEditing: false,
+  bookDraft: {},
+  bookFilter: { text: '', when: 'upcoming', venue: 'all' },
   sites: [],
   categories: [],
 
@@ -189,11 +198,11 @@ async function loadSchedule() {
     const rows = [];
     snap.forEach((doc) => rows.push({ id: doc.id, ...doc.data() }));
 
-    /*  Soonest first, and nothing that has been - a schedule is a list of
-        what is coming.                                                 */
-    const today = new Date().toISOString().slice(0, 10);
+    /*  Everything, past included - the table can show past bookings and
+        the calendar can be paged back into them. The filters decide what
+        is on screen, not the loader.                                   */
     state.schedule = rows
-      .filter((r) => r.date && r.date >= today)
+      .filter((r) => r.date)
       .sort((x, y) => x.date.localeCompare(y.date));
   } catch (err) {
     state.schedule = [];
@@ -1859,146 +1868,121 @@ function wireEventForm() {
    leave them - so they live together away from the daily work.
    ========================================================================= */
 /* -------------------------------------------------------------------------
-   ENTERTAINMENT
+   ENTERTAINMENT - DJ BOOKINGS
 
-   The acts, and who is booked on what night.
+   Who is playing where, on a month at a glance, with the roster underneath
+   it.
 
-   WHERE THE ACTS LIVE
-   js/roster.js holds a built-in list of the eight DJs, and this view writes
-   to Firestore. What the site shows is the two put together: an act saved
-   here is added, an act in both is taken from here, and one marked hidden
-   drops off. So the built-in list is what the site falls back to if the
-   database is unreachable, and everything after that is managed here
-   without a deploy.
+   WHAT IS REAL HERE
+   Every control on this page does something. There is no Send Details
+   button, because the mail path is still not working and a button that
+   silently does nothing is worse than no button; no Create Poster, because
+   there is nothing behind it. When either becomes true they go in.
 
-   That is also why removing one of the original eight writes a hidden flag
-   rather than deleting a row - there is nothing to delete, they are in the
-   file. Removing an act added here deletes it outright.
+   WHERE IT IS KEPT
+     talent/{slug}                  an act. See the note on the roster
+                                    panel below for how it merges with the
+                                    built-in list in js/roster.js.
+     talentSchedule/{date__slug}    one booking. The id is made from the
+                                    two, so booking the same act on the
+                                    same night twice edits rather than
+                                    duplicates, while two different acts on
+                                    one night are still two bookings.
 
-   PHOTOGRAPHS are a path, not an upload. There is no file picker because
-   there is nowhere yet to put what it picked; the images live in the
-   repository under images/talent/. Leave it blank and the card shows its
-   gradient, which is what every act without a photo does today.
+   The events page reads the same schedule for its Friday Nights cards, so
+   a booking made here is on the site within the minute.
    ------------------------------------------------------------------------- */
 VIEWS.entertainment = {
   html() {
     const acts = state.talent;
-    const booked = state.schedule;
+    const all = state.schedule;
+
+    const today = isoDay(new Date());
+    const upcoming = all.filter((b) => b.date >= today);
+    const confirmed = upcoming.filter((b) => (b.status || 'confirmed') === 'confirmed');
+    const pending = upcoming.filter((b) => b.status === 'pending');
+
+    /*  What the right hand panel is showing. Defaults to the next booking
+        there is, so the page opens on something rather than on a prompt. */
+    const picked = state.bookingOpen
+      ? all.find((b) => b.id === state.bookingOpen)
+      : upcoming[0];
+
+    const shown = filteredBookings();
 
     return `
       <div class="ad-page-head">
         <div>
-          <h1>Entertainment</h1>
-          <p>The roster, and who is booked on what night.</p>
+          <h1>DJ Bookings</h1>
+          <p>Who is playing at the Grand View Hotel and everywhere else.</p>
         </div>
+
+        <button type="button" class="ad-btn ad-btn-orange" id="ad-book-new">
+          + New booking
+        </button>
       </div>
 
-      <section class="ad-card ad-panel" style="margin-bottom:16px">
+      <div class="ad-stats">
+        ${statTile('Upcoming shows', upcoming.length, 'still to come', 'is-blue')}
+        ${statTile('Confirmed', confirmed.length, 'locked in', 'is-green')}
+        ${statTile('Pending', pending.length, 'not confirmed yet', 'is-amber')}
+        ${statTile('Acts on roster', acts.length, 'bookable today', '')}
+      </div>
+
+      <div class="ad-book-split">
+        ${calendarHtml()}
+        ${bookingPanel(picked)}
+      </div>
+
+      <section class="ad-card ad-panel" style="margin-top:16px">
         <header class="ad-panel-head">
-          <h2>Acts</h2>
+          <h2>Bookings</h2>
         </header>
 
-        <div class="ad-panel-intro">
-          <p>
-            Everyone on the roster. Changes show on the entertainment page
-            straight away, and on the Friday Nights cards wherever an act is
-            booked.
-          </p>
+        <div class="ad-filters">
+          <input type="search" id="ad-book-search" placeholder="Search act or venue…"
+                 value="${attr(state.bookFilter.text)}" aria-label="Search bookings">
+
+          <select id="ad-book-when" aria-label="Which bookings">
+            <option value="upcoming"${state.bookFilter.when === 'upcoming' ? ' selected' : ''}>Upcoming</option>
+            <option value="all"${state.bookFilter.when === 'all' ? ' selected' : ''}>All bookings</option>
+            <option value="past"${state.bookFilter.when === 'past' ? ' selected' : ''}>Past</option>
+          </select>
+
+          <select id="ad-book-venue-filter" aria-label="Which venue">
+            <option value="all">All venues</option>
+            ${venuesKnown().map((v) => `
+              <option value="${attr(v)}"${state.bookFilter.venue === v ? ' selected' : ''}>${esc(v)}</option>`).join('')}
+          </select>
         </div>
 
-        ${acts.length ? `
+        ${shown.length ? `
           <div class="ad-table-wrap">
             <table class="ad-table">
               <thead><tr>
-                <th>Name</th><th>Act</th><th>Photo</th><th></th>
+                <th>Date</th><th>Act</th><th>Venue</th><th>Time</th><th>Status</th><th></th>
               </tr></thead>
               <tbody>
-                ${acts.map((t) => `
-                  <tr>
-                    <td class="ad-cell-strong">${esc(t.name)}</td>
-                    <td>${esc(ACT_LABELS[t.act] || t.act || '')}</td>
-                    <td class="ad-cell-muted">${t.photo ? esc(t.photo) : '—'}</td>
-                    <td>
-                      <button type="button" class="ad-btn ad-btn-danger"
-                              data-act-remove="${attr(t.slug)}">Remove</button>
-                    </td>
-                  </tr>`).join('')}
-              </tbody>
-            </table>
-          </div>` : `
-          <p class="ad-empty">No acts yet.</p>`}
-
-        <div class="ad-panel-intro" style="border-top:1px solid var(--ad-line);margin-top:4px">
-          <p><strong>Add an act</strong></p>
-
-          <div class="ad-actions-row" style="flex-wrap:wrap;gap:10px;margin-top:10px">
-            <input type="text" id="ad-act-name" class="ad-limit" style="width:200px"
-                   placeholder="Name" aria-label="Act name">
-
-            <select id="ad-act-type" class="ad-limit" aria-label="Act type">
-              ${Object.keys(ACT_LABELS).map((k) => `
-                <option value="${attr(k)}">${esc(ACT_LABELS[k])}</option>`).join('')}
-            </select>
-
-            <input type="text" id="ad-act-photo" class="ad-limit" style="width:250px"
-                   placeholder="images/talent/name.jpg (optional)"
-                   aria-label="Photo path">
-
-            <button type="button" class="ad-btn ad-btn-primary" id="ad-act-add">
-              Add act
-            </button>
-          </div>
-
-          <p class="ad-action-msg" id="ad-act-msg" hidden></p>
-        </div>
-      </section>
-
-      <section class="ad-card ad-panel">
-        <header class="ad-panel-head">
-          <h2>Schedule</h2>
-        </header>
-
-        <div class="ad-panel-intro">
-          <p>
-            Who is playing where, and when. A booking on a Friday shows on
-            the Friday Nights cards on the events page; the rest is kept
-            here so there is one place that knows what is on.
-          </p>
-
-          <div class="ad-actions-row" style="flex-wrap:wrap;gap:10px;margin-top:10px">
-            <input type="date" id="ad-book-date" class="ad-limit"
-                   aria-label="Date">
-
-            <select id="ad-book-act" class="ad-limit" aria-label="Act">
-              ${acts.map((t) => `
-                <option value="${attr(t.slug)}">${esc(t.name)}</option>`).join('')}
-            </select>
-
-            <input type="text" id="ad-book-venue" class="ad-limit" style="width:220px"
-                   value="The Grand View Hotel" aria-label="Venue">
-
-            <button type="button" class="ad-btn ad-btn-primary" id="ad-book-add">
-              Book
-            </button>
-          </div>
-
-          <p class="ad-action-msg" id="ad-book-msg" hidden></p>
-        </div>
-
-        ${booked.length ? `
-          <div class="ad-table-wrap">
-            <table class="ad-table">
-              <thead><tr>
-                <th>Date</th><th>Act</th><th>Venue</th><th></th>
-              </tr></thead>
-              <tbody>
-                ${booked.map((b) => {
-                  const act = (state.talent.find((t) => t.slug === b.slug) || {});
+                ${shown.map((b) => {
+                  const act = state.talent.find((t) => t.slug === b.slug) || {};
+                  const status = b.status || 'confirmed';
                   return `
-                    <tr>
+                    <tr data-book-open="${attr(b.id)}">
                       <td class="ad-cell-strong">${esc(prettyDate(b.date))}</td>
-                      <td>${esc(act.name || b.slug || '—')}</td>
+                      <td>
+                        <span class="ad-act">
+                          <span class="ad-act-face"
+                                style="${act.photo ? `background-image:url('/${attr(act.photo)}')` : ''}"></span>
+                          ${esc(act.name || b.slug)}
+                        </span>
+                      </td>
                       <td class="ad-cell-muted">${esc(b.venue || '—')}</td>
+                      <td class="ad-cell-muted">${esc(b.time || '—')}</td>
+                      <td>
+                        <span class="ad-pill ${status === 'pending' ? 'ad-pill-amber' : 'ad-pill-green'}">
+                          ${status === 'pending' ? 'Pending' : 'Confirmed'}
+                        </span>
+                      </td>
                       <td>
                         <button type="button" class="ad-btn ad-btn-danger"
                                 data-book-remove="${attr(b.id)}">Remove</button>
@@ -2008,140 +1992,512 @@ VIEWS.entertainment = {
               </tbody>
             </table>
           </div>` : `
-          <p class="ad-empty">Nothing booked yet.</p>`}
-      </section>`;
+          <p class="ad-empty">Nothing matches that.</p>`}
+      </section>
+
+      ${rosterPanel(acts)}`;
   },
 
-  wire() {
-    const actBar = document.getElementById('ad-act-msg');
-    const bookBar = document.getElementById('ad-book-msg');
+  wire() { wireEntertainment(); },
+};
 
-    function say(bar, text, ok) {
-      if (!bar) return;
-      bar.hidden = false;
-      bar.className = 'ad-action-msg ' + (ok ? 'is-ok' : 'is-bad');
-      bar.textContent = text;
+
+/*  The month grid. Monday first, because that is how a week is read here,
+    and every day carries a dot for each booking on it so the shape of the
+    month is legible without reading a word.                             */
+function calendarHtml() {
+  const cursor = state.bookMonth;
+  const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+  const days = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
+
+  /*  getDay() is Sunday-first; this shifts it so Monday starts the row. */
+  const lead = (first.getDay() + 6) % 7;
+  const today = isoDay(new Date());
+
+  const cells = [];
+  for (let i = 0; i < lead; i++) cells.push('<div class="ad-cal-day is-empty"></div>');
+
+  for (let d = 1; d <= days; d++) {
+    const iso = isoDay(new Date(cursor.getFullYear(), cursor.getMonth(), d));
+    const on = state.schedule.filter((b) => b.date === iso);
+
+    cells.push(`
+      <div class="ad-cal-day${iso === today ? ' is-today' : ''}${on.length ? ' has-booking' : ''}"
+           ${on.length ? `data-book-open="${attr(on[0].id)}"` : ''}>
+        <span class="ad-cal-num">${d}</span>
+        ${on.map((b) => {
+          const act = state.talent.find((t) => t.slug === b.slug) || {};
+          return `<span class="ad-cal-act ${(b.status || 'confirmed') === 'pending' ? 'is-pending' : ''}">${esc(act.name || b.slug)}</span>`;
+        }).join('')}
+      </div>`);
+  }
+
+  return `
+    <section class="ad-card ad-cal">
+      <header class="ad-cal-head">
+        <h2>${esc(cursor.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' }))}</h2>
+        <div class="ad-cal-nav">
+          <button type="button" class="ad-btn" data-cal="-1" aria-label="Previous month">‹</button>
+          <button type="button" class="ad-btn" data-cal="0">Today</button>
+          <button type="button" class="ad-btn" data-cal="1" aria-label="Next month">›</button>
+        </div>
+      </header>
+
+      <div class="ad-cal-grid">
+        ${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+          .map((d) => `<div class="ad-cal-name">${d}</div>`).join('')}
+        ${cells.join('')}
+      </div>
+    </section>`;
+}
+
+/*  The one booking being looked at. Doubles as the editor: the same panel
+    fills in for a new booking, so there is one form on the page rather
+    than one to add and another to change.                               */
+function bookingPanel(b) {
+  const acts = state.talent;
+  const editing = state.bookEditing;
+
+  if (!b && !editing) {
+    return `
+      <section class="ad-card ad-book-panel">
+        <p class="ad-empty">No bookings yet. New booking puts one in.</p>
+      </section>`;
+  }
+
+  if (editing) {
+    const draft = state.bookDraft;
+    return `
+      <section class="ad-card ad-book-panel">
+        <h3>${draft.id ? 'Edit booking' : 'New booking'}</h3>
+
+        <label class="ad-field">Date
+          <input type="date" id="ad-f-date" value="${attr(draft.date || '')}">
+        </label>
+
+        <label class="ad-field">Act
+          <select id="ad-f-act">
+            ${acts.map((t) => `
+              <option value="${attr(t.slug)}"${draft.slug === t.slug ? ' selected' : ''}>${esc(t.name)}</option>`).join('')}
+          </select>
+        </label>
+
+        <label class="ad-field">Venue
+          <input type="text" id="ad-f-venue" value="${attr(draft.venue || 'Grand View Hotel, Bowen')}">
+        </label>
+
+        <label class="ad-field">Time
+          <input type="text" id="ad-f-time" value="${attr(draft.time || '9:30 PM – Late')}">
+        </label>
+
+        <label class="ad-field">Status
+          <select id="ad-f-status">
+            <option value="confirmed"${draft.status !== 'pending' ? ' selected' : ''}>Confirmed</option>
+            <option value="pending"${draft.status === 'pending' ? ' selected' : ''}>Pending</option>
+          </select>
+        </label>
+
+        <label class="ad-field">Notes
+          <textarea id="ad-f-notes" rows="2">${esc(draft.notes || '')}</textarea>
+        </label>
+
+        <div class="ad-actions-row" style="margin-top:12px">
+          <button type="button" class="ad-btn ad-btn-primary" id="ad-f-save">Save booking</button>
+          <button type="button" class="ad-btn" id="ad-f-cancel">Cancel</button>
+        </div>
+
+        <p class="ad-action-msg" id="ad-book-msg" hidden></p>
+      </section>`;
+  }
+
+  const act = acts.find((t) => t.slug === b.slug) || {};
+  const status = b.status || 'confirmed';
+
+  return `
+    <section class="ad-card ad-book-panel">
+      <div class="ad-book-head">
+        <h3>${esc(prettyDate(b.date))}</h3>
+        <span class="ad-pill ${status === 'pending' ? 'ad-pill-amber' : 'ad-pill-green'}">
+          ${status === 'pending' ? 'Pending' : 'Confirmed'}
+        </span>
+      </div>
+
+      <dl class="ad-book-facts">
+        <dt>Act</dt>
+        <dd>
+          <span class="ad-act">
+            <span class="ad-act-face"
+                  style="${act.photo ? `background-image:url('/${attr(act.photo)}')` : ''}"></span>
+            ${esc(act.name || b.slug)}
+          </span>
+        </dd>
+
+        <dt>Time</dt><dd>${esc(b.time || '—')}</dd>
+        <dt>Venue</dt><dd>${esc(b.venue || '—')}</dd>
+        ${b.notes ? `<dt>Notes</dt><dd>${esc(b.notes)}</dd>` : ''}
+      </dl>
+
+      <div class="ad-actions-row">
+        <button type="button" class="ad-btn ad-btn-primary" data-book-edit="${attr(b.id)}">Edit</button>
+        <!--  Puts the same act on the same night next week, which is what
+              a residency is and what most of this diary is.            -->
+        <button type="button" class="ad-btn" data-book-repeat="${attr(b.id)}">Repeat next week</button>
+      </div>
+
+      <p class="ad-action-msg" id="ad-book-msg" hidden></p>
+    </section>`;
+}
+
+function rosterPanel(acts) {
+  return `
+    <section class="ad-card ad-panel" style="margin-top:16px">
+      <header class="ad-panel-head">
+        <h2>The roster</h2>
+      </header>
+
+      <div class="ad-panel-intro">
+        <p>
+          Everyone bookable. An act added here shows on the entertainment
+          page and in the booking form straight away.
+        </p>
+        <p class="ad-cell-muted">
+          The photograph is a path to a file in the site, like
+          images/talent/maxzi.jpg. Leave it blank and the card shows its
+          gradient.
+        </p>
+      </div>
+
+      ${acts.length ? `
+        <div class="ad-table-wrap">
+          <table class="ad-table">
+            <thead><tr><th>Name</th><th>Act</th><th>Photo</th><th></th></tr></thead>
+            <tbody>
+              ${acts.map((t) => `
+                <tr>
+                  <td class="ad-cell-strong">
+                    <span class="ad-act">
+                      <span class="ad-act-face"
+                            style="${t.photo ? `background-image:url('/${attr(t.photo)}')` : ''}"></span>
+                      ${esc(t.name)}
+                    </span>
+                  </td>
+                  <td>${esc(ACT_LABELS[t.act] || t.act || '')}</td>
+                  <td class="ad-cell-muted">${t.photo ? esc(t.photo) : '—'}</td>
+                  <td>
+                    <button type="button" class="ad-btn ad-btn-danger"
+                            data-act-remove="${attr(t.slug)}">Remove</button>
+                  </td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>` : '<p class="ad-empty">No acts yet.</p>'}
+
+      <div class="ad-panel-intro" style="border-top:1px solid var(--ad-line)">
+        <p><strong>Add an act</strong></p>
+
+        <div class="ad-actions-row" style="flex-wrap:wrap;gap:10px;margin-top:10px">
+          <input type="text" id="ad-act-name" placeholder="Name" aria-label="Act name">
+          <select id="ad-act-type" aria-label="Act type">
+            ${Object.keys(ACT_LABELS).map((k) => `
+              <option value="${attr(k)}">${esc(ACT_LABELS[k])}</option>`).join('')}
+          </select>
+          <input type="text" id="ad-act-photo" style="min-width:230px"
+                 placeholder="images/talent/name.jpg (optional)" aria-label="Photo path">
+          <button type="button" class="ad-btn ad-btn-primary" id="ad-act-add">Add act</button>
+        </div>
+
+        <p class="ad-action-msg" id="ad-act-msg" hidden></p>
+      </div>
+    </section>`;
+}
+
+function statTile(label, value, note, mod) {
+  return `
+    <div class="ad-stat ${mod}">
+      <p class="ad-stat-label">${esc(label)}</p>
+      <p class="ad-stat-value">${value}</p>
+      <p class="ad-stat-note">${esc(note)}</p>
+    </div>`;
+}
+
+function venuesKnown() {
+  const seen = {};
+  state.schedule.forEach((b) => { if (b.venue) seen[b.venue] = true; });
+  return Object.keys(seen).sort();
+}
+
+function filteredBookings() {
+  const today = isoDay(new Date());
+  const f = state.bookFilter;
+  const text = (f.text || '').trim().toLowerCase();
+
+  return state.schedule.filter((b) => {
+    if (f.when === 'upcoming' && b.date < today) return false;
+    if (f.when === 'past' && b.date >= today) return false;
+    if (f.venue !== 'all' && b.venue !== f.venue) return false;
+
+    if (text) {
+      const act = state.talent.find((t) => t.slug === b.slug) || {};
+      const hay = ((act.name || b.slug) + ' ' + (b.venue || '')).toLowerCase();
+      if (hay.indexOf(text) < 0) return false;
     }
+    return true;
+  });
+}
 
-    /*  The slug is made from the name rather than asked for. It is the id
-        of the row and the name of the photo file, and nobody should have
-        to think about it to add a DJ.                                   */
-    function slugify(name) {
-      return String(name).toLowerCase()
+function isoDay(d) {
+  return d.getFullYear() + '-' +
+         String(d.getMonth() + 1).padStart(2, '0') + '-' +
+         String(d.getDate()).padStart(2, '0');
+}
+
+function bookingId(date, slug) {
+  return date + '__' + slug;
+}
+
+/* ---- wiring ---------------------------------------------------------- */
+function wireEntertainment() {
+  const say = (id, text, ok) => {
+    const bar = document.getElementById(id);
+    if (!bar) return;
+    bar.hidden = false;
+    bar.className = 'ad-action-msg ' + (ok ? 'is-ok' : 'is-bad');
+    bar.textContent = text;
+  };
+
+  /* the month */
+  document.querySelectorAll('[data-cal]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const step = parseInt(btn.getAttribute('data-cal'), 10);
+      state.bookMonth = step === 0
+        ? new Date()
+        : new Date(state.bookMonth.getFullYear(), state.bookMonth.getMonth() + step, 1);
+      render();
+    });
+  });
+
+  /* opening one */
+  document.querySelectorAll('[data-book-open]').forEach((el) => {
+    el.addEventListener('click', (ev) => {
+      if (ev.target.closest('[data-book-remove]')) return;
+      state.bookingOpen = el.getAttribute('data-book-open');
+      state.bookEditing = false;
+      render();
+    });
+  });
+
+  /* new / edit / cancel */
+  const fresh = document.getElementById('ad-book-new');
+  if (fresh) {
+    fresh.addEventListener('click', () => {
+      state.bookDraft = { date: '', slug: (state.talent[0] || {}).slug || '', status: 'confirmed' };
+      state.bookEditing = true;
+      render();
+    });
+  }
+
+  document.querySelectorAll('[data-book-edit]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const b = state.schedule.find((x) => x.id === btn.getAttribute('data-book-edit'));
+      if (!b) return;
+      state.bookDraft = { ...b };
+      state.bookEditing = true;
+      render();
+    });
+  });
+
+  const cancel = document.getElementById('ad-f-cancel');
+  if (cancel) {
+    cancel.addEventListener('click', () => {
+      state.bookEditing = false;
+      render();
+    });
+  }
+
+  const save = document.getElementById('ad-f-save');
+  if (save) {
+    save.addEventListener('click', async () => {
+      const date = document.getElementById('ad-f-date').value;
+      const slug = document.getElementById('ad-f-act').value;
+
+      if (!date) { say('ad-book-msg', 'Pick a date.', false); return; }
+      if (!slug) { say('ad-book-msg', 'Pick an act.', false); return; }
+
+      const row = {
+        date,
+        slug,
+        venue: document.getElementById('ad-f-venue').value.trim(),
+        time: document.getElementById('ad-f-time').value.trim(),
+        status: document.getElementById('ad-f-status').value,
+        notes: document.getElementById('ad-f-notes').value.trim(),
+        updatedAt: fb.f.serverTimestamp(),
+      };
+
+      save.disabled = true;
+
+      try {
+        const id = bookingId(date, slug);
+        const old = state.bookDraft.id;
+
+        await fb.f.setDoc(fb.f.doc(fb.db, 'talentSchedule', id), row);
+
+        /*  Moving a booking to another night or another act changes its
+            id, so the one it used to be has to go or there would be two. */
+        if (old && old !== id) {
+          await fb.f.deleteDoc(fb.f.doc(fb.db, 'talentSchedule', old));
+        }
+
+        await loadSchedule();
+        state.bookEditing = false;
+        state.bookingOpen = id;
+        render();
+        say('ad-book-msg', 'Saved.', true);
+      } catch (err) {
+        say('ad-book-msg', friendly(err), false);
+        save.disabled = false;
+      }
+    });
+  }
+
+  document.querySelectorAll('[data-book-repeat]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const b = state.schedule.find((x) => x.id === btn.getAttribute('data-book-repeat'));
+      if (!b) return;
+
+      const p = b.date.split('-');
+      const next = new Date(+p[0], +p[1] - 1, +p[2] + 7);
+      const date = isoDay(next);
+
+      btn.disabled = true;
+
+      try {
+        await fb.f.setDoc(fb.f.doc(fb.db, 'talentSchedule', bookingId(date, b.slug)), {
+          date, slug: b.slug, venue: b.venue || '', time: b.time || '',
+          status: b.status || 'confirmed', notes: b.notes || '',
+          updatedAt: fb.f.serverTimestamp(),
+        });
+
+        await loadSchedule();
+        state.bookingOpen = bookingId(date, b.slug);
+        render();
+        say('ad-book-msg', 'Booked for ' + prettyDate(date) + '.', true);
+      } catch (err) {
+        say('ad-book-msg', friendly(err), false);
+        btn.disabled = false;
+      }
+    });
+  });
+
+  document.querySelectorAll('[data-book-remove]').forEach((btn) => {
+    btn.addEventListener('click', async (ev) => {
+      ev.stopPropagation();
+      const id = btn.getAttribute('data-book-remove');
+      if (!window.confirm('Remove this booking?')) return;
+
+      btn.disabled = true;
+
+      try {
+        await fb.f.deleteDoc(fb.f.doc(fb.db, 'talentSchedule', id));
+        if (state.bookingOpen === id) state.bookingOpen = null;
+        await loadSchedule();
+        render();
+      } catch (err) {
+        say('ad-book-msg', friendly(err), false);
+        btn.disabled = false;
+      }
+    });
+  });
+
+  /* filters */
+  const search = document.getElementById('ad-book-search');
+  if (search) {
+    search.addEventListener('input', () => {
+      state.bookFilter.text = search.value;
+      render();
+      const again = document.getElementById('ad-book-search');
+      if (again) { again.focus(); again.setSelectionRange(again.value.length, again.value.length); }
+    });
+  }
+
+  const when = document.getElementById('ad-book-when');
+  if (when) {
+    when.addEventListener('change', () => {
+      state.bookFilter.when = when.value;
+      render();
+    });
+  }
+
+  const venueSel = document.getElementById('ad-book-venue-filter');
+  if (venueSel) {
+    venueSel.addEventListener('change', () => {
+      state.bookFilter.venue = venueSel.value;
+      render();
+    });
+  }
+
+  /* the roster */
+  const add = document.getElementById('ad-act-add');
+  if (add) {
+    add.addEventListener('click', async () => {
+      const name = document.getElementById('ad-act-name').value.trim();
+      const act = document.getElementById('ad-act-type').value;
+      const photo = document.getElementById('ad-act-photo').value.trim();
+
+      if (!name) { say('ad-act-msg', 'Give the act a name.', false); return; }
+
+      /*  The slug is made from the name rather than asked for. It is the
+          id of the row and nobody should have to think about it.       */
+      const slug = name.toLowerCase()
         .replace(/&/g, ' and ')
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '')
         .slice(0, 60);
-    }
 
-    const add = document.getElementById('ad-act-add');
-    if (add) {
-      add.addEventListener('click', async () => {
-        const name = document.getElementById('ad-act-name').value.trim();
-        const act = document.getElementById('ad-act-type').value;
-        const photo = document.getElementById('ad-act-photo').value.trim();
+      if (!slug) { say('ad-act-msg', 'That name has no letters or numbers in it.', false); return; }
 
-        if (!name) { say(actBar, 'Give the act a name.', false); return; }
+      add.disabled = true;
 
-        const slug = slugify(name);
-        if (!slug) { say(actBar, 'That name has no letters or numbers in it.', false); return; }
-
-        add.disabled = true;
-
-        try {
-          await fb.f.setDoc(fb.f.doc(fb.db, 'talent', slug), {
-            name, act, photo, hidden: false,
-            updatedAt: fb.f.serverTimestamp(),
-          });
-
-          await loadTalent();
-          render();
-          say(document.getElementById('ad-act-msg'), `${name} added.`, true);
-        } catch (err) {
-          say(actBar, friendly(err), false);
-          add.disabled = false;
-        }
-      });
-    }
-
-    document.querySelectorAll('[data-act-remove]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const slug = btn.getAttribute('data-act-remove');
-        const act = state.talent.find((t) => t.slug === slug) || {};
-
-        if (!window.confirm(`Remove ${act.name || slug} from the roster?`)) return;
-
-        btn.disabled = true;
-
-        try {
-          /*  An act that only exists in js/roster.js cannot be deleted -
-              there is no row to delete. It is marked hidden instead, and
-              the merge in roster.js drops it.                          */
-          await fb.f.setDoc(fb.f.doc(fb.db, 'talent', slug), {
-            name: act.name || slug,
-            hidden: true,
-            updatedAt: fb.f.serverTimestamp(),
-          }, { merge: true });
-
-          await loadTalent();
-          render();
-          say(document.getElementById('ad-act-msg'),
-              `${act.name || slug} removed.`, true);
-        } catch (err) {
-          say(actBar, friendly(err), false);
-          btn.disabled = false;
-        }
-      });
+      try {
+        await fb.f.setDoc(fb.f.doc(fb.db, 'talent', slug), {
+          name, act, photo, hidden: false, updatedAt: fb.f.serverTimestamp(),
+        });
+        await loadTalent();
+        render();
+        say('ad-act-msg', name + ' added.', true);
+      } catch (err) {
+        say('ad-act-msg', friendly(err), false);
+        add.disabled = false;
+      }
     });
+  }
 
-    const book = document.getElementById('ad-book-add');
-    if (book) {
-      book.addEventListener('click', async () => {
-        const date = document.getElementById('ad-book-date').value;
-        const slug = document.getElementById('ad-book-act').value;
-        const venue = document.getElementById('ad-book-venue').value.trim();
+  document.querySelectorAll('[data-act-remove]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const slug = btn.getAttribute('data-act-remove');
+      const act = state.talent.find((t) => t.slug === slug) || {};
 
-        if (!date) { say(bookBar, 'Pick a date.', false); return; }
-        if (!slug) { say(bookBar, 'Pick an act.', false); return; }
+      if (!window.confirm('Remove ' + (act.name || slug) + ' from the roster?')) return;
 
-        book.disabled = true;
+      btn.disabled = true;
 
-        try {
-          /*  The date is the id, so booking the same night twice replaces
-              the first rather than quietly making two.                 */
-          await fb.f.setDoc(fb.f.doc(fb.db, 'talentSchedule', date), {
-            date, slug, venue,
-            updatedAt: fb.f.serverTimestamp(),
-          });
+      try {
+        /*  An act that exists only in js/roster.js has no row to delete,
+            so it is marked hidden and the merge there drops it.        */
+        await fb.f.setDoc(fb.f.doc(fb.db, 'talent', slug), {
+          name: act.name || slug, hidden: true, updatedAt: fb.f.serverTimestamp(),
+        }, { merge: true });
 
-          await loadSchedule();
-          render();
-          say(document.getElementById('ad-book-msg'), 'Booked.', true);
-        } catch (err) {
-          say(bookBar, friendly(err), false);
-          book.disabled = false;
-        }
-      });
-    }
-
-    document.querySelectorAll('[data-book-remove]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const id = btn.getAttribute('data-book-remove');
-        btn.disabled = true;
-
-        try {
-          await fb.f.deleteDoc(fb.f.doc(fb.db, 'talentSchedule', id));
-          await loadSchedule();
-          render();
-          say(document.getElementById('ad-book-msg'), 'Removed.', true);
-        } catch (err) {
-          say(bookBar, friendly(err), false);
-          btn.disabled = false;
-        }
-      });
+        await loadTalent();
+        render();
+        say('ad-act-msg', (act.name || slug) + ' removed.', true);
+      } catch (err) {
+        say('ad-act-msg', friendly(err), false);
+        btn.disabled = false;
+      }
     });
-  },
-};
+  });
+}
+
 
 VIEWS.settings = {
   html() {

@@ -267,12 +267,19 @@ var EV_FRIDAYS = {
         out of it here.                                                 */
     window.SGWeekend.loadCollection('talentSchedule').then(function (rows) {
         rows.forEach(function (row) {
-            if (!row.date) return;
+            if (!row.date || !row.slug) return;
 
-            /*  A row with no act on it is somebody clearing a date, and
-                that has to beat the built-in list or it could never be
-                undone from admin.                                      */
-            booked[row.date] = row.slug ? { slug: row.slug, name: row.name } : null;
+            /*  A night can hold more than one booking now - two acts, or
+                two venues. The Grand View wins for these cards, because
+                that is what Friday Nights is; anything else only fills a
+                night nothing at the pub has claimed.                   */
+            var mine = /grand view/i.test(row.venue || '');
+            if (!mine && booked[row.date] && booked[row.date].fromVenue) return;
+
+            booked[row.date] = {
+                slug: row.slug,
+                fromVenue: mine
+            };
         });
 
         redraw();
