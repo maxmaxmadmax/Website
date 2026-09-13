@@ -138,9 +138,9 @@
    NAMING A DJ - two ways, and the first one wins
    ==========================================================================
 
-   1. ADMIN -> SETTINGS -> FRIDAY NIGHTS. Pick the DJ against the date and
-      it saves. This is the one to use: no deploy, no code, and it is there
-      for whoever is on the desk rather than for whoever has the repository.
+   1. ADMIN -> ENTERTAINMENT. Book the act against the date and it saves.
+      This is the one to use: no deploy, no code, and it is there for
+      whoever is on the desk rather than for whoever has the repository.
 
    2. THE LIST BELOW, for a Friday somebody wants locked in before the
       admin page is next opened. Anything set in admin overrides it.
