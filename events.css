@@ -710,6 +710,13 @@
     gap:26px;
     align-items:start;
 
+    /*  width:100% is load bearing. This is a flex item in a column, and
+        margin:auto on one of those centres it AND shrinks it to its own
+        content - so the line up column sized itself to the widest word on
+        a card instead of to the page. It was 219px across, with four
+        44px cards in it, the moment the cards stopped carrying a line of
+        text to hold them open. Same trap as the vendor progress bar.   */
+    width:100%;
     max-width:var(--sg-max-width);
     margin:auto;
     padding:18px 6%;
