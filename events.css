@@ -838,11 +838,15 @@
     overflow:hidden;
 }
 
+/*  The pub itself. The gradient stays underneath as the fallback, so
+    this still looks like a card if the photograph ever goes missing. */
 .ev-venue-art{
-    height:76px;
-    background:linear-gradient(140deg, #33184a, #0d0d0d 72%);
+    height:120px;
+    background:
+        url('images/venues/grand-view-hotel.jpg'),
+        linear-gradient(140deg, #33184a, #0d0d0d 72%);
     background-size:cover;
-    background-position:center;
+    background-position:center 62%;
     margin-bottom:12px;
 }
 
@@ -968,7 +972,7 @@
     .ev-res-body{ padding:12px 6%; }
     .ev-fri-body{ padding:22px 12px 12px; }
 
-    .ev-venue-art{ height:58px; margin-bottom:10px; }
+    .ev-venue-art{ height:92px; margin-bottom:10px; }
     .ev-venue > p{ margin-bottom:10px; }
     .ev-venue-points li{ padding:6px 16px; }
 

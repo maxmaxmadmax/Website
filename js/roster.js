@@ -69,11 +69,117 @@
         */
     ];
 
-    global.SG_ROSTER = TALENT;
+    /* ----------------------------------------------------------------------
+       THE LIST ABOVE IS THE STARTING POINT, NOT THE LAST WORD
 
-    /*  Handy for the two pages that look one up by slug. */
-    global.SG_ROSTER_BY_SLUG = TALENT.reduce(function (map, t) {
-        map[t.slug] = t;
-        return map;
-    }, {});
+       Acts are managed in Admin -> Entertainment, and those live in
+       Firestore. What the site actually shows is the two put together:
+
+           an act in the database that is not above    is added
+           an act in both                             the database wins
+           an act marked hidden in the database       is dropped
+
+       So the eight above are what the site falls back to if the database
+       is unreachable, and everything after that is managed without a
+       deploy. Nobody has to choose between the two.
+
+       SG_ROSTER holds the built-in list immediately and the merged list
+       once it lands. SG_ROSTER_READY is the one to wait for - a page that
+       builds itself from the roster should build inside it, once, rather
+       than drawing the built-ins and then flinching.
+       ---------------------------------------------------------------------- */
+    var PROJECT = 'soundzgood-8c86f';
+    var WEB_KEY = 'AIzaSyCVWdD7fE24MuN-v5XQLObJbSHYRUbPlPY';
+    var REST = 'https://firestore.googleapis.com/v1/projects/' + PROJECT +
+               '/databases/(default)/documents/talent?pageSize=200&key=' + WEB_KEY;
+
+    function index(list) {
+        return list.reduce(function (map, t) {
+            map[t.slug] = t;
+            return map;
+        }, {});
+    }
+
+    function publish(list) {
+        global.SG_ROSTER = list;
+        global.SG_ROSTER_BY_SLUG = index(list);
+        return list;
+    }
+
+    /*  The built-in list on its own, for the admin page: it merges the
+        same way this file does, and needs to know which acts are in the
+        file - those cannot be deleted, only hidden.                  */
+    global.SG_ROSTER_BUILT_IN = TALENT;
+
+    publish(TALENT);
+
+    /*  Firestore hands every value back wrapped in its type. */
+    function plain(fields) {
+        var out = {};
+        Object.keys(fields || {}).forEach(function (k) {
+            var v = fields[k];
+            out[k] = v.stringValue !== undefined ? v.stringValue
+                   : v.booleanValue !== undefined ? v.booleanValue
+                   : v.integerValue !== undefined ? parseInt(v.integerValue, 10)
+                   : v.arrayValue !== undefined
+                       ? (v.arrayValue.values || []).map(function (x) {
+                             return x.stringValue || '';
+                         })
+                   : '';
+        });
+        return out;
+    }
+
+    global.SG_ROSTER_READY = fetch(REST)
+        .then(function (r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        })
+        .then(function (body) {
+            var saved = (body.documents || []).map(function (doc) {
+                var t = plain(doc.fields);
+                t.slug = doc.name.split('/').pop();
+                return t;
+            });
+
+            if (!saved.length) return publish(TALENT);
+
+            var bySlug = index(TALENT);
+
+            saved.forEach(function (t) {
+                if (t.hidden) { delete bySlug[t.slug]; return; }
+
+                var was = bySlug[t.slug] || {};
+                bySlug[t.slug] = {
+                    slug: t.slug,
+                    name: t.name || was.name || t.slug,
+                    act: t.act || was.act || 'dj',
+                    photo: t.photo !== undefined && t.photo !== ''
+                        ? t.photo : (was.photo || ''),
+                    genres: (t.genres && t.genres.length) ? t.genres : (was.genres || []),
+                    events: (t.events && t.events.length) ? t.events : (was.events || []),
+                    order: t.order
+                };
+            });
+
+            var merged = Object.keys(bySlug).map(function (k) { return bySlug[k]; });
+
+            /*  Anything given an order in admin sorts by it; everything
+                else keeps the order it is written in above, which is the
+                order the DJs were signed.                              */
+            merged.sort(function (a, b) {
+                var ao = typeof a.order === 'number' ? a.order : 500;
+                var bo = typeof b.order === 'number' ? b.order : 500;
+                return ao - bo;
+            });
+
+            return publish(merged);
+        })
+        .catch(function (err) {
+            /*  The built-in eight. A roster page showing the acts we had
+                last week is a great deal better than an empty one.     */
+            if (global.console) console.warn('roster: using the built-in list', err);
+            return publish(TALENT);
+        });
 }(window));
+

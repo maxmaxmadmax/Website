@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=45';
+} from './firebase-config.js?v=46';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -52,7 +52,10 @@ const state = {
   /*  Which DJ is on which Friday, keyed by date. Filled in when the
       settings view is opened - it is four lines of data and nothing
       else on the desk needs it.                                     */
-  fridays: {},
+  /*  The roster and the schedule, for the Entertainment view. Loaded on
+      arrival there rather than kept in sync everywhere.             */
+  talent: [],
+  schedule: [],
   sites: [],
   categories: [],
 
@@ -126,40 +129,74 @@ async function loadFirebase() {
   };
 }
 
-/*  The next eight Fridays from today, as { key, label } - the same
-    dates the events page works out for itself, so the two lists line up
-    without either being told about the other.                          */
-function nextFridays(howMany) {
-  const out = [];
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + ((5 - d.getDay() + 7) % 7));
+/*  The act types, in the order they are offered. Same keys the
+    entertainment page uses.                                            */
+const ACT_LABELS = {
+  dj: 'DJ',
+  solo: 'Solo Artist',
+  band: 'Band',
+  mc: 'MC / Host',
+  kids: 'Kids Entertainment',
+};
 
-  for (let i = 0; i < howMany; i++) {
-    out.push({
-      key: d.getFullYear() + '-' +
-           String(d.getMonth() + 1).padStart(2, '0') + '-' +
-           String(d.getDate()).padStart(2, '0'),
-      label: d.toLocaleDateString('en-AU',
-        { weekday: 'short', day: 'numeric', month: 'short' }),
-    });
-    d.setDate(d.getDate() + 7);
-  }
-  return out;
+function prettyDate(iso) {
+  const p = String(iso || '').split('-');
+  if (p.length !== 3) return iso || '';
+  return new Date(+p[0], +p[1] - 1, +p[2])
+    .toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-/*  Reads the saved line up. Called before the settings view is drawn so
-    the dropdowns come up already showing who is booked.                */
-async function loadFridays() {
-  const { collection, getDocs } = fb.f;
-
+/*  The roster as the site sees it: the built-in list in js/roster.js with
+    whatever is saved in Firestore merged over it. Read through roster.js
+    rather than queried here, so the desk and the site can never disagree
+    about who is on the books.                                          */
+async function loadTalent() {
   try {
-    const snap = await getDocs(collection(fb.db, 'fridayNights'));
-    state.fridays = {};
-    snap.forEach((doc) => { state.fridays[doc.id] = doc.data().slug || ''; });
+    /*  SG_ROSTER_READY is a promise that has already resolved by now on a
+        second visit, so it is re-fetched rather than reused - an act
+        added a minute ago has to appear.                              */
+    const { collection, getDocs } = fb.f;
+    const snap = await getDocs(collection(fb.db, 'talent'));
+
+    const saved = {};
+    snap.forEach((doc) => { saved[doc.id] = doc.data(); });
+
+    const bySlug = {};
+    (window.SG_ROSTER_BUILT_IN || []).forEach((t) => { bySlug[t.slug] = { ...t }; });
+
+    Object.keys(saved).forEach((slug) => {
+      const t = saved[slug];
+      if (t.hidden) { delete bySlug[slug]; return; }
+      bySlug[slug] = {
+        slug,
+        name: t.name || slug,
+        act: t.act || (bySlug[slug] || {}).act || 'dj',
+        photo: t.photo || (bySlug[slug] || {}).photo || '',
+      };
+    });
+
+    state.talent = Object.keys(bySlug).map((k) => bySlug[k]);
   } catch (err) {
-    /*  An unreadable line up is empty dropdowns, not a broken page. */
-    state.fridays = {};
+    state.talent = (window.SG_ROSTER_BUILT_IN || []).slice();
+  }
+}
+
+async function loadSchedule() {
+  try {
+    const { collection, getDocs } = fb.f;
+    const snap = await getDocs(collection(fb.db, 'talentSchedule'));
+
+    const rows = [];
+    snap.forEach((doc) => rows.push({ id: doc.id, ...doc.data() }));
+
+    /*  Soonest first, and nothing that has been - a schedule is a list of
+        what is coming.                                                 */
+    const today = new Date().toISOString().slice(0, 10);
+    state.schedule = rows
+      .filter((r) => r.date && r.date >= today)
+      .sort((x, y) => x.date.localeCompare(y.date));
+  } catch (err) {
+    state.schedule = [];
   }
 }
 
@@ -248,7 +285,7 @@ function wireChrome() {
 /* -------------------------------------------------------------------------
    Routing
    ------------------------------------------------------------------------- */
-const BUILT = ['events', 'vendors', 'applications', 'map', 'settings'];
+const BUILT = ['events', 'vendors', 'applications', 'map', 'entertainment', 'settings'];
 
 /*  Vendors is where the work is, so it is what you land on. */
 const HOME = 'vendors';
@@ -267,8 +304,9 @@ function routeFromHash() {
       fetched on arrival rather than kept in sync all the time. Drawn
       again once it lands - the panel is already on screen by then, with
       its dropdowns unset for the half second it takes.                */
-  if (want === 'settings') {
-    loadFridays().then(() => { if (state.view === 'settings') render(); });
+  if (want === 'entertainment') {
+    Promise.all([loadTalent(), loadSchedule()])
+      .then(() => { if (state.view === 'entertainment') render(); });
   }
 }
 
@@ -1820,6 +1858,291 @@ function wireEventForm() {
    Both are per-event and both are rare - you set them up once and mostly
    leave them - so they live together away from the daily work.
    ========================================================================= */
+/* -------------------------------------------------------------------------
+   ENTERTAINMENT
+
+   The acts, and who is booked on what night.
+
+   WHERE THE ACTS LIVE
+   js/roster.js holds a built-in list of the eight DJs, and this view writes
+   to Firestore. What the site shows is the two put together: an act saved
+   here is added, an act in both is taken from here, and one marked hidden
+   drops off. So the built-in list is what the site falls back to if the
+   database is unreachable, and everything after that is managed here
+   without a deploy.
+
+   That is also why removing one of the original eight writes a hidden flag
+   rather than deleting a row - there is nothing to delete, they are in the
+   file. Removing an act added here deletes it outright.
+
+   PHOTOGRAPHS are a path, not an upload. There is no file picker because
+   there is nowhere yet to put what it picked; the images live in the
+   repository under images/talent/. Leave it blank and the card shows its
+   gradient, which is what every act without a photo does today.
+   ------------------------------------------------------------------------- */
+VIEWS.entertainment = {
+  html() {
+    const acts = state.talent;
+    const booked = state.schedule;
+
+    return `
+      <div class="ad-page-head">
+        <div>
+          <h1>Entertainment</h1>
+          <p>The roster, and who is booked on what night.</p>
+        </div>
+      </div>
+
+      <section class="ad-card ad-panel" style="margin-bottom:16px">
+        <header class="ad-panel-head">
+          <h2>Acts</h2>
+        </header>
+
+        <div class="ad-panel-intro">
+          <p>
+            Everyone on the roster. Changes show on the entertainment page
+            straight away, and on the Friday Nights cards wherever an act is
+            booked.
+          </p>
+        </div>
+
+        ${acts.length ? `
+          <div class="ad-table-wrap">
+            <table class="ad-table">
+              <thead><tr>
+                <th>Name</th><th>Act</th><th>Photo</th><th></th>
+              </tr></thead>
+              <tbody>
+                ${acts.map((t) => `
+                  <tr>
+                    <td class="ad-cell-strong">${esc(t.name)}</td>
+                    <td>${esc(ACT_LABELS[t.act] || t.act || '')}</td>
+                    <td class="ad-cell-muted">${t.photo ? esc(t.photo) : '—'}</td>
+                    <td>
+                      <button type="button" class="ad-btn ad-btn-danger"
+                              data-act-remove="${attr(t.slug)}">Remove</button>
+                    </td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>` : `
+          <p class="ad-empty">No acts yet.</p>`}
+
+        <div class="ad-panel-intro" style="border-top:1px solid var(--ad-line);margin-top:4px">
+          <p><strong>Add an act</strong></p>
+
+          <div class="ad-actions-row" style="flex-wrap:wrap;gap:10px;margin-top:10px">
+            <input type="text" id="ad-act-name" class="ad-limit" style="width:200px"
+                   placeholder="Name" aria-label="Act name">
+
+            <select id="ad-act-type" class="ad-limit" aria-label="Act type">
+              ${Object.keys(ACT_LABELS).map((k) => `
+                <option value="${attr(k)}">${esc(ACT_LABELS[k])}</option>`).join('')}
+            </select>
+
+            <input type="text" id="ad-act-photo" class="ad-limit" style="width:250px"
+                   placeholder="images/talent/name.jpg (optional)"
+                   aria-label="Photo path">
+
+            <button type="button" class="ad-btn ad-btn-primary" id="ad-act-add">
+              Add act
+            </button>
+          </div>
+
+          <p class="ad-action-msg" id="ad-act-msg" hidden></p>
+        </div>
+      </section>
+
+      <section class="ad-card ad-panel">
+        <header class="ad-panel-head">
+          <h2>Schedule</h2>
+        </header>
+
+        <div class="ad-panel-intro">
+          <p>
+            Who is playing where, and when. A booking on a Friday shows on
+            the Friday Nights cards on the events page; the rest is kept
+            here so there is one place that knows what is on.
+          </p>
+
+          <div class="ad-actions-row" style="flex-wrap:wrap;gap:10px;margin-top:10px">
+            <input type="date" id="ad-book-date" class="ad-limit"
+                   aria-label="Date">
+
+            <select id="ad-book-act" class="ad-limit" aria-label="Act">
+              ${acts.map((t) => `
+                <option value="${attr(t.slug)}">${esc(t.name)}</option>`).join('')}
+            </select>
+
+            <input type="text" id="ad-book-venue" class="ad-limit" style="width:220px"
+                   value="The Grand View Hotel" aria-label="Venue">
+
+            <button type="button" class="ad-btn ad-btn-primary" id="ad-book-add">
+              Book
+            </button>
+          </div>
+
+          <p class="ad-action-msg" id="ad-book-msg" hidden></p>
+        </div>
+
+        ${booked.length ? `
+          <div class="ad-table-wrap">
+            <table class="ad-table">
+              <thead><tr>
+                <th>Date</th><th>Act</th><th>Venue</th><th></th>
+              </tr></thead>
+              <tbody>
+                ${booked.map((b) => {
+                  const act = (state.talent.find((t) => t.slug === b.slug) || {});
+                  return `
+                    <tr>
+                      <td class="ad-cell-strong">${esc(prettyDate(b.date))}</td>
+                      <td>${esc(act.name || b.slug || '—')}</td>
+                      <td class="ad-cell-muted">${esc(b.venue || '—')}</td>
+                      <td>
+                        <button type="button" class="ad-btn ad-btn-danger"
+                                data-book-remove="${attr(b.id)}">Remove</button>
+                      </td>
+                    </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>` : `
+          <p class="ad-empty">Nothing booked yet.</p>`}
+      </section>`;
+  },
+
+  wire() {
+    const actBar = document.getElementById('ad-act-msg');
+    const bookBar = document.getElementById('ad-book-msg');
+
+    function say(bar, text, ok) {
+      if (!bar) return;
+      bar.hidden = false;
+      bar.className = 'ad-action-msg ' + (ok ? 'is-ok' : 'is-bad');
+      bar.textContent = text;
+    }
+
+    /*  The slug is made from the name rather than asked for. It is the id
+        of the row and the name of the photo file, and nobody should have
+        to think about it to add a DJ.                                   */
+    function slugify(name) {
+      return String(name).toLowerCase()
+        .replace(/&/g, ' and ')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 60);
+    }
+
+    const add = document.getElementById('ad-act-add');
+    if (add) {
+      add.addEventListener('click', async () => {
+        const name = document.getElementById('ad-act-name').value.trim();
+        const act = document.getElementById('ad-act-type').value;
+        const photo = document.getElementById('ad-act-photo').value.trim();
+
+        if (!name) { say(actBar, 'Give the act a name.', false); return; }
+
+        const slug = slugify(name);
+        if (!slug) { say(actBar, 'That name has no letters or numbers in it.', false); return; }
+
+        add.disabled = true;
+
+        try {
+          await fb.f.setDoc(fb.f.doc(fb.db, 'talent', slug), {
+            name, act, photo, hidden: false,
+            updatedAt: fb.f.serverTimestamp(),
+          });
+
+          await loadTalent();
+          render();
+          say(document.getElementById('ad-act-msg'), `${name} added.`, true);
+        } catch (err) {
+          say(actBar, friendly(err), false);
+          add.disabled = false;
+        }
+      });
+    }
+
+    document.querySelectorAll('[data-act-remove]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const slug = btn.getAttribute('data-act-remove');
+        const act = state.talent.find((t) => t.slug === slug) || {};
+
+        if (!window.confirm(`Remove ${act.name || slug} from the roster?`)) return;
+
+        btn.disabled = true;
+
+        try {
+          /*  An act that only exists in js/roster.js cannot be deleted -
+              there is no row to delete. It is marked hidden instead, and
+              the merge in roster.js drops it.                          */
+          await fb.f.setDoc(fb.f.doc(fb.db, 'talent', slug), {
+            name: act.name || slug,
+            hidden: true,
+            updatedAt: fb.f.serverTimestamp(),
+          }, { merge: true });
+
+          await loadTalent();
+          render();
+          say(document.getElementById('ad-act-msg'),
+              `${act.name || slug} removed.`, true);
+        } catch (err) {
+          say(actBar, friendly(err), false);
+          btn.disabled = false;
+        }
+      });
+    });
+
+    const book = document.getElementById('ad-book-add');
+    if (book) {
+      book.addEventListener('click', async () => {
+        const date = document.getElementById('ad-book-date').value;
+        const slug = document.getElementById('ad-book-act').value;
+        const venue = document.getElementById('ad-book-venue').value.trim();
+
+        if (!date) { say(bookBar, 'Pick a date.', false); return; }
+        if (!slug) { say(bookBar, 'Pick an act.', false); return; }
+
+        book.disabled = true;
+
+        try {
+          /*  The date is the id, so booking the same night twice replaces
+              the first rather than quietly making two.                 */
+          await fb.f.setDoc(fb.f.doc(fb.db, 'talentSchedule', date), {
+            date, slug, venue,
+            updatedAt: fb.f.serverTimestamp(),
+          });
+
+          await loadSchedule();
+          render();
+          say(document.getElementById('ad-book-msg'), 'Booked.', true);
+        } catch (err) {
+          say(bookBar, friendly(err), false);
+          book.disabled = false;
+        }
+      });
+    }
+
+    document.querySelectorAll('[data-book-remove]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-book-remove');
+        btn.disabled = true;
+
+        try {
+          await fb.f.deleteDoc(fb.f.doc(fb.db, 'talentSchedule', id));
+          await loadSchedule();
+          render();
+          say(document.getElementById('ad-book-msg'), 'Removed.', true);
+        } catch (err) {
+          say(bookBar, friendly(err), false);
+          btn.disabled = false;
+        }
+      });
+    });
+  },
+};
+
 VIEWS.settings = {
   html() {
     const ev = state.events.find((e) => e.id === state.activeEventId) || {};
@@ -1917,50 +2240,6 @@ VIEWS.settings = {
 
       <section class="ad-card ad-panel" style="margin-top:16px">
         <header class="ad-panel-head">
-          <h2>Friday Nights</h2>
-        </header>
-
-        <div class="ad-panel-intro">
-          <p>
-            Who is playing at the Grand View on each of the next eight
-            Fridays. Pick a DJ and it saves - the events page picks it up
-            straight away, and a Friday left as To Be Announced says exactly
-            that rather than guessing.
-          </p>
-          <p class="ad-cell-muted">
-            The list of DJs is the entertainment roster. Add an act there and
-            it appears here.
-          </p>
-
-          <div class="ad-table-wrap" style="margin-top:12px">
-            <table class="ad-table">
-              <thead><tr><th>Friday</th><th>DJ</th></tr></thead>
-              <tbody>
-                ${nextFridays(8).map((f) => `
-                  <tr>
-                    <td class="ad-cell-strong">${esc(f.label)}</td>
-                    <td>
-                      <select class="ad-limit" data-friday="${attr(f.key)}"
-                              aria-label="DJ for ${attr(f.label)}">
-                        <option value="">DJ To Be Announced</option>
-                        ${(window.SG_ROSTER || []).map((t) => `
-                          <option value="${attr(t.slug)}"
-                            ${state.fridays[f.key] === t.slug ? 'selected' : ''}>
-                            ${esc(t.name)}
-                          </option>`).join('')}
-                      </select>
-                    </td>
-                  </tr>`).join('')}
-              </tbody>
-            </table>
-          </div>
-
-          <p class="ad-action-msg" id="ad-friday-msg" hidden></p>
-        </div>
-      </section>
-
-      <section class="ad-card ad-panel" style="margin-top:16px">
-        <header class="ad-panel-head">
           <h2>Gig guide</h2>
         </header>
 
@@ -2009,36 +2288,6 @@ VIEWS.settings = {
         }
 
         input.disabled = false;
-      });
-    });
-
-    /*  A DJ is saved the moment it is picked. One value per row, nothing
-        to get half right, and the same shape as the category limits above. */
-    document.querySelectorAll('[data-friday]').forEach((select) => {
-      select.addEventListener('change', async () => {
-        const bar = document.getElementById('ad-friday-msg');
-        const day = select.getAttribute('data-friday');
-        select.disabled = true;
-
-        try {
-          await fb.f.setDoc(
-            fb.f.doc(fb.db, 'fridayNights', day),
-            { slug: select.value, updatedAt: fb.f.serverTimestamp() }
-          );
-
-          state.fridays[day] = select.value;
-
-          const who = select.options[select.selectedIndex].textContent.trim();
-          bar.hidden = false;
-          bar.className = 'ad-action-msg is-ok';
-          bar.textContent = select.value ? `Saved - ${who}.` : 'Cleared.';
-        } catch (err) {
-          bar.hidden = false;
-          bar.className = 'ad-action-msg is-bad';
-          bar.textContent = friendly(err);
-        }
-
-        select.disabled = false;
       });
     });
 

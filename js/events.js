@@ -232,31 +232,52 @@ var EV_FRIDAYS = {
         then again if Firestore has anything to say. A failed call leaves
         the dates correct and the DJs unnamed, which is the honest state
         rather than a broken one.                                        */
-    var fallback = {};
+    /*  THE TWO SOURCES, AND WHICH WINS
+
+        The booked map is what is drawn. It starts as the short list in
+        EV_FRIDAYS above and is replaced, date by date, by anything set in
+        Admin -> Entertainment.
+
+        Kept here rather than passed about because two things arrive at
+        their own pace - the schedule and the roster - and whichever lands
+        second must not undo the first. Each of them updates what it knows
+        and asks for a redraw.                                          */
+    var booked = {};
     Object.keys(EV_FRIDAYS).forEach(function (k) {
-        fallback[k] = { slug: EV_FRIDAYS[k] };
+        booked[k] = { slug: EV_FRIDAYS[k] };
     });
 
-    draw(fallback);
+    function redraw() { draw(booked); }
+
+    redraw();
+
+    /*  The roster carries the names and the photographs, so a card can
+        only be finished once it has landed.                            */
+    if (window.SG_ROSTER_READY) {
+        window.SG_ROSTER_READY.then(function () {
+            roster = window.SG_ROSTER_BY_SLUG || roster;
+            redraw();
+        });
+    }
 
     if (!window.SGWeekend) return;
 
-    window.SGWeekend.loadCollection('fridayNights').then(function (rows) {
-        var booked = {};
-        Object.keys(fallback).forEach(function (k) { booked[k] = fallback[k]; });
-
+    /*  The schedule is every booked act on every date, not only Fridays -
+        it is what Admin -> Entertainment writes. The Fridays are picked
+        out of it here.                                                 */
+    window.SGWeekend.loadCollection('talentSchedule').then(function (rows) {
         rows.forEach(function (row) {
-            /*  A row with no DJ on it is somebody clearing a Friday, and
-                that has to beat the fallback or it could never be undone
-                from admin.                                              */
-            booked[row.id] = row.slug || row.name
-                ? { slug: row.slug, name: row.name, note: row.note }
-                : null;
+            if (!row.date) return;
+
+            /*  A row with no act on it is somebody clearing a date, and
+                that has to beat the built-in list or it could never be
+                undone from admin.                                      */
+            booked[row.date] = row.slug ? { slug: row.slug, name: row.name } : null;
         });
 
-        draw(booked);
+        redraw();
     }).catch(function (err) {
-        if (window.console) console.warn('friday nights unavailable', err);
+        if (window.console) console.warn('friday nights schedule unavailable', err);
     });
 }());
 

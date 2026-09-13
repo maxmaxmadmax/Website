@@ -34,6 +34,20 @@
 (function () {
     'use strict';
 
+    /*  Built once the roster has settled rather than drawn from the
+        built-in list and then corrected. Acts are managed in Admin ->
+        Entertainment and arrive from Firestore; SG_ROSTER_READY resolves
+        either way, with the built-in eight if the database cannot be
+        reached, so this always runs.                                   */
+    var ready = window.SG_ROSTER_READY ||
+                Promise.resolve(window.SG_ROSTER || []);
+
+    ready.then(function (ROSTER) {
+        start(ROSTER);
+    });
+
+function start(ROSTER) {
+
     var page = document.getElementById('sg-ent-page');
     if (!page) return;
 
@@ -47,9 +61,9 @@
         kids:  'Kids Entertainment'
     };
 
-    /*  The roster lives in js/roster.js - the entertainment page, the
-        events page and the admin dropdown all read the same list. */
-    var TALENT = window.SG_ROSTER || [];
+    /*  Handed in above: the built-in list in js/roster.js with whatever
+        is set in Admin -> Entertainment merged over it.              */
+    var TALENT = ROSTER;
 
 
     /*  Paths are written out rather than derived from the slug. Deriving
@@ -407,4 +421,5 @@
     });
 
     render();
+}
 }());

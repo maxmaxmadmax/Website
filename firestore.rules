@@ -135,17 +135,27 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------
-    // Friday Nights
+    // Entertainment: the acts, and who is booked when
     //
-    // Who is playing at the Grand View on a given Friday. One document
-    // per date, the id being the date: fridayNights/2026-09-18
+    //   talent/{slug}          one act. hidden:true takes an act off the
+    //                          site, which is how one of the acts written
+    //                          into js/roster.js is removed - there is no
+    //                          row to delete for those.
+    //   talentSchedule/{date}  who is playing that night. The date is the
+    //                          id, so booking a night twice replaces the
+    //                          first rather than quietly making two.
     //
-    // Public read, because it is printed on the events page. Written from
-    // the admin page rather than by a function - there is nothing to
-    // check and nothing to get wrong that an admin cannot see in front of
-    // them, so a callable would be ceremony.
+    // Public read, because both are printed on the site. Written from the
+    // admin page rather than by a function - there is nothing here to
+    // check that an admin cannot see in front of them, so a callable
+    // would be ceremony.
     // ---------------------------------------------------------------
-    match /fridayNights/{friday} {
+    match /talent/{slug} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /talentSchedule/{day} {
       allow read: if true;
       allow write: if isAdmin();
     }
