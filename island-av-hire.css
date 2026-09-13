@@ -99,9 +99,12 @@
     background:linear-gradient(180deg, #0f1417 0%, #0a0a0a 100%);
 }
 
+/*  min() inside minmax, not a bare 300px. A bare minimum cannot shrink
+    below itself, so on a window narrower than one column the grid pushes
+    the page sideways. This caps the minimum at the width available.   */
 #sg-island .isl-points-inner{
     display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns:repeat(auto-fit, minmax(min(300px, 100%), 1fr));
     gap:clamp(28px, 5vw, 56px);
     max-width:var(--sg-max-width);
     margin:auto;
@@ -177,7 +180,7 @@
 #sg-island .isl-kit,
 #sg-island .isl-places{
     display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns:repeat(auto-fit, minmax(min(250px, 100%), 1fr));
     gap:18px;
     list-style:none;
     margin:0;
