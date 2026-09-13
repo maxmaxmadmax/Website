@@ -1,0 +1,369 @@
+/* ==========================================================================
+   AV HIRE FOR THE ISLANDS
+
+   Everything is scoped to #sg-island, so none of it can reach another
+   page. Loaded on top of style.css, which supplies the tokens, the
+   buttons, .section and the footer.
+   ========================================================================== */
+
+#sg-island{ background:#0a0a0a; }
+
+/* ==========================================================================
+   HERO
+   ========================================================================== */
+#sg-island .isl-hero{
+    position:relative;
+    display:flex;
+    align-items:flex-end;
+    min-height:min(66vh, 580px);
+    padding:calc(var(--sg-nav-height, 80px) + 44px) 20px 48px;
+    overflow:hidden;
+    /*  The fallback sits behind the video, never over it. Stacked on top
+        it covers the clip completely, which is how three heroes on this
+        site have broken.                                                */
+    background:linear-gradient(120deg, #05222c 0%, #0a0a0a 66%);
+}
+
+#sg-island .isl-hero-video{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    z-index:0;
+}
+
+#sg-island .isl-hero-scrim{
+    position:absolute;
+    inset:0;
+    z-index:1;
+    background:
+        linear-gradient(90deg, rgba(0,0,0,.88) 0%, rgba(0,0,0,.55) 58%, rgba(0,0,0,.7) 100%),
+        linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,.15) 42%, #0a0a0a 100%);
+}
+
+#sg-island .isl-hero-body{
+    position:relative;
+    z-index:2;
+    width:100%;
+    max-width:var(--sg-max-width);
+    margin:auto;
+}
+
+#sg-island .isl-eyebrow{
+    color:var(--sg-gold);
+    font-family:var(--sg-font-accent);
+    font-size:.72rem;
+    font-weight:bold;
+    letter-spacing:.26em;
+    text-transform:uppercase;
+    margin-bottom:14px;
+}
+
+#sg-island .isl-hero-body h1{
+    font-family:var(--sg-font-display);
+    font-size:clamp(2.5rem, 6.5vw, 4.8rem);
+    line-height:.92;
+    letter-spacing:-2px;
+    text-transform:uppercase;
+    margin:0;
+}
+
+#sg-island .isl-hero-body h1 span{ color:var(--sg-gold); }
+
+#sg-island .isl-lead{
+    max-width:56ch;
+    margin-top:20px;
+    color:#ddd;
+    line-height:1.7;
+}
+
+#sg-island .isl-hero-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-top:28px;
+}
+
+/* ==========================================================================
+   THE BOAT AND THE BATTERY
+
+   The two claims no competitor can copy without owning a boat and doing
+   the work, so they are a band of their own above everything else rather
+   than bullets in a list further down.
+   ========================================================================== */
+#sg-island .isl-points{
+    padding:clamp(50px, 7vw, 84px) 20px;
+    border-top:1px solid var(--sg-border);
+    border-bottom:1px solid var(--sg-border);
+    background:linear-gradient(180deg, #0f1417 0%, #0a0a0a 100%);
+}
+
+#sg-island .isl-points-inner{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
+    gap:clamp(28px, 5vw, 56px);
+    max-width:var(--sg-max-width);
+    margin:auto;
+}
+
+#sg-island .isl-point h2{
+    font-family:var(--sg-font-display);
+    font-size:clamp(1.7rem, 3.6vw, 2.5rem);
+    line-height:1.02;
+    letter-spacing:-1.2px;
+    text-transform:uppercase;
+    text-align:left;
+    margin:0 0 16px;
+}
+
+#sg-island .isl-point p{
+    color:#ddd;
+    font-size:1rem;
+    line-height:1.75;
+}
+
+/*  The line somebody remembers, set apart so it reads as the answer rather
+    than as the last sentence of a paragraph.                             */
+#sg-island .isl-point-note{
+    margin-top:16px;
+    padding-left:14px;
+    border-left:3px solid var(--sg-gold);
+    color:var(--sg-gold) !important;
+    font-family:var(--sg-font-display);
+    font-size:1.1rem;
+    letter-spacing:-.3px;
+    text-transform:uppercase;
+}
+
+/* ==========================================================================
+   BANDS
+   ========================================================================== */
+#sg-island .isl-band{
+    max-width:var(--sg-max-width);
+    margin:auto;
+    padding:clamp(46px, 6vw, 76px) 20px;
+}
+
+#sg-island .isl-band.is-alt{
+    max-width:none;
+    background:#0d0d0d;
+    border-top:1px solid var(--sg-border);
+    border-bottom:1px solid var(--sg-border);
+}
+
+#sg-island .isl-band.is-alt > *{
+    max-width:var(--sg-max-width);
+    margin-left:auto;
+    margin-right:auto;
+}
+
+#sg-island .isl-band h2{
+    font-family:var(--sg-font-display);
+    font-size:clamp(1.8rem, 4vw, 2.6rem);
+    letter-spacing:-1px;
+    text-transform:uppercase;
+    text-align:left;
+    margin:0;
+}
+
+#sg-island .isl-band .section-intro{
+    margin:8px 0 30px;
+    text-align:left;
+    color:var(--sg-dim);
+}
+
+/* ---- what comes with us, and where we go: the same shape ---- */
+#sg-island .isl-kit,
+#sg-island .isl-places{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));
+    gap:18px;
+    list-style:none;
+    margin:0;
+    padding:0;
+}
+
+#sg-island .isl-kit li,
+#sg-island .isl-places li{
+    padding:22px 22px 24px;
+    border:1px solid var(--sg-border);
+    border-radius:14px;
+    background:var(--sg-panel);
+}
+
+#sg-island .isl-kit h3,
+#sg-island .isl-places h3{
+    font-family:var(--sg-font-display);
+    font-size:1.05rem;
+    letter-spacing:-.3px;
+    text-transform:uppercase;
+    margin:0 0 8px;
+}
+
+#sg-island .isl-kit p,
+#sg-island .isl-places p{
+    margin:0;
+    color:var(--sg-dim);
+    font-size:.92rem;
+    line-height:1.65;
+}
+
+/*  An island we have actually worked, marked so it is visibly a different
+    claim to one we merely travel to. The difference is the whole value of
+    this page - see the note at the top of the markup.                    */
+#sg-island .isl-places li.is-worked{
+    border-color:rgba(255,183,0,.4);
+    background:linear-gradient(180deg, rgba(255,183,0,.06), rgba(255,183,0,0));
+}
+
+#sg-island .isl-done{
+    color:var(--sg-gold) !important;
+    font-weight:bold;
+}
+
+#sg-island .isl-places li.is-worked::after{
+    content:"Worked here";
+    display:inline-block;
+    margin-top:12px;
+    padding:4px 10px;
+    border:1px solid rgba(255,183,0,.45);
+    border-radius:999px;
+    color:var(--sg-gold);
+    font-family:var(--sg-font-accent);
+    font-size:.6rem;
+    font-weight:bold;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+}
+
+/* ---- what we'll ask you ---- */
+#sg-island .isl-asks{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
+    gap:18px;
+    list-style:none;
+    margin:0;
+    padding:0;
+    counter-reset:ask;
+}
+
+#sg-island .isl-asks li{
+    counter-increment:ask;
+    padding-top:18px;
+    border-top:2px solid var(--sg-border);
+}
+
+/*  Numbered by the stylesheet rather than by an <ol> marker, so the number
+    can be the size it wants to be.                                       */
+#sg-island .isl-asks li::before{
+    content:"0" counter(ask);
+    display:block;
+    margin-bottom:10px;
+    color:var(--sg-orange);
+    font-family:var(--sg-font-display);
+    font-size:1.3rem;
+    letter-spacing:-.5px;
+}
+
+#sg-island .isl-asks h3{
+    font-family:var(--sg-font-display);
+    font-size:1rem;
+    letter-spacing:-.2px;
+    text-transform:uppercase;
+    margin:0 0 7px;
+}
+
+#sg-island .isl-asks p{
+    margin:0;
+    color:var(--sg-dim);
+    font-size:.92rem;
+    line-height:1.65;
+}
+
+/* ==========================================================================
+   CLOSING
+   ========================================================================== */
+#sg-island .isl-cta{
+    padding:clamp(56px, 8vw, 96px) 20px;
+    border-top:1px solid var(--sg-border);
+    background:
+        linear-gradient(90deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,.6) 70%),
+        linear-gradient(120deg, #05222c 0%, #0a0a0a 66%);
+}
+
+#sg-island .isl-cta-inner{
+    max-width:var(--sg-max-width);
+    margin:auto;
+}
+
+#sg-island .isl-cta h2{
+    font-family:var(--sg-font-display);
+    font-size:clamp(2rem, 5vw, 3.4rem);
+    line-height:.96;
+    letter-spacing:-1.5px;
+    text-transform:uppercase;
+    text-align:left;
+    margin:0;
+}
+
+#sg-island .isl-cta h2 span{ color:var(--sg-gold); }
+
+#sg-island .isl-cta p{
+    max-width:52ch;
+    margin:18px 0 26px;
+    color:#ddd;
+    line-height:1.7;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width:560px){
+    #sg-island .isl-kit,
+    #sg-island .isl-places,
+    #sg-island .isl-asks{
+        grid-template-columns:1fr;
+    }
+}
+
+/* ==========================================================================
+   THE UPSELL
+
+   Quieter than the closing call above it on purpose: somebody who came
+   here for AV is being offered a second thing, and an offer that shouts
+   louder than the thing they came for reads as a sales page.
+   ========================================================================== */
+#sg-island .isl-upsell{
+    padding:clamp(34px, 5vw, 56px) 20px;
+    border-top:1px solid var(--sg-border);
+    background:#0d0d0d;
+}
+
+#sg-island .isl-upsell-inner{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:28px;
+    flex-wrap:wrap;
+    max-width:var(--sg-max-width);
+    margin:auto;
+}
+
+#sg-island .isl-upsell h2{
+    font-family:var(--sg-font-display);
+    font-size:clamp(1.4rem, 3vw, 2rem);
+    letter-spacing:-.8px;
+    text-transform:uppercase;
+    text-align:left;
+    margin:0 0 10px;
+}
+
+#sg-island .isl-upsell p{
+    max-width:52ch;
+    margin:0;
+    color:var(--sg-dim);
+    line-height:1.7;
+}
+
+#sg-island .isl-upsell .btn{ flex-shrink:0; }
