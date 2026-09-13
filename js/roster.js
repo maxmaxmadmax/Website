@@ -109,6 +109,23 @@
     /*  The built-in list on its own, for the admin page: it merges the
         same way this file does, and needs to know which acts are in the
         file - those cannot be deleted, only hidden.                  */
+
+    /* ----------------------------------------------------------------------
+       A FRIDAY OR TWO, LOCKED IN BEFORE THE DESK WAS OPENED
+
+       Bookings belong in Admin -> Entertainment. This is only for a night
+       somebody wants on the site before anybody next signs in, and the desk
+       offers to take these over the moment it sees them - at which point
+       they can be deleted from here.
+
+       Here rather than in js/events.js because the admin page has to see
+       them too, to know they exist and to offer to import them.
+       ---------------------------------------------------------------------- */
+    global.SG_FRIDAY_SEED = {
+        '2026-09-18': 'kriss-kross',
+        '2026-09-25': 'dj-charly-templar'
+    };
+
     global.SG_ROSTER_BUILT_IN = TALENT;
 
     publish(TALENT);

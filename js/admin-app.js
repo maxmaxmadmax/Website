@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=50';
+} from './firebase-config.js?v=51';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -1951,6 +1951,8 @@ VIEWS.entertainment = {
         ${statTile('Acts on Roster', acts.length, '', 'grey')}
       </div>
 
+      ${importBanner()}
+
       <div class="ad-book-split">
         ${calendarHtml()}
         ${bookingPanel(picked)}
@@ -2028,7 +2030,13 @@ function calendarHtml() {
   const today = isoDay(new Date());
 
   const cells = [];
-  for (let i = 0; i < lead; i++) cells.push('<div class="ad-cal-day is-empty"></div>');
+  /*  The days before the first, drawn greyed rather than left as holes -
+      a row with a gap in it does not read as a week.                  */
+  const before = new Date(cursor.getFullYear(), cursor.getMonth(), 0).getDate();
+  for (let i = lead; i > 0; i--) {
+    cells.push('<div class="ad-cal-day is-empty"><span class="ad-cal-num">' +
+               (before - i + 1) + '</span></div>');
+  }
 
   for (let d = 1; d <= days; d++) {
     const iso = isoDay(new Date(cursor.getFullYear(), cursor.getMonth(), d));
@@ -2074,7 +2082,14 @@ function bookingPanel(b) {
   if (!b && !editing) {
     return `
       <section class="ad-card ad-book-panel">
-        <p class="ad-empty">No bookings yet. New booking puts one in.</p>
+        <div class="ad-book-photo" aria-hidden="true"
+             style="background-image:url('/images/venues/grand-view-hotel.jpg')"></div>
+        <div class="ad-book-inner">
+          <h3>Nothing booked yet</h3>
+          <p class="ad-cell-muted">
+            New booking puts one in, or pick a night on the calendar.
+          </p>
+        </div>
       </section>`;
   }
 
@@ -2320,6 +2335,38 @@ const BOOK_TABS = [
   { key: 'other', label: 'Other Venues' },
 ];
 
+
+function importable() {
+  const inFile = window.SG_FRIDAY_SEED || {};
+  const have = {};
+  state.schedule.forEach((b) => { have[b.date] = true; });
+
+  return Object.keys(inFile)
+    .filter((date) => !have[date])
+    .map((date) => ({ date, slug: inFile[date] }));
+}
+
+function importBanner() {
+  const waiting = importable();
+  if (!waiting.length) return '';
+
+  return `
+    <div class="ad-import">
+      <p>
+        <strong>${waiting.length} booking${waiting.length === 1 ? '' : 's'}
+        set in the site file</strong> —
+        ${waiting.map((w) => {
+          const act = state.talent.find((t) => t.slug === w.slug) || {};
+          return esc((act.name || w.slug) + ' on ' + prettyDate(w.date));
+        }).join(', ')}.
+        They show on the site but this page cannot edit or count them.
+      </p>
+
+      <button type="button" class="ad-btn ad-btn-primary" id="ad-import">
+        Move into the diary
+      </button>
+    </div>`;
+}
 function venuesKnown() {
   const seen = {};
   state.schedule.forEach((b) => { if (b.venue) seen[b.venue] = true; });
@@ -2526,6 +2573,34 @@ function wireEntertainment() {
       render();
     });
   });
+  const imp = document.getElementById('ad-import');
+  if (imp) {
+    imp.addEventListener('click', async () => {
+      const waiting = importable();
+      imp.disabled = true;
+
+      try {
+        for (const w of waiting) {
+          await fb.f.setDoc(fb.f.doc(fb.db, 'talentSchedule', w.date + '__' + w.slug), {
+            date: w.date,
+            slug: w.slug,
+            venue: 'Grand View Hotel, Bowen',
+            time: '9:30 PM – Late',
+            status: 'confirmed',
+            notes: '',
+            updatedAt: fb.f.serverTimestamp(),
+          });
+        }
+
+        await loadSchedule();
+        render();
+      } catch (err) {
+        window.alert(friendly(err));
+        imp.disabled = false;
+      }
+    });
+  }
+
   /* the roster */
   const rosterBtn = document.getElementById('ad-roster-toggle');
   if (rosterBtn) {

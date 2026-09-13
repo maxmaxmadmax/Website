@@ -134,30 +134,18 @@
 /* ==========================================================================
    THE FRIDAY NIGHTS LINE UP
 
-   ==========================================================================
-   NAMING A DJ - two ways, and the first one wins
-   ==========================================================================
+   Who is playing comes from Admin -> Entertainment. The short list in
+   js/roster.js (SG_FRIDAY_SEED) covers a Friday locked in before anybody
+   opened the desk, and anything booked in admin beats it.
 
-   1. ADMIN -> ENTERTAINMENT. Book the act against the date and it saves.
-      This is the one to use: no deploy, no code, and it is there for
-      whoever is on the desk rather than for whoever has the repository.
+   A Friday named in neither says the DJ is still to be announced, which is
+   true, and the card still looks finished.
 
-   2. THE LIST BELOW, for a Friday somebody wants locked in before the
-      admin page is next opened. Anything set in admin overrides it.
-
-   Both are optional. A Friday named in neither says the DJ is still to be
-   announced, which is true, and the card still looks finished.
-
-   THE DATES ARE NOT IN EITHER. They are worked out from today, four
-   Fridays ahead, so the list rolls itself forward every week. It used to
-   be four dates typed into the HTML, which is why it sat there showing a
-   Friday that had already been.
+   THE DATES ARE IN NEITHER. They are worked out from today, four Fridays
+   ahead, so the list rolls itself forward every week. It used to be four
+   dates typed into the HTML, which is why it sat there offering a Friday
+   that had already been.
    ========================================================================== */
-var EV_FRIDAYS = {
-    '2026-09-18': 'kriss-kross',
-    '2026-09-25': 'dj-charly-templar'
-};
-
 (function () {
     'use strict';
 
@@ -234,8 +222,8 @@ var EV_FRIDAYS = {
         rather than a broken one.                                        */
     /*  THE TWO SOURCES, AND WHICH WINS
 
-        The booked map is what is drawn. It starts as the short list in
-        EV_FRIDAYS above and is replaced, date by date, by anything set in
+        The booked map is what is drawn. It starts as SG_FRIDAY_SEED in
+        js/roster.js and is replaced, date by date, by anything set in
         Admin -> Entertainment.
 
         Kept here rather than passed about because two things arrive at
@@ -243,8 +231,9 @@ var EV_FRIDAYS = {
         second must not undo the first. Each of them updates what it knows
         and asks for a redraw.                                          */
     var booked = {};
-    Object.keys(EV_FRIDAYS).forEach(function (k) {
-        booked[k] = { slug: EV_FRIDAYS[k] };
+    var seed = window.SG_FRIDAY_SEED || {};
+    Object.keys(seed).forEach(function (k) {
+        booked[k] = { slug: seed[k] };
     });
 
     function redraw() { draw(booked); }
