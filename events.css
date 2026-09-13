@@ -854,35 +854,30 @@
     line-height:1.65;
 }
 
-.ev-venue-points{
-    list-style:none;
-    margin:0;
-    border-top:1px solid var(--ev-res-line);
-}
-
-.ev-venue-points li{
-    display:flex;
+/*  The way through to the pub's own site. Underlined rather than a
+    button: the buttons on this page are ours - book a DJ, apply as a
+    vendor - and this one goes somewhere else.                          */
+.ev-venue-link{
+    display:inline-flex;
     align-items:center;
-    gap:11px;
-    padding:7px 16px;
-    border-bottom:1px solid var(--ev-res-line);
+    gap:7px;
+    margin:0 16px 16px;
 
-    color:var(--sg-muted);
+    color:var(--sg-gold);
     font-family:var(--sg-font-accent);
-    font-size:.64rem;
+    font-size:.66rem;
     font-weight:bold;
     letter-spacing:1.3px;
     text-transform:uppercase;
+    text-decoration:none;
+    border-bottom:1px solid rgba(255,183,0,.4);
+    padding-bottom:3px;
+    transition:color .2s ease, border-color .2s ease;
 }
 
-.ev-venue-points li:last-child{ border-bottom:0; }
-
-.ev-venue-points svg{
-    width:20px;
-    height:20px;
-    flex:0 0 auto;
-    fill:currentColor;
-    color:var(--sg-gold);
+.ev-venue-link:hover{
+    color:#fff;
+    border-color:#fff;
 }
 
 /* ---- book a DJ ---- */
