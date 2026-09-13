@@ -201,7 +201,6 @@ var EV_FRIDAYS = {
     function card(d, booked) {
         var act = booked && roster[booked.slug];
         var name = (act && act.name) || (booked && booked.name) || 'DJ To Be Announced';
-        var note = (booked && booked.note) || 'SoundzGood DJs on rotation';
         var art = act && act.photo
             ? ' style="--ev-art:url(\'' + esc(act.photo) + '\')"'
             : '';
@@ -212,8 +211,11 @@ var EV_FRIDAYS = {
                 '<span class="ev-fri-date">' + esc(label(d)) + '</span>' +
               '</div>' +
               '<div class="ev-fri-body">' +
+                /*  The name and nothing else. Every card used to carry
+                    'SoundzGood DJs on rotation' underneath, which said
+                    the same thing four times and said it loudest on the
+                    cards that had a name on them.                    */
                 '<h3>' + esc(name) + '</h3>' +
-                '<p>' + esc(note) + '</p>' +
               '</div>' +
             '</article>';
     }

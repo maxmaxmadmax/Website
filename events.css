@@ -640,13 +640,6 @@
     margin-bottom:14px;
 }
 
-.ev-res-copy{
-    color:var(--sg-muted);
-    font-size:.94rem;
-    line-height:1.6;
-    margin-bottom:18px;
-}
-
 /*  The three facts. Sized to their content rather than stretched, so the
     long label and the short one still line their icons up.              */
 .ev-res-facts{
@@ -737,8 +730,25 @@
     .ev-fri-grid{ grid-template-columns:repeat(4, minmax(0, 1fr)); }
 }
 
+/*  THE PHOTOGRAPH IS THE CARD.
+
+    It used to be a 94px strip along the top with the name in a panel
+    underneath, which made a portrait photo of somebody's face into a
+    letterbox of their shoulders. Now the picture fills the card and the
+    name sits on it, over a gradient that exists only to keep the name
+    readable.
+
+    A card with no DJ named yet has no photo either, so it shows the
+    purple gradient with the date on it - which still looks like a card
+    rather than like something failed to load.                          */
 .ev-fri{
-    background:#121212;
+    position:relative;
+    aspect-ratio:3 / 4;
+    background:
+        var(--ev-art, none),
+        linear-gradient(140deg, #33184a, #0d0d0d 72%);
+    background-size:cover;
+    background-position:center 18%;
     border:1px solid var(--ev-res-line);
     border-radius:12px;
     overflow:hidden;
@@ -747,14 +757,12 @@
 
 .ev-fri:hover{ border-color:var(--sg-gold); transform:translateY(-3px); }
 
+/*  Kept as an element rather than folded into the card, because the date
+    tab is positioned against it and because the markup is built in
+    js/events.js where one shape for every card is simpler to read.     */
 .ev-fri-art{
-    position:relative;
-    height:94px;
-    background:
-        var(--ev-art, none),
-        linear-gradient(140deg, #33184a, #0d0d0d 72%);
-    background-size:cover;
-    background-position:center;
+    position:absolute;
+    inset:0;
 }
 
 .ev-fri-date{
@@ -775,24 +783,27 @@
     text-transform:uppercase;
 }
 
-.ev-fri-body{ padding:13px 14px 15px; }
+/*  The name, on the picture. The gradient is on this rather than on a
+    layer of its own, so it can never end up stacked over the words it is
+    there to support.                                                    */
+.ev-fri-body{
+    position:absolute;
+    inset:auto 0 0 0;
+    padding:26px 14px 14px;
+    background:linear-gradient(
+        to top,
+        rgba(0,0,0,.92) 0%,
+        rgba(0,0,0,.72) 45%,
+        rgba(0,0,0,0) 100%
+    );
+}
 
 .ev-fri-body h3{
     font-family:var(--sg-font-display);
     font-size:1rem;
     letter-spacing:-.4px;
     text-transform:uppercase;
-    margin-bottom:5px;
-}
-
-.ev-fri-body p{
     margin:0;
-    color:var(--sg-gold);
-    font-family:var(--sg-font-accent);
-    font-size:.63rem;
-    font-weight:bold;
-    letter-spacing:1.1px;
-    text-transform:uppercase;
 }
 
 .ev-res-link{
@@ -950,12 +961,10 @@
 
     .ev-res-name{ font-size:clamp(1.7rem, 3.2vw, 2.3rem); }
     .ev-res-venue{ margin-bottom:10px; }
-    .ev-res-copy{ display:none; }
     .ev-res-facts{ margin-bottom:0; }
 
     .ev-res-body{ padding:12px 6%; }
-    .ev-fri-art{ height:78px; }
-    .ev-fri-body{ padding:10px 12px 12px; }
+    .ev-fri-body{ padding:22px 12px 12px; }
 
     .ev-venue-art{ height:58px; margin-bottom:10px; }
     .ev-venue > p{ margin-bottom:10px; }
