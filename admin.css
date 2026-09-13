@@ -1176,9 +1176,13 @@ body{
 }
 
 /* ---- month beside the booking ---- */
+/*  The month first at a fixed width, the booking taking whatever is left.
+    It used to be the other way round, which stretched seven columns across
+    most of the screen and made every day a wide letterbox. A calendar day
+    is a square - that is what makes a month readable as a shape.        */
 .ad-book-split{
     display:grid;
-    grid-template-columns:minmax(0, 1fr) minmax(0, 420px);
+    grid-template-columns:minmax(0, 452px) minmax(0, 1fr);
     gap:14px;
     align-items:start;
     flex:0 0 auto;
@@ -1186,7 +1190,11 @@ body{
 }
 
 @media (max-width:1000px){
+    /*  Stacked. The month keeps its width rather than spreading, because a
+        square day stretched across a laptop screen is a 90px square and a
+        month six hundred pixels tall.                                    */
     .ad-book-split{ grid-template-columns:1fr; }
+    .ad-cal{ max-width:452px; }
 }
 
 .ad-cal{ padding:14px 16px 16px; }
@@ -1220,8 +1228,9 @@ body{
 }
 
 .ad-cal-day{
-    min-height:50px;
+    aspect-ratio:1;
     padding:4px 5px;
+    overflow:hidden;
     border:1px solid var(--ad-line);
     border-radius:7px;
     background:#fff;
@@ -1523,7 +1532,7 @@ body.ad-fit .ad-main{ min-height:0; }
 /*  The month was all air: tall cells with a number in the corner. Tighter
     rows and a day name that sits over its own column read as a calendar
     rather than as a grid of empty boxes.                                 */
-.ad-desk.is-bookings .ad-cal-day{ min-height:44px; padding:4px 6px; }
+.ad-desk.is-bookings .ad-cal-day{ padding:4px 6px; }
 .ad-desk.is-bookings .ad-cal-num{ font-size:.75rem; color:#3f4350; }
 .ad-desk.is-bookings .ad-cal-name{ font-size:.66rem; padding-bottom:4px; }
 
