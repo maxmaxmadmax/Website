@@ -44,7 +44,7 @@ var GG_LISTINGS = [
     {
         name:  'Friday Nights',
         every: 'friday',
-        time:  '8:00 PM – Late',
+        time:  '9:30 PM – Late',
         venue: 'The Grand View Hotel, Bowen',
         area:  'bowen',
         cats:  ['dj', 'live'],
