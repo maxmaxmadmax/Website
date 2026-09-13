@@ -237,50 +237,6 @@
     text-transform:uppercase;
 }
 
-/* ---- what we'll ask you ---- */
-#sg-island .isl-asks{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
-    gap:18px;
-    list-style:none;
-    margin:0;
-    padding:0;
-    counter-reset:ask;
-}
-
-#sg-island .isl-asks li{
-    counter-increment:ask;
-    padding-top:18px;
-    border-top:2px solid var(--sg-border);
-}
-
-/*  Numbered by the stylesheet rather than by an <ol> marker, so the number
-    can be the size it wants to be.                                       */
-#sg-island .isl-asks li::before{
-    content:"0" counter(ask);
-    display:block;
-    margin-bottom:10px;
-    color:var(--sg-orange);
-    font-family:var(--sg-font-display);
-    font-size:1.3rem;
-    letter-spacing:-.5px;
-}
-
-#sg-island .isl-asks h3{
-    font-family:var(--sg-font-display);
-    font-size:1rem;
-    letter-spacing:-.2px;
-    text-transform:uppercase;
-    margin:0 0 7px;
-}
-
-#sg-island .isl-asks p{
-    margin:0;
-    color:var(--sg-dim);
-    font-size:.92rem;
-    line-height:1.65;
-}
-
 /* ==========================================================================
    CLOSING
    ========================================================================== */
@@ -367,3 +323,86 @@
 }
 
 #sg-island .isl-upsell .btn{ flex-shrink:0; }
+
+/* ==========================================================================
+   THE SMALL LISTS
+
+   Two of them: what the battery setup suits, and the four things to send
+   with an enquiry. Both are short and both sit inside something else, so
+   neither gets card treatment.
+   ========================================================================== */
+#sg-island .isl-ideal-label,
+#sg-island .isl-send-label{
+    margin-top:16px;
+    color:var(--sg-dim);
+    font-family:var(--sg-font-accent);
+    font-size:.7rem;
+    font-weight:bold;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+}
+
+#sg-island .isl-ideal{
+    list-style:none;
+    margin:10px 0 0;
+    padding:0;
+}
+
+#sg-island .isl-ideal li{
+    display:flex;
+    align-items:baseline;
+    gap:9px;
+    padding:3px 0;
+    color:#ddd;
+    font-size:.95rem;
+}
+
+/*  A tick drawn in CSS rather than a bullet: the list is things the setup
+    is good for, and a bullet reads as an inventory.                     */
+#sg-island .isl-ideal li::before{
+    content:"";
+    width:7px;
+    height:11px;
+    flex:0 0 auto;
+    border:solid var(--sg-gold);
+    border-width:0 2px 2px 0;
+    transform:rotate(45deg) translateY(-1px);
+}
+
+/*  Numbered by the stylesheet so the number can be the size it wants. */
+#sg-island .isl-send{
+    list-style:none;
+    margin:12px 0 22px;
+    padding:0;
+    counter-reset:send;
+    max-width:52ch;
+}
+
+#sg-island .isl-send li{
+    counter-increment:send;
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+    padding:7px 0;
+    border-bottom:1px solid var(--sg-border);
+    color:#ddd;
+}
+
+#sg-island .isl-send li:last-child{ border-bottom:0; }
+
+#sg-island .isl-send li::before{
+    content:counter(send);
+    flex:0 0 auto;
+    width:22px;
+    color:var(--sg-orange);
+    font-family:var(--sg-font-display);
+    font-size:.95rem;
+}
+
+/*  The line under the areas. Quiet, and the one invitation on the page to
+    ask about somewhere we have not listed.                              */
+#sg-island .isl-anywhere{
+    margin-top:22px;
+    color:var(--sg-dim);
+    font-size:.95rem;
+}
