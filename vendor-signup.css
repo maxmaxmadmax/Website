@@ -177,7 +177,7 @@
     flex-wrap:wrap;
     align-items:center;
     gap:8px 14px;
-    background:#0b0b0b;
+    background:#ffffff;
     border:1px solid var(--sg-border);
     border-radius:10px;
     padding:12px 16px;
@@ -240,7 +240,7 @@
 }
 
 .vs-facts > div{
-    background:#0b0b0b;
+    background:#ffffff;
     padding:16px 18px;
 }
 
@@ -255,7 +255,7 @@
 }
 
 .vs-facts dd{
-    color:#fff;
+    color:#12141a;
     font-size:.95rem;
 }
 
@@ -268,7 +268,7 @@
 }
 
 .vs-faqs details{
-    background:#0b0b0b;
+    background:#ffffff;
     border:1px solid var(--sg-border);
     border-radius:12px;
     overflow:hidden;
@@ -283,7 +283,7 @@
     cursor:pointer;
     position:relative;
     font-weight:bold;
-    color:#fff;
+    color:#12141a;
     list-style:none;
 }
 
@@ -358,11 +358,11 @@
     align-items:flex-start;
     gap:5px;
 
-    background:#0d0d0d;
+    background:#ffffff;
     border:2px solid var(--sg-border);
     border-radius:12px;
     padding:16px 18px;
-    color:#fff;
+    color:#12141a;
     text-align:left;
     cursor:pointer;
     transition:border-color .2s, transform .2s;
@@ -528,8 +528,8 @@
 .vs-field textarea{
     padding:14px;
     border-radius:8px;
-    background:#0b0b0b;
-    color:#fff;
+    background:#ffffff;
+    color:#12141a;
     border:1px solid var(--sg-border);
     font-family:var(--sg-font);
     font-size:1rem;
@@ -565,7 +565,7 @@
 }
 
 .vs-notice strong{
-    color:#fff;
+    color:#12141a;
 }
 
 .vs-check input{
@@ -588,7 +588,7 @@
 }
 
 .vs-preview-banner strong{
-    color:#fff;
+    color:#12141a;
 }
 
 /* --------------------------------------------------------------------------
@@ -607,7 +607,7 @@
     display:grid;
     grid-template-columns:minmax(120px, 200px) 1fr;
     gap:14px;
-    background:#0b0b0b;
+    background:#ffffff;
     padding:13px 18px;
 }
 
@@ -622,7 +622,7 @@
 }
 
 .vs-summary-list dd{
-    color:#fff;
+    color:#12141a;
     word-break:break-word;
 }
 
@@ -680,7 +680,7 @@
     font-family:var(--sg-font-display);
     font-size:1.2rem;
     letter-spacing:-.3px;
-    color:#fff;
+    color:#12141a;
 }
 
 .vs-card-head{
@@ -709,8 +709,8 @@
     padding:8px 14px;
     border-radius:50px;
     border:1px solid var(--vs-line);
-    background:#1f1f1f;
-    color:#fff;
+    background:#eef0f4;
+    color:#12141a;
     font-size:.82rem;
     cursor:pointer;
     transition:border-color .2s, color .2s;
@@ -741,7 +741,7 @@
 .vs-lineitem-ico svg{ width:30px; height:30px; fill:currentColor; }
 
 .vs-lineitem-txt{ display:grid; gap:3px; min-width:0; }
-.vs-lineitem-txt strong{ color:#fff; font-size:1rem; }
+.vs-lineitem-txt strong{ color:#12141a; font-size:1rem; }
 .vs-lineitem-txt > span{ color:var(--sg-muted); font-size:.85rem; }
 
 /*  PRICE / QTY / TOTAL across the foot of the booking card. Equal thirds
@@ -769,7 +769,7 @@
     margin-bottom:5px;
 }
 
-.vs-figures dd{ margin:0; color:#fff; font-size:.95rem; }
+.vs-figures dd{ margin:0; color:#12141a; font-size:.95rem; }
 .vs-figures dd.is-strong{ font-weight:bold; }
 
 /* ---- what it comes to ---- */
@@ -794,7 +794,7 @@
     font-size:.92rem;
 }
 
-.vs-sum dd{ margin:0; color:#fff; font-size:.92rem; }
+.vs-sum dd{ margin:0; color:#12141a; font-size:.92rem; }
 
 /*  A tooltip would be unreachable on a phone, so the (i) opens a line of
     text under the list instead of hovering over it.                    */
@@ -818,7 +818,7 @@
     margin:12px 0 0;
     padding:11px 13px;
     border-radius:9px;
-    background:#0d0d0d;
+    background:#f6f7f9;
     border:1px solid var(--vs-line);
     color:var(--sg-muted);
     font-size:.82rem;
@@ -872,7 +872,7 @@
 .vs-secure-ico svg{ width:22px; height:22px; fill:currentColor; }
 
 .vs-secure-head > span:last-child{ display:grid; gap:3px; }
-.vs-secure-head strong{ color:#fff; font-size:.95rem; }
+.vs-secure-head strong{ color:#12141a; font-size:.95rem; }
 .vs-secure-head > span:last-child > span{ color:var(--sg-muted); font-size:.84rem; }
 
 .vs-secure-row{
@@ -1122,7 +1122,7 @@
     padding:0;
     border:0;
     background:none;
-    color:#fff;
+    color:#12141a;
     font:inherit;
     font-size:.95rem;
     cursor:pointer;
@@ -1356,7 +1356,7 @@
     margin-top:14px;
     padding:12px 16px;
     border-radius:10px;
-    background:#0b0b0b;
+    background:#ffffff;
     border:1px solid var(--sg-border);
     color:var(--sg-dim);
 }
@@ -1822,7 +1822,7 @@ body.vendor-signup .footer-sponsors{
 .vs-event-art{
     position:relative;
     aspect-ratio:16 / 9;
-    background-color:#161616;
+    background-color:#e9ecf1;
     background-image:var(--vs-ev-art);
     background-size:cover;
     background-position:center;
@@ -1898,7 +1898,7 @@ body.vendor-signup .footer-sponsors{
 
 .vs-event-go.is-disabled{
     border:1px solid var(--sg-border);
-    background:#1a1a1a;
+    background:#dfe3e9;
     color:var(--sg-dim);
     cursor:default;
 }
@@ -2231,3 +2231,73 @@ body.vendor-signup .footer-sponsors{
 .vs-pick .vs-event-status.is-limited{ background:#f5b83d; color:#3a2600; }
 .vs-pick .vs-event-status.is-closed{  background:#12141a; color:#fff; }
 .vs-pick .vs-event-status.is-soon{    background:#12141a; color:#fff; }
+
+
+/* ==========================================================================
+   THE PAGE IS WHITE
+
+   Everywhere else on this site is dark. This page is a form - seven
+   steps, a map, uploads and a payment - and a long form is easier to
+   fill in on white. It is also the only page whose sibling, the admin
+   desk, is already light.
+
+   Done by redefining the tokens rather than by rewriting the rules:
+   style.css paints the body from --sg-black and --sg-text, and most of
+   the surfaces in this file come from --sg-panel and --sg-border. Set
+   those here and the page turns over with them.
+
+   WHAT STAYS DARK, AND WHY
+     the hero          it is a photograph with words on it
+     the vendor type   the same - two photo cards
+     the site map      it is a canvas, and the colours on it mean
+                       something to a vendor choosing a site. Flipping
+                       it risks the one part of this page where a
+                       wrong colour costs somebody a booking.
+   ========================================================================== */
+.vendor-signup{
+    --sg-black:#f6f7f9;
+    --sg-panel:#ffffff;
+    --sg-panel-light:#f2f4f7;
+    --sg-border:#e3e6ec;
+    --sg-text:#12141a;
+    --sg-muted:#4b5262;
+    --sg-dim:#6b7280;
+
+    /*  The grain overlay is a light film meant for a dark page; on
+        white it reads as dirt.                                     */
+    --sg-grain:none;
+}
+
+/*  The flow band. .section has no colour of its own, so this is the
+    page showing through - which is now the light one.             */
+.vendor-signup .vs-flow{ color:var(--sg-text); }
+
+/*  Headings come from style.css white. On white they need the ink.  */
+.vendor-signup h2,
+.vendor-signup h3,
+.vendor-signup .vs-step h2{ color:var(--sg-text); }
+
+/*  Inputs: white boxes with a visible edge rather than dark wells.  */
+.vendor-signup input,
+.vendor-signup select,
+.vendor-signup textarea{
+    background:#fff;
+    color:var(--sg-text);
+    border-color:var(--sg-border);
+}
+
+.vendor-signup input::placeholder,
+.vendor-signup textarea::placeholder{ color:#9aa1ad; }
+
+/*  The hero keeps its own dark world - photograph, white type, cobwebs
+    and all - so nothing above resets it.                          */
+.vendor-signup .vs-hero,
+.vendor-signup .vs-hero h1,
+.vendor-signup .vs-hero p{ color:#fff; }
+
+/*  So do the two vendor type cards, which are photographs.         */
+.vendor-signup .vs-type h3,
+.vendor-signup .vs-type p{ color:#fff; }
+
+/*  And the map, where the colours carry meaning.                   */
+.vendor-signup .vs-map-wrap{ color:#fff; }
