@@ -1361,9 +1361,14 @@
     color:var(--sg-dim);
 }
 
+/*  The panel that appears once a site is picked. Its chosen state was
+    white type - fine on the old black panel, invisible on the white one,
+    and only ever on screen after you tap a bay, which is why the first
+    contrast sweep did not catch it. Found by clicking through.        */
 .vs-site-choice.is-chosen{
     border-color:var(--sg-orange);
-    color:#fff;
+    background:#fff7f0;
+    color:#12141a;
 }
 
 .vs-hold-timer{
