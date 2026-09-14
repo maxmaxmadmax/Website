@@ -1580,3 +1580,11 @@ body.ad-fit .ad-main{ min-height:0; }
 }
 
 .ad-import strong{ color:#5c3800; }
+
+/*  The event an application belongs to, in the drawer under its status
+    pills. Quiet - it is context, not a heading.                       */
+.ad-drawer-event{
+    margin-top:6px;
+    color:var(--ad-muted);
+    font-size:.82rem;
+}

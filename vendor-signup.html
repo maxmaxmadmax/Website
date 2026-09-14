@@ -20,10 +20,10 @@
     <meta name="twitter:card" content="summary_large_image">
 
     <link rel="icon" href="images/logo.png">
-    <link rel="stylesheet" href="style.css?v=58">
-    <link rel="stylesheet" href="vendor-signup.css?v=58">
-    <script src="js/main.js?v=58" defer></script>
-    <script type="module" src="js/vendor-signup.js?v=58"></script>
+    <link rel="stylesheet" href="style.css?v=60">
+    <link rel="stylesheet" href="vendor-signup.css?v=60">
+    <script src="js/main.js?v=60" defer></script>
+    <script type="module" src="js/vendor-signup.js?v=60"></script>
 </head>
 
 <body class="vendor-signup">
@@ -54,25 +54,24 @@
 
     <div class="vs-hero-inner">
 
-        <!-- little pumpkin, drawn rather than loaded -->
-        <svg class="vs-pumpkin" viewBox="0 0 64 64" aria-hidden="true">
-            <path d="M32 14c-1 0-2-4 1-7 2-2 5-2 5-2s-1 4-3 6c-1 1-2 3-3 3z" fill="#4caf50"/>
-            <ellipse cx="32" cy="38" rx="24" ry="20" fill="#ff6b00"/>
-            <ellipse cx="20" cy="38" rx="9" ry="20" fill="#e2661a" opacity=".55"/>
-            <ellipse cx="44" cy="38" rx="9" ry="20" fill="#e2661a" opacity=".55"/>
-            <path d="M23 33l7 5-7 3zM41 33l-7 5 7 3z" fill="#1a0a00"/>
-            <path d="M22 47q10 7 20 0-4 4-10 4t-10-4z" fill="#1a0a00"/>
-        </svg>
+        <!--  GENERIC ON PURPOSE.
 
-        <h1>Eatz &amp; Beatz</h1>
-        <p class="vs-hero-sub">Halloween Edition</p>
-        <p class="vs-hero-kicker">Vendor Signup</p>
+              This page used to be the Eatz & Beatz signup and said so, with
+              a pumpkin over it. It now takes applications for every event
+              we are running, so the headline cannot belong to one of them.
+              The event a vendor picks is named on the step below and again
+              at the top of the form.                                    -->
+        <p class="vs-hero-kicker">Vendors</p>
 
-        <p class="vs-hero-meta">Saturday 31 October 2026</p>
-        <p class="vs-hero-meta">Bowen Sports Complex &middot; Bowen, Queensland</p>
+        <h1>Be part of<br>what&rsquo;s next.</h1>
+
+        <p class="vs-hero-sub">
+            Food, market stalls, drinks, activations and more.<br>
+            Apply to be a vendor at our upcoming events.
+        </p>
 
         <div class="buttons">
-            <button type="button" class="btn btn-ticket" data-start>Book Your Site</button>
+            <button type="button" class="btn btn-ticket" data-start>Choose your event</button>
         </div>
     </div>
 
@@ -89,6 +88,33 @@
         <!--  Back link, step counter and a segment bar. Filled by
               renderStepper() on every render.                          -->
         <div class="vs-progress" id="vs-stepper"></div>
+
+        <!--  Which event this application is for, from the moment one is
+              picked. Hidden on the choosing step itself, where it would be
+              telling somebody what they are looking at.               -->
+        <div class="vs-chosen" id="vs-chosen" hidden></div>
+
+        <!-- 1. WHICH EVENT --------------------------------------------------
+             The cards are built by js/vendor-signup.js from the events
+             collection, because the list changes without anybody touching
+             this file. An event only appears here if its status is one a
+             vendor should see - draft and archived are ours, not theirs.
+
+             Picking one sets the event for everything after it: the sites,
+             the categories, the prices and the booking itself. A vendor can
+             come back and pick another to apply for a second event; each
+             application is its own booking against its own event.     -->
+        <div class="vs-step" data-step="event">
+            <h2>Which event are you applying for?</h2>
+            <p class="vs-step-intro">
+                Choose the event you&rsquo;d like to be a vendor at. You can submit a
+                separate application for multiple events.
+            </p>
+
+            <div class="vs-events" id="vs-events">
+                <p class="vs-events-loading">Loading events&hellip;</p>
+            </div>
+        </div>
 
         <!-- 1. VENDOR TYPE ------------------------------------------------- -->
         <div class="vs-step" data-step="type">

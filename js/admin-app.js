@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=58';
+} from './firebase-config.js?v=60';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -523,6 +523,14 @@ function dateShort(ts) {
 
 /*  The vendor's own name for themselves, falling back through the fields
     most likely to be filled in on a half finished application. */
+/*  An event id turned into its name, for anywhere an application is read
+    on its own. Falls back to the id, which is readable enough.        */
+function eventNameOf(id) {
+  if (!id) return 'No event';
+  const ev = state.events.find((e) => e.id === id);
+  return (ev && ev.name) || id;
+}
+
 function vendorName(b) {
   return (b.business && (b.business.name || b.business.contactName))
     || b.reference
@@ -1047,6 +1055,14 @@ function detailPanel() {
         <div>
           <h2>${esc(vendorName(b))}</h2>
           <p>${statusPill(b)} ${paymentPill(b)} ${typePill(b.vendorType)}</p>
+
+          <!--  Which event this application is for. The list is already
+                filtered to one event by the picker at the top of the
+                page, but an application is a thing somebody reads on its
+                own - in a drawer, or over a shoulder - and it should say
+                what it belongs to without relying on what is selected
+                three feet away.                                     -->
+          <p class="ad-drawer-event">${esc(eventNameOf(b.eventId))}</p>
         </div>
         <button type="button" class="ad-drawer-close" id="ad-drawer-close"
                 aria-label="Close">&times;</button>
@@ -1561,11 +1577,18 @@ function wireSitePanel() {
    so it is not just a hidden button.
    ========================================================================= */
 
+/*  What the desk calls each status. The vendor signup page has its own
+    wording for the four it shows - EVENT_STATUS in js/vendor-signup.js.
+
+    draft and archived never appear on the signup page at all. They are
+    how an event is worked on before it opens, or put away afterwards. */
 const EVENT_WORD = {
-  draft:    ['ad-pill-grey',  'Draft'],
-  open:     ['ad-pill-green', 'Signup open'],
-  closed:   ['ad-pill-amber', 'Signup closed'],
-  archived: ['ad-pill-grey',  'Archived'],
+  draft:    ['ad-pill-grey',  'Draft (hidden)'],
+  soon:     ['ad-pill-blue',  'Coming soon'],
+  open:     ['ad-pill-green', 'Accepting vendors'],
+  limited:  ['ad-pill-amber', 'Limited spots'],
+  closed:   ['ad-pill-amber', 'Applications closed'],
+  archived: ['ad-pill-grey',  'Archived (hidden)'],
 };
 
 function eventPill(status) {
@@ -1761,6 +1784,14 @@ function eventForm() {
           <label for="ad-ev-venue">Venue</label>
           <input id="ad-ev-venue" maxlength="120" value="${attr(ev.venue || '')}">
 
+          <!--  Shown on the event card on the vendor signup page. A path
+                to a file in the site, like images/events/eatz-beatz.jpg.
+                Left blank, the card shows its gradient.            -->
+          <label for="ad-ev-image">Card image</label>
+          <input id="ad-ev-image" maxlength="200"
+                 placeholder="images/events/name.jpg"
+                 value="${attr(ev.image || '')}">
+
           <label for="ad-ev-location">Location</label>
           <input id="ad-ev-location" maxlength="200" value="${attr(ev.location || '')}">
 
@@ -1851,6 +1882,7 @@ function wireEventForm() {
           dateISO: val('ad-ev-dateiso'),
           dateLabel: val('ad-ev-datelabel'),
           venue: val('ad-ev-venue'),
+          image: val('ad-ev-image'),
           location: val('ad-ev-location'),
           status: val('ad-ev-status'),
           maxMarketBays: Number(val('ad-ev-bays')) || 8,

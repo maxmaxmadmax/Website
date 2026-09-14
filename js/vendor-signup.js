@@ -18,11 +18,11 @@
 import {
   firebaseConfig,
   functionsRegion,
-  eventId,
+  eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=58';
+} from './firebase-config.js?v=60';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=58';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=60';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -111,13 +111,35 @@ function vendorLabel() {
    full should stop a vendor before they get attached to a site. The site
    then comes before business details, so they can see what is left without
    filling anything in first. */
-const STEPS = ['type', 'info', 'category', 'site', 'details', 'documents', 'review'];
+/*  'event' is first, and everything after it depends on it: the sites,
+    the categories, the prices and the booking all belong to one event.
+    Nothing subscribes until one is chosen.                            */
+const STEPS = ['event', 'type', 'info', 'category', 'site', 'details', 'documents', 'review'];
+
+/*  What a vendor is allowed to see, and what each status says to them.
+    draft and archived are deliberately absent - those are ours.
+
+    canApply decides whether the button works. An event with applications
+    closed or not yet open still shows, because "we run this every year and
+    it opens in March" is worth knowing.                                */
+const EVENT_STATUS = {
+  open:    { label: 'Accepting Vendors',   tone: 'is-open',    canApply: true },
+  limited: { label: 'Limited Spots',       tone: 'is-limited', canApply: true },
+  closed:  { label: 'Applications Closed', tone: 'is-closed',  canApply: false },
+  soon:    { label: 'Coming Soon',         tone: 'is-soon',    canApply: false },
+};
 
 /* -------------------------------------------------------------------------
    State
    ------------------------------------------------------------------------- */
 const state = {
-  step: 'type',
+  step: 'event',
+
+  /*  Set when a vendor picks an event. Everything that reads an event
+      reads this - there is no module level event id any more, because a
+      page that can apply to several must not have one.               */
+  eventId: null,
+  events: [],
   preview: !isFirebaseConfigured,
 
   vendorType: null,
@@ -165,7 +187,6 @@ async function init() {
   try {
     fb = await loadFirebase();
     watchAuth();
-    subscribeCategories();
   } catch (err) {
     console.error('Firebase failed to start', err);
     state.preview = true;
@@ -175,9 +196,204 @@ async function init() {
   }
 
   buildMap();
-  subscribeSites();
-  handleReturnFromStripe();
+  await handleReturnFromStripe();
+
+  /*  Sites and categories belong to an event, so nothing is subscribed
+      until one is chosen.                                             */
+  if (state.eventId) subscribeToEvent();
+
   render();
+  loadEvents();
+}
+
+/*  Everything that hangs off the chosen event, in one place so that
+    choosing a different one can tear the old one down first.          */
+function subscribeToEvent() {
+  if (!fb || !state.eventId) return;
+  subscribeSites();
+  subscribeCategories();
+}
+
+/* -------------------------------------------------------------------------
+   Choosing an event
+
+   The page used to be the signup for one event, named in a constant. It
+   now takes applications for all of them, so the event is the first thing
+   asked and everything after it - the sites, the categories, the prices,
+   the booking - belongs to whichever one was picked.
+   ------------------------------------------------------------------------- */
+
+/*  Every event a vendor is allowed to see, soonest first. Read once rather
+    than watched: the list changes when we add an event, not while somebody
+    is part way through a form.                                          */
+async function loadEvents() {
+  if (state.preview) {
+    state.events = [{
+      id: defaultEventId,
+      name: 'Eatz & Beatz',
+      subtitle: 'Halloween Edition',
+      dateLabel: 'Saturday 31 October 2026',
+      dateISO: '2026-10-31',
+      venue: 'Bowen Sports Complex',
+      location: 'Bowen, Queensland',
+      status: 'open',
+    }];
+    renderEvents();
+    return;
+  }
+
+  try {
+    const { collection, getDocs } = fb.f;
+    const snap = await getDocs(collection(fb.db, 'events'));
+
+    const rows = [];
+    snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
+
+    /*  Only the statuses a vendor should see. draft and archived are ours. */
+    state.events = rows
+      .filter((ev) => EVENT_STATUS[ev.status])
+      .sort((a, b) => String(a.dateISO || '').localeCompare(String(b.dateISO || '')));
+
+    renderEvents();
+  } catch (err) {
+    console.error('events', err);
+    const host = document.getElementById('vs-events');
+    if (host) {
+      host.innerHTML =
+        '<p class="vs-events-loading">Could not load the events just now. ' +
+        'Please refresh, or email info@soundzgood.com.au.</p>';
+    }
+  }
+}
+
+function renderEvents() {
+  const host = document.getElementById('vs-events');
+  if (!host) return;
+
+  if (!state.events.length) {
+    host.innerHTML =
+      '<p class="vs-events-loading">No events are taking vendor applications ' +
+      'at the moment. Check back soon.</p>';
+    return;
+  }
+
+  host.innerHTML = state.events.map(eventCard).join('');
+
+  host.querySelectorAll('[data-choose-event]').forEach((btn) => {
+    btn.addEventListener('click', () => chooseEvent(btn.getAttribute('data-choose-event')));
+  });
+}
+
+function eventCard(ev) {
+  const st = EVENT_STATUS[ev.status] || EVENT_STATUS.soon;
+  const chosen = state.eventId === ev.id;
+
+  /*  The photo is a variable on the card, the way every other card on this
+      site does it, so an event without one shows its gradient rather than
+      a broken picture.                                                  */
+  const art = ev.image
+    ? ' style="--vs-ev-art:url(\'' + escapeHtml(ev.image) + '\')"'
+    : '';
+
+  const action = st.canApply
+    ? '<button type="button" class="btn btn-ticket vs-event-go" ' +
+      'data-choose-event="' + escapeHtml(ev.id) + '">' +
+      (chosen ? 'Selected' : 'Apply for this event') +
+      ' <span aria-hidden="true">&#8594;</span></button>'
+    : '<span class="btn vs-event-go is-disabled" aria-disabled="true">' +
+      (ev.status === 'soon' ? 'Applications open soon' : 'Applications closed') +
+      '</span>';
+
+  return '' +
+    '<article class="vs-event' + (chosen ? ' is-chosen' : '') +
+      (st.canApply ? '' : ' is-shut') + '"' + art + '>' +
+      '<div class="vs-event-art" aria-hidden="true">' +
+        '<span class="vs-event-status ' + st.tone + '">' + escapeHtml(st.label) + '</span>' +
+      '</div>' +
+      '<div class="vs-event-body">' +
+        '<h3>' + escapeHtml(ev.name || ev.id) + '</h3>' +
+        '<p class="vs-event-when">' +
+          escapeHtml(ev.dateLabel || ev.dateISO || 'Date to be announced') + '</p>' +
+        '<p class="vs-event-where">' + escapeHtml(ev.venue || ev.location || '') + '</p>' +
+        (ev.subtitle
+          ? '<p class="vs-event-blurb">' + escapeHtml(ev.subtitle) + '</p>'
+          : '') +
+        action +
+      '</div>' +
+    '</article>';
+}
+
+/*  Picking one.
+
+    Changing event after starting throws the part-filled application away,
+    because a site number and a food category belong to the event they were
+    chosen at. Carrying them across would hold a site at an event nobody
+    applied to, which is the kind of thing that ends with two vendors on
+    one patch of grass.                                                  */
+function chooseEvent(id) {
+  const ev = state.events.find((e) => e.id === id);
+  if (!ev) return;
+
+  if (state.eventId && state.eventId !== id) {
+    const ok = window.confirm(
+      'Start a new application for ' + (ev.name || id) + '?\n\n' +
+      'Anything filled in for the other event will be cleared.'
+    );
+    if (!ok) return;
+    resetForNewEvent();
+  }
+
+  state.eventId = id;
+  state.event = ev;
+
+  if (!state.preview) subscribeToEvent();
+
+  goTo('type');
+}
+
+/*  Back to a blank application with the vendor still signed in. Used when
+    somebody swaps events, and when they apply for a second one after
+    finishing the first.                                                 */
+function resetForNewEvent() {
+  if (sitesUnsub) { sitesUnsub(); sitesUnsub = null; }
+  if (categoriesUnsub) { categoriesUnsub(); categoriesUnsub = null; }
+
+  state.bookingId = null;
+  state.vendorType = null;
+  state.bayCount = 1;
+  state.categoryId = null;
+  state.siteIds = [];
+  state.siteId = null;
+  state.confirmed = false;
+  categories = [];
+}
+
+/*  The event this application is for, above every step after the first.
+    Hidden on the choosing step itself, where it would be telling somebody
+    what they are already looking at.                                    */
+function renderChosen() {
+  const host = document.getElementById('vs-chosen');
+  if (!host) return;
+
+  const ev = state.event;
+
+  if (!ev || !state.eventId || state.step === 'event') {
+    host.hidden = true;
+    return;
+  }
+
+  host.hidden = false;
+  host.innerHTML = '' +
+    '<div class="vs-chosen-what">' +
+      '<span class="vs-chosen-label">Applying for</span>' +
+      '<strong>' + escapeHtml(ev.name || state.eventId) + '</strong>' +
+      '<span class="vs-chosen-when">' +
+        escapeHtml(ev.dateLabel || ev.dateISO || '') + '</span>' +
+    '</div>' +
+    '<button type="button" class="vs-chosen-change" data-change-event>Change event</button>';
+
+  const change = host.querySelector('[data-change-event]');
+  if (change) change.addEventListener('click', () => goTo('event'));
 }
 
 function startPreview() {
@@ -284,7 +500,7 @@ function subscribeSites() {
   const { collection, onSnapshot, doc } = fb.f;
 
   // event doc: map size and landmarks
-  onSnapshot(doc(fb.db, 'events', eventId), (snap) => {
+  onSnapshot(doc(fb.db, 'events', state.eventId), (snap) => {
     if (!snap.exists()) return;
     const ev = snap.data();
     state.event = ev;
@@ -296,7 +512,7 @@ function subscribeSites() {
   });
 
   sitesUnsub = onSnapshot(
-    collection(fb.db, 'events', eventId, 'sites'),
+    collection(fb.db, 'events', state.eventId, 'sites'),
     (snap) => {
       const sites = [];
       snap.forEach((d) => sites.push({ id: d.id, ...d.data() }));
@@ -313,7 +529,7 @@ function subscribeCategories() {
   const { collection, onSnapshot } = fb.f;
 
   categoriesUnsub = onSnapshot(
-    collection(fb.db, 'events', eventId, 'categories'),
+    collection(fb.db, 'events', state.eventId, 'categories'),
     (snap) => {
       categories = [];
       snap.forEach((d) => categories.push({ id: d.id, ...d.data() }));
@@ -421,7 +637,7 @@ async function holdChosenSites() {
     await ensureBookingDoc();
 
     const call = fb.fn.httpsCallable(fb.fns, 'holdSite');
-    const res = await call({ eventId, siteIds: ids, bookingId: state.bookingId });
+    const res = await call({ eventId: state.eventId, siteIds: ids, bookingId: state.bookingId });
 
     state.siteIds = res.data.siteIds || ids;
     state.siteId = state.siteIds[0];
@@ -485,7 +701,7 @@ async function ensureBookingDoc() {
 
   const ref = await addDoc(collection(fb.db, 'bookings'), {
     uid: state.user.uid,
-    eventId,
+    eventId: state.eventId,
     vendorType: state.vendorType,
     bayCount: state.bayCount,
     business: state.business,
@@ -693,7 +909,13 @@ async function payAndBook() {
 /* Stripe sends people back here. The redirect is only a hint - the booking
    is not treated as paid until the webhook has written it, so this polls
    the booking rather than believing the URL. */
-function handleReturnFromStripe() {
+/*  Coming back from Stripe, paid or cancelled.
+
+    The booking knows which event it is for and this page no longer does,
+    so the event is read back off it before anything else happens. Without
+    that, a cancelled checkout returns to a review step with no sites and
+    no categories loaded, because nothing knows which event's to load.  */
+async function handleReturnFromStripe() {
   const params = new URLSearchParams(window.location.search);
   const bookingId = params.get('booking');
 
@@ -701,6 +923,19 @@ function handleReturnFromStripe() {
 
   state.bookingId = bookingId;
   localStorage.setItem('sg-vendor-booking', bookingId);
+
+  if (fb) {
+    try {
+      const { doc, getDoc } = fb.f;
+      const snap = await getDoc(doc(fb.db, 'bookings', bookingId));
+      if (snap.exists()) {
+        const b = snap.data();
+        if (b.eventId) state.eventId = b.eventId;
+      }
+    } catch (err) {
+      console.error('could not read the booking on return', err);
+    }
+  }
 
   if (params.get('cancelled')) {
     setStepError('review', 'Checkout was cancelled. Your site is still held for a few minutes.');
@@ -858,6 +1093,9 @@ function render() {
   });
 
   renderStepper(steps);
+  renderChosen();
+
+  if (state.step === 'event') renderEvents();
 
   if (state.step === 'category') renderCategories();
   if (state.step === 'site') {
