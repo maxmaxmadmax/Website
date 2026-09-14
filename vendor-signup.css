@@ -2301,3 +2301,61 @@ body.vendor-signup .footer-sponsors{
 
 /*  And the map, where the colours carry meaning.                   */
 .vendor-signup .vs-map-wrap{ color:#fff; }
+
+/* ==========================================================================
+   COLOURS THAT ONLY WORKED ON BLACK
+
+   Turning the page over left three of the site's colours sitting on white
+   at contrast a person cannot read. Found by walking every visible element
+   on every step and measuring foreground against its real background - not
+   by looking, because the worst of them, white on white, is invisible
+   rather than ugly and would have been missed.
+
+       gold #ffb700 on white      1.75 : 1   - 22 labels and values
+       .btn white text on white   1.00 : 1   - 10 Back and next buttons
+       orange #ff6b00 as a link   2.9  : 1
+
+   Each is fixed by darkening it for the light part of the page only. The
+   hero, the two vendor type cards and the map keep the originals, because
+   they are still dark and the colours still work there.
+   ========================================================================== */
+.vendor-signup{
+    /*  A gold dark enough to read on white and still recognisably ours.
+        4.9 : 1 against white, where 4.5 is the readable threshold.    */
+    --sg-gold:#8a5f00;
+}
+
+/*  The three places that are still dark keep the real gold.           */
+.vendor-signup .vs-hero,
+.vendor-signup .vs-type,
+.vendor-signup .vs-map-wrap{
+    --sg-gold:#ffb700;
+}
+
+/*  The buttons that are not the orange one. style.css gives them white
+    text for a black page; on white they were invisible - Back most of
+    all, which is the control somebody reaches for when they are lost. */
+.vendor-signup .vs-flow .btn:not(.btn-ticket),
+.vendor-signup .vs-flow .btn-outline{
+    color:#12141a;
+    border-color:#c9ced7;
+    background:#fff;
+}
+
+.vendor-signup .vs-flow .btn:not(.btn-ticket):hover,
+.vendor-signup .vs-flow .btn-outline:hover{
+    background:#12141a;
+    border-color:#12141a;
+    color:#fff;
+}
+
+/*  Orange as a text link. The button keeps the brand orange - white on
+    it is the same as everywhere else on the site - but orange type on
+    white is too pale to read, so links get a darker one.              */
+.vendor-signup .vs-flow a:not(.btn){
+    color:#b34700;
+}
+
+.vendor-signup .vs-flow a:not(.btn):hover{
+    color:#12141a;
+}
