@@ -22,10 +22,10 @@
     <meta name="twitter:card" content="summary_large_image">
 
     <link rel="icon" href="images/logo.png">
-    <link rel="stylesheet" href="style.css?v=63">
-    <link rel="stylesheet" href="vendor-signup.css?v=63">
-    <script src="js/main.js?v=63" defer></script>
-    <script type="module" src="js/vendor-signup.js?v=63"></script>
+    <link rel="stylesheet" href="style.css?v=64">
+    <link rel="stylesheet" href="vendor-signup.css?v=64">
+    <script src="js/main.js?v=64" defer></script>
+    <script type="module" src="js/vendor-signup.js?v=64"></script>
 </head>
 
 <body class="vendor-signup">
@@ -79,8 +79,53 @@
 
 </header>
 
+<!-- CHOOSING AN EVENT ---------------------------------------------------
+
+     Light, where the rest of the flow is dark. That is deliberate and it
+     is a stage, not a stripe: this section is on screen while you choose
+     and gone once you have, so the page never shows both at once. A page
+     that changes colour halfway down looks like a mistake; one that
+     changes when you move on looks like progress.
+
+     The cards are built by js/vendor-signup.js from the events
+     collection, so the list changes without anybody editing this file.
+     An event only appears if its status is one a vendor should see -
+     draft and archived are ours, not theirs.
+     -------------------------------------------------------------------- -->
+<section class="vs-pick" id="vs-pick">
+    <div class="vs-pick-inner">
+
+        <p class="vs-stepnum"><span>1</span> Select event</p>
+
+        <h2>Which event are you applying for?</h2>
+        <p class="vs-pick-intro">
+            Choose the event you&rsquo;d like to be a vendor at. You can submit a
+            separate application for multiple events.
+        </p>
+
+        <div class="vs-events" id="vs-events">
+            <p class="vs-events-loading">Loading events&hellip;</p>
+        </div>
+
+        <!--  The next step, shown locked rather than hidden. Somebody
+              landing here can see there is a form and what unlocks it,
+              which an empty page below the cards does not tell them. -->
+        <p class="vs-stepnum is-locked"><span>2</span> Vendor details</p>
+
+        <div class="vs-locked">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="16" rx="2"/>
+                <path d="M3 10h18M8 3v4M16 3v4"/>
+            </svg>
+            <p class="vs-locked-head">Select an event to continue</p>
+            <p class="vs-locked-sub">Choose an event above to start your vendor application.</p>
+        </div>
+    </div>
+</section>
+
+
 <!-- THE FLOW ------------------------------------------------------------ -->
-<section class="section dark" id="vs-flow">
+<section class="section dark" id="vs-flow" hidden>
 
     <div class="vs-flow">
 
@@ -96,29 +141,7 @@
               telling somebody what they are looking at.               -->
         <div class="vs-chosen" id="vs-chosen" hidden></div>
 
-        <!-- 1. WHICH EVENT --------------------------------------------------
-             The cards are built by js/vendor-signup.js from the events
-             collection, because the list changes without anybody touching
-             this file. An event only appears here if its status is one a
-             vendor should see - draft and archived are ours, not theirs.
-
-             Picking one sets the event for everything after it: the sites,
-             the categories, the prices and the booking itself. A vendor can
-             come back and pick another to apply for a second event; each
-             application is its own booking against its own event.     -->
-        <div class="vs-step" data-step="event">
-            <h2>Which event are you applying for?</h2>
-            <p class="vs-step-intro">
-                Choose the event you&rsquo;d like to be a vendor at. You can submit a
-                separate application for multiple events.
-            </p>
-
-            <div class="vs-events" id="vs-events">
-                <p class="vs-events-loading">Loading events&hellip;</p>
-            </div>
-        </div>
-
-        <!-- 1. VENDOR TYPE ------------------------------------------------- -->
+        <!-- 2. VENDOR TYPE ------------------------------------------------- -->
         <div class="vs-step" data-step="type">
             <h2>What kind of vendor are you?</h2>
             <p class="vs-step-intro">This decides your price and which sites you can choose from.</p>

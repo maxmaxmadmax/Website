@@ -35,13 +35,21 @@
 /* --------------------------------------------------------------------------
    HERO
    -------------------------------------------------------------------------- */
+/*  Our own stage at dusk, behind the wash that was already here.
+
+    The gradients are listed before the photograph on purpose: a
+    background stacks first-on-top, so the image has to come last or it
+    covers them and the headline goes unreadable over it. That is how
+    three heroes on this site have broken.                             */
 .vs-hero{
     position:relative;
     overflow:hidden;
     text-align:center;
 
     background:
-        radial-gradient(120% 100% at 50% 0%, var(--vs-purple-deep) 0%, #0a0a0a 58%),
+        radial-gradient(120% 100% at 50% 0%, rgba(46, 16, 66, .82) 0%, rgba(10, 10, 10, .92) 62%),
+        linear-gradient(180deg, rgba(0,0,0,.35) 0%, rgba(0,0,0,.65) 100%),
+        url('images/services/festivals.webp') center 62% / cover no-repeat,
         var(--sg-black);
 }
 
@@ -1961,3 +1969,265 @@ body.vendor-signup .footer-sponsors{
 }
 
 .vs-chosen-change:hover{ border-color:var(--sg-gold); color:#fff; }
+
+/* ==========================================================================
+   CHOOSING AN EVENT - THE LIGHT STAGE
+
+   The one light part of this page, and it is a stage rather than a stripe:
+   it is on screen while you choose and gone once you have, so the page
+   never shows light and dark at the same time. A page that changes colour
+   halfway down looks like a mistake; one that changes when you move on
+   looks like progress.
+
+   Its own small palette, because none of the site's tokens are meant for
+   dark type on white.
+   ========================================================================== */
+.vs-pick{
+    --pk-ink:#12141a;
+    --pk-muted:#606877;
+    --pk-line:#e3e6ec;
+    --pk-panel:#fff;
+
+    padding:clamp(34px, 5vw, 56px) 20px clamp(44px, 6vw, 72px);
+    background:#f6f7f9;
+    color:var(--pk-ink);
+}
+
+.vs-pick-inner{
+    max-width:var(--sg-max-width);
+    margin:auto;
+}
+
+.vs-pick h2{
+    font-family:var(--sg-font-display);
+    font-size:clamp(1.5rem, 3.4vw, 2.1rem);
+    letter-spacing:-.7px;
+    color:var(--pk-ink);
+    text-align:left;
+    margin:0 0 8px;
+}
+
+.vs-pick-intro{
+    margin:0 0 26px;
+    color:var(--pk-muted);
+    font-size:.95rem;
+}
+
+/*  The numbered step label. A circle and a word, so the page says where
+    you are without a progress bar - the bar lives in the dark half.    */
+.vs-stepnum{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:0 0 14px;
+    color:var(--pk-ink);
+    font-family:var(--sg-font-accent);
+    font-size:.68rem;
+    font-weight:bold;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+}
+
+.vs-stepnum span{
+    display:grid;
+    place-items:center;
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    background:var(--pk-ink);
+    color:#fff;
+    font-family:var(--sg-font);
+    font-size:.72rem;
+    letter-spacing:0;
+}
+
+/*  The step you cannot reach yet, greyed rather than missing.          */
+.vs-stepnum.is-locked{
+    margin-top:40px;
+    color:#9aa1ad;
+}
+
+.vs-stepnum.is-locked span{ background:#c9ced7; }
+
+.vs-locked{
+    display:grid;
+    place-items:center;
+    gap:6px;
+    padding:40px 20px;
+    border:1px solid var(--pk-line);
+    border-radius:14px;
+    background:var(--pk-panel);
+    text-align:center;
+}
+
+.vs-locked svg{
+    width:30px;
+    height:30px;
+    fill:none;
+    stroke:#98a0ad;
+    stroke-width:1.6;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+}
+
+.vs-locked-head{
+    margin:6px 0 0;
+    font-weight:bold;
+    color:var(--pk-ink);
+}
+
+.vs-locked-sub{
+    margin:0;
+    color:var(--pk-muted);
+    font-size:.9rem;
+}
+
+/* ---- the cards, on white ---- */
+.vs-pick .vs-events{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(min(230px, 100%), 1fr));
+    gap:16px;
+    margin-top:0;
+}
+
+.vs-pick .vs-events-loading{
+    color:var(--pk-muted);
+    padding:24px 0;
+}
+
+.vs-pick .vs-event{
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    border:1px solid var(--pk-line);
+    border-radius:14px;
+    background:var(--pk-panel);
+    box-shadow:0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06);
+    transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+
+.vs-pick .vs-event:hover{
+    transform:translateY(-3px);
+    box-shadow:0 12px 26px rgba(16,24,40,.12);
+}
+
+.vs-pick .vs-event.is-chosen{
+    border-color:var(--sg-orange);
+    box-shadow:0 0 0 1px var(--sg-orange), 0 12px 26px rgba(16,24,40,.12);
+}
+
+.vs-pick .vs-event.is-shut{ opacity:.82; }
+.vs-pick .vs-event.is-shut:hover{ transform:none; box-shadow:none; }
+
+.vs-pick .vs-event-art{
+    position:relative;
+    aspect-ratio:16 / 9;
+    background-color:#e9ecf1;
+    background-image:var(--vs-ev-art);
+    background-size:cover;
+    background-position:center;
+}
+
+.vs-pick .vs-event-body{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:5px;
+    padding:14px 14px 16px;
+    flex:1;
+}
+
+.vs-pick .vs-event-body h3{
+    font-family:var(--sg-font-display);
+    font-size:1rem;
+    letter-spacing:-.3px;
+    text-transform:none;
+    color:var(--pk-ink);
+    margin:0 0 2px;
+}
+
+/*  Date and place carry their own small icons, drawn here rather than in
+    the markup - there is one of each per card and they never change.  */
+.vs-pick .vs-event-when,
+.vs-pick .vs-event-where{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    margin:0;
+    color:var(--pk-muted);
+    font-size:.84rem;
+    font-weight:normal;
+}
+
+.vs-pick .vs-event-when::before,
+.vs-pick .vs-event-where::before{
+    content:"";
+    width:13px;
+    height:13px;
+    flex:0 0 auto;
+    background-color:currentColor;
+    -webkit-mask:var(--pk-icon) center / contain no-repeat;
+    mask:var(--pk-icon) center / contain no-repeat;
+}
+
+.vs-pick .vs-event-when::before{
+    --pk-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10z'/%3E%3C/svg%3E");
+}
+
+.vs-pick .vs-event-where::before{
+    --pk-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z'/%3E%3C/svg%3E");
+}
+
+.vs-pick .vs-event-blurb{
+    margin:6px 0 0;
+    color:var(--pk-muted);
+    font-size:.86rem;
+    line-height:1.6;
+}
+
+/*  Black, full width, like the design. The orange button is the site's
+    "buy" button and this is a choice, not a purchase.                 */
+.vs-pick .vs-event-go{
+    margin-top:14px;
+    width:100%;
+    padding:11px 14px;
+    border:0;
+    border-radius:10px;
+    background:var(--pk-ink);
+    color:#fff;
+    font-family:var(--sg-font-accent);
+    font-size:.68rem;
+    font-weight:bold;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    text-align:center;
+    cursor:pointer;
+    transition:background-color .2s ease;
+}
+
+.vs-pick .vs-event-go:hover{ background:#000; }
+
+.vs-pick .vs-event-go.is-disabled{
+    background:#dfe3e9;
+    color:#8b93a1;
+    cursor:default;
+}
+
+/* ---- the status badge, over the picture ---- */
+.vs-pick .vs-event-status{
+    position:absolute;
+    left:9px;
+    bottom:9px;
+    padding:4px 9px;
+    border-radius:6px;
+    font-family:var(--sg-font-accent);
+    font-size:.56rem;
+    font-weight:bold;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+}
+
+.vs-pick .vs-event-status.is-open{    background:#16a34a; color:#fff; }
+.vs-pick .vs-event-status.is-limited{ background:#f5b83d; color:#3a2600; }
+.vs-pick .vs-event-status.is-closed{  background:#12141a; color:#fff; }
+.vs-pick .vs-event-status.is-soon{    background:#12141a; color:#fff; }

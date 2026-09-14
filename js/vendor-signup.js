@@ -20,9 +20,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=63';
+} from './firebase-config.js?v=64';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=63';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=64';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -1095,7 +1095,16 @@ function render() {
   renderStepper(steps);
   renderChosen();
 
-  if (state.step === 'event') renderEvents();
+  /*  One stage on screen at a time: the light chooser, or the dark form.
+      Never both - that is what keeps the change of colour reading as
+      progress rather than as a seam.                                  */
+  const picking = state.step === 'event';
+  const pick = document.getElementById('vs-pick');
+  const flow = document.getElementById('vs-flow');
+  if (pick) pick.hidden = !picking;
+  if (flow) flow.hidden = picking;
+
+  if (picking) renderEvents();
 
   if (state.step === 'category') renderCategories();
   if (state.step === 'site') {
