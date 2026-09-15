@@ -20,9 +20,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=67';
+} from './firebase-config.js?v=71';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=67';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=71';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -107,15 +107,6 @@ function vendorLabel() {
   return '';
 }
 
-/* What you sell comes before the map, because a category that is already
-   full should stop a vendor before they get attached to a site. The site
-   then comes before business details, so they can see what is left without
-   filling anything in first. */
-/*  'event' is first, and everything after it depends on it: the sites,
-    the categories, the prices and the booking all belong to one event.
-    Nothing subscribes until one is chosen.                            */
-const STEPS = ['event', 'type', 'info', 'category', 'site', 'details', 'documents', 'review'];
-
 /*  What a vendor is allowed to see, and what each status says to them.
     draft and archived are deliberately absent - those are ours.
 
@@ -133,8 +124,6 @@ const EVENT_STATUS = {
    State
    ------------------------------------------------------------------------- */
 const state = {
-  step: 'event',
-
   /*  Set when a vendor picks an event. Everything that reads an event
       reads this - there is no module level event id any more, because a
       page that can apply to several must not have one.               */
@@ -348,7 +337,8 @@ function chooseEvent(id) {
 
   if (!state.preview) subscribeToEvent();
 
-  goTo('type');
+  render();
+  goToSection('details');
 }
 
 /*  Back to a blank application with the vendor still signed in. Used when
@@ -377,23 +367,30 @@ function renderChosen() {
 
   const ev = state.event;
 
-  if (!ev || !state.eventId || state.step === 'event') {
+  if (!ev || !state.eventId) {
     host.hidden = true;
     return;
   }
 
+  const art = ev.image
+    ? ' style="--vs-ev-art:url(\'' + escapeHtml(ev.image) + '\')"'
+    : '';
+
   host.hidden = false;
   host.innerHTML = '' +
-    '<div class="vs-chosen-what">' +
-      '<span class="vs-chosen-label">Applying for</span>' +
-      '<strong>' + escapeHtml(ev.name || state.eventId) + '</strong>' +
-      '<span class="vs-chosen-when">' +
-        escapeHtml(ev.dateLabel || ev.dateISO || '') + '</span>' +
+    '<p class="vs-side-label">Selected event</p>' +
+    '<div class="vs-side-card">' +
+      '<span class="vs-side-art"' + art + ' aria-hidden="true"></span>' +
+      '<span class="vs-side-card-text">' +
+        '<strong>' + escapeHtml(ev.name || state.eventId) + '</strong>' +
+        '<span>' + escapeHtml(ev.dateLabel || ev.dateISO || '') + '</span>' +
+        '<span>' + escapeHtml(ev.venue || ev.location || '') + '</span>' +
+      '</span>' +
     '</div>' +
     '<button type="button" class="vs-chosen-change" data-change-event>Change event</button>';
 
   const change = host.querySelector('[data-change-event]');
-  if (change) change.addEventListener('click', () => goTo('event'));
+  if (change) change.addEventListener('click', () => goToSection('event'));
 }
 
 function startPreview() {
@@ -534,7 +531,7 @@ function subscribeCategories() {
       categories = [];
       snap.forEach((d) => categories.push({ id: d.id, ...d.data() }));
       categories.sort((a, b) => a.name.localeCompare(b.name));
-      if (state.step === 'category') renderCategories();
+      renderCategories();
     },
     (err) => console.error('categories listener', err)
   );
@@ -874,6 +871,10 @@ async function payAndBook() {
     return;
   }
 
+  if (!validateAll()) return;
+
+  collectForm();
+
   if (!state.siteId) {
     setStepError('review', 'Choose a site before paying.');
     return;
@@ -939,7 +940,7 @@ async function handleReturnFromStripe() {
 
   if (params.get('cancelled')) {
     setStepError('review', 'Checkout was cancelled. Your site is still held for a few minutes.');
-    goTo('review');
+    goToSection('review');
     return;
   }
 
@@ -952,9 +953,8 @@ async function handleReturnFromStripe() {
 function showWaitingForPayment() {
   const el = document.getElementById('vs-confirming');
   if (el) el.hidden = false;
-  document.querySelectorAll('.vs-step').forEach((s) => { s.hidden = true; });
-  const stepper = document.getElementById('vs-stepper');
-  if (stepper) stepper.hidden = true;
+  document.querySelectorAll('.vs-sec').forEach((el) => { el.hidden = true; });
+  document.querySelector('.vs-side')?.setAttribute('hidden', '');
 }
 
 async function pollForConfirmation(bookingId, attempt = 0) {
@@ -1016,11 +1016,10 @@ async function refreshConfirmed() {
 function showConfirmation() {
   const wrap = document.getElementById('vs-confirmed');
   const confirming = document.getElementById('vs-confirming');
-  const stepper = document.getElementById('vs-stepper');
 
   if (confirming) confirming.hidden = true;
-  if (stepper) stepper.hidden = true;
-  document.querySelectorAll('.vs-step').forEach((s) => { s.hidden = true; });
+  document.querySelectorAll('.vs-sec').forEach((el) => { el.hidden = true; });
+  document.querySelector('.vs-side')?.setAttribute('hidden', '');
 
   if (!wrap) return;
   const b = state.confirmed || {};
@@ -1057,102 +1056,122 @@ function showConfirmation() {
 }
 
 /* -------------------------------------------------------------------------
-   Steps and rendering
+   Sections
+
+   The form is one page now: five sections, stacked, and you scroll. There
+   is no current step any more - what used to be state.step is replaced by
+   asking each section whether it has what it needs, which is also what
+   the summary down the side reports.
+
+   The order still matters. What you sell comes before the map, because a
+   category that is already full should stop somebody before they get
+   attached to a site.
    ------------------------------------------------------------------------- */
-function visibleSteps() {
-  return STEPS.slice();
+const SECTIONS = [
+  { id: 'event',   label: 'Select event' },
+  { id: 'details', label: 'Vendor details' },
+  { id: 'stall',   label: 'Stall requirements' },
+  { id: 'site',    label: 'Choose your site' },
+  { id: 'review',  label: 'Review & submit' },
+];
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/*  Has this section got everything it needs?
+
+    Read live from the fields rather than from state, because state is only
+    filled in when somebody presses Continue and the summary has to keep up
+    with typing.                                                          */
+function sectionDone(id) {
+  const ticked = (elId) => !!document.getElementById(elId)?.checked;
+
+  switch (id) {
+    case 'event':
+      return !!state.eventId;
+
+    case 'details':
+      return !!state.vendorType
+          && !!val('vs-biz-name') && !!val('vs-biz-contact')
+          && EMAIL_RE.test(val('vs-biz-email')) && !!val('vs-biz-phone');
+
+    case 'stall':
+      return !!state.categoryId
+          && !!val('vs-setup-frontage') && !!val('vs-setup-depth')
+          && !!val('vs-setup-own-power') && ticked('vs-setup-selfsufficient');
+
+    case 'site':
+      return !!state.siteId;
+
+    case 'review':
+      return !!state.confirmed;
+
+    default:
+      return false;
+  }
 }
 
-function goTo(step) {
-  state.step = step;
-  render();
-  const anchor = document.getElementById('vs-flow');
-  if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function nextStep() {
-  const steps = visibleSteps();
-  const i = steps.indexOf(state.step);
-  if (i < steps.length - 1) goTo(steps[i + 1]);
-}
-
-function prevStep() {
-  const steps = visibleSteps();
-  const i = steps.indexOf(state.step);
-  if (i > 0) goTo(steps[i - 1]);
+function goToSection(id) {
+  const el = document.getElementById('sec-' + id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function render() {
   if (state.confirmed) return;
 
-  const steps = visibleSteps();
-  if (!steps.includes(state.step)) state.step = steps[0];
-
-  document.querySelectorAll('.vs-step').forEach((el) => {
-    el.hidden = el.getAttribute('data-step') !== state.step;
+  /*  Everything after choosing an event is locked until one is chosen -
+      the prices, the categories and the sites all belong to a single
+      event, so there is nothing truthful to show before then.         */
+  const chosen = !!state.eventId;
+  document.querySelectorAll('.vs-sec').forEach((el) => {
+    if (el.getAttribute('data-sec') === 'event') return;
+    el.classList.toggle('is-locked', !chosen);
   });
 
-  renderStepper(steps);
+  renderEvents();
   renderChosen();
+  renderSide();
 
-  /*  One stage on screen at a time: the light chooser, or the dark form.
-      Never both - that is what keeps the change of colour reading as
-      progress rather than as a seam.                                  */
-  const picking = state.step === 'event';
-  const pick = document.getElementById('vs-pick');
-  const flow = document.getElementById('vs-flow');
-  if (pick) pick.hidden = !picking;
-  if (flow) flow.hidden = picking;
+  if (!chosen) return;
 
-  if (picking) renderEvents();
-
-  if (state.step === 'category') renderCategories();
-  if (state.step === 'site') {
-    if (map) map.setVendorType(state.vendorType);
-    renderSiteChoice();
-    renderMapMeta();
-    renderSignInPrompt();
-  }
-  if (state.step === 'review') renderReview();
-  if (state.step === 'documents') renderDocumentList();
+  renderCategories();
+  if (map) map.setVendorType(state.vendorType);
+  renderSiteChoice();
+  renderMapMeta();
+  renderSignInPrompt();
+  renderDocumentList();
+  renderReview();
 }
 
-/*  THE STEP HEADER
+/*  THE SUMMARY DOWN THE SIDE
 
-    A back link, a step counter and one segment per step. This replaced a
-    row of seven labelled pills: the labels needed the full desktop width
-    to be readable, and on a phone they collapsed to seven bare numbers,
-    which told nobody anything. A filling bar reads the same at any size.
-
-    It is rebuilt on every render, so the back link is wired here rather
-    than in wireStaticControls - a listener attached at load would be
-    thrown away with the markup on the first step change. That is also
-    why it uses its own attribute instead of [data-back].               */
-function renderStepper(steps) {
-  const host = document.getElementById('vs-stepper');
+    One line per section, saying complete, in progress or pending, and it
+    is the only thing on the page that answers "how much is left". The
+    lines are links, so it doubles as a way back to a section somebody
+    wants to change - which the old wizard could not do at all without
+    walking backwards through every screen in between.                  */
+function renderSide() {
+  const host = document.getElementById('vs-side-steps');
   if (!host) return;
 
-  const current = steps.indexOf(state.step);
-  const total = steps.length;
+  const states = SECTIONS.map((sec) => sectionDone(sec.id));
+  const now = states.indexOf(false);
 
-  host.innerHTML = `
-    <div class="vs-progress-top">
-      ${current > 0
-        ? `<button type="button" class="vs-progress-back" data-progress-back>
-             <span aria-hidden="true">&#8592;</span> Back
-           </button>`
-        : '<span></span>'}
-      <span class="vs-progress-count">Step ${current + 1} of ${total}</span>
-    </div>
+  host.innerHTML = SECTIONS.map((sec, i) => {
+    const done = states[i];
+    const cls = done ? 'is-done' : (i === now ? 'is-now' : 'is-wait');
+    const note = done ? 'Complete' : (i === now ? 'In progress' : 'Pending');
 
-    <div class="vs-progress-bar" role="progressbar" aria-label="Signup progress"
-         aria-valuemin="1" aria-valuemax="${total}" aria-valuenow="${current + 1}">
-      <span style="width:${(((current + 1) / total) * 100).toFixed(2)}%"></span>
-    </div>
-  `;
-
-  const back = host.querySelector('[data-progress-back]');
-  if (back) back.addEventListener('click', prevStep);
+    return '' +
+      '<li class="' + cls + '">' +
+        '<a href="#sec-' + sec.id + '">' +
+          '<span class="vs-side-num">' + (done ? '&#10003;' : (i + 1)) + '</span>' +
+          '<span class="vs-side-text">' +
+            '<strong>' + sec.label + '</strong>' +
+            '<em>' + note + '</em>' +
+          '</span>' +
+        '</a>' +
+      '</li>';
+  }).join('');
 }
 
 function renderCategories() {
@@ -1331,7 +1350,7 @@ function renderReview() {
       <section class="vs-card">
         <header class="vs-card-head">
           <h3>Your Booking</h3>
-          <button type="button" class="vs-pill" data-goto-step="details">
+          <button type="button" class="vs-pill" data-scroll-to="details">
             <svg viewBox="0 0 24 24" aria-hidden="true" class="vs-pill-ico">
               <path d="M4 20h4l10-10-4-4L4 16z"/>
               <path d="M14 6l4 4 2-2-4-4z"/>
@@ -1419,15 +1438,28 @@ function renderReview() {
 
       <p class="vs-checkout-foot">
         Questions? The event details and the ones vendors usually ask are on
-        <button type="button" class="vs-help-link" data-goto-step="info">step two</button>.
+        <button type="button" class="vs-help-link" data-open-faqs>event info &amp; FAQs</button>.
       </p>
     </div>
   `;
 
   /*  Wired here rather than in wireStaticControls because this markup is
       rebuilt on every render. */
-  host.querySelectorAll('[data-goto-step]').forEach((btn) => {
-    btn.addEventListener('click', () => goTo(btn.getAttribute('data-goto-step')));
+  host.querySelectorAll('[data-scroll-to]').forEach((btn) => {
+    btn.addEventListener('click', () => goToSection(btn.getAttribute('data-scroll-to')));
+  });
+
+  host.querySelectorAll('[data-open-faqs]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      /*  The FAQs are folded away under the event cards now, so this both
+          opens them and takes you there - opening something off screen
+          reads as nothing happening.                                   */
+      const faqs = document.querySelector('.vs-faqbox');
+      if (faqs) {
+        faqs.open = true;
+        faqs.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
   });
 
   /*  The (i) beside the booking fee. A tooltip would be unreachable on a
@@ -1469,7 +1501,11 @@ function wireStaticControls() {
            bays the vendor picks on the map, so the price follows from that
            and the flow moves straight on. */
         if (map) map.setVendorType(state.vendorType);
-        nextStep();
+
+        /*  No jump. The price and the map both follow from this, so the
+            page is re-rendered where it stands and the vendor carries on
+            down the same section.                                     */
+        render();
     });
   });
 
@@ -1477,19 +1513,30 @@ function wireStaticControls() {
   const holdBtn = document.getElementById('vs-site-confirm');
   if (holdBtn) holdBtn.addEventListener('click', holdChosenSites);
 
-  // next / back
-  document.querySelectorAll('[data-next]').forEach((btn) => {
+  /*  Continue. It checks its own section, keeps what is in it and takes
+      you to the next one - it is a scroll, not a screen change, so the
+      section you just filled in stays on the page behind you.        */
+  document.querySelectorAll('[data-go]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      if (!validateStep(state.step)) return;
-      collectStep(state.step);
+      const sec = btn.closest('.vs-sec');
+      const from = sec ? sec.getAttribute('data-sec') : null;
+
+      if (from && !validateSection(from)) return;
+
+      collectForm();
       saveDraft();
-      nextStep();
+      renderSide();
+      goToSection(btn.getAttribute('data-go'));
     });
   });
 
-  document.querySelectorAll('[data-back]').forEach((btn) => {
-    btn.addEventListener('click', prevStep);
-  });
+  /*  The summary follows the typing. One listener on the whole form
+      rather than one per field, so fields added later are covered.  */
+  const form = document.getElementById('vs-flow');
+  if (form) {
+    form.addEventListener('input', renderSide);
+    form.addEventListener('change', renderSide);
+  }
 
   // documents
   const fileInput = document.getElementById('vs-file');
@@ -1515,93 +1562,106 @@ function wireStaticControls() {
   });
 }
 
-function collectStep(step) {
-  if (step === 'details') {
-    state.business = {
-      name: val('vs-biz-name'),
-      contactName: val('vs-biz-contact'),
-      email: val('vs-biz-email'),
-      phone: val('vs-biz-phone'),
-      socials: val('vs-biz-socials'),
-      description: val('vs-biz-desc'),
-    };
+function collectForm() {
+  state.business = {
+    name: val('vs-biz-name'),
+    contactName: val('vs-biz-contact'),
+    email: val('vs-biz-email'),
+    phone: val('vs-biz-phone'),
+    socials: val('vs-biz-socials'),
+    description: val('vs-biz-desc'),
+  };
 
-    // Business, category and setup share a step, so the setup fields are
-    // read in the same pass.
-    state.setup = {
-      frontage: val('vs-setup-frontage'),
-      depth: val('vs-setup-depth'),
-      // All vendors run off their own power and water at this event, so
-      // what we record is what they are bringing, not what they want from
-      // us. Loud generators get placed away from the stage.
-      ownPower: val('vs-setup-own-power'),
-      selfSufficient: document.getElementById('vs-setup-selfsufficient')?.checked || false,
-      vehicleOnSite: document.getElementById('vs-setup-vehicle')?.checked || false,
-      notes: val('vs-setup-notes'),
-    };
-  }
+  state.setup = {
+    frontage: val('vs-setup-frontage'),
+    depth: val('vs-setup-depth'),
+    /* All vendors run off their own power and water at this event, so what
+       we record is what they are bringing, not what they want from us.
+       Loud generators get placed away from the stage. */
+    ownPower: val('vs-setup-own-power'),
+    selfSufficient: document.getElementById('vs-setup-selfsufficient')?.checked || false,
+    vehicleOnSite: document.getElementById('vs-setup-vehicle')?.checked || false,
+    notes: val('vs-setup-notes'),
+  };
 }
 
-function validateStep(step) {
-  setStepError(step, '');
+function validateSection(id) {
+  if (id === 'details') {
+    setStepError('type', '');
+    setStepError('details', '');
 
-  if (step === 'type' && !state.vendorType) {
-    setStepError('type', 'Please choose a vendor type.');
-    return false;
-  }
+    if (!state.vendorType) {
+      setStepError('type', 'Please choose a vendor type.');
+      return false;
+    }
 
-  if (step === 'category' && !state.categoryId) {
-    setStepError('category', 'Please choose a category.');
-    return false;
-  }
-
-  /* Business and setup share a step, so they share one error line. Checked
-     in the order they appear on the page, and the first thing missing is
-     scrolled to - otherwise on a long step the message can sit off screen
-     and look like nothing happened. */
-  if (step === 'details') {
     const name = val('vs-biz-name');
     const contact = val('vs-biz-contact');
     const email = val('vs-biz-email');
     const phone = val('vs-biz-phone');
 
     if (!name || !contact || !email || !phone) {
-      return failDetails('Please fill in business name, contact, email and phone.',
+      return fail('details', 'Please fill in business name, contact, email and phone.',
         'vs-biz-name');
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return failDetails('That email address does not look right.', 'vs-biz-email');
+    if (!EMAIL_RE.test(email)) {
+      return fail('details', 'That email address does not look right.', 'vs-biz-email');
     }
+    return true;
+  }
 
+  if (id === 'stall') {
+    setStepError('category', '');
+    setStepError('setup', '');
+
+    if (!state.categoryId) {
+      return fail('category', 'Please choose a category.', 'vs-categories');
+    }
     if (!val('vs-setup-frontage') || !val('vs-setup-depth')) {
-      return failDetails('Please choose your frontage and depth.', 'vs-setup-frontage');
+      return fail('setup', 'Please choose your frontage and depth.', 'vs-setup-frontage');
     }
-
     if (!val('vs-setup-own-power')) {
-      return failDetails('Please tell us what power you are bringing.',
-        'vs-setup-own-power');
+      return fail('setup', 'Please tell us what power you are bringing.', 'vs-setup-own-power');
     }
 
-    // Every vendor brings their own power and water to this event, so we
-    // ask them to say plainly that they can.
+    /* Every vendor brings their own power and water to this event, so we
+       ask them to say plainly that they can. */
     const ack = document.getElementById('vs-setup-selfsufficient');
     if (ack && !ack.checked) {
-      return failDetails('Please confirm you are bringing your own power and water.',
+      return fail('setup', 'Please confirm you are bringing your own power and water.',
         'vs-setup-selfsufficient');
     }
+    return true;
   }
 
-  if (step === 'site' && !state.siteId) {
-    setStepError('site', 'Please choose a site on the map.');
-    return false;
+  if (id === 'site') {
+    setStepError('site', '');
+    if (!state.siteId) {
+      setStepError('site', 'Please choose a site on the map.');
+      return false;
+    }
+    return true;
   }
+
+  if (id === 'event') return !!state.eventId;
 
   return true;
 }
 
+/*  Everything, in order, for the pay button. It has to check the sections
+    above it because on one page nobody is forced to walk through them -
+    you can scroll straight past a half-filled one to the bottom.       */
+function validateAll() {
+  return ['details', 'stall', 'site'].every((id) => {
+    if (validateSection(id)) return true;
+    goToSection(id);
+    return false;
+  });
+}
+
 /* Show the problem and take the vendor to the field it is about. */
-function failDetails(message, focusId) {
-  setStepError('details', message);
+function fail(where, message, focusId) {
+  setStepError(where, message);
 
   const el = document.getElementById(focusId);
   if (el) {

@@ -312,7 +312,7 @@
     line-height:1.7;
 }
 
-.vs-step-actions{
+.vs-sec-actions{
     display:flex;
     flex-wrap:wrap;
     gap:14px;
@@ -413,86 +413,20 @@
 }
 
 /* --------------------------------------------------------------------------
-   ONE STEP, ONE SCREEN
+   ONE PAGE
 
-   The flow fills the viewport and the page itself never scrolls. A vendor
-   answers what is in front of them and presses on; nothing important can be
-   hiding below the fold, because there is no below the fold.
-
-   Where a step genuinely has more in it than a screen holds - the event
-   info and its FAQs, business details on a small phone - the PANEL scrolls
-   inside its own frame rather than the page moving underneath it. The
-   progress bar and the buttons stay put either way, which is the part that
-   actually matters.
-
-   dvh rather than vh: on a phone, 100vh is the viewport with the browser
-   chrome hidden, so a vh-sized screen is always slightly too tall and the
-   page scrolls by exactly the height of the address bar. vh stays first as
-   the fallback for anything that does not know dvh.
+   This used to pin the flow to the height of the viewport so that exactly
+   one step was on screen and the page itself never scrolled. That shape is
+   gone: the form is five sections, stacked, and you scroll it like any
+   other page. The summary down the side is what now answers "how much is
+   left", which is the job the fixed frame and its progress bar were doing.
    -------------------------------------------------------------------------- */
-/*  height, not min-height. A min-height lets the box grow when the contents
-    are taller than the screen, which is exactly the case that has to scroll
-    the panel instead - a flex child only shrinks if the parent has a size
-    it cannot exceed.                                                      */
-#vs-flow{
-    display:flex;
-    flex-direction:column;
-    height:100vh;
-    height:100dvh;
-    padding:28px 6%;
-}
-
-.vs-flow{
-    display:flex;
-    flex-direction:column;
-    flex:1 1 auto;
-    min-height:0;          /* lets the step shrink instead of overflowing */
-    width:100%;
-    max-width:940px;
-    margin:auto;
-}
-
-.vs-progress{ flex:0 0 auto; }
-
-/*  The visible step takes what is left and scrolls its own contents. Hidden
-    steps are display:none, so only ever one of these is in the flex line. */
-.vs-step{
-    flex:1 1 auto;
-    min-height:0;
-    overflow-y:auto;
-    overscroll-behavior:contain;   /* stops a bounce scrolling the page */
-}
-
-/*  A step shorter than the screen should sit at the top of its frame, not
-    stretch its contents to fill it. */
-.vs-step > :last-child{ margin-bottom:0; }
-
-/*  Step one is the shop window and gets centred in whatever room is left,
-    so the two cards sit in the middle of the screen rather than riding up
-    under the progress bar on a tall monitor. */
-.vs-step[data-step="type"]{
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-}
-
-/*  The map needs its own height to be usable and is the one place where
-    squeezing to fit makes the step worse, so it keeps a floor and scrolls. */
-.vs-step[data-step="site"] .vs-map-wrap{ min-height:320px; }
-
-/*  The confirmation screens replace the step rather than sitting in one, so
-    they centre themselves in the same frame. */
 .vs-confirming,
 .vs-confirmed{
-    flex:1 1 auto;
-    min-height:0;
-    overflow-y:auto;
     display:flex;
     flex-direction:column;
     justify-content:center;
 }
-
-
 
 
 /* --------------------------------------------------------------------------
@@ -640,27 +574,31 @@
 
 /*  The checkout brings its own cards, so the step panel underneath steps
     back - otherwise every card is a box inside another box.             */
-.vs-step.is-checkout{
+.vs-sec.is-checkout{
     background:none;
     border:0;
     padding:0;
 }
 
 /*  The heading sits over the cards, so it is held to the same column. */
-.vs-step.is-checkout > h2,
-.vs-step.is-checkout > .vs-step-intro,
-.vs-step.is-checkout > .vs-busy,
-.vs-step.is-checkout > .vs-error{
+.vs-sec.is-checkout > h2,
+.vs-sec.is-checkout > .vs-sec-intro,
+.vs-sec.is-checkout > .vs-busy,
+.vs-sec.is-checkout > .vs-error{
     max-width:560px;
     margin-left:auto;
     margin-right:auto;
 }
 
 .vs-checkout{
-    /*  The section behind this is --sg-panel, so the cards have to be a
-        shade lighter than the page rather than the same colour.        */
-    --vs-card:#181818;
-    --vs-line:#2b2b2b;
+    /*  White cards on the page's off-white. These two were the last dark
+        values left in the file: the text inside had already been turned to
+        ink for the white page, but the cards it sits on had not, so the
+        whole receipt was near-black type on near-black card. It is the one
+        screen nobody reached in the first pass, because getting to it
+        needs a held site.                                              */
+    --vs-card:#fff;
+    --vs-line:#e3e6ec;
 
     display:grid;
     gap:14px;
@@ -947,15 +885,14 @@
     on screen however far down the cards somebody has scrolled. Sticky
     rather than fixed, so it comes to rest at the end of the step instead
     of hovering over the site footer for the rest of the page.          */
+/*  The pay button sat stuck to the bottom of the screen, which made
+    sense when the checkout was a screen of its own and the page could not
+    scroll. On one page it floated over the review cards on the way past.
+    It is the last thing on the page now, so it simply sits there.      */
 .vs-paybar{
     display:block;
-    position:sticky;
-    bottom:0;
-    z-index:5;
     max-width:560px;
     margin:22px auto 0;
-    padding:14px 0 18px;
-    background:linear-gradient(to top, var(--sg-panel) 62%, rgba(17,17,17,0));
 }
 
 .vs-paybar .btn{
@@ -1040,20 +977,20 @@
     margin:auto;
 }
 
-.vs-step{
+.vs-sec{
     background:var(--sg-panel);
     border:1px solid var(--sg-border);
     border-radius:18px;
     padding:34px 30px;
 }
 
-.vs-step h2{
+.vs-sec h2{
     text-align:left;
     font-size:clamp(1.4rem, 3.4vw, 2rem);
     margin-bottom:8px;
 }
 
-.vs-step-intro{
+.vs-sec-intro{
     color:var(--sg-muted);
     margin-bottom:26px;
 }
@@ -1070,90 +1007,10 @@
     border-top:1px solid var(--sg-border);
 }
 
-.vs-step > .vs-sub:first-of-type{
+.vs-sec > .vs-sub:first-of-type{
     margin-top:0;
     padding-top:0;
     border-top:0;
-}
-
-/* --------------------------------------------------------------------------
-   PROGRESS HEADER
-
-   A back link, a step counter and one segment per step.
-
-   This replaced a row of seven labelled pills. The labels needed the full
-   desktop width to be readable, and below 768px they were hidden, which
-   left seven bare numbers telling nobody anything. A bar that fills reads
-   the same at any width.
-   -------------------------------------------------------------------------- */
-/*  margin:0 0, not 0 auto.
-
-    This is a flex item in a column, and auto side margins on one of those
-    override the default stretch and shrink it to its own content. The bar
-    was collapsing to 79px - seven four-pixel dots huddled under the step
-    count instead of a progress bar across the page.                     */
-.vs-progress{
-    margin:0 0 26px;
-}
-
-/*  The checkout holds itself to a 560px reading column, so the bar above it
-    comes in to match rather than running the full width of the flow. Every
-    other step fills the panel, so the bar fills it too.
-
-    If :has() is not supported the bar simply stays wide, which is the old
-    behaviour and no worse than it was.                                   */
-.vs-flow:has(> .vs-step.is-checkout:not([hidden])) > .vs-progress{
-    max-width:560px;
-}
-
-.vs-progress-top{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:16px;
-    min-height:34px;   /* holds its place on step one, where there is no back */
-    margin-bottom:12px;
-}
-
-.vs-progress-back{
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-    padding:0;
-    border:0;
-    background:none;
-    color:#12141a;
-    font:inherit;
-    font-size:.95rem;
-    cursor:pointer;
-    transition:color .2s;
-}
-
-.vs-progress-back:hover{ color:var(--sg-orange); }
-
-.vs-progress-count{
-    color:var(--sg-dim);
-    font-size:.82rem;
-}
-
-/*  The same bar the services slider uses: one hairline track with a
-    coloured marker sliding along it, rather than seven separate segments.
-
-    A row of segments counts the steps, which the "Step 3 of 7" line above
-    already does in words. The track says how far along you are, which the
-    words do not, and it is the treatment the rest of the site uses.     */
-.vs-progress-bar{
-    height:2px;
-    background:rgba(255,255,255,.18);
-    border-radius:2px;
-    overflow:hidden;
-}
-
-.vs-progress-bar span{
-    display:block;
-    height:100%;
-    background:var(--sg-gold);
-    transition:width .35s ease;
 }
 
 /* --------------------------------------------------------------------------
@@ -1661,12 +1518,12 @@
         padding:100px 20px 54px;
     }
 
-    .vs-step{
+    .vs-sec{
         padding:20px 16px;
         border-radius:14px;
     }
 
-    .vs-step-actions .btn{
+    .vs-sec-actions .btn{
         width:100%;
         max-width:none;
     }
@@ -1740,13 +1597,13 @@
         phone the two cards need every line they can give back.         */
     .vs-type-desc{ display:none; }
 
-    .vs-step-intro{ margin-bottom:18px; }
+    .vs-sec-intro{ margin-bottom:18px; }
 
     /*  On step one the two cards already say what this sentence says - the
         price is on each of them and the map is in the ticks. Dropping it is
         two lines back, which is the difference between both cards fitting a
         phone screen and not.                                            */
-    .vs-step[data-step="type"] .vs-step-intro{ display:none; }
+    .vs-sec[data-step="type"] .vs-sec-intro{ display:none; }
 
     /*  Steps get their air back on a phone, where the panel scrolls anyway
         and cramping it only makes the form harder to fill in.          */
@@ -1909,56 +1766,14 @@ body.vendor-signup .footer-sponsors{
 }
 
 /* ==========================================================================
-   THE EVENT BEING APPLIED FOR
+   CHANGE EVENT
 
-   Sits above every step after the first, so nobody fills in six screens
-   and then wonders which event they were for.
+   The rest of this block went with the banner it styled - the event being
+   applied for is in the summary down the side now, not a strip above each
+   step. This is the button under it.
    ========================================================================== */
-.vs-chosen{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:16px;
-    flex-wrap:wrap;
-    padding:12px 16px;
-    margin-bottom:22px;
-    border:1px solid var(--sg-border);
-    border-left:3px solid var(--sg-orange);
-    border-radius:10px;
-    background:var(--sg-panel);
-}
-
-.vs-chosen-what{
-    display:flex;
-    align-items:baseline;
-    gap:10px;
-    flex-wrap:wrap;
-    min-width:0;
-}
-
-.vs-chosen-label{
-    color:var(--sg-dim);
-    font-family:var(--sg-font-accent);
-    font-size:.62rem;
-    font-weight:bold;
-    letter-spacing:.14em;
-    text-transform:uppercase;
-}
-
-.vs-chosen-what strong{
-    font-family:var(--sg-font-display);
-    font-size:1rem;
-    letter-spacing:-.2px;
-    text-transform:uppercase;
-}
-
-.vs-chosen-when{
-    color:var(--sg-dim);
-    font-size:.84rem;
-}
-
 .vs-chosen-change{
-    flex-shrink:0;
+    margin-top:14px;
     padding:6px 12px;
     border:1px solid var(--sg-border);
     border-radius:8px;
@@ -1973,7 +1788,7 @@ body.vendor-signup .footer-sponsors{
     transition:border-color .2s ease, color .2s ease;
 }
 
-.vs-chosen-change:hover{ border-color:var(--sg-gold); color:#fff; }
+.vs-chosen-change:hover{ border-color:var(--sg-gold); color:var(--pk-ink); }
 
 /* ==========================================================================
    CHOOSING AN EVENT - THE LIGHT STAGE
@@ -1987,23 +1802,18 @@ body.vendor-signup .footer-sponsors{
    Its own small palette, because none of the site's tokens are meant for
    dark type on white.
    ========================================================================== */
-.vs-pick{
+.vs-apply{
     --pk-ink:#12141a;
     --pk-muted:#606877;
     --pk-line:#e3e6ec;
     --pk-panel:#fff;
 
-    padding:clamp(34px, 5vw, 56px) 20px clamp(44px, 6vw, 72px);
-    background:#f6f7f9;
+    padding:clamp(28px, 4vw, 52px) 6% clamp(48px, 7vw, 84px);
+    background:var(--sg-black);
     color:var(--pk-ink);
 }
 
-.vs-pick-inner{
-    max-width:var(--sg-max-width);
-    margin:auto;
-}
-
-.vs-pick h2{
+.vs-sec h2{
     font-family:var(--sg-font-display);
     font-size:clamp(1.5rem, 3.4vw, 2.1rem);
     letter-spacing:-.7px;
@@ -2012,7 +1822,7 @@ body.vendor-signup .footer-sponsors{
     margin:0 0 8px;
 }
 
-.vs-pick-intro{
+.vs-sec-intro{
     margin:0 0 26px;
     color:var(--pk-muted);
     font-size:.95rem;
@@ -2020,7 +1830,7 @@ body.vendor-signup .footer-sponsors{
 
 /*  The numbered step label. A circle and a word, so the page says where
     you are without a progress bar - the bar lives in the dark half.    */
-.vs-stepnum{
+.vs-secnum{
     display:flex;
     align-items:center;
     gap:10px;
@@ -2033,7 +1843,7 @@ body.vendor-signup .footer-sponsors{
     text-transform:uppercase;
 }
 
-.vs-stepnum span{
+.vs-secnum span{
     display:grid;
     place-items:center;
     width:22px;
@@ -2047,14 +1857,14 @@ body.vendor-signup .footer-sponsors{
 }
 
 /*  The step you cannot reach yet, greyed rather than missing.          */
-.vs-stepnum.is-locked{
+.vs-secnum.is-locked{
     margin-top:40px;
     color:#9aa1ad;
 }
 
-.vs-stepnum.is-locked span{ background:#c9ced7; }
+.vs-secnum.is-locked span{ background:#c9ced7; }
 
-.vs-locked{
+.vs-lock{
     display:grid;
     place-items:center;
     gap:6px;
@@ -2065,7 +1875,7 @@ body.vendor-signup .footer-sponsors{
     text-align:center;
 }
 
-.vs-locked svg{
+.vs-lock svg{
     width:30px;
     height:30px;
     fill:none;
@@ -2075,32 +1885,32 @@ body.vendor-signup .footer-sponsors{
     stroke-linejoin:round;
 }
 
-.vs-locked-head{
+.vs-lock-head{
     margin:6px 0 0;
     font-weight:bold;
     color:var(--pk-ink);
 }
 
-.vs-locked-sub{
+.vs-lock-sub{
     margin:0;
     color:var(--pk-muted);
     font-size:.9rem;
 }
 
 /* ---- the cards, on white ---- */
-.vs-pick .vs-events{
+.vs-sec .vs-events{
     display:grid;
     grid-template-columns:repeat(auto-fill, minmax(min(230px, 100%), 1fr));
     gap:16px;
     margin-top:0;
 }
 
-.vs-pick .vs-events-loading{
+.vs-sec .vs-events-loading{
     color:var(--pk-muted);
     padding:24px 0;
 }
 
-.vs-pick .vs-event{
+.vs-sec .vs-event{
     display:flex;
     flex-direction:column;
     overflow:hidden;
@@ -2111,20 +1921,20 @@ body.vendor-signup .footer-sponsors{
     transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
 
-.vs-pick .vs-event:hover{
+.vs-sec .vs-event:hover{
     transform:translateY(-3px);
     box-shadow:0 12px 26px rgba(16,24,40,.12);
 }
 
-.vs-pick .vs-event.is-chosen{
+.vs-sec .vs-event.is-chosen{
     border-color:var(--sg-orange);
     box-shadow:0 0 0 1px var(--sg-orange), 0 12px 26px rgba(16,24,40,.12);
 }
 
-.vs-pick .vs-event.is-shut{ opacity:.82; }
-.vs-pick .vs-event.is-shut:hover{ transform:none; box-shadow:none; }
+.vs-sec .vs-event.is-shut{ opacity:.82; }
+.vs-sec .vs-event.is-shut:hover{ transform:none; box-shadow:none; }
 
-.vs-pick .vs-event-art{
+.vs-sec .vs-event-art{
     position:relative;
     aspect-ratio:16 / 9;
     background-color:#e9ecf1;
@@ -2133,7 +1943,7 @@ body.vendor-signup .footer-sponsors{
     background-position:center;
 }
 
-.vs-pick .vs-event-body{
+.vs-sec .vs-event-body{
     display:flex;
     flex-direction:column;
     align-items:flex-start;
@@ -2142,7 +1952,7 @@ body.vendor-signup .footer-sponsors{
     flex:1;
 }
 
-.vs-pick .vs-event-body h3{
+.vs-sec .vs-event-body h3{
     font-family:var(--sg-font-display);
     font-size:1rem;
     letter-spacing:-.3px;
@@ -2153,8 +1963,8 @@ body.vendor-signup .footer-sponsors{
 
 /*  Date and place carry their own small icons, drawn here rather than in
     the markup - there is one of each per card and they never change.  */
-.vs-pick .vs-event-when,
-.vs-pick .vs-event-where{
+.vs-sec .vs-event-when,
+.vs-sec .vs-event-where{
     display:flex;
     align-items:center;
     gap:7px;
@@ -2164,8 +1974,8 @@ body.vendor-signup .footer-sponsors{
     font-weight:normal;
 }
 
-.vs-pick .vs-event-when::before,
-.vs-pick .vs-event-where::before{
+.vs-sec .vs-event-when::before,
+.vs-sec .vs-event-where::before{
     content:"";
     width:13px;
     height:13px;
@@ -2175,15 +1985,15 @@ body.vendor-signup .footer-sponsors{
     mask:var(--pk-icon) center / contain no-repeat;
 }
 
-.vs-pick .vs-event-when::before{
+.vs-sec .vs-event-when::before{
     --pk-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10z'/%3E%3C/svg%3E");
 }
 
-.vs-pick .vs-event-where::before{
+.vs-sec .vs-event-where::before{
     --pk-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z'/%3E%3C/svg%3E");
 }
 
-.vs-pick .vs-event-blurb{
+.vs-sec .vs-event-blurb{
     margin:6px 0 0;
     color:var(--pk-muted);
     font-size:.86rem;
@@ -2192,7 +2002,7 @@ body.vendor-signup .footer-sponsors{
 
 /*  Black, full width, like the design. The orange button is the site's
     "buy" button and this is a choice, not a purchase.                 */
-.vs-pick .vs-event-go{
+.vs-sec .vs-event-go{
     margin-top:14px;
     width:100%;
     padding:11px 14px;
@@ -2210,16 +2020,16 @@ body.vendor-signup .footer-sponsors{
     transition:background-color .2s ease;
 }
 
-.vs-pick .vs-event-go:hover{ background:#000; }
+.vs-sec .vs-event-go:hover{ background:#000; }
 
-.vs-pick .vs-event-go.is-disabled{
+.vs-sec .vs-event-go.is-disabled{
     background:#dfe3e9;
     color:#8b93a1;
     cursor:default;
 }
 
 /* ---- the status badge, over the picture ---- */
-.vs-pick .vs-event-status{
+.vs-sec .vs-event-status{
     position:absolute;
     left:9px;
     bottom:9px;
@@ -2232,10 +2042,10 @@ body.vendor-signup .footer-sponsors{
     text-transform:uppercase;
 }
 
-.vs-pick .vs-event-status.is-open{    background:#16a34a; color:#fff; }
-.vs-pick .vs-event-status.is-limited{ background:#f5b83d; color:#3a2600; }
-.vs-pick .vs-event-status.is-closed{  background:#12141a; color:#fff; }
-.vs-pick .vs-event-status.is-soon{    background:#12141a; color:#fff; }
+.vs-sec .vs-event-status.is-open{    background:#16a34a; color:#fff; }
+.vs-sec .vs-event-status.is-limited{ background:#f5b83d; color:#3a2600; }
+.vs-sec .vs-event-status.is-closed{  background:#12141a; color:#fff; }
+.vs-sec .vs-event-status.is-soon{    background:#12141a; color:#fff; }
 
 
 /* ==========================================================================
@@ -2280,7 +2090,7 @@ body.vendor-signup .footer-sponsors{
 /*  Headings come from style.css white. On white they need the ink.  */
 .vendor-signup h2,
 .vendor-signup h3,
-.vendor-signup .vs-step h2{ color:var(--sg-text); }
+.vendor-signup .vs-sec h2{ color:var(--sg-text); }
 
 /*  Inputs: white boxes with a visible edge rather than dark wells.  */
 .vendor-signup input,
@@ -2364,3 +2174,338 @@ body.vendor-signup .footer-sponsors{
 .vendor-signup .vs-flow a:not(.btn):hover{
     color:#12141a;
 }
+
+
+/* ==========================================================================
+   THE ONE-PAGE LAYOUT
+
+   Five numbered sections down the middle and a summary stuck to the side.
+   The summary is the whole reason this works: a long form with no sense of
+   how far through you are is worse than a wizard, and it is the one thing
+   the wizard did give you.
+
+   On a phone the summary comes first and stops sticking - a fixed panel on
+   a small screen eats the room the form needs, and at the top of the page
+   it still does its job, which is to say what this is going to involve.
+   ========================================================================== */
+.vs-apply-inner{
+    display:grid;
+    grid-template-columns:minmax(0, 1fr) 290px;
+    align-items:start;
+    gap:clamp(20px, 3vw, 40px);
+    max-width:var(--sg-max-width);
+    margin:auto;
+}
+
+.vs-main{
+    display:flex;
+    flex-direction:column;
+    gap:clamp(16px, 2vw, 26px);
+    min-width:0;
+}
+
+/*  Each section is a card. The padding comes from the old step panel, so a
+    section reads the same as a step did - it is the arrangement that has
+    changed, not the furniture.                                          */
+.vs-sec{
+    scroll-margin-top:18px;
+}
+
+/*  The number and its word, above every section heading.               */
+.vs-secnum{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:0 0 14px;
+    color:var(--pk-ink);
+    font-family:var(--sg-font-accent);
+    font-size:.68rem;
+    font-weight:bold;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+}
+
+.vs-secnum span{
+    display:grid;
+    place-items:center;
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    background:var(--pk-ink);
+    color:#fff;
+    font-family:var(--sg-font);
+    font-size:.72rem;
+    letter-spacing:0;
+}
+
+/*  A locked section shows its number and the reason, and nothing else.
+    Locked rather than hidden, so somebody landing here can see what the
+    whole thing is going to ask before committing to any of it.        */
+.vs-sec.is-locked > *:not(.vs-secnum):not(.vs-lock){ display:none; }
+.vs-sec:not(.is-locked) > .vs-lock{ display:none; }
+
+.vs-sec.is-locked .vs-secnum{ color:#9aa1ad; }
+.vs-sec.is-locked .vs-secnum span{ background:#c9ced7; }
+
+/*  The note under a subheading. The subheadings carry a rule above them,
+    so an intro paragraph belongs to the one it sits under.            */
+.vs-sub-note{
+    margin:-10px 0 18px;
+    color:var(--sg-muted);
+    font-size:.92rem;
+    line-height:1.65;
+}
+
+/*  Continue. One button, not a Back and a Continue - going back is a
+    scroll now, or a click on the summary.                             */
+.vs-sec-actions{ margin-top:26px; }
+
+/* ---- the summary ------------------------------------------------------- */
+/*  align-self:stretch, not the grid's own align-items:start.
+
+    A sticky box can only travel inside its own container, and a grid item
+    aligned to the start is exactly as tall as its contents - so it had
+    nowhere to go and scrolled off the top with everything else. Stretched,
+    the column is as tall as the form beside it and the panel rides down
+    it.                                                                 */
+.vs-side{
+    min-width:0;
+    align-self:stretch;
+}
+
+.vs-side-inner{
+    position:sticky;
+    top:18px;
+    border:1px solid var(--pk-line);
+    border-radius:16px;
+    background:var(--pk-panel);
+    padding:20px 18px;
+    box-shadow:0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06);
+}
+
+.vs-side-head{
+    font-family:var(--sg-font-display);
+    font-size:1rem;
+    letter-spacing:-.3px;
+    text-transform:uppercase;
+    color:var(--pk-ink);
+    margin:0 0 14px;
+}
+
+.vs-side-steps{
+    list-style:none;
+    margin:0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+}
+
+.vs-side-steps a{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    padding:9px 10px;
+    border-radius:10px;
+    text-decoration:none;
+    color:var(--pk-ink);
+}
+
+.vs-side-steps a:hover{ background:#f2f4f7; }
+
+.vs-side-num{
+    display:grid;
+    place-items:center;
+    flex:0 0 auto;
+    width:24px;
+    height:24px;
+    border-radius:50%;
+    background:#e3e6ec;
+    color:#6b7280;
+    font-size:.78rem;
+    font-weight:bold;
+}
+
+.vs-side-text{
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+}
+
+.vs-side-text strong{
+    font-size:.88rem;
+    font-weight:bold;
+}
+
+.vs-side-text em{
+    font-style:normal;
+    font-size:.74rem;
+    color:var(--pk-muted);
+}
+
+/*  Done is green, because it is the one state somebody scans for. The
+    current one is orange to match the rest of the site, and everything
+    after it stays grey.                                               */
+.vs-side-steps .is-done .vs-side-num{ background:#16a34a; color:#fff; }
+.vs-side-steps .is-done .vs-side-text em{ color:#15803d; }
+
+.vs-side-steps .is-now{ background:#fff7f0; border-radius:10px; }
+.vs-side-steps .is-now .vs-side-num{ background:var(--sg-orange); color:#fff; }
+.vs-side-steps .is-now .vs-side-text em{ color:#b34700; }
+
+/* ---- the event you chose, under the list ------------------------------- */
+.vs-side-event{
+    margin-top:16px;
+    padding-top:16px;
+    border-top:1px solid var(--pk-line);
+}
+
+.vs-side-label{
+    margin:0 0 9px;
+    font-family:var(--sg-font-accent);
+    font-size:.62rem;
+    font-weight:bold;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--pk-muted);
+}
+
+.vs-side-card{
+    display:flex;
+    gap:11px;
+    align-items:flex-start;
+}
+
+.vs-side-art{
+    flex:0 0 auto;
+    width:52px;
+    height:52px;
+    border-radius:9px;
+    background-color:#e9ecf1;
+    background-image:var(--vs-ev-art);
+    background-size:cover;
+    background-position:center;
+}
+
+.vs-side-card-text{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    min-width:0;
+    font-size:.8rem;
+    color:var(--pk-muted);
+    line-height:1.45;
+}
+
+.vs-side-card-text strong{
+    color:var(--pk-ink);
+    font-size:.88rem;
+}
+
+/*  The error boxes were dark red on a dark page. On white they need the
+    light version, or they read as a block of colour with nothing in it. */
+.vendor-signup .vs-error{
+    background:#fdecec;
+    border-color:#f3c2c2;
+    color:#8a1f1f;
+}
+
+@media (max-width:980px){
+    .vs-apply-inner{ grid-template-columns:1fr; }
+
+    /*  Summary first, and it stops sticking. A sticky panel on a phone
+        is a panel permanently covering part of the form.              */
+    .vs-side{ order:-1; }
+    .vs-side-inner{ position:static; }
+}
+
+/* ==========================================================================
+   EVENT INFO AND FAQS, FOLDED AWAY
+
+   This was a whole step of the wizard, which meant everybody walked past a
+   screen of answers to questions they had not asked yet. On one page it can
+   simply sit under the event cards, shut, for whoever wants it.
+   ========================================================================== */
+.vs-faqbox{
+    margin-top:22px;
+    border:1px solid var(--pk-line);
+    border-radius:12px;
+    background:#fbfcfd;
+}
+
+.vs-faqbox > summary{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    padding:14px 16px;
+    cursor:pointer;
+    list-style:none;
+    font-family:var(--sg-font-accent);
+    font-size:.7rem;
+    font-weight:bold;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--pk-ink);
+}
+
+.vs-faqbox > summary::-webkit-details-marker{ display:none; }
+
+.vs-faqbox > summary::after{
+    content:'+';
+    font-family:var(--sg-font);
+    font-size:1.4rem;
+    line-height:1;
+    color:var(--sg-orange);
+}
+
+.vs-faqbox[open] > summary::after{ content:'\2013'; }
+
+.vs-faqbox > summary:hover{ color:var(--sg-orange); }
+
+.vs-faqbox-body{
+    padding:4px 16px 16px;
+    border-top:1px solid var(--pk-line);
+}
+
+/*  The facts table and the questions were built for a full-width step, so
+    inside a folded panel they come in a little.                        */
+.vs-faqbox-body .vs-facts{ margin-top:16px; }
+
+/* ==========================================================================
+   WHAT THE WHITE PAGE BROKE, MEASURED RATHER THAN LOOKED AT
+
+   Every one of these was found by walking the page and comparing each piece
+   of text against the colour actually behind it. The first three matter:
+   they are unreadable, not merely unlovely.
+   ========================================================================== */
+
+/*  The two vendor type cards are still photographs, so they kept the white
+    type - but they were inheriting the white page's grey for their muted
+    text, which put #4b5262 on near-black at 2.5 : 1. The tick lists under
+    the price were the worst of it.                                      */
+.vendor-signup .vs-type{
+    --sg-muted:#c9ced7;
+    --sg-dim:#9aa1ad;
+}
+
+/*  Orange as type on white. The buttons keep the brand orange - white on
+    it is what the rest of the site does - but the total, which is the one
+    number on this page a vendor actually checks, was 2.9 : 1.          */
+.vs-sum-total,
+.vs-sum-total span,
+.vs-sum-total strong,
+.vs-help-link{
+    color:#b34700;
+}
+
+/*  The summary's own circles. Pending was grey on grey; the current one
+    was white on the brand orange, which is fine on a button and not fine
+    on a 24px disc.                                                      */
+.vs-side-num{ color:#4b5262; }
+.vs-side-steps .is-now .vs-side-num{ background:#b34700; }
+
+/*  Accepting Vendors, and the tick beside a finished section - white on
+    a green that was a shade too light to carry it.                    */
+.vs-sec .vs-event-status.is-open,
+.vs-side-steps .is-done .vs-side-num{ background:#15803d; }
