@@ -1,8 +1,11 @@
 /* --------------------------------------------------------------------------
-   Eatz & Beatz - vendor signup flow
+   Vendor signup
 
-   Vendor type -> event info and FAQs -> what you sell -> site on the map
-   -> business and setup -> documents -> review -> pay -> confirmation.
+   One page, five sections, and you scroll: select event -> vendor type ->
+   your details -> choose site -> review and pay. It was a seven screen
+   wizard, and the names of things still show it in places - a step error
+   is set with setStepError, because that is what the error lines are
+   still called in the markup.
 
    Two things worth knowing if you come back to this later:
 
@@ -20,9 +23,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=75';
+} from './firebase-config.js?v=77';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=75';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=77';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -102,17 +105,6 @@ function money(cents) {
     have to line up under each other to be checkable. */
 function exact(cents) {
   return `$${((cents || 0) / 100).toFixed(2)}`;
-}
-
-function vendorLabel() {
-  if (state.vendorType === 'food') return 'Food Vendor (6 m x 3 m)';
-
-  if (state.vendorType === 'market') {
-    const n = state.bayCount || 1;
-    return `Market Stall (${n} x 3 m bay${n > 1 ? 's' : ''}, ${n * 3} m frontage)`;
-  }
-
-  return '';
 }
 
 /*  What a vendor is allowed to see, and what each status says to them.
@@ -1112,7 +1104,6 @@ function render() {
   if (map) map.setVendorType(state.vendorType);
   renderSiteChoice();
   renderMapMeta();
-  renderSignInPrompt();
   renderDocumentList();
   renderReview();
 }
@@ -1281,6 +1272,11 @@ function renderSide() {
 
   const b = feeBreakdown(priceCents());
 
+  const bays = state.bayCount || 1;
+  const siteLine = state.vendorType === 'market'
+    ? 'Market stall × ' + bays + ' bay' + (bays > 1 ? 's' : '')
+    : 'Food vendor site';
+
   const typeRow = state.vendorType
     ? '<strong>' + escapeHtml(VENDOR_LABEL[state.vendorType] || '') + '</strong>' +
       '<span>' + (state.vendorType === 'food'
@@ -1317,13 +1313,39 @@ function renderSide() {
       '<p class="vs-side-label">Site selection</p>' + siteRow +
     '</div>' +
 
+    /*  Itemised, not a total with a note under it saying fees are in
+        there somewhere. A vendor comparing our $100 site against the
+        $115.49 that leaves their account deserves to see which line is
+        ours, which is the payment processor's and which is the tax.
+
+        The bays line is spelled out for market stalls because the site
+        total moves with the map - two bays at $50 reads as a mistake
+        otherwise.                                                    */
+    (b.totalCents
+      ? '<div class="vs-side-sum">' +
+          '<div>' +
+            '<span>' + escapeHtml(siteLine) + '</span>' +
+            '<span>' + exact(b.siteCents) + '</span>' +
+          '</div>' +
+          '<div>' +
+            '<span>Booking fee <em>4% + $0.99</em></span>' +
+            '<span>' + exact(b.bookingFeeCents) + '</span>' +
+          '</div>' +
+          '<div>' +
+            '<span>GST <em>10%</em></span>' +
+            '<span>' + exact(b.gstCents) + '</span>' +
+          '</div>' +
+        '</div>'
+      : '') +
+
     '<div class="vs-side-total">' +
       '<span>Total</span>' +
       '<strong>' + exact(b.totalCents) + '</strong>' +
     '</div>' +
-    '<p class="vs-side-fineprint">' +
-      (b.totalCents ? '(Includes booking fee and GST)' : 'Choose a vendor type to see your total') +
-    '</p>' +
+
+    (b.totalCents
+      ? ''
+      : '<p class="vs-side-fineprint">Choose a vendor type to see your total</p>') +
 
     '<button type="button" class="btn vs-side-go" data-side-go>' +
       'Continue to next step <span aria-hidden="true">&#8594;</span>' +
@@ -1441,11 +1463,6 @@ function renderSiteChoice() {
 /*  The sign-in panel is gone - see watchAuth. This is kept as a no-op
     rather than chased through every call site, and hides the panel if an
     old cached copy of the page is still serving it. */
-function renderSignInPrompt() {
-  const wrap = document.getElementById('vs-auth');
-  if (wrap) wrap.hidden = true;
-}
-
 /*  THE REVIEW STEP
 
     A stack of small cards, one idea each: what you are buying, what it

@@ -100,25 +100,6 @@
     margin-bottom:20px;
 }
 
-.vs-hero-meta{
-    font-family:var(--sg-font);
-    font-weight:400;
-    font-size:clamp(.72rem, 1.8vw, .95rem);
-    letter-spacing:.3em;
-    text-indent:.3em;
-    text-transform:uppercase;
-    color:var(--sg-muted);
-    margin-bottom:6px;
-}
-
-/* Small pumpkin, drawn rather than loaded */
-.vs-pumpkin{
-    display:block;
-    width:56px;
-    height:auto;
-    margin:0 auto 18px;
-}
-
 /* Cobweb in the top corners of the hero */
 .vs-web{
     position:absolute;
@@ -972,11 +953,6 @@
 /* --------------------------------------------------------------------------
    STEP PANELS
    -------------------------------------------------------------------------- */
-.vs-flow{
-    max-width:940px;
-    margin:auto;
-}
-
 .vs-sec{
     background:var(--sg-panel);
     border:1px solid var(--sg-border);
@@ -1464,31 +1440,6 @@ body.vendor-signup .footer-sponsors{
 }
 
 /* ==========================================================================
-   CHANGE EVENT
-
-   The rest of this block went with the banner it styled - the event being
-   applied for is in the summary down the side now, not a strip above each
-   step. This is the button under it.
-   ========================================================================== */
-.vs-chosen-change{
-    margin-top:14px;
-    padding:6px 12px;
-    border:1px solid var(--sg-border);
-    border-radius:8px;
-    background:none;
-    color:var(--sg-gold);
-    font-family:var(--sg-font-accent);
-    font-size:.66rem;
-    font-weight:bold;
-    letter-spacing:.1em;
-    text-transform:uppercase;
-    cursor:pointer;
-    transition:border-color .2s ease, color .2s ease;
-}
-
-.vs-chosen-change:hover{ border-color:var(--sg-gold); color:var(--pk-ink); }
-
-/* ==========================================================================
    CHOOSING AN EVENT - THE LIGHT STAGE
 
    The one light part of this page, and it is a stage rather than a stripe:
@@ -1554,14 +1505,6 @@ body.vendor-signup .footer-sponsors{
     letter-spacing:0;
 }
 
-/*  The step you cannot reach yet, greyed rather than missing.          */
-.vs-secnum.is-locked{
-    margin-top:40px;
-    color:#9aa1ad;
-}
-
-.vs-secnum.is-locked span{ background:#c9ced7; }
-
 .vs-lock{
     display:grid;
     place-items:center;
@@ -1571,16 +1514,6 @@ body.vendor-signup .footer-sponsors{
     border-radius:14px;
     background:var(--pk-panel);
     text-align:center;
-}
-
-.vs-lock svg{
-    width:30px;
-    height:30px;
-    fill:none;
-    stroke:#98a0ad;
-    stroke-width:1.6;
-    stroke-linecap:round;
-    stroke-linejoin:round;
 }
 
 .vs-lock-head{
@@ -1720,6 +1653,17 @@ body.vendor-signup .footer-sponsors{
 
 .vs-sec .vs-event-go:hover{ background:#000; }
 
+/*  The one you have chosen wears the accent, the rest stay black. In the
+    design it is the other way up only because the accent there is lime;
+    what it is saying is "this is the one", and on our palette that is
+    the orange.                                                       */
+.vs-sec .vs-event.is-chosen .vs-event-go{
+    background:var(--sg-orange);
+    color:#12141a;
+}
+
+.vs-sec .vs-event.is-chosen .vs-event-go:hover{ background:#e66000; }
+
 .vs-sec .vs-event-go.is-disabled{
     background:#dfe3e9;
     color:#8b93a1;
@@ -1783,7 +1727,7 @@ body.vendor-signup .footer-sponsors{
 
 /*  The flow band. .section has no colour of its own, so this is the
     page showing through - which is now the light one.             */
-.vendor-signup .vs-flow{ color:var(--sg-text); }
+.vendor-signup .vs-apply{ color:var(--sg-text); }
 
 /*  Headings come from style.css white. On white they need the ink.  */
 .vendor-signup h2,
@@ -1837,18 +1781,21 @@ body.vendor-signup .footer-sponsors{
     --sg-gold:#ffb700;
 }
 
-/*  The buttons that are not the orange one. style.css gives them white
-    text for a black page; on white they were invisible - Back most of
-    all, which is the control somebody reaches for when they are lost. */
-.vendor-signup .vs-flow .btn:not(.btn-ticket),
-.vendor-signup .vs-flow .btn-outline{
+/*  The outline button. style.css gives it white text for a black page,
+    which on white was invisible. The only one left in the form is on the
+    confirmation card - the Back buttons it was written for went with the
+    wizard.
+
+    Scoped to .btn-outline and not to every button that is not the ticket
+    one: widened that far it catches Continue as well and turns the whole
+    form's buttons into outlines.                                      */
+.vendor-signup .vs-apply .btn-outline{
     color:#12141a;
     border-color:#c9ced7;
     background:#fff;
 }
 
-.vendor-signup .vs-flow .btn:not(.btn-ticket):hover,
-.vendor-signup .vs-flow .btn-outline:hover{
+.vendor-signup .vs-apply .btn-outline:hover{
     background:#12141a;
     border-color:#12141a;
     color:#fff;
@@ -1857,11 +1804,11 @@ body.vendor-signup .footer-sponsors{
 /*  Orange as a text link. The button keeps the brand orange - white on
     it is the same as everywhere else on the site - but orange type on
     white is too pale to read, so links get a darker one.              */
-.vendor-signup .vs-flow a:not(.btn){
+.vendor-signup .vs-apply a:not(.btn){
     color:#b34700;
 }
 
-.vendor-signup .vs-flow a:not(.btn):hover{
+.vendor-signup .vs-apply a:not(.btn):hover{
     color:#12141a;
 }
 
@@ -1901,41 +1848,15 @@ body.vendor-signup .footer-sponsors{
     scroll-margin-top:18px;
 }
 
-/*  The number and its word, above every section heading.               */
-.vs-secnum{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin:0 0 14px;
-    color:var(--pk-ink);
-    font-family:var(--sg-font-accent);
-    font-size:.68rem;
-    font-weight:bold;
-    letter-spacing:.18em;
-    text-transform:uppercase;
-}
-
-.vs-secnum span{
-    display:grid;
-    place-items:center;
-    width:22px;
-    height:22px;
-    border-radius:50%;
-    background:var(--pk-ink);
-    color:#fff;
-    font-family:var(--sg-font);
-    font-size:.72rem;
-    letter-spacing:0;
-}
-
 /*  A locked section shows its number and the reason, and nothing else.
     Locked rather than hidden, so somebody landing here can see what the
     whole thing is going to ask before committing to any of it.        */
-.vs-sec.is-locked > *:not(.vs-secnum):not(.vs-lock){ display:none; }
+/*  h2 stays: the number is inside the heading now rather than a line
+    above it, so hiding everything but .vs-secnum would have taken the
+    section's name down with its contents and left a numbered box that
+    does not say what it is for.                                      */
+.vs-sec.is-locked > *:not(h2):not(.vs-lock){ display:none; }
 .vs-sec:not(.is-locked) > .vs-lock{ display:none; }
-
-.vs-sec.is-locked .vs-secnum{ color:#9aa1ad; }
-.vs-sec.is-locked .vs-secnum span{ background:#c9ced7; }
 
 /*  The note under a subheading. The subheadings carry a rule above them,
     so an intro paragraph belongs to the one it sits under.            */
@@ -2534,6 +2455,49 @@ body.vendor-signup .footer-sponsors{
     letter-spacing:.14em;
     text-transform:uppercase;
     color:var(--sg-dim);
+}
+
+/* ---- what the total is made of ----------------------------------------- */
+/*  Three lines above the total rather than a note under it saying fees are
+    in there somewhere. Somebody looking at a $100 site and a $115.49 charge
+    should be able to see which line is ours, which is the payment
+    processor's and which is the tax, without opening the checkout.     */
+.vs-side-sum{
+    display:grid;
+    gap:8px;
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px solid var(--vs-line);
+}
+
+.vs-side-sum > div{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
+    font-size:.82rem;
+    color:var(--sg-muted);
+}
+
+.vs-side-sum > div > span:last-child{
+    flex:0 0 auto;
+    font-variant-numeric:tabular-nums;
+    color:var(--vs-ink);
+}
+
+/*  The rate, beside the name of the charge. Small and grey, because it
+    explains the figure rather than competing with it.                */
+.vs-side-sum em{
+    font-style:normal;
+    color:var(--sg-dim);
+    font-size:.92em;
+}
+
+/*  The total sits directly under the three lines it adds up, so it does
+    not need a rule of its own above it as well.                      */
+.vs-side-sum + .vs-side-total{
+    margin-top:12px;
+    padding-top:12px;
 }
 
 .vs-side-total{
