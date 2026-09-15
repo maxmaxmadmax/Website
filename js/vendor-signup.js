@@ -23,9 +23,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=79';
+} from './firebase-config.js?v=82';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=79';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=82';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -843,14 +843,20 @@ async function payAndBook() {
     return;
   }
 
-  if (!validateAll()) return;
-
-  collectForm();
-
-  if (!state.siteId) {
-    setStepError('review', 'Choose a site before paying.');
+  /*  Say what is missing, put the message on the step it belongs to AND
+      beside the pay button, then go there. Leaving it only on the step
+      means somebody who has scrolled to the bottom sees the page move
+      and never learns why.                                          */
+  const missing = firstIncomplete();
+  if (missing) {
+    const label = (SECTIONS.find((sec) => sec.id === missing) || {}).label || 'an earlier step';
+    setStepError('review', 'Finish ' + label + ' first - we have highlighted what is missing.');
+    goToSection(missing);
     return;
   }
+
+  setStepError('review', '');
+  collectForm();
 
   setBusy('review', true);
   setStepError('review', '');
@@ -1683,7 +1689,11 @@ function renderReview() {
     payBtn.textContent = b.totalCents === 0
       ? 'Confirm booking'
       : `Pay ${exact(b.totalCents)} AUD`;
-    payBtn.disabled = !state.siteLabel;
+    /*  Never disabled. A disabled pay button is a button that does
+        nothing when you press it and says nothing about why - which is
+        exactly what somebody does when they have missed a field. It is
+        live, and pressing it says what is still needed.              */
+    payBtn.disabled = false;
   }
 }
 
@@ -1875,12 +1885,10 @@ function validateSection(id) {
 /*  Everything, in order, for the pay button. It has to check the sections
     above it because on one page nobody is forced to walk through them -
     you can scroll straight past a half-filled one to the bottom.       */
-function validateAll() {
-  return ['type', 'details', 'site'].every((id) => {
-    if (validateSection(id)) return true;
-    goToSection(id);
-    return false;
-  });
+/*  Everything, in order, for the pay button - and it says which section
+    it stopped at rather than just refusing.                           */
+function firstIncomplete() {
+  return ['type', 'details', 'site'].find((id) => !validateSection(id)) || null;
 }
 
 /* Show the problem and take the vendor to the field it is about. */
@@ -1906,7 +1914,16 @@ function val(id) {
 
 function setStepError(step, message) {
   const el = document.querySelector(`[data-error="${step}"]`);
-  if (!el) return;
+
+  /*  Loudly, not quietly. This used to return and say nothing when the
+      slot was missing, which is how the business fields' error line went
+      missing in a rebuild and took its message with it - the form simply
+      refused to go on and explained nothing.                         */
+  if (!el) {
+    if (message) console.warn(`No [data-error="${step}"] to show: ${message}`);
+    return;
+  }
+
   el.textContent = message || '';
   el.hidden = !message;
 }
@@ -1915,9 +1932,12 @@ function setBusy(step, busy) {
   const el = document.querySelector(`[data-busy="${step}"]`);
   if (el) el.hidden = !busy;
 
-  document.querySelectorAll(`[data-step="${step}"] button`).forEach((b) => {
-    b.disabled = busy;
-  });
+  /*  The buttons in the section that is busy. It used to look for
+      [data-step], which nothing has carried since the steps became
+      sections - so nothing was ever disabled while an upload or a
+      checkout was in flight, and a second click could start it twice. */
+  const sec = document.querySelector(`.vs-sec[data-sec="${step}"]`);
+  if (sec) sec.querySelectorAll('button').forEach((b) => { b.disabled = busy; });
 }
 
 function friendlyError(err) {

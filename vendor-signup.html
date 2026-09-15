@@ -35,10 +35,10 @@
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap">
 
     <link rel="icon" href="images/logo.png">
-    <link rel="stylesheet" href="style.css?v=79">
-    <link rel="stylesheet" href="vendor-signup.css?v=79">
-    <script src="js/main.js?v=79" defer></script>
-    <script type="module" src="js/vendor-signup.js?v=79"></script>
+    <link rel="stylesheet" href="style.css?v=82">
+    <link rel="stylesheet" href="vendor-signup.css?v=82">
+    <script src="js/main.js?v=82" defer></script>
+    <script type="module" src="js/vendor-signup.js?v=82"></script>
 </head>
 
 <body class="vendor-signup">
@@ -381,6 +381,13 @@
                         </span>
                     </div>
                 </div>
+
+                <!--  The business fields' error line. It was lost when this
+                      section was rebuilt, and setStepError does nothing
+                      quietly when its slot is missing - so "please fill in
+                      business name, contact, email and phone" has been
+                      going nowhere.                                     -->
+                <p class="vs-error" data-error="details" hidden></p>
 
                 <h3 class="vs-sub" id="vs-category-heading">What do you sell?</h3>
                 <p class="vs-sub-note">
