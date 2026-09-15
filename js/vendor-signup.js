@@ -20,9 +20,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=71';
+} from './firebase-config.js?v=75';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=71';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=75';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -37,6 +37,14 @@ const PRICE = {
 };
 
 const MAX_BAYS = 8;
+
+/*  VENDOR_LABEL was used on the confirmation screen and never defined -
+    a ReferenceError that only fires after a real payment, which is why
+    it sat there. Defined here now, and the side column uses it too.  */
+const VENDOR_LABEL = {
+  food: 'Food Vendor',
+  market: 'Market Stall',
+};
 
 /* Matches priceFor() in functions/index.js */
 function priceCents() {
@@ -361,38 +369,6 @@ function resetForNewEvent() {
 /*  The event this application is for, above every step after the first.
     Hidden on the choosing step itself, where it would be telling somebody
     what they are already looking at.                                    */
-function renderChosen() {
-  const host = document.getElementById('vs-chosen');
-  if (!host) return;
-
-  const ev = state.event;
-
-  if (!ev || !state.eventId) {
-    host.hidden = true;
-    return;
-  }
-
-  const art = ev.image
-    ? ' style="--vs-ev-art:url(\'' + escapeHtml(ev.image) + '\')"'
-    : '';
-
-  host.hidden = false;
-  host.innerHTML = '' +
-    '<p class="vs-side-label">Selected event</p>' +
-    '<div class="vs-side-card">' +
-      '<span class="vs-side-art"' + art + ' aria-hidden="true"></span>' +
-      '<span class="vs-side-card-text">' +
-        '<strong>' + escapeHtml(ev.name || state.eventId) + '</strong>' +
-        '<span>' + escapeHtml(ev.dateLabel || ev.dateISO || '') + '</span>' +
-        '<span>' + escapeHtml(ev.venue || ev.location || '') + '</span>' +
-      '</span>' +
-    '</div>' +
-    '<button type="button" class="vs-chosen-change" data-change-event>Change event</button>';
-
-  const change = host.querySelector('[data-change-event]');
-  if (change) change.addEventListener('click', () => goToSection('event'));
-}
-
 function startPreview() {
   categories = previewCategories();
   buildMap();
@@ -1068,11 +1044,11 @@ function showConfirmation() {
    attached to a site.
    ------------------------------------------------------------------------- */
 const SECTIONS = [
-  { id: 'event',   label: 'Select event' },
-  { id: 'details', label: 'Vendor details' },
-  { id: 'stall',   label: 'Stall requirements' },
-  { id: 'site',    label: 'Choose your site' },
-  { id: 'review',  label: 'Review & submit' },
+  { id: 'event',   label: 'Select Event' },
+  { id: 'type',    label: 'Vendor Type' },
+  { id: 'details', label: 'Your Details' },
+  { id: 'site',    label: 'Choose Site' },
+  { id: 'review',  label: 'Review & Pay' },
 ];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -1080,8 +1056,8 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 /*  Has this section got everything it needs?
 
     Read live from the fields rather than from state, because state is only
-    filled in when somebody presses Continue and the summary has to keep up
-    with typing.                                                          */
+    filled in when somebody presses Continue and the rail has to keep up
+    with the typing.                                                      */
 function sectionDone(id) {
   const ticked = (elId) => !!document.getElementById(elId)?.checked;
 
@@ -1089,13 +1065,13 @@ function sectionDone(id) {
     case 'event':
       return !!state.eventId;
 
-    case 'details':
-      return !!state.vendorType
-          && !!val('vs-biz-name') && !!val('vs-biz-contact')
-          && EMAIL_RE.test(val('vs-biz-email')) && !!val('vs-biz-phone');
+    case 'type':
+      return !!state.vendorType;
 
-    case 'stall':
-      return !!state.categoryId
+    case 'details':
+      return !!val('vs-biz-name') && !!val('vs-biz-contact')
+          && EMAIL_RE.test(val('vs-biz-email')) && !!val('vs-biz-phone')
+          && !!state.categoryId
           && !!val('vs-setup-frontage') && !!val('vs-setup-depth')
           && !!val('vs-setup-own-power') && ticked('vs-setup-selfsufficient');
 
@@ -1128,10 +1104,9 @@ function render() {
   });
 
   renderEvents();
-  renderChosen();
+  renderPicked();
   renderSide();
-
-  if (!chosen) return;
+  renderRail();  if (!chosen) return;
 
   renderCategories();
   if (map) map.setVendorType(state.vendorType);
@@ -1142,36 +1117,233 @@ function render() {
   renderReview();
 }
 
-/*  THE SUMMARY DOWN THE SIDE
+/*  THE STEP RAIL
 
-    One line per section, saying complete, in progress or pending, and it
-    is the only thing on the page that answers "how much is left". The
-    lines are links, so it doubles as a way back to a section somebody
-    wants to change - which the old wizard could not do at all without
-    walking backwards through every screen in between.                  */
-function renderSide() {
-  const host = document.getElementById('vs-side-steps');
+    Five steps across the top of the form, sticky. A step is done when its
+    section has everything it needs, and the one highlighted is whichever
+    section is on screen - not the next unfinished one, because on a page
+    you scroll those two are different things and the rail should say where
+    you are looking.
+
+    Clicking one scrolls to it. Nothing here gates anything: the rail
+    reports, it does not lock.                                          */
+let railOn = 'event';
+
+function onFormChange() {
+  renderSide();
+  renderRail();
+}
+
+function renderRail() {
+  const host = document.getElementById('vs-rail');
   if (!host) return;
 
-  const states = SECTIONS.map((sec) => sectionDone(sec.id));
-  const now = states.indexOf(false);
-
-  host.innerHTML = SECTIONS.map((sec, i) => {
-    const done = states[i];
-    const cls = done ? 'is-done' : (i === now ? 'is-now' : 'is-wait');
-    const note = done ? 'Complete' : (i === now ? 'In progress' : 'Pending');
+  host.innerHTML = '<ol class="vs-rail-list">' + SECTIONS.map((sec, i) => {
+    const done = sectionDone(sec.id);
+    const here = sec.id === railOn;
 
     return '' +
-      '<li class="' + cls + '">' +
-        '<a href="#sec-' + sec.id + '">' +
-          '<span class="vs-side-num">' + (done ? '&#10003;' : (i + 1)) + '</span>' +
-          '<span class="vs-side-text">' +
-            '<strong>' + sec.label + '</strong>' +
-            '<em>' + note + '</em>' +
-          '</span>' +
-        '</a>' +
+      '<li class="' + (done ? 'is-done ' : '') + (here ? 'is-here' : '') + '">' +
+        '<button type="button" data-rail="' + sec.id + '">' +
+          '<span class="vs-rail-num">' + (done ? '&#10003;' : (i + 1)) + '</span>' +
+          '<span class="vs-rail-label">' + sec.label + '</span>' +
+        '</button>' +
       '</li>';
-  }).join('');
+  }).join('') + '</ol>';
+
+  host.querySelectorAll('[data-rail]').forEach((btn) => {
+    btn.addEventListener('click', () => goToSection(btn.getAttribute('data-rail')));
+  });
+}
+
+/*  Which section is on screen, for the rail. Whatever crosses a third of
+    the way down the window - not the very top, where a section is only
+    just arriving and does not yet have anybody's attention.            */
+function watchScroll() {
+  let queued = false;
+
+  const check = () => {
+    queued = false;
+    const line = window.innerHeight / 3;
+    let here = SECTIONS[0].id;
+
+    SECTIONS.forEach((sec) => {
+      const el = document.getElementById('sec-' + sec.id);
+      if (el && el.getBoundingClientRect().top <= line) here = sec.id;
+    });
+
+    if (here !== railOn) {
+      railOn = here;
+      renderRail();
+    }
+  };
+
+  window.addEventListener('scroll', () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(check);
+  }, { passive: true });
+
+  check();
+}
+
+/*  THE EVENT YOU PICKED
+
+    Sits under the cards the moment one is chosen, and carries the two
+    prices and the power situation. Those used to be a step of their own
+    that everybody walked past on the way to the form; here they arrive
+    at the only moment they mean anything.                              */
+function renderPicked() {
+  const wrap = document.getElementById('vs-picked');
+  const head = document.getElementById('vs-picked-head');
+  if (!wrap || !head) return;
+
+  const ev = state.event;
+  if (!ev || !state.eventId) {
+    wrap.hidden = true;
+    return;
+  }
+
+  const art = ev.image
+    ? ' style="--vs-ev-art:url(\'' + escapeHtml(ev.image) + '\')"'
+    : '';
+
+  wrap.hidden = false;
+  head.innerHTML = '' +
+    '<span class="vs-picked-art"' + art + ' aria-hidden="true">' +
+      '<span class="vs-picked-tick">&#10003;</span>' +
+    '</span>' +
+
+    '<div class="vs-picked-what">' +
+      '<p class="vs-picked-label">Selected event</p>' +
+      '<strong>' + escapeHtml(ev.name || state.eventId) + '</strong>' +
+      '<span class="vs-picked-when">' +
+        escapeHtml(ev.dateLabel || ev.dateISO || '') + '</span>' +
+      '<span class="vs-picked-where">' +
+        escapeHtml(ev.venue || ev.location || '') + '</span>' +
+    '</div>' +
+
+    '<div class="vs-picked-fact">' +
+      '<p class="vs-picked-label">Food vendor</p>' +
+      '<strong>' + money(PRICE.foodCents) + '</strong>' +
+      '<span>6 m &times; 3 m site</span>' +
+    '</div>' +
+
+    '<div class="vs-picked-fact">' +
+      '<p class="vs-picked-label">Market stall</p>' +
+      '<strong>' + money(PRICE.marketPerBayCents) + ' / bay</strong>' +
+      '<span>3 m &times; 3 m per bay<br>(up to 8 adjoining bays)</span>' +
+    '</div>' +
+
+    '<div class="vs-picked-fact">' +
+      '<p class="vs-picked-label">Power / water</p>' +
+      '<span>No power or water supplied.<br>Generators recommended.</span>' +
+    '</div>' +
+
+    '<button type="button" class="vs-picked-more-btn" data-more>' +
+      'Event details &amp; FAQs <span aria-hidden="true">&#9662;</span>' +
+    '</button>';
+
+  const btn = head.querySelector('[data-more]');
+  const more = document.getElementById('vs-picked-more');
+  if (btn && more) {
+    btn.addEventListener('click', () => {
+      more.hidden = !more.hidden;
+      btn.classList.toggle('is-open', !more.hidden);
+      btn.setAttribute('aria-expanded', String(!more.hidden));
+    });
+  }
+}
+
+/*  YOUR APPLICATION
+
+    The booking as it stands, down the side. It was a second list of the
+    five steps, which is what the rail across the top already does - so it
+    says what is actually being bought instead: which event, which kind of
+    vendor, which site, and what it comes to.                           */
+function renderSide() {
+  const host = document.getElementById('vs-chosen');
+  if (!host) return;
+
+  const ev = state.event;
+
+  if (!ev || !state.eventId) {
+    host.innerHTML =
+      '<h3 class="vs-side-head">Your application</h3>' +
+      '<p class="vs-side-empty">Choose an event above and your booking will ' +
+      'build up here as you go.</p>';
+    return;
+  }
+
+  const art = ev.image
+    ? ' style="--vs-ev-art:url(\'' + escapeHtml(ev.image) + '\')"'
+    : '';
+
+  const b = feeBreakdown(priceCents());
+
+  const typeRow = state.vendorType
+    ? '<strong>' + escapeHtml(VENDOR_LABEL[state.vendorType] || '') + '</strong>' +
+      '<span>' + (state.vendorType === 'food'
+        ? money(PRICE.foodCents) + ' &middot; 6 m &times; 3 m'
+        : money(PRICE.marketPerBayCents) + ' per bay') + '</span>'
+    : '<span class="vs-side-wait">Not chosen yet</span>';
+
+  const siteRow = state.siteLabel
+    ? '<strong>' + escapeHtml(state.siteLabel) + '</strong>' +
+      '<span>Held for you while you finish.</span>'
+    : '<span class="vs-side-wait">Not selected yet</span>' +
+      '<span>Choose your site on the map below.</span>';
+
+  host.innerHTML = '' +
+    '<div class="vs-side-top">' +
+      '<h3 class="vs-side-head">Your application</h3>' +
+      '<button type="button" class="vs-side-change" data-change-event>Edit event</button>' +
+    '</div>' +
+
+    '<div class="vs-side-card">' +
+      '<span class="vs-side-art"' + art + ' aria-hidden="true"></span>' +
+      '<span class="vs-side-card-text">' +
+        '<strong>' + escapeHtml(ev.name || state.eventId) + '</strong>' +
+        '<span>' + escapeHtml(ev.dateLabel || ev.dateISO || '') + '</span>' +
+        '<span>' + escapeHtml(ev.venue || ev.location || '') + '</span>' +
+      '</span>' +
+    '</div>' +
+
+    '<div class="vs-side-row">' +
+      '<p class="vs-side-label">Vendor type</p>' + typeRow +
+    '</div>' +
+
+    '<div class="vs-side-row">' +
+      '<p class="vs-side-label">Site selection</p>' + siteRow +
+    '</div>' +
+
+    '<div class="vs-side-total">' +
+      '<span>Total</span>' +
+      '<strong>' + exact(b.totalCents) + '</strong>' +
+    '</div>' +
+    '<p class="vs-side-fineprint">' +
+      (b.totalCents ? '(Includes booking fee and GST)' : 'Choose a vendor type to see your total') +
+    '</p>' +
+
+    '<button type="button" class="btn vs-side-go" data-side-go>' +
+      'Continue to next step <span aria-hidden="true">&#8594;</span>' +
+    '</button>' +
+
+    '<p class="vs-side-hold">' +
+      'Your site is held for 10 minutes once selected. Complete your ' +
+      'application and payment to confirm.' +
+    '</p>';
+
+  const change = host.querySelector('[data-change-event]');
+  if (change) change.addEventListener('click', () => goToSection('event'));
+
+  /*  One button that always points at the first thing still to do, so it
+      works wherever somebody has scrolled to.                         */
+  const go = host.querySelector('[data-side-go]');
+  if (go) {
+    const next = SECTIONS.find((sec) => !sectionDone(sec.id)) || SECTIONS[SECTIONS.length - 1];
+    go.addEventListener('click', () => goToSection(next.id));
+  }
 }
 
 function renderCategories() {
@@ -1530,12 +1702,13 @@ function wireStaticControls() {
     });
   });
 
-  /*  The summary follows the typing. One listener on the whole form
-      rather than one per field, so fields added later are covered.  */
+  /*  The rail and the side column follow the typing. One listener on the
+      whole form rather than one per field, so fields added later are
+      covered without anybody remembering to wire them.              */
   const form = document.getElementById('vs-flow');
   if (form) {
-    form.addEventListener('input', renderSide);
-    form.addEventListener('change', renderSide);
+    form.addEventListener('input', onFormChange);
+    form.addEventListener('change', onFormChange);
   }
 
   // documents
@@ -1548,6 +1721,22 @@ function wireStaticControls() {
       fileInput.value = '';
     });
   }
+
+  /*  The 0/300 under "What do you sell?". It is what we put in the
+      marketing, so the limit is real and worth showing rather than
+      cutting somebody off at the end.                              */
+  const desc = document.getElementById('vs-biz-desc');
+  const count = document.getElementById('vs-biz-desc-count');
+  if (desc && count) {
+    const tick = () => {
+      if (desc.value.length > 300) desc.value = desc.value.slice(0, 300);
+      count.textContent = desc.value.length + '/300';
+    };
+    desc.addEventListener('input', tick);
+    tick();
+  }
+
+  watchScroll();
 
   // pay
   const payBtn = document.getElementById('vs-pay');
@@ -1586,14 +1775,23 @@ function collectForm() {
 }
 
 function validateSection(id) {
-  if (id === 'details') {
+  if (id === 'type') {
     setStepError('type', '');
-    setStepError('details', '');
-
     if (!state.vendorType) {
       setStepError('type', 'Please choose a vendor type.');
       return false;
     }
+    return true;
+  }
+
+  /*  Business, what you sell and your setup are one section now, so they
+      are checked in the order they appear on the page and the first thing
+      missing is scrolled to - on a long section a message at the bottom
+      can sit off screen and look like nothing happened.                */
+  if (id === 'details') {
+    setStepError('details', '');
+    setStepError('category', '');
+    setStepError('setup', '');
 
     const name = val('vs-biz-name');
     const contact = val('vs-biz-contact');
@@ -1607,13 +1805,6 @@ function validateSection(id) {
     if (!EMAIL_RE.test(email)) {
       return fail('details', 'That email address does not look right.', 'vs-biz-email');
     }
-    return true;
-  }
-
-  if (id === 'stall') {
-    setStepError('category', '');
-    setStepError('setup', '');
-
     if (!state.categoryId) {
       return fail('category', 'Please choose a category.', 'vs-categories');
     }
@@ -1652,7 +1843,7 @@ function validateSection(id) {
     above it because on one page nobody is forced to walk through them -
     you can scroll straight past a half-filled one to the bottom.       */
 function validateAll() {
-  return ['details', 'stall', 'site'].every((id) => {
+  return ['type', 'details', 'site'].every((id) => {
     if (validateSection(id)) return true;
     goToSection(id);
     return false;

@@ -1248,268 +1248,6 @@
 }
 
 /* --------------------------------------------------------------------------
-   VENDOR TYPE CHOICES
-
-   Two cards that have to answer "which one am I?" in a glance and then be
-   pressed. Each carries its own accent through a pair of custom properties,
-   so the market card is purple everywhere - art, price, ticks, button -
-   without a second copy of every rule.
-   -------------------------------------------------------------------------- */
-.vs-type-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
-    gap:18px;
-}
-
-/* Two options rather than four, so give them room */
-.vs-type-grid.is-two{
-    grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
-}
-
-/*  The photo fills the card and the wording sits on it, over a scrim dark
-    enough that the text stays readable whatever the photo turns out to be. */
-.vs-type{
-    --vs-type-accent:var(--sg-orange);
-    --vs-type-glow:rgba(255,107,0,.35);
-    --vs-type-cta-bg:var(--sg-orange);
-    --vs-type-cta-ink:#140800;
-
-    position:relative;
-    display:flex;
-    overflow:hidden;
-
-    text-align:left;
-    background:#0d0d0d;
-    border:2px solid var(--sg-border);
-    border-radius:18px;
-    padding:0;
-    color:#fff;
-    cursor:pointer;
-    transition:border-color .25s, transform .25s, box-shadow .25s;
-}
-
-.vs-type[data-vendor-type="market"]{
-    --vs-type-accent:#a77dff;
-    --vs-type-glow:rgba(124,77,255,.35);
-    --vs-type-cta-bg:#7c4dff;
-    --vs-type-cta-ink:#fff;
-}
-
-.vs-type-bg{
-    position:absolute;
-    inset:0;
-    overflow:hidden;
-    background:linear-gradient(155deg, #2a1201, #0a0a0a 62%);
-}
-
-.vs-type[data-vendor-type="market"] .vs-type-bg{
-    background:linear-gradient(155deg, #1d0f2c, #0a0a0a 62%);
-}
-
-.vs-type-bg img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    display:block;
-    transition:transform .5s ease;
-}
-
-/*  The scrim. Nearly solid low down where the words are, clearer at the top
-    so the photo still reads as a photo behind the icon.                   */
-.vs-type-bg::after{
-    content:'';
-    position:absolute;
-    inset:0;
-    background:linear-gradient(
-        to top,
-        rgba(0,0,0,.95) 0%,
-        rgba(0,0,0,.9) 40%,
-        rgba(0,0,0,.55) 72%,
-        rgba(0,0,0,.25) 100%
-    );
-}
-
-/*  The body flows normally and reserves room at the top for the icon, which
-    is positioned over the photo. That way the card is as tall as its own
-    words rather than a fixed height guessed in advance - which matters now
-    the whole step has to fit one screen.                                  */
-.vs-type-body{
-    position:relative;
-    display:flex;
-    flex-direction:column;
-    width:100%;
-    padding:132px 22px 20px;
-}
-
-/*  Line art shown until a real photo is saved, so an empty card still looks
-    like a choice rather than a mistake. The card starts on .no-photo and the
-    image removes it once it has loaded - the other way round (onerror)
-    leaves the card blank whenever the photo simply never starts loading,
-    which is what happens on a step that is hidden.                        */
-.vs-type-art{
-    display:none;
-    position:absolute;
-    top:26px;
-    left:50%;
-    transform:translateX(-50%);
-    width:min(44%, 148px);
-    fill:none;
-    stroke:var(--vs-type-accent);
-    stroke-width:2.5;
-    stroke-linejoin:round;
-    opacity:.65;
-    transition:opacity .25s, transform .5s ease;
-}
-
-.vs-type.no-photo .vs-type-bg img{ display:none; }
-.vs-type.no-photo .vs-type-art{ display:block; }
-
-.vs-type:hover{
-    transform:translateY(-4px);
-    border-color:var(--vs-type-accent);
-    box-shadow:0 18px 40px rgba(0,0,0,.55);
-}
-
-.vs-type:hover .vs-type-bg img{ transform:scale(1.06); }
-
-.vs-type:hover .vs-type-art{
-    opacity:.9;
-    transform:translateX(-50%) translateY(-4px);
-}
-
-.vs-type:focus-visible{
-    outline:none;
-    border-color:var(--sg-gold);
-}
-
-.vs-type.is-selected{
-    border-color:var(--vs-type-accent);
-    box-shadow:0 0 0 1px var(--vs-type-accent), 0 18px 40px rgba(0,0,0,.55);
-}
-
-/*  Tick badge on the chosen card - colour alone should not be the only thing
-    saying which one is picked.                                            */
-.vs-type.is-selected::after{
-    content:'\2713';
-    position:absolute;
-    top:16px;
-    right:16px;
-    width:34px;
-    height:34px;
-    display:grid;
-    place-items:center;
-    border-radius:50%;
-    background:var(--vs-type-accent);
-    color:#0a0a0a;
-    font-size:1.05rem;
-    font-weight:bold;
-}
-
-.vs-type-name{
-    display:block;
-    text-align:center;
-    font-family:var(--sg-font-display);
-    font-size:1.2rem;
-    letter-spacing:-.5px;
-    text-transform:uppercase;
-}
-
-.vs-type-price{
-    display:block;
-    text-align:center;
-    font-family:var(--sg-font-display);
-    font-size:2.5rem;
-    line-height:1.1;
-    letter-spacing:-1.5px;
-    color:var(--vs-type-accent);
-    margin-top:6px;
-}
-
-.vs-type-per{
-    font-family:var(--sg-font);
-    font-size:.82rem;
-    font-weight:normal;
-    letter-spacing:0;
-    text-transform:none;
-    color:var(--sg-dim);
-}
-
-/*  The headline price is the site only. The reference design this was drawn
-    from said "incl. GST" under the figure, which would be wrong here - a
-    $100 site is $115.49 once the booking fee and GST are on it. So this
-    says what is actually still to come.                                   */
-.vs-type-fees{
-    display:block;
-    text-align:center;
-    font-size:.78rem;
-    color:var(--sg-dim);
-    margin-top:2px;
-}
-
-.vs-type-desc{
-    display:block;
-    text-align:center;
-    color:var(--sg-muted);
-    font-size:.9rem;
-    margin-top:12px;
-}
-
-/*  What you get, one line each. Ticks in the card's own accent so the two
-    cards stay told apart even this far down.                              */
-.vs-type-list{
-    display:grid;
-    gap:9px;
-    margin:16px 0 20px;   /* the bottom half is the gap above the button */
-}
-
-.vs-type-list > span{
-    display:flex;
-    align-items:flex-start;
-    gap:9px;
-    color:var(--sg-muted);
-    font-size:.88rem;
-    line-height:1.4;
-}
-
-.vs-type-list i{
-    flex:0 0 auto;
-    font-style:normal;
-    font-weight:bold;
-    color:var(--vs-type-accent);
-}
-
-/*  Looks like a button, is a span. The whole card is already the button and
-    a nested one would be invalid markup and unclickable - but without
-    something button-shaped at the bottom the card does not read as pressable.
-
-    margin-top:auto pins it to the foot, so the two cards line up even when
-    one has more words than the other.                                     */
-.vs-type-cta{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:9px;
-    margin-top:auto;
-    padding:13px 18px;
-
-    border-radius:11px;
-    background:var(--vs-type-cta-bg);
-    color:var(--vs-type-cta-ink);
-
-    font-family:var(--sg-font-display);
-    font-size:.95rem;
-    letter-spacing:-.2px;
-    transition:box-shadow .25s, transform .25s;
-}
-
-.vs-type:hover .vs-type-cta{
-    box-shadow:0 8px 22px var(--vs-type-glow);
-}
-
-.vs-type-cta i{ font-style:normal; }
-
-
-/* --------------------------------------------------------------------------
    MOBILE
    -------------------------------------------------------------------------- */
 @media (max-width:768px){
@@ -1566,44 +1304,7 @@
         height:88px;
     }
 
-    /*  Shorter cards on a phone, where they stack and two full-height
-        tiles would push the second one well below the fold.            */
-    /*  Two rich cards will not both fit a phone screen no matter how they
-        are cut, so on a phone the icon band shrinks hard and the card is
-        allowed to be as tall as its words. The step panel scrolls inside
-        its own frame if it has to; the page still does not.            */
-    .vs-type-grid{ gap:12px; }
-
-    /*  The icon band is the biggest thing that can give on a phone. It drops
-        to a small badge so both cards clear an 812pt screen without the
-        wording having to shrink to match. The photo, when there is one,
-        fills the whole card behind this anyway - the band is only where the
-        text is told not to start.                                       */
-    .vs-type-body{
-        padding:48px 16px 12px;
-    }
-
-    .vs-type-art{
-        top:8px;
-        width:min(20%, 46px);
-    }
-
-    .vs-type-price{ font-size:1.9rem; }
-    .vs-type-list{ margin:10px 0 14px; gap:6px; }
-    .vs-type-list > span{ font-size:.83rem; }
-    .vs-type-cta{ padding:11px 16px; font-size:.9rem; }
-
-    /*  The tagline repeats what the ticks underneath already say, and on a
-        phone the two cards need every line they can give back.         */
-    .vs-type-desc{ display:none; }
-
-    .vs-sec-intro{ margin-bottom:18px; }
-
-    /*  On step one the two cards already say what this sentence says - the
-        price is on each of them and the map is in the ticks. Dropping it is
-        two lines back, which is the difference between both cards fitting a
-        phone screen and not.                                            */
-    .vs-sec[data-step="type"] .vs-sec-intro{ display:none; }
+        .vs-sec-intro{ margin-bottom:18px; }
 
     /*  Steps get their air back on a phone, where the panel scrolls anyway
         and cramping it only makes the form harder to fill in.          */
@@ -1612,10 +1313,7 @@
 
 @media (prefers-reduced-motion:reduce){
     .vs-spinner{ animation:none; }
-    .vs-type:hover,
     .vs-category:hover:not(:disabled){ transform:none; }
-    .vs-type:hover .vs-type-bg img{ transform:none; }
-    .vs-type:hover .vs-type-art{ transform:translateX(-50%); }
 }
 
 /* --------------------------------------------------------------------------
@@ -2110,12 +1808,6 @@ body.vendor-signup .footer-sponsors{
 .vendor-signup .vs-hero h1,
 .vendor-signup .vs-hero p{ color:#fff; }
 
-/*  So do the two vendor type cards, which are photographs.         */
-.vendor-signup .vs-type h3,
-.vendor-signup .vs-type p{ color:#fff; }
-
-/*  And the map, where the colours carry meaning.                   */
-.vendor-signup .vs-map-wrap{ color:#fff; }
 
 /* ==========================================================================
    COLOURS THAT ONLY WORKED ON BLACK
@@ -2141,9 +1833,7 @@ body.vendor-signup .footer-sponsors{
 }
 
 /*  The three places that are still dark keep the real gold.           */
-.vendor-signup .vs-hero,
-.vendor-signup .vs-type,
-.vendor-signup .vs-map-wrap{
+.vendor-signup .vs-hero{
     --sg-gold:#ffb700;
 }
 
@@ -2268,6 +1958,478 @@ body.vendor-signup .footer-sponsors{
     nowhere to go and scrolled off the top with everything else. Stretched,
     the column is as tall as the form beside it and the panel rides down
     it.                                                                 */
+/* ==========================================================================
+   WHAT THE WHITE PAGE BROKE, MEASURED RATHER THAN LOOKED AT
+
+   Every one of these was found by walking the page and comparing each piece
+   of text against the colour actually behind it. The first three matter:
+   they are unreadable, not merely unlovely.
+   ========================================================================== */
+
+/*  Orange as type on white. The buttons keep the brand orange - white on
+    it is what the rest of the site does - but the total, which is the one
+    number on this page a vendor actually checks, was 2.9 : 1.          */
+.vs-sum-total,
+.vs-sum-total span,
+.vs-sum-total strong,
+.vs-help-link{
+    color:#b34700;
+}
+
+/*  Accepting Vendors, and the tick beside a finished section - white on
+    a green that was a shade too light to carry it.                    */
+.vs-sec .vs-event-status.is-open{ background:#15803d; }
+
+/* ==========================================================================
+   THE DESIGN MAX SENT THROUGH
+
+   A rail of five steps across the top, a card per section, and the booking
+   itself down the side. Three things changed from what was here before:
+
+     the type       Poppins for the headings and Inter for the rest, which
+                    is what the design uses. Everywhere else on this site
+                    is Arial Black over Arial - right for a page shouting
+                    about a party, wrong for a form somebody is filling in
+                    with their insurance certificate open in another tab.
+                    This page is the exception and the only one.
+
+     no dark panels the vendor type cards were photographs with white type
+                    over them, and the chosen category chip went near
+                    black. On a white page both read as holes in it.
+
+     orange         the design came through in lime. Max asked for our
+                    orange, so the lime is orange and the black button in
+                    the design is our black.
+   ========================================================================== */
+.vendor-signup{
+    --sg-font:"Inter", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --sg-font-display:"Poppins", "Inter", -apple-system, "Segoe UI", Arial, sans-serif;
+
+    /*  The accent face was Courier, which is what gives the rest of the
+        site its backstage-pass look. On a form it turned every field
+        label into a typewriter caption.                               */
+    --sg-font-accent:"Inter", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+
+    --vs-ink:#12141a;
+    --vs-line:#e3e6ec;
+    --vs-soft:#f6f7f9;
+}
+
+/*  Headings lose the uppercase and the black weight along with the face. */
+.vendor-signup .vs-apply h2,
+.vendor-signup .vs-apply h3,
+.vendor-signup .vs-rail{
+    text-transform:none;
+    letter-spacing:-.4px;
+    font-weight:600;
+}
+
+/* ---- the rail ---------------------------------------------------------- */
+.vs-rail{
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:#0b0b0b;
+    border-bottom:1px solid #1e1e1e;
+}
+
+.vs-rail-list{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    list-style:none;
+    max-width:var(--sg-max-width);
+    margin:auto;
+    padding:12px 6%;
+    overflow-x:auto;
+    scrollbar-width:none;
+}
+
+.vs-rail-list::-webkit-scrollbar{ display:none; }
+
+/*  The hairline between one step and the next. Drawn on the item rather
+    than as an element of its own so it cannot wrap onto a line by
+    itself when the rail runs out of room.                            */
+.vs-rail-list li{
+    display:flex;
+    align-items:center;
+    flex:1 1 auto;
+    min-width:0;
+}
+
+.vs-rail-list li + li::before{
+    content:"";
+    flex:1 1 20px;
+    height:1px;
+    background:#2b2b2b;
+    margin:0 4px;
+}
+
+.vs-rail-list button{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    flex:0 0 auto;
+    padding:6px 8px;
+    border:0;
+    border-radius:8px;
+    background:none;
+    color:#8b93a1;
+    font:inherit;
+    font-size:.86rem;
+    white-space:nowrap;
+    cursor:pointer;
+    transition:color .2s ease;
+}
+
+.vs-rail-list button:hover{ color:#fff; }
+
+.vs-rail-num{
+    display:grid;
+    place-items:center;
+    flex:0 0 auto;
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    border:1px solid #3a3a3a;
+    font-size:.8rem;
+    font-weight:600;
+}
+
+.vs-rail-list .is-here button{ color:#fff; }
+
+.vs-rail-list .is-here .vs-rail-num{
+    background:var(--sg-orange);
+    border-color:var(--sg-orange);
+    color:#12141a;      /* same reason as .vs-secnum */
+}
+
+.vs-rail-list .is-done .vs-rail-num{
+    background:#15803d;
+    border-color:#15803d;
+    color:#fff;
+}
+
+.vs-rail-list .is-done button{ color:#d4d8de; }
+
+/* ---- section headings -------------------------------------------------- */
+.vs-sec-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:20px;
+    flex-wrap:wrap;
+}
+
+.vs-sec-aside{
+    flex:0 0 auto;
+    color:#b34700;
+    font-size:.86rem;
+}
+
+.vendor-signup .vs-apply h2{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    font-size:clamp(1.25rem, 2.6vw, 1.6rem);
+    margin-bottom:6px;
+}
+
+/*  The number is part of the heading now rather than a line above it, so
+    a section says what it is in one line instead of two.             */
+.vs-secnum{
+    display:grid;
+    place-items:center;
+    flex:0 0 auto;
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    background:var(--sg-orange);
+
+    /*  Ink on the orange, not white on it. White on our orange is 2.9 : 1,
+        which is fine on a button the size of a thumb and not fine on a
+        30px disc with a single digit in it. Ink is 6.3 : 1 and it is what
+        the design does anyway - a dark number on the accent.          */
+    color:#12141a;
+    font-family:var(--sg-font);
+    font-size:.95rem;
+    font-weight:bold;
+    letter-spacing:0;
+}
+
+.vs-sec.is-locked .vs-secnum{ background:#c9ced7; color:#6b7280; }
+
+.vendor-signup .vs-sec-intro{
+    margin:0 0 22px 42px;
+    color:var(--sg-muted);
+    font-size:.94rem;
+}
+
+.vendor-signup .vs-sub{
+    font-family:var(--sg-font-display);
+    font-size:1rem;
+    text-transform:none;
+    letter-spacing:-.3px;
+}
+
+/* ---- the event you picked ---------------------------------------------- */
+.vs-picked{
+    margin-top:22px;
+    border:1px solid var(--sg-orange);
+    border-radius:14px;
+    background:#fff9f4;
+}
+
+.vs-picked-head{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    flex-wrap:wrap;
+    padding:14px 16px;
+}
+
+.vs-picked-art{
+    position:relative;
+    flex:0 0 auto;
+    width:96px;
+    height:64px;
+    border-radius:10px;
+    background-color:#e9ecf1;
+    background-image:var(--vs-ev-art);
+    background-size:cover;
+    background-position:center;
+}
+
+.vs-picked-tick{
+    position:absolute;
+    top:-8px;
+    right:-8px;
+    display:grid;
+    place-items:center;
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    background:#15803d;
+    color:#fff;
+    font-size:.72rem;
+}
+
+.vs-picked-what,
+.vs-picked-fact{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    min-width:0;
+    font-size:.82rem;
+    color:var(--sg-muted);
+    line-height:1.45;
+}
+
+.vs-picked-what{ flex:1 1 200px; }
+
+.vs-picked-fact{
+    flex:0 1 auto;
+    padding-left:18px;
+    border-left:1px solid #f0d9c4;
+}
+
+.vs-picked-what strong,
+.vs-picked-fact strong{
+    color:var(--vs-ink);
+    font-size:.95rem;
+}
+
+.vs-picked-label{
+    margin:0 0 2px;
+    font-size:.62rem;
+    font-weight:bold;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:#6f6152;      /* 5.4 : 1 on the strip, where #8b7a68 was 4.0 */
+}
+
+.vs-picked-more-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    flex:0 0 auto;
+    padding:9px 14px;
+    border:1px solid var(--vs-line);
+    border-radius:9px;
+    background:#fff;
+    color:var(--vs-ink);
+    font:inherit;
+    font-size:.84rem;
+    cursor:pointer;
+}
+
+.vs-picked-more-btn span{ display:inline-block; transition:transform .2s ease; }
+.vs-picked-more-btn.is-open span{ transform:rotate(180deg); }
+
+.vs-picked-more{
+    padding:4px 16px 18px;
+    border-top:1px solid #f0d9c4;
+}
+
+/* ---- vendor type, on white --------------------------------------------- */
+.vs-type-grid{
+    display:grid;
+    gap:16px;
+}
+
+.vs-type-grid.is-two{
+    grid-template-columns:repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+}
+
+.vs-type{
+    position:relative;
+    display:flex;
+    align-items:flex-start;
+    gap:16px;
+    padding:20px;
+    border:2px solid var(--vs-line);
+    border-radius:14px;
+    background:#fff;
+    text-align:left;
+    cursor:pointer;
+    transition:border-color .2s ease, box-shadow .2s ease;
+}
+
+.vs-type:hover{
+    border-color:#c9ced7;
+    box-shadow:0 10px 24px rgba(16,24,40,.08);
+}
+
+.vs-type.is-selected{
+    border-color:var(--sg-orange);
+    background:#fff9f4;
+}
+
+.vs-type-ico{
+    flex:0 0 auto;
+    width:54px;
+    height:40px;
+    fill:none;
+    stroke:var(--vs-ink);
+    stroke-width:2;
+    stroke-linejoin:round;
+}
+
+.vs-type.is-selected .vs-type-ico{ stroke:#b34700; }
+
+.vs-type-body{
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    min-width:0;
+}
+
+.vs-type-name{
+    font-family:var(--sg-font-display);
+    font-size:1.02rem;
+    font-weight:600;
+    color:var(--vs-ink);
+}
+
+.vs-type-desc{
+    color:var(--sg-muted);
+    font-size:.86rem;
+}
+
+.vs-type-price{
+    margin-top:6px;
+    font-family:var(--sg-font-display);
+    font-size:1.55rem;
+    font-weight:600;
+    color:var(--vs-ink);
+}
+
+.vs-type-per{
+    font-size:.92rem;
+    font-weight:normal;
+    color:var(--sg-muted);
+}
+
+.vs-type-size{
+    color:var(--sg-muted);
+    font-size:.84rem;
+    line-height:1.5;
+}
+
+/*  The tick only exists on the chosen card. A tick that is merely faint
+    reads as one you could turn on, which is not what it means.      */
+.vs-type-tick{
+    position:absolute;
+    top:14px;
+    right:14px;
+    display:none;
+    place-items:center;
+    width:24px;
+    height:24px;
+    border-radius:50%;
+    background:#15803d;
+    color:#fff;
+    font-size:.78rem;
+}
+
+.vs-type.is-selected .vs-type-tick{ display:grid; }
+
+/* ---- fields ------------------------------------------------------------ */
+/*  Sentence case, and the same face as everything else. The asterisk comes
+    off the input's own required attribute, so a field cannot look optional
+    while the form insists on it.                                     */
+.vendor-signup .vs-field label{
+    font-family:var(--sg-font);
+    font-size:.84rem;
+    font-weight:500;
+    letter-spacing:0;
+    text-transform:none;
+    color:#3d4351;
+}
+
+.vendor-signup .vs-field:has(input[required], select[required], textarea[required])
+  > label::after{
+    content:" *";
+    color:#c0392b;
+}
+
+.vendor-signup .vs-field-hint{
+    display:flex;
+    justify-content:space-between;
+    gap:14px;
+    color:var(--sg-dim);
+}
+
+.vs-field-count{
+    flex:0 0 auto;
+    color:var(--sg-dim);
+    font-size:.78rem;
+}
+
+/*  The chosen category went near-black with near-black type on it - the
+    same dark-state-on-a-white-page problem as the vendor cards, and it
+    only showed once somebody actually picked one.                  */
+.vs-category.is-selected{
+    border-color:var(--sg-orange);
+    background:#fff9f4;
+}
+
+.vs-category.is-selected .vs-category-name{ color:#b34700; }
+
+.vendor-signup .vs-category-name{
+    font-family:var(--sg-font-display);
+    font-size:.92rem;
+    font-weight:600;
+    text-transform:none;
+    letter-spacing:-.2px;
+}
+
+.vendor-signup .vs-category-count{
+    font-family:var(--sg-font);
+    letter-spacing:0;
+}
+
+/* ---- your application, down the side ----------------------------------- */
 .vs-side{
     min-width:0;
     align-self:stretch;
@@ -2275,111 +2437,59 @@ body.vendor-signup .footer-sponsors{
 
 .vs-side-inner{
     position:sticky;
-    top:18px;
-    border:1px solid var(--pk-line);
+    top:76px;               /* clears the rail */
+    border:1px solid var(--vs-line);
     border-radius:16px;
-    background:var(--pk-panel);
-    padding:20px 18px;
+    background:#fff;
+    padding:18px;
     box-shadow:0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06);
+}
+
+.vs-side-top{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
 }
 
 .vs-side-head{
     font-family:var(--sg-font-display);
     font-size:1rem;
+    font-weight:600;
     letter-spacing:-.3px;
-    text-transform:uppercase;
-    color:var(--pk-ink);
-    margin:0 0 14px;
-}
-
-.vs-side-steps{
-    list-style:none;
+    text-transform:none;
+    color:var(--vs-ink);
     margin:0;
+}
+
+.vs-side-change{
     padding:0;
-    display:flex;
-    flex-direction:column;
-    gap:2px;
+    border:0;
+    background:none;
+    color:#b34700;
+    font:inherit;
+    font-size:.8rem;
+    cursor:pointer;
 }
 
-.vs-side-steps a{
-    display:flex;
-    align-items:center;
-    gap:11px;
-    padding:9px 10px;
-    border-radius:10px;
-    text-decoration:none;
-    color:var(--pk-ink);
-}
-
-.vs-side-steps a:hover{ background:#f2f4f7; }
-
-.vs-side-num{
-    display:grid;
-    place-items:center;
-    flex:0 0 auto;
-    width:24px;
-    height:24px;
-    border-radius:50%;
-    background:#e3e6ec;
-    color:#6b7280;
-    font-size:.78rem;
-    font-weight:bold;
-}
-
-.vs-side-text{
-    display:flex;
-    flex-direction:column;
-    min-width:0;
-}
-
-.vs-side-text strong{
-    font-size:.88rem;
-    font-weight:bold;
-}
-
-.vs-side-text em{
-    font-style:normal;
-    font-size:.74rem;
-    color:var(--pk-muted);
-}
-
-/*  Done is green, because it is the one state somebody scans for. The
-    current one is orange to match the rest of the site, and everything
-    after it stays grey.                                               */
-.vs-side-steps .is-done .vs-side-num{ background:#16a34a; color:#fff; }
-.vs-side-steps .is-done .vs-side-text em{ color:#15803d; }
-
-.vs-side-steps .is-now{ background:#fff7f0; border-radius:10px; }
-.vs-side-steps .is-now .vs-side-num{ background:var(--sg-orange); color:#fff; }
-.vs-side-steps .is-now .vs-side-text em{ color:#b34700; }
-
-/* ---- the event you chose, under the list ------------------------------- */
-.vs-side-event{
-    margin-top:16px;
-    padding-top:16px;
-    border-top:1px solid var(--pk-line);
-}
-
-.vs-side-label{
-    margin:0 0 9px;
-    font-family:var(--sg-font-accent);
-    font-size:.62rem;
-    font-weight:bold;
-    letter-spacing:.16em;
-    text-transform:uppercase;
-    color:var(--pk-muted);
+.vs-side-empty{
+    margin:10px 0 0;
+    color:var(--sg-muted);
+    font-size:.86rem;
+    line-height:1.6;
 }
 
 .vs-side-card{
     display:flex;
-    gap:11px;
+    gap:12px;
     align-items:flex-start;
+    margin-top:14px;
 }
 
 .vs-side-art{
     flex:0 0 auto;
-    width:52px;
-    height:52px;
+    width:72px;
+    height:56px;
     border-radius:9px;
     background-color:#e9ecf1;
     background-image:var(--vs-ev-art);
@@ -2392,120 +2502,192 @@ body.vendor-signup .footer-sponsors{
     flex-direction:column;
     gap:2px;
     min-width:0;
-    font-size:.8rem;
-    color:var(--pk-muted);
+    font-size:.78rem;
+    color:var(--sg-muted);
     line-height:1.45;
 }
 
 .vs-side-card-text strong{
-    color:var(--pk-ink);
+    color:var(--vs-ink);
     font-size:.88rem;
 }
 
-/*  The error boxes were dark red on a dark page. On white they need the
-    light version, or they read as a block of colour with nothing in it. */
-.vendor-signup .vs-error{
-    background:#fdecec;
-    border-color:#f3c2c2;
-    color:#8a1f1f;
+.vs-side-row{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px solid var(--vs-line);
+    font-size:.8rem;
+    color:var(--sg-muted);
+    line-height:1.45;
+}
+
+.vs-side-row strong{ color:var(--vs-ink); font-size:.88rem; }
+.vs-side-wait{ color:var(--vs-ink); font-size:.88rem; font-weight:600; }
+
+.vs-side-label{
+    margin:0 0 3px;
+    font-size:.62rem;
+    font-weight:bold;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--sg-dim);
+}
+
+.vs-side-total{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px solid var(--vs-line);
+    font-family:var(--sg-font-display);
+    font-size:1.05rem;
+    font-weight:600;
+    color:var(--vs-ink);
+}
+
+.vs-side-total strong{ font-size:1.3rem; }
+
+.vs-side-fineprint{
+    margin:2px 0 0;
+    text-align:right;
+    color:var(--sg-dim);
+    font-size:.72rem;
+}
+
+.vendor-signup .vs-side-go{
+    display:block;
+    width:100%;
+    max-width:none;
+    margin-top:16px;
+    text-align:center;
+}
+
+.vs-side-hold{
+    margin:14px 0 0;
+    padding:12px;
+    border-radius:10px;
+    background:var(--vs-soft);
+    color:var(--sg-muted);
+    font-size:.76rem;
+    line-height:1.55;
 }
 
 @media (max-width:980px){
     .vs-apply-inner{ grid-template-columns:1fr; }
 
-    /*  Summary first, and it stops sticking. A sticky panel on a phone
-        is a panel permanently covering part of the form.              */
+    /*  The booking comes first and stops sticking. A sticky panel on a
+        phone is a panel permanently covering part of the form, and at the
+        top of the page it still says what this is going to involve.   */
     .vs-side{ order:-1; }
     .vs-side-inner{ position:static; }
 }
 
-/* ==========================================================================
-   EVENT INFO AND FAQS, FOLDED AWAY
+@media (max-width:768px){
+    .vs-rail-list{ padding:10px 5%; }
 
-   This was a whole step of the wizard, which meant everybody walked past a
-   screen of answers to questions they had not asked yet. On one page it can
-   simply sit under the event cards, shut, for whoever wants it.
+    /*  The words go and the numbers stay. Five labels will not fit a phone
+        without shrinking past readable, and the rail is still saying which
+        of five you are on.                                           */
+    .vs-rail-label{ display:none; }
+    .vs-rail-list li{ justify-content:center; }
+
+    .vendor-signup .vs-sec-intro{ margin-left:0; }
+
+    .vs-picked-fact{
+        padding-left:0;
+        border-left:0;
+        border-top:1px solid #f0d9c4;
+        padding-top:10px;
+        flex-basis:100%;
+    }
+}
+
+/* ==========================================================================
+   THE SITE PLAN, ON WHITE
+
+   The last dark panel in the form. It was left alone when the page turned
+   over because the colours on it mean something to a vendor choosing a
+   site, and getting one wrong there costs somebody a booking - so it is
+   turned over deliberately, state by state, keeping every meaning:
+
+     available   green        take it
+     held by you orange       yours for the next ten minutes
+     on hold     amber        somebody else is mid-checkout
+     booked      red          gone
+     not available grey       never on offer
+     opens later dashed grey  free, but not released yet
+
+   Same six colours, same order of loudness. What changes is that they are
+   now inks on a light plan rather than glows on a black one.
    ========================================================================== */
-.vs-faqbox{
-    margin-top:22px;
-    border:1px solid var(--pk-line);
-    border-radius:12px;
+.vendor-signup .vs-map-wrap{
     background:#fbfcfd;
+    border-color:var(--vs-line);
+    color:var(--vs-ink);
 }
 
-.vs-faqbox > summary{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:14px;
-    padding:14px 16px;
-    cursor:pointer;
-    list-style:none;
-    font-family:var(--sg-font-accent);
-    font-size:.7rem;
-    font-weight:bold;
-    letter-spacing:.14em;
-    text-transform:uppercase;
-    color:var(--pk-ink);
+/* the fixed furniture - stage, bar, walkway */
+.vendor-signup .vmap-landmark rect{
+    fill:#eef0f4;
+    stroke:#d6dae1;
 }
 
-.vs-faqbox > summary::-webkit-details-marker{ display:none; }
+.vendor-signup .vmap-site-label{ fill:#12141a; }
+.vendor-signup .vmap-site-sub{ fill:rgba(18,20,26,.6); }
 
-.vs-faqbox > summary::after{
-    content:'+';
-    font-family:var(--sg-font);
-    font-size:1.4rem;
-    line-height:1;
-    color:var(--sg-orange);
+.vendor-signup .vmap-site.is-available rect{ fill:#e7f6ea; stroke:#15803d; }
+.vendor-signup .vmap-site.is-held rect{      fill:#fdf3d9; stroke:#a16207; }
+.vendor-signup .vmap-site.is-booked rect{    fill:#fdeaea; stroke:#b91c1c; }
+.vendor-signup .vmap-site.is-blocked rect{   fill:#f1f2f5; stroke:#c9ced7; }
+.vendor-signup .vmap-site.is-mine rect{      fill:#fff1e4; stroke:#c2410c; }
+
+.vendor-signup .vmap-site.is-selectable:hover rect{
+    fill:#d4eeda;
+    stroke:#15803d;
 }
 
-.vs-faqbox[open] > summary::after{ content:'\2013'; }
-
-.vs-faqbox > summary:hover{ color:var(--sg-orange); }
-
-.vs-faqbox-body{
-    padding:4px 16px 16px;
-    border-top:1px solid var(--pk-line);
+.vendor-signup .vmap-site.is-selected rect{
+    fill:#ffe6d2;
+    stroke:var(--sg-orange);
+    stroke-width:4;
 }
 
-/*  The facts table and the questions were built for a full-width step, so
-    inside a folded panel they come in a little.                        */
-.vs-faqbox-body .vs-facts{ margin-top:16px; }
-
-/* ==========================================================================
-   WHAT THE WHITE PAGE BROKE, MEASURED RATHER THAN LOOKED AT
-
-   Every one of these was found by walking the page and comparing each piece
-   of text against the colour actually behind it. The first three matter:
-   they are unreadable, not merely unlovely.
-   ========================================================================== */
-
-/*  The two vendor type cards are still photographs, so they kept the white
-    type - but they were inheriting the white page's grey for their muted
-    text, which put #4b5262 on near-black at 2.5 : 1. The tick lists under
-    the price were the worst of it.                                      */
-.vendor-signup .vs-type{
-    --sg-muted:#c9ced7;
-    --sg-dim:#9aa1ad;
+.vendor-signup .vmap-site.is-not-open rect{
+    fill:#f7f8fa;
+    stroke:#c9ced7;
 }
 
-/*  Orange as type on white. The buttons keep the brand orange - white on
-    it is what the rest of the site does - but the total, which is the one
-    number on this page a vendor actually checks, was 2.9 : 1.          */
-.vs-sum-total,
-.vs-sum-total span,
-.vs-sum-total strong,
-.vs-help-link{
-    color:#b34700;
+.vendor-signup .vmap-site.is-locked .vmap-site-label,
+.vendor-signup .vmap-site.is-not-open .vmap-site-label,
+.vendor-signup .vmap-site.is-not-open .vmap-site-sub{
+    fill:rgba(18,20,26,.42);
 }
 
-/*  The summary's own circles. Pending was grey on grey; the current one
-    was white on the brand orange, which is fine on a button and not fine
-    on a 24px disc.                                                      */
-.vs-side-num{ color:#4b5262; }
-.vs-side-steps .is-now .vs-side-num{ background:#b34700; }
+.vendor-signup .vmap-site.is-wrong-type rect{
+    fill:#f7f8fa;
+    stroke:#e3e6ec;
+}
 
-/*  Accepting Vendors, and the tick beside a finished section - white on
-    a green that was a shade too light to carry it.                    */
-.vs-sec .vs-event-status.is-open,
-.vs-side-steps .is-done .vs-side-num{ background:#15803d; }
+.vendor-signup .vmap-site.is-wrong-type .vmap-site-label,
+.vendor-signup .vmap-site.is-wrong-type .vmap-site-sub{
+    fill:rgba(18,20,26,.3);
+}
+
+/*  The legend is a set of samples of the plan, so it has to move with it -
+    a swatch that does not match the bay it stands for is worse than no
+    legend at all.                                                      */
+.vendor-signup .vs-swatch.is-available{ background:#e7f6ea; border-color:#15803d; }
+.vendor-signup .vs-swatch.is-held{      background:#fdf3d9; border-color:#a16207; }
+.vendor-signup .vs-swatch.is-booked{    background:#fdeaea; border-color:#b91c1c; }
+.vendor-signup .vs-swatch.is-blocked{   background:#f1f2f5; border-color:#c9ced7; }
+.vendor-signup .vs-swatch.is-mine{      background:#fff1e4; border-color:#c2410c; }
+.vendor-signup .vs-swatch.is-not-open{  background:#f7f8fa; border-color:#c9ced7; }
+
+/*  The bold bit in "up to 8 bays" was gold, which the white page had
+    already darkened - on the plan's own panel it can be the orange.  */
+.vendor-signup .vs-map-intro strong{ color:#b34700; }
