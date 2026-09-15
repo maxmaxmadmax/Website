@@ -23,9 +23,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=77';
+} from './firebase-config.js?v=79';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=77';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=79';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -338,7 +338,11 @@ function chooseEvent(id) {
   if (!state.preview) subscribeToEvent();
 
   render();
-  goToSection('details');
+
+  /*  Section two, not three. This said 'details' from when vendor type and
+      business details shared a section; splitting them left it pointing
+      past the vendor type cards at the form below.                   */
+  goToSection('type');
 }
 
 /*  Back to a blank application with the vendor still signed in. Used when
@@ -1078,9 +1082,21 @@ function sectionDone(id) {
   }
 }
 
+/*  Scrolls a section to just under the rail.
+
+    Not scrollIntoView with a scroll-margin: the rail is one line of steps
+    on a wide screen and can be taller on a narrow one, so any fixed margin
+    is wrong at some width and the heading ends up tucked underneath. This
+    measures it.                                                        */
 function goToSection(id) {
   const el = document.getElementById('sec-' + id);
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (!el) return;
+
+  const rail = document.getElementById('vs-rail');
+  const clear = (rail ? rail.getBoundingClientRect().height : 0) + 14;
+  const top = el.getBoundingClientRect().top + window.scrollY - clear;
+
+  window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
 }
 
 function render() {

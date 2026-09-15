@@ -1845,7 +1845,10 @@ body.vendor-signup .footer-sponsors{
     section reads the same as a step did - it is the arrangement that has
     changed, not the furniture.                                          */
 .vs-sec{
-    scroll-margin-top:18px;
+    /*  Clears the sticky rail. Without it a section scrolled to sits with
+        its number and heading under the rail, so it looks like the page
+        landed one line too far down.                                  */
+    scroll-margin-top:66px;
 }
 
 /*  A locked section shows its number and the reason, and nothing else.
@@ -2044,6 +2047,7 @@ body.vendor-signup .footer-sponsors{
 
 .vs-sec-aside{
     flex:0 0 auto;
+    margin-left:auto;   /* stays right when it wraps to its own line */
     color:#b34700;
     font-size:.86rem;
 }
