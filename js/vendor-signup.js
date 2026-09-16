@@ -23,9 +23,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=98';
+} from './firebase-config.js?v=100';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=98';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=100';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -640,6 +640,10 @@ function buildMap() {
           hold went through.                                          */
       renderSide();
       renderReview();
+
+      /*  And the hold follows the bays. No button: what is lit up on the
+          plan is what gets held, a moment after the tapping stops.   */
+      scheduleHoldSync();
     },
   });
 
@@ -722,6 +726,90 @@ function pendingPriceCents() {
 
 /* Take the bays the vendor has picked. One call for the whole group, so
    the server allocates them together or not at all. */
+/*  HOLDING FOLLOWS THE MAP
+
+    A short wait after the last tap, so building a three bay shape is one
+    call rather than three. Anything tapped during a call in flight is
+    picked up by the re-run at the end of it, so the last thing a vendor
+    did is always what ends up held.                                    */
+const HOLD_SETTLE_MS = 650;
+
+let holdTimer2 = null;      // the settle timer
+let holdInFlight = false;
+let holdAgain = false;      // something changed while we were talking
+
+function sameIds(a, b) {
+  return a.length === b.length && a.every((id, i) => id === b[i]);
+}
+
+function scheduleHoldSync() {
+  clearTimeout(holdTimer2);
+  holdTimer2 = setTimeout(syncHold, HOLD_SETTLE_MS);
+}
+
+/*  Run whatever is waiting, now. Used by the Continue button so that
+    pressing it immediately after a tap cannot race the hold.         */
+async function flushHoldSync() {
+  clearTimeout(holdTimer2);
+  await syncHold();
+}
+
+async function syncHold() {
+  if (holdInFlight) { holdAgain = true; return; }
+
+  const want = pendingSites().map((site) => site.id);
+  const have = state.siteIds.slice();
+
+  if (sameIds(want, have)) return;
+
+  holdInFlight = true;
+  try {
+    if (want.length) await holdChosenSites();
+    else await releaseHeldSites();
+  } finally {
+    holdInFlight = false;
+    if (holdAgain) {
+      holdAgain = false;
+      await syncHold();
+    }
+  }
+}
+
+/*  Tapped every bay off again. Give them back rather than leaving a
+    vendor's abandoned shape held for the full ten minutes.          */
+async function releaseHeldSites() {
+  const ids = state.siteIds.slice();
+  if (!ids.length) return;
+
+  const forget = () => {
+    state.siteId = null;
+    state.siteIds = [];
+    state.siteLabel = null;
+    state.holdExpiresAt = null;
+    stopHoldCountdown();
+    renderSiteChoice();
+    renderSide();
+    renderReview();
+    renderRail();
+  };
+
+  if (state.preview || !state.user || !fb) { forget(); return; }
+
+  setBusy('site', true);
+  try {
+    const call = fb.fn.httpsCallable(fb.fns, 'releaseHold');
+    await call({ eventId: state.eventId, siteIds: ids });
+    forget();
+  } catch (err) {
+    /*  Not worth stopping them over: the hold runs out on its own in ten
+        minutes, and expireHolds sweeps it up.                       */
+    console.warn('Could not release the hold', err);
+    forget();
+  } finally {
+    setBusy('site', false);
+  }
+}
+
 async function holdChosenSites() {
   const chosen = pendingSites();
   if (!chosen.length) return;
@@ -774,6 +862,9 @@ async function holdChosenSites() {
     map.setSelected(state.siteIds);
     startHoldCountdown();
     renderSiteChoice();
+    renderSide();
+    renderReview();
+    renderRail();
   } catch (err) {
     setStepError('site', friendlyError(err));
   } finally {
@@ -790,14 +881,22 @@ function startHoldCountdown() {
     const left = state.holdExpiresAt - Date.now();
 
     if (left <= 0) {
-      el.textContent = 'Your hold has expired. Choose a site again.';
-      el.classList.add('is-expired');
       state.siteId = null;
       state.siteIds = [];
       state.siteLabel = null;
+      state.holdExpiresAt = null;
       map.setSelected(null);
-      renderSiteChoice();
+
+      /*  Stop first, then say so: stopHoldCountdown clears this line,
+          so writing the message before it wiped the message.      */
       stopHoldCountdown();
+      el.textContent = 'Your hold has expired. Choose a site again.';
+      el.classList.add('is-expired');
+
+      renderSiteChoice();
+      renderSide();
+      renderReview();
+      renderRail();
       return;
     }
 
@@ -814,6 +913,15 @@ function startHoldCountdown() {
 function stopHoldCountdown() {
   if (holdTimer) clearInterval(holdTimer);
   holdTimer = null;
+
+  /*  And clear the line it was writing. Stopping the interval used to
+      leave the last thing it said on screen, so a released bay still
+      claimed to be held for another nine minutes.                  */
+  const el = document.getElementById('vs-hold-timer');
+  if (el) {
+    el.textContent = '';
+    el.classList.remove('is-expired');
+  }
 }
 
 /* -------------------------------------------------------------------------
@@ -1737,7 +1845,6 @@ function renderCategories() {
 
 function renderSiteChoice() {
   const out = document.getElementById('vs-site-choice');
-  const confirm = document.getElementById('vs-site-confirm');
   if (!out) return;
 
   const chosen = pendingSites();
@@ -1761,18 +1868,15 @@ function renderSiteChoice() {
     out.textContent = `Held for you: site ${state.siteLabel}`;
   } else {
     out.textContent = state.vendorType === 'market'
-      ? `Tap the bays you want. Take up to ${MAX_BAYS} joined together for a bigger stall.`
-      : 'Tap the site you want.';
+      ? `Tap the bays you want - they are held as you pick. Take up to ${MAX_BAYS} joined together for a bigger stall.`
+      : 'Tap the site you want - it is held as soon as you do.';
   }
 
   out.classList.toggle('is-chosen', sameAsHeld || chosen.length > 0);
 
-  if (confirm) {
-    confirm.hidden = chosen.length === 0 || sameAsHeld;
-    confirm.textContent = chosen.length > 1
-      ? `Hold these ${chosen.length} bays`
-      : 'Hold this site';
-  }
+  /*  The Hold button is gone - the selection is the hold. What is left
+      is saying which state we are in, which renderSiteChoice does
+      above.                                                        */
 }
 
 /*  The sign-in panel is gone - see watchAuth. This is kept as a no-op
@@ -2022,17 +2126,17 @@ function wireStaticControls() {
     });
   });
 
-  // hold the bays picked on the map
-  const holdBtn = document.getElementById('vs-site-confirm');
-  if (holdBtn) holdBtn.addEventListener('click', holdChosenSites);
-
   /*  Continue. It checks its own section, keeps what is in it and takes
       you to the next one - it is a scroll, not a screen change, so the
       section you just filled in stays on the page behind you.        */
   document.querySelectorAll('[data-go]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const sec = btn.closest('.vs-sec');
       const from = sec ? sec.getAttribute('data-sec') : null;
+
+      /*  If they tapped a bay and went straight for Continue, hold it now
+          rather than letting the settle timer lose the race.        */
+      if (from === 'site') await flushHoldSync();
 
       if (from && !validateSection(from)) return;
 

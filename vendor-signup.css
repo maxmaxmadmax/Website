@@ -1179,12 +1179,6 @@
     font-size:.86rem;
 }
 
-/*  Nothing is held until this is pressed, so it only appears once bays
-    have been picked.                                                       */
-.vs-site-confirm{
-    margin-top:14px;
-}
-
 .vs-site-choice{
     margin-top:14px;
     padding:12px 16px;
