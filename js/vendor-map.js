@@ -20,6 +20,40 @@
        grow into it - what is gated is where a stall starts.
    -------------------------------------------------------------------------- */
 
+/*  DO TWO BAYS TOUCH?
+
+    Side by side or one above the other, with no more than a hairline
+    between them. On the Bowen plan the gap down a column is 12 units and
+    the two middle columns are 16 apart, while every aisle is 120 - so a
+    threshold of 20 joins the bays that really do back on to each other and
+    nothing across a walkway.
+
+    Market bays only. A food van takes one site and never joins anything,
+    and two of them sit on an angle where a rectangle would lie.
+
+    THIS RULE IS ALSO IN functions/index.js. If it changes here it has to
+    change there, or a vendor will be offered a shape the server refuses
+    to allocate.                                                        */
+const BAY_TOUCH_GAP = 20;
+
+function baysTouch(a, b) {
+  if (a.type !== 'market' || b.type !== 'market') return false;
+  if (a.rotate || b.rotate) return false;
+
+  const gapX = Math.max(a.x - (b.x + b.w), b.x - (a.x + a.w));
+  const gapY = Math.max(a.y - (b.y + b.h), b.y - (a.y + a.h));
+
+  /*  Touching means close on one axis while genuinely overlapping on the
+      other - otherwise two bays meeting at a corner would count.      */
+  const overlapX = gapX < 0;
+  const overlapY = gapY < 0;
+
+  if (overlapX && gapY >= 0 && gapY <= BAY_TOUCH_GAP) return true;
+  if (overlapY && gapX >= 0 && gapX <= BAY_TOUCH_GAP) return true;
+
+  return false;
+}
+
 export class VendorMap {
   /**
    * @param {HTMLElement} host       element to draw into
@@ -123,10 +157,26 @@ export class VendorMap {
     return site.type === wanted;
   }
 
-  /* The bays touching this one. Food sites have none - they stand alone. */
+  /* The bays touching this one. Food sites have none - they stand alone.
+
+     Two sources, unioned. adjacentIds is what the layout wrote down: the
+     bay above and the bay below, in the same column. Touching sideways is
+     worked out from the rectangles, because the middle two columns back
+     on to each other and a stall is allowed to straddle them.
+
+     Geometry rather than another list of ids, so the forty bays already
+     sitting in Firestore for the running event did not have to be
+     rewritten to gain a neighbour they always physically had. */
   neighboursOf(site) {
     const ids = site.adjacentIds || [];
-    return ids.map((id) => this.byId.get(id)).filter(Boolean);
+    const listed = ids.map((id) => this.byId.get(id)).filter(Boolean);
+
+    const touching = this.sites.filter((other) =>
+      other.id !== site.id &&
+      !ids.includes(other.id) &&
+      baysTouch(site, other));
+
+    return [...listed, ...touching];
   }
 
   /* ---- release waves ---------------------------------------------------

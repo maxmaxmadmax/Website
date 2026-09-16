@@ -23,9 +23,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=85';
+} from './firebase-config.js?v=87';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=85';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=87';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -33,7 +33,8 @@ const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
    event document; these are only for display.
 
    A food van is a flat fee for its 6 m x 3 m site. A market stall is sold
-   by the 3 m x 3 m bay - between one and eight in a row. */
+   by the 3 m x 3 m bay - between one and eight of them joined up,
+   in whatever shape they make. */
 const PRICE = {
   foodCents: 10000,
   marketPerBayCents: 5000,
@@ -635,6 +636,30 @@ function renderMapMeta() {
 /* What the vendor has clicked but not yet confirmed. */
 function pendingSites() {
   return map ? map.selectedSites() : [];
+}
+
+/*  HOW BIG THE STALL ACTUALLY IS
+
+    This used to be n x 3 m by 3 m, which was true while a stall could only
+    be a straight run down one column. Bays can now join sideways across
+    the middle pair, so three of them might be an L rather than a 9 m line,
+    and quoting a frontage for an L is just wrong.
+
+    So: the bays are measured. A shape that fills its bounding box is a
+    rectangle and gets its dimensions - frontage along the aisle first,
+    then depth. Anything else is described by the count alone, which is the
+    honest answer for a shape that has no single frontage.
+
+    3 m per bay, which is the bay size this plan is drawn in.           */
+function marketFootprint(bays) {
+  if (!bays.length) return '';
+
+  const columns = new Set(bays.map((b) => b.x)).size;
+  const rows = new Set(bays.map((b) => b.y)).size;
+
+  if (columns * rows !== bays.length) return '';
+
+  return ` · ${rows * 3} m x ${columns * 3} m`;
 }
 
 function pendingLabel() {
@@ -1531,7 +1556,7 @@ function renderSiteChoice() {
   } else if (chosen.length) {
     const n = chosen.length;
     const size = state.vendorType === 'market'
-      ? ` (${n} bay${n > 1 ? 's' : ''} · ${n * 3} m x 3 m)`
+      ? ` (${n} bay${n > 1 ? 's' : ''}${marketFootprint(chosen)})`
       : ' (6 m x 3 m)';
     out.textContent = `Picked: ${pendingLabel()}${size} · ${money(pendingPriceCents())} site fee`;
   } else if (held) {

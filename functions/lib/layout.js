@@ -21,9 +21,14 @@
    single transaction, so a big stall can never end up with only part of its
    space.
 
-   Bays touch up and down their own column only. The columns either side of
-   an aisle are not joined, and the two middle columns back on to each other,
-   so a stall cannot straddle either pair and block a walkway.
+   adjacentIds lists the bay above and the bay below, in the same column.
+   Sideways is not listed: it is worked out from the rectangles, because
+   the two middle columns back on to each other with 16 units between them
+   while every aisle is 120. So a stall can straddle the middle pair and
+   make an L or a block, and still cannot reach across a walkway.
+
+   The rule that decides it lives in js/vendor-map.js and in index.js, next
+   to the check that allocates the group.
    -------------------------------------------------------------------------- */
 
 const MAP_WIDTH = 760;
@@ -97,9 +102,10 @@ function marketSites() {
     const built = column({ ids: col.ids, type: 'market', x: col.x, y: top, w, h, gap });
 
     built.forEach((site, i) => {
-      // The bays this one touches: the one above and the one below, in the
-      // same column. A stall is any joined group of these, so a vendor can
-      // grow up the column as well as down.
+      // The bays this one touches in its own column: the one above and the
+      // one below. Bays that back on to each other across the middle pair
+      // are not listed here - they are worked out from the rectangles, so
+      // that an event already seeded gains the shapes too.
       site.adjacentIds = [
         i > 0 ? built[i - 1].id : null,
         i < built.length - 1 ? built[i + 1].id : null,
