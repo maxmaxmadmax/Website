@@ -23,9 +23,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=87';
+} from './firebase-config.js?v=88';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=87';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=88';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -409,10 +409,10 @@ function chooseEvent(id) {
 
   render();
 
-  /*  Section two, not three. This said 'details' from when vendor type and
-      business details shared a section; splitting them left it pointing
-      past the vendor type cards at the form below.                   */
-  goToSection('type');
+  /*  Straight to what was just chosen. This has now been wrong twice by
+      naming a section that moved, so: it is the step immediately after
+      the cards, whatever that is called.                            */
+  goToSection(SECTIONS[1].id);
 }
 
 /*  Back to a blank application with the vendor still signed in. Used when
@@ -1142,6 +1142,7 @@ function showConfirmation() {
    ------------------------------------------------------------------------- */
 const SECTIONS = [
   { id: 'event',   label: 'Select Event' },
+  { id: 'info',    label: 'Event Info' },
   { id: 'type',    label: 'Vendor Type' },
   { id: 'details', label: 'Your Details' },
   { id: 'site',    label: 'Choose Site' },
@@ -1160,6 +1161,13 @@ function sectionDone(id) {
 
   switch (id) {
     case 'event':
+      return !!state.eventId;
+
+    /*  Nothing is asked here - it is the prices and the power situation to
+        read. So it is done as soon as there is an event to read them for,
+        and the rail says so rather than holding a tick back for a step
+        with nothing in it to finish.                                   */
+    case 'info':
       return !!state.eventId;
 
     case 'type':
