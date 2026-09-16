@@ -2736,3 +2736,9 @@ body.vendor-signup .footer-sponsors{
     white-space:nowrap;
     border:0;
 }
+
+
+/*  [hidden] loses to .vs-field's own display:flex, so the two size fields
+    would stay on screen for a market stall without this. Same trap as the
+    one on the admin desk.                                            */
+.vendor-signup .vs-field[hidden]{ display:none !important; }

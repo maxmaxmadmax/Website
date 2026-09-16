@@ -35,10 +35,10 @@
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap">
 
     <link rel="icon" href="images/logo.png">
-    <link rel="stylesheet" href="style.css?v=90">
-    <link rel="stylesheet" href="vendor-signup.css?v=90">
-    <script src="js/main.js?v=90" defer></script>
-    <script type="module" src="js/vendor-signup.js?v=90"></script>
+    <link rel="stylesheet" href="style.css?v=97">
+    <link rel="stylesheet" href="vendor-signup.css?v=97">
+    <script src="js/main.js?v=97" defer></script>
+    <script type="module" src="js/vendor-signup.js?v=97"></script>
 </head>
 
 <body class="vendor-signup">
@@ -452,12 +452,17 @@
                 <p class="vs-error" data-error="category" hidden></p>
 
                 <h3 class="vs-sub">Your setup</h3>
-                <p class="vs-sub-note">
+                <!--  The wording changes with the vendor type: a market
+                      stall's size comes from the bays it takes, so only a
+                      food van is asked for one.                      -->
+                <p class="vs-sub-note" id="vs-setup-note">
                     The size you need on the ground, and what you are running on.
                 </p>
 
                 <div class="vs-field-grid">
-                    <div class="vs-field">
+                    <!--  Food vans only. Hidden for market stalls, whose
+                          size is however many 3 x 3 bays they pick. -->
+                    <div class="vs-field" data-size-field>
                         <label for="vs-setup-frontage">Frontage in metres</label>
                         <select id="vs-setup-frontage" required>
                             <option value="">Select frontage</option>
@@ -476,7 +481,7 @@
                         </select>
                     </div>
 
-                    <div class="vs-field">
+                    <div class="vs-field" data-size-field>
                         <label for="vs-setup-depth">Depth in metres</label>
                         <select id="vs-setup-depth" required>
                             <option value="">Select depth</option>

@@ -23,9 +23,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=90';
+} from './firebase-config.js?v=97';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=90';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=97';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -63,11 +63,12 @@ function bayCount() {
   /*  Held first, then picked-but-not-held. The map already prices what
       is picked - it says "2 bays, $100 site fee" under the plan - so if
       the side column counted only held bays the two would sit on the
-      same screen disagreeing, which is this bug again in miniature.
+      same screen disagreeing.
 
-      pendingSites() is whatever is lit up on the plan; once the hold
-      goes through, siteIds says the same thing and takes over.     */
-  return state.siteIds.length || pendingSites().length || 1;
+      Zero when neither, and zero is the truth: no bays, nothing owed.
+      There used to be a floor of one here, as an indicative price, and
+      it read as a charge for a stall nobody had chosen.            */
+  return state.siteIds.length || pendingSites().length;
 }
 
 /*  VENDOR_LABEL was used on the confirmation screen and never defined -
@@ -79,7 +80,19 @@ const VENDOR_LABEL = {
 };
 
 /* Matches priceFor() in functions/index.js */
+/*  Is there a site yet - picked on the plan, or held?  */
+function hasSite() {
+  return Boolean(state.siteId) || pendingSites().length > 0;
+}
+
 function priceCents() {
+  /*  Nothing is owed until a site is chosen. A food van's fee is a flat
+      $100 whichever site it takes, but quoting it before there is one
+      still puts a charge on screen for a booking that does not exist
+      yet - and the line beside it saying "not selected yet" does not
+      cancel out a dollar figure.                                     */
+  if (!hasSite()) return 0;
+
   if (state.vendorType === 'food') return PRICE.foodCents;
   if (state.vendorType === 'market') {
     return PRICE.marketPerBayCents * bayCount();
@@ -134,6 +147,12 @@ function money(cents) {
     have to line up under each other to be checkable. */
 function exact(cents) {
   return `$${((cents || 0) / 100).toFixed(2)}`;
+}
+
+/*  The same, but a dash when there is nothing owed yet. "$0.00" next to
+    the word Total reads as free rather than as not-yet-priced.       */
+function exactOrDash(cents) {
+  return cents ? exact(cents) : '&mdash;';
 }
 
 /*  What a vendor is allowed to see, and what each status says to them.
@@ -557,6 +576,14 @@ function subscribeSites() {
       sites.sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
       map.setLayout({ sites });
       renderMapMeta();
+
+      /*  Anything measured from the bays has to wait for the bays. The
+          review line and the side column are drawn before this lands, so
+          a held stall showed its name and not its size until something
+          else happened to redraw them.                              */
+      renderSiteChoice();
+      renderSide();
+      renderReview();
     },
     (err) => console.error('sites listener', err)
   );
@@ -638,6 +665,21 @@ function pendingSites() {
   return map ? map.selectedSites() : [];
 }
 
+/*  The bays this booking is for, whichever way they got here: lit up on
+    the plan, or held and restored from the booking. Held wins, because a
+    hold is the commitment and a selection is only an intention.
+
+    Used by everything that measures the stall rather than counts it - the
+    footprint on the review line, and the size written into the booking -
+    so that a vendor who reloads still sees how big their stall is.   */
+function chosenSites() {
+  if (state.siteIds.length && map) {
+    const held = state.siteIds.map((id) => map.byId.get(id)).filter(Boolean);
+    if (held.length) return held;
+  }
+  return pendingSites();
+}
+
 /*  HOW BIG THE STALL ACTUALLY IS
 
     This used to be n x 3 m by 3 m, which was true while a stall could only
@@ -651,6 +693,13 @@ function pendingSites() {
     honest answer for a shape that has no single frontage.
 
     3 m per bay, which is the bay size this plan is drawn in.           */
+/*  " · 6 m x 3 m", or nothing at all for a shape that has no size to
+    quote. Kept apart from the size itself so the two callers can each
+    punctuate their own line.                                          */
+function sizeSuffix(size) {
+  return size ? ' · ' + size : '';
+}
+
 function marketFootprint(bays) {
   if (!bays.length) return '';
 
@@ -659,7 +708,7 @@ function marketFootprint(bays) {
 
   if (columns * rows !== bays.length) return '';
 
-  return ` · ${rows * 3} m x ${columns * 3} m`;
+  return `${rows * 3} m x ${columns * 3} m`;
 }
 
 function pendingLabel() {
@@ -1267,7 +1316,8 @@ function sectionDone(id) {
       return !!val('vs-biz-name') && !!val('vs-biz-contact')
           && EMAIL_RE.test(val('vs-biz-email')) && !!val('vs-biz-phone')
           && !!state.categoryId
-          && !!val('vs-setup-frontage') && !!val('vs-setup-depth')
+          && (state.vendorType === 'market'
+              || (!!val('vs-setup-frontage') && !!val('vs-setup-depth')))
           && !!val('vs-setup-own-power') && ticked('vs-setup-selfsufficient');
 
     case 'site':
@@ -1316,6 +1366,7 @@ function render() {
   renderRail();  if (!chosen) return;
 
   renderCategories();
+  renderSizeFields();
   if (map) map.setVendorType(state.vendorType);
   renderSiteChoice();
   renderMapMeta();
@@ -1555,12 +1606,17 @@ function renderSide() {
 
     '<div class="vs-side-total">' +
       '<span>Total</span>' +
-      '<strong>' + exact(b.totalCents) + '</strong>' +
+      '<strong>' + exactOrDash(b.totalCents) + '</strong>' +
     '</div>' +
 
+    /*  A total of nothing needs to say why, or it reads as free.      */
     (b.totalCents
       ? ''
-      : '<p class="vs-side-fineprint">Choose a vendor type to see your total</p>') +
+      : '<p class="vs-side-fineprint">' +
+          (!state.vendorType
+            ? 'Choose a vendor type to see your total'
+            : 'Choose your site to see your total') +
+        '</p>') +
 
     '<button type="button" class="btn vs-side-go" data-side-go>' +
       'Continue to next step <span aria-hidden="true">&#8594;</span>' +
@@ -1580,6 +1636,31 @@ function renderSide() {
   if (go) {
     const next = SECTIONS.find((sec) => !sectionDone(sec.id)) || SECTIONS[SECTIONS.length - 1];
     go.addEventListener('click', () => goToSection(next.id));
+  }
+}
+
+/*  Frontage and depth are a food van question.
+
+    A market stall is however many 3 m x 3 m bays it takes, so the map has
+    already answered this by the time anybody reaches the form - asking
+    again invites a different answer, and then two records of one stall's
+    size that can disagree.                                            */
+function renderSizeFields() {
+  const market = state.vendorType === 'market';
+
+  document.querySelectorAll('[data-size-field]').forEach((el) => {
+    el.hidden = market;
+
+    /*  Not required while they are not on screen, or the form refuses to
+        submit over a field nobody can see.                          */
+    el.querySelectorAll('select').forEach((sel) => { sel.required = !market; });
+  });
+
+  const note = document.getElementById('vs-setup-note');
+  if (note) {
+    note.textContent = market
+      ? 'What you are running on. Your size comes from the bays you pick.'
+      : 'The size you need on the ground, and what you are running on.';
   }
 }
 
@@ -1654,7 +1735,7 @@ function renderSiteChoice() {
   } else if (chosen.length) {
     const n = chosen.length;
     const size = state.vendorType === 'market'
-      ? ` (${n} bay${n > 1 ? 's' : ''}${marketFootprint(chosen)})`
+      ? ` (${n} bay${n > 1 ? 's' : ''}${sizeSuffix(marketFootprint(chosen))})`
       : ' (6 m x 3 m)';
     out.textContent = `Picked: ${pendingLabel()}${size} · ${money(pendingPriceCents())} site fee`;
   } else if (held) {
@@ -1721,12 +1802,24 @@ function renderReview() {
       2 x $50.00 = $100.00 rather than an unexplained $100. */
   const perBay = bays > 1 ? Math.round(b.siteCents / bays) : b.siteCents;
 
-  const itemName = isMarket
-    ? `Market bay${bays > 1 ? 's' : ''}`
-    : 'Food vendor site';
+  /*  The bays by name - "Site M11", or "Sites M12 + M13" - because that
+      is the thing being bought. Before a site is chosen it says so
+      rather than naming a stall that does not exist yet.             */
+  const named = state.siteLabel || pendingLabel();
 
-  const itemSub = [state.siteLabel, state.categoryName]
-    .filter(Boolean).map(escapeHtml).join(' &middot; ') || 'No site chosen yet';
+  const itemName = named
+    ? `Site${bays > 1 ? 's' : ''} ${named}`
+    : (isMarket ? 'Market bay' : 'Food vendor site');
+
+  /*  How big it is, then what they sell. Measured for a market stall,
+      fixed for a food van.                                           */
+  const measured = isMarket ? marketFootprint(chosenSites()) : '6 m x 3 m';
+
+  const itemSub = named
+    ? [isMarket ? `Market bay${bays > 1 ? 's' : ''}` : 'Food vendor site',
+       measured, state.categoryName]
+        .filter(Boolean).map(escapeHtml).join(' &middot; ')
+    : 'No site chosen yet';
 
   /*  The event line under the card title. It is the one thing the old
       sidebar carried that is not repeated anywhere else on this step. */
@@ -1776,9 +1869,9 @@ function renderReview() {
         </div>
 
         <dl class="vs-figures">
-          <div><dt>Price</dt><dd>${exact(perBay)}</dd></div>
-          <div><dt>Qty</dt><dd>${bays}</dd></div>
-          <div><dt>Total</dt><dd class="is-strong">${exact(b.siteCents)}</dd></div>
+          <div><dt>Price</dt><dd>${exactOrDash(perBay)}</dd></div>
+          <div><dt>Qty</dt><dd>${bays || '&mdash;'}</dd></div>
+          <div><dt>Total</dt><dd class="is-strong">${exactOrDash(b.siteCents)}</dd></div>
         </dl>
       </section>
 
@@ -1787,15 +1880,15 @@ function renderReview() {
         <h3>Price Summary</h3>
 
         <dl class="vs-sum">
-          <div><dt>Site total</dt><dd>${exact(b.siteCents)}</dd></div>
+          <div><dt>Site total</dt><dd>${exactOrDash(b.siteCents)}</dd></div>
           <div>
             <dt>Booking fee
               <button type="button" class="vs-info" data-info
                       aria-expanded="false" aria-label="What is the booking fee?">i</button>
             </dt>
-            <dd>${exact(b.bookingFeeCents)}</dd>
+            <dd>${exactOrDash(b.bookingFeeCents)}</dd>
           </div>
-          <div><dt>GST (10%)</dt><dd>${exact(b.gstCents)}</dd></div>
+          <div><dt>GST (10%)</dt><dd>${exactOrDash(b.gstCents)}</dd></div>
         </dl>
 
         <p class="vs-info-note" data-info-note hidden>
@@ -1805,7 +1898,8 @@ function renderReview() {
 
         <div class="vs-sum-total">
           <span>Total to pay</span>
-          <strong>${b.totalCents === 0 ? 'Free' : exact(b.totalCents)}</strong>
+          <strong>${!hasSite() ? '&mdash;'
+            : (b.totalCents === 0 ? 'Free' : exact(b.totalCents))}</strong>
         </div>
       </section>
 
@@ -1879,9 +1973,11 @@ function renderReview() {
 
   const payBtn = document.getElementById('vs-pay');
   if (payBtn) {
-    payBtn.textContent = b.totalCents === 0
-      ? 'Confirm booking'
-      : `Pay ${exact(b.totalCents)} AUD`;
+    /*  Free is a price an admin set. No site is not a price at all, so
+        the button keeps its plain wording until there is one.       */
+    payBtn.textContent = !hasSite()
+      ? 'Pay and Book'
+      : (b.totalCents === 0 ? 'Confirm booking' : `Pay ${exact(b.totalCents)} AUD`);
     /*  Never disabled. A disabled pay button is a button that does
         nothing when you press it and says nothing about why - which is
         exactly what somebody does when they have missed a field. It is
@@ -1997,9 +2093,26 @@ function collectForm() {
     description: val('vs-biz-desc'),
   };
 
+  /*  For a market stall the size is the bays, so it is measured rather
+      than asked. A run or a block gives a real frontage and depth for the
+      run sheet; an L has neither, and is left blank - the site label
+      names every bay either way.                                     */
+  let frontage = val('vs-setup-frontage');
+  let depth = val('vs-setup-depth');
+
+  if (state.vendorType === 'market') {
+    const bays = chosenSites();
+    const columns = new Set(bays.map((b) => b.x)).size;
+    const rows = new Set(bays.map((b) => b.y)).size;
+
+    const rectangular = bays.length > 0 && columns * rows === bays.length;
+    frontage = rectangular ? String(rows * 3) : '';
+    depth = rectangular ? String(columns * 3) : '';
+  }
+
   state.setup = {
-    frontage: val('vs-setup-frontage'),
-    depth: val('vs-setup-depth'),
+    frontage,
+    depth,
     /* All vendors run off their own power and water at this event, so what
        we record is what they are bringing, not what they want from us.
        Loud generators get placed away from the stage. */
@@ -2044,7 +2157,10 @@ function validateSection(id) {
     if (!state.categoryId) {
       return fail('category', 'Please choose a category.', 'vs-categories');
     }
-    if (!val('vs-setup-frontage') || !val('vs-setup-depth')) {
+    /*  Market stalls are sized by the bays they take, so the fields are
+        not on screen and there is nothing to check.                 */
+    if (state.vendorType !== 'market'
+        && (!val('vs-setup-frontage') || !val('vs-setup-depth'))) {
       return fail('setup', 'Please choose your frontage and depth.', 'vs-setup-frontage');
     }
     if (!val('vs-setup-own-power')) {
