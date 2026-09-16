@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', function () {
     loadComponent('navbar', versioned('/components/navbar.html'), function () {
         highlightCurrentPage();
         initSubmenus();
+        initBurger();
         initHomeNav();
         trackNavHeight();
     });
@@ -87,6 +88,47 @@ function initEnquiryPrefill() {
         var box = form.querySelector('[name="email"]');
         if (box && box.value.trim() === '') box.value = email;
     }
+}
+
+/* The phone menu.
+
+   Opens and closes the panel, and closes it again on a link, on Escape,
+   on a tap outside it, and when the window grows past the breakpoint -
+   that last one matters on a tablet turned sideways, where the panel
+   would otherwise stay open as a floating box beside a menu bar that has
+   come back on its own. */
+function initBurger() {
+    var navEl = document.querySelector('#navbar nav');
+    var burger = document.getElementById('nav-burger');
+    if (!navEl || !burger) return;
+
+    var setOpen = function (open) {
+        navEl.classList.toggle('is-open', open);
+        burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+
+    burger.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        setOpen(!navEl.classList.contains('is-open'));
+    });
+
+    /* A link means they are going somewhere, so the panel has done its job. */
+    var links = navEl.querySelectorAll('a');
+    for (var i = 0; i < links.length; i++) {
+        links[i].addEventListener('click', function () { setOpen(false); });
+    }
+
+    document.addEventListener('click', function (ev) {
+        if (!navEl.contains(ev.target)) setOpen(false);
+    });
+
+    document.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Escape') setOpen(false);
+    });
+
+    window.addEventListener('resize', function () {
+        if (window.innerWidth > 900) setOpen(false);
+    });
 }
 
 /* Publishes the real height of the menu as --sg-nav-height.

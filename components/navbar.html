@@ -14,7 +14,17 @@
         </a>
     </div>
 
-    <ul>
+    <!--  The phone menu button. Hidden on a computer, where the menu is
+          simply the bar itself. Three lines rather than an icon font, so
+          it cannot arrive late or fail to load.                      -->
+    <button type="button" class="nav-burger" id="nav-burger"
+            aria-expanded="false" aria-controls="nav-menu" aria-label="Menu">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+    </button>
+
+    <ul id="nav-menu">
         <!--  Attend Events carries a submenu. It opens on hover on a
               computer, and the little arrow opens it on a touch screen,
               where there is no hover to speak of. Add another <li> inside
@@ -47,9 +57,9 @@
                 <li><a href="/island-av-hire">Island AV Hire</a></li>
             </ul>
         </li>
-        <!--  "SoundzGood" is dropped on a phone, where the full name pushed the
-              menu onto a third row. Same link, same destination - the word is
-              only hidden where there is no room for it.                  -->
+        <!--  The full name everywhere now. It used to be trimmed to
+              "Entertainment" on a phone to keep the bar on two rows; the
+              phone menu is a panel with room to spell it out.          -->
         <li><a href="/entertainment"><span class="nav-long">SoundzGood </span>Entertainment</a></li>
 
         <!--  The one coloured button in the menu. It used to sell tickets,

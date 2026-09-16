@@ -2088,11 +2088,10 @@ nav a.nav-cta.active{
 
 @media (max-width:768px){
 
-    /* Nav stays a transparent overlay on the hero, the same as desktop. */
+    /* One row: the logo, and the button that opens the menu. */
     nav{
-        flex-direction:column;
-        gap:6px;
-        padding:14px 16px;
+        padding:12px 16px;
+        gap:12px;
         background:linear-gradient(
             to bottom,
             rgba(0,0,0,.5),
@@ -2111,36 +2110,6 @@ nav a.nav-cta.active{
         sticky ticket bar below the hero was already doing that job. It is
         Contact now and there is no sticky bar behind it, so hiding it would
         leave no way to reach Contact from the menu at all. It stays.     */
-
-    /* The menu is long enough on a phone without spelling the brand out
-       twice; the logo above it already says who this is. */
-    nav .nav-long{ display:none; }
-
-    /* A bigger area to hit for the dropdown arrow, without making the
-       menu item any wider. */
-    nav .sub-toggle{
-        padding:11px 6px;
-        font-size:.8rem;
-    }
-
-    nav ul{
-        flex-wrap:wrap;
-        justify-content:center;
-        gap:2px 7px;
-    }
-
-    /* Tight enough that five menu items still sit on one row at 375px.
-       If a sixth is ever added the bar simply wraps - the heroes read
-       --sg-nav-height, so nothing lands underneath the menu either way. */
-    nav a{
-        padding:11px 2px;
-        font-size:.8rem;
-        letter-spacing:0;
-    }
-
-    nav a.nav-cta{
-        padding:11px 20px;
-    }
 
     .Nav img{
         height:28px;
@@ -2387,3 +2356,166 @@ nav a.nav-cta.active{
     }
 }
 
+
+
+/* ==========================================================================
+   THE MENU ON A PHONE
+
+   It used to be the desktop bar, shrunk: smaller type, tighter gaps, and
+   "SoundzGood" dropped from Entertainment to save a row. It still did not
+   fit. At 390px the bar wrapped onto three rows and stood 155px tall, so
+   every hero on the site began underneath it - the vendor page printed its
+   own headline through the word ENTERTAINMENT - and opening a dropdown
+   covered the Contact button.
+
+   A phone menu is a button and a panel. So it is one now.
+
+   The breakpoint is 900 rather than 768 because the bar was already
+   wrapping on a tablet at 820; nobody had looked at it there.
+   ========================================================================== */
+.nav-burger{ display:none; }
+
+@media (max-width:900px){
+
+    /*  THE BUTTON  */
+    .nav-burger{
+        display:grid;
+        gap:5px;
+        flex:0 0 auto;
+
+        /*  44px square: the size a finger actually hits. Smaller targets
+            are the single most common reason a menu "does not work" on a
+            phone - it works, it is just being missed.                 */
+        width:44px;
+        height:44px;
+        padding:10px;
+        place-content:center;
+
+        border:0;
+        border-radius:10px;
+        background:none;
+        cursor:pointer;
+    }
+
+    .nav-burger span{
+        display:block;
+        width:22px;
+        height:2px;
+        border-radius:2px;
+        background:#fff;
+        transition:transform .2s ease, opacity .2s ease;
+    }
+
+    /*  Into a cross while the panel is open, so the button says what
+        pressing it again will do.                                     */
+    nav.is-open .nav-burger span:nth-child(1){ transform:translateY(7px) rotate(45deg); }
+    nav.is-open .nav-burger span:nth-child(2){ opacity:0; }
+    nav.is-open .nav-burger span:nth-child(3){ transform:translateY(-7px) rotate(-45deg); }
+
+    /*  THE PANEL
+
+        Hidden until the button is pressed. Absolutely positioned under the
+        bar rather than inside it, so the bar keeps its own height - which
+        is what --sg-nav-height measures, and what every hero pads down
+        from. An open menu must not push the page around.              */
+    nav ul{
+        position:absolute;
+        top:100%;
+        left:0;
+        right:0;
+
+        display:none;
+        flex-direction:column;
+        align-items:stretch;
+        gap:0;
+
+        margin:0;
+        padding:8px 16px 18px;
+
+        /*  Solid, not the bar's gradient: this sits over photographs and
+            has to be readable on all of them.                          */
+        background:#0b0b0b;
+        border-top:1px solid rgba(255,255,255,.08);
+        box-shadow:0 18px 40px rgba(0,0,0,.5);
+    }
+
+    nav.is-open ul{ display:flex; }
+
+    nav ul li{
+        border-bottom:1px solid rgba(255,255,255,.07);
+    }
+
+    nav ul li:last-child{ border-bottom:0; }
+
+    nav a{
+        display:block;
+        padding:15px 4px;
+        font-size:1rem;
+        letter-spacing:.02em;
+        text-align:left;
+    }
+
+    /*  The name in full. It was trimmed to fit a row that no longer
+        exists.                                                        */
+    nav .nav-long{ display:inline; }
+
+    /*  SUB-ITEMS
+
+        Shown, indented, rather than folded behind an arrow. There is room
+        in a panel, and it saves a tap on the one menu people came for -
+        the gig guide and the vendor form are the two busiest pages on the
+        site and both live down here.                                  */
+    /*  The parent stacks over its children. On a computer .has-sub is a
+        flex row - the link, the arrow, and the dropdown floating out of
+        it - which in a panel put the sub-items in a column BESIDE their
+        parent rather than underneath it.                              */
+    nav .has-sub{ display:block; }
+
+    nav .sub-toggle{ display:none; }
+
+    nav .subnav{
+        position:static;
+        display:block;
+        opacity:1;
+        visibility:visible;
+        transform:none;
+        min-width:0;
+        margin:0 0 6px;
+        padding:0;
+        border:0;
+        background:none;
+        box-shadow:none;
+    }
+
+    nav .subnav li{ border-bottom:0; }
+
+    nav .subnav a{
+        padding:11px 4px 11px 18px;
+        font-size:.92rem;
+        color:rgba(255,255,255,.72);
+        border-left:2px solid rgba(255,255,255,.14);
+    }
+
+    nav .subnav a:hover,
+    nav .subnav a.active{
+        color:#fff;
+        border-left-color:var(--sg-orange);
+    }
+
+    /*  Contact stays the one coloured thing, full width at the foot of
+        the panel where a thumb already is.                            */
+    nav .nav-cta-item{
+        margin-top:12px;
+        border-bottom:0;
+    }
+
+    nav a.nav-cta{
+        display:block;
+        padding:14px 20px;
+        text-align:center;
+    }
+
+    .Nav img{
+        height:34px;
+    }
+}
