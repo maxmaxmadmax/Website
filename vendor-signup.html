@@ -35,10 +35,10 @@
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap">
 
     <link rel="icon" href="images/logo.png">
-    <link rel="stylesheet" href="style.css?v=97">
-    <link rel="stylesheet" href="vendor-signup.css?v=97">
-    <script src="js/main.js?v=97" defer></script>
-    <script type="module" src="js/vendor-signup.js?v=97"></script>
+    <link rel="stylesheet" href="style.css?v=98">
+    <link rel="stylesheet" href="vendor-signup.css?v=98">
+    <script src="js/main.js?v=98" defer></script>
+    <script type="module" src="js/vendor-signup.js?v=98"></script>
 </head>
 
 <body class="vendor-signup">
@@ -516,16 +516,17 @@
                             Every vendor supplies their own, so please bring a generator
                             and whatever water you need for the day.
                         </p>
-                        <label class="vs-check">
-                            <input type="checkbox" id="vs-setup-selfsufficient" required>
-                            <span>I am supplying my own power and water</span>
-                        </label>
-                    </div>
 
-                    <div class="vs-field">
+                        <!--  One tick, and it is a read receipt rather than a
+                              promise about power. The link goes back up to
+                              Event info and opens the questions, because a
+                              tick saying you have read something should be
+                              next to a way of reading it.             -->
                         <label class="vs-check">
-                            <input type="checkbox" id="vs-setup-vehicle">
-                            <span>My vehicle stays on site</span>
+                            <input type="checkbox" id="vs-setup-faqs" required>
+                            <span>I have read the
+                                <button type="button" class="vs-inline-link" data-open-faqs>frequently
+                                asked questions</button></span>
                         </label>
                     </div>
 

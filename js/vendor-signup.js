@@ -23,9 +23,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=97';
+} from './firebase-config.js?v=98';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=97';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=98';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -958,8 +958,7 @@ function fillFormFromState() {
     const el = document.getElementById(id);
     if (el && on) el.checked = true;
   };
-  tick('vs-setup-selfsufficient', setup.selfSufficient);
-  tick('vs-setup-vehicle', setup.vehicleOnSite);
+  tick('vs-setup-faqs', setup.readFaqs);
 
   /*  The vendor type card. state.vendorType decides the price and which
       sites are selectable, so a page that has one and does not show it is
@@ -1318,7 +1317,7 @@ function sectionDone(id) {
           && !!state.categoryId
           && (state.vendorType === 'market'
               || (!!val('vs-setup-frontage') && !!val('vs-setup-depth')))
-          && !!val('vs-setup-own-power') && ticked('vs-setup-selfsufficient');
+          && !!val('vs-setup-own-power') && ticked('vs-setup-faqs');
 
     case 'site':
       return !!state.siteId;
@@ -1337,6 +1336,26 @@ function sectionDone(id) {
     on a wide screen and can be taller on a narrow one, so any fixed margin
     is wrong at some width and the heading ends up tucked underneath. This
     measures it.                                                        */
+/*  Take somebody to the questions and open them.
+
+    Opening a panel that is off screen reads as nothing happening, so this
+    does both. Called from the tick in Your details and from the line at
+    the foot of the review.                                            */
+function openFaqs() {
+  const panel = document.getElementById('vs-picked-more');
+  const btn = document.querySelector('.vs-picked-more-btn');
+
+  if (panel && panel.hidden) {
+    panel.hidden = false;
+    if (btn) {
+      btn.classList.add('is-open');
+      btn.setAttribute('aria-expanded', 'true');
+    }
+  }
+
+  goToSection('info');
+}
+
 function goToSection(id) {
   const el = document.getElementById('sec-' + id);
   if (!el) return;
@@ -1835,8 +1854,7 @@ function renderReview() {
     ['Frontage', state.setup.frontage ? `${state.setup.frontage} m` : ''],
     ['Depth', state.setup.depth ? `${state.setup.depth} m` : ''],
     ['Power', state.setup.ownPower],
-    ['Power and water', state.setup.selfSufficient ? 'Bringing my own' : ''],
-    ['Vehicle on site', state.setup.vehicleOnSite ? 'Yes' : ''],
+    ['FAQs', state.setup.readFaqs ? 'Read' : ''],
     ['Documents', state.documents.length ? `${state.documents.length} attached` : ''],
   ].filter(([, v]) => v);
 
@@ -1948,16 +1966,7 @@ function renderReview() {
   });
 
   host.querySelectorAll('[data-open-faqs]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      /*  The FAQs are folded away under the event cards now, so this both
-          opens them and takes you there - opening something off screen
-          reads as nothing happening.                                   */
-      const faqs = document.querySelector('.vs-faqbox');
-      if (faqs) {
-        faqs.open = true;
-        faqs.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    });
+    btn.addEventListener('click', openFaqs);
   });
 
   /*  The (i) beside the booking fee. A tooltip would be unreachable on a
@@ -2054,6 +2063,17 @@ function wireStaticControls() {
     });
   }
 
+  /*  The link inside the "I have read the FAQs" tick. Static markup, so
+      it is wired once here - and the click must not toggle the checkbox
+      it sits inside, which is what a button in a <label> would do.  */
+  document.querySelectorAll('.vs-check [data-open-faqs]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openFaqs();
+    });
+  });
+
   /*  The 0/300 under "What do you sell?". It is what we put in the
       marketing, so the limit is real and worth showing rather than
       cutting somebody off at the end.                              */
@@ -2117,8 +2137,7 @@ function collectForm() {
        we record is what they are bringing, not what they want from us.
        Loud generators get placed away from the stage. */
     ownPower: val('vs-setup-own-power'),
-    selfSufficient: document.getElementById('vs-setup-selfsufficient')?.checked || false,
-    vehicleOnSite: document.getElementById('vs-setup-vehicle')?.checked || false,
+    readFaqs: document.getElementById('vs-setup-faqs')?.checked || false,
     notes: val('vs-setup-notes'),
   };
 }
@@ -2167,12 +2186,13 @@ function validateSection(id) {
       return fail('setup', 'Please tell us what power you are bringing.', 'vs-setup-own-power');
     }
 
-    /* Every vendor brings their own power and water to this event, so we
-       ask them to say plainly that they can. */
-    const ack = document.getElementById('vs-setup-selfsufficient');
+    /* There is a lot in the FAQs that costs money to find out late - no
+       power, no bar, the ten minute hold - so we ask them to say they have
+       read it. */
+    const ack = document.getElementById('vs-setup-faqs');
     if (ack && !ack.checked) {
-      return fail('setup', 'Please confirm you are bringing your own power and water.',
-        'vs-setup-selfsufficient');
+      return fail('setup', 'Please confirm you have read the frequently asked questions.',
+        'vs-setup-faqs');
     }
     return true;
   }

@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=97';
+} from './firebase-config.js?v=98';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -1097,8 +1097,7 @@ function detailPanel() {
           ${row('Frontage', esc(setup.frontage ? setup.frontage + ' m' : '—'))}
           ${row('Depth', esc(setup.depth ? setup.depth + ' m' : '—'))}
           ${row('Own power', setup.ownPower ? 'Yes' : 'No')}
-          ${row('Self sufficient', setup.selfSufficient ? 'Yes' : 'No')}
-          ${row('Vehicle on site', setup.vehicleOnSite ? 'Yes' : 'No')}
+          ${row('FAQs read', (setup.readFaqs ?? setup.selfSufficient) ? 'Yes' : 'No')}
           ${setup.notes ? row('Notes', esc(setup.notes)) : ''}
         </dl>
 

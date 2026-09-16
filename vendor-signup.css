@@ -2742,3 +2742,18 @@ body.vendor-signup .footer-sponsors{
     would stay on screen for a market stall without this. Same trap as the
     one on the admin desk.                                            */
 .vendor-signup .vs-field[hidden]{ display:none !important; }
+
+/*  A link that lives inside a label. It has to be a button so that
+    clicking it does not tick the box it sits in, but it should read as a
+    link - so it borrows the type around it and keeps the underline.   */
+.vs-inline-link{
+    padding:0;
+    border:0;
+    background:none;
+    font:inherit;
+    color:#b34700;
+    text-decoration:underline;
+    cursor:pointer;
+}
+
+.vs-inline-link:hover{ color:var(--vs-ink); }
