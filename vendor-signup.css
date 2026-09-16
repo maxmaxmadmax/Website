@@ -2659,3 +2659,80 @@ body.vendor-signup .footer-sponsors{
 /*  The bold bit in "up to 8 bays" was gold, which the white page had
     already darkened - on the plan's own panel it can be the orange.  */
 .vendor-signup .vs-map-intro strong{ color:#b34700; }
+
+/* ==========================================================================
+   WAITING FOR THE EVENTS
+
+   The list is read from Firestore, which takes about a second on a cold
+   load, and until it answers the page cannot tell "none yet" from "none at
+   all" - so it used to say "no events are taking vendor applications" and
+   then contradict itself.
+
+   Grey cards the shape of real ones, in their place, so the real cards land
+   where the grey was instead of shoving the page around.
+   ========================================================================== */
+.vs-event.is-loading{
+    border-color:var(--pk-line);
+    box-shadow:none;
+    pointer-events:none;
+}
+
+.vs-event.is-loading:hover{ transform:none; box-shadow:none; }
+
+.vs-event.is-loading .vs-event-art{ background-image:none; }
+
+/*  One animation on the whole card rather than one per bar, so the bars
+    pulse together and it reads as a single thing loading.             */
+.vs-event.is-loading .vs-event-art,
+.vs-skel{
+    background:#e9ecf1;
+    animation:vs-pulse 1.4s ease-in-out infinite;
+}
+
+.vs-skel{
+    display:block;
+    height:11px;
+    border-radius:5px;
+}
+
+.vs-skel-title{
+    width:62%;
+    height:15px;
+    margin-bottom:6px;
+}
+
+.vs-skel-line{ width:80%; }
+.vs-skel-line.is-short{ width:52%; }
+
+.vs-skel-btn{
+    width:100%;
+    height:38px;
+    border-radius:10px;
+    margin-top:12px;
+}
+
+@keyframes vs-pulse{
+    0%, 100%{ opacity:1; }
+    50%{ opacity:.45; }
+}
+
+/*  Anybody who has asked for less movement gets the grey without the
+    pulse. It still says "something is coming here".                 */
+@media (prefers-reduced-motion:reduce){
+    .vs-event.is-loading .vs-event-art,
+    .vs-skel{ animation:none; }
+}
+
+/*  For a screen reader, which cannot see grey boxes. role="status" on it
+    means the wait is announced without stealing focus.               */
+.vs-sr-only{
+    position:absolute;
+    width:1px;
+    height:1px;
+    padding:0;
+    margin:-1px;
+    overflow:hidden;
+    clip:rect(0 0 0 0);
+    white-space:nowrap;
+    border:0;
+}

@@ -23,9 +23,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=82';
+} from './firebase-config.js?v=85';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=82';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=85';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -41,6 +41,34 @@ const PRICE = {
 
 const MAX_BAYS = 8;
 
+/*  HOW MANY BAYS - worked out, never stored.
+
+    This used to be state.bayCount: set from the map when bays were held,
+    written into the saved draft, and read back on the next visit. The
+    sites themselves are not restored that way, because a hold only lasts
+    ten minutes - so somebody returning to a part-finished application got
+    a page holding no site at all and quoting two bays.
+
+    createCheckout prices from booking.siteIds.length on the server, so the
+    charge was right and only the quote was wrong. The quote is the number
+    a vendor decides on, which is bad enough.
+
+    The floor of 1 is the indicative price before any bay is picked: a
+    market stall starts at one bay, and the line beside it says plainly
+    that no site is chosen yet.                                        */
+function bayCount() {
+  if (state.vendorType !== 'market') return 1;
+
+  /*  Held first, then picked-but-not-held. The map already prices what
+      is picked - it says "2 bays, $100 site fee" under the plan - so if
+      the side column counted only held bays the two would sit on the
+      same screen disagreeing, which is this bug again in miniature.
+
+      pendingSites() is whatever is lit up on the plan; once the hold
+      goes through, siteIds says the same thing and takes over.     */
+  return state.siteIds.length || pendingSites().length || 1;
+}
+
 /*  VENDOR_LABEL was used on the confirmation screen and never defined -
     a ReferenceError that only fires after a real payment, which is why
     it sat there. Defined here now, and the side column uses it too.  */
@@ -53,7 +81,7 @@ const VENDOR_LABEL = {
 function priceCents() {
   if (state.vendorType === 'food') return PRICE.foodCents;
   if (state.vendorType === 'market') {
-    return PRICE.marketPerBayCents * (state.bayCount || 1);
+    return PRICE.marketPerBayCents * bayCount();
   }
   return 0;
 }
@@ -129,10 +157,16 @@ const state = {
       page that can apply to several must not have one.               */
   eventId: null,
   events: [],
+
+  /*  Whether the events have come back yet - not the same question as
+      whether there are any. Without it an empty list before the first
+      read looks exactly like a read that found nothing, and the page
+      said "no events are taking applications" for the second or so it
+      took Firestore to answer.                                      */
+  eventsLoaded: false,
   preview: !isFirebaseConfigured,
 
   vendorType: null,
-  bayCount: 1,            // market only: how many bays are held, set from the map
   business: {},
   categoryId: null,
   categoryName: null,
@@ -227,6 +261,7 @@ async function loadEvents() {
       location: 'Bowen, Queensland',
       status: 'open',
     }];
+    state.eventsLoaded = true;
     renderEvents();
     return;
   }
@@ -243,9 +278,15 @@ async function loadEvents() {
       .filter((ev) => EVENT_STATUS[ev.status])
       .sort((a, b) => String(a.dateISO || '').localeCompare(String(b.dateISO || '')));
 
+    state.eventsLoaded = true;
     renderEvents();
   } catch (err) {
     console.error('events', err);
+
+    /*  Loaded, in the sense that waiting longer will not help. Leaving it
+        false would spin the skeleton for ever.                        */
+    state.eventsLoaded = true;
+
     const host = document.getElementById('vs-events');
     if (host) {
       host.innerHTML =
@@ -255,9 +296,37 @@ async function loadEvents() {
   }
 }
 
+/*  Three cards' worth of grey while we wait.
+
+    A skeleton rather than a spinner because the shape is already known:
+    the cards land where the grey was, so the page does not jump, and the
+    wait reads as this list arriving rather than as the page being stuck.
+    Three because that is what the row usually holds - it is a placeholder
+    for a list, not a promise about its length.                        */
+function eventSkeleton() {
+  return (
+    '<article class="vs-event is-loading" aria-hidden="true">' +
+      '<div class="vs-event-art"></div>' +
+      '<div class="vs-event-body">' +
+        '<span class="vs-skel vs-skel-title"></span>' +
+        '<span class="vs-skel vs-skel-line"></span>' +
+        '<span class="vs-skel vs-skel-line is-short"></span>' +
+        '<span class="vs-skel vs-skel-btn"></span>' +
+      '</div>' +
+    '</article>'
+  ).repeat(3);
+}
+
 function renderEvents() {
   const host = document.getElementById('vs-events');
   if (!host) return;
+
+  if (!state.eventsLoaded) {
+    host.innerHTML =
+      '<p class="vs-sr-only" role="status">Loading events&hellip;</p>' +
+      eventSkeleton();
+    return;
+  }
 
   if (!state.events.length) {
     host.innerHTML =
@@ -354,7 +423,6 @@ function resetForNewEvent() {
 
   state.bookingId = null;
   state.vendorType = null;
-  state.bayCount = 1;
   state.categoryId = null;
   state.siteIds = [];
   state.siteId = null;
@@ -538,6 +606,12 @@ function buildMap() {
     onSelect: () => {
       renderSiteChoice();
       renderMapMeta();
+
+      /*  The price follows the bays as they are tapped. Without these two
+          the plan said one thing and the side column another until the
+          hold went through.                                          */
+      renderSide();
+      renderReview();
     },
   });
 
@@ -583,7 +657,6 @@ async function holdChosenSites() {
   if (state.preview) {
     state.siteId = ids[0];
     state.siteIds = ids;
-    state.bayCount = state.vendorType === 'market' ? ids.length : 1;
     state.siteLabel = pendingLabel();
     renderSiteChoice();
     return;
@@ -610,7 +683,6 @@ async function holdChosenSites() {
 
     state.siteIds = res.data.siteIds || ids;
     state.siteId = state.siteIds[0];
-    state.bayCount = state.vendorType === 'market' ? state.siteIds.length : 1;
     state.siteLabel = res.data.siteLabel;
     state.holdExpiresAt = res.data.holdExpiresAt;
 
@@ -638,7 +710,6 @@ function startHoldCountdown() {
       state.siteId = null;
       state.siteIds = [];
       state.siteLabel = null;
-      state.bayCount = 1;
       map.setSelected(null);
       renderSiteChoice();
       stopHoldCountdown();
@@ -672,7 +743,7 @@ async function ensureBookingDoc() {
     uid: state.user.uid,
     eventId: state.eventId,
     vendorType: state.vendorType,
-    bayCount: state.bayCount,
+    bayCount: bayCount(),
     business: state.business,
     categoryId: state.categoryId,
     setup: state.setup,
@@ -695,7 +766,7 @@ async function saveDraft() {
 
   await updateDoc(doc(fb.db, 'bookings', state.bookingId), {
     vendorType: state.vendorType,
-    bayCount: state.bayCount,
+    bayCount: bayCount(),
     business: state.business,
     categoryId: state.categoryId,
     setup: state.setup,
@@ -724,7 +795,6 @@ async function loadExistingBooking() {
 
     state.bookingId = snap.id;
     state.vendorType = b.vendorType || state.vendorType;
-    state.bayCount = b.bayCount || 1;
     state.business = b.business || {};
     state.categoryId = b.categoryId || null;
     state.setup = b.setup || {};
@@ -1294,7 +1364,7 @@ function renderSide() {
 
   const b = feeBreakdown(priceCents());
 
-  const bays = state.bayCount || 1;
+  const bays = bayCount();
   const siteLine = state.vendorType === 'market'
     ? 'Market stall × ' + bays + ' bay' + (bays > 1 ? 's' : '')
     : 'Food vendor site';
@@ -1522,7 +1592,7 @@ function renderReview() {
   const b = feeBreakdown(priceCents());
   const ev = state.event || {};
   const isMarket = state.vendorType === 'market';
-  const bays = isMarket ? (state.bayCount || 1) : 1;
+  const bays = bayCount();
 
   /*  Priced per bay so the sum is visible: two bays at $50 reads as
       2 x $50.00 = $100.00 rather than an unexplained $100. */
