@@ -23,9 +23,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=88';
+} from './firebase-config.js?v=90';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=88';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=90';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -677,6 +677,13 @@ async function holdChosenSites() {
   const chosen = pendingSites();
   if (!chosen.length) return;
 
+  /*  Whatever is in the form, saved before the hold. saveDraft used to run
+      only from a Continue button, and on a page you scroll nobody has to
+      press one - somebody could fill in every field, take a site, close
+      the tab, and come back to a booking that had never heard of their
+      business.                                                        */
+  collectForm();
+
   const ids = chosen.map((s) => s.id);
 
   if (state.preview) {
@@ -702,6 +709,10 @@ async function holdChosenSites() {
 
   try {
     await ensureBookingDoc();
+
+    /*  The form goes up with the hold. collectForm() above put it into
+        state; this is what actually writes it to the booking.       */
+    await saveDraft();
 
     const call = fb.fn.httpsCallable(fb.fns, 'holdSite');
     const res = await call({ eventId: state.eventId, siteIds: ids, bookingId: state.bookingId });
@@ -819,6 +830,31 @@ async function loadExistingBooking() {
     }
 
     state.bookingId = snap.id;
+
+    /*  The event first, because everything else in the booking belongs to
+        it. Without this a returning vendor got their vendor type and
+        their held site back with no event chosen - so the rail showed
+        ticks against steps that were still locked, which is a page
+        arguing with itself.                                          */
+    if (b.eventId && b.eventId !== state.eventId) {
+      state.eventId = b.eventId;
+      state.event = state.events.find((e) => e.id === b.eventId) || null;
+
+      if (!state.event) {
+        /*  The event list is read in parallel with this and may not have
+            landed yet, so the one event we need is read directly.    */
+        try {
+          const { doc: docRef, getDoc: get } = fb.f;
+          const evSnap = await get(docRef(fb.db, 'events', b.eventId));
+          if (evSnap.exists()) state.event = { id: evSnap.id, ...evSnap.data() };
+        } catch (evErr) {
+          console.warn('Could not read the event for a restored booking', evErr);
+        }
+      }
+
+      subscribeToEvent();
+    }
+
     state.vendorType = b.vendorType || state.vendorType;
     state.business = b.business || {};
     state.categoryId = b.categoryId || null;
@@ -832,9 +868,63 @@ async function loadExistingBooking() {
       map.setVendorType(state.vendorType);
       map.setSelected(state.siteIds);
     }
+
+    fillFormFromState();
+    render();
   } catch (err) {
     console.warn('Could not restore booking', err);
   }
+}
+
+/*  Write what we restored back into the form.
+
+    Only fields that are empty are filled, so this can never overwrite
+    something the vendor has already typed - loadExistingBooking runs after
+    sign-in comes back, which can land after somebody has started.
+
+    The category chips are drawn from the categories collection, which
+    arrives on its own schedule; renderCategories() reads state.categoryId
+    every time it draws, so the chosen one lights up whenever that is. */
+function fillFormFromState() {
+  const put = (id, value) => {
+    const el = document.getElementById(id);
+    if (el && !el.value && value) el.value = value;
+  };
+
+  const b = state.business || {};
+  put('vs-biz-name', b.name);
+  put('vs-biz-contact', b.contactName);
+  put('vs-biz-email', b.email);
+  put('vs-biz-phone', b.phone);
+  put('vs-biz-socials', b.socials);
+  put('vs-biz-desc', b.description);
+
+  const setup = state.setup || {};
+  put('vs-setup-frontage', setup.frontage);
+  put('vs-setup-depth', setup.depth);
+  put('vs-setup-own-power', setup.ownPower);
+  put('vs-setup-notes', setup.notes);
+
+  const tick = (id, on) => {
+    const el = document.getElementById(id);
+    if (el && on) el.checked = true;
+  };
+  tick('vs-setup-selfsufficient', setup.selfSufficient);
+  tick('vs-setup-vehicle', setup.vehicleOnSite);
+
+  /*  The vendor type card. state.vendorType decides the price and which
+      sites are selectable, so a page that has one and does not show it is
+      telling the vendor something different from what it will charge. */
+  document.querySelectorAll('[data-vendor-type]').forEach((btn) => {
+    btn.classList.toggle('is-selected',
+      btn.getAttribute('data-vendor-type') === state.vendorType);
+  });
+
+  /*  The counter under the description, which is wired to the input event
+      and so does not know anything arrived.                          */
+  const desc = document.getElementById('vs-biz-desc');
+  const count = document.getElementById('vs-biz-desc-count');
+  if (desc && count) count.textContent = desc.value.length + '/300';
 }
 
 /* -------------------------------------------------------------------------
