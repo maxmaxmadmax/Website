@@ -77,7 +77,86 @@ function figures(booking) {
   return { site, fee, gst, total, subtotal: site + fee };
 }
 
+/*  WHAT A TEMPLATE CAN SAY
+
+    The whole vocabulary, in one place, so the admin screen and the mailer
+    cannot drift apart: the screen lists these for Max to click, this fills
+    them in, and anything not on the list is left alone rather than quietly
+    blanked - a stray {{curly}} then shows up in the preview instead of
+    vanishing on its way to a vendor.                                    */
+function placeholders(booking, event) {
+  const biz = booking.business || {};
+  const f = figures(booking);
+
+  return {
+    vendor_name: biz.contactName || '',
+    business_name: biz.name || '',
+    vendor_email: biz.email || '',
+    event_name: event.name || '',
+    event_date: event.dateLabel || event.dateISO || '',
+    event_venue: [event.venue, event.location].filter(Boolean).join(', '),
+    site_number: booking.siteLabel || '',
+    site_type: booking.vendorType === 'market' ? 'Market Stall' : 'Food Vendor',
+    amount_paid: money(f.total),
+    reference: booking.reference || '',
+  };
+}
+
+/*  Fill {{these}} in. Values are escaped, because they are somebody's
+    business name and not markup - a stall called "Ben & Jerry's" must not
+    be able to break the email it appears in.                          */
+function fill(template, values, escapeValue) {
+  const clean = escapeValue === undefined ? esc : escapeValue;
+  return String(template || '').replace(/\{\{\s*([a-z_]+)\s*\}\}/gi,
+    function (whole, key) {
+      const v = values[key.toLowerCase()];
+      return v === undefined ? whole : clean(v);
+    });
+}
+
+/*  Subjects are plain text, so values go in as they are. Escaping them
+    put "Eatz &amp; Beatz" in somebody's inbox.                       */
+const raw = (v) => String(v == null ? '' : v);
+
+/*  The template Max wrote for this event, if he wrote one. Both halves
+    have to be there: a subject with no body, or the other way round, is
+    a half-saved form rather than an intention.                        */
+function customTemplate(event) {
+  const t = (event && event.vendorEmail) || {};
+  const subject = String(t.subject || '').trim();
+  const body = String(t.body || '').trim();
+  return subject && body ? { subject: subject, body: body } : null;
+}
+
+/*  THE LETTERHEAD
+
+    The black bar, the white card and the footer, with somebody's words in
+    the middle. Pulled out so a template written in the admin desk arrives
+    looking like every other email we send: Max writes the letter, not the
+    stationery.                                                        */
+function shell(inner) {
+  return [
+    '<!doctype html>',
+    '<html><body style="margin:0;padding:24px;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">',
+    '<div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;overflow:hidden;">',
+    '<div style="background:#111;padding:24px;">',
+    '<p style="margin:0;color:#ff6b00;font-size:12px;letter-spacing:2px;text-transform:uppercase;">',
+    esc(SELLER.name),
+    '</p></div>',
+    '<div style="padding:24px;font-size:15px;line-height:1.6;color:#111;">',
+    inner,
+    '</div>',
+    '<div style="padding:0 24px 24px;color:#777;font-size:12px;line-height:1.6;">',
+    esc(SELLER.name) + (SELLER.abn ? ' &middot; ABN ' + esc(SELLER.abn) : '') + '<br>',
+    esc(SELLER.email) + ' &middot; ' + esc(SELLER.site),
+    '</div></div></body></html>',
+  ].join('');
+}
+
 function vendorSubject(booking, event) {
+  const custom = customTemplate(event);
+  if (custom) return fill(custom.subject, placeholders(booking, event), raw);
+
   return `You're in - ${event.name || 'the event'}, site ${booking.siteLabel || ''}`.trim();
 }
 
@@ -85,6 +164,10 @@ function vendorSubject(booking, event) {
    The vendor's copy: confirmation and tax invoice in one
    ------------------------------------------------------------------------- */
 function vendorHtml(booking, bookingId, event) {
+  /*  Max's wording if there is any, in our letterhead.             */
+  const custom = customTemplate(event);
+  if (custom) return shell(fill(custom.body, placeholders(booking, event)));
+
   const f = figures(booking);
   const biz = booking.business || {};
   const when = event.dateLabel || event.dateISO || '';
@@ -155,6 +238,21 @@ function vendorHtml(booking, bookingId, event) {
 }
 
 function vendorText(booking, bookingId, event) {
+  /*  The same words with the markup taken out. An email client that
+      refuses HTML still gets the letter rather than the built-in one,
+      which would say something different from the copy beside it.   */
+  const custom = customTemplate(event);
+  if (custom) {
+    return fill(custom.body, placeholders(booking, event))
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(p|div|li|h[1-6])>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&nbsp;/g, ' ').replace(/&#39;/g, "'").replace(/&quot;/g, '"')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
   const f = figures(booking);
   const biz = booking.business || {};
   return [
@@ -288,4 +386,9 @@ async function sendBookingEmails(booking, bookingId, event) {
   return { sent: results.vendor || results.office, ...results };
 }
 
-module.exports = { sendBookingEmails };
+/*  __test is the rendering, exposed so it can be checked without sending
+    anything. sendBookingEmails is still the only thing index.js calls. */
+module.exports = {
+  sendBookingEmails,
+  __test: { vendorSubject, vendorHtml, vendorText, fill, placeholders },
+};

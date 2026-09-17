@@ -216,20 +216,68 @@ function siteIsFree(site, uid, now) {
   return true;
 }
 
+/*  DO TWO BAYS TOUCH?
+
+    Side by side or one above the other, with no more than a hairline
+    between them. On the Bowen plan the gap down a column is 12 units and
+    the two middle columns are 16 apart, while every aisle is 120 - so a
+    threshold of 20 joins the bays that really do back on to each other
+    and nothing across a walkway.
+
+    Market bays only. A food van takes one site and never joins anything,
+    and two of them sit on an angle where a rectangle would lie.
+
+    THIS RULE IS ALSO IN js/vendor-map.js, which decides what a vendor is
+    allowed to click. If it changes here it has to change there, or the
+    page will offer a shape this function then refuses to allocate.   */
+const BAY_TOUCH_GAP = 20;
+
+function baysTouch(a, b) {
+  if (a.type !== 'market' || b.type !== 'market') return false;
+  if (a.rotate || b.rotate) return false;
+  if ([a.x, a.y, a.w, a.h, b.x, b.y, b.w, b.h].some((n) => typeof n !== 'number')) {
+    return false;
+  }
+
+  const gapX = Math.max(a.x - (b.x + b.w), b.x - (a.x + a.w));
+  const gapY = Math.max(a.y - (b.y + b.h), b.y - (a.y + a.h));
+
+  /*  Close on one axis while genuinely overlapping on the other -
+      otherwise two bays meeting at a corner would count.           */
+  if (gapX < 0 && gapY >= 0 && gapY <= BAY_TOUCH_GAP) return true;
+  if (gapY < 0 && gapX >= 0 && gapX <= BAY_TOUCH_GAP) return true;
+
+  return false;
+}
+
 /* Every bay in a group must touch another bay in the same group, or the
    stall is not one stall - it is bays scattered around the market. Walks
-   out from the first bay and checks it reaches all of them. */
+   out from the first bay and checks it reaches all of them.
+
+   Two bays count as touching if the layout wrote them down as neighbours
+   (up and down a column) or if their rectangles back on to each other -
+   which is how a stall can straddle the two middle columns without the
+   forty bays already in Firestore having to be rewritten. */
 function isJoinedUp(sitesById) {
   const ids = Object.keys(sitesById);
   if (ids.length <= 1) return true;
+
+  const neighboursOf = (site) => {
+    const listed = (site.adjacentIds || []).filter((id) => sitesById[id]);
+    const touching = ids.filter((id) =>
+      id !== site.id &&
+      !listed.includes(id) &&
+      baysTouch(site, sitesById[id]));
+    return [...listed, ...touching];
+  };
 
   const seen = new Set([ids[0]]);
   const queue = [ids[0]];
 
   while (queue.length) {
     const site = sitesById[queue.shift()];
-    for (const neighbourId of site.adjacentIds || []) {
-      if (sitesById[neighbourId] && !seen.has(neighbourId)) {
+    for (const neighbourId of neighboursOf(site)) {
+      if (!seen.has(neighbourId)) {
         seen.add(neighbourId);
         queue.push(neighbourId);
       }
@@ -1876,7 +1924,16 @@ exports.adminUpdateBooking = onCall(async (request) => {
     ['frontage', 'depth'].forEach((k) => {
       if (setup[k] !== undefined) update[`setup.${k}`] = Number(setup[k]) || null;
     });
-    ['ownPower', 'selfSufficient', 'vehicleOnSite'].forEach((k) => {
+    /*  ownPower is a dropdown holding words - 'Silent generator' - and was
+        in this list of checkboxes, so !! turned it into true. An admin
+        editing a booking lost which generator the vendor was bringing,
+        which is the thing stages get placed around.                   */
+    if (setup.ownPower !== undefined) update['setup.ownPower'] = text(setup.ownPower, 120);
+
+    /*  readFaqs is the tick on the form now; selfSufficient and
+        vehicleOnSite are still accepted so a booking taken before the
+        form changed can still be edited.                             */
+    ['readFaqs', 'selfSufficient', 'vehicleOnSite'].forEach((k) => {
       if (setup[k] !== undefined) update[`setup.${k}`] = !!setup[k];
     });
     if (setup.notes !== undefined) update['setup.notes'] = text(setup.notes, 2000);
@@ -1919,6 +1976,23 @@ exports.adminSaveEvent = onCall(async (request) => {
   ['name', 'subtitle', 'dateISO', 'dateLabel', 'venue', 'location'].forEach((k) => {
     if (f[k] !== undefined) update[k] = text(f[k]);
   });
+
+  /*  THE CONFIRMATION EMAIL
+
+      Subject and body, written in the admin desk. The body is HTML from a
+      rich text box, so it gets a lot more room than a name - but a cap all
+      the same, because a document pasted in wholesale has no business in a
+      field nobody meant to be a document.
+
+      Nothing is validated beyond length: this is our own admin writing our
+      own email, and the mailer escapes every value it substitutes, so a
+      vendor's business name cannot break out of it.                     */
+  if (f.vendorEmail !== undefined) {
+    const t = f.vendorEmail || {};
+    if (t.subject !== undefined) update['vendorEmail.subject'] = text(t.subject, 300);
+    if (t.body !== undefined) update['vendorEmail.body'] = text(t.body, 20000);
+    update['vendorEmail.updatedAt'] = FieldValue.serverTimestamp();
+  }
 
   if (f.status !== undefined) {
     if (!EVENT_STATES.includes(f.status)) {
@@ -2040,5 +2114,68 @@ exports.syncGigGuideNow = onCall(
         that looks like a date and is not.                              */
     delete status.ranAt;
     return status;
+  },
+);
+
+/* -------------------------------------------------------------------------
+   adminSendTestVendorEmail
+
+   Sends the confirmation email for an event to whoever asks for it, with
+   made-up booking details, so the wording and the settings can both be
+   checked without taking a payment to do it.
+
+   This replaced smtpSmokeTest, which did the same job through a public
+   URL with a token in it and a sample hard coded into this file. An
+   admin-only callable is the same test without the open door.
+   ------------------------------------------------------------------------- */
+exports.adminSendTestVendorEmail = onCall(
+  { secrets: [SMTP_USER, SMTP_PASS] },
+  async (request) => {
+    requireAdmin(request);
+
+    const { eventId, to } = request.data || {};
+
+    const address = String(to || request.auth.token.email || '').trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) {
+      throw new HttpsError('invalid-argument', 'That is not an email address.');
+    }
+
+    const id = String(eventId || '').trim();
+    if (!id) throw new HttpsError('invalid-argument', 'Missing event id.');
+
+    const evSnap = await db.collection('events').doc(id).get();
+    if (!evSnap.exists) throw new HttpsError('not-found', 'No such event.');
+    const event = evSnap.data();
+
+    /*  A booking that looks like a real one, so every placeholder has
+        something to show and the figures add up the way they will on
+        the day.                                                     */
+    const siteCents = event.pricing && event.pricing.food ? event.pricing.food : 10000;
+    const money = feeBreakdown(event, siteCents);
+
+    const booking = {
+      reference: 'TEST-0001',
+      siteLabel: 'F5',
+      vendorType: 'food',
+      categoryName: 'BBQ / Smoked Meats',
+      amountCents: siteCents,
+      bookingFeeCents: money.bookingFeeCents,
+      gstCents: money.gstCents,
+      totalCents: money.totalCents,
+      documents: [],
+      business: {
+        name: 'Test Kitchen Co',
+        contactName: 'Sample Vendor',
+        email: address,
+        phone: '0400 000 000',
+      },
+    };
+
+    const result = await sendBookingEmails(booking, 'test-email', event);
+    logger.info('test vendor email', { eventId: id, to: address, result });
+
+    /*  The result rather than a throw: "it did not send, and here is what
+        Google said" is the whole point of pressing the button.       */
+    return result;
   },
 );

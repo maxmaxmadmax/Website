@@ -1588,3 +1588,176 @@ body.ad-fit .ad-main{ min-height:0; }
     color:var(--ad-muted);
     font-size:.82rem;
 }
+
+/* ==========================================================================
+   VENDOR EMAILS
+
+   The editor on the left, the placeholders and the preview on the right.
+   The preview is deliberately a small facsimile of the email rather than a
+   real one in an iframe: it only has to answer "does my wording read
+   right", and an iframe would bring the email's own stylesheet into the
+   admin desk to fight with this one.
+   ========================================================================== */
+.ad-mail-grid{
+    display:grid;
+    grid-template-columns:minmax(0, 1fr) 340px;
+    align-items:start;
+    gap:16px;
+}
+
+.ad-mail-side{
+    display:grid;
+    gap:16px;
+    min-width:0;
+}
+
+/* ---- the toolbar ------------------------------------------------------- */
+.ad-mail-tools{
+    display:flex;
+    gap:4px;
+    padding:6px;
+    border:1px solid var(--ad-line, #e3e6ec);
+    border-bottom:0;
+    border-radius:10px 10px 0 0;
+    background:#f6f7f9;
+}
+
+.ad-mail-tools button{
+    min-width:32px;
+    height:32px;
+    padding:0 8px;
+    border:1px solid transparent;
+    border-radius:7px;
+    background:none;
+    color:#12141a;
+    font-size:.92rem;
+    cursor:pointer;
+}
+
+.ad-mail-tools button:hover{
+    background:#fff;
+    border-color:var(--ad-line, #e3e6ec);
+}
+
+/* ---- the body box ------------------------------------------------------ */
+.ad-mail-body{
+    min-height:320px;
+    max-height:60vh;
+    overflow-y:auto;
+    padding:16px;
+    border:1px solid var(--ad-line, #e3e6ec);
+    border-radius:0 0 10px 10px;
+    background:#fff;
+    font-size:.95rem;
+    line-height:1.65;
+    color:#12141a;
+}
+
+.ad-mail-body:focus{
+    outline:2px solid var(--sg-orange);
+    outline-offset:-2px;
+}
+
+.ad-mail-body p{ margin:0 0 12px; }
+.ad-mail-body ul,
+.ad-mail-body ol{ margin:0 0 12px; padding-left:22px; }
+.ad-mail-body li{ margin-bottom:4px; }
+.ad-mail-body a{ color:#b34700; }
+
+/* ---- the placeholder list ---------------------------------------------- */
+.ad-tag-list{
+    list-style:none;
+    margin:0;
+    padding:0 0 4px;
+    display:grid;
+    gap:6px;
+}
+
+.ad-tag-list button{
+    display:grid;
+    gap:2px;
+    width:100%;
+    padding:9px 11px;
+    border:1px solid var(--ad-line, #e3e6ec);
+    border-radius:9px;
+    background:#fff;
+    text-align:left;
+    cursor:pointer;
+}
+
+.ad-tag-list button:hover{
+    border-color:var(--sg-orange);
+    background:#fff9f4;
+}
+
+.ad-tag-list code{
+    font-family:'Courier New', Courier, monospace;
+    font-size:.82rem;
+    color:#b34700;
+}
+
+.ad-tag-list span{
+    font-size:.78rem;
+    color:#6b7280;
+}
+
+/* ---- the preview -------------------------------------------------------- */
+.ad-mail-preview{
+    padding:12px;
+    border-radius:10px;
+    background:#f4f4f5;
+}
+
+.ad-mail-shell{
+    border-radius:8px;
+    overflow:hidden;
+    background:#fff;
+    box-shadow:0 1px 3px rgba(16,24,40,.1);
+}
+
+.ad-mail-head{
+    padding:12px 14px;
+    background:#111;
+    color:var(--sg-orange);
+    font-size:.6rem;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+}
+
+/*  The subject line, above the body the way an inbox shows it. */
+.ad-mail-subject{
+    padding:10px 14px;
+    border-bottom:1px solid #eceef2;
+    font-size:.82rem;
+    font-weight:bold;
+    color:#12141a;
+}
+
+.ad-mail-inner{
+    padding:14px;
+    font-size:.78rem;
+    line-height:1.6;
+    color:#333;
+}
+
+.ad-mail-inner p{ margin:0 0 9px; }
+.ad-mail-inner ul,
+.ad-mail-inner ol{ margin:0 0 9px; padding-left:18px; }
+
+/*  A message that is bad news should not look like a message that is not. */
+.ad-action-msg.is-bad{
+    color:#8a1f1f;
+    background:#fdecec;
+    border:1px solid #f3c2c2;
+    border-radius:8px;
+    padding:10px 12px;
+
+    /*  SMTP errors arrive as a paragraph of Google's prose with a URL in
+        it, so it wraps rather than running off the side.              */
+    white-space:pre-wrap;
+    word-break:break-word;
+}
+
+@media (max-width:1100px){
+    .ad-mail-grid{ grid-template-columns:1fr; }
+}

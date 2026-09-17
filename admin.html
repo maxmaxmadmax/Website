@@ -16,11 +16,11 @@
       and the two would fight each other. Keeping them apart also means
       nothing done in here can reach the public site, and nothing done
       there can reach this.                                             -->
-<link rel="stylesheet" href="admin.css?v=102">
+<link rel="stylesheet" href="admin.css?v=103">
 <!--  The DJ list for the Friday Nights panel. Same roster the
         entertainment page shows.                                  -->
-  <script src="js/roster.js?v=102" defer></script>
-  <script type="module" src="js/admin-app.js?v=102"></script>
+  <script src="js/roster.js?v=103" defer></script>
+  <script type="module" src="js/admin-app.js?v=103"></script>
 </head>
 
 <body>
@@ -89,6 +89,14 @@
 
       <button type="button" class="ad-nav-item" data-view="settings">
         <span class="ad-ico" aria-hidden="true">⚙</span> Settings
+      </button>
+
+      <p class="ad-nav-divider">Communication</p>
+
+      <!--  The vendor confirmation email. It used to be HTML inside a
+            Cloud Function, so changing a word was a deploy. -->
+      <button type="button" class="ad-nav-item" data-view="vendorEmail">
+        <span class="ad-ico" aria-hidden="true">✉</span> Vendor Emails
       </button>
 
       <p class="ad-nav-divider">Coming soon</p>
