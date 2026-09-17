@@ -232,18 +232,6 @@ p, h1, h2, h3, h4, h5, li, a{
     color:var(--sg-muted);
 }
 
-/* Call to action block */
-.cta{
-    text-align:center;
-}
-
-.cta p{
-    max-width:640px;
-    margin:0 auto 30px;
-    color:var(--sg-muted);
-}
-
-
 /* ==========================================================================
    ACTS
 
@@ -1380,14 +1368,6 @@ nav{
     );
 }
 
-.logo a{
-    color:#fff;
-    font-size:26px;
-    font-weight:700;
-    letter-spacing:3px;
-    text-decoration:none;
-}
-
 .Nav a{
     display:block;
     padding:0; /* logo shouldn't inherit the menu link padding */
@@ -1782,37 +1762,6 @@ nav a.nav-cta.active{
 }
 
 
-/* ==========================================================================
-   SPONSORS
-
-   The sponsor logo row and the ticket checkout embed.
-   ========================================================================== */
-.sponsors{
-    display:flex;
-    align-items:center;
-    flex-wrap:wrap;
-    gap:30px 44px;
-    justify-content:center;
-}
-
-.sponsors a{
-    display:inline-flex;
-    align-items:center;
-    padding:8px;
-}
-
-.sponsors img{
-    height:60px;
-    width:auto;
-    max-width:180px;
-    object-fit:contain;
-    transition:transform .25s;
-}
-
-.sponsors a:hover img{
-    transform:scale(1.06);
-}
-
 /* Humanitix embedded checkout */
 .checkout-embed{
     max-width:900px;
@@ -1830,30 +1779,6 @@ nav a.nav-cta.active{
 /*  MAKE A WEEKEND OF IT
     Travel-brochure treatment: the photography does the selling, with the
     copy sitting over it. Aimed at people driving in from out of town.   */
-
-
-/* ==========================================================================
-   STEPS
-
-   Numbered how-it-works steps.
-   ========================================================================== */
-.step{
-    text-align:center;
-}
-
-
-.step h3{
-    font-family:var(--sg-font-display);
-    font-size:1.2rem;
-    letter-spacing:-.5px;
-    text-transform:uppercase;
-    color:#fff;
-    margin-bottom:10px;
-}
-
-.step p{
-    color:var(--sg-muted);
-}
 
 
 /*  Buttons sitting on the orange band go black, so they read against it  */

@@ -319,17 +319,6 @@
     margin:0 0 16px;
 }
 
-#sg-services-page .sgs-copy{
-    max-width:70ch;
-}
-
-#sg-services-page .sgs-copy p{
-    color:var(--sg-muted, #d0d0d0);
-    font-size:1.04rem;
-    line-height:1.85;
-    margin-bottom:18px;
-}
-
 /* ==========================================================================
    BUTTONS
 
@@ -536,12 +525,6 @@
 
    The area-served line and the closing call to action.
    ========================================================================== */
-/* Service area and closing call to action --------------------------------- */
-#sg-services-page .sgs-area{
-    background:#000;
-    border-top:1px solid var(--sg-border, #222);
-}
-
 /*  THE CLOSING CALL TO ACTION
 
     It was centred, on a flat gradient, with the copy and the button stacked

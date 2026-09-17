@@ -99,12 +99,6 @@
    What the ticket bar and its button look like once an event has been
    and gone.
    ========================================================================== */
-/* The sticky bar keeps its position but stops selling anything */
-.ticket-bar.is-archived{
-    background:#141414;
-    border-top:1px solid var(--sg-border);
-}
-
 /* Reads as a statement, not a button you can press */
 .btn.is-done{
     background:#1a1a1a;
@@ -974,8 +968,6 @@
 
     .ev-venue-art{ height:92px; margin-bottom:10px; }
     .ev-venue > p{ margin-bottom:10px; }
-    .ev-venue-points li{ padding:6px 16px; }
-
     .ev-res-cta{ padding:12px 6%; }
 }
 

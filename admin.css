@@ -169,15 +169,6 @@ body{
     font-size:.92rem;
 }
 
-.ad-nav-divider{
-    margin:14px 12px 4px;
-    font-size:.62rem;
-    font-weight:700;
-    letter-spacing:.14em;
-    text-transform:uppercase;
-    color:#5c6373;
-}
-
 .ad-nav-item[data-soon]{ color:#7f8797; }
 .ad-nav-item[data-soon]:hover{ color:#c7ccd6; }
 
@@ -250,27 +241,6 @@ body{
     padding:7px 11px;
     font-size:1rem;
     cursor:pointer;
-}
-
-.ad-event-pick{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    font-size:.78rem;
-    color:var(--ad-muted);
-    font-weight:600;
-}
-
-.ad-event-pick select{
-    font:inherit;
-    font-size:.85rem;
-    font-weight:500;
-    color:var(--ad-text);
-    padding:7px 10px;
-    border:1px solid var(--ad-line);
-    border-radius:8px;
-    background:#fff;
-    max-width:320px;
 }
 
 .ad-top-link{

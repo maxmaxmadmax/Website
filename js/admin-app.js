@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=107';
+} from './firebase-config.js?v=108';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -296,10 +296,6 @@ function wireChrome() {
     });
   }
 
-  document.getElementById('ad-event-select').addEventListener('change', (ev) => {
-    setActiveEvent(ev.target.value);
-  });
-
   window.addEventListener('hashchange', routeFromHash);
 }
 
@@ -346,13 +342,6 @@ async function loadEvents() {
   if (!state.events.some((e) => e.id === state.activeEventId)) {
     state.activeEventId = state.events[0] ? state.events[0].id : null;
   }
-
-  const select = document.getElementById('ad-event-select');
-  select.innerHTML = state.events
-    .map((e) => `<option value="${attr(e.id)}"${e.id === state.activeEventId ? ' selected' : ''}>
-        ${esc(e.name || e.id)}${e.dateLabel ? ' — ' + esc(e.dateLabel) : ''}
-      </option>`)
-    .join('') || '<option value="">No events yet</option>';
 }
 
 /*  Live subscriptions for the active event. Everything on the page reads
@@ -1738,9 +1727,6 @@ function setActiveEvent(id) {
   state.bookings = [];
   state.sites = [];
   state.categories = [];
-
-  const picker = document.getElementById('ad-event-select');
-  if (picker) picker.value = id;
 
   render();
   subscribeToEvent();

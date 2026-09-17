@@ -212,34 +212,6 @@
     line-height:1.65;
 }
 
-/*  An island we have actually worked, marked so it is visibly a different
-    claim to one we merely travel to. The difference is the whole value of
-    this page - see the note at the top of the markup.                    */
-#sg-island .isl-places li.is-worked{
-    border-color:rgba(255,183,0,.4);
-    background:linear-gradient(180deg, rgba(255,183,0,.06), rgba(255,183,0,0));
-}
-
-#sg-island .isl-done{
-    color:var(--sg-gold) !important;
-    font-weight:bold;
-}
-
-#sg-island .isl-places li.is-worked::after{
-    content:"Worked here";
-    display:inline-block;
-    margin-top:12px;
-    padding:4px 10px;
-    border:1px solid rgba(255,183,0,.45);
-    border-radius:999px;
-    color:var(--sg-gold);
-    font-family:var(--sg-font-accent);
-    font-size:.6rem;
-    font-weight:bold;
-    letter-spacing:.12em;
-    text-transform:uppercase;
-}
-
 /* ==========================================================================
    CLOSING
    ========================================================================== */
@@ -281,9 +253,6 @@
 @media (max-width:560px){
     #sg-island .isl-kit,
     #sg-island .isl-places,
-    #sg-island .isl-asks{
-        grid-template-columns:1fr;
-    }
 }
 
 /* ==========================================================================
