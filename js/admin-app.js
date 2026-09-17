@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=106';
+} from './firebase-config.js?v=107';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -3129,13 +3129,6 @@ VIEWS.vendorEmail = {
             <p>This is an example of how the email will look to the vendor.</p>
           </div>
 
-          <div class="ad-field ad-mail-as">
-            <label for="ad-mail-as">Preview as</label>
-            <select id="ad-mail-as">
-              <option value="food">Food Vendor</option>
-              <option value="market">Market Stall</option>
-            </select>
-          </div>
 
           <div class="ad-mail-preview" id="ad-mail-preview"></div>
         </aside>
@@ -3346,17 +3339,10 @@ function wireVendorEmail() {
   };
 
   /* ---- the preview ------------------------------------------------------ */
-  const asSelect = document.getElementById('ad-mail-as');
-
   const paint = function () {
     if (!preview) return;
 
-    const market = asSelect && asSelect.value === 'market';
-
     const values = Object.assign({}, EMAIL_SAMPLE, {
-      site_type: market ? 'Market Stall' : 'Food Vendor',
-      site_number: market ? 'M08' : 'F12',
-      business_name: market ? 'Reef Threads' : 'Island Tacos',
       event_name: s.ev.name || 'Your event',
       event_date: s.ev.dateLabel || s.ev.dateISO || 'The date',
       event_venue: [s.ev.venue, s.ev.location].filter(Boolean).join(', '),
@@ -3384,7 +3370,6 @@ function wireVendorEmail() {
   paint();
   subject.addEventListener('input', onEdit);
   body.addEventListener('input', onEdit);
-  if (asSelect) asSelect.addEventListener('change', paint);
 
   /* ---- formatting -------------------------------------------------------- */
   /*  mousedown, not click: pressing a button takes focus, and taking focus
