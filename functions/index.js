@@ -776,14 +776,47 @@ exports.createCheckout = onCall(
       and the number of bays they are actually holding, and the fee and GST
       from that. Editing amountCents in a browser now achieves nothing,
       because nothing here reads it. */
-  const heldBays = Array.isArray(booking.siteIds) && booking.siteIds.length
-    ? booking.siteIds.length
-    : (booking.siteId ? 1 : 0);
+  const bayIds = Array.isArray(booking.siteIds) && booking.siteIds.length
+    ? booking.siteIds
+    : (booking.siteId ? [booking.siteId] : []);
 
-  if (!heldBays) {
+  if (!bayIds.length) {
     throw new HttpsError('failed-precondition', 'Choose a site first.');
   }
 
+  /*  VALIDATE AGAINST THE HELD SITES, NOT THE BOOKING.
+
+      vendorType and eventId are the two pricing inputs a vendor can
+      still edit on their own draft - the rules lock the money and the
+      site, but not these. So neither is trusted here: the sites they are
+      holding are read back, and they were validated by holdSite (right
+      type, right event, actually free) when they were held.
+
+      A booking whose event was flipped has no such site under the new
+      event; a booking whose type was flipped is holding sites of the
+      wrong type. Either way this refuses before Stripe is called.    */
+  const wantedType = siteTypeFor(booking.vendorType);
+  const heldSnaps = await Promise.all(
+    bayIds.map((id) => siteRef(booking.eventId, id).get())
+  );
+
+  heldSnaps.forEach((snap, i) => {
+    if (!snap.exists) {
+      throw new HttpsError('failed-precondition',
+        `Site ${bayIds[i]} is not part of this event. Please choose your site again.`);
+    }
+    const site = snap.data();
+    if (site.heldBy !== uid || site.status !== 'held') {
+      throw new HttpsError('failed-precondition',
+        `Site ${bayIds[i]} is not being held for you. Please choose your site again.`);
+    }
+    if (site.type !== wantedType) {
+      throw new HttpsError('failed-precondition',
+        `Site ${bayIds[i]} is a ${site.type} site, not a ${booking.vendorType} one.`);
+    }
+  });
+
+  const heldBays = bayIds.length;
   const siteCents = priceFor(eventForBooking, booking.vendorType, heldBays);
   const money = feeBreakdown(eventForBooking, siteCents);
   const amount = money.totalCents;
@@ -827,10 +860,8 @@ exports.createCheckout = onCall(
     (sessionExpiresAt + HOLD_MARGIN_MINUTES * 60) * 1000
   );
 
-  const bayIds = Array.isArray(booking.siteIds) && booking.siteIds.length
-    ? booking.siteIds
-    : [booking.siteId];
-
+  /*  bayIds is the validated list from the price check above - the same
+      sites, reused to push their hold out past the Stripe session.   */
   await Promise.all([
     ...bayIds.map((id) =>
       siteRef(booking.eventId, id).update({ holdExpiresAt: holdUntil })),
