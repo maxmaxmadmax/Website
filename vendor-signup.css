@@ -2761,3 +2761,32 @@ body.vendor-signup .footer-sponsors{
 }
 
 .vs-inline-link:hover{ color:var(--vs-ink); }
+
+/* ==========================================================================
+   AN EVENT WITH NO PICTURE
+
+   Not a grey box. The mark on the house gradient, so an event nobody has
+   uploaded a photograph for still looks like ours - and so the card does
+   not read as a picture that failed to load, which is what an empty grey
+   rectangle looks like to everybody.
+
+   The logo is the file the menu already loads, so this costs no request.
+   First layer is on top: the mark sits over the gradient.
+   ========================================================================== */
+/*  Two shapes to catch. The strip and the summary put the marker on the
+    picture itself; a card puts it on the <article>, because that is where
+    the custom property lives for the picture to inherit.            */
+.vs-event[data-noart] .vs-event-art,
+.vs-picked-art[data-noart],
+.vs-side-art[data-noart]{
+    background-color:#12141a;
+    background-image:url('/images/logowhite.png'),
+        linear-gradient(135deg, #3a1c05 0%, #12141a 72%);
+    background-repeat:no-repeat;
+    background-position:center;
+
+    /*  Percentage on the mark so it holds its proportion across the three
+        sizes these are drawn at - 320px on a card, 96px on the strip,
+        72px in the summary - and cover on the gradient underneath.  */
+    background-size:36% auto, cover;
+}

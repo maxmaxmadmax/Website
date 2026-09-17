@@ -23,9 +23,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=110';
+} from './firebase-config.js?v=112';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=110';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=112';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -362,6 +362,17 @@ function renderEvents() {
   });
 }
 
+/*  THE PICTURE FOR AN EVENT
+
+    Its own if it has one, and a marker for the CSS to dress if it does
+    not. A data attribute rather than a class so it cannot collide with
+    the state classes these same elements carry.                    */
+function eventArt(ev) {
+  return ev && ev.image
+    ? ' style="--vs-ev-art:url(\'' + escapeHtml(ev.image) + '\')"'
+    : ' data-noart';
+}
+
 function eventCard(ev) {
   const st = EVENT_STATUS[ev.status] || EVENT_STATUS.soon;
   const chosen = state.eventId === ev.id;
@@ -369,9 +380,7 @@ function eventCard(ev) {
   /*  The photo is a variable on the card, the way every other card on this
       site does it, so an event without one shows its gradient rather than
       a broken picture.                                                  */
-  const art = ev.image
-    ? ' style="--vs-ev-art:url(\'' + escapeHtml(ev.image) + '\')"'
-    : '';
+  const art = eventArt(ev);
 
   const action = st.canApply
     ? '<button type="button" class="btn btn-ticket vs-event-go" ' +
@@ -1588,9 +1597,7 @@ function renderPicked() {
     return;
   }
 
-  const art = ev.image
-    ? ' style="--vs-ev-art:url(\'' + escapeHtml(ev.image) + '\')"'
-    : '';
+  const art = eventArt(ev);
 
   wrap.hidden = false;
   head.innerHTML = '' +
@@ -1659,9 +1666,7 @@ function renderSide() {
     return;
   }
 
-  const art = ev.image
-    ? ' style="--vs-ev-art:url(\'' + escapeHtml(ev.image) + '\')"'
-    : '';
+  const art = eventArt(ev);
 
   const b = feeBreakdown(priceCents());
 
