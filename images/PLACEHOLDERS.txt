@@ -1,0 +1,30 @@
+PLACEHOLDER IMAGES
+==================
+
+These files are a temporary branded tile (the SoundzGood mark on the dark
+gradient), standing in until a real photo is supplied. They stop the pages
+showing empty coloured boxes. Replace any of them by saving a real photo
+over the same filename - nothing in the code needs to change.
+
+    images/annual/anh-do.jpg
+    images/annual/bshs-musical.jpg
+    images/annual/community-carols.jpg
+    images/annual/don-river-dash.jpg
+    images/annual/gumlu-growers-ball.jpg
+    images/annual/multicultural-festival.jpg
+    images/annual/naidoc-day.jpg
+    images/annual/paradise-country.jpg
+    images/annual/pink-stumps.jpg
+    images/annual/stonka-fishing-challenge.jpg
+    images/annual/tones-and-i.jpg
+    images/annual/tour-de-cure.jpg
+    images/entertainment/production.webp
+    images/entertainment/recommend.webp
+    images/services/cta.webp
+    images/services/private-functions.webp
+    images/services/region.webp
+    images/services/touring-bands.webp
+
+The .webp ones are JPEG bytes under a .webp name; browsers decode by
+content, not by the extension, so they render fine. When a real photo
+replaces one, save it in whatever format it is - just keep the filename.
