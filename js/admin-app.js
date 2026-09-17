@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=103';
+} from './firebase-config.js?v=104';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -3083,36 +3083,31 @@ VIEWS.vendorEmail = {
         </section>
 
         <aside class="ad-mail-side">
+          <!--  The preview first. It was under ten placeholder cards, so
+                looking at what you had written meant scrolling away from
+                where you were writing it.                          -->
           <section class="ad-card ad-panel">
-            <header class="ad-panel-head"><h2>Things you can drop in</h2></header>
+            <header class="ad-panel-head"><h2>Preview</h2></header>
+            <div class="ad-mail-preview" id="ad-mail-preview"></div>
+          </section>
+
+          <section class="ad-card ad-panel">
+            <header class="ad-panel-head"><h2>Drop in a detail</h2></header>
             <div class="ad-panel-intro">
-              <p>
-                Click one to put it where the cursor is. It is swapped for the
-                real detail when the email goes out.
-              </p>
+              <p>Click one to put it where the cursor is.</p>
             </div>
 
             <ul class="ad-tag-list">
               ${EMAIL_TAGS.map(function (pair) {
                 return `
                   <li>
-                    <button type="button" data-tag="${attr(pair[0])}">
+                    <button type="button" data-tag="${attr(pair[0])}" title="${attr(pair[1])}">
                       <code>{{${esc(pair[0])}}}</code>
-                      <span>${esc(pair[1])}</span>
                     </button>
                   </li>`;
               }).join('')}
             </ul>
-          </section>
-
-          <section class="ad-card ad-panel">
-            <header class="ad-panel-head"><h2>Preview</h2></header>
-            <div class="ad-panel-intro">
-              <p>With made-up booking details, so you see what a vendor sees.</p>
-            </div>
-            <div class="ad-mail-preview" id="ad-mail-preview"></div>
-          </section>
-        </aside>
+          </section>        </aside>
       </div>
     `;
   },
@@ -3165,7 +3160,14 @@ function wireVendorEmail() {
     preview.innerHTML =
       '<div class="ad-mail-shell">' +
         '<div class="ad-mail-head">SoundzGood Whitsundays</div>' +
-        '<div class="ad-mail-subject">' + esc(swap(subject.value)) + '</div>' +
+        /*  swap() has already escaped every value it put in, so the line
+            is escaped once and not twice - it was arriving as
+            "Eatz &amp;amp; Beatz". The subject is plain text from a text
+            input, so what is left to escape is escaped here.        */
+        '<div class="ad-mail-subject">' + esc(subject.value).replace(/\{\{\s*([a-z_]+)\s*\}\}/gi, function (whole, key) {
+          const v = values[key.toLowerCase()];
+          return v === undefined ? whole : esc(v);
+        }) + '</div>' +
         '<div class="ad-mail-inner">' + swap(body.innerHTML) + '</div>' +
       '</div>';
   };
