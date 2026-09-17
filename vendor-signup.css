@@ -2269,6 +2269,16 @@ body.vendor-signup .footer-sponsors{
     color:var(--sg-muted);
 }
 
+/*  Booking fee and GST. Quiet, because it is a qualifier on the price
+    rather than a second price - but present, because a vendor comparing
+    $100 against the $115.49 that leaves their account should have been
+    told here rather than at the checkout.                            */
+.vs-type-fees{
+    margin-top:2px;
+    color:var(--sg-dim);
+    font-size:.78rem;
+}
+
 .vs-type-size{
     color:var(--sg-muted);
     font-size:.84rem;

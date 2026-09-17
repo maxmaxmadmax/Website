@@ -23,9 +23,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=108';
+} from './firebase-config.js?v=110';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=108';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=110';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -1609,8 +1609,8 @@ function renderPicked() {
 
     '<div class="vs-picked-fact">' +
       '<p class="vs-picked-label">Food vendor</p>' +
-      '<strong>' + money(PRICE.foodCents) + '</strong>' +
-      '<span>6 m &times; 3 m site</span>' +
+      '<strong>' + money(PRICE.foodCents) + ' / bay</strong>' +
+      '<span>6 m &times; 3 m per bay</span>' +
     '</div>' +
 
     '<div class="vs-picked-fact">' +
