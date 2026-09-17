@@ -1539,12 +1539,6 @@ nav a.nav-cta.active{
     pointer-events:none;
 }
 
-/* The sponsors are event sponsors, so they stay on the event page */
-.home .footer-sponsors{
-    display:none;
-}
-
-
 /* ==========================================================================
    SCROLL ANIMATIONS
 
@@ -1720,47 +1714,6 @@ nav a.nav-cta.active{
     transform:translateY(-5px);
     box-shadow:0 16px 34px rgba(80,28,0,.38);
 }
-
-/* Compact strip across the bottom of every page, inside the footer */
-.footer-sponsors{
-    background:#fff;
-    padding:26px 6%;
-}
-
-.footer-sponsors h3{
-    text-align:center;
-    color:rgba(0,0,0,.55);
-    font-family:var(--sg-font-accent);
-    font-size:.72rem;
-    font-weight:bold;
-    letter-spacing:3px;
-    text-transform:uppercase;
-    margin-bottom:18px;
-}
-
-.footer-sponsor-row{
-    display:flex;
-    flex-wrap:wrap;
-    align-items:center;
-    justify-content:center;
-    gap:18px 34px;
-    max-width:var(--sg-max-width);
-    margin:auto;
-}
-
-.footer-sponsor-row a{
-    display:flex;
-    align-items:center;
-    padding:4px;
-}
-
-.footer-sponsor-row img{
-    max-height:46px;
-    max-width:120px;
-    width:auto;
-    object-fit:contain;
-}
-
 
 /* Humanitix embedded checkout */
 .checkout-embed{

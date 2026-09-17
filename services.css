@@ -1210,16 +1210,6 @@
 }
 
 /* ==========================================================================
-   FOOTER TWEAK
-
-   Pinned after RESPONSIVE so it still wins on a small screen.
-   ========================================================================== */
-#sg-services-page ~ #footer .footer-sponsors{
-    display:none;
-}
-
-
-/* ==========================================================================
    ANNUAL EVENTS ROW
 
    The band at the foot of the page: a headline on the left, four words on

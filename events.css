@@ -1050,17 +1050,6 @@
 }
 
 /* ==========================================================================
-   FOOTER TWEAK
-
-   Pinned after RESPONSIVE so it still wins on a small screen.
-   ========================================================================== */
-body.events-page .footer-sponsors{
-    display:none;
-}
-
-
-
-/* ==========================================================================
    WHAT'S ON THIS WEEK
 
    The strip under Friday Nights. The cards themselves are not styled here
