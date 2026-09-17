@@ -16,11 +16,11 @@
       and the two would fight each other. Keeping them apart also means
       nothing done in here can reach the public site, and nothing done
       there can reach this.                                             -->
-<link rel="stylesheet" href="admin.css?v=104">
+<link rel="stylesheet" href="admin.css?v=106">
 <!--  The DJ list for the Friday Nights panel. Same roster the
         entertainment page shows.                                  -->
-  <script src="js/roster.js?v=104" defer></script>
-  <script type="module" src="js/admin-app.js?v=104"></script>
+  <script src="js/roster.js?v=106" defer></script>
+  <script type="module" src="js/admin-app.js?v=106"></script>
 </head>
 
 <body>
@@ -65,67 +65,89 @@
       </div>
     </div>
 
-    <!--  ADDING A SECTION
-          Add a button here and a matching panel in the main area. A
-          section with data-soon shows the Coming Soon screen instead,
-          so the menu can show where things are heading without
-          pretending they are built.                                 -->
+    <!--  THE RAIL
+
+          Grouped rather than one long list. Vendors is where nearly all
+          the work is, so it carries its own set and opens by default;
+          everything else is a single item.
+
+          data-soon shows the Coming Soon screen instead of a panel, so
+          the menu can say where this is heading without pretending the
+          page is built.
+
+          Entertainment is not in Max's drawing of this but it is real and
+          in use - the DJ diary lives there - so it stays. It is the one
+          item here that came from the old menu rather than the new one.
+          -->
     <nav class="ad-nav" aria-label="Admin sections">
-      <button type="button" class="ad-nav-item" data-view="vendors">
-        <span class="ad-ico" aria-hidden="true">☰</span> Vendors
+
+      <button type="button" class="ad-nav-item" data-view="dashboard" data-soon>
+        <span class="ad-ico" aria-hidden="true">▤</span> Dashboard
       </button>
-      <button type="button" class="ad-nav-item" data-view="applications">
-        <span class="ad-ico" aria-hidden="true">✎</span> Applications
-      </button>
+
       <button type="button" class="ad-nav-item" data-view="events">
         <span class="ad-ico" aria-hidden="true">◈</span> Events
       </button>
-      <button type="button" class="ad-nav-item" data-view="map">
-        <span class="ad-ico" aria-hidden="true">◱</span> Map &amp; Sites
-      </button>
+
+      <!--  A group. The button opens and closes it; the items inside are
+            ordinary nav items, so nothing else has to know about groups. -->
+      <div class="ad-nav-group is-open" data-group="vendors">
+        <button type="button" class="ad-nav-item ad-nav-head" data-group-toggle
+                aria-expanded="true">
+          <span class="ad-ico" aria-hidden="true">☰</span> Vendors
+          <span class="ad-nav-caret" aria-hidden="true">⌃</span>
+        </button>
+
+        <div class="ad-nav-sub">
+          <button type="button" class="ad-nav-item" data-view="applications">
+            Applications
+          </button>
+          <button type="button" class="ad-nav-item" data-view="vendors">
+            Approved Vendors
+          </button>
+          <button type="button" class="ad-nav-item" data-view="payments" data-soon>
+            Payments
+          </button>
+          <button type="button" class="ad-nav-item" data-view="vendorEmail">
+            Vendor Emails
+          </button>
+          <button type="button" class="ad-nav-item" data-view="map">
+            Sites &amp; Map
+          </button>
+          <button type="button" class="ad-nav-item" data-view="discounts" data-soon>
+            Discount Codes
+          </button>
+        </div>
+      </div>
+
       <button type="button" class="ad-nav-item" data-view="entertainment">
         <span class="ad-ico" aria-hidden="true">♫</span> Entertainment
+      </button>
+
+      <button type="button" class="ad-nav-item" data-view="customers" data-soon>
+        <span class="ad-ico" aria-hidden="true">☺</span> Customers
+      </button>
+
+      <button type="button" class="ad-nav-item" data-view="messages" data-soon>
+        <span class="ad-ico" aria-hidden="true">✉</span> Messages
+      </button>
+
+      <button type="button" class="ad-nav-item" data-view="reports" data-soon>
+        <span class="ad-ico" aria-hidden="true">◔</span> Reports
       </button>
 
       <button type="button" class="ad-nav-item" data-view="settings">
         <span class="ad-ico" aria-hidden="true">⚙</span> Settings
       </button>
-
-      <p class="ad-nav-divider">Communication</p>
-
-      <!--  The vendor confirmation email. It used to be HTML inside a
-            Cloud Function, so changing a word was a deploy. -->
-      <button type="button" class="ad-nav-item" data-view="vendorEmail">
-        <span class="ad-ico" aria-hidden="true">✉</span> Vendor Emails
-      </button>
-
-      <p class="ad-nav-divider">Coming soon</p>
-
-      <!--  The dashboard's numbers turned out to belong above the vendor
-            list rather than on a page of their own. It keeps its place in
-            the menu for whatever it becomes instead.                    -->
-      <button type="button" class="ad-nav-item" data-view="dashboard" data-soon>
-        <span class="ad-ico" aria-hidden="true">▤</span> Dashboard
-      </button>
-      <button type="button" class="ad-nav-item" data-view="messages" data-soon>
-        <span class="ad-ico" aria-hidden="true">✉</span> Messages
-      </button>
-      <button type="button" class="ad-nav-item" data-view="leads" data-soon>
-        <span class="ad-ico" aria-hidden="true">◎</span> Leads
-      </button>
-      <button type="button" class="ad-nav-item" data-view="customers" data-soon>
-        <span class="ad-ico" aria-hidden="true">☺</span> Customers
-      </button>
-      <button type="button" class="ad-nav-item" data-view="quotes" data-soon>
-        <span class="ad-ico" aria-hidden="true">$</span> Quotes
-      </button>
-      <button type="button" class="ad-nav-item" data-view="calendar" data-soon>
-        <span class="ad-ico" aria-hidden="true">▦</span> Calendar
-      </button>
-      <button type="button" class="ad-nav-item" data-view="reports" data-soon>
-        <span class="ad-ico" aria-hidden="true">◔</span> Reports
-      </button>
     </nav>
+
+    <!--  The panel at the foot of Max's drawing. A photograph would mean
+          shipping one more image and keeping it in step with the brand;
+          the words do the same job and cost nothing.               -->
+    <div class="ad-rail-card" aria-hidden="true">
+      <p class="ad-rail-card-line">Good Events</p>
+      <p class="ad-rail-card-line">Better People</p>
+    </div>
 
     <div class="ad-rail-foot">
       <div class="ad-who">

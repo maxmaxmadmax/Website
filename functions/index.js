@@ -24,6 +24,40 @@ const { getAuth } = require('firebase-admin/auth');
 const layout = require('./lib/layout');
 const { sendBookingEmails } = require('./lib/email');
 
+/*  SEND, AND WRITE DOWN WHAT HAPPENED
+
+    sendBookingEmails never throws - it hands back what worked and what
+    did not - so the only record of a failure was a log line. The booking
+    keeps the answer now, which is what the admin desk reads to say Sent,
+    Failed or Not sent beside each vendor.
+
+    The write is best effort: a booking that is paid and confirmed must not
+    come undone because we could not write a status onto it.           */
+async function sendAndRecord(booking, bookingId, event, ref) {
+  const result = await sendBookingEmails(booking, bookingId, event);
+
+  if (!ref) return result;
+
+  try {
+    const sent = Boolean(result && result.vendor);
+    const why = (result && result.errors && result.errors.length)
+      ? result.errors.join(' | ')
+      : ((result && result.reason) || '');
+
+    await ref.update({
+      emailStatus: sent ? 'sent' : 'failed',
+      emailAt: FieldValue.serverTimestamp(),
+      emailError: sent ? FieldValue.delete() : String(why).slice(0, 500),
+    });
+  } catch (err) {
+    logger.warn('could not record the email status', {
+      bookingId, message: err && err.message,
+    });
+  }
+
+  return result;
+}
+
 initializeApp();
 const db = getFirestore();
 
@@ -936,9 +970,14 @@ async function confirmAndNotify(bookingId, extra = {}) {
     const evSnap = await db.collection('events').doc(booking.eventId).get();
     const event = evSnap.exists ? evSnap.data() : {};
 
-    const sent = await sendBookingEmails(booking, bookingId, event);
+    const sent = await sendAndRecord(booking, bookingId, event, ref);
 
-    if (sent.sent) {
+    /*  confirmationEmailAt is the "we have already told them" guard a few
+        lines up. It was set from sent.sent, which sendBookingEmails has
+        never returned - it returns { vendor, office, errors } - so the
+        guard never armed and a webhook retry would have emailed the
+        vendor a second time.                                          */
+    if (sent && sent.vendor) {
       await ref.update({ confirmationEmailAt: FieldValue.serverTimestamp() });
     }
   } catch (err) {
@@ -2128,6 +2167,53 @@ exports.syncGigGuideNow = onCall(
    URL with a token in it and a sample hard coded into this file. An
    admin-only callable is the same test without the open door.
    ------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------
+   adminResendVendorEmail
+
+   Sends a vendor their confirmation again - or for the first time, if it
+   failed when they paid. Only for a booking that is actually paid: the
+   email says "payment has been received", and sending that to somebody who
+   has not paid is worse than sending nothing.
+   ------------------------------------------------------------------------- */
+exports.adminResendVendorEmail = onCall(
+  { secrets: [SMTP_USER, SMTP_PASS] },
+  async (request) => {
+    requireAdmin(request);
+
+    const { bookingId } = request.data || {};
+    const id = String(bookingId || '').trim();
+    if (!id) throw new HttpsError('invalid-argument', 'Missing booking.');
+
+    const ref = db.collection('bookings').doc(id);
+    const snap = await ref.get();
+    if (!snap.exists) throw new HttpsError('not-found', 'No such booking.');
+
+    const booking = snap.data();
+
+    const paid = booking.status === 'confirmed'
+      || booking.paymentStatus === 'paid'
+      || booking.paymentStatus === 'free';
+
+    if (!paid) {
+      throw new HttpsError('failed-precondition',
+        'That booking has not been paid, so there is nothing to confirm.');
+    }
+
+    if (!(booking.business || {}).email) {
+      throw new HttpsError('failed-precondition',
+        'That booking has no email address on it.');
+    }
+
+    const evSnap = await db.collection('events').doc(booking.eventId).get();
+    const event = evSnap.exists ? evSnap.data() : {};
+
+    const result = await sendAndRecord(booking, id, event, ref);
+    logger.info('vendor email resent by an admin', { bookingId: id, result });
+
+    return result;
+  },
+);
+
 exports.adminSendTestVendorEmail = onCall(
   { secrets: [SMTP_USER, SMTP_PASS] },
   async (request) => {

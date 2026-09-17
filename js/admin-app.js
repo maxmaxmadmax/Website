@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=104';
+} from './firebase-config.js?v=106';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -275,6 +275,17 @@ function wireChrome() {
     btn.addEventListener('click', () => {
       location.hash = '#/' + btn.getAttribute('data-view');
       document.getElementById('ad-rail').classList.remove('is-open');
+    });
+  });
+
+  /*  The Vendors group opens and shuts. It is a button rather than a
+      link because it goes nowhere - the items inside it do.        */
+  document.querySelectorAll('[data-group-toggle]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const group = btn.closest('.ad-nav-group');
+      if (!group) return;
+      const open = group.classList.toggle('is-open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
   });
 
@@ -3035,45 +3046,73 @@ function savedVendorEmail() {
 VIEWS.vendorEmail = {
   html() {
     const s = savedVendorEmail();
+    const when = vendorEmailWhen(s.saved);
 
     return `
-      <div class="ad-page-head">
-        <div>
-          <h1>Vendor email</h1>
-          <p>
-            Sent automatically after a vendor pays &middot;
-            ${esc(s.ev.name || state.activeEventId || 'No event selected')}
-          </p>
+      <div class="ad-mail-head-row">
+        <span class="ad-mail-icon" aria-hidden="true">&#9993;</span>
+        <div class="ad-mail-title">
+          <h1>Vendor Email Template</h1>
+          <p>Edit the confirmation email sent to vendors after successful payment via Stripe.</p>
         </div>
-        <span class="ad-pill ${s.custom ? 'ad-pill-green' : 'ad-pill-blue'}">
-          ${s.custom ? 'Your wording' : 'Built-in email'}
-        </span>
+        <div class="ad-mail-status">
+          <span class="ad-pill ${s.custom ? 'ad-pill-green' : 'ad-pill-blue'}">
+            ${s.custom ? 'Active' : 'Built-in email'}
+          </span>
+          ${when ? `<p class="ad-mail-when">Last updated ${esc(when)}</p>` : ''}
+        </div>
       </div>
 
       <div class="ad-mail-grid">
         <section class="ad-card ad-panel">
           <div class="ad-field">
-            <label for="ad-mail-subject">Subject</label>
+            <label for="ad-mail-subject">Email Subject</label>
             <input type="text" id="ad-mail-subject" value="${attr(s.tpl.subject)}">
           </div>
 
           <div class="ad-field">
-            <label for="ad-mail-body">Body</label>
+            <label for="ad-mail-body">Email Body</label>
 
             <div class="ad-mail-tools" role="toolbar" aria-label="Formatting">
+              <select id="ad-mail-block" aria-label="Text style">
+                <option value="p">Paragraph</option>
+                <option value="h2">Heading</option>
+              </select>
+              <span class="ad-mail-tools-sep" aria-hidden="true"></span>
               <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
               <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
+              <button type="button" data-link title="Add a link">&#128279;</button>
               <button type="button" data-cmd="insertUnorderedList" title="Bulleted list">&bull;</button>
               <button type="button" data-cmd="insertOrderedList" title="Numbered list">1.</button>
-              <button type="button" data-link title="Add a link">&#128279;</button>
+              <button type="button" data-cmd="outdent" title="Less indent">&#8676;</button>
+              <button type="button" data-cmd="indent" title="More indent">&#8677;</button>
+              <span class="ad-mail-tools-sep" aria-hidden="true"></span>
+              <button type="button" data-html title="Edit the HTML">&lt;&gt;</button>
             </div>
 
             <div class="ad-mail-body" id="ad-mail-body" contenteditable="true"></div>
           </div>
 
+          <!--  The placeholders sit under the body rather than in a column
+                of their own: they belong to the thing being written, and
+                as a side panel they pushed the preview off the screen. -->
+          <div class="ad-tagbar">
+            <p class="ad-tagbar-head">Available Placeholders</p>
+            <p class="ad-tagbar-sub">Click to insert into your email.</p>
+            <div class="ad-tagbar-chips">
+              ${EMAIL_TAGS.map(function (pair) {
+                return `<button type="button" data-tag="${attr(pair[0])}"
+                                title="${attr(pair[1])}">{{${esc(pair[0])}}}</button>`;
+              }).join('')}
+            </div>
+          </div>
+
           <div class="ad-actions-row">
-            <button type="button" class="ad-btn ad-btn-primary" id="ad-mail-save">Save email</button>
-            <button type="button" class="ad-btn" id="ad-mail-test">Send test to me</button>
+            <button type="button" class="ad-btn ad-btn-primary" id="ad-mail-save">
+              Save Template
+            </button>
+            <button type="button" class="ad-btn" id="ad-mail-preview-btn">Preview Email</button>
+            <button type="button" class="ad-btn" id="ad-mail-test">Send Test Email</button>
             ${s.custom
               ? '<button type="button" class="ad-btn" id="ad-mail-reset">Use the built-in one</button>'
               : ''}
@@ -3082,38 +3121,201 @@ VIEWS.vendorEmail = {
           <p class="ad-action-msg" id="ad-mail-msg" hidden></p>
         </section>
 
-        <aside class="ad-mail-side">
-          <!--  The preview first. It was under ten placeholder cards, so
-                looking at what you had written meant scrolling away from
-                where you were writing it.                          -->
-          <section class="ad-card ad-panel">
-            <header class="ad-panel-head"><h2>Preview</h2></header>
-            <div class="ad-mail-preview" id="ad-mail-preview"></div>
-          </section>
+        <aside class="ad-card ad-panel ad-mail-side">
+          <header class="ad-panel-head">
+            <h2>Preview Email</h2>
+          </header>
+          <div class="ad-panel-intro">
+            <p>This is an example of how the email will look to the vendor.</p>
+          </div>
 
-          <section class="ad-card ad-panel">
-            <header class="ad-panel-head"><h2>Drop in a detail</h2></header>
-            <div class="ad-panel-intro">
-              <p>Click one to put it where the cursor is.</p>
-            </div>
+          <div class="ad-field ad-mail-as">
+            <label for="ad-mail-as">Preview as</label>
+            <select id="ad-mail-as">
+              <option value="food">Food Vendor</option>
+              <option value="market">Market Stall</option>
+            </select>
+          </div>
 
-            <ul class="ad-tag-list">
-              ${EMAIL_TAGS.map(function (pair) {
-                return `
-                  <li>
-                    <button type="button" data-tag="${attr(pair[0])}" title="${attr(pair[1])}">
-                      <code>{{${esc(pair[0])}}}</code>
-                    </button>
-                  </li>`;
-              }).join('')}
-            </ul>
-          </section>        </aside>
+          <div class="ad-mail-preview" id="ad-mail-preview"></div>
+        </aside>
       </div>
+
+      <!--  WHO GOT ONE
+
+            Every paid booking for this event and whether their
+            confirmation went out. It is the answer to "did Jess get her
+            email", which until now meant reading the Cloud Function logs.
+            -->
+      <section class="ad-card ad-panel ad-mail-vendors">
+        <header class="ad-panel-head">
+          <div>
+            <h2>Vendors</h2>
+            <p class="ad-panel-sub">View payment and email status.</p>
+          </div>
+          <input type="search" id="ad-mail-search" class="ad-search"
+                 placeholder="Search vendors..." aria-label="Search vendors">
+        </header>
+
+        <div class="ad-table-wrap">
+          <table class="ad-table ad-mail-table">
+            <thead>
+              <tr>
+                <th>Name</th><th>Business</th><th>Site</th><th>Amount</th>
+                <th>Payment status</th><th>Email status</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="ad-mail-rows"></tbody>
+          </table>
+        </div>
+      </section>
     `;
   },
 
   wire() { wireVendorEmail(); },
 };
+
+/*  When the template was last saved, in words. The stamp comes back from
+    Firestore as a Timestamp, or as nothing at all on an event nobody has
+    touched.                                                           */
+function vendorEmailWhen(saved) {
+  const at = saved && saved.updatedAt;
+  if (!at) return '';
+
+  const d = typeof at.toDate === 'function' ? at.toDate() : new Date(at);
+  if (isNaN(d)) return '';
+
+  return d.toLocaleString('en-AU', {
+    day: 'numeric', month: 'short', year: 'numeric',
+    hour: 'numeric', minute: '2-digit',
+  });
+}
+
+/*  THE VENDOR ROWS
+
+    Paid bookings for this event, with what we know about their email.
+    emailStatus is written by the server when it sends one; a booking from
+    before that existed has none, which reads as "not sent" - true as far
+    as this page can tell, and the Send button is there either way.    */
+function vendorEmailRows() {
+  const paid = (state.bookings || []).filter(function (b) {
+    return b.eventId === state.activeEventId
+        && (b.status === 'confirmed' || b.paymentStatus === 'paid'
+            || b.paymentStatus === 'free');
+  });
+
+  const term = (document.getElementById('ad-mail-search') || {}).value || '';
+  const needle = term.trim().toLowerCase();
+
+  return paid.filter(function (b) {
+    if (!needle) return true;
+    const biz = b.business || {};
+    return [biz.name, biz.contactName, biz.email, b.siteLabel]
+      .filter(Boolean).join(' ').toLowerCase().includes(needle);
+  });
+}
+
+function emailStatusCell(b) {
+  const at = b.emailAt || b.confirmationEmailAt;
+  const when = at ? vendorEmailWhen({ updatedAt: at }) : '';
+
+  if (b.emailStatus === 'sent' || (!b.emailStatus && at)) {
+    return '<span class="ad-dot ad-dot-green"></span> Sent'
+      + (when ? ' <span class="ad-cell-muted">' + esc(when) + '</span>' : '');
+  }
+
+  if (b.emailStatus === 'failed') {
+    return '<span class="ad-dot ad-dot-red"></span> Failed'
+      + (when ? ' <span class="ad-cell-muted">' + esc(when) + '</span>' : '');
+  }
+
+  return '<span class="ad-dot"></span> <span class="ad-cell-muted">Not sent</span>';
+}
+
+function renderVendorEmailRows() {
+  const host = document.getElementById('ad-mail-rows');
+  if (!host) return;
+
+  const rows = vendorEmailRows();
+
+  if (!rows.length) {
+    host.innerHTML = '<tr><td colspan="7" class="ad-cell-muted">'
+      + 'No paid vendors for this event yet.</td></tr>';
+    return;
+  }
+
+  host.innerHTML = rows.map(function (b) {
+    const biz = b.business || {};
+    const everSent = b.emailStatus === 'sent' || b.emailStatus === 'failed'
+      || b.emailAt || b.confirmationEmailAt;
+
+    return `
+      <tr>
+        <td class="ad-cell-strong">${esc(biz.contactName || '')}</td>
+        <td>${esc(biz.name || '')}</td>
+        <td>${esc(b.siteLabel || '')}</td>
+        <td>${esc(money(b.totalCents != null ? b.totalCents : b.amountCents))}</td>
+        <td><span class="ad-dot ad-dot-green"></span> Paid</td>
+        <td>${emailStatusCell(b)}</td>
+        <td class="ad-cell-right">
+          <button type="button" class="ad-btn ad-btn-small" data-resend="${attr(b.id)}">
+            ${everSent ? 'Resend Email' : 'Send Email'}
+          </button>
+        </td>
+      </tr>`;
+  }).join('');
+
+  host.querySelectorAll('[data-resend]').forEach(function (btn) {
+    btn.addEventListener('click', function () { resendVendorEmail(btn); });
+  });
+}
+
+async function resendVendorEmail(btn) {
+  const id = btn.getAttribute('data-resend');
+  const was = btn.textContent;
+
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+
+  try {
+    const res = await call('adminResendVendorEmail', { bookingId: id });
+
+    if (res && res.vendor) {
+      btn.textContent = 'Sent';
+    } else {
+      const why = (res && res.errors && res.errors.length)
+        ? res.errors.join(' | ')
+        : ((res && res.reason) || 'no reason given');
+      btn.textContent = was;
+      btn.disabled = false;
+      window.alert('It did not send.\n\n' + why);
+      return;
+    }
+
+    /*  Nothing to reload: bookings are a live listener, so the row
+        redraws itself the moment the server writes the status.     */
+  } catch (err) {
+    btn.textContent = was;
+    btn.disabled = false;
+    window.alert(err.message || 'Could not send that.');
+  }
+}
+
+
+/*  WHAT IS IN THE BOXES RIGHT NOW
+
+    Bookings are a live listener that calls render(), and render() rebuilds
+    this whole screen - so a vendor paying while Max is halfway through a
+    sentence used to wipe the sentence. Every keystroke is kept here, and
+    the screen reads from it, so a redraw puts back what was there.
+
+    Cleared when the template is saved, or when the event changes, because
+    at that point it is no longer unsaved work.                        */
+let mailDraft = null;
+
+function mailDraftFor(eventId) {
+  return mailDraft && mailDraft.eventId === eventId ? mailDraft : null;
+}
 
 function wireVendorEmail() {
   const subject = document.getElementById('ad-mail-subject');
@@ -3123,11 +3325,10 @@ function wireVendorEmail() {
   if (!subject || !body) return;
 
   const s = savedVendorEmail();
+  const kept = mailDraftFor(state.activeEventId);
 
-  /*  Set as HTML rather than through an attribute in the markup above: the
-      body IS markup, and putting it there would need escaping on the way
-      in and unescaping on the way out.                                  */
-  body.innerHTML = s.tpl.body;
+  if (kept) subject.value = kept.subject;
+  body.innerHTML = kept ? kept.body : s.tpl.body;
 
   const say = function (text, bad) {
     if (!msg) return;
@@ -3136,15 +3337,26 @@ function wireVendorEmail() {
     msg.classList.toggle('is-bad', Boolean(bad));
   };
 
-  /*  THE PREVIEW
+  const remember = function () {
+    mailDraft = {
+      eventId: state.activeEventId,
+      subject: subject.value,
+      body: body.innerHTML,
+    };
+  };
 
-      The same substitution the mailer does, with sample details - but the
-      event's own name and date rather than invented ones, because those are
-      the two a typo actually shows up in.                              */
+  /* ---- the preview ------------------------------------------------------ */
+  const asSelect = document.getElementById('ad-mail-as');
+
   const paint = function () {
     if (!preview) return;
 
+    const market = asSelect && asSelect.value === 'market';
+
     const values = Object.assign({}, EMAIL_SAMPLE, {
+      site_type: market ? 'Market Stall' : 'Food Vendor',
+      site_number: market ? 'M08' : 'F12',
+      business_name: market ? 'Reef Threads' : 'Island Tacos',
       event_name: s.ev.name || 'Your event',
       event_date: s.ev.dateLabel || s.ev.dateISO || 'The date',
       event_venue: [s.ev.venue, s.ev.location].filter(Boolean).join(', '),
@@ -3159,41 +3371,48 @@ function wireVendorEmail() {
 
     preview.innerHTML =
       '<div class="ad-mail-shell">' +
-        '<div class="ad-mail-head">SoundzGood Whitsundays</div>' +
-        /*  swap() has already escaped every value it put in, so the line
-            is escaped once and not twice - it was arriving as
-            "Eatz &amp;amp; Beatz". The subject is plain text from a text
-            input, so what is left to escape is escaped here.        */
-        '<div class="ad-mail-subject">' + esc(subject.value).replace(/\{\{\s*([a-z_]+)\s*\}\}/gi, function (whole, key) {
-          const v = values[key.toLowerCase()];
-          return v === undefined ? whole : esc(v);
-        }) + '</div>' +
+        '<div class="ad-mail-brand">' +
+          '<span class="ad-mail-brand-name">SoundzGood</span>' +
+          '<span class="ad-mail-brand-sub">Events &middot; Production &middot; Hire</span>' +
+        '</div>' +
         '<div class="ad-mail-inner">' + swap(body.innerHTML) + '</div>' +
       '</div>';
   };
 
-  paint();
-  subject.addEventListener('input', paint);
-  body.addEventListener('input', paint);
+  const onEdit = function () { remember(); paint(); };
 
-  /* ---- formatting ------------------------------------------------------- */
-  /*  mousedown is where the selection is preserved: the default action of
-      pressing a button is to take focus, which collapses the selection the
-      command was meant to act on.                                       */
+  paint();
+  subject.addEventListener('input', onEdit);
+  body.addEventListener('input', onEdit);
+  if (asSelect) asSelect.addEventListener('change', paint);
+
+  /* ---- formatting -------------------------------------------------------- */
+  /*  mousedown, not click: pressing a button takes focus, and taking focus
+      collapses the selection the command was meant to act on.          */
   const keepSelection = function (el) {
     el.addEventListener('mousedown', function (e) { e.preventDefault(); });
   };
 
-  const cmdButtons = document.querySelectorAll('.ad-mail-tools [data-cmd]');
-  for (let i = 0; i < cmdButtons.length; i++) {
+  const cmds = document.querySelectorAll('.ad-mail-tools [data-cmd]');
+  for (let i = 0; i < cmds.length; i++) {
     (function (btn) {
       keepSelection(btn);
       btn.addEventListener('click', function () {
         document.execCommand(btn.getAttribute('data-cmd'), false, null);
         body.focus();
-        paint();
+        onEdit();
       });
-    }(cmdButtons[i]));
+    }(cmds[i]));
+  }
+
+  const block = document.getElementById('ad-mail-block');
+  if (block) {
+    keepSelection(block);
+    block.addEventListener('change', function () {
+      document.execCommand('formatBlock', false, block.value);
+      body.focus();
+      onEdit();
+    });
   }
 
   const linkBtn = document.querySelector('.ad-mail-tools [data-link]');
@@ -3204,20 +3423,32 @@ function wireVendorEmail() {
       if (!url) return;
       document.execCommand('createLink', false, url);
       body.focus();
-      paint();
+      onEdit();
     });
   }
 
-  /* ---- dropping a placeholder in ---------------------------------------- */
-  const tagButtons = document.querySelectorAll('.ad-tag-list [data-tag]');
-  for (let i = 0; i < tagButtons.length; i++) {
+  /*  The HTML view. Some things - a table, a coloured button - are easier
+      to paste in than to build with four toolbar buttons, so the markup is
+      one click away rather than unreachable.                          */
+  const htmlBtn = document.querySelector('.ad-mail-tools [data-html]');
+  if (htmlBtn) {
+    keepSelection(htmlBtn);
+    htmlBtn.addEventListener('click', function () {
+      const edited = window.prompt('The HTML behind this email:', body.innerHTML);
+      if (edited === null) return;
+      body.innerHTML = edited;
+      onEdit();
+    });
+  }
+
+  /* ---- dropping a placeholder in ----------------------------------------- */
+  const tags = document.querySelectorAll('.ad-tagbar [data-tag]');
+  for (let i = 0; i < tags.length; i++) {
     (function (btn) {
       keepSelection(btn);
       btn.addEventListener('click', function () {
         const tag = '{{' + btn.getAttribute('data-tag') + '}}';
 
-        /*  Into the subject if that is where they were, otherwise into the
-            body at the cursor.                                          */
         if (document.activeElement === subject) {
           const at = subject.selectionStart == null ? subject.value.length : subject.selectionStart;
           subject.value = subject.value.slice(0, at) + tag + subject.value.slice(at);
@@ -3228,12 +3459,18 @@ function wireVendorEmail() {
           body.focus();
           document.execCommand('insertText', false, tag);
         }
-        paint();
+        onEdit();
       });
-    }(tagButtons[i]));
+    }(tags[i]));
   }
 
-  /* ---- saving ------------------------------------------------------------ */
+  /* ---- the vendor list ---------------------------------------------------- */
+  renderVendorEmailRows();
+
+  const search = document.getElementById('ad-mail-search');
+  if (search) search.addEventListener('input', renderVendorEmailRows);
+
+  /* ---- saving -------------------------------------------------------------- */
   const current = function () {
     return { subject: subject.value, body: body.innerHTML };
   };
@@ -3250,6 +3487,7 @@ function wireVendorEmail() {
           eventId: state.activeEventId,
           fields: { vendorEmail: current() },
         });
+        mailDraft = null;          // saved, so no longer unsaved work
         await loadEvents();
         render();
       } catch (err) {
@@ -3259,7 +3497,15 @@ function wireVendorEmail() {
     });
   }
 
-  /* ---- back to the built-in one ------------------------------------------ */
+  /*  Preview Email scrolls the preview into view. On a wide screen it is
+      already beside the editor; on a narrow one it is underneath.     */
+  const previewBtn = document.getElementById('ad-mail-preview-btn');
+  if (previewBtn && preview) {
+    previewBtn.addEventListener('click', function () {
+      preview.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+
   const resetBtn = document.getElementById('ad-mail-reset');
   if (resetBtn) {
     resetBtn.addEventListener('click', async function () {
@@ -3271,6 +3517,7 @@ function wireVendorEmail() {
           eventId: state.activeEventId,
           fields: { vendorEmail: { subject: '', body: '' } },
         });
+        mailDraft = null;
         await loadEvents();
         render();
       } catch (err) {
@@ -3280,7 +3527,7 @@ function wireVendorEmail() {
     });
   }
 
-  /* ---- send one to yourself ---------------------------------------------- */
+  /* ---- send one to yourself ------------------------------------------------- */
   const testBtn = document.getElementById('ad-mail-test');
   if (testBtn) {
     testBtn.addEventListener('click', async function () {
@@ -3290,11 +3537,12 @@ function wireVendorEmail() {
       say('Sending...');
       try {
         /*  Saved first: a test of what is on screen is only a test if what
-            is on screen is what the server has.                         */
+            is on screen is what the server has.                        */
         await call('adminSaveEvent', {
           eventId: state.activeEventId,
           fields: { vendorEmail: current() },
         });
+        mailDraft = null;
 
         const res = await call('adminSendTestVendorEmail', { eventId: state.activeEventId });
 
@@ -3303,7 +3551,7 @@ function wireVendorEmail() {
         } else {
           /*  The reason, not just "it failed". Nine times out of ten it is
               the mail password, and this puts Google's own words on screen
-              rather than making somebody go and read the logs.         */
+              rather than sending somebody to the logs.                 */
           const why = (res && res.errors && res.errors.length)
             ? res.errors.join(' | ')
             : ((res && res.reason) || 'no reason given');
