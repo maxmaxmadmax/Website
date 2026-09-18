@@ -21,7 +21,7 @@
 
 import {
   firebaseConfig, functionsRegion, isFirebaseConfigured,
-} from './firebase-config.js?v=120';
+} from './firebase-config.js?v=121';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -377,11 +377,16 @@ async function showEstimate() {
   askContact();
 }
 
+/*  The contact form goes INSIDE the scrollable conversation, not in the
+    fixed dock at the foot: as a dock it was tall enough to cover the chat,
+    so you could not scroll back up to read your estimate. In the stream it
+    scrolls with everything else.                                          */
 function askContact() {
-  dock.innerHTML = '';
-  dock.className = 'sgq-dock sgq-dock-form';
+  clearDock();
 
-  dock.innerHTML = `
+  const card = document.createElement('div');
+  card.className = 'sgq-formwrap';
+  card.innerHTML = `
     <form class="sgq-form" novalidate>
       <label class="sgq-field">
         <span>Your name</span>
@@ -414,7 +419,9 @@ function askContact() {
       <button type="submit" class="sgq-submit">Send me my estimate</button>
     </form>`;
 
-  const form = dock.querySelector('.sgq-form');
+  stream.appendChild(card);
+
+  const form = card.querySelector('.sgq-form');
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     submit(form);
@@ -455,8 +462,10 @@ async function submit(form) {
   /*  No Firebase (preview or a load failure): the bot cannot send, so it
       says so plainly and hands the visitor the contact page rather than
       pretending it worked.                                                */
+  const card = form.closest('.sgq-formwrap');
+
   if (!fb) {
-    clearDock();
+    if (card) card.remove();
     meSay(`${name} — ${email}`);
     await botSay('Thanks! We can’t send from this preview, but you can reach the '
       + 'team on the <a href="/contact">contact page</a> and quote your estimate of '
@@ -466,7 +475,7 @@ async function submit(form) {
 
   try {
     await fb.submit(payload);
-    clearDock();
+    if (card) card.remove();
     meSay(`${name} — ${email}`);
     await botSay(`Perfect, thanks ${esc(name)}! 🎉 Your estimate of `
       + `<strong>${rangeLabel(answers._est)}</strong> is on its way to your inbox, `

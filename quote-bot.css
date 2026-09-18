@@ -199,6 +199,16 @@
 .sgq-cat:first-child { margin-top: 0; }
 
 /* ---- contact form --------------------------------------------------- */
+/* the form sits inside the scrollable stream, as its own card, so the
+   conversation above it stays readable */
+.sgq-formwrap {
+  width: 100%;
+  background: var(--q-panel);
+  border: 1px solid var(--q-line);
+  border-radius: 14px;
+  padding: 14px;
+  box-sizing: border-box;
+}
 .sgq-dock-form { display: block; }
 .sgq-form { display: flex; flex-direction: column; gap: 10px; }
 
