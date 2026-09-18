@@ -41,18 +41,10 @@ const DEFAULT_QUOTE_PRICING = {
     { key: 'festival', label: 'Festival', baseCents: 250000 },
   ],
 
-  // What they want on the day. Multi-select, each adds its amount. This one
-  // list covers services, extras, setup, lighting-only and dry hire - the
-  // things Max listed - so he can add or drop a line without new code.
-  services: [
-    { key: 'dj', label: 'DJ', addCents: 60000 },
-    { key: 'pa', label: 'Live Sound / PA', addCents: 45000 },
-    { key: 'lighting', label: 'Lighting', addCents: 40000 },
-    { key: 'mc', label: 'MC / Host', addCents: 35000 },
-    { key: 'staging', label: 'Staging', addCents: 50000 },
-    { key: 'dryhire', label: 'Dry Hire Gear', addCents: 25000 },
-    { key: 'setup', label: 'Setup & Pack-down', addCents: 30000 },
-  ],
+  // NOTE: what the visitor picks on the day - "services & extras" - no
+  // longer lives here. It is the equipment inventory now (see
+  // DEFAULT_INVENTORY below), so one list is both Max's price list and the
+  // bot's options. Only the items flagged inBot are offered by the bot.
 
   // Guest count. A bigger crowd needs more of everything, so it scales the
   // whole subtotal rather than adding a flat amount.
@@ -84,6 +76,32 @@ const DEFAULT_QUOTE_PRICING = {
   ],
 };
 
+/*  THE EQUIPMENT INVENTORY - Max's price list, and the source of the bot's
+    "what are you after?" options in one.
+
+    Each item:
+      id        stable handle the bot and a lead refer to it by
+      name      what it is called on the price list
+      category  how the list is grouped (Audio, Lighting, ...)
+      priceCents  hire price
+      period    what that price is for: 'day' | 'event' | 'weekend'
+      quantity  how many are owned (stock, shown in admin; not used in the sum)
+      inBot     whether the bot offers it as a pickable extra
+
+    These starter items mirror the old built-in services so the bot keeps
+    working before Max fills in his real gear. The store is the `inventory`
+    collection in Firestore; this is only the fallback. The public bot
+    mirrors this list in js/quote-bot.js.                                   */
+const DEFAULT_INVENTORY = [
+  { id: 'dj', name: 'DJ Package', category: 'DJ / MC', priceCents: 60000, period: 'event', quantity: 2, inBot: true },
+  { id: 'mc', name: 'MC / Host', category: 'DJ / MC', priceCents: 35000, period: 'event', quantity: 1, inBot: true },
+  { id: 'pa', name: 'Live Sound / PA System', category: 'Audio', priceCents: 45000, period: 'event', quantity: 3, inBot: true },
+  { id: 'lighting', name: 'Lighting Package', category: 'Lighting', priceCents: 40000, period: 'event', quantity: 4, inBot: true },
+  { id: 'staging', name: 'Staging', category: 'Staging', priceCents: 50000, period: 'event', quantity: 1, inBot: true },
+  { id: 'dryhire', name: 'Dry Hire Gear', category: 'Dry Hire', priceCents: 25000, period: 'day', quantity: 10, inBot: true },
+  { id: 'setup', name: 'Setup & Pack-down', category: 'Crew', priceCents: 30000, period: 'event', quantity: 1, inBot: true },
+];
+
 /*  Round to the nearest step, never below zero. Used for both ends of the
     range so the numbers a visitor sees are clean.                        */
 function roundCents(cents, step) {
@@ -108,8 +126,10 @@ function find(list, key) {
     the caller can store readable text without looking anything up again.
     Unknown keys are ignored rather than throwing - a stale bot on a cached
     page must still produce a number, just not a wrong-shaped crash.       */
-function estimate(pricing, answers) {
+function estimate(pricing, inventory, answers) {
   const p = pricing || DEFAULT_QUOTE_PRICING;
+  const inv = Array.isArray(inventory) && inventory.length
+    ? inventory : DEFAULT_INVENTORY;
   const a = answers || {};
 
   const evt = find(p.eventTypes, a.eventType);
@@ -117,12 +137,17 @@ function estimate(pricing, answers) {
   const size = find(p.sizes, a.size);
   const dur = find(p.durations, a.hours) || find(p.durations, String(a.hours));
 
+  //  The picked extras are equipment items, referenced by id. Only items
+  //  that are actually offered by the bot count, so a stale or fiddled id
+  //  cannot pull in a hidden line.
+  const byId = {};
+  inv.forEach((item) => { if (item && item.id) byId[item.id] = item; });
   const pickedServices = (Array.isArray(a.services) ? a.services : [])
-    .map((k) => find(p.services, k))
-    .filter(Boolean);
+    .map((id) => byId[id])
+    .filter((item) => item && item.inBot);
 
   const base = evt ? evt.baseCents || 0 : 0;
-  const addons = pickedServices.reduce((sum, s) => sum + (s.addCents || 0), 0);
+  const addons = pickedServices.reduce((sum, s) => sum + (s.priceCents || 0), 0);
   const travel = loc ? loc.travelCents || 0 : 0;
 
   const hours = dur ? dur.hours || 0 : 0;
@@ -149,9 +174,11 @@ function estimate(pricing, answers) {
       location: loc ? loc.label : '',
       size: size ? size.label : '',
       duration: dur ? dur.label : '',
-      services: pickedServices.map((s) => s.label),
+      services: pickedServices.map((s) => s.name),
     },
   };
 }
 
-module.exports = { DEFAULT_QUOTE_PRICING, estimate, roundCents };
+module.exports = {
+  DEFAULT_QUOTE_PRICING, DEFAULT_INVENTORY, estimate, roundCents,
+};

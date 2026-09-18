@@ -25,7 +25,7 @@ const layout = require('./lib/layout');
 const { sendBookingEmails } = require('./lib/email');
 const { sendQuoteEmail } = require('./lib/quote-email');
 const {
-  DEFAULT_QUOTE_PRICING, estimate: estimateQuote,
+  DEFAULT_QUOTE_PRICING, DEFAULT_INVENTORY, estimate: estimateQuote,
 } = require('./lib/quote-pricing');
 
 /*  SEND, AND WRITE DOWN WHAT HAPPENED
@@ -2336,6 +2336,25 @@ async function loadQuotePricing() {
   return DEFAULT_QUOTE_PRICING;
 }
 
+/*  The equipment inventory. The bot prices the extras a visitor picks from
+    the hire prices here, so it is read back server-side rather than trusted
+    from the browser. Falls back to the starter list if nothing is saved. */
+async function loadQuoteInventory() {
+  try {
+    const snap = await db.collection('inventory').get();
+    if (!snap.empty) {
+      const items = [];
+      snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+      if (items.length) return items;
+    }
+  } catch (err) {
+    logger.warn('could not read inventory, using default', {
+      message: err && err.message,
+    });
+  }
+  return DEFAULT_INVENTORY;
+}
+
 const QUOTE_STATES = ['new', 'contacted', 'quoted', 'won', 'lost'];
 
 exports.submitQuoteLead = onCall(
@@ -2378,8 +2397,10 @@ exports.submitQuoteLead = onCall(
         .filter(Boolean),
     };
 
-    const pricing = await loadQuotePricing();
-    const est = estimateQuote(pricing, answers);
+    const [pricing, inventory] = await Promise.all([
+      loadQuotePricing(), loadQuoteInventory(),
+    ]);
+    const est = estimateQuote(pricing, inventory, answers);
 
     const lead = {
       source: 'services-quote-bot',
@@ -2481,10 +2502,6 @@ exports.adminSaveQuotePricing = onCall(async (request) => {
     eventTypes: list(p.eventTypes, (x, i) => ({
       key: key(x.key || x.label, i), label: text(x.label, 60),
       baseCents: cents(x.baseCents, 'Base price'),
-    })),
-    services: list(p.services, (x, i) => ({
-      key: key(x.key || x.label, i), label: text(x.label, 60),
-      addCents: cents(x.addCents, 'Add-on price'),
     })),
     sizes: list(p.sizes, (x, i) => ({
       key: key(x.key || x.label, i), label: text(x.label, 60),

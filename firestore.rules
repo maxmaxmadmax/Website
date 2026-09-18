@@ -188,6 +188,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    //  The equipment inventory / price list. Public read: it feeds the bot,
+    //  and doubles as a hire price list. Written straight from the admin
+    //  desk (like talent) - it is reference data an admin can see in front
+    //  of them, with no money or allocation to guard, so a callable would be
+    //  ceremony. Nothing a visitor writes can reach it.
+    match /inventory/{itemId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /quoteLeads/{leadId} {
       allow read: if isAdmin();
       allow write: if false;

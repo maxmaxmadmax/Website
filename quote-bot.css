@@ -186,6 +186,18 @@
   margin-left: auto;
 }
 
+/* a category heading inside the multi-select dock, breaking to its own line */
+.sgq-cat {
+  flex: 0 0 100%;
+  margin: 6px 0 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--q-muted);
+}
+.sgq-cat:first-child { margin-top: 0; }
+
 /* ---- contact form --------------------------------------------------- */
 .sgq-dock-form { display: block; }
 .sgq-form { display: flex; flex-direction: column; gap: 10px; }
@@ -250,4 +262,117 @@
 @media (max-width: 520px) {
   .sgq { height: auto; max-height: none; border-radius: 16px; }
   .sgq-stream { max-height: 58vh; }
+}
+
+
+/* =========================================================================
+   FLOATING LAUNCHER  -  the bubble bottom-right and the pop-up panel
+   ========================================================================= */
+.sgq-fab-wrap{
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 2147483000;
+  font-family: var(--sg-font, Arial, Helvetica, sans-serif);
+}
+
+/* the bubble */
+.sgq-fab{
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 58px;
+  padding: 0 22px 0 18px;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--sg-orange, #ff6b00), var(--sg-orange-bright, #ff8c00));
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .38);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.sgq-fab:hover{ transform: translateY(-2px); box-shadow: 0 16px 38px rgba(0, 0, 0, .45); }
+.sgq-fab:active{ transform: translateY(0); }
+
+.sgq-fab svg{ width: 26px; height: 26px; flex: 0 0 auto; }
+.sgq-fab-open{ fill: #fff; stroke: none; }
+.sgq-fab-close{
+  display: none;
+  fill: none; stroke: #fff; stroke-width: 2.2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.sgq-fab-label{ white-space: nowrap; }
+
+/* a soft attention pulse until it is first opened */
+.sgq-fab::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  box-shadow: 0 0 0 0 rgba(255, 107, 0, .5);
+  animation: sgq-pulse 2.6s ease-out infinite;
+  pointer-events: none;
+}
+.sgq-fab-wrap.is-open .sgq-fab::after{ animation: none; }
+@keyframes sgq-pulse{
+  0%   { box-shadow: 0 0 0 0 rgba(255, 107, 0, .45); }
+  70%  { box-shadow: 0 0 0 16px rgba(255, 107, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0); }
+}
+
+/* when open: the bubble shrinks to a round close button */
+.sgq-fab-wrap.is-open .sgq-fab{ padding: 0; width: 58px; justify-content: center; }
+.sgq-fab-wrap.is-open .sgq-fab-open{ display: none; }
+.sgq-fab-wrap.is-open .sgq-fab-close{ display: block; }
+.sgq-fab-wrap.is-open .sgq-fab-label{ display: none; }
+
+/* the pop-up panel */
+.sgq-panel{
+  position: absolute;
+  right: 0;
+  bottom: 72px;
+  width: min(400px, calc(100vw - 32px));
+  transform-origin: bottom right;
+  animation: sgq-pop .18s ease-out;
+}
+.sgq-panel .sgq{
+  width: 100%;
+  max-width: none;
+  height: min(624px, calc(100vh - 130px));
+  max-height: none;
+  margin: 0;
+}
+@keyframes sgq-pop{
+  from{ opacity: 0; transform: translateY(12px) scale(.98); }
+  to  { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* close (x) in the panel header */
+.sgq-close{
+  margin-left: auto;
+  align-self: flex-start;
+  background: transparent;
+  border: none;
+  color: var(--q-muted);
+  font-size: 26px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+}
+.sgq-close:hover{ color: #fff; }
+
+@media (max-width: 520px){
+  .sgq-fab-wrap{ right: 14px; bottom: 14px; }
+  .sgq-fab-label{ display: none; }          /* just the icon on a phone */
+  .sgq-fab{ padding: 0; width: 58px; justify-content: center; }
+  .sgq-panel{ width: calc(100vw - 24px); bottom: 70px; }
+  .sgq-panel .sgq{ height: min(580px, calc(100vh - 92px)); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .sgq-fab::after{ animation: none; }
+  .sgq-panel{ animation: none; }
 }

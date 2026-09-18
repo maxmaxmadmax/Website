@@ -2048,3 +2048,49 @@ body.ad-fit .ad-main{ min-height:0; }
     .ad-quote-cols{ grid-template-columns:1fr; gap:16px; }
     .ad-price-settings{ grid-template-columns:1fr; }
 }
+
+
+/* =========================================================================
+   EQUIPMENT  -  inventory / price-list table
+   ========================================================================= */
+.ad-inv-cols,
+.ad-inv-row{
+    display:grid;
+    grid-template-columns:1fr 0.8fr 92px 118px 64px 58px 34px;
+    gap:8px;
+    align-items:center;
+}
+.ad-inv-cols{
+    margin:6px 0 6px;
+    font-size:.68rem;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    color:var(--ad-faint);
+}
+.ad-inv-rows{ display:flex; flex-direction:column; gap:8px; }
+.ad-inv-row .ad-input,
+.ad-inv-row .ad-select{ width:100%; box-sizing:border-box; }
+
+.ad-inv-check{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    height:100%;
+}
+.ad-inv-check input{ width:18px; height:18px; accent-color:var(--ad-orange); cursor:pointer; }
+
+@media (max-width:900px){
+    /*  On a phone the grid would crush, so each row becomes a little card
+        with its own labels via the column header hidden.                  */
+    .ad-inv-cols{ display:none; }
+    .ad-inv-row{
+        grid-template-columns:1fr 1fr;
+        gap:8px;
+        padding:12px;
+        border:1px solid var(--ad-line);
+        border-radius:10px;
+        background:#fff;
+    }
+    .ad-inv-row .ad-input[data-field="name"]{ grid-column:1 / -1; }
+    .ad-price-del{ justify-self:end; }
+}

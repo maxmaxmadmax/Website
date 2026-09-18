@@ -21,7 +21,7 @@
 
 import {
   firebaseConfig, functionsRegion, isFirebaseConfigured,
-} from './firebase-config.js?v=117';
+} from './firebase-config.js?v=119';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -39,15 +39,6 @@ const DEFAULT_PRICING = {
     { key: 'corporate', label: 'Corporate', baseCents: 150000 },
     { key: 'private', label: 'Private Function', baseCents: 80000 },
     { key: 'festival', label: 'Festival', baseCents: 250000 },
-  ],
-  services: [
-    { key: 'dj', label: 'DJ', addCents: 60000 },
-    { key: 'pa', label: 'Live Sound / PA', addCents: 45000 },
-    { key: 'lighting', label: 'Lighting', addCents: 40000 },
-    { key: 'mc', label: 'MC / Host', addCents: 35000 },
-    { key: 'staging', label: 'Staging', addCents: 50000 },
-    { key: 'dryhire', label: 'Dry Hire Gear', addCents: 25000 },
-    { key: 'setup', label: 'Setup & Pack-down', addCents: 30000 },
   ],
   sizes: [
     { key: 's', label: 'Up to 50 guests', multiplier: 1 },
@@ -69,6 +60,20 @@ const DEFAULT_PRICING = {
   ],
 };
 
+/*  DEFAULT INVENTORY - a mirror of functions/lib/quote-pricing.js. The bot
+    reads the live `inventory` collection; this is the fallback so it still
+    offers something before Max has saved his gear. Only inBot items are
+    offered. Keep the SHAPE in step with the server file.                  */
+const DEFAULT_INVENTORY = [
+  { id: 'dj', name: 'DJ Package', category: 'DJ / MC', priceCents: 60000, period: 'event', quantity: 2, inBot: true },
+  { id: 'mc', name: 'MC / Host', category: 'DJ / MC', priceCents: 35000, period: 'event', quantity: 1, inBot: true },
+  { id: 'pa', name: 'Live Sound / PA System', category: 'Audio', priceCents: 45000, period: 'event', quantity: 3, inBot: true },
+  { id: 'lighting', name: 'Lighting Package', category: 'Lighting', priceCents: 40000, period: 'event', quantity: 4, inBot: true },
+  { id: 'staging', name: 'Staging', category: 'Staging', priceCents: 50000, period: 'event', quantity: 1, inBot: true },
+  { id: 'dryhire', name: 'Dry Hire Gear', category: 'Dry Hire', priceCents: 25000, period: 'day', quantity: 10, inBot: true },
+  { id: 'setup', name: 'Setup & Pack-down', category: 'Crew', priceCents: 30000, period: 'event', quantity: 1, inBot: true },
+];
+
 /* -------------------------------------------------------------------------
    Estimator - the same formula as functions/lib/quote-pricing.js
    ------------------------------------------------------------------------- */
@@ -82,18 +87,24 @@ function find(list, key) {
   return (Array.isArray(list) ? list : []).find((x) => x && x.key === key) || null;
 }
 
-function estimate(pricing, answers) {
+function estimate(pricing, inv, answers) {
   const p = pricing || DEFAULT_PRICING;
+  const items = (Array.isArray(inv) && inv.length) ? inv : DEFAULT_INVENTORY;
   const a = answers || {};
 
   const evt = find(p.eventTypes, a.eventType);
   const loc = find(p.locations, a.location);
   const size = find(p.sizes, a.size);
   const dur = find(p.durations, a.hours);
-  const picked = (a.services || []).map((k) => find(p.services, k)).filter(Boolean);
+
+  const byId = {};
+  items.forEach((it) => { if (it && it.id) byId[it.id] = it; });
+  const picked = (a.services || [])
+    .map((id) => byId[id])
+    .filter((it) => it && it.inBot);
 
   const base = evt ? evt.baseCents || 0 : 0;
-  const addons = picked.reduce((s, x) => s + (x.addCents || 0), 0);
+  const addons = picked.reduce((s, x) => s + (x.priceCents || 0), 0);
   const travel = loc ? loc.travelCents || 0 : 0;
   const overage = Math.max(0, (dur ? dur.hours || 0 : 0) - (p.freeHours || 0));
   const duration = overage * (p.hourlyCents || 0);
@@ -123,6 +134,7 @@ function rangeLabel(est) {
    ------------------------------------------------------------------------- */
 const answers = { eventType: '', location: '', size: '', hours: '', services: [] };
 let pricing = DEFAULT_PRICING;
+let inventory = DEFAULT_INVENTORY;
 let fb = null;          // { functions, callable } once the SDK is up
 let stream;             // the messages column
 let dock;              // where the current choices sit
@@ -147,8 +159,8 @@ async function initFirebase() {
       submit: functions.httpsCallable(fns, 'submitQuoteLead'),
     };
 
-    // Live prices, if Max has saved a table. A partial or missing doc leaves
-    // the default in place rather than emptying the menus.
+    // Live prices and the live inventory, if Max has saved them. A missing
+    // or empty one leaves the default in place rather than emptying the menus.
     try {
       const snap = await firestore.getDoc(
         firestore.doc(db, 'config', 'quotePricing'));
@@ -158,6 +170,16 @@ async function initFirebase() {
           pricing = data;
         }
       }
+    } catch (err) {
+      /* keep the default */
+    }
+
+    try {
+      const invSnap = await firestore.getDocs(
+        firestore.collection(db, 'inventory'));
+      const items = [];
+      invSnap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+      if (items.length) inventory = items;
     } catch (err) {
       /* keep the default */
     }
@@ -276,21 +298,41 @@ async function askServices() {
   renderServiceChips();
 }
 
+/*  The extras the bot offers: inventory items flagged inBot, in the order
+    they were saved, grouped under their category.                         */
+function botItems() {
+  return (inventory || []).filter((it) => it && it.inBot && it.name);
+}
+
 function renderServiceChips() {
   dock.innerHTML = '';
   dock.className = 'sgq-dock sgq-dock-multi';
 
-  pricing.services.forEach((opt) => {
-    const on = answers.services.includes(opt.key);
+  const items = botItems();
+
+  //  Grouped by category, each group under a small heading. A single flat
+  //  list if nothing has a category, so it never looks broken.
+  let lastCat = null;
+  items.forEach((item) => {
+    const cat = item.category || '';
+    if (cat && cat !== lastCat) {
+      const h = document.createElement('span');
+      h.className = 'sgq-cat';
+      h.textContent = cat;
+      dock.appendChild(h);
+      lastCat = cat;
+    }
+
+    const on = answers.services.includes(item.id);
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'sgq-chip sgq-chip-toggle' + (on ? ' is-on' : '');
     b.setAttribute('aria-pressed', on ? 'true' : 'false');
-    b.innerHTML = (on ? '✓ ' : '') + esc(opt.label);
+    b.innerHTML = (on ? '✓ ' : '') + esc(item.name);
     b.addEventListener('click', () => {
-      const i = answers.services.indexOf(opt.key);
+      const i = answers.services.indexOf(item.id);
       if (i >= 0) answers.services.splice(i, 1);
-      else answers.services.push(opt.key);
+      else answers.services.push(item.id);
       renderServiceChips();
     });
     dock.appendChild(b);
@@ -301,9 +343,9 @@ function renderServiceChips() {
   done.className = 'sgq-chip sgq-chip-go';
   done.textContent = answers.services.length ? "That's everything →" : 'Skip →';
   done.addEventListener('click', () => {
-    const chosen = pricing.services
-      .filter((s) => answers.services.includes(s.key))
-      .map((s) => s.label);
+    const chosen = items
+      .filter((s) => answers.services.includes(s.id))
+      .map((s) => s.name);
     meSay(chosen.length ? chosen.join(', ') : 'Not sure yet');
     askDuration();
   });
@@ -323,7 +365,7 @@ async function askDuration() {
 
 async function showEstimate() {
   clearDock();
-  const est = estimate(pricing, answers);
+  const est = estimate(pricing, inventory, answers);
   answers._est = est;
 
   await botSay('Thanks! Based on that, an event like yours usually lands around:');
@@ -445,34 +487,80 @@ function showErr(el, msg) {
 }
 
 /* -------------------------------------------------------------------------
-   Mount
+   Mount  -  a floating launcher, bottom right, that opens the chat panel
    ------------------------------------------------------------------------- */
-function mount(root) {
-  root.innerHTML = `
-    <div class="sgq" role="region" aria-label="Event estimate assistant">
-      <header class="sgq-head">
-        <span class="sgq-avatar sgq-avatar-lg" aria-hidden="true">SG</span>
-        <div class="sgq-head-text">
-          <p class="sgq-head-name">SoundzGood Estimate Bot</p>
-          <p class="sgq-head-status"><span class="sgq-dot"></span> Online now</p>
-        </div>
-      </header>
-      <div class="sgq-stream" id="sgq-stream" aria-live="polite"></div>
-      <div class="sgq-dock" id="sgq-dock"></div>
-    </div>`;
+let started = false;   // the chat flow only kicks off the first time it opens
 
-  stream = root.querySelector('#sgq-stream');
-  dock = root.querySelector('#sgq-dock');
+/*  Build the launcher bubble and the panel, appended to <body> so nothing on
+    the page can clip them. The panel is hidden until the bubble is tapped. */
+function mount() {
+  const wrap = document.createElement('div');
+  wrap.className = 'sgq-fab-wrap';
+  wrap.innerHTML = `
+    <div class="sgq-panel" id="sgq-panel" hidden>
+      <div class="sgq" role="dialog" aria-label="Event estimate assistant" aria-modal="false">
+        <header class="sgq-head">
+          <span class="sgq-avatar sgq-avatar-lg" aria-hidden="true">SG</span>
+          <div class="sgq-head-text">
+            <p class="sgq-head-name">SoundzGood Estimate Bot</p>
+            <p class="sgq-head-status"><span class="sgq-dot"></span> Online now</p>
+          </div>
+          <button type="button" class="sgq-close" id="sgq-close" aria-label="Close">&times;</button>
+        </header>
+        <div class="sgq-stream" id="sgq-stream" aria-live="polite"></div>
+        <div class="sgq-dock" id="sgq-dock"></div>
+      </div>
+    </div>
+
+    <button type="button" class="sgq-fab" id="sgq-fab" aria-expanded="false"
+            aria-controls="sgq-panel" aria-label="Get an instant estimate">
+      <svg class="sgq-fab-open" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.6-.8L3 21l1.8-5.4a8.5 8.5 0 0 1-.8-3.6A8.38 8.38 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5z"/>
+      </svg>
+      <svg class="sgq-fab-close" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M18 6 6 18M6 6l12 12"/>
+      </svg>
+      <span class="sgq-fab-label">Instant estimate</span>
+    </button>`;
+
+  document.body.appendChild(wrap);
+
+  stream = wrap.querySelector('#sgq-stream');
+  dock = wrap.querySelector('#sgq-dock');
+
+  const panel = wrap.querySelector('#sgq-panel');
+  const fab = wrap.querySelector('#sgq-fab');
+  const close = wrap.querySelector('#sgq-close');
+
+  const setOpen = (open) => {
+    panel.hidden = !open;
+    wrap.classList.toggle('is-open', open);
+    fab.setAttribute('aria-expanded', open ? 'true' : 'false');
+    // Start the conversation the first time it is opened, so the greeting
+    // types out live rather than sitting there answered.
+    if (open && !started) { started = true; start(); }
+    if (open) scrollDown();
+  };
+
+  fab.addEventListener('click', () => setOpen(panel.hidden));
+  close.addEventListener('click', () => setOpen(false));
+
+  // Any in-page button (e.g. the services CTA) can open it too.
+  document.querySelectorAll('[data-open-quote-bot]').forEach((b) =>
+    b.addEventListener('click', (e) => { e.preventDefault(); setOpen(true); }));
+
+  // Esc closes it.
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !panel.hidden) setOpen(false);
+  });
 }
 
-async function init() {
-  const root = document.getElementById('sg-quote-bot');
-  if (!root) return;
-
-  mount(root);
-  // Fire the greeting straight away; prices load in the background and are
-  // ready well before the visitor reaches a priced choice.
-  await Promise.all([initFirebase(), start()]);
+function init() {
+  if (document.getElementById('sgq-fab')) return;   // guard against double-mount
+  mount();
+  // Prices and inventory load quietly in the background, ready well before
+  // the visitor opens the bubble and reaches a priced choice.
+  initFirebase();
 }
 
 if (document.readyState === 'loading') {

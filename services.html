@@ -20,12 +20,12 @@
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="style.css?v=117">
-  <link rel="stylesheet" href="services.css?v=117">
-  <link rel="stylesheet" href="quote-bot.css?v=117">
-  <script src="js/main.js?v=117" defer></script>
-  <script src="js/services.js?v=117" defer></script>
-  <script type="module" src="js/quote-bot.js?v=117"></script>
+  <link rel="stylesheet" href="style.css?v=119">
+  <link rel="stylesheet" href="services.css?v=119">
+  <link rel="stylesheet" href="quote-bot.css?v=119">
+  <script src="js/main.js?v=119" defer></script>
+  <script src="js/services.js?v=119" defer></script>
+  <script type="module" src="js/quote-bot.js?v=119"></script>
 </head>
 
 <body>
@@ -500,12 +500,10 @@
         dark and wide works best: the words sit over the left of it.    -->
   <!-- 5b. INSTANT ESTIMATE ---------------------------------------------------
 
-       The quote bot. A guided, button-led chat that gives the visitor a
-       ballpark on the spot and captures the lead. Priced from the table at
-       config/quotePricing (edited in the admin desk); the estimate shown is
-       recomputed server-side on submit, so the figure is never taken on the
-       browser's word. All of its markup is built by js/quote-bot.js into the
-       mount below, so this page carries only the frame.
+       The quote bot lives in a floating bubble bottom-right, built and mounted
+       by js/quote-bot.js on every page it loads. This band is an in-page
+       prompt: the button opens that same bubble (data-open-quote-bot), so a
+       visitor scrolling past here gets a nudge as well as the corner launcher.
        -->
   <section class="sgs-block sg-quote-block">
     <div class="sgs-wrap">
@@ -516,8 +514,10 @@
           Answer a few quick questions and our assistant will give you a
           price range on the spot &mdash; no waiting, no obligation.
         </p>
+        <button type="button" class="sgs-btn sgs-btn-primary" data-open-quote-bot>
+          Get an Instant Estimate <span aria-hidden="true">&rarr;</span>
+        </button>
       </div>
-      <div id="sg-quote-bot"></div>
     </div>
   </section>
 
