@@ -1909,3 +1909,142 @@ body.ad-fit .ad-main{ min-height:0; }
 @media (max-width:1180px){
     .ad-mail-grid{ grid-template-columns:1fr; }
 }
+
+
+/* =========================================================================
+   ESTIMATE BOT  -  admin styling (Quote Leads + Quote Pricing)
+   ========================================================================= */
+
+/*  Shared small controls the quote views lean on. Kept generic so other
+    views can use them later.                                              */
+.ad-input,
+.ad-select{
+    padding:8px 10px;
+    border:1px solid var(--ad-line);
+    border-radius:8px;
+    background:#fff;
+    color:var(--ad-text);
+    font:inherit;
+    font-size:.88rem;
+}
+.ad-input:focus,
+.ad-select:focus{ outline:none; border-color:var(--ad-blue); }
+
+.ad-field em{ display:block; margin-top:3px; color:var(--ad-faint);
+              font-weight:400; font-size:.72rem; }
+
+/* ---- Quote Leads --------------------------------------------------- */
+.ad-quote-tools{ display:flex; gap:8px; flex:1 1 auto; justify-content:flex-end;
+                 flex-wrap:wrap; }
+.ad-quote-tools .ad-search{ flex:0 1 240px; }
+
+.ad-quote-table td{ vertical-align:middle; }
+.ad-quote-row{ cursor:pointer; }
+.ad-quote-row:hover{ background:var(--ad-orange-soft); }
+.ad-quote-row.is-open{ background:var(--ad-orange-soft); }
+.ad-quote-caret{ color:var(--ad-faint); }
+
+.ad-quote-detail-row td{ background:#fbfbfc; border-top:0; padding:0; }
+.ad-quote-detail{ padding:18px 20px; border-top:1px dashed var(--ad-line); }
+
+.ad-quote-cols{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:26px;
+    margin-bottom:16px;
+}
+.ad-quote-cols h3{
+    margin:0 0 10px;
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--ad-faint);
+}
+.ad-quote-dl{ display:flex; gap:10px; margin:0 0 6px; font-size:.86rem; }
+.ad-quote-dl dt{ flex:0 0 108px; color:var(--ad-muted); }
+.ad-quote-dl dd{ margin:0; color:var(--ad-text); font-weight:500; }
+.ad-quote-note-box{ margin-top:10px; }
+.ad-quote-note-box dt{ color:var(--ad-muted); font-size:.86rem; margin-bottom:4px; }
+.ad-quote-note-box p{ margin:0; font-size:.86rem; line-height:1.5;
+                      background:#fff; border:1px solid var(--ad-line);
+                      border-radius:8px; padding:8px 10px; }
+
+.ad-quote-actions{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    padding-top:14px;
+    border-top:1px solid var(--ad-line);
+}
+.ad-quote-actions-label{
+    display:inline-block;
+    margin-right:8px;
+    font-size:.72rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    color:var(--ad-faint);
+}
+.ad-quote-statusrow{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.ad-quote-status-btn.is-on{
+    background:var(--ad-orange);
+    border-color:var(--ad-orange);
+    color:#fff;
+}
+.ad-quote-noteline{ display:flex; gap:8px; margin-top:4px; }
+.ad-quote-noteinput{ flex:1 1 auto; }
+.ad-quote-mailrow{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.ad-quote-msg{ font-size:.82rem; color:var(--ad-muted); }
+.ad-quote-msg.is-ok{ color:var(--ad-green); }
+.ad-quote-msg.is-bad{ color:var(--ad-red); }
+
+/* ---- Quote Pricing ------------------------------------------------- */
+.ad-price-grid{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:18px;
+    align-items:start;
+}
+.ad-price-card{ margin:0; }
+
+.ad-price-cols{
+    display:grid;
+    grid-template-columns:1fr 130px 34px;
+    gap:8px;
+    margin:6px 0 4px;
+    font-size:.68rem;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    color:var(--ad-faint);
+}
+.ad-price-rows{ display:flex; flex-direction:column; gap:8px; }
+.ad-price-row{
+    display:grid;
+    grid-template-columns:1fr 130px 34px;
+    gap:8px;
+    align-items:center;
+}
+.ad-price-input{ width:100%; box-sizing:border-box; }
+.ad-price-del{
+    width:30px; height:30px;
+    border:1px solid var(--ad-line);
+    border-radius:8px;
+    background:#fff;
+    color:var(--ad-faint);
+    cursor:pointer;
+    line-height:1;
+}
+.ad-price-del:hover{ border-color:var(--ad-red); color:var(--ad-red); }
+.ad-price-add{ margin-top:12px; }
+
+.ad-price-settings{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.ad-price-settings .ad-field span{ display:block; }
+.ad-price-settings .ad-input{ width:100%; box-sizing:border-box; margin-top:4px; }
+
+.ad-price-save-row{ margin-top:18px; }
+
+@media (max-width:900px){
+    .ad-price-grid{ grid-template-columns:1fr; }
+    .ad-quote-cols{ grid-template-columns:1fr; gap:16px; }
+    .ad-price-settings{ grid-template-columns:1fr; }
+}

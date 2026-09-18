@@ -169,6 +169,31 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------
+    // Estimate bot
+    //
+    //   config/quotePricing   the price table the bot reads to show a live
+    //                         range. Public read so the services page can
+    //                         price without a login; written only by the
+    //                         adminSaveQuotePricing function (Admin SDK) so
+    //                         no visitor can move the numbers.
+    //
+    //   quoteLeads/{id}       a submitted estimate. Written ONLY by the
+    //                         submitQuoteLead function, which validates the
+    //                         input and recomputes the price server-side -
+    //                         so it is closed to browsers entirely. Read by
+    //                         admins, who work the leads in the desk.
+    // ---------------------------------------------------------------
+    match /config/{docId} {
+      allow read: if docId == 'quotePricing';
+      allow write: if false;
+    }
+
+    match /quoteLeads/{leadId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ---------------------------------------------------------------
     // Anything not named above is closed.
     // ---------------------------------------------------------------
     match /{document=**} {

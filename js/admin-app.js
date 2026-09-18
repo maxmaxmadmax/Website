@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=116';
+} from './firebase-config.js?v=117';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -83,6 +83,15 @@ const state = {
   noteDraft: '',
   addingVendor: false,
   ready: false,
+
+  /*  The estimate bot. Leads stream in from the whole site (not one event),
+      and the price table is loaded once and edited in the Quote Pricing
+      view. quotePricing is null until loaded, so the editor shows the
+      built-in default until Max has saved his own.                        */
+  quoteLeads: [],
+  quotePricing: null,
+  quoteFilter: { search: '', status: 'all' },
+  openLeadId: null,
 };
 
 let fb = null;
@@ -116,6 +125,8 @@ async function init() {
     showApp(user);
     await loadEvents();
     subscribeToEvent();
+    subscribeToQuoteLeads();
+    loadQuotePricing();
     routeFromHash();
   });
 }
@@ -303,7 +314,7 @@ function wireChrome() {
    Routing
    ------------------------------------------------------------------------- */
 const BUILT = ['events', 'vendors', 'applications', 'map', 'entertainment',
-               'settings', 'vendorEmail'];
+               'settings', 'vendorEmail', 'quotes', 'quotePricing'];
 
 /*  Vendors is where the work is, so it is what you land on. */
 const HOME = 'vendors';
@@ -394,6 +405,38 @@ function subscribeToEvent() {
     },
     (err) => console.error('categories', err)
   ));
+}
+
+/*  ESTIMATE-BOT LEADS
+
+    Not tied to an event - a quote can come in for anything - so this is its
+    own subscription, set up once at sign-in and left running. Newest first,
+    the way the table wants them.                                          */
+function subscribeToQuoteLeads() {
+  const { collection, onSnapshot, query, orderBy } = fb.f;
+  unsubscribes.push(onSnapshot(
+    query(collection(fb.db, 'quoteLeads'), orderBy('createdAt', 'desc')),
+    (snap) => {
+      state.quoteLeads = [];
+      snap.forEach((d) => state.quoteLeads.push({ id: d.id, ...d.data() }));
+      if (state.view === 'quotes') render();
+    },
+    (err) => console.error('quoteLeads', err)
+  ));
+}
+
+/*  The saved price table, loaded once for the editor. Null stays null on a
+    miss, and the editor falls back to the built-in default, so a fresh site
+    with no saved table still shows something to edit.                     */
+async function loadQuotePricing() {
+  try {
+    const { doc, getDoc } = fb.f;
+    const snap = await getDoc(doc(fb.db, 'config', 'quotePricing'));
+    if (snap.exists()) state.quotePricing = snap.data();
+  } catch (err) {
+    console.error('quotePricing', err);
+  }
+  if (state.view === 'quotePricing') render();
 }
 
 /* -------------------------------------------------------------------------
@@ -3535,4 +3578,566 @@ function wireVendorEmail() {
       }
     });
   }
+}
+
+
+/* =========================================================================
+   ESTIMATE BOT  -  admin views
+
+   Two panels, both under the "Leads" group in the rail:
+
+     quotes         who asked, what they asked for, and the range they saw
+     quotePricing   the price table the bot runs on - Max's numbers
+
+   Leads are read-only here (a lead is a record of what happened) apart from
+   a status and a note; the price table is fully editable and saved through
+   the adminSaveQuotePricing function.
+   ========================================================================= */
+
+/*  DEFAULT PRICES - a mirror of functions/lib/quote-pricing.js, used by the
+    editor before Max has saved a table of his own. Keep the SHAPE in step
+    with the server file.                                                  */
+const DEFAULT_QUOTE_PRICING = {
+  spreadPct: 15,
+  roundToCents: 5000,
+  freeHours: 4,
+  hourlyCents: 0,
+  eventTypes: [
+    { key: 'wedding', label: 'Wedding', baseCents: 120000 },
+    { key: 'corporate', label: 'Corporate', baseCents: 150000 },
+    { key: 'private', label: 'Private Function', baseCents: 80000 },
+    { key: 'festival', label: 'Festival', baseCents: 250000 },
+  ],
+  services: [
+    { key: 'dj', label: 'DJ', addCents: 60000 },
+    { key: 'pa', label: 'Live Sound / PA', addCents: 45000 },
+    { key: 'lighting', label: 'Lighting', addCents: 40000 },
+    { key: 'mc', label: 'MC / Host', addCents: 35000 },
+    { key: 'staging', label: 'Staging', addCents: 50000 },
+    { key: 'dryhire', label: 'Dry Hire Gear', addCents: 25000 },
+    { key: 'setup', label: 'Setup & Pack-down', addCents: 30000 },
+  ],
+  sizes: [
+    { key: 's', label: 'Up to 50 guests', multiplier: 1 },
+    { key: 'm', label: '50 to 150 guests', multiplier: 1.25 },
+    { key: 'l', label: '150 to 400 guests', multiplier: 1.6 },
+    { key: 'xl', label: '400+ guests', multiplier: 2.2 },
+  ],
+  locations: [
+    { key: 'bowen', label: 'Bowen', travelCents: 0 },
+    { key: 'airlie', label: 'Airlie Beach', travelCents: 15000 },
+    { key: 'whitsundays', label: 'Whitsundays', travelCents: 20000 },
+    { key: 'other', label: 'Somewhere else', travelCents: 25000 },
+  ],
+  durations: [
+    { key: '3', label: 'A few hours', hours: 3 },
+    { key: '5', label: 'Half a day', hours: 5 },
+    { key: '7', label: 'A full evening', hours: 7 },
+    { key: '10', label: 'All day', hours: 10 },
+  ],
+};
+
+const QUOTE_STATUS = {
+  new:       ['ad-pill-blue',  'New'],
+  contacted: ['ad-pill-amber', 'Contacted'],
+  quoted:    ['ad-pill-amber', 'Quoted'],
+  won:       ['ad-pill-green', 'Won'],
+  lost:      ['ad-pill-grey',  'Lost'],
+};
+const QUOTE_STATUS_ORDER = ['new', 'contacted', 'quoted', 'won', 'lost'];
+
+function quoteRange(lead) {
+  const lo = money(lead.estimateLowCents);
+  const hi = money(lead.estimateHighCents);
+  return lo === hi ? lo : lo + ' \u2013 ' + hi;
+}
+
+function quoteStatusPill(status) {
+  const [cls, label] = QUOTE_STATUS[status] || QUOTE_STATUS.new;
+  return `<span class="ad-pill ${cls}">${esc(label)}</span>`;
+}
+
+/* -------------------------------------------------------------------------
+   Quote Leads
+   ------------------------------------------------------------------------- */
+VIEWS.quotes = {
+  html() {
+    const leads = state.quoteLeads || [];
+    const open = leads.filter((l) => (l.status || 'new') === 'new').length;
+
+    return `
+      <div class="ad-mail-head-row">
+        <span class="ad-mail-icon" aria-hidden="true">&#128172;</span>
+        <div class="ad-mail-title">
+          <h1>Quote Leads</h1>
+          <p>Estimates people worked out with the bot on the services page.</p>
+        </div>
+        <div class="ad-mail-status">
+          <span class="ad-pill ad-pill-blue">${open} new</span>
+          <p class="ad-mail-when">${leads.length} total</p>
+        </div>
+      </div>
+
+      <section class="ad-card ad-panel">
+        <header class="ad-panel-head">
+          <div>
+            <h2>Enquiries</h2>
+            <p class="ad-panel-sub">Newest first. Click a row to see the full answers.</p>
+          </div>
+          <div class="ad-quote-tools">
+            <select id="ad-quote-status" class="ad-select" aria-label="Filter by status">
+              <option value="all">All statuses</option>
+              ${QUOTE_STATUS_ORDER.map((s) =>
+                `<option value="${s}">${esc(QUOTE_STATUS[s][1])}</option>`).join('')}
+            </select>
+            <input type="search" id="ad-quote-search" class="ad-search"
+                   placeholder="Search leads..." aria-label="Search leads">
+          </div>
+        </header>
+
+        <div class="ad-table-wrap">
+          <table class="ad-table ad-quote-table">
+            <thead>
+              <tr>
+                <th>When</th><th>Name</th><th>Event</th><th>Where</th>
+                <th>Estimate</th><th>Status</th><th>Email</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="ad-quote-rows"></tbody>
+          </table>
+        </div>
+      </section>
+    `;
+  },
+
+  wire() { wireQuotes(); },
+};
+
+function quoteLeadsFiltered() {
+  const leads = state.quoteLeads || [];
+  const f = state.quoteFilter;
+  const needle = (f.search || '').trim().toLowerCase();
+
+  return leads.filter((l) => {
+    if (f.status !== 'all' && (l.status || 'new') !== f.status) return false;
+    if (!needle) return true;
+    return [l.name, l.email, l.phone, l.eventTypeLabel, l.locationLabel,
+            (l.serviceLabels || []).join(' '), l.message]
+      .filter(Boolean).join(' ').toLowerCase().includes(needle);
+  });
+}
+
+function quoteEmailCell(l) {
+  if (l.emailStatus === 'sent') {
+    return '<span class="ad-dot ad-dot-green"></span> Sent';
+  }
+  if (l.emailStatus === 'failed') {
+    return '<span class="ad-dot ad-dot-red"></span> Failed';
+  }
+  return '<span class="ad-dot"></span> <span class="ad-cell-muted">\u2014</span>';
+}
+
+function leadDetailRow(l) {
+  const line = (k, v) => v
+    ? `<div class="ad-quote-dl"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>` : '';
+
+  return `
+    <tr class="ad-quote-detail-row">
+      <td colspan="8">
+        <div class="ad-quote-detail">
+          <div class="ad-quote-cols">
+            <div>
+              <h3>Their event</h3>
+              ${line('Event type', l.eventTypeLabel)}
+              ${line('Where', l.locationLabel)}
+              ${line('Guests', l.sizeLabel)}
+              ${line('Length', l.durationLabel)}
+              ${line('Looking for', (l.serviceLabels || []).join(', '))}
+              ${line('Their date', l.eventDate)}
+              ${line('Estimate shown', quoteRange(l))}
+            </div>
+            <div>
+              <h3>Contact</h3>
+              ${line('Name', l.name)}
+              <div class="ad-quote-dl"><dt>Email</dt>
+                <dd><a href="mailto:${attr(l.email)}">${esc(l.email)}</a></dd></div>
+              ${l.phone ? `<div class="ad-quote-dl"><dt>Phone</dt>
+                <dd><a href="tel:${attr(l.phone)}">${esc(l.phone)}</a></dd></div>` : ''}
+              ${l.message ? `<div class="ad-quote-note-box">
+                <dt>Message</dt><p>${esc(l.message)}</p></div>` : ''}
+            </div>
+          </div>
+
+          <div class="ad-quote-actions">
+            <div class="ad-quote-statusrow">
+              <span class="ad-quote-actions-label">Status</span>
+              ${QUOTE_STATUS_ORDER.map((s) => {
+                const on = (l.status || 'new') === s;
+                return `<button type="button" class="ad-btn ad-btn-small ad-quote-status-btn${
+                  on ? ' is-on' : ''}" data-set-status="${attr(l.id)}" data-status="${s}">
+                  ${esc(QUOTE_STATUS[s][1])}</button>`;
+              }).join('')}
+            </div>
+
+            <div class="ad-quote-noterow">
+              <label class="ad-quote-actions-label" for="ad-quote-note-${attr(l.id)}">
+                Private note</label>
+              <div class="ad-quote-noteline">
+                <input type="text" id="ad-quote-note-${attr(l.id)}"
+                       class="ad-input ad-quote-noteinput"
+                       value="${attr(l.note || '')}" placeholder="Just for the team...">
+                <button type="button" class="ad-btn ad-btn-small"
+                        data-save-note="${attr(l.id)}">Save</button>
+              </div>
+            </div>
+
+            <div class="ad-quote-mailrow">
+              <button type="button" class="ad-btn ad-btn-small" data-resend-quote="${attr(l.id)}">
+                ${l.emailStatus === 'sent' ? 'Resend estimate email' : 'Send estimate email'}
+              </button>
+              <span class="ad-quote-msg" data-quote-msg="${attr(l.id)}"></span>
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>`;
+}
+
+function renderQuoteRows() {
+  const host = document.getElementById('ad-quote-rows');
+  if (!host) return;
+
+  const rows = quoteLeadsFiltered();
+  if (!rows.length) {
+    host.innerHTML = '<tr><td colspan="8" class="ad-cell-muted">'
+      + 'No leads yet. They will appear here the moment somebody finishes the bot.</td></tr>';
+    return;
+  }
+
+  host.innerHTML = rows.map((l) => {
+    const open = state.openLeadId === l.id;
+    return `
+      <tr class="ad-quote-row${open ? ' is-open' : ''}" data-open-lead="${attr(l.id)}">
+        <td class="ad-cell-muted">${esc(dateShort(l.createdAt))}</td>
+        <td class="ad-cell-strong">${esc(l.name || '')}</td>
+        <td>${esc(l.eventTypeLabel || '\u2014')}</td>
+        <td>${esc(l.locationLabel || '\u2014')}</td>
+        <td>${esc(quoteRange(l))}</td>
+        <td>${quoteStatusPill(l.status || 'new')}</td>
+        <td>${quoteEmailCell(l)}</td>
+        <td class="ad-cell-right"><span class="ad-quote-caret">${open ? '\u25be' : '\u25b8'}</span></td>
+      </tr>
+      ${open ? leadDetailRow(l) : ''}`;
+  }).join('');
+}
+
+function wireQuotes() {
+  renderQuoteRows();
+
+  const search = document.getElementById('ad-quote-search');
+  const status = document.getElementById('ad-quote-status');
+  if (search) {
+    search.value = state.quoteFilter.search;
+    search.addEventListener('input', () => {
+      state.quoteFilter.search = search.value;
+      renderQuoteRows();
+    });
+  }
+  if (status) {
+    status.value = state.quoteFilter.status;
+    status.addEventListener('change', () => {
+      state.quoteFilter.status = status.value;
+      renderQuoteRows();
+    });
+  }
+
+  const host = document.getElementById('ad-quote-rows');
+  if (!host) return;
+
+  host.addEventListener('click', async (e) => {
+    const openBtn = e.target.closest('[data-open-lead]');
+    const setStatus = e.target.closest('[data-set-status]');
+    const saveNote = e.target.closest('[data-save-note]');
+    const resend = e.target.closest('[data-resend-quote]');
+
+    if (setStatus) {
+      const id = setStatus.getAttribute('data-set-status');
+      const to = setStatus.getAttribute('data-status');
+      try {
+        await call('adminUpdateQuoteLead', { leadId: id, status: to });
+        const lead = (state.quoteLeads || []).find((x) => x.id === id);
+        if (lead) lead.status = to;      // optimistic; the snapshot confirms
+        renderQuoteRows();
+      } catch (err) { alert(err.message || 'Could not update.'); }
+      return;
+    }
+
+    if (saveNote) {
+      const id = saveNote.getAttribute('data-save-note');
+      const input = document.getElementById('ad-quote-note-' + id);
+      const msg = host.querySelector(`[data-quote-msg="${cssEsc(id)}"]`);
+      try {
+        await call('adminUpdateQuoteLead', { leadId: id, note: input ? input.value : '' });
+        if (msg) { msg.textContent = 'Note saved.'; msg.className = 'ad-quote-msg is-ok'; }
+      } catch (err) {
+        if (msg) { msg.textContent = err.message || 'Could not save.'; msg.className = 'ad-quote-msg is-bad'; }
+      }
+      return;
+    }
+
+    if (resend) {
+      const id = resend.getAttribute('data-resend-quote');
+      const msg = host.querySelector(`[data-quote-msg="${cssEsc(id)}"]`);
+      resend.disabled = true;
+      if (msg) { msg.textContent = 'Sending\u2026'; msg.className = 'ad-quote-msg'; }
+      try {
+        const res = await call('adminResendQuoteEmail', { leadId: id });
+        if (res && res.sent) {
+          if (msg) { msg.textContent = 'Sent.'; msg.className = 'ad-quote-msg is-ok'; }
+        } else {
+          const why = (res && (res.error || res.reason)) || 'no reason given';
+          if (msg) { msg.textContent = 'Did not send: ' + why; msg.className = 'ad-quote-msg is-bad'; }
+        }
+      } catch (err) {
+        if (msg) { msg.textContent = err.message || 'Could not send.'; msg.className = 'ad-quote-msg is-bad'; }
+      } finally {
+        resend.disabled = false;
+      }
+      return;
+    }
+
+    if (openBtn) {
+      const id = openBtn.getAttribute('data-open-lead');
+      state.openLeadId = state.openLeadId === id ? null : id;
+      renderQuoteRows();
+    }
+  });
+}
+
+/*  A value safe to drop inside a CSS attribute selector. Ids are Firestore's
+    own, so this is belt and braces rather than a real threat.             */
+function cssEsc(v) {
+  return String(v == null ? '' : v).replace(/["\\]/g, '\\$&');
+}
+
+/* -------------------------------------------------------------------------
+   Quote Pricing  -  the editable price table
+   ------------------------------------------------------------------------- */
+function quotePricingModel() {
+  const p = state.quotePricing;
+  if (p && Array.isArray(p.eventTypes) && p.eventTypes.length) return p;
+  return DEFAULT_QUOTE_PRICING;
+}
+
+const centsToDollars = (c) => (Number(c || 0) / 100);
+
+/*  One editable row. `fields` is [{name, value, type, step}], rendered as
+    inputs carrying data-field so the saver can read them back.            */
+function priceRow(kind, fields) {
+  const cells = fields.map((f) => `
+    <input class="ad-input ad-price-input" data-field="${attr(f.name)}"
+           type="${f.type || 'text'}" ${f.step ? `step="${f.step}"` : ''}
+           ${f.min != null ? `min="${f.min}"` : ''}
+           value="${attr(f.value)}" placeholder="${attr(f.placeholder || '')}">`).join('');
+  return `<div class="ad-price-row" data-kind="${attr(kind)}">
+    ${cells}
+    <button type="button" class="ad-price-del" data-del-row title="Remove">\u2715</button>
+  </div>`;
+}
+
+function priceList(kind, title, hint, rows, cols) {
+  return `
+    <section class="ad-card ad-panel ad-price-card" data-list="${attr(kind)}">
+      <header class="ad-panel-head">
+        <div><h2>${esc(title)}</h2><p class="ad-panel-sub">${esc(hint)}</p></div>
+      </header>
+      <div class="ad-price-cols" aria-hidden="true">
+        ${cols.map((c) => `<span>${esc(c)}</span>`).join('')}<span></span>
+      </div>
+      <div class="ad-price-rows" data-rows="${attr(kind)}">${rows.join('')}</div>
+      <button type="button" class="ad-btn ad-btn-small ad-price-add" data-add-row="${attr(kind)}">
+        + Add
+      </button>
+    </section>`;
+}
+
+VIEWS.quotePricing = {
+  html() {
+    const p = quotePricingModel();
+
+    const eventRows = (p.eventTypes || []).map((x) => priceRow('eventTypes', [
+      { name: 'label', value: x.label, placeholder: 'Wedding' },
+      { name: 'baseCents', value: centsToDollars(x.baseCents), type: 'number', step: '1', min: 0 },
+    ]));
+    const serviceRows = (p.services || []).map((x) => priceRow('services', [
+      { name: 'label', value: x.label, placeholder: 'DJ' },
+      { name: 'addCents', value: centsToDollars(x.addCents), type: 'number', step: '1', min: 0 },
+    ]));
+    const sizeRows = (p.sizes || []).map((x) => priceRow('sizes', [
+      { name: 'label', value: x.label, placeholder: 'Up to 50 guests' },
+      { name: 'multiplier', value: x.multiplier, type: 'number', step: '0.05', min: 0 },
+    ]));
+    const locationRows = (p.locations || []).map((x) => priceRow('locations', [
+      { name: 'label', value: x.label, placeholder: 'Bowen' },
+      { name: 'travelCents', value: centsToDollars(x.travelCents), type: 'number', step: '1', min: 0 },
+    ]));
+    const durationRows = (p.durations || []).map((x) => priceRow('durations', [
+      { name: 'label', value: x.label, placeholder: 'A few hours' },
+      { name: 'hours', value: x.hours, type: 'number', step: '1', min: 0 },
+    ]));
+
+    return `
+      <div class="ad-mail-head-row">
+        <span class="ad-mail-icon" aria-hidden="true">&#36;</span>
+        <div class="ad-mail-title">
+          <h1>Quote Pricing</h1>
+          <p>The numbers the estimate bot runs on. Change them here &mdash; the bot
+             updates straight away. Dollar amounts are GST-inclusive ballparks.</p>
+        </div>
+        <div class="ad-mail-status">
+          <span class="ad-pill ${state.quotePricing ? 'ad-pill-green' : 'ad-pill-blue'}">
+            ${state.quotePricing ? 'Your prices' : 'Starter prices'}
+          </span>
+        </div>
+      </div>
+
+      <div class="ad-price-grid">
+        ${priceList('eventTypes', 'Event types', 'The base price each kind of event starts at.',
+          eventRows, ['Label', 'Base price $'])}
+        ${priceList('services', 'Services & extras', 'Each one the visitor picks adds this on. Covers setup, lighting, dry hire and the rest.',
+          serviceRows, ['Label', 'Adds $'])}
+        ${priceList('sizes', 'Guest sizes', 'Scales the whole estimate. 1 = no change, 1.5 = half again.',
+          sizeRows, ['Label', 'Multiplier'])}
+        ${priceList('locations', 'Locations', 'A flat travel amount added for where it is.',
+          locationRows, ['Label', 'Travel $'])}
+        ${priceList('durations', 'Durations', 'How long they need us. Only bills beyond the free hours below.',
+          durationRows, ['Label', 'Hours'])}
+
+        <section class="ad-card ad-panel ad-price-card">
+          <header class="ad-panel-head">
+            <div><h2>Settings</h2><p class="ad-panel-sub">How the range is worked out.</p></div>
+          </header>
+          <div class="ad-price-settings">
+            <label class="ad-field">
+              <span>Range spread %</span>
+              <input class="ad-input" id="ad-price-spread" type="number" step="1" min="0" max="90"
+                     value="${attr(p.spreadPct != null ? p.spreadPct : 15)}">
+              <em>How wide the low\u2013high band is around the estimate.</em>
+            </label>
+            <label class="ad-field">
+              <span>Round to nearest $</span>
+              <input class="ad-input" id="ad-price-round" type="number" step="5" min="1"
+                     value="${attr(centsToDollars(p.roundToCents || 5000))}">
+              <em>Keeps the numbers tidy, e.g. $2,600 not $2,617.</em>
+            </label>
+            <label class="ad-field">
+              <span>Free hours</span>
+              <input class="ad-input" id="ad-price-freehours" type="number" step="1" min="0" max="48"
+                     value="${attr(p.freeHours != null ? p.freeHours : 4)}">
+              <em>Hours included before the hourly rate kicks in.</em>
+            </label>
+            <label class="ad-field">
+              <span>Hourly rate $ (over the free hours)</span>
+              <input class="ad-input" id="ad-price-hourly" type="number" step="1" min="0"
+                     value="${attr(centsToDollars(p.hourlyCents || 0))}">
+              <em>Leave at 0 to not charge by the hour.</em>
+            </label>
+          </div>
+        </section>
+      </div>
+
+      <div class="ad-actions-row ad-price-save-row">
+        <button type="button" class="ad-btn ad-btn-primary" id="ad-price-save">Save prices</button>
+        <p class="ad-action-msg" id="ad-price-msg" hidden></p>
+      </div>
+    `;
+  },
+
+  wire() { wireQuotePricing(); },
+};
+
+/*  A fresh blank row for the "+ Add" button, matching each list's columns. */
+function blankPriceRow(kind) {
+  const map = {
+    eventTypes: [{ name: 'label', placeholder: 'New event' },
+                 { name: 'baseCents', value: 0, type: 'number', step: '1', min: 0 }],
+    services:   [{ name: 'label', placeholder: 'New service' },
+                 { name: 'addCents', value: 0, type: 'number', step: '1', min: 0 }],
+    sizes:      [{ name: 'label', placeholder: 'New size' },
+                 { name: 'multiplier', value: 1, type: 'number', step: '0.05', min: 0 }],
+    locations:  [{ name: 'label', placeholder: 'New place' },
+                 { name: 'travelCents', value: 0, type: 'number', step: '1', min: 0 }],
+    durations:  [{ name: 'label', placeholder: 'New length' },
+                 { name: 'hours', value: 1, type: 'number', step: '1', min: 0 }],
+  };
+  return priceRow(kind, (map[kind] || []).map((f) => ({ value: '', ...f })));
+}
+
+function wireQuotePricing() {
+  const desk = document.getElementById('ad-desk');
+  if (!desk) return;
+
+  desk.querySelectorAll('[data-add-row]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const kind = btn.getAttribute('data-add-row');
+      const rows = desk.querySelector(`[data-rows="${cssEsc(kind)}"]`);
+      if (rows) rows.insertAdjacentHTML('beforeend', blankPriceRow(kind));
+    });
+  });
+
+  desk.addEventListener('click', (e) => {
+    const del = e.target.closest('[data-del-row]');
+    if (del) { const row = del.closest('.ad-price-row'); if (row) row.remove(); }
+  });
+
+  const save = document.getElementById('ad-price-save');
+  if (save) save.addEventListener('click', () => saveQuotePricing());
+}
+
+/*  Read the DOM back into the pricing shape and send it. Dollars in the
+    inputs become cents on the way out - the store is always cents.        */
+function saveQuotePricing() {
+  const desk = document.getElementById('ad-desk');
+  const msg = document.getElementById('ad-price-msg');
+  const dollarsToCents = (v) => Math.round(Number(v || 0) * 100);
+
+  const readList = (kind, map) => {
+    const rows = desk.querySelectorAll(`[data-rows="${cssEsc(kind)}"] .ad-price-row`);
+    return Array.from(rows).map((row) => {
+      const get = (n) => {
+        const el = row.querySelector(`[data-field="${cssEsc(n)}"]`);
+        return el ? el.value : '';
+      };
+      return map(get);
+    }).filter((x) => x.label);
+  };
+
+  const pricing = {
+    spreadPct: Number((document.getElementById('ad-price-spread') || {}).value || 0),
+    roundToCents: dollarsToCents((document.getElementById('ad-price-round') || {}).value || 50),
+    freeHours: Number((document.getElementById('ad-price-freehours') || {}).value || 0),
+    hourlyCents: dollarsToCents((document.getElementById('ad-price-hourly') || {}).value || 0),
+
+    eventTypes: readList('eventTypes', (g) => ({
+      label: g('label').trim(), baseCents: dollarsToCents(g('baseCents')) })),
+    services: readList('services', (g) => ({
+      label: g('label').trim(), addCents: dollarsToCents(g('addCents')) })),
+    sizes: readList('sizes', (g) => ({
+      label: g('label').trim(), multiplier: Number(g('multiplier') || 1) })),
+    locations: readList('locations', (g) => ({
+      label: g('label').trim(), travelCents: dollarsToCents(g('travelCents')) })),
+    durations: readList('durations', (g) => ({
+      label: g('label').trim(), hours: Number(g('hours') || 0) })),
+  };
+
+  if (msg) { msg.hidden = false; msg.className = 'ad-action-msg'; msg.textContent = 'Saving\u2026'; }
+
+  call('adminSaveQuotePricing', { pricing })
+    .then(() => {
+      state.quotePricing = pricing;
+      if (msg) { msg.className = 'ad-action-msg is-ok'; msg.textContent = 'Saved. The bot is using these now.'; }
+    })
+    .catch((err) => {
+      if (msg) { msg.className = 'ad-action-msg is-bad'; msg.textContent = err.message || 'Could not save.'; }
+    });
 }

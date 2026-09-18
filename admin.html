@@ -16,11 +16,11 @@
       and the two would fight each other. Keeping them apart also means
       nothing done in here can reach the public site, and nothing done
       there can reach this.                                             -->
-<link rel="stylesheet" href="admin.css?v=116">
+<link rel="stylesheet" href="admin.css?v=117">
 <!--  The DJ list for the Friday Nights panel. Same roster the
         entertainment page shows.                                  -->
-  <script src="js/roster.js?v=116" defer></script>
-  <script type="module" src="js/admin-app.js?v=116"></script>
+  <script src="js/roster.js?v=117" defer></script>
+  <script type="module" src="js/admin-app.js?v=117"></script>
 </head>
 
 <body>
@@ -123,6 +123,25 @@
       <button type="button" class="ad-nav-item" data-view="entertainment">
         <span class="ad-ico" aria-hidden="true">♫</span> Entertainment
       </button>
+
+      <!--  Estimate bot. Leads come in from the quote bot on the services
+            page; pricing is the table it runs on. Grouped like Vendors. -->
+      <div class="ad-nav-group is-open" data-group="leads">
+        <button type="button" class="ad-nav-item ad-nav-head" data-group-toggle
+                aria-expanded="true">
+          <span class="ad-ico" aria-hidden="true">◎</span> Leads
+          <span class="ad-nav-caret" aria-hidden="true">⌃</span>
+        </button>
+
+        <div class="ad-nav-sub">
+          <button type="button" class="ad-nav-item" data-view="quotes">
+            Quote Leads
+          </button>
+          <button type="button" class="ad-nav-item" data-view="quotePricing">
+            Quote Pricing
+          </button>
+        </div>
+      </div>
 
       <button type="button" class="ad-nav-item" data-view="customers" data-soon>
         <span class="ad-ico" aria-hidden="true">☺</span> Customers

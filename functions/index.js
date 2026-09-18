@@ -23,6 +23,10 @@ const { getAuth } = require('firebase-admin/auth');
 
 const layout = require('./lib/layout');
 const { sendBookingEmails } = require('./lib/email');
+const { sendQuoteEmail } = require('./lib/quote-email');
+const {
+  DEFAULT_QUOTE_PRICING, estimate: estimateQuote,
+} = require('./lib/quote-pricing');
 
 /*  SEND, AND WRITE DOWN WHAT HAPPENED
 
@@ -2294,5 +2298,274 @@ exports.adminSendTestVendorEmail = onCall(
     /*  The result rather than a throw: "it did not send, and here is what
         Google said" is the whole point of pressing the button.       */
     return result;
+  },
+);
+
+/* =========================================================================
+   ESTIMATE BOT
+
+   The quote bot on the services page. Three functions:
+
+     submitQuoteLead      public - a visitor finishes the bot
+     adminSaveQuotePricing  admin  - Max edits the price table
+     adminUpdateQuoteLead   admin  - Max moves a lead along / adds a note
+     adminResendQuoteEmail  admin  - Max re-sends a visitor their estimate
+
+   The lead is written only here, with the Admin SDK, so the price a visitor
+   is emailed is recomputed server-side from the saved pricing and cannot be
+   forged by editing the page. The pricing document is public-read (the bot
+   needs it to show a live range) but function/admin-write only.
+   ========================================================================= */
+
+/*  The saved price table, or the built-in default if Max has not saved one
+    yet. The bot falls back to the same default, so the two agree even on
+    day one.                                                              */
+async function loadQuotePricing() {
+  try {
+    const snap = await db.collection('config').doc('quotePricing').get();
+    if (snap.exists) {
+      const data = snap.data() || {};
+      // A part-saved or empty doc should not strip the bot of its options.
+      if (Array.isArray(data.eventTypes) && data.eventTypes.length) return data;
+    }
+  } catch (err) {
+    logger.warn('could not read quote pricing, using default', {
+      message: err && err.message,
+    });
+  }
+  return DEFAULT_QUOTE_PRICING;
+}
+
+const QUOTE_STATES = ['new', 'contacted', 'quoted', 'won', 'lost'];
+
+exports.submitQuoteLead = onCall(
+  { secrets: [SMTP_USER, SMTP_PASS] },
+  async (request) => {
+    const d = request.data || {};
+
+    /*  A honeypot: a field no human ever fills, hidden off-screen on the
+        form. A bot that dumps text into every input trips it, and we drop
+        the submission quietly - a 200 so it does not learn what caught it. */
+    if (String(d.website || d.company_url || '').trim()) {
+      logger.info('quote lead rejected: honeypot filled');
+      return { ok: true };
+    }
+
+    const text = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
+
+    const name = text(d.name, 120);
+    const email = text(d.email, 200);
+    const phone = text(d.phone, 40);
+    const eventDate = text(d.eventDate, 60);
+    const message = text(d.message, 2000);
+
+    if (!name) throw new HttpsError('invalid-argument', 'Please add your name.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new HttpsError('invalid-argument', 'That email does not look right.');
+    }
+
+    /*  The answers that drive the price. Kept as keys; the pricing table
+        turns them into labels and dollars. Anything unrecognised is simply
+        dropped by the estimator.                                          */
+    const answers = {
+      eventType: text(d.eventType, 40),
+      location: text(d.location, 40),
+      size: text(d.size, 40),
+      hours: text(d.hours, 40),
+      services: (Array.isArray(d.services) ? d.services : [])
+        .slice(0, 30)
+        .map((k) => text(k, 40))
+        .filter(Boolean),
+    };
+
+    const pricing = await loadQuotePricing();
+    const est = estimateQuote(pricing, answers);
+
+    const lead = {
+      source: 'services-quote-bot',
+      status: 'new',
+
+      name,
+      email,
+      phone,
+      eventDate,
+      message,
+
+      // the raw answers, and the readable version, so the admin table needs
+      // no lookup and a later pricing edit never rewrites an old lead
+      eventType: answers.eventType,
+      eventTypeLabel: est.labels.eventType,
+      location: answers.location,
+      locationLabel: est.labels.location,
+      size: answers.size,
+      sizeLabel: est.labels.size,
+      hours: answers.hours,
+      durationLabel: est.labels.duration,
+      services: answers.services,
+      serviceLabels: est.labels.services,
+
+      estimateLowCents: est.lowCents,
+      estimateHighCents: est.highCents,
+      estimatePointCents: est.pointCents,
+
+      createdAt: FieldValue.serverTimestamp(),
+    };
+
+    const ref = await db.collection('quoteLeads').add(lead);
+
+    /*  Auto-reply to the visitor. Never blocks the lead: it is already
+        saved, and the status is written back so the admin table can show
+        whether it went.                                                   */
+    const mail = await sendQuoteEmail(lead);
+    try {
+      await ref.update({
+        emailStatus: mail.sent ? 'sent' : 'failed',
+        emailAt: FieldValue.serverTimestamp(),
+        emailError: mail.sent ? FieldValue.delete()
+          : String(mail.error || mail.reason || '').slice(0, 500),
+      });
+    } catch (err) {
+      logger.warn('could not record quote email status', { message: err && err.message });
+    }
+
+    logger.info('quote lead', { id: ref.id, emailSent: mail.sent });
+
+    /*  The visitor sees the range regardless of the email. Returned so the
+        bot can show the same figure the server computed.                  */
+    return {
+      ok: true,
+      id: ref.id,
+      lowCents: est.lowCents,
+      highCents: est.highCents,
+      emailSent: mail.sent,
+    };
+  },
+);
+
+exports.adminSaveQuotePricing = onCall(async (request) => {
+  requireAdmin(request);
+  const p = (request.data && request.data.pricing) || {};
+
+  const text = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
+  const cents = (v, name, max = 10000000) => {
+    const n = Math.round(Number(v));
+    if (!Number.isFinite(n) || n < 0 || n > max) {
+      throw new HttpsError('invalid-argument', `${name} does not look right.`);
+    }
+    return n;
+  };
+  const num = (v, name, min, max) => {
+    const n = Number(v);
+    if (!Number.isFinite(n) || n < min || n > max) {
+      throw new HttpsError('invalid-argument', `${name} does not look right.`);
+    }
+    return n;
+  };
+  const key = (v, i) => {
+    const k = text(v, 40).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    return k || 'item-' + (i + 1);
+  };
+
+  const list = (arr, map) => {
+    if (!Array.isArray(arr)) return [];
+    return arr.slice(0, 40).map(map).filter((x) => x.label);
+  };
+
+  const clean = {
+    currency: 'AUD',
+    spreadPct: num(p.spreadPct != null ? p.spreadPct : 15, 'Spread', 0, 90),
+    roundToCents: cents(p.roundToCents != null ? p.roundToCents : 5000, 'Rounding', 100000),
+    freeHours: num(p.freeHours != null ? p.freeHours : 4, 'Free hours', 0, 48),
+    hourlyCents: cents(p.hourlyCents != null ? p.hourlyCents : 0, 'Hourly rate'),
+
+    eventTypes: list(p.eventTypes, (x, i) => ({
+      key: key(x.key || x.label, i), label: text(x.label, 60),
+      baseCents: cents(x.baseCents, 'Base price'),
+    })),
+    services: list(p.services, (x, i) => ({
+      key: key(x.key || x.label, i), label: text(x.label, 60),
+      addCents: cents(x.addCents, 'Add-on price'),
+    })),
+    sizes: list(p.sizes, (x, i) => ({
+      key: key(x.key || x.label, i), label: text(x.label, 60),
+      multiplier: num(x.multiplier, 'Multiplier', 0, 20),
+    })),
+    locations: list(p.locations, (x, i) => ({
+      key: key(x.key || x.label, i), label: text(x.label, 60),
+      travelCents: cents(x.travelCents, 'Travel fee'),
+    })),
+    durations: list(p.durations, (x, i) => ({
+      key: key(x.key || x.hours || x.label, i), label: text(x.label, 60),
+      hours: num(x.hours, 'Hours', 0, 48),
+    })),
+
+    updatedAt: FieldValue.serverTimestamp(),
+  };
+
+  if (!clean.eventTypes.length) {
+    throw new HttpsError('invalid-argument', 'Add at least one event type.');
+  }
+
+  await db.collection('config').doc('quotePricing').set(clean, { merge: false });
+  return { ok: true };
+});
+
+exports.adminUpdateQuoteLead = onCall(async (request) => {
+  requireAdmin(request);
+  const { leadId, status, note } = request.data || {};
+  const id = String(leadId || '').trim();
+  if (!id) throw new HttpsError('invalid-argument', 'Missing lead id.');
+
+  const ref = db.collection('quoteLeads').doc(id);
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'No such lead.');
+
+  const update = { updatedAt: FieldValue.serverTimestamp() };
+
+  if (status !== undefined) {
+    if (!QUOTE_STATES.includes(status)) {
+      throw new HttpsError('invalid-argument',
+        'Status must be one of: ' + QUOTE_STATES.join(', '));
+    }
+    update.status = status;
+  }
+
+  if (note !== undefined) {
+    update.note = String(note || '').trim().slice(0, 2000);
+  }
+
+  await ref.update(update);
+  return { ok: true };
+});
+
+exports.adminResendQuoteEmail = onCall(
+  { secrets: [SMTP_USER, SMTP_PASS] },
+  async (request) => {
+    requireAdmin(request);
+    const id = String((request.data || {}).leadId || '').trim();
+    if (!id) throw new HttpsError('invalid-argument', 'Missing lead id.');
+
+    const ref = db.collection('quoteLeads').doc(id);
+    const snap = await ref.get();
+    if (!snap.exists) throw new HttpsError('not-found', 'No such lead.');
+
+    const lead = snap.data();
+    if (!lead.email) {
+      throw new HttpsError('failed-precondition', 'That lead has no email address.');
+    }
+
+    const mail = await sendQuoteEmail(lead);
+    try {
+      await ref.update({
+        emailStatus: mail.sent ? 'sent' : 'failed',
+        emailAt: FieldValue.serverTimestamp(),
+        emailError: mail.sent ? FieldValue.delete()
+          : String(mail.error || mail.reason || '').slice(0, 500),
+      });
+    } catch (err) {
+      logger.warn('could not record quote email status', { message: err && err.message });
+    }
+
+    return mail;
   },
 );

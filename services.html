@@ -20,10 +20,12 @@
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="style.css?v=116">
-  <link rel="stylesheet" href="services.css?v=116">
-  <script src="js/main.js?v=116" defer></script>
-  <script src="js/services.js?v=116" defer></script>
+  <link rel="stylesheet" href="style.css?v=117">
+  <link rel="stylesheet" href="services.css?v=117">
+  <link rel="stylesheet" href="quote-bot.css?v=117">
+  <script src="js/main.js?v=117" defer></script>
+  <script src="js/services.js?v=117" defer></script>
+  <script type="module" src="js/quote-bot.js?v=117"></script>
 </head>
 
 <body>
@@ -496,6 +498,30 @@
         gradient rather than a broken image. Save yours as
         images/services/cta.webp, landscape, around 2000px wide. Something
         dark and wide works best: the words sit over the left of it.    -->
+  <!-- 5b. INSTANT ESTIMATE ---------------------------------------------------
+
+       The quote bot. A guided, button-led chat that gives the visitor a
+       ballpark on the spot and captures the lead. Priced from the table at
+       config/quotePricing (edited in the admin desk); the estimate shown is
+       recomputed server-side on submit, so the figure is never taken on the
+       browser's word. All of its markup is built by js/quote-bot.js into the
+       mount below, so this page carries only the frame.
+       -->
+  <section class="sgs-block sg-quote-block">
+    <div class="sgs-wrap">
+      <div class="sg-quote-intro">
+        <p class="sgs-kicker">Instant Estimate</p>
+        <h2>Get a <span>Ballpark</span> in 30 Seconds</h2>
+        <p class="sgs-cta-lead">
+          Answer a few quick questions and our assistant will give you a
+          price range on the spot &mdash; no waiting, no obligation.
+        </p>
+      </div>
+      <div id="sg-quote-bot"></div>
+    </div>
+  </section>
+
+
   <section class="sgs-block sgs-cta">
     <div class="sgs-cta-media" aria-hidden="true"></div>
 
