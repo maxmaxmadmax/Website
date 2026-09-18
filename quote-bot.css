@@ -255,10 +255,6 @@
 }
 .sgq-submit:disabled { opacity: .65; cursor: default; }
 
-/* the framing band on the services page */
-.sg-quote-block { text-align: center; }
-.sg-quote-intro { max-width: 620px; margin: 0 auto 28px; }
-
 @media (max-width: 520px) {
   .sgq { height: auto; max-height: none; border-radius: 16px; }
   .sgq-stream { max-height: 58vh; }
