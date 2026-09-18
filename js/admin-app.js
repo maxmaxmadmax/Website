@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=121';
+} from './firebase-config.js?v=123';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -93,9 +93,12 @@ const state = {
   quoteFilter: { search: '', status: 'all' },
   openLeadId: null,
 
-  /*  The equipment inventory / price list. Loaded live so the Equipment
+  /*  The equipment inventory / price list. Loaded live so the Inventory
       page and the bot never disagree. null until first load.            */
   inventory: null,
+  openInvId: null,                                  // which item's detail is open
+  invFilter: { search: '', category: 'all', location: 'all', status: 'all' },
+  invPage: 1,
 };
 
 let fb = null;
@@ -319,7 +322,7 @@ function wireChrome() {
    Routing
    ------------------------------------------------------------------------- */
 const BUILT = ['events', 'vendors', 'applications', 'map', 'entertainment',
-               'settings', 'vendorEmail', 'quotes', 'equipment', 'botSettings'];
+               'settings', 'vendorEmail', 'quotes', 'inventory', 'botSettings'];
 
 /*  Vendors is where the work is, so it is what you land on. */
 const HOME = 'vendors';
@@ -458,7 +461,7 @@ function subscribeToInventory() {
         || (a.order || 0) - (b.order || 0)
         || (a.name || '').localeCompare(b.name || ''));
       state.inventory = items;
-      if (state.view === 'equipment') render();
+      if (state.view === 'inventory') render();
     },
     (err) => console.error('inventory', err)
   ));
@@ -4159,190 +4162,534 @@ function saveQuotePricing() {
 
 
 /* =========================================================================
-   EQUIPMENT  -  the inventory / price list
+   INVENTORY  -  the equipment manager
 
-   Max's real gear, one row each: name, category, hire price, what the price
-   is per, how many are owned, and whether the bot offers it as an extra.
-   This is the source of truth - the bot's "what are you after?" step is
-   built from the items ticked "In bot", and prices them from here.
+   Max's gear as a proper inventory: a table with thumbnails, category and
+   status pills, quantities and hire pricing, plus a detail panel on the
+   right for editing one item at a time. It is the source of truth - the
+   bot's extras and their prices come from the items flagged "Available for
+   quotes" here.
 
-   Written straight to the `inventory` collection (rules allow admin writes),
-   in one atomic batch: rows with an id are set, new rows get one, and any
-   saved item no longer on the page is removed.
+   CORE FIRST: photos, a per-item history and booking-driven availability are
+   deliberately left out for now; quantities and status are set by hand.
+
+   Items live in the `inventory` collection (rules allow admin writes), one
+   document each, saved on their own when you press Save Changes.
    ========================================================================= */
 
-/*  DEFAULT INVENTORY - a mirror of functions/lib/quote-pricing.js. Shown as
-    the starter list until Max saves his own gear. Keep the SHAPE in step
-    with the server file.                                                  */
+/*  DEFAULT INVENTORY - a mirror of functions/lib/quote-pricing.js, shown as
+    a starter list until real gear is saved. Only the fields the bot needs
+    (id, name, category, priceCents, inBot) have to match the server; the
+    rest are the richer admin fields, filled in here.                      */
 const DEFAULT_INVENTORY = [
-  { id: 'dj', name: 'DJ Package', category: 'DJ / MC', priceCents: 60000, period: 'event', quantity: 2, inBot: true },
-  { id: 'mc', name: 'MC / Host', category: 'DJ / MC', priceCents: 35000, period: 'event', quantity: 1, inBot: true },
-  { id: 'pa', name: 'Live Sound / PA System', category: 'Audio', priceCents: 45000, period: 'event', quantity: 3, inBot: true },
-  { id: 'lighting', name: 'Lighting Package', category: 'Lighting', priceCents: 40000, period: 'event', quantity: 4, inBot: true },
-  { id: 'staging', name: 'Staging', category: 'Staging', priceCents: 50000, period: 'event', quantity: 1, inBot: true },
-  { id: 'dryhire', name: 'Dry Hire Gear', category: 'Dry Hire', priceCents: 25000, period: 'day', quantity: 10, inBot: true },
-  { id: 'setup', name: 'Setup & Pack-down', category: 'Crew', priceCents: 30000, period: 'event', quantity: 1, inBot: true },
+  { id: 'dj', name: 'DJ Package', subtitle: 'Decks, mixer & booth', category: 'DJ', priceCents: 60000, extraDayCents: 30000, quantityTotal: 2, quantityAvailable: 2, location: 'Bowen', status: 'available', inBot: true },
+  { id: 'mc', name: 'MC / Host', subtitle: 'Mic & host for the night', category: 'DJ', priceCents: 35000, extraDayCents: 0, quantityTotal: 1, quantityAvailable: 1, location: 'Bowen', status: 'available', inBot: true },
+  { id: 'pa', name: 'Live Sound / PA System', subtitle: 'Tops, subs & desk', category: 'Audio', priceCents: 45000, extraDayCents: 22000, quantityTotal: 3, quantityAvailable: 3, location: 'Bowen', status: 'available', inBot: true },
+  { id: 'lighting', name: 'Lighting Package', subtitle: 'Stage & dance-floor wash', category: 'Lighting', priceCents: 40000, extraDayCents: 20000, quantityTotal: 4, quantityAvailable: 4, location: 'Bowen', status: 'available', inBot: true },
+  { id: 'staging', name: 'Staging', subtitle: 'Modular deck, per section', category: 'Staging', priceCents: 50000, extraDayCents: 25000, quantityTotal: 1, quantityAvailable: 1, location: 'Bowen', status: 'available', inBot: true },
+  { id: 'dryhire', name: 'Dry Hire Gear', subtitle: 'Self-collect equipment', category: 'Dry Hire', priceCents: 25000, extraDayCents: 12000, quantityTotal: 10, quantityAvailable: 10, location: 'Bowen', status: 'available', inBot: true },
+  { id: 'setup', name: 'Setup & Pack-down', subtitle: 'Crew on the day', category: 'Crew', priceCents: 30000, extraDayCents: 0, quantityTotal: 1, quantityAvailable: 1, location: 'Bowen', status: 'available', inBot: true },
 ];
 
-/*  The list to show: the saved gear if there is any, otherwise the starter
-    list. An empty array means Max cleared it, and stays empty.            */
-function quoteInventoryModel() {
+function invModelRaw() {
   if (Array.isArray(state.inventory) && state.inventory.length) return state.inventory;
   return DEFAULT_INVENTORY;
 }
 
-const PERIODS = [['day', 'per day'], ['event', 'per event'], ['weekend', 'per weekend']];
+const invNum = (v, d = 0) => { const n = Number(v); return Number.isFinite(n) ? n : d; };
 
-function invRow(it) {
-  it = it || {};
-  const per = it.period || 'event';
-  const opts = PERIODS.map(
-    (o) => `<option value="${o[0]}"${per === o[0] ? ' selected' : ''}>${o[1]}</option>`).join('');
-  return `<div class="ad-inv-row" data-id="${attr(it.id || '')}">
-    <input class="ad-input" data-field="name" value="${attr(it.name || '')}" placeholder="e.g. Speaker Top">
-    <input class="ad-input" data-field="category" value="${attr(it.category || '')}" placeholder="Audio">
-    <input class="ad-input" data-field="priceCents" type="number" step="1" min="0"
-           value="${attr(centsToDollars(it.priceCents))}">
-    <select class="ad-select" data-field="period">${opts}</select>
-    <input class="ad-input" data-field="quantity" type="number" step="1" min="0"
-           value="${attr(it.quantity != null ? it.quantity : 1)}">
-    <label class="ad-inv-check" title="Offer this in the estimate bot">
-      <input type="checkbox" data-field="inBot"${it.inBot ? ' checked' : ''}></label>
-    <button type="button" class="ad-price-del" data-del-inv title="Remove">✕</button>
-  </div>`;
+/*  Normalise a stored item to every field the page expects, coping with
+    older documents (quantity -> quantityTotal, and no availability yet). */
+function invItem(raw) {
+  const r = raw || {};
+  const qt = invNum(r.quantityTotal != null ? r.quantityTotal : r.quantity, 0);
+  const qaRaw = r.quantityAvailable != null ? r.quantityAvailable : qt;
+  return {
+    id: r.id || '',
+    name: r.name || '',
+    subtitle: r.subtitle || '',
+    category: r.category || '',
+    status: r.status || 'available',
+    quantityTotal: qt,
+    quantityAvailable: Math.max(0, Math.min(invNum(qaRaw, 0), qt)),
+    location: r.location || '',
+    pricingType: r.pricingType || 'per-day',
+    priceCents: invNum(r.priceCents, 0),
+    extraDayCents: invNum(r.extraDayCents, 0),
+    replacementCents: invNum(r.replacementCents, 0),
+    internalNotes: r.internalNotes || '',
+    specs: r.specs || '',
+    weight: r.weight || '',
+    powerDraw: r.powerDraw || '',
+    included: r.included || '',
+    inBot: r.inBot !== false,
+    order: invNum(r.order, 0),
+  };
 }
 
-VIEWS.equipment = {
+function invItems() { return invModelRaw().map(invItem); }
+
+/*  Category pills get a stable colour from the category name, so "Audio" is
+    always the same blue without a hard-coded list.                        */
+const INV_CAT_CLASSES = ['inv-c1', 'inv-c2', 'inv-c3', 'inv-c4', 'inv-c5', 'inv-c6'];
+function invCatClass(cat) {
+  if (!cat) return 'inv-c0';
+  let h = 0;
+  for (let i = 0; i < cat.length; i++) h = (h * 31 + cat.charCodeAt(i)) >>> 0;
+  return INV_CAT_CLASSES[h % INV_CAT_CLASSES.length];
+}
+
+const INV_STATUS = {
+  'available': ['inv-st-green', 'Available'],
+  'on-hire':   ['inv-st-blue',  'On Hire'],
+  'in-repair': ['inv-st-red',   'In Repair'],
+};
+function invStatusPill(status) {
+  const [cls, label] = INV_STATUS[status] || INV_STATUS.available;
+  return `<span class="inv-pill ${cls}">${esc(label)}</span>`;
+}
+
+/*  A little thumbnail stand-in until real photos land: a tinted tile with
+    the category's first letter.                                           */
+function invThumb(it) {
+  const letter = (it.category || it.name || '?').trim().charAt(0).toUpperCase();
+  return `<span class="inv-thumb ${invCatClass(it.category)}">${esc(letter)}</span>`;
+}
+
+/*  The units, split so available + on-hire + in-repair == total. Whatever a
+    vendor does not have available is "out"; the item's status decides which
+    bucket that out-count falls in.                                         */
+function invStats() {
+  const items = invItems();
+  let total = 0, available = 0, onHire = 0, inRepair = 0;
+  items.forEach((it) => {
+    const out = Math.max(0, it.quantityTotal - it.quantityAvailable);
+    total += it.quantityTotal;
+    available += it.quantityAvailable;
+    if (it.status === 'in-repair') inRepair += out || it.quantityTotal;
+    else onHire += out;
+  });
+  // in-repair with nothing "out" still shows its units as in repair, so pull
+  // those back off available-count double-adds
+  return { total, available, onHire, inRepair };
+}
+
+function invDistinct(key) {
+  const set = [];
+  invItems().forEach((it) => {
+    const v = (it[key] || '').trim();
+    if (v && !set.includes(v)) set.push(v);
+  });
+  return set.sort((a, b) => a.localeCompare(b));
+}
+
+function invFiltered() {
+  const f = state.invFilter;
+  const needle = (f.search || '').trim().toLowerCase();
+  return invItems().filter((it) => {
+    if (f.category !== 'all' && it.category !== f.category) return false;
+    if (f.location !== 'all' && it.location !== f.location) return false;
+    if (f.status !== 'all' && it.status !== f.status) return false;
+    if (!needle) return true;
+    return [it.name, it.subtitle, it.category, it.location]
+      .filter(Boolean).join(' ').toLowerCase().includes(needle);
+  });
+}
+
+const INV_PER_PAGE = 12;
+
+/* -------------------------------------------------------------------------
+   The view
+   ------------------------------------------------------------------------- */
+VIEWS.inventory = {
   html() {
-    const items = quoteInventoryModel();
+    const s = invStats();
     const starter = !(state.inventory && state.inventory.length);
-    const inBot = items.filter((x) => x.inBot).length;
+    const pct = (n) => (s.total ? Math.round((n / s.total) * 100) : 0);
+    const cats = invDistinct('category');
+    const locs = invDistinct('location');
+    const f = state.invFilter;
+
+    const opt = (val, label, cur) =>
+      `<option value="${attr(val)}"${cur === val ? ' selected' : ''}>${esc(label)}</option>`;
+
+    const open = state.openInvId != null;
 
     return `
-      <div class="ad-mail-head-row">
-        <span class="ad-mail-icon" aria-hidden="true">&#128230;</span>
-        <div class="ad-mail-title">
-          <h1>Equipment</h1>
-          <p>Your gear and hire prices. Tick <strong>In bot</strong> to offer an item as
-             an extra in the estimate bot &mdash; it adds that price to the quote.</p>
-        </div>
-        <div class="ad-mail-status">
-          <span class="ad-pill ${starter ? 'ad-pill-blue' : 'ad-pill-green'}">
-            ${starter ? 'Starter list' : 'Your gear'}
-          </span>
-          <p class="ad-mail-when">${items.length} items &middot; ${inBot} in bot</p>
-        </div>
-      </div>
-
-      <section class="ad-card ad-panel">
-        <header class="ad-panel-head">
-          <div>
-            <h2>Price list</h2>
-            <p class="ad-panel-sub">One row per item. Hire price is GST-inclusive.</p>
+      <div class="inv-wrap${open ? ' has-detail' : ''}">
+        <div class="inv-main">
+          <div class="inv-head">
+            <div class="inv-head-title">
+              <span class="ad-mail-icon" aria-hidden="true">&#128230;</span>
+              <div>
+                <h1>Inventory</h1>
+                <p>Manage your equipment, availability and hire pricing.</p>
+              </div>
+            </div>
+            <div class="inv-head-actions">
+              ${starter ? '<span class="inv-pill inv-st-blue">Starter list</span>' : ''}
+              <button type="button" class="ad-btn ad-btn-primary" id="inv-add">+ Add Item</button>
+            </div>
           </div>
-        </header>
 
-        <div class="ad-inv-cols" aria-hidden="true">
-          <span>Item</span><span>Category</span><span>Hire $</span><span>Per</span>
-          <span>Qty</span><span>In bot</span><span></span>
+          <div class="inv-tiles">
+            ${invTile('&#128230;', 'inv-t-slate', s.total, 'Total Items', '')}
+            ${invTile('&#10003;', 'inv-t-green', s.available, 'Available', pct(s.available) + '%')}
+            ${invTile('&#128666;', 'inv-t-blue', s.onHire, 'On Hire', pct(s.onHire) + '%')}
+            ${invTile('&#128295;', 'inv-t-amber', s.inRepair, 'In Repair', pct(s.inRepair) + '%')}
+          </div>
+
+          <div class="inv-toolbar">
+            <input type="search" id="inv-search" class="ad-search" placeholder="Search items..."
+                   value="${attr(f.search)}" aria-label="Search inventory">
+            <select id="inv-f-category" class="ad-select" aria-label="Filter by category">
+              ${opt('all', 'All categories', f.category)}
+              ${cats.map((c) => opt(c, c, f.category)).join('')}
+            </select>
+            <select id="inv-f-location" class="ad-select" aria-label="Filter by location">
+              ${opt('all', 'All locations', f.location)}
+              ${locs.map((c) => opt(c, c, f.location)).join('')}
+            </select>
+            <select id="inv-f-status" class="ad-select" aria-label="Filter by status">
+              ${opt('all', 'All status', f.status)}
+              ${opt('available', 'Available', f.status)}
+              ${opt('on-hire', 'On Hire', f.status)}
+              ${opt('in-repair', 'In Repair', f.status)}
+            </select>
+          </div>
+
+          <div class="ad-table-wrap inv-table-wrap">
+            <table class="ad-table inv-table">
+              <thead>
+                <tr>
+                  <th>Item</th><th>Category</th><th class="inv-num">Total</th>
+                  <th class="inv-num">Avail.</th><th>Location</th>
+                  <th class="inv-num">Hire / day</th><th class="inv-num">Extra day</th>
+                  <th>Status</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="inv-rows"></tbody>
+            </table>
+          </div>
+
+          <div class="inv-foot" id="inv-foot"></div>
         </div>
-        <div class="ad-inv-rows" id="ad-inv-rows">${items.map(invRow).join('')}</div>
-        <button type="button" class="ad-btn ad-btn-small ad-price-add" id="ad-inv-add">
-          + Add item
-        </button>
-      </section>
 
-      <div class="ad-actions-row ad-price-save-row">
-        <button type="button" class="ad-btn ad-btn-primary" id="ad-inv-save">Save price list</button>
-        <p class="ad-action-msg" id="ad-inv-msg" hidden></p>
+        ${open ? invDetail() : ''}
       </div>
     `;
   },
 
-  wire() { wireEquipment(); },
+  wire() { wireInventory(); },
 };
 
-function wireEquipment() {
-  const desk = document.getElementById('ad-desk');
-  if (!desk) return;
-
-  const add = document.getElementById('ad-inv-add');
-  if (add) {
-    add.addEventListener('click', () => {
-      const rows = document.getElementById('ad-inv-rows');
-      if (rows) rows.insertAdjacentHTML('beforeend', invRow({}));
-    });
-  }
-
-  desk.addEventListener('click', (e) => {
-    const del = e.target.closest('[data-del-inv]');
-    if (del) { const row = del.closest('.ad-inv-row'); if (row) row.remove(); }
-  });
-
-  const save = document.getElementById('ad-inv-save');
-  if (save) save.addEventListener('click', () => saveEquipment(save));
+function invTile(icon, cls, value, label, pct) {
+  return `
+    <div class="inv-tile">
+      <span class="inv-tile-ico ${cls}" aria-hidden="true">${icon}</span>
+      <div class="inv-tile-body">
+        <p class="inv-tile-value">${esc(value)}</p>
+        <p class="inv-tile-label">${esc(label)}</p>
+      </div>
+      ${pct ? `<span class="inv-tile-pct">${esc(pct)}</span>` : ''}
+    </div>`;
 }
 
-/*  Gather the rows and write them in one batch. Rows with a data-id are set
-    in place (so the starter list keeps its friendly ids on first save); new
-    rows get an auto id; anything saved before but gone from the page is
-    deleted.                                                               */
-async function saveEquipment(btn) {
-  const desk = document.getElementById('ad-desk');
-  const msg = document.getElementById('ad-inv-msg');
-  const { collection, doc, writeBatch } = fb.f;
+function invRowsHtml() {
+  const rows = invFiltered();
+  const pages = Math.max(1, Math.ceil(rows.length / INV_PER_PAGE));
+  if (state.invPage > pages) state.invPage = pages;
+  const start = (state.invPage - 1) * INV_PER_PAGE;
+  const pageRows = rows.slice(start, start + INV_PER_PAGE);
 
-  const rows = Array.from(desk.querySelectorAll('.ad-inv-row'));
-  const items = rows.map((row, i) => {
-    const g = (n) => {
-      const el = row.querySelector(`[data-field="${cssEsc(n)}"]`);
-      return el ? el.value : '';
-    };
-    const chk = row.querySelector('[data-field="inBot"]');
-    return {
-      id: row.getAttribute('data-id') || '',
-      name: g('name').trim(),
-      category: g('category').trim(),
-      priceCents: Math.round(Number(g('priceCents') || 0) * 100),
-      period: g('period') || 'event',
-      quantity: Math.round(Number(g('quantity') || 0)),
-      inBot: chk ? chk.checked : false,
-      order: i,
-    };
-  }).filter((x) => x.name);
+  const body = pageRows.length ? pageRows.map((it) => `
+    <tr class="inv-row${state.openInvId === it.id ? ' is-open' : ''}" data-inv="${attr(it.id)}">
+      <td class="inv-item-cell">
+        ${invThumb(it)}
+        <span class="inv-item-text">
+          <span class="inv-item-name">${esc(it.name || 'Untitled')}</span>
+          ${it.subtitle ? `<span class="inv-item-sub">${esc(it.subtitle)}</span>` : ''}
+        </span>
+      </td>
+      <td>${it.category ? `<span class="inv-pill ${invCatClass(it.category)}">${esc(it.category)}</span>` : '<span class="ad-cell-muted">—</span>'}</td>
+      <td class="inv-num">${esc(it.quantityTotal)}</td>
+      <td class="inv-num">${esc(it.quantityAvailable)}</td>
+      <td>${it.location ? esc(it.location) : '<span class="ad-cell-muted">—</span>'}</td>
+      <td class="inv-num">${esc(money(it.priceCents))}</td>
+      <td class="inv-num">${it.extraDayCents ? esc(money(it.extraDayCents)) : '<span class="ad-cell-muted">—</span>'}</td>
+      <td>${invStatusPill(it.status)}</td>
+      <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-inv-open="${attr(it.id)}" aria-label="Edit">&#8250;</button></td>
+    </tr>`).join('')
+    : `<tr><td colspan="9" class="ad-cell-muted">No items match. Try clearing the filters, or add one.</td></tr>`;
 
-  if (msg) { msg.hidden = false; msg.className = 'ad-action-msg'; msg.textContent = 'Saving…'; }
-  if (btn) btn.disabled = true;
+  return { body, total: rows.length, pages, start, shown: pageRows.length };
+}
 
-  try {
-    const batch = writeBatch(fb.db);
-    const keep = new Set();
+function renderInvRows() {
+  const host = document.getElementById('inv-rows');
+  const foot = document.getElementById('inv-foot');
+  if (!host) return;
 
-    items.forEach((it) => {
-      const ref = it.id
-        ? doc(fb.db, 'inventory', it.id)
-        : doc(collection(fb.db, 'inventory'));   // auto id
-      keep.add(ref.id);
-      batch.set(ref, {
-        name: it.name,
-        category: it.category,
-        priceCents: it.priceCents,
-        period: it.period,
-        quantity: it.quantity,
-        inBot: it.inBot,
-        order: it.order,
+  const r = invRowsHtml();
+  host.innerHTML = r.body;
+
+  if (foot) {
+    const from = r.total ? r.start + 1 : 0;
+    const to = r.start + r.shown;
+    let nums = '';
+    for (let p = 1; p <= r.pages; p++) {
+      nums += `<button type="button" class="inv-pagebtn${p === state.invPage ? ' is-on' : ''}"
+                 data-inv-page="${p}">${p}</button>`;
+    }
+    foot.innerHTML = `
+      <p class="inv-foot-count">Showing ${from}–${to} of ${r.total} items</p>
+      <div class="inv-pages">
+        <button type="button" class="inv-pagebtn" data-inv-page="${Math.max(1, state.invPage - 1)}"
+                ${state.invPage === 1 ? 'disabled' : ''}>‹</button>
+        ${nums}
+        <button type="button" class="inv-pagebtn" data-inv-page="${Math.min(r.pages, state.invPage + 1)}"
+                ${state.invPage === r.pages ? 'disabled' : ''}>›</button>
+      </div>`;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Detail panel  -  edit one item
+   ------------------------------------------------------------------------- */
+function invEditingItem() {
+  if (state.openInvId === '__new__') {
+    return invItem({ status: 'available', quantityTotal: 1, quantityAvailable: 1,
+      pricingType: 'per-day', inBot: true, location: '' });
+  }
+  const found = (state.inventory || []).find((x) => x.id === state.openInvId);
+  return invItem(found || {});
+}
+
+function invDetail() {
+  const it = invEditingItem();
+  const isNew = state.openInvId === '__new__';
+  const dollars = (c) => (c ? (c / 100) : '');
+
+  const statusOpt = (v, l) =>
+    `<option value="${v}"${it.status === v ? ' selected' : ''}>${l}</option>`;
+
+  return `
+    <aside class="inv-detail" aria-label="Item details">
+      <header class="inv-detail-head">
+        <div>
+          <h2>${isNew ? 'New item' : esc(it.name || 'Item')}</h2>
+          ${!isNew && it.subtitle ? `<p class="inv-detail-sub">${esc(it.subtitle)}</p>` : ''}
+        </div>
+        <button type="button" class="inv-detail-close" id="inv-close" aria-label="Close">&times;</button>
+      </header>
+
+      <div class="inv-detail-body">
+        <div class="inv-fgrid">
+          <label class="ad-field inv-span2"><span>Item name</span>
+            <input class="ad-input" data-f="name" value="${attr(it.name)}" placeholder="Electro-Voice ICOA 12"></label>
+          <label class="ad-field inv-span2"><span>Subtitle</span>
+            <input class="ad-input" data-f="subtitle" value="${attr(it.subtitle)}" placeholder="Active Speaker"></label>
+
+          <label class="ad-field"><span>Category</span>
+            <input class="ad-input" data-f="category" value="${attr(it.category)}" placeholder="Audio"></label>
+          <label class="ad-field"><span>Status</span>
+            <select class="ad-select" data-f="status">
+              ${statusOpt('available', 'Available')}
+              ${statusOpt('on-hire', 'On Hire')}
+              ${statusOpt('in-repair', 'In Repair')}
+            </select></label>
+
+          <label class="ad-field"><span>Quantity owned</span>
+            <input class="ad-input" type="number" min="0" step="1" data-f="quantityTotal" value="${attr(it.quantityTotal)}"></label>
+          <label class="ad-field"><span>Quantity available</span>
+            <input class="ad-input" type="number" min="0" step="1" data-f="quantityAvailable" value="${attr(it.quantityAvailable)}"></label>
+
+          <label class="ad-field inv-span2"><span>Default location</span>
+            <input class="ad-input" data-f="location" value="${attr(it.location)}" placeholder="Bowen"></label>
+
+          <label class="ad-field"><span>Hire price (1 day) $</span>
+            <input class="ad-input" type="number" min="0" step="1" data-f="priceCents" value="${attr(dollars(it.priceCents))}"></label>
+          <label class="ad-field"><span>Extra day price $</span>
+            <input class="ad-input" type="number" min="0" step="1" data-f="extraDayCents" value="${attr(dollars(it.extraDayCents))}"></label>
+
+          <label class="ad-field inv-span2"><span>Replacement value $</span>
+            <input class="ad-input" type="number" min="0" step="1" data-f="replacementCents" value="${attr(dollars(it.replacementCents))}"></label>
+
+          <label class="ad-field inv-span2"><span>Internal notes</span>
+            <textarea class="ad-input" rows="2" data-f="internalNotes" placeholder="Just for the team...">${esc(it.internalNotes)}</textarea></label>
+        </div>
+
+        <div class="inv-detail-section">
+          <h3>Extra equipment details</h3>
+          <div class="inv-fgrid">
+            <label class="ad-field inv-span2"><span>Specs</span>
+              <textarea class="ad-input" rows="2" data-f="specs" placeholder="12&quot; two-way powered loudspeaker...">${esc(it.specs)}</textarea></label>
+            <label class="ad-field"><span>Weight</span>
+              <input class="ad-input" data-f="weight" value="${attr(it.weight)}" placeholder="17.4 kg"></label>
+            <label class="ad-field"><span>Power draw</span>
+              <input class="ad-input" data-f="powerDraw" value="${attr(it.powerDraw)}" placeholder="300 W (max)"></label>
+            <label class="ad-field inv-span2"><span>What's included</span>
+              <textarea class="ad-input" rows="2" data-f="included" placeholder="1x speaker, 1x power cable...">${esc(it.included)}</textarea></label>
+          </div>
+        </div>
+
+        <label class="inv-toggle">
+          <span>
+            <strong>Available for quotes</strong>
+            <em>Offer this item as an extra in the estimate bot.</em>
+          </span>
+          <input type="checkbox" data-f="inBot"${it.inBot ? ' checked' : ''}>
+          <span class="inv-switch" aria-hidden="true"></span>
+        </label>
+      </div>
+
+      <footer class="inv-detail-foot">
+        ${isNew ? '' : '<button type="button" class="ad-btn inv-del" id="inv-delete">Delete</button>'}
+        <button type="button" class="ad-btn ad-btn-primary" id="inv-save">
+          ${isNew ? 'Add item' : 'Save changes'}</button>
+        <span class="ad-quote-msg" id="inv-msg"></span>
+      </footer>
+    </aside>`;
+}
+
+/* -------------------------------------------------------------------------
+   Wiring
+   ------------------------------------------------------------------------- */
+function wireInventory() {
+  renderInvRows();
+
+  /*  Delegate on the wrapper, which render() recreates each time, rather
+      than on the persistent #ad-desk - a listener on the desk would stack
+      up a duplicate on every re-render.                                  */
+  const wrap = document.querySelector('.inv-wrap');
+  if (!wrap) return;
+
+  const add = document.getElementById('inv-add');
+  if (add) add.addEventListener('click', () => { state.openInvId = '__new__'; render(); });
+
+  const search = document.getElementById('inv-search');
+  if (search) {
+    search.addEventListener('input', () => {
+      state.invFilter.search = search.value;
+      state.invPage = 1;
+      renderInvRows();
+    });
+  }
+  [['inv-f-category', 'category'], ['inv-f-location', 'location'], ['inv-f-status', 'status']]
+    .forEach(([id, key]) => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('change', () => {
+        state.invFilter[key] = el.value;
+        state.invPage = 1;
+        renderInvRows();
       });
     });
 
-    (state.inventory || []).forEach((old) => {
-      if (!keep.has(old.id)) batch.delete(doc(fb.db, 'inventory', old.id));
-    });
+  // table: open a row, or page
+  wrap.addEventListener('click', (e) => {
+    const page = e.target.closest('[data-inv-page]');
+    if (page) {
+      state.invPage = Number(page.getAttribute('data-inv-page')) || 1;
+      renderInvRows();
+      return;
+    }
+    const row = e.target.closest('[data-inv]');
+    const openBtn = e.target.closest('[data-inv-open]');
+    const id = openBtn ? openBtn.getAttribute('data-inv-open')
+      : (row ? row.getAttribute('data-inv') : null);
+    if (id) { state.openInvId = id; render(); }
+  });
 
-    await batch.commit();
-    if (msg) { msg.className = 'ad-action-msg is-ok'; msg.textContent = 'Saved. The bot is using these now.'; }
+  wireInvDetail();
+}
+
+function wireInvDetail() {
+  const close = document.getElementById('inv-close');
+  if (close) close.addEventListener('click', () => { state.openInvId = null; render(); });
+
+  const save = document.getElementById('inv-save');
+  if (save) save.addEventListener('click', () => saveInvItem(save));
+
+  const del = document.getElementById('inv-delete');
+  if (del) del.addEventListener('click', () => deleteInvItem(del));
+}
+
+async function saveInvItem(btn) {
+  const panel = document.querySelector('.inv-detail');
+  const msg = document.getElementById('inv-msg');
+  if (!panel) return;
+
+  const get = (f) => {
+    const el = panel.querySelector(`[data-f="${cssEsc(f)}"]`);
+    if (!el) return '';
+    return el.type === 'checkbox' ? el.checked : el.value;
+  };
+  const dollarsToCents = (v) => Math.round(Number(v || 0) * 100);
+  const int = (v) => Math.max(0, Math.round(Number(v || 0)));
+
+  const name = String(get('name') || '').trim();
+  if (!name) {
+    if (msg) { msg.textContent = 'Give it a name first.'; msg.className = 'ad-quote-msg is-bad'; }
+    return;
+  }
+
+  const qt = int(get('quantityTotal'));
+  const data = {
+    name,
+    subtitle: String(get('subtitle') || '').trim(),
+    category: String(get('category') || '').trim(),
+    status: get('status') || 'available',
+    quantityTotal: qt,
+    quantityAvailable: Math.min(int(get('quantityAvailable')), qt),
+    location: String(get('location') || '').trim(),
+    pricingType: 'per-day',
+    priceCents: dollarsToCents(get('priceCents')),
+    extraDayCents: dollarsToCents(get('extraDayCents')),
+    replacementCents: dollarsToCents(get('replacementCents')),
+    internalNotes: String(get('internalNotes') || '').trim().slice(0, 2000),
+    specs: String(get('specs') || '').trim().slice(0, 2000),
+    weight: String(get('weight') || '').trim().slice(0, 100),
+    powerDraw: String(get('powerDraw') || '').trim().slice(0, 100),
+    included: String(get('included') || '').trim().slice(0, 2000),
+    inBot: !!get('inBot'),
+  };
+
+  if (msg) { msg.textContent = 'Saving…'; msg.className = 'ad-quote-msg'; }
+  if (btn) btn.disabled = true;
+
+  try {
+    const { collection, doc, setDoc, addDoc } = fb.f;
+    if (state.openInvId === '__new__') {
+      data.order = (state.inventory || []).length;
+      const ref = await addDoc(collection(fb.db, 'inventory'), data);
+      state.openInvId = ref.id;   // stay open on the new item
+    } else {
+      await setDoc(doc(fb.db, 'inventory', state.openInvId), data, { merge: true });
+    }
+    if (msg) { msg.textContent = 'Saved.'; msg.className = 'ad-quote-msg is-ok'; }
+    // the snapshot refreshes the table; re-render so the header/name updates
+    render();
   } catch (err) {
-    if (msg) { msg.className = 'ad-action-msg is-bad'; msg.textContent = err.message || 'Could not save.'; }
-  } finally {
     if (btn) btn.disabled = false;
+    if (msg) { msg.textContent = err.message || 'Could not save.'; msg.className = 'ad-quote-msg is-bad'; }
+  }
+}
+
+async function deleteInvItem(btn) {
+  if (!state.openInvId || state.openInvId === '__new__') return;
+  const item = (state.inventory || []).find((x) => x.id === state.openInvId);
+  const name = item ? (item.name || 'this item') : 'this item';
+  if (!window.confirm(`Delete ${name}? This cannot be undone.`)) return;
+
+  if (btn) btn.disabled = true;
+  try {
+    const { doc, deleteDoc } = fb.f;
+    await deleteDoc(doc(fb.db, 'inventory', state.openInvId));
+    state.openInvId = null;
+    render();
+  } catch (err) {
+    if (btn) btn.disabled = false;
+    const msg = document.getElementById('inv-msg');
+    if (msg) { msg.textContent = err.message || 'Could not delete.'; msg.className = 'ad-quote-msg is-bad'; }
   }
 }
