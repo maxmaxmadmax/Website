@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=131';
+} from './firebase-config.js?v=132';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -4413,9 +4413,11 @@ VIEWS.inventory = {
     active one flips the direction.                                         */
 function invTh(key, label, num) {
   const on = state.invSort.key === key;
-  const caret = on ? (state.invSort.dir === 'asc' ? ' ▲' : ' ▼') : '';
+  //  An idle up/down arrow on every column so it reads as sortable; the
+  //  active column shows a solid up or down caret instead.
+  const glyph = on ? (state.invSort.dir === 'asc' ? '▲' : '▼') : '⇅';
   return `<th class="${num ? 'inv-num ' : ''}inv-th-sort${on ? ' is-sorted' : ''}"
-              data-sort="${attr(key)}">${esc(label)}<span class="inv-caret">${caret}</span></th>`;
+              data-sort="${attr(key)}">${esc(label)}<span class="inv-caret${on ? '' : ' inv-caret-idle'}">${glyph}</span></th>`;
 }
 
 const INV_NUM_KEYS = ['quantityTotal', 'quantityAvailable', 'priceCents', 'extraDayCents'];

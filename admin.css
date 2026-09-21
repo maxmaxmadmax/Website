@@ -2319,3 +2319,5 @@ body.ad-fit .ad-main{ min-height:0; }
 .inv-th-sort:hover{ color:var(--ad-orange); }
 .inv-th-sort.is-sorted{ color:var(--ad-orange); }
 .inv-caret{ font-size:.7em; opacity:.9; }
+.inv-caret-idle{ opacity:.35; }
+.inv-th-sort:hover .inv-caret-idle{ opacity:.8; }
