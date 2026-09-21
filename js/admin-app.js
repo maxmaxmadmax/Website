@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=128';
+} from './firebase-config.js?v=129';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -4221,6 +4221,7 @@ function invItem(raw) {
     status: r.status || 'available',
     quantityTotal: qt,
     quantityAvailable: Math.max(0, Math.min(invNum(qaRaw, 0), qt)),
+    quantityRepair: Math.max(0, Math.min(invNum(r.quantityRepair, 0), qt)),
     location: r.location || '',
     pricingType: r.pricingType || 'per-day',
     priceCents: invNum(r.priceCents, 0),
@@ -4270,21 +4271,23 @@ function invThumb(it) {
   return `<span class="inv-thumb ${invCatClass(it.category)}">${esc(letter)}</span>`;
 }
 
-/*  The units, split so available + on-hire + in-repair == total. Whatever a
-    vendor does not have available is "out"; the item's status decides which
-    bucket that out-count falls in.                                         */
+/*  The units, split so available + on-hire + in-repair == total, counted
+    from the quantities on each item rather than a single status - so one
+    item can have some units on hire and some in for repair at once.
+
+    owned  = available + in repair + on hire.
+    Anything not available and not in repair is taken to be out on hire.    */
 function invStats() {
   const items = invItems();
   let total = 0, available = 0, onHire = 0, inRepair = 0;
   items.forEach((it) => {
-    const out = Math.max(0, it.quantityTotal - it.quantityAvailable);
+    const repair = Math.min(it.quantityRepair, it.quantityTotal);
+    const avail = Math.min(it.quantityAvailable, it.quantityTotal - repair);
     total += it.quantityTotal;
-    available += it.quantityAvailable;
-    if (it.status === 'in-repair') inRepair += out || it.quantityTotal;
-    else onHire += out;
+    available += avail;
+    inRepair += repair;
+    onHire += Math.max(0, it.quantityTotal - avail - repair);
   });
-  // in-repair with nothing "out" still shows its units as in repair, so pull
-  // those back off available-count double-adds
   return { total, available, onHire, inRepair };
 }
 
@@ -4534,6 +4537,11 @@ function invDetail() {
           <label class="ad-field"><span>Quantity available</span>
             <input class="ad-input" type="number" min="0" step="1" data-f="quantityAvailable" value="${attr(it.quantityAvailable)}"></label>
 
+          <label class="ad-field"><span>Quantity in repair</span>
+            <input class="ad-input" type="number" min="0" step="1" data-f="quantityRepair" value="${attr(it.quantityRepair)}"></label>
+          <div class="ad-field"><span>On hire (worked out)</span>
+            <p class="inv-onhire" id="inv-onhire">${attr(Math.max(0, it.quantityTotal - it.quantityAvailable - it.quantityRepair))}</p></div>
+
           <label class="ad-field inv-span2"><span>Default location</span>
             <input class="ad-input" data-f="location" value="${attr(it.location)}" placeholder="Bowen"></label>
 
@@ -4654,6 +4662,27 @@ function wireInvDetail() {
 
   const del = document.getElementById('inv-delete');
   if (del) del.addEventListener('click', () => deleteInvItem(del));
+
+  /*  Keep the "On hire (worked out)" number live as the quantities change,
+      so the split is obvious before saving: on hire = owned - available -
+      in repair.                                                            */
+  const panel = document.querySelector('.inv-detail');
+  const onhire = document.getElementById('inv-onhire');
+  if (panel && onhire) {
+    const num = (f) => {
+      const el = panel.querySelector(`[data-f="${cssEsc(f)}"]`);
+      return Math.max(0, Math.round(Number((el && el.value) || 0)));
+    };
+    const recalc = () => {
+      const owned = num('quantityTotal');
+      const v = Math.max(0, owned - num('quantityAvailable') - num('quantityRepair'));
+      onhire.textContent = String(v);
+    };
+    ['quantityTotal', 'quantityAvailable', 'quantityRepair'].forEach((f) => {
+      const el = panel.querySelector(`[data-f="${cssEsc(f)}"]`);
+      if (el) el.addEventListener('input', recalc);
+    });
+  }
 
   const photoInput = document.getElementById('inv-photo-input');
   if (photoInput) {
@@ -4840,6 +4869,7 @@ async function saveInvItem(btn) {
     category: String(get('category') || '').trim(),
     status: get('status') || 'available',
     quantityTotal: qt,
+    quantityRepair: Math.min(int(get('quantityRepair')), qt),
     quantityAvailable: Math.min(int(get('quantityAvailable')), qt),
     location: String(get('location') || '').trim(),
     pricingType: 'per-day',

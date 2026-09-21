@@ -2301,3 +2301,15 @@ body.ad-fit .ad-main{ min-height:0; }
     box-shadow:0 0 0 3px var(--ad-orange-soft);
 }
 .inv-photo-hint{ margin:2px 0 0; font-size:.72rem; color:var(--ad-faint); line-height:1.4; }
+
+/* inventory: the derived "on hire" readout in the detail panel */
+.inv-onhire{
+    margin:4px 0 0;
+    padding:8px 10px;
+    border:1px dashed var(--ad-line);
+    border-radius:8px;
+    background:var(--ad-desk);
+    color:var(--ad-muted);
+    font-weight:600;
+    font-size:.88rem;
+}
