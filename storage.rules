@@ -28,6 +28,17 @@ service firebase.storage {
       allow delete: if isAdmin() || (signedIn() && request.auth.uid == uid);
     }
 
+    // Inventory photos - one per equipment item. Public read, because they
+    // appear on the public hire catalogue and in the estimate bot; written
+    // only by an admin from the inventory desk. Images only, capped in size.
+    match /inventory/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if isAdmin();
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

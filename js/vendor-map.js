@@ -90,7 +90,7 @@ export class VendorMap {
   setVendorType(type) {
     if (type !== this.vendorType) this.selectedIds = [];
     this.vendorType = type;
-    this._openTier = null;
+    this._openTierByCol = null;
     this.render();
   }
 
@@ -105,7 +105,7 @@ export class VendorMap {
     }
     if (landmarks) this.landmarks = landmarks;
     if (mapSize) this.mapSize = mapSize;
-    this._openTier = null;
+    this._openTierByCol = null;
 
     // A bay in the group may have been taken by someone else while the page
     // was open. Drop anything no longer free and keep the rest joined up.
@@ -123,7 +123,7 @@ export class VendorMap {
   /* Accepts one id or a list, so a whole group lights up. */
   setSelected(ids) {
     this.selectedIds = !ids ? [] : (Array.isArray(ids) ? ids : [ids]);
-    this._openTier = null;
+    this._openTierByCol = null;
     this.render();
   }
 
@@ -180,33 +180,40 @@ export class VendorMap {
   }
 
   /* ---- release waves ---------------------------------------------------
-     Bays carry a tier: the first three of each column are tier 1, the next
-     three tier 2, and so on. The open tier is the lowest one that still has
-     a free bay - so nothing past it can be picked until the bays in front
-     of it have gone, and the market fills from the top out.
+     Bays carry a tier: the first three of a column are tier 1, the next
+     three tier 2, and so on. Each COLUMN releases on its own: a column's
+     open tier is the lowest tier in THAT column that still has a free bay,
+     so once the front of a column fills, its next bay opens - regardless of
+     how the other columns are going. (This used to be one wave across the
+     whole market, which left a full column's back bays stuck behind other
+     columns that still had room.)
 
      Sites with no tier (the food vans) are never gated. */
-  openTier() {
-    if (this._openTier !== null && this._openTier !== undefined) return this._openTier;
+  openTierFor(column) {
+    if (!this._openTierByCol) this._openTierByCol = {};
+    const key = column || '';
+    if (this._openTierByCol[key] !== undefined) return this._openTierByCol[key];
 
     let open = Infinity;
     for (const site of this.sites) {
       if (!site.tier) continue;
       if (site.type !== 'market') continue;
+      if ((site.column || '') !== key) continue;
       if (!this.isFree(site)) continue;
       if (site.tier < open) open = site.tier;
     }
 
-    this._openTier = open === Infinity ? 0 : open;
-    return this._openTier;
+    const val = open === Infinity ? 0 : open;
+    this._openTierByCol[key] = val;
+    return val;
   }
 
-  /* True when this bay is past the wave that is currently open. It is drawn
-     greyed out and cannot start a selection, but a stall that has already
-     started in the open wave may still grow into it. */
+  /* True when this bay is past the wave that is currently open in its own
+     column. It is drawn greyed out and cannot start a selection, but a stall
+     that has already started in the open wave may still grow into it. */
   isBeyondWave(site) {
     if (!site.tier) return false;
-    return site.tier > this.openTier();
+    return site.tier > this.openTierFor(site.column);
   }
 
   /* Can this site be clicked right now, given what is already selected? */
@@ -247,7 +254,7 @@ export class VendorMap {
       this.selectedIds = [...this.selectedIds, site.id];
     }
 
-    this._openTier = null;
+    this._openTierByCol = null;
     this.render();
     this.onSelect(this.selectedIds.slice());
   }

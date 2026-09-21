@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=124';
+} from './firebase-config.js?v=126';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -140,11 +140,12 @@ async function init() {
 }
 
 async function loadFirebase() {
-  const [{ initializeApp }, auth, firestore, functions] = await Promise.all([
+  const [{ initializeApp }, auth, firestore, functions, storage] = await Promise.all([
     import(`${SDK}/firebase-app.js`),
     import(`${SDK}/firebase-auth.js`),
     import(`${SDK}/firebase-firestore.js`),
     import(`${SDK}/firebase-functions.js`),
+    import(`${SDK}/firebase-storage.js`),
   ]);
 
   const app = initializeApp(firebaseConfig);
@@ -152,9 +153,11 @@ async function loadFirebase() {
     auth: auth.getAuth(app),
     db: firestore.getFirestore(app),
     fns: functions.getFunctions(app, functionsRegion),
+    storage: storage.getStorage(app),
     a: auth,
     f: firestore,
     fn: functions,
+    st: storage,
   };
 }
 
@@ -4223,6 +4226,8 @@ function invItem(raw) {
     powerDraw: r.powerDraw || '',
     included: r.included || '',
     inBot: r.inBot !== false,
+    photoUrl: r.photoUrl || '',
+    photoPath: r.photoPath || '',
     order: invNum(r.order, 0),
   };
 }
@@ -4252,6 +4257,9 @@ function invStatusPill(status) {
 /*  A little thumbnail stand-in until real photos land: a tinted tile with
     the category's first letter.                                           */
 function invThumb(it) {
+  if (it.photoUrl) {
+    return `<span class="inv-thumb inv-thumb-img"><img src="${attr(it.photoUrl)}" alt="" loading="lazy"></span>`;
+  }
   const letter = (it.category || it.name || '?').trim().charAt(0).toUpperCase();
   return `<span class="inv-thumb ${invCatClass(it.category)}">${esc(letter)}</span>`;
 }
@@ -4484,6 +4492,23 @@ function invDetail() {
       </header>
 
       <div class="inv-detail-body">
+        <div class="inv-photo">
+          <div class="inv-photo-preview">
+            ${it.photoUrl
+              ? `<img src="${attr(it.photoUrl)}" alt="">`
+              : `<span class="inv-photo-ph ${invCatClass(it.category)}">${esc((it.category || it.name || '?').trim().charAt(0).toUpperCase())}</span>`}
+          </div>
+          <div class="inv-photo-actions">
+            ${isNew
+              ? '<p class="ad-cell-muted">Save the item first, then add a photo.</p>'
+              : `<label class="ad-btn ad-btn-small inv-photo-btn">
+                   ${it.photoUrl ? 'Replace photo' : 'Upload photo'}
+                   <input type="file" accept="image/*" id="inv-photo-input" hidden></label>
+                 ${it.photoUrl ? '<button type="button" class="ad-btn ad-btn-small" id="inv-photo-remove">Remove</button>' : ''}`}
+            <span class="ad-quote-msg" id="inv-photo-msg"></span>
+          </div>
+        </div>
+
         <div class="inv-fgrid">
           <label class="ad-field inv-span2"><span>Item name</span>
             <input class="ad-input" data-f="name" value="${attr(it.name)}" placeholder="Electro-Voice ICOA 12"></label>
@@ -4612,6 +4637,65 @@ function wireInvDetail() {
 
   const del = document.getElementById('inv-delete');
   if (del) del.addEventListener('click', () => deleteInvItem(del));
+
+  const photoInput = document.getElementById('inv-photo-input');
+  if (photoInput) {
+    photoInput.addEventListener('change', () => {
+      const file = photoInput.files && photoInput.files[0];
+      if (file) uploadInvPhoto(state.openInvId, file);
+    });
+  }
+  const photoRemove = document.getElementById('inv-photo-remove');
+  if (photoRemove) photoRemove.addEventListener('click', () => removeInvPhoto(state.openInvId));
+}
+
+/*  Upload one photo for an item to Storage and record its URL on the doc.
+    The item must already exist (have an id) - a new item shows "save first"
+    rather than an upload button.                                          */
+async function uploadInvPhoto(id, file) {
+  if (!id || id === '__new__') return;
+  const msg = document.getElementById('inv-photo-msg');
+
+  if (!/^image\//.test(file.type)) {
+    if (msg) { msg.textContent = 'Pick an image file.'; msg.className = 'ad-quote-msg is-bad'; }
+    return;
+  }
+  if (file.size > 8 * 1024 * 1024) {
+    if (msg) { msg.textContent = 'That image is over 8 MB - try a smaller one.'; msg.className = 'ad-quote-msg is-bad'; }
+    return;
+  }
+
+  if (msg) { msg.textContent = 'Uploading…'; msg.className = 'ad-quote-msg'; }
+
+  try {
+    const { ref, uploadBytes, getDownloadURL } = fb.st;
+    const { doc, setDoc } = fb.f;
+    const path = `inventory/${id}`;                 // one photo per item, overwritten
+    const r = ref(fb.storage, path);
+    await uploadBytes(r, file, { contentType: file.type });
+    const url = await getDownloadURL(r);
+    await setDoc(doc(fb.db, 'inventory', id), { photoUrl: url, photoPath: path }, { merge: true });
+    render();                                        // the snapshot also refreshes the table
+  } catch (err) {
+    if (msg) { msg.textContent = err.message || 'Upload failed.'; msg.className = 'ad-quote-msg is-bad'; }
+  }
+}
+
+async function removeInvPhoto(id) {
+  if (!id || id === '__new__') return;
+  const item = (state.inventory || []).find((x) => x.id === id) || {};
+  try {
+    const { ref, deleteObject } = fb.st;
+    const { doc, setDoc } = fb.f;
+    if (item.photoPath) {
+      try { await deleteObject(ref(fb.storage, item.photoPath)); } catch (e) { /* already gone */ }
+    }
+    await setDoc(doc(fb.db, 'inventory', id), { photoUrl: '', photoPath: '' }, { merge: true });
+    render();
+  } catch (err) {
+    const msg = document.getElementById('inv-photo-msg');
+    if (msg) { msg.textContent = err.message || 'Could not remove.'; msg.className = 'ad-quote-msg is-bad'; }
+  }
 }
 
 async function saveInvItem(btn) {

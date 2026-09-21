@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Equipment Hire | Audio, Lighting &amp; Staging | SoundzGood Whitsundays</title>
+    <meta name="description" content="Hire audio, lighting, staging, DJ gear and event equipment across Bowen, the Whitsundays and North Queensland. Browse our gear and hire prices, then enquire for an instant estimate.">
+
+    <!-- Facebook / Messenger sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="SoundzGood Whitsundays">
+    <meta property="og:title" content="Equipment Hire | SoundzGood Whitsundays">
+    <meta property="og:description" content="Browse our audio, lighting, staging and DJ gear with hire prices, and enquire for an instant estimate.">
+    <meta property="og:url" content="https://www.soundzgood.com.au/hire">
+    <meta property="og:image" content="https://www.soundzgood.com.au/images/og-soundzgood.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="SoundzGood Whitsundays">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="icon" href="images/logo.png">
+    <link rel="stylesheet" href="style.css?v=126">
+    <link rel="stylesheet" href="hire.css?v=126">
+    <link rel="stylesheet" href="quote-bot.css?v=126">
+    <script src="js/main.js?v=126" defer></script>
+    <script type="module" src="js/quote-bot.js?v=126"></script>
+    <script type="module" src="js/hire.js?v=126"></script>
+</head>
+
+<body>
+
+<div id="navbar"></div>
+
+<header class="page-header hire-header">
+    <div class="header-overlay"></div>
+    <div class="header-content">
+        <h1>Equipment Hire</h1>
+        <p>Audio, lighting, staging and more &mdash; across the Whitsundays and North Queensland.</p>
+    </div>
+</header>
+
+<!--  The catalogue. js/hire.js reads the same inventory the admin manages and
+      the estimate bot prices from, so the gear and prices here are always in
+      step. The page carries only the frame; every card is built by the
+      script. "Enquire" opens the estimate bot (data-open-quote-bot).      -->
+<section class="section hire-section">
+
+    <div class="hire-intro">
+        <p>Prices are per day and include GST. Need it for longer, or want a full
+           package put together? Hit <strong>Enquire</strong> for an instant estimate.</p>
+    </div>
+
+    <div class="hire-filters" id="hire-filters" role="tablist" aria-label="Filter by category"></div>
+
+    <div class="hire-grid" id="hire-grid" aria-live="polite">
+        <p class="hire-loading">Loading our gear&hellip;</p>
+    </div>
+
+</section>
+
+<div id="footer"></div>
+
+</body>
+</html>

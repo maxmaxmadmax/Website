@@ -21,7 +21,7 @@
 
 import {
   firebaseConfig, functionsRegion, isFirebaseConfigured,
-} from './firebase-config.js?v=124';
+} from './firebase-config.js?v=126';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -554,9 +554,11 @@ function mount() {
   fab.addEventListener('click', () => setOpen(panel.hidden));
   close.addEventListener('click', () => setOpen(false));
 
-  // Any in-page button (e.g. the services CTA) can open it too.
-  document.querySelectorAll('[data-open-quote-bot]').forEach((b) =>
-    b.addEventListener('click', (e) => { e.preventDefault(); setOpen(true); }));
+  // Any in-page button can open it - delegated on the document, so buttons
+  // rendered later (e.g. the hire catalogue's Enquire buttons) work too.
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-open-quote-bot]')) { e.preventDefault(); setOpen(true); }
+  });
 
   // Esc closes it.
   document.addEventListener('keydown', (e) => {

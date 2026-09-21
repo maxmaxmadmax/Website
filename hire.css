@@ -1,0 +1,134 @@
+/* ==========================================================================
+   EQUIPMENT HIRE  -  the public catalogue
+
+   Sits on top of style.css and uses its tokens, so the dark theme and orange
+   accents match the rest of the site. Everything is scoped under .hire-* so
+   it cannot reach another page.
+   ========================================================================== */
+
+.hire-header .header-content h1 { margin-bottom: .3em; }
+
+.hire-section { padding-top: 44px; }
+
+.hire-intro {
+  max-width: 720px;
+  margin: 0 auto 26px;
+  text-align: center;
+  color: var(--sg-muted, #d0d0d0);
+  font-size: 1.02rem;
+  line-height: 1.6;
+}
+.hire-intro strong { color: var(--sg-orange, #ff6b00); }
+
+/* ---- filters ---- */
+.hire-filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: var(--sg-max-width, 1200px);
+  margin: 0 auto 26px;
+}
+.hire-chip {
+  appearance: none;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1.5px solid var(--sg-border, #222);
+  background: transparent;
+  color: var(--sg-muted, #d0d0d0);
+  font: inherit;
+  font-size: .86rem;
+  font-weight: 600;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.hire-chip:hover { color: #fff; border-color: var(--sg-orange, #ff6b00); }
+.hire-chip.is-on {
+  background: linear-gradient(135deg, var(--sg-orange, #ff6b00), var(--sg-orange-bright, #ff8c00));
+  border-color: transparent;
+  color: #fff;
+}
+
+/* ---- grid ---- */
+.hire-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+  max-width: var(--sg-max-width, 1200px);
+  margin: 0 auto;
+}
+.hire-loading, .hire-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--sg-dim, #aaa);
+  padding: 40px 0;
+}
+.hire-empty a { color: var(--sg-orange, #ff6b00); }
+
+/* ---- card ---- */
+.hire-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--sg-panel, #111);
+  border: 1px solid var(--sg-border, #222);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: transform .15s, border-color .15s;
+}
+.hire-card:hover { transform: translateY(-3px); border-color: #333; }
+
+.hire-media {
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(135deg, #3a1c05, #12141a);
+  overflow: hidden;
+}
+.hire-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hire-noimg {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.4rem; font-weight: 800; color: #fff; opacity: .85;
+}
+
+.hire-body { display: flex; flex-direction: column; gap: 6px; padding: 16px; flex: 1 1 auto; }
+.hire-cat {
+  align-self: flex-start;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+}
+.hire-name { margin: 2px 0 0; font-size: 1.05rem; color: #fff; }
+.hire-sub { margin: 0; color: var(--sg-dim, #aaa); font-size: .84rem; }
+
+.hire-foot {
+  margin-top: auto;
+  padding-top: 12px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.hire-price { margin: 0; font-size: 1.1rem; font-weight: 800; color: #fff; }
+.hire-price span { font-size: .74rem; font-weight: 600; color: var(--sg-dim, #aaa); }
+
+.hire-enquire {
+  cursor: pointer;
+  padding: 9px 16px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--sg-orange, #ff6b00), var(--sg-orange-bright, #ff8c00));
+  color: #fff;
+  font: inherit; font-weight: 700; font-size: .86rem;
+}
+.hire-enquire:hover { filter: brightness(1.06); }
+
+/* category pill / placeholder colours */
+.hc0 { background: #26292f; color: #c3c9d2; }
+.hc1 { background: #16324f; color: #7db4ff; }
+.hc2 { background: #3f2f10; color: #ffc772; }
+.hc3 { background: #33204a; color: #cc9bff; }
+.hc4 { background: #0f3d34; color: #6fe6cd; }
+.hc5 { background: #23264f; color: #a6adff; }
+.hc6 { background: #43172c; color: #ff9ac4; }
+
+@media (max-width: 560px) {
+  .hire-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+  .hire-body { padding: 13px; }
+  .hire-foot { flex-direction: column; align-items: stretch; }
+  .hire-enquire { width: 100%; }
+}
