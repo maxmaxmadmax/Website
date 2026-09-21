@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=129';
+} from './firebase-config.js?v=130';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -4235,6 +4235,9 @@ function invItem(raw) {
     inBot: r.inBot !== false,
     photoUrl: r.photoUrl || '',
     photoPath: r.photoPath || '',
+    repairFault: r.repairFault || '',
+    repairWith: r.repairWith || '',
+    repairDue: r.repairDue || '',
     order: invNum(r.order, 0),
   };
 }
@@ -4558,6 +4561,18 @@ function invDetail() {
         </div>
 
         <div class="inv-detail-section">
+          <h3>Repair &amp; maintenance</h3>
+          <div class="inv-fgrid">
+            <label class="ad-field inv-span2"><span>What&rsquo;s wrong / being done</span>
+              <textarea class="ad-input" rows="2" data-f="repairFault" placeholder="e.g. blown driver, sent for reconing">${esc(it.repairFault)}</textarea></label>
+            <label class="ad-field"><span>With / who&rsquo;s fixing it</span>
+              <input class="ad-input" data-f="repairWith" value="${attr(it.repairWith)}" placeholder="e.g. JD Audio Repairs"></label>
+            <label class="ad-field"><span>Expected back</span>
+              <input class="ad-input" data-f="repairDue" value="${attr(it.repairDue)}" placeholder="e.g. Fri 3 Oct"></label>
+          </div>
+        </div>
+
+        <div class="inv-detail-section">
           <h3>Extra equipment details</h3>
           <div class="inv-fgrid">
             <label class="ad-field inv-span2"><span>Specs</span>
@@ -4877,6 +4892,9 @@ async function saveInvItem(btn) {
     extraDayCents: dollarsToCents(get('extraDayCents')),
     replacementCents: dollarsToCents(get('replacementCents')),
     internalNotes: String(get('internalNotes') || '').trim().slice(0, 2000),
+    repairFault: String(get('repairFault') || '').trim().slice(0, 1000),
+    repairWith: String(get('repairWith') || '').trim().slice(0, 200),
+    repairDue: String(get('repairDue') || '').trim().slice(0, 100),
     specs: String(get('specs') || '').trim().slice(0, 2000),
     weight: String(get('weight') || '').trim().slice(0, 100),
     powerDraw: String(get('powerDraw') || '').trim().slice(0, 100),
