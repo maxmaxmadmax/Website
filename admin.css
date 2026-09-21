@@ -2313,3 +2313,9 @@ body.ad-fit .ad-main{ min-height:0; }
     font-weight:600;
     font-size:.88rem;
 }
+
+/* ---- inventory: sortable column headers ---- */
+.inv-th-sort{ cursor:pointer; user-select:none; white-space:nowrap; }
+.inv-th-sort:hover{ color:var(--ad-orange); }
+.inv-th-sort.is-sorted{ color:var(--ad-orange); }
+.inv-caret{ font-size:.7em; opacity:.9; }

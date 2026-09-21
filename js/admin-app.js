@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=130';
+} from './firebase-config.js?v=131';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -99,6 +99,7 @@ const state = {
   openInvId: null,                                  // which item's detail is open
   invFilter: { search: '', category: 'all', location: 'all', status: 'all' },
   invPage: 1,
+  invSort: { key: '', dir: 'asc' },                 // '' = default (category, then name)
 };
 
 let fb = null;
@@ -4382,10 +4383,15 @@ VIEWS.inventory = {
             <table class="ad-table inv-table">
               <thead>
                 <tr>
-                  <th>Item</th><th>Category</th><th class="inv-num">Total</th>
-                  <th class="inv-num">Avail.</th><th>Location</th>
-                  <th class="inv-num">Hire / day</th><th class="inv-num">Extra day</th>
-                  <th>Status</th><th></th>
+                  ${invTh('name', 'Item')}
+                  ${invTh('category', 'Category')}
+                  ${invTh('quantityTotal', 'Total', true)}
+                  ${invTh('quantityAvailable', 'Avail.', true)}
+                  ${invTh('location', 'Location')}
+                  ${invTh('priceCents', 'Hire / day', true)}
+                  ${invTh('extraDayCents', 'Extra day', true)}
+                  ${invTh('status', 'Status')}
+                  <th></th>
                 </tr>
               </thead>
               <tbody id="inv-rows"></tbody>
@@ -4403,6 +4409,41 @@ VIEWS.inventory = {
   wire() { wireInventory(); },
 };
 
+/*  A sortable column header. Clicking it sorts by that field; clicking the
+    active one flips the direction.                                         */
+function invTh(key, label, num) {
+  const on = state.invSort.key === key;
+  const caret = on ? (state.invSort.dir === 'asc' ? ' ▲' : ' ▼') : '';
+  return `<th class="${num ? 'inv-num ' : ''}inv-th-sort${on ? ' is-sorted' : ''}"
+              data-sort="${attr(key)}">${esc(label)}<span class="inv-caret">${caret}</span></th>`;
+}
+
+const INV_NUM_KEYS = ['quantityTotal', 'quantityAvailable', 'priceCents', 'extraDayCents'];
+
+/*  Apply the chosen column sort. No sort chosen -> leave the default order
+    (category, then name) the list already comes in.                        */
+function invSorted(list) {
+  const { key, dir } = state.invSort;
+  if (!key) return list;
+  const mul = dir === 'desc' ? -1 : 1;
+  return list.slice().sort((a, b) => {
+    if (INV_NUM_KEYS.includes(key)) return ((a[key] || 0) - (b[key] || 0)) * mul;
+    return String(a[key] || '').localeCompare(String(b[key] || ''),
+      undefined, { numeric: true, sensitivity: 'base' }) * mul;
+  });
+}
+
+/*  Refresh the carets / highlight on the header row in place, so sorting
+    does not need a full re-render (which would disturb an open panel).    */
+function updateInvSortHeaders() {
+  document.querySelectorAll('.inv-table thead [data-sort]').forEach((th) => {
+    const on = state.invSort.key === th.getAttribute('data-sort');
+    th.classList.toggle('is-sorted', on);
+    const caret = th.querySelector('.inv-caret');
+    if (caret) caret.textContent = on ? (state.invSort.dir === 'asc' ? ' ▲' : ' ▼') : '';
+  });
+}
+
 function invTile(icon, cls, value, label, pct) {
   return `
     <div class="inv-tile">
@@ -4416,7 +4457,7 @@ function invTile(icon, cls, value, label, pct) {
 }
 
 function invRowsHtml() {
-  const rows = invFiltered();
+  const rows = invSorted(invFiltered());
   const pages = Math.max(1, Math.ceil(rows.length / INV_PER_PAGE));
   if (state.invPage > pages) state.invPage = pages;
   const start = (state.invPage - 1) * INV_PER_PAGE;
@@ -4640,6 +4681,19 @@ function wireInventory() {
 
   // table: open a row, or page
   wrap.addEventListener('click', (e) => {
+    const sortTh = e.target.closest('[data-sort]');
+    if (sortTh) {
+      const k = sortTh.getAttribute('data-sort');
+      if (state.invSort.key === k) {
+        state.invSort.dir = state.invSort.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        state.invSort.key = k; state.invSort.dir = 'asc';
+      }
+      state.invPage = 1;
+      updateInvSortHeaders();
+      renderInvRows();
+      return;
+    }
     const page = e.target.closest('[data-inv-page]');
     if (page) {
       state.invPage = Number(page.getAttribute('data-inv-page')) || 1;
