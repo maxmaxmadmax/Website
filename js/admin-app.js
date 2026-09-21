@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=132';
+} from './firebase-config.js?v=133';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -4428,10 +4428,19 @@ function invSorted(list) {
   const { key, dir } = state.invSort;
   if (!key) return list;
   const mul = dir === 'desc' ? -1 : 1;
+
+  //  Names that start with a letter come first (A-Z); anything starting with
+  //  a number or symbol sorts after Z, rather than jumping to the top.
+  const rank = (s) => (/^\s*[a-z]/i.test(s) ? 0 : 1);
+
   return list.slice().sort((a, b) => {
     if (INV_NUM_KEYS.includes(key)) return ((a[key] || 0) - (b[key] || 0)) * mul;
-    return String(a[key] || '').localeCompare(String(b[key] || ''),
-      undefined, { numeric: true, sensitivity: 'base' }) * mul;
+    const av = String(a[key] || '');
+    const bv = String(b[key] || '');
+    const ra = rank(av);
+    const rb = rank(bv);
+    if (ra !== rb) return (ra - rb) * mul;
+    return av.localeCompare(bv, undefined, { numeric: true, sensitivity: 'base' }) * mul;
   });
 }
 
