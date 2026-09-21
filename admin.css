@@ -2292,3 +2292,12 @@ body.ad-fit .ad-main{ min-height:0; }
 }
 .inv-photo-actions{ display:flex; flex-direction:column; align-items:flex-start; gap:8px; }
 .inv-photo-btn{ position:relative; cursor:pointer; }
+
+/* ---- inventory photo: drag / paste affordances ---- */
+.inv-photo-preview{ cursor:pointer; position:relative; transition:border-color .12s, box-shadow .12s; }
+.inv-photo-preview:hover{ border-color:var(--ad-orange); }
+.inv-photo-preview.is-drop{
+    border-color:var(--ad-orange);
+    box-shadow:0 0 0 3px var(--ad-orange-soft);
+}
+.inv-photo-hint{ margin:2px 0 0; font-size:.72rem; color:var(--ad-faint); line-height:1.4; }

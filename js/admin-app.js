@@ -33,7 +33,7 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=126';
+} from './firebase-config.js?v=128';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -464,7 +464,13 @@ function subscribeToInventory() {
         || (a.order || 0) - (b.order || 0)
         || (a.name || '').localeCompare(b.name || ''));
       state.inventory = items;
-      if (state.view === 'inventory') render();
+      /*  Never rebuild the whole view while a detail panel is open - that
+          would wipe whatever the user is part-way through typing. Refresh
+          only the table; the open panel is left exactly as it is.        */
+      if (state.view === 'inventory') {
+        if (state.openInvId) renderInvRows();
+        else render();
+      }
     },
     (err) => console.error('inventory', err)
   ));
@@ -4493,18 +4499,17 @@ function invDetail() {
 
       <div class="inv-detail-body">
         <div class="inv-photo">
-          <div class="inv-photo-preview">
+          <div class="inv-photo-preview" id="inv-photo-drop" title="Drag, paste or click to add a photo">
             ${it.photoUrl
               ? `<img src="${attr(it.photoUrl)}" alt="">`
               : `<span class="inv-photo-ph ${invCatClass(it.category)}">${esc((it.category || it.name || '?').trim().charAt(0).toUpperCase())}</span>`}
           </div>
           <div class="inv-photo-actions">
-            ${isNew
-              ? '<p class="ad-cell-muted">Save the item first, then add a photo.</p>'
-              : `<label class="ad-btn ad-btn-small inv-photo-btn">
-                   ${it.photoUrl ? 'Replace photo' : 'Upload photo'}
-                   <input type="file" accept="image/*" id="inv-photo-input" hidden></label>
-                 ${it.photoUrl ? '<button type="button" class="ad-btn ad-btn-small" id="inv-photo-remove">Remove</button>' : ''}`}
+            <label class="ad-btn ad-btn-small inv-photo-btn">
+              ${it.photoUrl ? 'Replace photo' : 'Upload photo'}
+              <input type="file" accept="image/*" id="inv-photo-input" hidden></label>
+            ${it.photoUrl ? '<button type="button" class="ad-btn ad-btn-small" id="inv-photo-remove">Remove</button>' : ''}
+            <p class="inv-photo-hint">Drag an image in, or paste a screenshot (Ctrl / Cmd + V)</p>
             <span class="ad-quote-msg" id="inv-photo-msg"></span>
           </div>
         </div>
@@ -4590,7 +4595,7 @@ function wireInventory() {
   if (!wrap) return;
 
   const add = document.getElementById('inv-add');
-  if (add) add.addEventListener('click', () => { state.openInvId = '__new__'; render(); });
+  if (add) add.addEventListener('click', () => { clearPendingPhoto(); state.openInvId = '__new__'; render(); });
 
   const search = document.getElementById('inv-search');
   if (search) {
@@ -4622,15 +4627,27 @@ function wireInventory() {
     const openBtn = e.target.closest('[data-inv-open]');
     const id = openBtn ? openBtn.getAttribute('data-inv-open')
       : (row ? row.getAttribute('data-inv') : null);
-    if (id) { state.openInvId = id; render(); }
+    if (id) { clearPendingPhoto(); state.openInvId = id; render(); }
   });
 
   wireInvDetail();
 }
 
+/*  A photo waiting to go up for a brand-new item that has not been saved
+    yet - it is uploaded the moment the item is created, so you can add the
+    picture and the details together.                                      */
+let pendingPhoto = null;
+let pendingPhotoUrl = '';
+
+function clearPendingPhoto() {
+  pendingPhoto = null;
+  if (pendingPhotoUrl) { try { URL.revokeObjectURL(pendingPhotoUrl); } catch (e) { /* noop */ } }
+  pendingPhotoUrl = '';
+}
+
 function wireInvDetail() {
   const close = document.getElementById('inv-close');
-  if (close) close.addEventListener('click', () => { state.openInvId = null; render(); });
+  if (close) close.addEventListener('click', () => { clearPendingPhoto(); state.openInvId = null; render(); });
 
   const save = document.getElementById('inv-save');
   if (save) save.addEventListener('click', () => saveInvItem(save));
@@ -4642,40 +4659,105 @@ function wireInvDetail() {
   if (photoInput) {
     photoInput.addEventListener('change', () => {
       const file = photoInput.files && photoInput.files[0];
-      if (file) uploadInvPhoto(state.openInvId, file);
+      if (file) handlePhotoFile(file);
+      photoInput.value = '';   // let the same file be picked again after a remove
     });
   }
   const photoRemove = document.getElementById('inv-photo-remove');
-  if (photoRemove) photoRemove.addEventListener('click', () => removeInvPhoto(state.openInvId));
+  if (photoRemove) photoRemove.addEventListener('click', onRemovePhoto);
+
+  // Drag-and-drop onto the photo box.
+  const drop = document.getElementById('inv-photo-drop');
+  if (drop) {
+    const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
+    drop.addEventListener('dragover', (e) => { stop(e); drop.classList.add('is-drop'); });
+    drop.addEventListener('dragleave', (e) => { stop(e); drop.classList.remove('is-drop'); });
+    drop.addEventListener('drop', (e) => {
+      stop(e); drop.classList.remove('is-drop');
+      const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (file) handlePhotoFile(file);
+    });
+    // Click the box itself to open the file picker.
+    drop.addEventListener('click', () => { if (photoInput) photoInput.click(); });
+  }
+
+  // Paste a screenshot (Ctrl/Cmd+V) while a detail panel is open. Wired once,
+  // on the document, and guarded by whether an item is open.
+  if (!window.__invPasteWired) {
+    window.__invPasteWired = true;
+    document.addEventListener('paste', (e) => {
+      if (state.view !== 'inventory' || state.openInvId == null) return;
+      const items = (e.clipboardData && e.clipboardData.items) || [];
+      for (const it of items) {
+        if (it.type && it.type.startsWith('image/')) {
+          const f = it.getAsFile();
+          if (f) { e.preventDefault(); handlePhotoFile(f); }
+          break;
+        }
+      }
+    });
+  }
 }
 
-/*  Upload one photo for an item to Storage and record its URL on the doc.
-    The item must already exist (have an id) - a new item shows "save first"
-    rather than an upload button.                                          */
+/*  A photo arrived (picked, dropped or pasted). For a saved item it uploads
+    straight away; for a new one it is held and uploaded on save.          */
+function handlePhotoFile(file) {
+  const msg = document.getElementById('inv-photo-msg');
+  const bad = (t) => { if (msg) { msg.textContent = t; msg.className = 'ad-quote-msg is-bad'; } };
+
+  if (!file || !/^image\//.test(file.type)) return bad('That’s not an image.');
+  if (file.size > 8 * 1024 * 1024) return bad('Image is over 8 MB — try a smaller one.');
+
+  if (state.openInvId === '__new__') {
+    clearPendingPhoto();
+    pendingPhoto = file;
+    pendingPhotoUrl = URL.createObjectURL(file);
+    setInvPhotoPreview(pendingPhotoUrl);
+    if (msg) { msg.textContent = 'Photo ready — it’ll save with the item.'; msg.className = 'ad-quote-msg is-ok'; }
+    return;
+  }
+  uploadInvPhoto(state.openInvId, file);
+}
+
+/*  Remove clears a pending (unsaved) photo locally, or deletes a saved one. */
+function onRemovePhoto() {
+  if (pendingPhoto) {
+    clearPendingPhoto();
+    setInvPhotoPreview('');
+    const msg = document.getElementById('inv-photo-msg');
+    if (msg) { msg.textContent = ''; msg.className = 'ad-quote-msg'; }
+    return;
+  }
+  removeInvPhoto(state.openInvId);
+}
+
+/*  Push one image to Storage under inventory/<id> and record its URL on the
+    doc. Shared by the immediate upload (saved item) and the save-time upload
+    of a photo added to a brand-new item.                                   */
+async function doUploadPhoto(id, file) {
+  const { ref, uploadBytes, getDownloadURL } = fb.st;
+  const { doc, setDoc } = fb.f;
+  const path = `inventory/${id}`;                    // one photo per item, overwritten
+  await uploadBytes(ref(fb.storage, path), file, { contentType: file.type });
+  const url = await getDownloadURL(ref(fb.storage, path));
+  await setDoc(doc(fb.db, 'inventory', id), { photoUrl: url, photoPath: path }, { merge: true });
+  const item = (state.inventory || []).find((x) => x.id === id);
+  if (item) { item.photoUrl = url; item.photoPath = path; }
+  return { url, path };
+}
+
+/*  Upload a photo for a saved item straight away, updating only the preview
+    (not a full render, which would wipe anything typed but not yet saved).
+    The table thumbnail refreshes on its own through the inventory snapshot. */
 async function uploadInvPhoto(id, file) {
   if (!id || id === '__new__') return;
   const msg = document.getElementById('inv-photo-msg');
-
-  if (!/^image\//.test(file.type)) {
-    if (msg) { msg.textContent = 'Pick an image file.'; msg.className = 'ad-quote-msg is-bad'; }
-    return;
-  }
-  if (file.size > 8 * 1024 * 1024) {
-    if (msg) { msg.textContent = 'That image is over 8 MB - try a smaller one.'; msg.className = 'ad-quote-msg is-bad'; }
-    return;
-  }
-
   if (msg) { msg.textContent = 'Uploading…'; msg.className = 'ad-quote-msg'; }
 
   try {
-    const { ref, uploadBytes, getDownloadURL } = fb.st;
-    const { doc, setDoc } = fb.f;
-    const path = `inventory/${id}`;                 // one photo per item, overwritten
-    const r = ref(fb.storage, path);
-    await uploadBytes(r, file, { contentType: file.type });
-    const url = await getDownloadURL(r);
-    await setDoc(doc(fb.db, 'inventory', id), { photoUrl: url, photoPath: path }, { merge: true });
-    render();                                        // the snapshot also refreshes the table
+    const { url } = await doUploadPhoto(id, file);
+    setInvPhotoPreview(url);
+    if (msg) { msg.textContent = 'Photo saved.'; msg.className = 'ad-quote-msg is-ok'; }
   } catch (err) {
     if (msg) { msg.textContent = err.message || 'Upload failed.'; msg.className = 'ad-quote-msg is-bad'; }
   }
@@ -4684,6 +4766,7 @@ async function uploadInvPhoto(id, file) {
 async function removeInvPhoto(id) {
   if (!id || id === '__new__') return;
   const item = (state.inventory || []).find((x) => x.id === id) || {};
+  const msg = document.getElementById('inv-photo-msg');
   try {
     const { ref, deleteObject } = fb.st;
     const { doc, setDoc } = fb.f;
@@ -4691,10 +4774,43 @@ async function removeInvPhoto(id) {
       try { await deleteObject(ref(fb.storage, item.photoPath)); } catch (e) { /* already gone */ }
     }
     await setDoc(doc(fb.db, 'inventory', id), { photoUrl: '', photoPath: '' }, { merge: true });
-    render();
+    item.photoUrl = ''; item.photoPath = '';
+    setInvPhotoPreview('');                           // in place, keep the form
+    if (msg) { msg.textContent = 'Photo removed.'; msg.className = 'ad-quote-msg is-ok'; }
   } catch (err) {
-    const msg = document.getElementById('inv-photo-msg');
     if (msg) { msg.textContent = err.message || 'Could not remove.'; msg.className = 'ad-quote-msg is-bad'; }
+  }
+}
+
+/*  Swap the photo preview and its buttons without touching the rest of the
+    detail panel, so a photo change never disturbs the fields being edited. */
+function setInvPhotoPreview(url) {
+  const panel = document.querySelector('.inv-detail');
+  if (!panel) return;
+
+  const preview = panel.querySelector('.inv-photo-preview');
+  const cat = (panel.querySelector('[data-f="category"]') || {}).value || '';
+  const name = (panel.querySelector('[data-f="name"]') || {}).value || '';
+  if (preview) {
+    preview.innerHTML = url
+      ? `<img src="${attr(url)}" alt="">`
+      : `<span class="inv-photo-ph ${invCatClass(cat)}">${esc((cat || name || '?').trim().charAt(0).toUpperCase())}</span>`;
+  }
+
+  const actions = panel.querySelector('.inv-photo-actions');
+  if (actions) {
+    const label = actions.querySelector('.inv-photo-btn');
+    if (label) label.childNodes[0].nodeValue = url ? 'Replace photo ' : 'Upload photo ';
+    let remove = actions.querySelector('#inv-photo-remove');
+    if (url && !remove) {
+      remove = document.createElement('button');
+      remove.type = 'button'; remove.className = 'ad-btn ad-btn-small'; remove.id = 'inv-photo-remove';
+      remove.textContent = 'Remove';
+      remove.addEventListener('click', onRemovePhoto);
+      if (label) label.insertAdjacentElement('afterend', remove);
+    } else if (!url && remove) {
+      remove.remove();
+    }
   }
 }
 
@@ -4743,16 +4859,33 @@ async function saveInvItem(btn) {
 
   try {
     const { collection, doc, setDoc, addDoc } = fb.f;
+    state.inventory = state.inventory || [];
+
     if (state.openInvId === '__new__') {
-      data.order = (state.inventory || []).length;
+      data.order = state.inventory.length;
       const ref = await addDoc(collection(fb.db, 'inventory'), data);
       state.openInvId = ref.id;   // stay open on the new item
+      // Seed state now so the re-render shows the saved item without waiting
+      // on the snapshot round-trip.
+      state.inventory.push({ id: ref.id, ...data });
+      // A photo added before saving goes up now that the item has an id.
+      if (pendingPhoto) {
+        try { await doUploadPhoto(ref.id, pendingPhoto); } catch (e) { /* item saved; photo can be retried */ }
+        clearPendingPhoto();
+      }
     } else {
-      await setDoc(doc(fb.db, 'inventory', state.openInvId), data, { merge: true });
+      const id = state.openInvId;
+      await setDoc(doc(fb.db, 'inventory', id), data, { merge: true });
+      // Merge onto what we already hold (keeps photoUrl), so the re-render
+      // below shows exactly what was saved rather than pre-save state.
+      const cur = state.inventory.find((x) => x.id === id);
+      if (cur) Object.assign(cur, data); else state.inventory.push({ id, ...data });
     }
-    if (msg) { msg.textContent = 'Saved.'; msg.className = 'ad-quote-msg is-ok'; }
-    // the snapshot refreshes the table; re-render so the header/name updates
+    // A deliberate save may repaint the panel (header/name, photo controls);
+    // state is already updated above, so nothing typed is lost.
     render();
+    const m2 = document.getElementById('inv-msg');   // the repaint made a fresh one
+    if (m2) { m2.textContent = 'Saved.'; m2.className = 'ad-quote-msg is-ok'; }
   } catch (err) {
     if (btn) btn.disabled = false;
     if (msg) { msg.textContent = err.message || 'Could not save.'; msg.className = 'ad-quote-msg is-bad'; }
