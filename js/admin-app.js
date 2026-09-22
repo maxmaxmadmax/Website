@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=144';
+} from './firebase-config.js?v=145';
 
-import { expandKit } from './kit.js?v=144';
+import { expandKit } from './kit.js?v=145';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -114,6 +114,12 @@ const state = {
       editor.                                                              */
   packages: null,
   openPackageId: null,
+
+  /*  Crew & vehicles - staff / vehicle / trailer records, billable onto a
+      quote. null until first load.                                        */
+  resources: null,
+  openResourceId: null,
+  resFilter: 'all',
 };
 
 let fb = null;
@@ -151,6 +157,7 @@ async function init() {
     subscribeToInventory();
     subscribeToQuoteDocs();
     subscribeToPackages();
+    subscribeToResources();
     loadQuotePricing();
     routeFromHash();
   });
@@ -343,7 +350,7 @@ function wireChrome() {
    ------------------------------------------------------------------------- */
 const BUILT = ['events', 'vendors', 'applications', 'map', 'entertainment',
                'settings', 'vendorEmail', 'quotes', 'inventory', 'botSettings',
-               'quoteDocs', 'packages'];
+               'quoteDocs', 'packages', 'resources'];
 
 /*  Vendors is where the work is, so it is what you land on. */
 const HOME = 'vendors';
@@ -5571,7 +5578,7 @@ function quoteBuilderHtml() {
             <div class="qb-adder">
               <div class="qb-searchwrap">
                 <input type="text" id="q-inv-search" class="qb-searchin" autocomplete="off"
-                       placeholder="&#128269;  Search inventory to add an item&hellip;">
+                       placeholder="&#128269;  Search inventory, crew or a vehicle&hellip;">
                 <div class="qb-results" id="q-inv-results" hidden></div>
               </div>
               <button type="button" class="ad-btn ad-btn-small" id="q-add-custom">+ Custom item</button>
@@ -5735,25 +5742,32 @@ function invSearchList() {
 
 let invSearchActive = -1;   // keyboard-highlighted result
 
+/*  Matches for the quote add-search: inventory + active crew/vehicles. */
+function quoteSearchMatches(term) {
+  const t = String(term || '').trim().toLowerCase();
+  if (!t) return [];
+  return quoteAddSearchList()
+    .filter((it) => it.name.toLowerCase().includes(t))
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+    .slice(0, 3);
+}
+
 function renderInvResults(term) {
   const box = document.getElementById('q-inv-results');
   if (!box) return [];
   const t = String(term || '').trim().toLowerCase();
   if (!t) { box.hidden = true; box.innerHTML = ''; invSearchActive = -1; return []; }
-  const matches = invSearchList()
-    .filter((it) => it.name.toLowerCase().includes(t))
-    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
-    .slice(0, 3);
+  const matches = quoteSearchMatches(term);
   if (!matches.length) {
     box.hidden = false;
-    box.innerHTML = '<div class="qb-res-empty">No matching inventory</div>';
+    box.innerHTML = '<div class="qb-res-empty">No match in inventory or crew</div>';
     invSearchActive = -1;
     return [];
   }
   box.hidden = false;
   box.innerHTML = matches.map((it, i) => `
-    <div class="qb-res${i === invSearchActive ? ' is-active' : ''}" data-add="${attr(it.id)}">
-      <span class="qb-res-name">${esc(it.name)}</span>
+    <div class="qb-res${i === invSearchActive ? ' is-active' : ''}" data-add="${attr(it.id)}" data-kind="${attr(it.kind)}">
+      <span class="qb-res-name">${esc(it.name)}${it.kind === 'resource' ? ` <span class="qb-res-tag">${esc(it.sub)}</span>` : ''}</span>
       <span class="qb-res-price">${esc(money(it.priceCents))}/day</span>
     </div>`).join('');
   return matches;
@@ -5766,7 +5780,9 @@ function wireInvTypeahead() {
 
   const add = (id) => {
     if (!id) return;
-    addInvLineToQuote(id);
+    const pick = quoteAddSearchList().find((x) => x.id === id);
+    if (pick && pick.kind === 'resource') addResourceLineToQuote(pick);
+    else addInvLineToQuote(id);
     input.value = '';
     box.hidden = true; box.innerHTML = '';
     invSearchActive = -1;
@@ -5776,9 +5792,7 @@ function wireInvTypeahead() {
   input.addEventListener('input', () => { invSearchActive = -1; renderInvResults(input.value); });
   input.addEventListener('focus', () => { if (input.value.trim()) renderInvResults(input.value); });
   input.addEventListener('keydown', (e) => {
-    const matches = invSearchList()
-      .filter((it) => it.name.toLowerCase().includes(input.value.trim().toLowerCase()))
-      .slice(0, 3);
+    const matches = quoteSearchMatches(input.value);
     if (e.key === 'ArrowDown') { e.preventDefault(); invSearchActive = Math.min(matches.length - 1, invSearchActive + 1); renderInvResults(input.value); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); invSearchActive = Math.max(0, invSearchActive - 1); renderInvResults(input.value); }
     else if (e.key === 'Enter') { e.preventDefault(); const pick = matches[invSearchActive] || matches[0]; if (pick) add(pick.id); }
@@ -6530,4 +6544,282 @@ async function deletePackage(btn) {
     if (msg) { msg.textContent = err.message || 'Could not delete.'; msg.className = 'ad-quote-msg is-bad'; }
     if (btn) btn.disabled = false;
   }
+}
+
+/* =========================================================================
+   CREW & VEHICLES  -  staff / vehicle / trailer records, billable to a quote
+
+   Not gear (that's Inventory) and not a roster - just the people and vehicles
+   you own, each with a day rate so it can be dropped onto a quote as a line.
+   Kept private (admin-only) since they carry phone numbers and pay rates.
+   ========================================================================= */
+
+const RES_TYPES = { staff: 'Staff', vehicle: 'Vehicle', trailer: 'Trailer' };
+const RES_GROUP = { staff: 'Staff', vehicle: 'Vehicles', trailer: 'Trailers' };
+
+function blankResource(type) {
+  return { type: type || 'staff', name: '', role: '', phone: '', rego: '', capacity: '', dayRateCents: 0, active: true, notes: '' };
+}
+
+let resourceDraft = blankResource();
+
+function subscribeToResources() {
+  const { collection, onSnapshot } = fb.f;
+  const rank = { staff: 0, vehicle: 1, trailer: 2 };
+  unsubscribes.push(onSnapshot(
+    collection(fb.db, 'resources'),
+    (snap) => {
+      const rows = [];
+      snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
+      rows.sort((a, b) =>
+        (rank[a.type] ?? 9) - (rank[b.type] ?? 9)
+        || (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }));
+      state.resources = rows;
+      if (state.view === 'resources' && !state.openResourceId) render();
+    },
+    (err) => console.error('resources', err)
+  ));
+}
+
+VIEWS.resources = {
+  html() { return state.openResourceId ? resourceBuilderHtml() : resourceListHtml(); },
+  wire() { if (state.openResourceId) wireResourceBuilder(); else wireResourceList(); },
+};
+
+/* ---- list ---- */
+function resourceListHtml() {
+  const rows = state.resources;
+  const header = `
+    <div class="ad-mail-head-row">
+      <span class="ad-mail-icon" aria-hidden="true">&#128666;</span>
+      <div class="ad-mail-title">
+        <h1>Crew &amp; Vehicles</h1>
+        <p>Your staff, vehicles and trailers. Each has a day rate, so it can be added to a quote as a billable line.</p>
+      </div>
+      <div class="ad-mail-status res-addbtns">
+        <button type="button" class="ad-btn ad-btn-small" data-res-new="staff">+ Staff</button>
+        <button type="button" class="ad-btn ad-btn-small" data-res-new="vehicle">+ Vehicle</button>
+        <button type="button" class="ad-btn ad-btn-small" data-res-new="trailer">+ Trailer</button>
+      </div>
+    </div>`;
+
+  if (rows == null) return header + '<p class="ad-loading">Loading…</p>';
+  if (!rows.length) {
+    return header + `
+      <section class="ad-card ad-panel"><p class="ad-panel-sub">
+        Nothing here yet. Add your first staff member, vehicle or trailer with the buttons above.
+        Give each a day rate and you'll be able to drop it straight onto a quote.
+      </p></section>`;
+  }
+
+  return header + ['staff', 'vehicle', 'trailer'].map((t) => {
+    const inType = rows.filter((r) => (r.type || 'staff') === t);
+    if (!inType.length) return '';
+    return renderResGroup(RES_GROUP[t], t, inType);
+  }).join('');
+}
+
+function resSub(r) {
+  if (r.type === 'staff') return [r.role, r.phone].filter(Boolean).join(' · ');
+  return [r.rego, r.capacity].filter(Boolean).join(' · ');
+}
+
+function renderResGroup(title, type, list) {
+  const rows = list.map((r) => `
+    <tr class="ad-quote-row" data-open-res="${attr(r.id)}">
+      <td class="ad-cell-strong">${esc(r.name || 'Untitled')}</td>
+      <td class="ad-cell-muted">${esc(resSub(r) || '—')}</td>
+      <td class="inv-num">${esc(money(r.dayRateCents))}/day</td>
+      <td>${r.active === false ? '<span class="ad-pill ad-pill-grey">Off</span>' : '<span class="ad-pill ad-pill-green">Active</span>'}</td>
+      <td class="ad-cell-right"><span class="ad-quote-caret">&#8250;</span></td>
+    </tr>`).join('');
+  return `
+    <section class="ad-card ad-panel">
+      <header class="ad-panel-head"><div><h2>${esc(title)}</h2></div></header>
+      <div class="ad-table-wrap"><table class="ad-table">
+        <thead><tr><th>Name</th><th>${type === 'staff' ? 'Role · phone' : 'Rego · capacity'}</th>
+          <th class="inv-num">Day rate</th><th>Status</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+    </section>`;
+}
+
+function wireResourceList() {
+  document.querySelectorAll('[data-res-new]').forEach((b) => b.addEventListener('click', () => {
+    resourceDraft = blankResource(b.getAttribute('data-res-new'));
+    state.openResourceId = '__new__';
+    render();
+  }));
+  document.querySelectorAll('[data-open-res]').forEach((r) => r.addEventListener('click', () => {
+    const id = r.getAttribute('data-open-res');
+    const doc = (state.resources || []).find((x) => x.id === id);
+    resourceDraft = doc ? resourceFromDoc(doc) : blankResource();
+    state.openResourceId = id;
+    render();
+  }));
+}
+
+function resourceFromDoc(doc) {
+  const b = blankResource(doc.type);
+  return {
+    type: RES_TYPES[doc.type] ? doc.type : 'staff',
+    name: doc.name || '', role: doc.role || '', phone: doc.phone || '',
+    rego: doc.rego || '', capacity: doc.capacity || '',
+    dayRateCents: Math.max(0, Math.round(doc.dayRateCents || 0)),
+    active: doc.active !== false,
+    notes: doc.notes || '',
+  };
+}
+
+/* ---- builder ---- */
+function resourceBuilderHtml() {
+  const isNew = state.openResourceId === '__new__';
+  const r = resourceDraft;
+  const isStaff = r.type === 'staff';
+  const rate = r.dayRateCents ? r.dayRateCents / 100 : '';
+  const pill = r.active === false
+    ? '<span class="ad-pill ad-pill-grey">Off</span>'
+    : '<span class="ad-pill ad-pill-green">Active</span>';
+  const typeOpt = (v) => `<option value="${v}"${r.type === v ? ' selected' : ''}>${RES_TYPES[v]}</option>`;
+
+  return `
+    <div class="res-build">
+      <div class="qb-bar">
+        <button type="button" class="qb-back" id="res-back">&larr; All crew &amp; vehicles</button>
+        <div class="qb-bar-title"><h1>${esc(r.name || ('New ' + RES_TYPES[r.type].toLowerCase()))}</h1>${pill}</div>
+        <div class="qb-bar-spacer"></div>
+        ${!isNew ? '<button type="button" class="ad-btn inv-del" id="res-del">Delete</button>' : ''}
+        <button type="button" class="ad-btn ad-btn-primary" id="res-save">Save</button>
+        <span class="ad-quote-msg" id="res-msg"></span>
+      </div>
+
+      <section class="ad-card ad-panel">
+        <div class="pkg-fgrid">
+          <label class="ad-field"><span>Type</span>
+            <select class="ad-input" data-rf="type">${typeOpt('staff')}${typeOpt('vehicle')}${typeOpt('trailer')}</select></label>
+          <label class="ad-field pkg-span2"><span>Name</span>
+            <input class="ad-input" data-rf="name" value="${attr(r.name)}" placeholder="${isStaff ? 'e.g. Jesse Taylor' : 'e.g. Hilux + box trailer'}"></label>
+          <label class="ad-field"><span>Day rate (ex GST)</span>
+            <input class="ad-input" type="number" min="0" step="1" data-rf="dayRateCents" value="${attr(rate)}"></label>
+
+          ${isStaff ? `
+          <label class="ad-field"><span>Role</span><input class="ad-input" data-rf="role" value="${attr(r.role)}" placeholder="e.g. Sound tech"></label>
+          <label class="ad-field"><span>Phone</span><input class="ad-input" data-rf="phone" value="${attr(r.phone)}" placeholder="Mobile"></label>`
+          : `
+          <label class="ad-field"><span>Rego</span><input class="ad-input" data-rf="rego" value="${attr(r.rego)}" placeholder="e.g. 123 ABC"></label>
+          <label class="ad-field"><span>Capacity / size</span><input class="ad-input" data-rf="capacity" value="${attr(r.capacity)}" placeholder="e.g. 1 tonne, 2m x 1.2m"></label>`}
+
+          <label class="ad-field pkg-switchfield"><span>Active</span>
+            <label class="pkg-switch"><input type="checkbox" data-rf="active"${r.active !== false ? ' checked' : ''}><span>Available to bill</span></label></label>
+          <label class="ad-field pkg-span2"><span>Notes</span>
+            <input class="ad-input" data-rf="notes" value="${attr(r.notes)}" placeholder="Only you see this"></label>
+        </div>
+      </section>
+    </div>`;
+}
+
+function wireResourceBuilder() {
+  const wrap = document.querySelector('.res-build');
+  if (!wrap) return;
+
+  const back = document.getElementById('res-back');
+  if (back) back.addEventListener('click', () => { state.openResourceId = null; render(); });
+
+  wrap.addEventListener('input', (e) => {
+    const t = e.target;
+    if (!t.dataset.rf) return;
+    const f = t.dataset.rf;
+    if (f === 'active') resourceDraft.active = t.checked;
+    else if (f === 'dayRateCents') resourceDraft.dayRateCents = Math.max(0, Math.round(Number(t.value || 0) * 100));
+    else resourceDraft[f] = t.value;
+  });
+
+  // switching the type shows the matching fields
+  const typeSel = wrap.querySelector('[data-rf="type"]');
+  if (typeSel) typeSel.addEventListener('change', () => { resourceDraft.type = typeSel.value; render(); });
+
+  const save = document.getElementById('res-save');
+  if (save) save.addEventListener('click', () => saveResource(save));
+  const del = document.getElementById('res-del');
+  if (del) del.addEventListener('click', () => deleteResource(del));
+}
+
+async function saveResource(btn) {
+  const msg = document.getElementById('res-msg');
+  const r = resourceDraft;
+  if (!String(r.name || '').trim()) {
+    if (msg) { msg.textContent = 'Give it a name first.'; msg.className = 'ad-quote-msg is-bad'; }
+    return;
+  }
+  const type = RES_TYPES[r.type] ? r.type : 'staff';
+  const clean = {
+    type,
+    name: String(r.name).trim().slice(0, 120),
+    role: type === 'staff' ? String(r.role || '').trim().slice(0, 80) : '',
+    phone: type === 'staff' ? String(r.phone || '').trim().slice(0, 40) : '',
+    rego: type !== 'staff' ? String(r.rego || '').trim().slice(0, 40) : '',
+    capacity: type !== 'staff' ? String(r.capacity || '').trim().slice(0, 80) : '',
+    dayRateCents: Math.max(0, Math.round(r.dayRateCents || 0)),
+    active: r.active !== false,
+    notes: String(r.notes || '').trim().slice(0, 1000),
+    updatedAt: Date.now(),
+  };
+
+  if (msg) { msg.textContent = 'Saving…'; msg.className = 'ad-quote-msg'; }
+  if (btn) btn.disabled = true;
+  try {
+    const { collection, doc, setDoc, addDoc } = fb.f;
+    state.resources = state.resources || [];
+    if (state.openResourceId === '__new__') {
+      clean.createdAt = Date.now();
+      const ref = await addDoc(collection(fb.db, 'resources'), clean);
+      state.openResourceId = ref.id;
+      state.resources.push({ id: ref.id, ...clean });
+    } else {
+      const id = state.openResourceId;
+      await setDoc(doc(fb.db, 'resources', id), clean, { merge: true });
+      const cur = state.resources.find((x) => x.id === id);
+      if (cur) Object.assign(cur, clean); else state.resources.push({ id, ...clean });
+    }
+    if (msg) { msg.textContent = 'Saved.'; msg.className = 'ad-quote-msg is-ok'; }
+    render();
+  } catch (err) {
+    if (msg) { msg.textContent = err.message || 'Could not save.'; msg.className = 'ad-quote-msg is-bad'; }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function deleteResource(btn) {
+  if (!window.confirm('Delete this record? This cannot be undone.')) return;
+  const id = state.openResourceId;
+  if (id === '__new__') { state.openResourceId = null; render(); return; }
+  if (btn) btn.disabled = true;
+  try {
+    const { doc, deleteDoc } = fb.f;
+    await deleteDoc(doc(fb.db, 'resources', id));
+    state.resources = (state.resources || []).filter((x) => x.id !== id);
+    state.openResourceId = null;
+    render();
+  } catch (err) {
+    const msg = document.getElementById('res-msg');
+    if (msg) { msg.textContent = err.message || 'Could not delete.'; msg.className = 'ad-quote-msg is-bad'; }
+    if (btn) btn.disabled = false;
+  }
+}
+
+/*  The quote builder's add-search draws on inventory PLUS active crew and
+    vehicles, so any of them can be dropped onto a quote as a billable line. */
+function quoteAddSearchList() {
+  const inv = invSearchList().map((it) => ({ id: it.id, name: it.name, priceCents: it.priceCents, kind: 'item', sub: it.category || 'Gear' }));
+  const res = (state.resources || [])
+    .filter((r) => r.active !== false && r.name)
+    .map((r) => ({ id: r.id, name: r.name, priceCents: r.dayRateCents || 0, kind: 'resource', sub: RES_TYPES[r.type] || 'Crew' }));
+  return inv.concat(res);
+}
+
+function addResourceLineToQuote(res) {
+  const days = Math.max(1, Math.round(quoteDraft.hire.days || 1));
+  quoteDraft.lines.push({ type: 'custom', name: res.name, qty: 1, unitCents: res.priceCents || 0, days, resourceId: res.id });
+  renderQuoteLines();
 }

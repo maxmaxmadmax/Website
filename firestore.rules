@@ -207,6 +207,14 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    //  Crew & vehicles. Staff and vehicle/trailer records the admin adds and
+    //  can bill onto a quote. These carry phone numbers and pay rates, so they
+    //  are staff-only - never public. The public quote page never reads these;
+    //  a billed line stores its own name and price on the quote itself.
+    match /resources/{resourceId} {
+      allow read, write: if isAdmin();
+    }
+
     match /quoteLeads/{leadId} {
       allow read: if isAdmin();
       allow write: if false;

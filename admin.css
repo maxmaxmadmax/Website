@@ -2461,6 +2461,8 @@ body.ad-fit .ad-main{ min-height:0; }
 .qb-res:hover,.qb-res.is-active{ background:var(--ad-orange-soft); }
 .qb-res-name{ font-weight:600; color:var(--ad-text); }
 .qb-res-price{ color:var(--ad-muted); white-space:nowrap; }
+.qb-res-tag{ font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.03em;
+             background:var(--ad-blue-bg); color:var(--ad-blue); padding:1px 6px; border-radius:999px; }
 .qb-res-empty{ padding:10px 14px; color:var(--ad-faint); font-size:.85rem; }
 .qb-thead{ display:grid; grid-template-columns:var(--qb-cols); gap:8px; padding:10px 12px;
            background:var(--ad-desk); font-size:.68rem; font-weight:700; text-transform:uppercase;
@@ -2595,3 +2597,7 @@ body.ad-fit .ad-main{ min-height:0; }
   .pkg-span2{ grid-column:span 2; }
   .pkg-tier-price{ margin-left:0; }
 }
+
+/* Crew & Vehicles - reuses the package editor grid and card styles */
+.res-build{ max-width:820px; margin:0 auto; }
+.res-addbtns{ display:flex; gap:8px; flex-wrap:wrap; }
