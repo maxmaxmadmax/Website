@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=136';
+} from './firebase-config.js?v=137';
 
-import { expandKit } from './kit.js?v=136';
+import { expandKit } from './kit.js?v=137';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5401,7 +5401,7 @@ function quoteDocsFiltered() {
   return (state.quoteDocs || []).filter((q) => f === 'all' || q.status === f);
 }
 
-function renderQuoteRows() {
+function renderQuoteDocRows() {
   const host = document.getElementById('q-rows');
   if (!host) return;
   const rows = quoteDocsFiltered();
@@ -5426,11 +5426,11 @@ function renderQuoteRows() {
 }
 
 function wireQuoteList() {
-  renderQuoteRows();
+  renderQuoteDocRows();
   const nw = document.getElementById('q-new');
   if (nw) nw.addEventListener('click', () => { quoteDraft = blankQuote(); state.openQuoteId = '__new__'; render(); });
   const filter = document.getElementById('q-filter');
-  if (filter) filter.addEventListener('change', () => { state.quoteDocFilter = filter.value; renderQuoteRows(); });
+  if (filter) filter.addEventListener('change', () => { state.quoteDocFilter = filter.value; renderQuoteDocRows(); });
   const rows = document.getElementById('q-rows');
   if (rows) rows.addEventListener('click', (e) => {
     const r = e.target.closest('[data-open-q]');
