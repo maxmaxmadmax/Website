@@ -2277,15 +2277,17 @@ body.ad-fit .ad-main{ min-height:0; }
 }
 
 /* ---- inventory item photos ---- */
-.inv-thumb.inv-thumb-img{ padding:0; overflow:hidden; background:#eef0f3; }
-.inv-thumb-img img{ width:100%; height:100%; object-fit:cover; display:block; }
+.inv-thumb.inv-thumb-img{ padding:0; overflow:hidden; background:#fff; }
+/*  'contain' so the whole item shows at a uniform size instead of being
+    cropped/zoomed to fill. */
+.inv-thumb-img img{ width:100%; height:100%; object-fit:contain; display:block; }
 
 .inv-photo{ display:flex; gap:14px; align-items:center; margin-bottom:16px; }
 .inv-photo-preview{
     flex:0 0 auto; width:96px; height:96px; border-radius:10px; overflow:hidden;
-    border:1px solid var(--ad-line); background:#f4f5f7;
+    border:1px solid var(--ad-line); background:#fff;
 }
-.inv-photo-preview img{ width:100%; height:100%; object-fit:cover; display:block; }
+.inv-photo-preview img{ width:100%; height:100%; object-fit:contain; display:block; }
 .inv-photo-ph{
     width:100%; height:100%; display:flex; align-items:center; justify-content:center;
     font-weight:700; font-size:1.6rem;

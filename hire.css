@@ -79,12 +79,16 @@
 
 .hire-media {
   aspect-ratio: 4 / 3;
-  background: linear-gradient(135deg, #3a1c05, #12141a);
+  background: #fff;               /* product shots sit on white so contain blends */
   overflow: hidden;
 }
-.hire-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/*  'contain' (not cover) so the WHOLE item shows at a consistent size and the
+    big ones stop overflowing the frame. */
+.hire-media img { width: 100%; height: 100%; object-fit: contain; display: block;
+                  padding: 12px; box-sizing: border-box; }
 .hire-noimg {
   width: 100%; height: 100%;
+  background: linear-gradient(135deg, #3a1c05, #12141a);
   display: flex; align-items: center; justify-content: center;
   font-size: 2.4rem; font-weight: 800; color: #fff; opacity: .85;
 }
