@@ -1,0 +1,107 @@
+/* ==========================================================================
+   QUOTE / INVOICE  -  the public document page
+
+   A white "paper" document on the site's dark background, so it reads like a
+   real quote and prints clean to PDF. Scoped under .qv-*.
+   ========================================================================== */
+
+.qv-wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 16px 64px;
+}
+
+.qv-empty {
+  text-align: center;
+  color: var(--sg-muted, #d0d0d0);
+  padding: 80px 16px;
+}
+.qv-empty h1 { color: #fff; margin-bottom: .4em; }
+.qv-empty a { color: var(--sg-orange, #ff6b00); }
+
+/* the paper */
+.qv-doc {
+  background: #fff;
+  color: #1a1a1a;
+  border-radius: 12px;
+  padding: 44px 48px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .45);
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.55;
+}
+
+.qv-banner {
+  margin: -12px -12px 26px;
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-weight: 700;
+  text-align: center;
+}
+.qv-ok { background: #e7f6ee; color: #0f7a43; border: 1px solid #b9e6cd; }
+
+.qv-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; border-bottom: 3px solid #111; padding-bottom: 20px; }
+.qv-brand { display: flex; flex-direction: column; gap: 8px; }
+.qv-logo { height: 46px; width: auto; object-fit: contain; align-self: flex-start;
+           /* the mark is white on transparent; sit it on a dark chip so it shows on paper */
+           background: #111; border-radius: 8px; padding: 8px 12px; }
+.qv-legal { margin: 0; font-size: 11px; color: #777; }
+.qv-meta { text-align: right; }
+.qv-meta h1 { margin: 0; font-size: 30px; letter-spacing: 1px; text-transform: uppercase; color: #ff6b00; }
+.qv-ref { margin: 4px 0 0; font-weight: 700; font-size: 15px; }
+.qv-date { margin: 2px 0 0; color: #777; font-size: 13px; }
+
+.qv-parties { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin: 26px 0; }
+.qv-parties h3 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #999; }
+.qv-parties p { margin: 0; font-size: 13.5px; }
+
+.qv-table { width: 100%; border-collapse: collapse; margin: 8px 0 0; }
+.qv-table thead th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #999;
+                     border-bottom: 2px solid #111; padding: 8px 10px; }
+.qv-table td { padding: 11px 10px; border-bottom: 1px solid #eee; font-size: 13.5px; vertical-align: top; }
+.qv-num { text-align: right; white-space: nowrap; }
+.qv-desc { font-weight: 600; }
+.qv-sub { display: block; font-weight: 400; color: #888; font-size: 12px; margin-top: 2px; }
+.qv-perday { display: block; font-weight: 400; color: #b25b00; font-size: 12px; margin-top: 2px; }
+.qv-row-disc td { color: #0f7a43; }
+
+.qv-summary { margin: 18px 0 0; margin-left: auto; width: 320px; max-width: 100%; }
+.qv-sumrow { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
+.qv-sumrow span:first-child { color: #666; }
+.qv-grand { border-top: 2px solid #111; margin-top: 6px; padding-top: 10px; font-weight: 800; font-size: 17px; }
+.qv-grand span:first-child { color: #111; }
+
+.qv-pay { margin: 28px 0 0; background: #fff7ef; border: 1px solid #ffd9b3; border-radius: 10px; padding: 16px 20px; }
+.qv-pay h3 { margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: #b25b00; }
+.qv-pay p { margin: 0; font-size: 14px; }
+
+.qv-notes { margin: 22px 0 0; }
+.qv-notes h3 { margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #999; }
+.qv-notes p { margin: 0; font-size: 13px; color: #444; white-space: pre-wrap; }
+
+.qv-foot { margin: 34px 0 0; padding-top: 16px; border-top: 1px solid #eee; text-align: center; font-size: 11px; color: #999; }
+
+/* actions (not printed) */
+.qv-actions { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 22px; flex-wrap: wrap; }
+.qv-btn { cursor: pointer; padding: 12px 22px; border-radius: 10px; border: none; font: inherit; font-weight: 700; font-size: 15px; }
+.qv-btn-primary { background: linear-gradient(135deg, var(--sg-orange, #ff6b00), var(--sg-orange-bright, #ff8c00)); color: #fff; }
+.qv-btn-ghost { background: transparent; border: 1.5px solid #555; color: #eee; }
+.qv-btn-ghost:hover { border-color: var(--sg-orange, #ff6b00); color: #fff; }
+.qv-btn:disabled { opacity: .6; cursor: default; }
+.qv-msg { flex-basis: 100%; text-align: center; color: var(--sg-muted, #d0d0d0); margin: 6px 0 0; }
+.qv-msg.qv-bad { color: #ff8a80; }
+
+@media (max-width: 640px) {
+  .qv-doc { padding: 26px 20px; }
+  .qv-parties { grid-template-columns: 1fr; gap: 14px; }
+  .qv-meta h1 { font-size: 24px; }
+  .qv-summary { width: 100%; }
+}
+
+/* ---- print: just the paper ---- */
+@media print {
+  body { background: #fff !important; }
+  #navbar, #footer, .qv-actions { display: none !important; }
+  .qv-wrap { max-width: none; padding: 0; }
+  .qv-doc { box-shadow: none; border-radius: 0; padding: 0; }
+  .qv-banner { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
