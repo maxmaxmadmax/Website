@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=138';
+} from './firebase-config.js?v=139';
 
-import { expandKit } from './kit.js?v=138';
+import { expandKit } from './kit.js?v=139';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5536,15 +5536,11 @@ function quoteBuilderHtml() {
 
         <div class="qb-lines-head">
           <span class="qb-block-h">Line items</span>
-          <div class="qb-lines-tools">
-            <select id="q-add-inv" class="qb-search"><option value="">&#128269; Search inventory&hellip;</option>${invOpts}</select>
-            <button type="button" class="ad-btn ad-btn-small" id="q-add-custom">+ Custom item</button>
-            <button type="button" class="ad-btn ad-btn-small" id="q-add-discount">+ Discount</button>
-          </div>
         </div>
 
         <div class="qb-table">
           <div class="qb-thead">
+            <span class="qb-c-grip"></span>
             <span class="qb-c-desc">Item / Description</span>
             <span class="qb-c-qty">Qty</span>
             <span class="qb-c-rate">Day rate (ex GST)</span>
@@ -5553,6 +5549,21 @@ function quoteBuilderHtml() {
             <span class="qb-c-x"></span>
           </div>
           <div class="qb-lines" id="q-lines"></div>
+
+          <!--  The adder stays pinned as the bottom row: type to search
+                inventory (top 3), or add a custom line / discount. It sits
+                outside #q-lines so re-rendering the rows never wipes it.   -->
+          <div class="qb-addrow">
+            <div class="qb-adder">
+              <div class="qb-searchwrap">
+                <input type="text" id="q-inv-search" class="qb-searchin" autocomplete="off"
+                       placeholder="&#128269;  Search inventory to add an item&hellip;">
+                <div class="qb-results" id="q-inv-results" hidden></div>
+              </div>
+              <button type="button" class="ad-btn ad-btn-small" id="q-add-custom">+ Custom item</button>
+              <button type="button" class="ad-btn ad-btn-small" id="q-add-discount">+ Discount</button>
+            </div>
+          </div>
         </div>
 
         <div class="qb-foot">
@@ -5602,7 +5613,8 @@ function renderQuoteLines() {
     if (l.type === 'discount') {
       const val = l.amountCents ? l.amountCents / 100 : '';
       return `
-        <div class="qb-row qb-row-disc" data-ql="${i}">
+        <div class="qb-row qb-row-disc" data-ql="${i}" data-top>
+          <div class="qb-cell qb-c-grip"><span class="qb-grip" title="Drag to reorder">&#10303;</span></div>
           <div class="qb-cell qb-c-desc">
             <span class="qb-disc-badge">Discount</span>
             <input class="qb-name" data-lf="name" value="${attr(l.name)}" placeholder="Discount">
@@ -5621,7 +5633,8 @@ function renderQuoteLines() {
       const header = prevWasKit ? '' : '<div class="qb-subhead">Included / required items</div>';
       const free = l.charge === 'free' || !l.unitCents;
       return `${header}
-        <div class="qb-row qb-row-sub" data-ql="${i}">
+        <div class="qb-row qb-row-sub" data-ql="${i}" data-sub>
+          <div class="qb-cell qb-c-grip"></div>
           <div class="qb-cell qb-c-desc"><span class="qb-arrow">&#8627;</span><span class="qb-subname">${esc(l.name)}</span></div>
           <div class="qb-cell qb-c-qty">${esc(l.qty)}</div>
           <div class="qb-cell qb-c-rate">${free ? '<span class="qb-incl">Included</span>' : money(l.unitCents)}</div>
@@ -5634,7 +5647,8 @@ function renderQuoteLines() {
     // Editable item / custom line.
     const rate = l.unitCents ? l.unitCents / 100 : '';
     return `
-      <div class="qb-row" data-ql="${i}">
+      <div class="qb-row" data-ql="${i}" data-top>
+        <div class="qb-cell qb-c-grip"><span class="qb-grip" title="Drag to reorder">&#10303;</span></div>
         <div class="qb-cell qb-c-desc">
           <input class="qb-name" data-lf="name" value="${attr(l.name)}" placeholder="Item name">
           ${l.description ? `<span class="qb-sub">${esc(l.description)}</span>` : ''}
@@ -5688,6 +5702,165 @@ function addInvLineToQuote(itemId) {
   renderQuoteLines();
 }
 
+/* -------------------------------------------------------------------------
+   Inventory typeahead - the pinned bottom "add" row
+   ------------------------------------------------------------------------- */
+function invSearchList() {
+  return (typeof invItems === 'function' ? invItems() : []).filter((it) => it.id && it.name);
+}
+
+let invSearchActive = -1;   // keyboard-highlighted result
+
+function renderInvResults(term) {
+  const box = document.getElementById('q-inv-results');
+  if (!box) return [];
+  const t = String(term || '').trim().toLowerCase();
+  if (!t) { box.hidden = true; box.innerHTML = ''; invSearchActive = -1; return []; }
+  const matches = invSearchList()
+    .filter((it) => it.name.toLowerCase().includes(t))
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+    .slice(0, 3);
+  if (!matches.length) {
+    box.hidden = false;
+    box.innerHTML = '<div class="qb-res-empty">No matching inventory</div>';
+    invSearchActive = -1;
+    return [];
+  }
+  box.hidden = false;
+  box.innerHTML = matches.map((it, i) => `
+    <div class="qb-res${i === invSearchActive ? ' is-active' : ''}" data-add="${attr(it.id)}">
+      <span class="qb-res-name">${esc(it.name)}</span>
+      <span class="qb-res-price">${esc(money(it.priceCents))}/day</span>
+    </div>`).join('');
+  return matches;
+}
+
+function wireInvTypeahead() {
+  const input = document.getElementById('q-inv-search');
+  const box = document.getElementById('q-inv-results');
+  if (!input || !box) return;
+
+  const add = (id) => {
+    if (!id) return;
+    addInvLineToQuote(id);
+    input.value = '';
+    box.hidden = true; box.innerHTML = '';
+    invSearchActive = -1;
+    input.focus();
+  };
+
+  input.addEventListener('input', () => { invSearchActive = -1; renderInvResults(input.value); });
+  input.addEventListener('focus', () => { if (input.value.trim()) renderInvResults(input.value); });
+  input.addEventListener('keydown', (e) => {
+    const matches = invSearchList()
+      .filter((it) => it.name.toLowerCase().includes(input.value.trim().toLowerCase()))
+      .slice(0, 3);
+    if (e.key === 'ArrowDown') { e.preventDefault(); invSearchActive = Math.min(matches.length - 1, invSearchActive + 1); renderInvResults(input.value); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); invSearchActive = Math.max(0, invSearchActive - 1); renderInvResults(input.value); }
+    else if (e.key === 'Enter') { e.preventDefault(); const pick = matches[invSearchActive] || matches[0]; if (pick) add(pick.id); }
+    else if (e.key === 'Escape') { box.hidden = true; invSearchActive = -1; }
+  });
+  // mousedown (not click) so it fires before the input's blur hides the list
+  box.addEventListener('mousedown', (e) => {
+    const r = e.target.closest('[data-add]');
+    if (!r) return;
+    e.preventDefault();
+    add(r.getAttribute('data-add'));
+  });
+  input.addEventListener('blur', () => { setTimeout(() => { box.hidden = true; }, 150); });
+}
+
+/* -------------------------------------------------------------------------
+   Reordering - each item plus its included/required rows moves as one group
+   ------------------------------------------------------------------------- */
+function quoteGroups() {
+  const groups = [];
+  let cur = null;
+  quoteDraft.lines.forEach((l, idx) => {
+    if (l.type === 'kit' && cur) { cur.lines.push(l); }
+    else { cur = { start: idx, lines: [l] }; groups.push(cur); }
+  });
+  return groups;
+}
+
+function groupIndexOfLine(idx) {
+  const g = quoteGroups();
+  for (let i = 0; i < g.length; i++) {
+    const s = g[i].start;
+    if (idx >= s && idx < s + g[i].lines.length) return i;
+  }
+  return -1;
+}
+
+function moveLineGroup(fromLine, overLine, after) {
+  const groups = quoteGroups();
+  const fromG = groupIndexOfLine(fromLine);
+  let toG = groupIndexOfLine(overLine);
+  if (fromG < 0 || toG < 0 || fromG === toG) return;
+  const moved = groups.splice(fromG, 1)[0];
+  if (fromG < toG) toG -= 1;                       // indices shift after removal
+  let insert = toG + (after ? 1 : 0);
+  insert = Math.max(0, Math.min(groups.length, insert));
+  groups.splice(insert, 0, moved);
+  quoteDraft.lines = groups.reduce((acc, gr) => acc.concat(gr.lines), []);
+  renderQuoteLines();
+}
+
+function wireQuoteDrag(lines) {
+  if (!lines) return;
+  let fromLine = null;
+  const clearMarks = () => lines.querySelectorAll('.qb-drop-before, .qb-drop-after')
+    .forEach((el) => el.classList.remove('qb-drop-before', 'qb-drop-after'));
+  const dropInfo = (e) => {
+    const row = e.target.closest('[data-ql]');
+    if (!row) return null;
+    const r = row.getBoundingClientRect();
+    return { row, line: Number(row.getAttribute('data-ql')), after: (e.clientY - r.top) > r.height / 2 };
+  };
+
+  // arm dragging only when the grab starts on a grip
+  lines.addEventListener('mousedown', (e) => {
+    const g = e.target.closest('.qb-grip');
+    if (!g) return;
+    const row = g.closest('[data-ql]');
+    if (row && row.hasAttribute('data-top')) row.setAttribute('draggable', 'true');
+  });
+  lines.addEventListener('mouseup', () => {
+    lines.querySelectorAll('[draggable="true"]').forEach((el) => el.removeAttribute('draggable'));
+  });
+
+  lines.addEventListener('dragstart', (e) => {
+    const row = e.target.closest('[data-ql]');
+    if (!row || !row.hasAttribute('data-top') || row.getAttribute('draggable') !== 'true') { e.preventDefault(); return; }
+    fromLine = Number(row.getAttribute('data-ql'));
+    row.classList.add('qb-dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', String(fromLine)); } catch (_) {}
+  });
+  lines.addEventListener('dragover', (e) => {
+    if (fromLine == null) return;
+    e.preventDefault();
+    clearMarks();
+    const info = dropInfo(e);
+    if (info) info.row.classList.add(info.after ? 'qb-drop-after' : 'qb-drop-before');
+  });
+  lines.addEventListener('drop', (e) => {
+    if (fromLine == null) return;
+    e.preventDefault();
+    const info = dropInfo(e);
+    const from = fromLine;
+    fromLine = null;
+    clearMarks();
+    if (info) moveLineGroup(from, info.line, info.after);
+  });
+  lines.addEventListener('dragend', () => {
+    fromLine = null;
+    clearMarks();
+    lines.querySelectorAll('[draggable="true"]').forEach((el) => el.removeAttribute('draggable'));
+    lines.querySelectorAll('.qb-dragging').forEach((el) => el.classList.remove('qb-dragging'));
+  });
+}
+
 function wireQuoteBuilder() {
   renderQuoteLines();
 
@@ -5730,12 +5903,14 @@ function wireQuoteBuilder() {
   });
 
   // add buttons
-  const addInv = document.getElementById('q-add-inv');
-  if (addInv) addInv.addEventListener('change', () => { if (addInv.value) { addInvLineToQuote(addInv.value); addInv.value = ''; } });
+  const days0 = () => Math.max(1, Math.round(quoteDraft.hire.days || 1));
   const addCustom = document.getElementById('q-add-custom');
-  if (addCustom) addCustom.addEventListener('click', () => { quoteDraft.lines.push({ type: 'custom', name: '', qty: 1, unitCents: 0 }); renderQuoteLines(); });
+  if (addCustom) addCustom.addEventListener('click', () => { quoteDraft.lines.push({ type: 'custom', name: '', qty: 1, unitCents: 0, days: days0() }); renderQuoteLines(); });
   const addDisc = document.getElementById('q-add-discount');
   if (addDisc) addDisc.addEventListener('click', () => { quoteDraft.lines.push({ type: 'discount', name: 'Discount', amountCents: 0 }); renderQuoteLines(); });
+
+  // inventory typeahead (top 3 as you type)
+  wireInvTypeahead();
 
   // remove line
   const lines = document.getElementById('q-lines');
@@ -5746,6 +5921,10 @@ function wireQuoteBuilder() {
     quoteDraft.lines.splice(i, 1);
     renderQuoteLines();
   });
+
+  // drag to reorder (grip handle). An item drags together with its
+  // included/required sub-rows as one group.
+  wireQuoteDrag(lines);
 
   const save = document.getElementById('q-save');
   if (save) save.addEventListener('click', () => saveQuoteDoc(save));
