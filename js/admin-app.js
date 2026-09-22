@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=146';
+} from './firebase-config.js?v=147';
 
-import { expandKit } from './kit.js?v=146';
+import { expandKit } from './kit.js?v=147';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6576,15 +6576,24 @@ function subscribeToResources() {
         (rank[a.type] ?? 9) - (rank[b.type] ?? 9)
         || (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }));
       state.resources = rows;
-      if (state.view === 'resources' && !state.openResourceId) render();
+      if (state.view === 'resources') {
+        if (state.openResourceId) renderResRows();   // panel open: refresh list only
+        else render();
+      }
     },
     (err) => console.error('resources', err)
   ));
 }
 
 VIEWS.resources = {
-  html() { return state.openResourceId ? resourceBuilderHtml() : resourceListHtml(); },
-  wire() { if (state.openResourceId) wireResourceBuilder(); else wireResourceList(); },
+  html() {
+    const open = state.openResourceId != null;
+    return `<div class="inv-wrap${open ? ' has-detail' : ''}">
+      ${resourceMainHtml()}
+      ${open ? resourceDetailHtml() : ''}
+    </div>`;
+  },
+  wire() { wireResourceList(); if (state.openResourceId != null) wireResourceDetail(); },
 };
 
 /* ---- list (built to match the Inventory manager) ---- */
@@ -6627,14 +6636,12 @@ function resActivePill(r) {
     : '<span class="inv-pill inv-st-green">Active</span>';
 }
 
-function resourceListHtml() {
-  const rows = state.resources;
+function resourceMainHtml() {
   const s = resStats();
   const f = state.resFilter;
   const opt = (v, l) => `<option value="${v}"${f === v ? ' selected' : ''}>${l}</option>`;
 
   return `
-    <div class="inv-wrap">
       <div class="inv-main">
         <div class="inv-head">
           <div class="inv-head-title">
@@ -6683,8 +6690,7 @@ function resourceListHtml() {
         </div>
 
         <div class="inv-foot" id="res-foot"></div>
-      </div>
-    </div>`;
+      </div>`;
 }
 
 function renderResRows() {
@@ -6693,7 +6699,7 @@ function renderResRows() {
   if (!host) return;
   const rows = resFiltered();
   host.innerHTML = rows.length ? rows.map((r) => `
-    <tr class="inv-row" data-open-res="${attr(r.id)}">
+    <tr class="inv-row${state.openResourceId === r.id ? ' is-open' : ''}" data-open-res="${attr(r.id)}">
       <td class="inv-item-cell">
         ${resThumb(r)}
         <span class="inv-item-text"><span class="inv-item-name">${esc(r.name || 'Untitled')}</span></span>
@@ -6746,61 +6752,72 @@ function resourceFromDoc(doc) {
   };
 }
 
-/* ---- builder ---- */
-function resourceBuilderHtml() {
+/* ---- detail panel (slides in from the right, like Inventory) ---- */
+function resourceDetailHtml() {
   const isNew = state.openResourceId === '__new__';
   const r = resourceDraft;
-  const isStaff = r.type === 'staff';
+  const type = RES_TYPES[r.type] ? r.type : 'staff';
+  const isStaff = type === 'staff';
   const rate = r.dayRateCents ? r.dayRateCents / 100 : '';
-  const pill = r.active === false
-    ? '<span class="ad-pill ad-pill-grey">Off</span>'
-    : '<span class="ad-pill ad-pill-green">Active</span>';
-  const typeOpt = (v) => `<option value="${v}"${r.type === v ? ' selected' : ''}>${RES_TYPES[v]}</option>`;
+  const typeOpt = (v) => `<option value="${v}"${type === v ? ' selected' : ''}>${RES_TYPES[v]}</option>`;
 
   return `
-    <div class="res-build">
-      <div class="qb-bar">
-        <button type="button" class="qb-back" id="res-back">&larr; All crew &amp; vehicles</button>
-        <div class="qb-bar-title"><h1>${esc(r.name || ('New ' + RES_TYPES[r.type].toLowerCase()))}</h1>${pill}</div>
-        <div class="qb-bar-spacer"></div>
-        ${!isNew ? '<button type="button" class="ad-btn inv-del" id="res-del">Delete</button>' : ''}
-        <button type="button" class="ad-btn ad-btn-primary" id="res-save">Save</button>
-        <span class="ad-quote-msg" id="res-msg"></span>
-      </div>
+    <aside class="inv-detail" aria-label="Record details">
+      <header class="inv-detail-head">
+        <div>
+          <h2>${isNew ? ('New ' + RES_TYPES[type].toLowerCase()) : esc(r.name || 'Record')}</h2>
+          ${!isNew ? `<p class="inv-detail-sub">${esc(RES_TYPES[type])}</p>` : ''}
+        </div>
+        <button type="button" class="inv-detail-close" id="res-close" aria-label="Close">&times;</button>
+      </header>
 
-      <section class="ad-card ad-panel">
-        <div class="pkg-fgrid">
+      <div class="inv-detail-body">
+        <div class="inv-fgrid">
           <label class="ad-field"><span>Type</span>
-            <select class="ad-input" data-rf="type">${typeOpt('staff')}${typeOpt('vehicle')}${typeOpt('trailer')}</select></label>
-          <label class="ad-field pkg-span2"><span>Name</span>
-            <input class="ad-input" data-rf="name" value="${attr(r.name)}" placeholder="${isStaff ? 'e.g. Jesse Taylor' : 'e.g. Hilux + box trailer'}"></label>
-          <label class="ad-field"><span>Day rate (ex GST)</span>
+            <select class="ad-select" data-rf="type">${typeOpt('staff')}${typeOpt('vehicle')}${typeOpt('trailer')}</select></label>
+          <label class="ad-field"><span>Day rate (ex GST) $</span>
             <input class="ad-input" type="number" min="0" step="1" data-rf="dayRateCents" value="${attr(rate)}"></label>
+
+          <label class="ad-field inv-span2"><span>Name</span>
+            <input class="ad-input" data-rf="name" value="${attr(r.name)}" placeholder="${isStaff ? 'e.g. Jesse Taylor' : 'e.g. Mercedes Sprinter'}"></label>
 
           ${isStaff ? `
           <label class="ad-field"><span>Role</span><input class="ad-input" data-rf="role" value="${attr(r.role)}" placeholder="e.g. Sound tech"></label>
           <label class="ad-field"><span>Phone</span><input class="ad-input" data-rf="phone" value="${attr(r.phone)}" placeholder="Mobile"></label>`
           : `
           <label class="ad-field"><span>Rego</span><input class="ad-input" data-rf="rego" value="${attr(r.rego)}" placeholder="e.g. 123 ABC"></label>
-          <label class="ad-field"><span>Capacity / size</span><input class="ad-input" data-rf="capacity" value="${attr(r.capacity)}" placeholder="e.g. 1 tonne, 2m x 1.2m"></label>`}
+          <label class="ad-field"><span>Capacity / size</span><input class="ad-input" data-rf="capacity" value="${attr(r.capacity)}" placeholder="e.g. 1 tonne"></label>`}
 
-          <label class="ad-field pkg-switchfield"><span>Active</span>
-            <label class="pkg-switch"><input type="checkbox" data-rf="active"${r.active !== false ? ' checked' : ''}><span>Available to bill</span></label></label>
-          <label class="ad-field pkg-span2"><span>Notes</span>
-            <input class="ad-input" data-rf="notes" value="${attr(r.notes)}" placeholder="Only you see this"></label>
+          <label class="ad-field inv-span2"><span>Notes</span>
+            <textarea class="ad-input" rows="2" data-rf="notes" placeholder="Just for the team...">${esc(r.notes)}</textarea></label>
         </div>
-      </section>
-    </div>`;
+
+        <label class="inv-toggle">
+          <span>
+            <strong>Active</strong>
+            <em>Available to add to a quote as a billable line.</em>
+          </span>
+          <input type="checkbox" data-rf="active"${r.active !== false ? ' checked' : ''}>
+          <span class="inv-switch" aria-hidden="true"></span>
+        </label>
+      </div>
+
+      <footer class="inv-detail-foot">
+        ${isNew ? '' : '<button type="button" class="ad-btn inv-del" id="res-delete">Delete</button>'}
+        <button type="button" class="ad-btn ad-btn-primary" id="res-save">${isNew ? 'Add record' : 'Save changes'}</button>
+        <span class="ad-quote-msg" id="res-msg"></span>
+      </footer>
+    </aside>`;
 }
 
-function wireResourceBuilder() {
-  const wrap = document.querySelector('.res-build');
-  if (!wrap) return;
+function wireResourceDetail() {
+  const panel = document.querySelector('.inv-detail');
+  if (!panel) return;
 
-  const back = document.getElementById('res-back');
-  if (back) back.addEventListener('click', () => { state.openResourceId = null; render(); });
+  const close = document.getElementById('res-close');
+  if (close) close.addEventListener('click', () => { state.openResourceId = null; render(); });
 
-  wrap.addEventListener('input', (e) => {
+  panel.addEventListener('input', (e) => {
     const t = e.target;
     if (!t.dataset.rf) return;
     const f = t.dataset.rf;
@@ -6809,13 +6826,13 @@ function wireResourceBuilder() {
     else resourceDraft[f] = t.value;
   });
 
-  // switching the type shows the matching fields
-  const typeSel = wrap.querySelector('[data-rf="type"]');
+  // switching the type swaps the staff / vehicle fields
+  const typeSel = panel.querySelector('[data-rf="type"]');
   if (typeSel) typeSel.addEventListener('change', () => { resourceDraft.type = typeSel.value; render(); });
 
   const save = document.getElementById('res-save');
   if (save) save.addEventListener('click', () => saveResource(save));
-  const del = document.getElementById('res-del');
+  const del = document.getElementById('res-delete');
   if (del) del.addEventListener('click', () => deleteResource(del));
 }
 
