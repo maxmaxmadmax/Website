@@ -198,6 +198,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    //  Packages. Reusable bundles the quote bot builds from - lists of
+    //  inventory items grouped by event type and size tier. Public read so
+    //  the bot can price without a login (Phase 2); written straight from the
+    //  admin desk like inventory, with no money or allocation to guard.
+    match /packages/{packageId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /quoteLeads/{leadId} {
       allow read: if isAdmin();
       allow write: if false;

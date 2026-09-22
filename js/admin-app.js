@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=141';
+} from './firebase-config.js?v=142';
 
-import { expandKit } from './kit.js?v=141';
+import { expandKit } from './kit.js?v=142';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -108,6 +108,12 @@ const state = {
   quoteDocs: [],
   openQuoteId: null,
   quoteDocFilter: 'all',
+
+  /*  Packages - reusable bundles the bot will draw on. null until first
+      load; openPackageId is null on the list, an id (or '__new__') in the
+      editor.                                                              */
+  packages: null,
+  openPackageId: null,
 };
 
 let fb = null;
@@ -144,6 +150,7 @@ async function init() {
     subscribeToQuoteLeads();
     subscribeToInventory();
     subscribeToQuoteDocs();
+    subscribeToPackages();
     loadQuotePricing();
     routeFromHash();
   });
@@ -336,7 +343,7 @@ function wireChrome() {
    ------------------------------------------------------------------------- */
 const BUILT = ['events', 'vendors', 'applications', 'map', 'entertainment',
                'settings', 'vendorEmail', 'quotes', 'inventory', 'botSettings',
-               'quoteDocs'];
+               'quoteDocs', 'packages'];
 
 /*  Vendors is where the work is, so it is what you land on. */
 const HOME = 'vendors';
@@ -6019,4 +6026,504 @@ function daysBetween(a, b) {
   if (isNaN(da) || isNaN(db)) return 0;
   const diff = Math.round((db - da) / 86400000) + 1;
   return diff > 0 ? diff : 0;
+}
+
+/* =========================================================================
+   PACKAGES  -  reusable, self-serve bundles the quote bot draws on
+
+   A package belongs to an event type (Wedding, Party, ...) and holds one or
+   more SIZE TIERS (Up to 50, Up to 150, ...), each a list of inventory items.
+   On top sit OPTIONAL EXTRAS the customer can tick on. The price is never
+   typed - it is the sum of the items' day rates, run through the kit engine
+   so required gear (amps, leads) is included automatically. Change a price
+   once in Inventory and every package follows. Built here for staff; the bot
+   will pick from these in Phase 2.
+   ========================================================================= */
+
+function blankPackage() {
+  return {
+    name: '', eventType: '', active: true, rangePct: 10, notes: '',
+    tiers: [{ label: '', maxGuests: '', items: [] }],
+    extras: [],
+  };
+}
+
+let packageDraft = blankPackage();
+
+function subscribeToPackages() {
+  const { collection, onSnapshot } = fb.f;
+  unsubscribes.push(onSnapshot(
+    collection(fb.db, 'packages'),
+    (snap) => {
+      const rows = [];
+      snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
+      rows.sort((a, b) =>
+        (a.eventType || '').localeCompare(b.eventType || '')
+        || (a.order || 0) - (b.order || 0)
+        || (a.name || '').localeCompare(b.name || ''));
+      state.packages = rows;
+      // Don't repaint while the editor is open - it would wipe the draft.
+      if (state.view === 'packages' && !state.openPackageId) render();
+    },
+    (err) => console.error('packages', err)
+  ));
+}
+
+/*  Every inventory item keyed by id, for the kit engine and lookups. */
+function invByIdMap() {
+  const items = typeof invItems === 'function' ? invItems() : [];
+  const byId = {};
+  items.forEach((it) => { byId[it.id] = it; });
+  return byId;
+}
+
+/*  Day-rate price of a list of {itemId, qty}, including any required gear the
+    kit engine pulls in. Returns cents + any stock shortages at that size.   */
+function packageItemsPriceCents(items, byId) {
+  const cart = {};
+  (items || []).forEach((r) => {
+    if (!r || !r.itemId) return;
+    cart[r.itemId] = (cart[r.itemId] || 0) + Math.max(0, Math.round(r.qty || 0));
+  });
+  if (!Object.keys(cart).length) return { dayCents: 0, shortages: [] };
+  const kit = expandKit(cart, byId);
+  const baseCents = kit.base.reduce((s, b) => s + b.lineCents, 0);
+  return { dayCents: baseCents + kit.addCents, shortages: kit.shortages };
+}
+
+function pkgEventTypes() {
+  const set = new Set();
+  (state.packages || []).forEach((p) => { if (p.eventType) set.add(p.eventType); });
+  return [...set].sort((a, b) => a.localeCompare(b));
+}
+
+VIEWS.packages = {
+  html() { return state.openPackageId ? packageBuilderHtml() : packageListHtml(); },
+  wire() { if (state.openPackageId) wirePackageBuilder(); else wirePackageList(); },
+};
+
+/* ---- list ---- */
+function packageListHtml() {
+  const pkgs = state.packages;
+  const header = `
+    <div class="ad-mail-head-row">
+      <span class="ad-mail-icon" aria-hidden="true">&#128230;</span>
+      <div class="ad-mail-title">
+        <h1>Packages</h1>
+        <p>Reusable bundles the quote bot builds from. Grouped by event type; the price is live from Inventory.</p>
+      </div>
+      <div class="ad-mail-status">
+        <button type="button" class="ad-btn ad-btn-primary" id="pkg-new">+ New package</button>
+      </div>
+    </div>`;
+
+  if (pkgs == null) return header + '<p class="ad-loading">Loading…</p>';
+  if (!pkgs.length) {
+    return header + `
+      <section class="ad-card ad-panel"><p class="ad-panel-sub">
+        No packages yet. Hit &ldquo;New package&rdquo; to build your first bundle &mdash;
+        name it, give it an event type, add a size tier or two, and drop in the gear.
+        Everything downstream (the bot, instant estimates) builds on these.
+      </p></section>`;
+  }
+
+  const byId = invByIdMap();
+  const typed = pkgEventTypes().map((t) => renderPkgGroup(t, pkgs.filter((p) => (p.eventType || '') === t), byId)).join('');
+  const untyped = pkgs.filter((p) => !p.eventType);
+  return header + typed + (untyped.length ? renderPkgGroup('Uncategorised', untyped, byId) : '');
+}
+
+function renderPkgGroup(title, list, byId) {
+  const rows = list.map((p) => {
+    const tiers = Array.isArray(p.tiers) ? p.tiers : [];
+    const first = tiers[0];
+    const price = first ? packageItemsPriceCents(first.items, byId).dayCents : 0;
+    const label = (tiers.length > 1 ? 'from ' : '') + money(price) + '/day';
+    const xtra = (p.extras || []).length;
+    return `
+      <tr class="ad-quote-row" data-open-pkg="${attr(p.id)}">
+        <td class="ad-cell-strong">${esc(p.name || 'Untitled')}</td>
+        <td>${tiers.length} size${tiers.length === 1 ? '' : 's'}</td>
+        <td>${xtra} extra${xtra === 1 ? '' : 's'}</td>
+        <td class="inv-num">${esc(label)}</td>
+        <td>${p.active === false ? '<span class="ad-pill ad-pill-grey">Off</span>' : '<span class="ad-pill ad-pill-green">Active</span>'}</td>
+        <td class="ad-cell-right"><span class="ad-quote-caret">&#8250;</span></td>
+      </tr>`;
+  }).join('');
+  return `
+    <section class="ad-card ad-panel">
+      <header class="ad-panel-head"><div><h2>${esc(title)}</h2></div></header>
+      <div class="ad-table-wrap"><table class="ad-table">
+        <thead><tr><th>Package</th><th>Sizes</th><th>Extras</th><th class="inv-num">Price</th><th>Status</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+    </section>`;
+}
+
+function wirePackageList() {
+  const nw = document.getElementById('pkg-new');
+  if (nw) nw.addEventListener('click', () => { packageDraft = blankPackage(); state.openPackageId = '__new__'; render(); });
+  document.querySelectorAll('[data-open-pkg]').forEach((r) => r.addEventListener('click', () => {
+    const id = r.getAttribute('data-open-pkg');
+    const doc = (state.packages || []).find((x) => x.id === id);
+    packageDraft = doc ? packageFromDoc(doc) : blankPackage();
+    state.openPackageId = id;
+    render();
+  }));
+}
+
+function packageFromDoc(doc) {
+  const b = blankPackage();
+  const tiers = (Array.isArray(doc.tiers) && doc.tiers.length ? doc.tiers : b.tiers).map((t) => ({
+    label: t.label || '',
+    maxGuests: t.maxGuests == null ? '' : t.maxGuests,
+    items: (t.items || []).map((i) => ({ itemId: i.itemId, qty: Math.max(1, Math.round(i.qty || 1)) })),
+  }));
+  return {
+    name: doc.name || '',
+    eventType: doc.eventType || '',
+    active: doc.active !== false,
+    rangePct: doc.rangePct != null ? doc.rangePct : 10,
+    notes: doc.notes || '',
+    tiers,
+    extras: (doc.extras || []).map((i) => ({ itemId: i.itemId, qty: Math.max(1, Math.round(i.qty || 1)) })),
+  };
+}
+
+/* ---- builder ---- */
+function packageBuilderHtml() {
+  const isNew = state.openPackageId === '__new__';
+  const p = packageDraft;
+  const datalist = pkgEventTypes().map((t) => `<option value="${attr(t)}">`).join('');
+  const pill = p.active === false
+    ? '<span class="ad-pill ad-pill-grey">Off</span>'
+    : '<span class="ad-pill ad-pill-green">Active</span>';
+
+  return `
+    <div class="pkg-build">
+      <div class="qb-bar">
+        <button type="button" class="qb-back" id="pkg-back">&larr; All packages</button>
+        <div class="qb-bar-title"><h1>${esc(p.name || 'New package')}</h1>${pill}</div>
+        <div class="qb-bar-spacer"></div>
+        ${!isNew ? '<button type="button" class="ad-btn inv-del" id="pkg-del">Delete</button>' : ''}
+        <button type="button" class="ad-btn ad-btn-primary" id="pkg-save">Save package</button>
+        <span class="ad-quote-msg" id="pkg-msg"></span>
+      </div>
+
+      <section class="ad-card ad-panel">
+        <div class="pkg-fgrid">
+          <label class="ad-field pkg-span2"><span>Package name</span>
+            <input class="ad-input" data-pf="name" value="${attr(p.name)}" placeholder="e.g. Wedding – Ceremony + Reception"></label>
+          <label class="ad-field"><span>Event type</span>
+            <input class="ad-input" list="pkg-types" data-pf="eventType" value="${attr(p.eventType)}" placeholder="e.g. Wedding">
+            <datalist id="pkg-types">${datalist}</datalist></label>
+          <label class="ad-field"><span>Estimate range &plusmn;%</span>
+            <input class="ad-input" type="number" min="0" max="50" step="1" data-pf="rangePct" value="${attr(p.rangePct)}"></label>
+          <label class="ad-field pkg-switchfield"><span>Active</span>
+            <label class="pkg-switch"><input type="checkbox" data-pf="active"${p.active !== false ? ' checked' : ''}><span>Offered by the bot</span></label></label>
+          <label class="ad-field pkg-span2"><span>Internal notes</span>
+            <input class="ad-input" data-pf="notes" value="${attr(p.notes)}" placeholder="Only you see this"></label>
+        </div>
+      </section>
+
+      <section class="ad-card ad-panel">
+        <header class="ad-panel-head"><div><h2>Size tiers</h2>
+          <p class="ad-panel-sub">The bot picks the smallest tier that fits the guest count. Leave a single tier if size doesn't matter. Prices include any auto-added required gear.</p></div></header>
+        <div id="pkg-tiers"></div>
+        <button type="button" class="ad-btn ad-btn-small" id="pkg-add-tier">+ Add size tier</button>
+      </section>
+
+      <section class="ad-card ad-panel">
+        <header class="ad-panel-head"><div><h2>Optional extras</h2>
+          <p class="ad-panel-sub">Add-ons the customer can tick on top of any tier.</p></div></header>
+        <div id="pkg-extras"></div>
+      </section>
+    </div>`;
+}
+
+/*  A generic inventory typeahead: wires an input + results box so typing shows
+    the top 3 matches; onPick(id) is called when one is chosen.              */
+function pkgRenderResults(box, term, activeIdx) {
+  const t = String(term || '').trim().toLowerCase();
+  if (!t) { box.hidden = true; box.innerHTML = ''; return []; }
+  const matches = invSearchList()
+    .filter((it) => it.name.toLowerCase().includes(t))
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+    .slice(0, 3);
+  if (!matches.length) { box.hidden = false; box.innerHTML = '<div class="qb-res-empty">No matching inventory</div>'; return []; }
+  box.hidden = false;
+  box.innerHTML = matches.map((it, i) => `
+    <div class="qb-res${i === activeIdx ? ' is-active' : ''}" data-add="${attr(it.id)}">
+      <span class="qb-res-name">${esc(it.name)}</span>
+      <span class="qb-res-price">${esc(money(it.priceCents))}/day</span>
+    </div>`).join('');
+  return matches;
+}
+
+function attachTypeahead(input, box, onPick) {
+  if (!input || !box) return;
+  let active = -1;
+  const matchNow = () => invSearchList().filter((it) => it.name.toLowerCase().includes(input.value.trim().toLowerCase())).slice(0, 3);
+  input.addEventListener('input', () => { active = -1; pkgRenderResults(box, input.value, active); });
+  input.addEventListener('focus', () => { if (input.value.trim()) pkgRenderResults(box, input.value, active); });
+  input.addEventListener('keydown', (e) => {
+    const m = matchNow();
+    if (e.key === 'ArrowDown') { e.preventDefault(); active = Math.min(m.length - 1, active + 1); pkgRenderResults(box, input.value, active); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(0, active - 1); pkgRenderResults(box, input.value, active); }
+    else if (e.key === 'Enter') { e.preventDefault(); const pick = m[active] || m[0]; if (pick) { onPick(pick.id); input.value = ''; box.hidden = true; active = -1; } }
+    else if (e.key === 'Escape') { box.hidden = true; active = -1; }
+  });
+  box.addEventListener('mousedown', (e) => {
+    const r = e.target.closest('[data-add]');
+    if (!r) return;
+    e.preventDefault();
+    onPick(r.getAttribute('data-add'));
+    input.value = ''; box.hidden = true; active = -1;
+  });
+  input.addEventListener('blur', () => setTimeout(() => { box.hidden = true; }, 150));
+}
+
+function addPkgItem(list, itemId) {
+  const existing = list.find((x) => x.itemId === itemId);
+  if (existing) existing.qty = Math.max(1, Math.round(existing.qty || 1) + 1);
+  else list.push({ itemId, qty: 1 });
+}
+
+function pkgItemRowHtml(it, byId, attrName, idx) {
+  const inv = byId[it.itemId] || {};
+  const line = (inv.priceCents || 0) * Math.max(1, Math.round(it.qty || 1));
+  return `
+    <div class="pkg-item" ${attrName}="${idx}">
+      <span class="pkg-item-name">${esc(inv.name || it.itemId)}</span>
+      <label class="pkg-qtyf"><span>Qty</span><input class="qb-num" type="number" min="1" step="1" data-${attrName === 'data-pi' ? 'pi' : 'xi'}-qty value="${attr(Math.max(1, Math.round(it.qty || 1)))}"></label>
+      <span class="pkg-item-price">${esc(money(line))}/day</span>
+      <button type="button" class="qb-del" data-${attrName === 'data-pi' ? 'pi' : 'xi'}-del title="Remove">&times;</button>
+    </div>`;
+}
+
+function renderPkgTiers() {
+  const host = document.getElementById('pkg-tiers');
+  if (!host) return;
+  const byId = invByIdMap();
+  host.innerHTML = packageDraft.tiers.map((t, ti) => {
+    const price = packageItemsPriceCents(t.items, byId);
+    const itemsHtml = (t.items || []).length
+      ? t.items.map((it, ii) => pkgItemRowHtml(it, byId, 'data-pi', ii)).join('')
+      : '<p class="pkg-empty">No gear in this tier yet — search below to add.</p>';
+    const short = price.shortages && price.shortages.length
+      ? `<p class="pkg-short">Not enough stock for ${esc(price.shortages.map((s) => s.name).join(', '))} at this size.</p>` : '';
+    return `
+      <div class="pkg-tier" data-tier="${ti}">
+        <div class="pkg-tier-head">
+          <label class="ad-field"><span>Tier label</span><input class="ad-input" data-tf="label" value="${attr(t.label)}" placeholder="e.g. Up to 150"></label>
+          <label class="ad-field"><span>Up to N guests</span><input class="ad-input" type="number" min="0" step="1" data-tf="maxGuests" value="${attr(t.maxGuests)}" placeholder="blank = any size"></label>
+          <span class="pkg-tier-price" title="Day rate incl. required gear">${esc(money(price.dayCents))}/day</span>
+          ${packageDraft.tiers.length > 1 ? '<button type="button" class="ad-btn ad-btn-small pkg-tier-del" data-tier-del>Remove</button>' : ''}
+        </div>
+        <div class="pkg-items">${itemsHtml}</div>
+        <div class="pkg-adder">
+          <div class="qb-searchwrap">
+            <input type="text" class="qb-searchin" data-tier-search autocomplete="off" placeholder="&#128269;  Search inventory to add to this tier…">
+            <div class="qb-results pkg-results" data-tier-results hidden></div>
+          </div>
+        </div>
+        ${short}
+      </div>`;
+  }).join('');
+  document.querySelectorAll('#pkg-tiers .pkg-tier').forEach((el) => {
+    const ti = Number(el.getAttribute('data-tier'));
+    attachTypeahead(el.querySelector('[data-tier-search]'), el.querySelector('[data-tier-results]'),
+      (id) => { addPkgItem(packageDraft.tiers[ti].items, id); renderPkgTiers(); });
+  });
+}
+
+function renderPkgExtras() {
+  const host = document.getElementById('pkg-extras');
+  if (!host) return;
+  const byId = invByIdMap();
+  const itemsHtml = (packageDraft.extras || []).length
+    ? packageDraft.extras.map((it, ii) => pkgItemRowHtml(it, byId, 'data-xi', ii)).join('')
+    : '<p class="pkg-empty">No extras yet — search below to offer add-ons.</p>';
+  host.innerHTML = `
+    <div class="pkg-items">${itemsHtml}</div>
+    <div class="pkg-adder">
+      <div class="qb-searchwrap">
+        <input type="text" class="qb-searchin" id="pkg-extra-search" autocomplete="off" placeholder="&#128269;  Search inventory to add an extra…">
+        <div class="qb-results pkg-results" id="pkg-extra-results" hidden></div>
+      </div>
+    </div>`;
+  attachTypeahead(document.getElementById('pkg-extra-search'), document.getElementById('pkg-extra-results'),
+    (id) => { addPkgItem(packageDraft.extras, id); renderPkgExtras(); });
+}
+
+function updatePkgTierPrices(tierEl, ti) {
+  const byId = invByIdMap();
+  const tier = packageDraft.tiers[ti];
+  if (!tier) return;
+  tierEl.querySelectorAll('[data-pi]').forEach((piEl) => {
+    const ii = Number(piEl.getAttribute('data-pi'));
+    const it = tier.items[ii];
+    if (!it) return;
+    const inv = byId[it.itemId] || {};
+    const el = piEl.querySelector('.pkg-item-price');
+    if (el) el.textContent = money((inv.priceCents || 0) * Math.max(1, Math.round(it.qty || 1))) + '/day';
+  });
+  const tp = tierEl.querySelector('.pkg-tier-price');
+  if (tp) tp.textContent = money(packageItemsPriceCents(tier.items, byId).dayCents) + '/day';
+}
+
+function updatePkgExtraPrices() {
+  const byId = invByIdMap();
+  document.querySelectorAll('#pkg-extras [data-xi]').forEach((xiEl) => {
+    const ii = Number(xiEl.getAttribute('data-xi'));
+    const it = packageDraft.extras[ii];
+    if (!it) return;
+    const inv = byId[it.itemId] || {};
+    const el = xiEl.querySelector('.pkg-item-price');
+    if (el) el.textContent = money((inv.priceCents || 0) * Math.max(1, Math.round(it.qty || 1))) + '/day';
+  });
+}
+
+function wirePackageBuilder() {
+  renderPkgTiers();
+  renderPkgExtras();
+
+  const wrap = document.querySelector('.pkg-build');
+  if (!wrap) return;
+
+  const back = document.getElementById('pkg-back');
+  if (back) back.addEventListener('click', () => { state.openPackageId = null; render(); });
+
+  wrap.addEventListener('input', (e) => {
+    const t = e.target;
+    if (t.dataset.pf) {
+      const f = t.dataset.pf;
+      if (f === 'active') packageDraft.active = t.checked;
+      else if (f === 'rangePct') packageDraft.rangePct = Math.max(0, Math.min(50, Math.round(Number(t.value || 0))));
+      else packageDraft[f] = t.value;
+      return;
+    }
+    const tierEl = t.closest('[data-tier]');
+    if (tierEl && t.dataset.tf) {
+      const ti = Number(tierEl.getAttribute('data-tier'));
+      const tier = packageDraft.tiers[ti];
+      if (!tier) return;
+      if (t.dataset.tf === 'maxGuests') tier.maxGuests = t.value === '' ? '' : Math.max(0, Math.round(Number(t.value || 0)));
+      else tier.label = t.value;
+      return;
+    }
+    if (tierEl && t.hasAttribute('data-pi-qty')) {
+      const ti = Number(tierEl.getAttribute('data-tier'));
+      const piEl = t.closest('[data-pi]');
+      if (!piEl) return;
+      const it = packageDraft.tiers[ti].items[Number(piEl.getAttribute('data-pi'))];
+      if (!it) return;
+      it.qty = Math.max(1, Math.round(Number(t.value || 1)));
+      updatePkgTierPrices(tierEl, ti);
+      return;
+    }
+    const xiEl = t.closest('[data-xi]');
+    if (xiEl && t.hasAttribute('data-xi-qty')) {
+      const it = packageDraft.extras[Number(xiEl.getAttribute('data-xi'))];
+      if (!it) return;
+      it.qty = Math.max(1, Math.round(Number(t.value || 1)));
+      updatePkgExtraPrices();
+    }
+  });
+
+  wrap.addEventListener('click', (e) => {
+    const piDel = e.target.closest('[data-pi-del]');
+    if (piDel) {
+      const ti = Number(piDel.closest('[data-tier]').getAttribute('data-tier'));
+      packageDraft.tiers[ti].items.splice(Number(piDel.closest('[data-pi]').getAttribute('data-pi')), 1);
+      renderPkgTiers();
+      return;
+    }
+    const xiDel = e.target.closest('[data-xi-del]');
+    if (xiDel) {
+      packageDraft.extras.splice(Number(xiDel.closest('[data-xi]').getAttribute('data-xi')), 1);
+      renderPkgExtras();
+      return;
+    }
+    const tierDel = e.target.closest('[data-tier-del]');
+    if (tierDel) {
+      packageDraft.tiers.splice(Number(tierDel.closest('[data-tier]').getAttribute('data-tier')), 1);
+      renderPkgTiers();
+    }
+  });
+
+  const addTier = document.getElementById('pkg-add-tier');
+  if (addTier) addTier.addEventListener('click', () => { packageDraft.tiers.push({ label: '', maxGuests: '', items: [] }); renderPkgTiers(); });
+
+  const save = document.getElementById('pkg-save');
+  if (save) save.addEventListener('click', () => savePackage(save));
+  const del = document.getElementById('pkg-del');
+  if (del) del.addEventListener('click', () => deletePackage(del));
+}
+
+async function savePackage(btn) {
+  const msg = document.getElementById('pkg-msg');
+  const p = packageDraft;
+  if (!String(p.name || '').trim()) {
+    if (msg) { msg.textContent = 'Give the package a name first.'; msg.className = 'ad-quote-msg is-bad'; }
+    return;
+  }
+  const clean = {
+    name: String(p.name).trim().slice(0, 160),
+    eventType: String(p.eventType || '').trim().slice(0, 80),
+    active: p.active !== false,
+    rangePct: Math.max(0, Math.min(50, Math.round(Number(p.rangePct || 0)))),
+    notes: String(p.notes || '').trim().slice(0, 1000),
+    tiers: (p.tiers || []).map((t) => ({
+      label: String(t.label || '').trim().slice(0, 80),
+      maxGuests: t.maxGuests === '' || t.maxGuests == null ? null : Math.max(0, Math.round(Number(t.maxGuests || 0))),
+      items: (t.items || []).filter((i) => i.itemId).map((i) => ({ itemId: i.itemId, qty: Math.max(1, Math.round(i.qty || 1)) })),
+    })).filter((t) => t.items.length || t.label || t.maxGuests != null),
+    extras: (p.extras || []).filter((i) => i.itemId).map((i) => ({ itemId: i.itemId, qty: Math.max(1, Math.round(i.qty || 1)) })),
+    updatedAt: Date.now(),
+  };
+  if (!clean.tiers.length) clean.tiers = [{ label: '', maxGuests: null, items: [] }];
+
+  if (msg) { msg.textContent = 'Saving…'; msg.className = 'ad-quote-msg'; }
+  if (btn) btn.disabled = true;
+  try {
+    const { collection, doc, setDoc, addDoc } = fb.f;
+    state.packages = state.packages || [];
+    if (state.openPackageId === '__new__') {
+      clean.order = state.packages.length;
+      clean.createdAt = Date.now();
+      const ref = await addDoc(collection(fb.db, 'packages'), clean);
+      state.openPackageId = ref.id;
+      state.packages.push({ id: ref.id, ...clean });
+    } else {
+      const id = state.openPackageId;
+      await setDoc(doc(fb.db, 'packages', id), clean, { merge: true });
+      const cur = state.packages.find((x) => x.id === id);
+      if (cur) Object.assign(cur, clean); else state.packages.push({ id, ...clean });
+    }
+    if (msg) { msg.textContent = 'Saved.'; msg.className = 'ad-quote-msg is-ok'; }
+    render();
+  } catch (err) {
+    if (msg) { msg.textContent = err.message || 'Could not save.'; msg.className = 'ad-quote-msg is-bad'; }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function deletePackage(btn) {
+  if (!window.confirm('Delete this package? This cannot be undone.')) return;
+  const id = state.openPackageId;
+  if (id === '__new__') { state.openPackageId = null; render(); return; }
+  if (btn) btn.disabled = true;
+  try {
+    const { doc, deleteDoc } = fb.f;
+    await deleteDoc(doc(fb.db, 'packages', id));
+    state.packages = (state.packages || []).filter((x) => x.id !== id);
+    state.openPackageId = null;
+    render();
+  } catch (err) {
+    const msg = document.getElementById('pkg-msg');
+    if (msg) { msg.textContent = err.message || 'Could not delete.'; msg.className = 'ad-quote-msg is-bad'; }
+    if (btn) btn.disabled = false;
+  }
 }
