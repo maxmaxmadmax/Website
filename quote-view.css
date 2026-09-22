@@ -63,6 +63,7 @@
 .qv-sub { display: block; font-weight: 400; color: #888; font-size: 12px; margin-top: 2px; }
 .qv-perday { display: block; font-weight: 400; color: #b25b00; font-size: 12px; margin-top: 2px; }
 .qv-row-disc td { color: #0f7a43; }
+.qv-incl { font-style: italic; color: #0f7a43; }
 
 .qv-summary { margin: 18px 0 0; margin-left: auto; width: 320px; max-width: 100%; }
 .qv-sumrow { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }

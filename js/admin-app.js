@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=137';
+} from './firebase-config.js?v=138';
 
-import { expandKit } from './kit.js?v=137';
+import { expandKit } from './kit.js?v=138';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5327,32 +5327,26 @@ function qdocPill(s) { const [c, l] = QDOC_STATUS[s] || QDOC_STATUS.draft; retur
 /*  Totals - mirror of quoteMoney() in functions/index.js. Prices ex-GST,
     discounts off the net, GST 10% on top.                                 */
 function quoteDraftMoney(d) {
-  const days = Math.max(1, Math.round((d.hire && d.hire.days) || 1));
+  const docDays = Math.max(1, Math.round((d.hire && d.hire.days) || 1));
   let subtotal = 0; let discount = 0;
   (d.lines || []).forEach((l) => {
     if (l.type === 'discount') { discount += Math.max(0, Math.round(l.amountCents || 0)); return; }
-    const qty = Math.max(0, Math.round(l.qty || 0));
-    const unit = Math.max(0, Math.round(l.unitCents || 0));
-    const multi = (l.type === 'item' || l.type === 'kit');
-    const per = multi
-      ? unit + Math.max(0, Math.round(l.extraDayCents || 0)) * Math.max(0, Math.round(l.days || days) - 1)
-      : unit;
-    subtotal += qty * per;
+    subtotal += quoteLineCents(l, docDays);
   });
   const net = Math.max(0, subtotal - discount);
   const gst = Math.round(net * 0.10);
   return { subtotalCents: subtotal, discountCents: discount, netCents: net, gstCents: gst, totalCents: net + gst };
 }
 
-function quoteLineCents(l, days) {
+/*  A line's own total: quantity x day rate x number of days.
+    Custom lines default to 1 day unless the staffer sets more.
+    Discounts are handled once against the whole total, not per line.     */
+function quoteLineCents(l, docDays) {
   if (l.type === 'discount') return -Math.max(0, Math.round(l.amountCents || 0));
   const qty = Math.max(0, Math.round(l.qty || 0));
   const unit = Math.max(0, Math.round(l.unitCents || 0));
-  const multi = (l.type === 'item' || l.type === 'kit');
-  const per = multi
-    ? unit + Math.max(0, Math.round(l.extraDayCents || 0)) * Math.max(0, Math.round(l.days || days) - 1)
-    : unit;
-  return qty * per;
+  const days = Math.max(1, Math.round(l.days || docDays || 1));
+  return qty * unit * days;
 }
 
 VIEWS.quoteDocs = {
@@ -5465,8 +5459,12 @@ function quoteBuilderHtml() {
   const isNew = state.openQuoteId === '__new__';
   const doc = currentQuoteDoc();
   const status = doc ? doc.status : 'draft';
-  const num = doc ? (doc.kind === 'invoice' && doc.invoiceNumber ? doc.invoiceNumber : doc.number) : 'New quote';
+  const isInvoice = doc && doc.kind === 'invoice';
+  const docWord = isInvoice ? 'Tax Invoice' : 'Quote';
+  const num = doc ? (isInvoice && doc.invoiceNumber ? doc.invoiceNumber : doc.number) : 'New';
+  const created = doc && doc.createdAt ? dateShort(doc.createdAt) : dateShort(Math.floor(Date.now() / 1000));
   const c = quoteDraft.customer;
+  const h = quoteDraft.hire;
 
   const invOpts = (typeof invItems === 'function' ? invItems() : [])
     .filter((it) => it.id && it.name)
@@ -5475,70 +5473,117 @@ function quoteBuilderHtml() {
 
   const link = doc && doc.token ? (window.location.origin + '/quote?t=' + doc.token) : '';
 
+  const metaRow = (label, value) => `<div class="qb-mrow"><span class="qb-mlabel">${label}</span><span class="qb-mval">${value}</span></div>`;
+  const hirePeriod = (h.startDate || h.endDate)
+    ? `${esc(h.startDate || '…')} &rarr; ${esc(h.endDate || '…')}`
+    : '<span class="qb-faint">Set below</span>';
+
   return `
-    <div class="q-build">
-      <div class="q-build-head">
-        <button type="button" class="ad-btn ad-btn-small" id="q-back">&larr; All quotes</button>
-        <div class="q-build-title"><h1>${esc(num)}</h1>${doc ? qdocPill(status) : ''}</div>
-        <div class="q-build-actions">
-          <button type="button" class="ad-btn ad-btn-primary" id="q-save">Save</button>
+    <div class="q-build qb">
+
+      <!-- toolbar (not part of the printed paper) -->
+      <div class="qb-bar">
+        <button type="button" class="qb-back" id="q-back">&larr; All quotes</button>
+        <div class="qb-bar-title"><h1>${esc(docWord)} #${esc(num)}</h1>${doc ? qdocPill(status) : '<span class="ad-pill ad-pill-grey">New</span>'}</div>
+        <div class="qb-bar-spacer"></div>
+        ${link ? `<a class="ad-btn ad-btn-ghost" href="${attr(link)}" target="_blank" rel="noopener">Preview</a>` : ''}
+        <button type="button" class="ad-btn${doc ? '' : ' ad-btn-primary'}" id="q-save">Save</button>
+        ${doc ? `<button type="button" class="ad-btn ad-btn-primary" id="q-send">${status === 'draft' ? '&#9993; Send Quote' : '&#9993; Resend'}</button>` : ''}
+      </div>
+
+      <!-- the paper -->
+      <div class="qb-paper">
+
+        <div class="qb-lh">
+          <div class="qb-brand">
+            <img src="/images/logo.png" alt="SoundzGood" class="qb-logo">
+            <div class="qb-seller">
+              ABN 49 700 595 348<br>
+              Bowen, QLD 4805<br>
+              info@soundzgood.com.au<br>
+              www.soundzgood.com.au
+            </div>
+          </div>
+          <div class="qb-meta">
+            <p class="qb-tagline">Good People<br>Great Events</p>
+            <div class="qb-mgrid">
+              ${metaRow(docWord + ' number', `<strong>${esc(num)}</strong>`)}
+              ${metaRow('Status', doc ? qdocPill(status) : '<span class="ad-pill ad-pill-grey">Draft</span>')}
+              ${metaRow('Created', esc(created))}
+              ${metaRow('Event / Job', `<input class="qb-min" data-qc="eventName" value="${attr(c.eventName)}" placeholder="Event name">`)}
+              ${metaRow('Event date', `<input class="qb-min" data-qc="eventDate" value="${attr(c.eventDate)}" placeholder="e.g. Sat 14 Mar">`)}
+              ${metaRow('Hire period', `<span class="qb-hp">${hirePeriod}</span>`)}
+              ${metaRow('Days charged', `<input class="qb-min qb-min-num" type="number" min="1" step="1" data-qh="days" value="${attr(h.days)}">`)}
+            </div>
+          </div>
+        </div>
+
+        <div class="qb-parties">
+          <div class="qb-to">
+            <p class="qb-block-h">${isInvoice ? 'Bill to' : 'Quote to'}</p>
+            <input class="qb-cin qb-cin-strong" data-qc="name" value="${attr(c.name)}" placeholder="Customer name">
+            <input class="qb-cin" data-qc="business" value="${attr(c.business)}" placeholder="Business (optional)">
+            <input class="qb-cin" data-qc="address" value="${attr(c.address)}" placeholder="Address">
+            <input class="qb-cin" data-qc="phone" value="${attr(c.phone)}" placeholder="Phone">
+            <input class="qb-cin" type="email" data-qc="email" value="${attr(c.email)}" placeholder="Email">
+          </div>
+          <div class="qb-hire">
+            <p class="qb-block-h">Hire period</p>
+            <label class="qb-dfield"><span>From</span><input class="qb-date" type="date" data-qh="startDate" value="${attr(h.startDate)}"></label>
+            <label class="qb-dfield"><span>To</span><input class="qb-date" type="date" data-qh="endDate" value="${attr(h.endDate)}"></label>
+          </div>
+        </div>
+
+        <div class="qb-lines-head">
+          <span class="qb-block-h">Line items</span>
+          <div class="qb-lines-tools">
+            <select id="q-add-inv" class="qb-search"><option value="">&#128269; Search inventory&hellip;</option>${invOpts}</select>
+            <button type="button" class="ad-btn ad-btn-small" id="q-add-custom">+ Custom item</button>
+            <button type="button" class="ad-btn ad-btn-small" id="q-add-discount">+ Discount</button>
+          </div>
+        </div>
+
+        <div class="qb-table">
+          <div class="qb-thead">
+            <span class="qb-c-desc">Item / Description</span>
+            <span class="qb-c-qty">Qty</span>
+            <span class="qb-c-rate">Day rate (ex GST)</span>
+            <span class="qb-c-days">Days</span>
+            <span class="qb-c-total">Total (ex GST)</span>
+            <span class="qb-c-x"></span>
+          </div>
+          <div class="qb-lines" id="q-lines"></div>
+        </div>
+
+        <div class="qb-foot">
+          <div class="qb-foot-notes">
+            <div class="qb-note-box">
+              <p class="qb-block-h">Notes to customer</p>
+              <textarea class="qb-note" rows="3" data-qmeta="notes" placeholder="Thanks for your enquiry. Looking forward to working with you!">${esc(quoteDraft.notes)}</textarea>
+            </div>
+            <div class="qb-note-box">
+              <p class="qb-block-h">Terms &amp; conditions</p>
+              <textarea class="qb-note" rows="3" data-qmeta="terms" placeholder="Quote valid for 30 days.&#10;Payment due on acceptance.&#10;All prices are in AUD and exclude GST.">${esc(quoteDraft.terms)}</textarea>
+            </div>
+          </div>
+          <div class="qb-summary" id="q-totals"></div>
         </div>
       </div>
 
-      <div class="q-grid">
-        <section class="ad-card ad-panel q-col">
-          <h2 class="q-h">Customer</h2>
-          <div class="inv-fgrid">
-            <label class="ad-field"><span>Name</span><input class="ad-input" data-qc="name" value="${attr(c.name)}"></label>
-            <label class="ad-field"><span>Business</span><input class="ad-input" data-qc="business" value="${attr(c.business)}"></label>
-            <label class="ad-field"><span>Email</span><input class="ad-input" type="email" data-qc="email" value="${attr(c.email)}"></label>
-            <label class="ad-field"><span>Phone</span><input class="ad-input" data-qc="phone" value="${attr(c.phone)}"></label>
-            <label class="ad-field inv-span2"><span>Address</span><input class="ad-input" data-qc="address" value="${attr(c.address)}"></label>
-            <label class="ad-field"><span>Event / job</span><input class="ad-input" data-qc="eventName" value="${attr(c.eventName)}"></label>
-            <label class="ad-field"><span>Event date</span><input class="ad-input" data-qc="eventDate" placeholder="e.g. Sat 14 Mar" value="${attr(c.eventDate)}"></label>
-          </div>
-
-          <h2 class="q-h">Hire period</h2>
-          <div class="inv-fgrid">
-            <label class="ad-field"><span>From</span><input class="ad-input" type="date" data-qh="startDate" value="${attr(quoteDraft.hire.startDate)}"></label>
-            <label class="ad-field"><span>To</span><input class="ad-input" type="date" data-qh="endDate" value="${attr(quoteDraft.hire.endDate)}"></label>
-            <label class="ad-field"><span>Days charged</span><input class="ad-input" type="number" min="1" step="1" data-qh="days" value="${attr(quoteDraft.hire.days)}"></label>
-          </div>
-        </section>
-
-        <section class="ad-card ad-panel q-col">
-          <h2 class="q-h">Line items</h2>
-          <div class="q-addbar">
-            <select id="q-add-inv" class="ad-select"><option value="">Add from inventory&hellip;</option>${invOpts}</select>
-            <button type="button" class="ad-btn ad-btn-small" id="q-add-custom">+ Custom line</button>
-            <button type="button" class="ad-btn ad-btn-small" id="q-add-discount">+ Discount</button>
-          </div>
-          <div class="q-lines" id="q-lines"></div>
-          <div class="q-totals" id="q-totals"></div>
-
-          <h2 class="q-h">Notes &amp; terms</h2>
-          <label class="ad-field"><span>Notes (shown to customer)</span>
-            <textarea class="ad-input" rows="2" data-qmeta="notes">${esc(quoteDraft.notes)}</textarea></label>
-          <label class="ad-field"><span>Terms</span>
-            <textarea class="ad-input" rows="2" data-qmeta="terms" placeholder="e.g. Quote valid 30 days. Bank transfer on acceptance.">${esc(quoteDraft.terms)}</textarea></label>
-        </section>
-      </div>
-
+      <!-- lifecycle strip (not part of the paper) -->
       ${doc ? `
-      <section class="ad-card ad-panel q-actions">
-        <div class="q-actions-row">
-          <button type="button" class="ad-btn" id="q-send">${status === 'draft' ? 'Send to customer' : 'Resend link'}</button>
+      <section class="qb-lifecycle">
+        <div class="qb-life-row">
           ${status !== 'accepted' && status !== 'paid' ? '<button type="button" class="ad-btn" id="q-accept">Mark accepted</button>' : ''}
           ${doc.kind !== 'invoice' ? '<button type="button" class="ad-btn" id="q-invoice">Convert to invoice</button>' : ''}
           ${doc.kind === 'invoice' && status !== 'paid' ? '<button type="button" class="ad-btn" id="q-paid">Mark paid</button>' : ''}
-          <button type="button" class="ad-btn inv-del" id="q-cancel">Cancel quote</button>
+          <button type="button" class="ad-btn inv-del" id="q-cancel">Cancel</button>
           <span class="ad-quote-msg" id="q-msg"></span>
         </div>
         ${link ? `<div class="q-link"><span>Customer link</span>
           <input class="ad-input" id="q-link" readonly value="${attr(link)}">
-          <button type="button" class="ad-btn ad-btn-small" id="q-copy">Copy</button>
-          <a class="ad-btn ad-btn-small" href="${attr(link)}" target="_blank" rel="noopener">View</a></div>` : ''}
-      </section>` : '<p class="q-savefirst">Save the quote to send it, get its link, or turn it into an invoice.</p>'}
+          <button type="button" class="ad-btn ad-btn-small" id="q-copy">Copy</button></div>` : ''}
+      </section>` : '<p class="q-savefirst">Save the quote to send it, get its link, or turn it into an invoice. <span id="q-msg" class="ad-quote-msg"></span></p>'}
     </div>`;
 }
 
@@ -5548,32 +5593,57 @@ function renderQuoteLines() {
   const days = Math.max(1, Math.round(quoteDraft.hire.days || 1));
 
   if (!quoteDraft.lines.length) {
-    host.innerHTML = '<p class="q-lines-empty">No lines yet &mdash; add gear from inventory, a custom line, or a discount.</p>';
+    host.innerHTML = '<p class="q-lines-empty">No items yet &mdash; search inventory above, or add a custom item.</p>';
     renderQuoteTotals();
     return;
   }
 
   host.innerHTML = quoteDraft.lines.map((l, i) => {
-    const isDisc = l.type === 'discount';
-    const isMulti = (l.type === 'item' || l.type === 'kit');
-    const tag = l.type === 'kit' ? '<span class="q-line-tag">kit</span>'
-      : (l.type === 'discount' ? '<span class="q-line-tag q-tag-disc">discount</span>'
-      : (l.type === 'custom' ? '<span class="q-line-tag">custom</span>' : ''));
+    if (l.type === 'discount') {
+      const val = l.amountCents ? l.amountCents / 100 : '';
+      return `
+        <div class="qb-row qb-row-disc" data-ql="${i}">
+          <div class="qb-cell qb-c-desc">
+            <span class="qb-disc-badge">Discount</span>
+            <input class="qb-name" data-lf="name" value="${attr(l.name)}" placeholder="Discount">
+          </div>
+          <div class="qb-cell qb-c-qty">&mdash;</div>
+          <div class="qb-cell qb-c-rate">&mdash;</div>
+          <div class="qb-cell qb-c-days">&mdash;</div>
+          <div class="qb-cell qb-c-total qb-total">&minus;<span class="qb-inline-dollar">$</span><input class="qb-num qb-num-total" type="number" min="0" step="1" data-lf="amountCents" value="${attr(val)}"></div>
+          <div class="qb-cell qb-c-x"><button type="button" class="qb-del" data-ql-del title="Remove">&times;</button></div>
+        </div>`;
+    }
+
+    // Kit / required lines render as a read-only sub-row grouped under the item above.
+    if (l.type === 'kit') {
+      const prevWasKit = i > 0 && quoteDraft.lines[i - 1].type === 'kit';
+      const header = prevWasKit ? '' : '<div class="qb-subhead">Included / required items</div>';
+      const free = l.charge === 'free' || !l.unitCents;
+      return `${header}
+        <div class="qb-row qb-row-sub" data-ql="${i}">
+          <div class="qb-cell qb-c-desc"><span class="qb-arrow">&#8627;</span><span class="qb-subname">${esc(l.name)}</span></div>
+          <div class="qb-cell qb-c-qty">${esc(l.qty)}</div>
+          <div class="qb-cell qb-c-rate">${free ? '<span class="qb-incl">Included</span>' : money(l.unitCents)}</div>
+          <div class="qb-cell qb-c-days">${free ? '&mdash;' : esc(Math.max(1, Math.round(l.days || days)))}</div>
+          <div class="qb-cell qb-c-total">${free ? '&mdash;' : money(quoteLineCents(l, days))}</div>
+          <div class="qb-cell qb-c-x"><button type="button" class="qb-del" data-ql-del title="Remove">&times;</button></div>
+        </div>`;
+    }
+
+    // Editable item / custom line.
+    const rate = l.unitCents ? l.unitCents / 100 : '';
     return `
-      <div class="q-line" data-ql="${i}">
-        <button type="button" class="inv-req-del" data-ql-del title="Remove">&times;</button>
-        <div class="q-line-main">
-          <input class="ad-input q-line-name" data-lf="name" value="${attr(l.name)}" placeholder="Description">
-          ${tag}
+      <div class="qb-row" data-ql="${i}">
+        <div class="qb-cell qb-c-desc">
+          <input class="qb-name" data-lf="name" value="${attr(l.name)}" placeholder="Item name">
+          ${l.description ? `<span class="qb-sub">${esc(l.description)}</span>` : ''}
         </div>
-        <div class="q-line-nums">
-          ${isDisc
-            ? `<label class="q-nf"><span>Amount $</span><input class="ad-input" type="number" min="0" step="1" data-lf="amountCents" value="${attr(l.amountCents ? l.amountCents / 100 : '')}"></label>`
-            : `<label class="q-nf"><span>Qty</span><input class="ad-input" type="number" min="0" step="1" data-lf="qty" value="${attr(l.qty)}"></label>
-               <label class="q-nf"><span>Unit $</span><input class="ad-input" type="number" min="0" step="1" data-lf="unitCents" value="${attr(l.unitCents ? l.unitCents / 100 : '')}"></label>
-               ${isMulti ? `<label class="q-nf"><span>Extra day $</span><input class="ad-input" type="number" min="0" step="1" data-lf="extraDayCents" value="${attr(l.extraDayCents ? l.extraDayCents / 100 : '')}"></label>` : ''}`}
-          <span class="q-line-total">${esc(money(quoteLineCents(l, days)))}</span>
-        </div>
+        <div class="qb-cell qb-c-qty"><input class="qb-num" type="number" min="0" step="1" data-lf="qty" value="${attr(l.qty)}"></div>
+        <div class="qb-cell qb-c-rate"><span class="qb-inline-dollar">$</span><input class="qb-num" type="number" min="0" step="1" data-lf="unitCents" value="${attr(rate)}"></div>
+        <div class="qb-cell qb-c-days"><input class="qb-num" type="number" min="1" step="1" data-lf="days" value="${attr(Math.max(1, Math.round(l.days || days)))}"></div>
+        <div class="qb-cell qb-c-total qb-total"><span class="q-line-total">${esc(money(quoteLineCents(l, days)))}</span></div>
+        <div class="qb-cell qb-c-x"><button type="button" class="qb-del" data-ql-del title="Remove">&times;</button></div>
       </div>`;
   }).join('');
   renderQuoteTotals();
@@ -5583,12 +5653,12 @@ function renderQuoteTotals() {
   const host = document.getElementById('q-totals');
   if (!host) return;
   const m = quoteDraftMoney(quoteDraft);
-  const row = (k, v, cls) => `<div class="q-total-row ${cls || ''}"><span>${esc(k)}</span><span>${esc(v)}</span></div>`;
+  const row = (k, v, cls) => `<div class="qb-sumrow ${cls || ''}"><span>${esc(k)}</span><span>${esc(v)}</span></div>`;
   host.innerHTML =
     row('Subtotal (ex GST)', money(m.subtotalCents))
     + (m.discountCents ? row('Discount', '−' + money(m.discountCents)) : '')
     + row('GST (10%)', money(m.gstCents))
-    + row('Total (incl GST)', money(m.totalCents), 'q-total-grand');
+    + row('Total (incl GST)', money(m.totalCents), 'qb-sumgrand');
 }
 
 function addInvLineToQuote(itemId) {
@@ -5601,18 +5671,17 @@ function addInvLineToQuote(itemId) {
 
   quoteDraft.lines.push({
     type: 'item', itemId: it.id, name: it.name, description: it.subtitle || '',
-    qty: 1, unitCents: it.priceCents || 0, extraDayCents: it.extraDayCents || 0, days,
+    qty: 1, unitCents: it.priceCents || 0, days,
   });
 
   // Auto-add the required kit for one of these.
   const kit = expandKit({ [it.id]: 1 }, byId);
   kit.required.forEach((r) => {
-    const kitItem = byId[r.itemId] || {};
-    const multi = r.charge === 'normal';
+    const charged = r.charge === 'normal';
     quoteDraft.lines.push({
       type: 'kit', itemId: r.itemId, name: r.name + (r.charge === 'free' ? ' (included)' : ''),
-      qty: r.qty, unitCents: r.unitCents, charge: r.charge,
-      days: multi ? days : 1, extraDayCents: multi ? (kitItem.extraDayCents || 0) : 0,
+      qty: r.qty, unitCents: charged ? r.unitCents : 0, charge: r.charge,
+      days: charged ? days : 1,
     });
   });
 
@@ -5651,6 +5720,7 @@ function wireQuoteBuilder() {
       const f = t.dataset.lf;
       if (f === 'amountCents' || f === 'unitCents' || f === 'extraDayCents') l[f] = Math.max(0, Math.round(Number(t.value || 0) * 100));
       else if (f === 'qty') l.qty = Math.max(0, Math.round(Number(t.value || 0)));
+      else if (f === 'days') l.days = Math.max(1, Math.round(Number(t.value || 1)));
       else l[f] = t.value;
       // update just this line's total + the grand totals, without a full re-render
       const tot = line.querySelector('.q-line-total');

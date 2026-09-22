@@ -7,7 +7,7 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=137';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=138';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -55,9 +55,8 @@ function lineAmount(l, days) {
   if (l.type === 'discount') return -Math.max(0, Math.round(l.amountCents || 0));
   const qty = Math.max(0, Math.round(l.qty || 0));
   const unit = Math.max(0, Math.round(l.unitCents || 0));
-  const multi = (l.type === 'item' || l.type === 'kit');
-  const per = multi ? unit + Math.max(0, Math.round(l.extraDayCents || 0)) * Math.max(0, Math.round(l.days || days) - 1) : unit;
-  return qty * per;
+  const d = Math.max(1, Math.round(l.days || days));
+  return qty * unit * d;   // quantity x day rate x number of days
 }
 
 function fmtDate(secs) {
@@ -76,14 +75,15 @@ function render(q) {
   const rows = (q.lines || []).map((l) => {
     const amt = lineAmount(l, days);
     const isDisc = l.type === 'discount';
-    const perNote = (l.type === 'item' || l.type === 'kit') && multiDay
-      ? `<span class="qv-perday">${money(l.unitCents)}/day${l.extraDayCents ? ' + ' + money(l.extraDayCents) + ' extra day' : ''}</span>` : '';
+    const lineDays = Math.max(1, Math.round(l.days || days));
+    const free = l.type === 'kit' && (l.charge === 'free' || !l.unitCents);
     return `
       <tr${isDisc ? ' class="qv-row-disc"' : ''}>
-        <td class="qv-desc">${esc(l.name || '')}${l.description ? `<span class="qv-sub">${esc(l.description)}</span>` : ''}${perNote}</td>
+        <td class="qv-desc">${esc(l.name || '')}${l.description ? `<span class="qv-sub">${esc(l.description)}</span>` : ''}</td>
         <td class="qv-num">${isDisc ? '' : esc(l.qty)}</td>
-        <td class="qv-num">${isDisc ? '' : money(l.unitCents)}</td>
-        <td class="qv-num">${money(amt)}</td>
+        <td class="qv-num">${isDisc ? '' : (free ? '<span class="qv-incl">Included</span>' : money(l.unitCents))}</td>
+        <td class="qv-num">${isDisc || free ? '' : esc(lineDays)}</td>
+        <td class="qv-num">${free ? '' : money(amt)}</td>
       </tr>`;
   }).join('');
 
@@ -135,8 +135,8 @@ function render(q) {
       </div>
 
       <table class="qv-table">
-        <thead><tr><th>Description</th><th class="qv-num">Qty</th><th class="qv-num">Unit</th><th class="qv-num">Amount</th></tr></thead>
-        <tbody>${rows || '<tr><td colspan="4" class="qv-sub">No items.</td></tr>'}</tbody>
+        <thead><tr><th>Description</th><th class="qv-num">Qty</th><th class="qv-num">Day rate</th><th class="qv-num">Days</th><th class="qv-num">Amount</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="5" class="qv-sub">No items.</td></tr>'}</tbody>
       </table>
 
       <div class="qv-summary">

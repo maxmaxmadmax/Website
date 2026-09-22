@@ -2621,11 +2621,9 @@ function quoteMoney(quote) {
     if (l.type === 'discount') { discount += Math.max(0, Math.round(l.amountCents || 0)); return; }
     const qty = Math.max(0, Math.round(l.qty || 0));
     const unit = Math.max(0, Math.round(l.unitCents || 0));
-    const multiDay = (l.type === 'item' || l.type === 'kit');
-    const perUnit = multiDay
-      ? unit + Math.max(0, Math.round(l.extraDayCents || 0)) * Math.max(0, Math.round(l.days || days) - 1)
-      : unit;
-    subtotal += qty * perUnit;
+    const lineDays = Math.max(1, Math.round(l.days || days));
+    // quantity x day rate x number of days
+    subtotal += qty * unit * lineDays;
   });
   const net = Math.max(0, subtotal - discount);
   const gst = Math.round(net * 0.10);
