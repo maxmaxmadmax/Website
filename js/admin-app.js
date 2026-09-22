@@ -33,7 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=133';
+} from './firebase-config.js?v=134';
+
+import { expandKit } from './kit.js?v=134';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -4239,11 +4241,63 @@ function invItem(raw) {
     repairFault: r.repairFault || '',
     repairWith: r.repairWith || '',
     repairDue: r.repairDue || '',
+    requirements: (Array.isArray(r.requirements) ? r.requirements : []).map(normalizeReq),
     order: invNum(r.order, 0),
   };
 }
 
 function invItems() { return invModelRaw().map(invItem); }
+
+/* -------------------------------------------------------------------------
+   Item requirements  -  the gear an item needs (see js/kit.js for the maths)
+   ------------------------------------------------------------------------- */
+function normalizeReq(r) {
+  r = r || {};
+  const rule = r.rule === 'shared' ? 'shared' : 'per-item';
+  const charge = ['normal', 'discounted', 'free'].includes(r.charge) ? r.charge : 'normal';
+  return {
+    itemId: String(r.itemId || ''),
+    rule,
+    qty: Math.max(rule === 'shared' ? 1 : 0, Math.round(invNum(r.qty, 1))),
+    coversN: Math.max(1, Math.round(invNum(r.coversN, 1))),
+    charge,
+    discountCents: Math.max(0, Math.round(invNum(r.discountCents, 0))),
+  };
+}
+
+/*  The working copy of the open item's requirements, edited in the panel and
+    written back on save. Kept off the item so a live snapshot cannot wipe an
+    edit in progress (same reason as the pending photo).                    */
+let invReqDraft = [];
+function initInvReqDraft(item) {
+  invReqDraft = (item && Array.isArray(item.requirements) ? item.requirements : [])
+    .map(normalizeReq);
+}
+
+/*  Every OTHER item, for the "required item" dropdown - an item cannot
+    require itself.                                                         */
+function invReqOptions(excludeId) {
+  return invItems()
+    .filter((it) => it.id && it.id !== excludeId && it.name)
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+}
+
+/*  itemsById for the kit engine, with the item being edited overlaid with
+    the in-progress draft (and given a temp id when it is brand new).      */
+function invKitIndex(editId, editName) {
+  const byId = {};
+  invItems().forEach((it) => { byId[it.id] = it; });
+  const id = editId && editId !== '__new__' ? editId : '__preview__';
+  byId[id] = {
+    id,
+    name: editName || (byId[editId] && byId[editId].name) || 'This item',
+    priceCents: (byId[editId] && byId[editId].priceCents) || 0,
+    quantityAvailable: byId[editId] ? byId[editId].quantityAvailable : Infinity,
+    quantityTotal: byId[editId] ? byId[editId].quantityTotal : Infinity,
+    requirements: invReqDraft,
+  };
+  return { byId, id };
+}
 
 /*  Category pills get a stable colour from the category name, so "Audio" is
     always the same blue without a hard-coded list.                        */
@@ -4638,6 +4692,17 @@ function invDetail() {
           </div>
         </div>
 
+        <div class="inv-detail-section inv-reqs">
+          <div class="inv-reqs-head">
+            <h3>Item requirements</h3>
+            <button type="button" class="ad-btn ad-btn-small inv-reqs-add" id="inv-req-add">+ Add requirement</button>
+          </div>
+          <p class="inv-reqs-intro">Gear this item needs to work. When it&rsquo;s hired,
+             these come too &mdash; and their own requirements follow automatically.</p>
+          <div class="inv-reqs-list" id="inv-reqs-list"></div>
+          <div class="inv-reqs-preview" id="inv-reqs-preview"></div>
+        </div>
+
         <label class="inv-toggle">
           <span>
             <strong>Available for quotes</strong>
@@ -4670,7 +4735,9 @@ function wireInventory() {
   if (!wrap) return;
 
   const add = document.getElementById('inv-add');
-  if (add) add.addEventListener('click', () => { clearPendingPhoto(); state.openInvId = '__new__'; render(); });
+  if (add) add.addEventListener('click', () => {
+    clearPendingPhoto(); initInvReqDraft(null); state.openInvId = '__new__'; render();
+  });
 
   const search = document.getElementById('inv-search');
   if (search) {
@@ -4715,7 +4782,12 @@ function wireInventory() {
     const openBtn = e.target.closest('[data-inv-open]');
     const id = openBtn ? openBtn.getAttribute('data-inv-open')
       : (row ? row.getAttribute('data-inv') : null);
-    if (id) { clearPendingPhoto(); state.openInvId = id; render(); }
+    if (id) {
+      clearPendingPhoto();
+      initInvReqDraft((state.inventory || []).find((x) => x.id === id));
+      state.openInvId = id;
+      render();
+    }
   });
 
   wireInvDetail();
@@ -4742,6 +4814,8 @@ function wireInvDetail() {
 
   const del = document.getElementById('inv-delete');
   if (del) del.addEventListener('click', () => deleteInvItem(del));
+
+  wireInvReqs();
 
   /*  Keep the "On hire (worked out)" number live as the quantities change,
       so the split is obvious before saving: on hire = owned - available -
@@ -4965,6 +5039,9 @@ async function saveInvItem(btn) {
     powerDraw: String(get('powerDraw') || '').trim().slice(0, 100),
     included: String(get('included') || '').trim().slice(0, 2000),
     inBot: !!get('inBot'),
+    // Requirements come from their own draft, not the field grid. Drop any
+    // half-added row that never got an item chosen.
+    requirements: invReqDraft.map(normalizeReq).filter((r) => r.itemId).slice(0, 40),
   };
 
   if (msg) { msg.textContent = 'Saving…'; msg.className = 'ad-quote-msg'; }
@@ -5022,4 +5099,169 @@ async function deleteInvItem(btn) {
     const msg = document.getElementById('inv-msg');
     if (msg) { msg.textContent = err.message || 'Could not delete.'; msg.className = 'ad-quote-msg is-bad'; }
   }
+}
+
+
+/* -------------------------------------------------------------------------
+   Item requirements  -  the detail-panel editor + live kit preview
+   ------------------------------------------------------------------------- */
+let invReqPreviewQty = 1;
+
+const invMoney = (c) => {
+  const n = Math.round(c || 0);
+  return '$' + (n / 100).toFixed(n % 100 ? 2 : 0);
+};
+
+function reqRowHtml(r, i, options) {
+  const itemOpts = options.map((o) =>
+    `<option value="${attr(o.id)}"${r.itemId === o.id ? ' selected' : ''}>${esc(o.name)}</option>`).join('');
+  const chargeOpts = [['normal', 'Normal price'], ['discounted', 'Discounted'], ['free', 'Included free']]
+    .map((c) => `<option value="${c[0]}"${r.charge === c[0] ? ' selected' : ''}>${c[1]}</option>`).join('');
+
+  const qtyFields = r.rule === 'shared'
+    ? `<label class="inv-req-f"><span>Qty</span>
+         <input class="ad-input" type="number" min="1" step="1" data-rf="qty" value="${attr(r.qty)}"></label>
+       <label class="inv-req-f"><span>Covers (units)</span>
+         <input class="ad-input" type="number" min="1" step="1" data-rf="coversN" value="${attr(r.coversN)}"></label>`
+    : `<label class="inv-req-f"><span>Qty per unit</span>
+         <input class="ad-input" type="number" min="0" step="1" data-rf="qty" value="${attr(r.qty)}"></label>`;
+
+  const discField = r.charge === 'discounted'
+    ? `<label class="inv-req-f"><span>Price $</span>
+         <input class="ad-input" type="number" min="0" step="1" data-rf="discountCents" value="${attr(r.discountCents ? r.discountCents / 100 : '')}"></label>`
+    : '';
+
+  return `
+    <div class="inv-req" data-i="${i}">
+      <button type="button" class="inv-req-del" data-req-del title="Remove">&times;</button>
+      <div class="inv-req-grid">
+        <label class="inv-req-f inv-req-item"><span>Required item</span>
+          <select class="ad-select" data-rf="itemId">
+            <option value="">Choose item&hellip;</option>${itemOpts}
+          </select></label>
+        <label class="inv-req-f"><span>How</span>
+          <select class="ad-select" data-rf="rule">
+            <option value="per-item"${r.rule === 'per-item' ? ' selected' : ''}>Per item</option>
+            <option value="shared"${r.rule === 'shared' ? ' selected' : ''}>Shared capacity</option>
+          </select></label>
+        ${qtyFields}
+        <label class="inv-req-f"><span>Charge</span>
+          <select class="ad-select" data-rf="charge">${chargeOpts}</select></label>
+        ${discField}
+      </div>
+    </div>`;
+}
+
+function renderInvReqs() {
+  const list = document.getElementById('inv-reqs-list');
+  if (!list) return;
+  const options = invReqOptions(state.openInvId);
+  list.innerHTML = invReqDraft.length
+    ? invReqDraft.map((r, i) => reqRowHtml(r, i, options)).join('')
+    : '<p class="inv-reqs-empty">No requirements yet &mdash; add the gear this item needs to work.</p>';
+  renderInvReqPreview();
+}
+
+/*  Live "what comes with it" preview, run through the same kit engine the
+    quotes and pick list will use.                                          */
+function renderInvReqPreview() {
+  const host = document.getElementById('inv-reqs-preview');
+  if (!host) return;
+
+  const nameEl = document.querySelector('.inv-detail [data-f="name"]');
+  const editName = nameEl ? nameEl.value : '';
+  const { byId, id } = invKitIndex(state.openInvId, editName);
+  const qty = Math.max(1, Math.round(invReqPreviewQty || 1));
+
+  const kit = expandKit({ [id]: qty }, byId);
+
+  const chargeLabel = (r) => r.charge === 'free' ? 'included free'
+    : (r.charge === 'discounted' ? invMoney(r.unitCents) + ' ea' : invMoney(r.unitCents) + ' ea');
+
+  const lines = kit.required.length
+    ? kit.required.map((r) =>
+        `<li><span class="inv-req-pv-qty">${esc(r.qty)}&times;</span> ${esc(r.name)}
+           <span class="inv-req-pv-charge">${chargeLabel(r)}</span></li>`).join('')
+    : '<li class="inv-reqs-empty">Nothing else needed.</li>';
+
+  const shorts = kit.shortages.length
+    ? `<p class="inv-reqs-short">&#9888; Short: ${kit.shortages.map((s) =>
+        `${esc(s.name)} needs ${s.needed}, ${s.available === Infinity ? '—' : s.available} available`)
+        .join('; ')}</p>`
+    : '';
+
+  host.innerHTML = `
+    <div class="inv-reqs-pv">
+      <p class="inv-reqs-pv-head">If you hire
+        <input class="ad-input inv-req-pv-num" type="number" id="inv-req-qty" min="1" step="1" value="${attr(qty)}">
+        of this, the kit adds:</p>
+      <ul class="inv-reqs-pv-list">${lines}</ul>
+      <p class="inv-reqs-pv-total">${kit.addCents ? 'Adds ' + invMoney(kit.addCents) : 'No extra charge'}</p>
+      ${shorts}
+    </div>`;
+}
+
+function applyReqField(r, f, val) {
+  if (f === 'discountCents') r.discountCents = Math.max(0, Math.round(Number(val || 0) * 100));
+  else if (f === 'qty') r.qty = Math.max(0, Math.round(Number(val || 0)));
+  else if (f === 'coversN') r.coversN = Math.max(1, Math.round(Number(val || 0)));
+  else r[f] = val;   // itemId, rule, charge
+}
+
+function wireInvReqs() {
+  const addBtn = document.getElementById('inv-req-add');
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      invReqDraft.push(normalizeReq({ itemId: '', rule: 'per-item', qty: 1, coversN: 1, charge: 'normal' }));
+      renderInvReqs();
+    });
+  }
+
+  const list = document.getElementById('inv-reqs-list');
+  if (list) {
+    list.addEventListener('change', (e) => {
+      const el = e.target.closest('[data-rf]');
+      const row = el && el.closest('.inv-req');
+      if (!row) return;
+      const i = Number(row.getAttribute('data-i'));
+      const r = invReqDraft[i];
+      if (!r) return;
+      const f = el.getAttribute('data-rf');
+      applyReqField(r, f, el.value);
+      if (f === 'rule' || f === 'charge') { invReqDraft[i] = normalizeReq(r); renderInvReqs(); }
+      else renderInvReqPreview();
+    });
+    list.addEventListener('input', (e) => {
+      const el = e.target.closest('[data-rf]');
+      const row = el && el.closest('.inv-req');
+      if (!row) return;
+      const f = el.getAttribute('data-rf');
+      if (f === 'rule' || f === 'charge' || f === 'itemId') return;   // selects handled on change
+      const i = Number(row.getAttribute('data-i'));
+      const r = invReqDraft[i];
+      if (!r) return;
+      applyReqField(r, f, el.value);
+      renderInvReqPreview();
+    });
+    list.addEventListener('click', (e) => {
+      const del = e.target.closest('[data-req-del]');
+      if (!del) return;
+      const row = del.closest('.inv-req');
+      invReqDraft.splice(Number(row.getAttribute('data-i')), 1);
+      renderInvReqs();
+    });
+  }
+
+  const preview = document.getElementById('inv-reqs-preview');
+  if (preview) {
+    preview.addEventListener('input', (e) => {
+      if (e.target.id === 'inv-req-qty') {
+        invReqPreviewQty = Math.max(1, Math.round(Number(e.target.value || 1)));
+        renderInvReqPreview();
+      }
+    });
+  }
+
+  invReqPreviewQty = 1;
+  renderInvReqs();
 }
