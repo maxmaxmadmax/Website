@@ -2436,8 +2436,10 @@ body.ad-fit .ad-main{ min-height:0; }
 .qb-lines-head{ display:flex; align-items:center; justify-content:space-between;
                 gap:12px; margin:26px 0 0; flex-wrap:wrap; }
 
-/* the table */
-.qb-table{ margin-top:10px; border:1px solid var(--ad-line); border-radius:10px; overflow:hidden; }
+/* the table - overflow visible so the search popup can spill above the add-row */
+.qb-table{ margin-top:10px; border:1px solid var(--ad-line); border-radius:10px; }
+.qb-thead{ border-radius:10px 10px 0 0; }
+.qb-addrow{ border-radius:0 0 10px 10px; }
 
 /* pinned bottom "add" row */
 .qb-addrow{ display:grid; grid-template-columns:var(--qb-cols); gap:8px;
@@ -2447,9 +2449,10 @@ body.ad-fit .ad-main{ min-height:0; }
 .qb-searchin{ width:100%; border:1px solid var(--ad-line); border-radius:8px; padding:9px 12px;
               font:inherit; font-size:.88rem; background:#fff; }
 .qb-searchin:focus{ outline:none; border-color:var(--ad-orange); box-shadow:0 0 0 3px var(--ad-orange-soft); }
-.qb-results{ position:absolute; left:0; right:0; top:calc(100% + 5px); z-index:30;
+/* opens UPWARD (bottom row of the table) so it never covers the notes/totals */
+.qb-results{ position:absolute; left:0; right:0; bottom:calc(100% + 6px); top:auto; z-index:40;
              background:#fff; border:1px solid var(--ad-line); border-radius:10px;
-             box-shadow:0 12px 30px rgba(20,22,30,.16); overflow:hidden; }
+             box-shadow:0 -10px 30px rgba(20,22,30,.18); overflow:hidden; }
 .qb-res{ display:flex; align-items:center; justify-content:space-between; gap:14px;
          padding:10px 14px; cursor:pointer; font-size:.88rem; }
 .qb-res + .qb-res{ border-top:1px solid var(--ad-line); }
