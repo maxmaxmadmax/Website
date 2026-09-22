@@ -2375,3 +2375,50 @@ body.ad-fit .ad-main{ min-height:0; }
 .inv-reqs-pv-total{ margin:10px 0 0; font-weight:700; font-size:.86rem; color:var(--ad-text); }
 .inv-reqs-short{ margin:8px 0 0; font-size:.8rem; font-weight:600; color:var(--ad-red);
                  background:var(--ad-red-bg); border-radius:8px; padding:7px 9px; }
+
+/* =========================================================================
+   QUOTES & INVOICES  -  the builder
+   ========================================================================= */
+.q-build-head{ display:flex; align-items:center; gap:14px; margin-bottom:16px; }
+.q-build-title{ display:flex; align-items:center; gap:10px; flex:1 1 auto; }
+.q-build-title h1{ margin:0; font-size:1.4rem; }
+.q-build-actions{ flex:0 0 auto; }
+
+.q-grid{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.3fr); gap:18px; align-items:start; }
+.q-col{ margin:0; }
+.q-h{ margin:18px 0 10px; font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ad-faint); }
+.q-h:first-child{ margin-top:0; }
+
+.q-addbar{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+.q-addbar .ad-select{ flex:1 1 200px; }
+
+.q-lines{ display:flex; flex-direction:column; gap:8px; }
+.q-lines-empty, .q-savefirst{ color:var(--ad-faint); font-size:.86rem; }
+.q-line{
+    position:relative; background:#fff; border:1px solid var(--ad-line);
+    border-radius:10px; padding:10px 34px 10px 12px;
+}
+.q-line-main{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.q-line-name{ flex:1 1 auto; }
+.q-line-tag{ flex:0 0 auto; font-size:.64rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+             background:var(--ad-grey-bg); color:var(--ad-muted); padding:2px 7px; border-radius:999px; }
+.q-tag-disc{ background:var(--ad-green-bg); color:var(--ad-green); }
+.q-line-nums{ display:flex; align-items:flex-end; gap:8px; flex-wrap:wrap; }
+.q-nf{ display:flex; flex-direction:column; gap:3px; }
+.q-nf > span{ font-size:.68rem; color:var(--ad-muted); font-weight:600; }
+.q-nf .ad-input{ width:88px; }
+.q-line-total{ margin-left:auto; font-weight:700; font-size:.95rem; white-space:nowrap; align-self:center; }
+
+.q-totals{ margin-top:14px; border-top:1px solid var(--ad-line); padding-top:12px; }
+.q-total-row{ display:flex; justify-content:space-between; font-size:.9rem; padding:4px 0; color:var(--ad-text); }
+.q-total-row span:first-child{ color:var(--ad-muted); }
+.q-total-grand{ border-top:2px solid var(--ad-text); margin-top:6px; padding-top:8px; font-weight:800; font-size:1.05rem; }
+.q-total-grand span:first-child{ color:var(--ad-text); }
+
+.q-actions{ margin-top:18px; }
+.q-actions-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.q-link{ display:flex; align-items:center; gap:8px; margin-top:14px; flex-wrap:wrap; }
+.q-link > span{ font-size:.72rem; font-weight:700; text-transform:uppercase; color:var(--ad-faint); }
+.q-link .ad-input{ flex:1 1 260px; min-width:0; }
+
+@media (max-width:1000px){ .q-grid{ grid-template-columns:1fr; } }

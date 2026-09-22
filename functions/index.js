@@ -24,6 +24,7 @@ const { getAuth } = require('firebase-admin/auth');
 const layout = require('./lib/layout');
 const { sendBookingEmails } = require('./lib/email');
 const { sendQuoteEmail } = require('./lib/quote-email');
+const { sendQuoteLinkEmail } = require('./lib/quote-doc-email');
 const {
   DEFAULT_QUOTE_PRICING, DEFAULT_INVENTORY, estimate: estimateQuote,
 } = require('./lib/quote-pricing');
@@ -2586,3 +2587,239 @@ exports.adminResendQuoteEmail = onCall(
     return mail;
   },
 );
+
+
+/* =========================================================================
+   QUOTES / INVOICES
+
+   One record moves Estimate -> Quote -> (customer accepts) -> Invoice.
+   Line items are stored explicitly (the admin builds them, the kit engine
+   having already expanded any required gear), so the server just validates
+   and sums them. Prices are EX-GST; GST is 10% on top.
+
+     adminSaveQuote        admin  - create/update, allocates SG-Q-#### + token
+     adminSetQuoteStatus   admin  - move it along (sent/accepted/invoiced/paid)
+     adminSendQuote        admin  - email the customer their link
+     getQuote              public - fetch a quote by its secret token
+     acceptQuote           public - customer accepts, by token
+
+   The docs stay admin-only in the rules; the public sees theirs only through
+   getQuote / acceptQuote, matched on an unguessable token.
+   ========================================================================= */
+
+const crypto = require('crypto');
+
+const QUOTE_DOC_STATES = ['draft', 'sent', 'accepted', 'declined', 'invoiced', 'paid', 'cancelled'];
+
+/*  Totals from the stored lines. Prices are ex-GST; discounts come off the
+    net; GST is 10% of the net; total is net + GST.                        */
+function quoteMoney(quote) {
+  const days = Math.max(1, Math.round((quote.hire && quote.hire.days) || 1));
+  let subtotal = 0;
+  let discount = 0;
+  (quote.lines || []).forEach((l) => {
+    if (l.type === 'discount') { discount += Math.max(0, Math.round(l.amountCents || 0)); return; }
+    const qty = Math.max(0, Math.round(l.qty || 0));
+    const unit = Math.max(0, Math.round(l.unitCents || 0));
+    const multiDay = (l.type === 'item' || l.type === 'kit');
+    const perUnit = multiDay
+      ? unit + Math.max(0, Math.round(l.extraDayCents || 0)) * Math.max(0, Math.round(l.days || days) - 1)
+      : unit;
+    subtotal += qty * perUnit;
+  });
+  const net = Math.max(0, subtotal - discount);
+  const gst = Math.round(net * 0.10);
+  return { subtotalCents: subtotal, discountCents: discount, netCents: net, gstCents: gst, totalCents: net + gst };
+}
+
+function sanitizeQuote(q) {
+  const text = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
+  const days = Math.max(1, Math.round(Number(q.hire && q.hire.days) || 1));
+
+  const customer = {
+    name: text(q.customer && q.customer.name, 120),
+    business: text(q.customer && q.customer.business, 120),
+    email: text(q.customer && q.customer.email, 200),
+    phone: text(q.customer && q.customer.phone, 40),
+    address: text(q.customer && q.customer.address, 300),
+    eventName: text(q.customer && q.customer.eventName, 160),
+    eventDate: text(q.customer && q.customer.eventDate, 60),
+  };
+  const hire = {
+    startDate: text(q.hire && q.hire.startDate, 40),
+    endDate: text(q.hire && q.hire.endDate, 40),
+    days,
+  };
+  const lines = (Array.isArray(q.lines) ? q.lines : []).slice(0, 200).map((l) => {
+    const type = ['item', 'kit', 'custom', 'discount'].includes(l.type) ? l.type : 'custom';
+    const line = {
+      type,
+      itemId: text(l.itemId, 60),
+      name: text(l.name, 200),
+      description: text(l.description, 500),
+      qty: type === 'discount' ? 1 : Math.max(0, Math.round(Number(l.qty) || 0)),
+      unitCents: type === 'discount' ? 0 : Math.max(0, Math.round(Number(l.unitCents) || 0)),
+      extraDayCents: Math.max(0, Math.round(Number(l.extraDayCents) || 0)),
+      days: Math.max(1, Math.round(Number(l.days) || days)),
+      amountCents: type === 'discount' ? Math.max(0, Math.round(Number(l.amountCents) || 0)) : 0,
+    };
+    if (['normal', 'discounted', 'free'].includes(l.charge)) line.charge = l.charge;
+    return line;
+  }).filter((l) => l.name || l.itemId);
+
+  const kind = ['estimate', 'quote', 'invoice'].includes(q.kind) ? q.kind : 'quote';
+  return {
+    customer, hire, lines, kind,
+    notes: text(q.notes, 3000),
+    terms: text(q.terms, 3000),
+  };
+}
+
+exports.adminSaveQuote = onCall(async (request) => {
+  requireAdmin(request);
+  const { id, quote } = request.data || {};
+  const clean = sanitizeQuote(quote || {});
+  const money = quoteMoney(clean);
+
+  if (id) {
+    const ref = db.collection('quotes').doc(String(id));
+    const snap = await ref.get();
+    if (!snap.exists) throw new HttpsError('not-found', 'No such quote.');
+    await ref.update({ ...clean, ...money, updatedAt: FieldValue.serverTimestamp() });
+    return { id: String(id), ...money };
+  }
+
+  // New: allocate a sequential number + an unguessable token.
+  const counterRef = db.collection('config').doc('counters');
+  const seq = await db.runTransaction(async (tx) => {
+    const c = await tx.get(counterRef);
+    const n = ((c.exists && c.data().quoteSeq) || 0) + 1;
+    tx.set(counterRef, { quoteSeq: n }, { merge: true });
+    return n;
+  });
+  const number = 'SG-Q-' + String(seq).padStart(4, '0');
+  const token = crypto.randomBytes(16).toString('hex');
+
+  const ref = await db.collection('quotes').add({
+    number, token, status: 'draft', ...clean, ...money,
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+    createdBy: (request.auth.token && request.auth.token.email) || request.auth.uid,
+  });
+  return { id: ref.id, number, token, ...money };
+});
+
+exports.adminSetQuoteStatus = onCall(async (request) => {
+  requireAdmin(request);
+  const { id, status } = request.data || {};
+  if (!QUOTE_DOC_STATES.includes(status)) throw new HttpsError('invalid-argument', 'Bad status.');
+
+  const ref = db.collection('quotes').doc(String(id || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'No such quote.');
+
+  const update = { status, updatedAt: FieldValue.serverTimestamp() };
+  const stamp = {
+    sent: 'sentAt', accepted: 'acceptedAt', declined: 'declinedAt',
+    invoiced: 'invoicedAt', paid: 'paidAt', cancelled: 'cancelledAt',
+  };
+  if (stamp[status]) update[stamp[status]] = FieldValue.serverTimestamp();
+
+  if (status === 'invoiced') {
+    update.kind = 'invoice';
+    if (!snap.data().invoiceNumber) {
+      const counterRef = db.collection('config').doc('counters');
+      const n = await db.runTransaction(async (tx) => {
+        const c = await tx.get(counterRef);
+        const s = ((c.exists && c.data().invoiceSeq) || 0) + 1;
+        tx.set(counterRef, { invoiceSeq: s }, { merge: true });
+        return s;
+      });
+      update.invoiceNumber = 'SG-I-' + String(n).padStart(4, '0');
+    }
+  }
+
+  await ref.update(update);
+  return { ok: true, invoiceNumber: update.invoiceNumber || snap.data().invoiceNumber || '' };
+});
+
+exports.adminSendQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  requireAdmin(request);
+  const { id } = request.data || {};
+  const ref = db.collection('quotes').doc(String(id || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'No such quote.');
+  const q = snap.data();
+  if (!(q.customer && q.customer.email)) {
+    throw new HttpsError('failed-precondition', 'Add a customer email first.');
+  }
+
+  const link = SITE_URL + '/quote?t=' + q.token;
+  const mail = await sendQuoteLinkEmail(q, link);
+
+  const update = { updatedAt: FieldValue.serverTimestamp() };
+  if (mail.sent && q.status === 'draft') {
+    update.status = 'sent';
+    update.sentAt = FieldValue.serverTimestamp();
+  }
+  await ref.update(update);
+  return mail;
+});
+
+/*  PUBLIC - fetch a quote by its token. Returns a customer-safe subset; the
+    doc itself stays closed to browsers.                                    */
+exports.getQuote = onCall(async (request) => {
+  const token = String((request.data || {}).token || '').trim();
+  if (!/^[a-f0-9]{20,40}$/.test(token)) throw new HttpsError('invalid-argument', 'That link is not valid.');
+
+  const snap = await db.collection('quotes').where('token', '==', token).limit(1).get();
+  if (snap.empty) throw new HttpsError('not-found', 'That link is not valid.');
+  const q = snap.docs[0].data();
+  if (q.status === 'cancelled') throw new HttpsError('failed-precondition', 'This quote is no longer available.');
+
+  const secs = (t) => (t && t.seconds != null ? t.seconds : null);
+  return {
+    number: q.number,
+    invoiceNumber: q.invoiceNumber || '',
+    kind: q.kind || 'quote',
+    status: q.status,
+    customer: q.customer || {},
+    hire: q.hire || {},
+    lines: q.lines || [],
+    notes: q.notes || '',
+    terms: q.terms || '',
+    subtotalCents: q.subtotalCents || 0,
+    discountCents: q.discountCents || 0,
+    gstCents: q.gstCents || 0,
+    totalCents: q.totalCents || 0,
+    acceptedName: q.acceptedName || '',
+    acceptedAt: secs(q.acceptedAt),
+    createdAt: secs(q.createdAt),
+  };
+});
+
+/*  PUBLIC - the customer accepts, by token. Idempotent once accepted.     */
+exports.acceptQuote = onCall(async (request) => {
+  const data = request.data || {};
+  const token = String(data.token || '').trim();
+  const name = String(data.name || '').trim().slice(0, 120);
+  if (!/^[a-f0-9]{20,40}$/.test(token)) throw new HttpsError('invalid-argument', 'That link is not valid.');
+
+  const snap = await db.collection('quotes').where('token', '==', token).limit(1).get();
+  if (snap.empty) throw new HttpsError('not-found', 'That link is not valid.');
+  const doc = snap.docs[0];
+  const q = doc.data();
+
+  if (q.status === 'accepted') return { ok: true, already: true };
+  if (!['draft', 'sent'].includes(q.status)) {
+    throw new HttpsError('failed-precondition', 'This quote can no longer be accepted.');
+  }
+
+  await doc.ref.update({
+    status: 'accepted',
+    acceptedName: name,
+    acceptedAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+  return { ok: true };
+});

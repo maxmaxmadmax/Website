@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=134';
+} from './firebase-config.js?v=135';
 
-import { expandKit } from './kit.js?v=134';
+import { expandKit } from './kit.js?v=135';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -102,6 +102,12 @@ const state = {
   invFilter: { search: '', category: 'all', location: 'all', status: 'all' },
   invPage: 1,
   invSort: { key: '', dir: 'asc' },                 // '' = default (category, then name)
+
+  /*  Quotes / invoices. quoteDocs streams in live; openQuoteId is null on
+      the list, an id (or '__new__') when the builder is open.            */
+  quoteDocs: [],
+  openQuoteId: null,
+  quoteDocFilter: 'all',
 };
 
 let fb = null;
@@ -137,6 +143,7 @@ async function init() {
     subscribeToEvent();
     subscribeToQuoteLeads();
     subscribeToInventory();
+    subscribeToQuoteDocs();
     loadQuotePricing();
     routeFromHash();
   });
@@ -328,7 +335,8 @@ function wireChrome() {
    Routing
    ------------------------------------------------------------------------- */
 const BUILT = ['events', 'vendors', 'applications', 'map', 'entertainment',
-               'settings', 'vendorEmail', 'quotes', 'inventory', 'botSettings'];
+               'settings', 'vendorEmail', 'quotes', 'inventory', 'botSettings',
+               'quoteDocs'];
 
 /*  Vendors is where the work is, so it is what you land on. */
 const HOME = 'vendors';
@@ -476,6 +484,22 @@ function subscribeToInventory() {
       }
     },
     (err) => console.error('inventory', err)
+  ));
+}
+
+/*  Quotes / invoices, live. Only re-render the list when it is on screen;
+    while the builder is open the draft is edited off to the side, so a
+    snapshot must not repaint over it.                                     */
+function subscribeToQuoteDocs() {
+  const { collection, onSnapshot, query, orderBy } = fb.f;
+  unsubscribes.push(onSnapshot(
+    query(collection(fb.db, 'quotes'), orderBy('createdAt', 'desc')),
+    (snap) => {
+      state.quoteDocs = [];
+      snap.forEach((d) => state.quoteDocs.push({ id: d.id, ...d.data() }));
+      if (state.view === 'quoteDocs' && !state.openQuoteId) render();
+    },
+    (err) => console.error('quotes', err)
   ));
 }
 
@@ -5264,4 +5288,470 @@ function wireInvReqs() {
 
   invReqPreviewQty = 1;
   renderInvReqs();
+}
+
+
+/* =========================================================================
+   QUOTES & INVOICES  -  the admin builder
+
+   List of quotes, and a builder for one: customer, hire dates, line items
+   (from inventory with the kit engine auto-adding required gear, plus custom
+   lines and discounts), live totals (ex-GST, +10% GST), and the actions to
+   save, email the link, accept, invoice and mark paid.
+   ========================================================================= */
+
+function blankQuote() {
+  return {
+    kind: 'quote',
+    customer: { name: '', business: '', email: '', phone: '', address: '', eventName: '', eventDate: '' },
+    hire: { startDate: '', endDate: '', days: 1 },
+    lines: [],
+    notes: '',
+    terms: '',
+  };
+}
+
+let quoteDraft = blankQuote();
+
+const QDOC_STATUS = {
+  draft:     ['ad-pill-grey',  'Draft'],
+  sent:      ['ad-pill-blue',  'Sent'],
+  accepted:  ['ad-pill-green', 'Accepted'],
+  declined:  ['ad-pill-red',   'Declined'],
+  invoiced:  ['ad-pill-amber', 'Invoiced'],
+  paid:      ['ad-pill-green', 'Paid'],
+  cancelled: ['ad-pill-grey',  'Cancelled'],
+};
+function qdocPill(s) { const [c, l] = QDOC_STATUS[s] || QDOC_STATUS.draft; return `<span class="ad-pill ${c}">${esc(l)}</span>`; }
+
+/*  Totals - mirror of quoteMoney() in functions/index.js. Prices ex-GST,
+    discounts off the net, GST 10% on top.                                 */
+function quoteDraftMoney(d) {
+  const days = Math.max(1, Math.round((d.hire && d.hire.days) || 1));
+  let subtotal = 0; let discount = 0;
+  (d.lines || []).forEach((l) => {
+    if (l.type === 'discount') { discount += Math.max(0, Math.round(l.amountCents || 0)); return; }
+    const qty = Math.max(0, Math.round(l.qty || 0));
+    const unit = Math.max(0, Math.round(l.unitCents || 0));
+    const multi = (l.type === 'item' || l.type === 'kit');
+    const per = multi
+      ? unit + Math.max(0, Math.round(l.extraDayCents || 0)) * Math.max(0, Math.round(l.days || days) - 1)
+      : unit;
+    subtotal += qty * per;
+  });
+  const net = Math.max(0, subtotal - discount);
+  const gst = Math.round(net * 0.10);
+  return { subtotalCents: subtotal, discountCents: discount, netCents: net, gstCents: gst, totalCents: net + gst };
+}
+
+function quoteLineCents(l, days) {
+  if (l.type === 'discount') return -Math.max(0, Math.round(l.amountCents || 0));
+  const qty = Math.max(0, Math.round(l.qty || 0));
+  const unit = Math.max(0, Math.round(l.unitCents || 0));
+  const multi = (l.type === 'item' || l.type === 'kit');
+  const per = multi
+    ? unit + Math.max(0, Math.round(l.extraDayCents || 0)) * Math.max(0, Math.round(l.days || days) - 1)
+    : unit;
+  return qty * per;
+}
+
+VIEWS.quoteDocs = {
+  html() { return state.openQuoteId ? quoteBuilderHtml() : quoteListHtml(); },
+  wire() { if (state.openQuoteId) wireQuoteBuilder(); else wireQuoteList(); },
+};
+
+/* -------------------------------------------------------------------------
+   List
+   ------------------------------------------------------------------------- */
+function quoteListHtml() {
+  const f = state.quoteDocFilter;
+  const opt = (v, l) => `<option value="${v}"${f === v ? ' selected' : ''}>${l}</option>`;
+  return `
+    <div class="ad-mail-head-row">
+      <span class="ad-mail-icon" aria-hidden="true">&#128196;</span>
+      <div class="ad-mail-title">
+        <h1>Quotes &amp; Invoices</h1>
+        <p>Build a quote, send it for the customer to accept, then turn it into an invoice.</p>
+      </div>
+      <div class="ad-mail-status">
+        <button type="button" class="ad-btn ad-btn-primary" id="q-new">+ New quote</button>
+      </div>
+    </div>
+
+    <section class="ad-card ad-panel">
+      <header class="ad-panel-head">
+        <div><h2>All quotes</h2><p class="ad-panel-sub">Newest first.</p></div>
+        <select id="q-filter" class="ad-select" aria-label="Filter by status">
+          ${opt('all', 'All statuses')}${opt('draft', 'Draft')}${opt('sent', 'Sent')}
+          ${opt('accepted', 'Accepted')}${opt('invoiced', 'Invoiced')}${opt('paid', 'Paid')}
+        </select>
+      </header>
+      <div class="ad-table-wrap">
+        <table class="ad-table">
+          <thead><tr><th>Number</th><th>Customer</th><th>Event</th>
+            <th class="inv-num">Total</th><th>Status</th><th>Date</th><th></th></tr></thead>
+          <tbody id="q-rows"></tbody>
+        </table>
+      </div>
+    </section>`;
+}
+
+function quoteDocsFiltered() {
+  const f = state.quoteDocFilter;
+  return (state.quoteDocs || []).filter((q) => f === 'all' || q.status === f);
+}
+
+function renderQuoteRows() {
+  const host = document.getElementById('q-rows');
+  if (!host) return;
+  const rows = quoteDocsFiltered();
+  if (!rows.length) {
+    host.innerHTML = '<tr><td colspan="7" class="ad-cell-muted">No quotes yet. Hit &ldquo;New quote&rdquo; to start one.</td></tr>';
+    return;
+  }
+  host.innerHTML = rows.map((q) => {
+    const num = q.kind === 'invoice' && q.invoiceNumber ? q.invoiceNumber : q.number;
+    const c = q.customer || {};
+    return `
+      <tr class="ad-quote-row" data-open-q="${attr(q.id)}">
+        <td class="ad-cell-strong">${esc(num || '')}</td>
+        <td>${esc(c.name || c.business || '')}</td>
+        <td>${esc(c.eventName || '—')}</td>
+        <td class="inv-num">${esc(money(q.totalCents))}</td>
+        <td>${qdocPill(q.status)}</td>
+        <td class="ad-cell-muted">${esc(dateShort(q.createdAt))}</td>
+        <td class="ad-cell-right"><span class="ad-quote-caret">&#8250;</span></td>
+      </tr>`;
+  }).join('');
+}
+
+function wireQuoteList() {
+  renderQuoteRows();
+  const nw = document.getElementById('q-new');
+  if (nw) nw.addEventListener('click', () => { quoteDraft = blankQuote(); state.openQuoteId = '__new__'; render(); });
+  const filter = document.getElementById('q-filter');
+  if (filter) filter.addEventListener('change', () => { state.quoteDocFilter = filter.value; renderQuoteRows(); });
+  const rows = document.getElementById('q-rows');
+  if (rows) rows.addEventListener('click', (e) => {
+    const r = e.target.closest('[data-open-q]');
+    if (!r) return;
+    const id = r.getAttribute('data-open-q');
+    const doc = (state.quoteDocs || []).find((x) => x.id === id);
+    quoteDraft = doc ? quoteFromDoc(doc) : blankQuote();
+    state.openQuoteId = id;
+    render();
+  });
+}
+
+function quoteFromDoc(doc) {
+  return {
+    kind: doc.kind || 'quote',
+    customer: { ...blankQuote().customer, ...(doc.customer || {}) },
+    hire: { ...blankQuote().hire, ...(doc.hire || {}) },
+    lines: (doc.lines || []).map((l) => ({ ...l })),
+    notes: doc.notes || '',
+    terms: doc.terms || '',
+  };
+}
+
+/* -------------------------------------------------------------------------
+   Builder
+   ------------------------------------------------------------------------- */
+function currentQuoteDoc() {
+  return (state.quoteDocs || []).find((x) => x.id === state.openQuoteId) || null;
+}
+
+function quoteBuilderHtml() {
+  const isNew = state.openQuoteId === '__new__';
+  const doc = currentQuoteDoc();
+  const status = doc ? doc.status : 'draft';
+  const num = doc ? (doc.kind === 'invoice' && doc.invoiceNumber ? doc.invoiceNumber : doc.number) : 'New quote';
+  const c = quoteDraft.customer;
+
+  const invOpts = (typeof invItems === 'function' ? invItems() : [])
+    .filter((it) => it.id && it.name)
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+    .map((it) => `<option value="${attr(it.id)}">${esc(it.name)} &middot; ${esc(money(it.priceCents))}/day</option>`).join('');
+
+  const link = doc && doc.token ? (window.location.origin + '/quote?t=' + doc.token) : '';
+
+  return `
+    <div class="q-build">
+      <div class="q-build-head">
+        <button type="button" class="ad-btn ad-btn-small" id="q-back">&larr; All quotes</button>
+        <div class="q-build-title"><h1>${esc(num)}</h1>${doc ? qdocPill(status) : ''}</div>
+        <div class="q-build-actions">
+          <button type="button" class="ad-btn ad-btn-primary" id="q-save">Save</button>
+        </div>
+      </div>
+
+      <div class="q-grid">
+        <section class="ad-card ad-panel q-col">
+          <h2 class="q-h">Customer</h2>
+          <div class="inv-fgrid">
+            <label class="ad-field"><span>Name</span><input class="ad-input" data-qc="name" value="${attr(c.name)}"></label>
+            <label class="ad-field"><span>Business</span><input class="ad-input" data-qc="business" value="${attr(c.business)}"></label>
+            <label class="ad-field"><span>Email</span><input class="ad-input" type="email" data-qc="email" value="${attr(c.email)}"></label>
+            <label class="ad-field"><span>Phone</span><input class="ad-input" data-qc="phone" value="${attr(c.phone)}"></label>
+            <label class="ad-field inv-span2"><span>Address</span><input class="ad-input" data-qc="address" value="${attr(c.address)}"></label>
+            <label class="ad-field"><span>Event / job</span><input class="ad-input" data-qc="eventName" value="${attr(c.eventName)}"></label>
+            <label class="ad-field"><span>Event date</span><input class="ad-input" data-qc="eventDate" placeholder="e.g. Sat 14 Mar" value="${attr(c.eventDate)}"></label>
+          </div>
+
+          <h2 class="q-h">Hire period</h2>
+          <div class="inv-fgrid">
+            <label class="ad-field"><span>From</span><input class="ad-input" type="date" data-qh="startDate" value="${attr(quoteDraft.hire.startDate)}"></label>
+            <label class="ad-field"><span>To</span><input class="ad-input" type="date" data-qh="endDate" value="${attr(quoteDraft.hire.endDate)}"></label>
+            <label class="ad-field"><span>Days charged</span><input class="ad-input" type="number" min="1" step="1" data-qh="days" value="${attr(quoteDraft.hire.days)}"></label>
+          </div>
+        </section>
+
+        <section class="ad-card ad-panel q-col">
+          <h2 class="q-h">Line items</h2>
+          <div class="q-addbar">
+            <select id="q-add-inv" class="ad-select"><option value="">Add from inventory&hellip;</option>${invOpts}</select>
+            <button type="button" class="ad-btn ad-btn-small" id="q-add-custom">+ Custom line</button>
+            <button type="button" class="ad-btn ad-btn-small" id="q-add-discount">+ Discount</button>
+          </div>
+          <div class="q-lines" id="q-lines"></div>
+          <div class="q-totals" id="q-totals"></div>
+
+          <h2 class="q-h">Notes &amp; terms</h2>
+          <label class="ad-field"><span>Notes (shown to customer)</span>
+            <textarea class="ad-input" rows="2" data-qmeta="notes">${esc(quoteDraft.notes)}</textarea></label>
+          <label class="ad-field"><span>Terms</span>
+            <textarea class="ad-input" rows="2" data-qmeta="terms" placeholder="e.g. Quote valid 30 days. Bank transfer on acceptance.">${esc(quoteDraft.terms)}</textarea></label>
+        </section>
+      </div>
+
+      ${doc ? `
+      <section class="ad-card ad-panel q-actions">
+        <div class="q-actions-row">
+          <button type="button" class="ad-btn" id="q-send">${status === 'draft' ? 'Send to customer' : 'Resend link'}</button>
+          ${status !== 'accepted' && status !== 'paid' ? '<button type="button" class="ad-btn" id="q-accept">Mark accepted</button>' : ''}
+          ${doc.kind !== 'invoice' ? '<button type="button" class="ad-btn" id="q-invoice">Convert to invoice</button>' : ''}
+          ${doc.kind === 'invoice' && status !== 'paid' ? '<button type="button" class="ad-btn" id="q-paid">Mark paid</button>' : ''}
+          <button type="button" class="ad-btn inv-del" id="q-cancel">Cancel quote</button>
+          <span class="ad-quote-msg" id="q-msg"></span>
+        </div>
+        ${link ? `<div class="q-link"><span>Customer link</span>
+          <input class="ad-input" id="q-link" readonly value="${attr(link)}">
+          <button type="button" class="ad-btn ad-btn-small" id="q-copy">Copy</button>
+          <a class="ad-btn ad-btn-small" href="${attr(link)}" target="_blank" rel="noopener">View</a></div>` : ''}
+      </section>` : '<p class="q-savefirst">Save the quote to send it, get its link, or turn it into an invoice.</p>'}
+    </div>`;
+}
+
+function renderQuoteLines() {
+  const host = document.getElementById('q-lines');
+  if (!host) return;
+  const days = Math.max(1, Math.round(quoteDraft.hire.days || 1));
+
+  if (!quoteDraft.lines.length) {
+    host.innerHTML = '<p class="q-lines-empty">No lines yet &mdash; add gear from inventory, a custom line, or a discount.</p>';
+    renderQuoteTotals();
+    return;
+  }
+
+  host.innerHTML = quoteDraft.lines.map((l, i) => {
+    const isDisc = l.type === 'discount';
+    const isMulti = (l.type === 'item' || l.type === 'kit');
+    const tag = l.type === 'kit' ? '<span class="q-line-tag">kit</span>'
+      : (l.type === 'discount' ? '<span class="q-line-tag q-tag-disc">discount</span>'
+      : (l.type === 'custom' ? '<span class="q-line-tag">custom</span>' : ''));
+    return `
+      <div class="q-line" data-ql="${i}">
+        <button type="button" class="inv-req-del" data-ql-del title="Remove">&times;</button>
+        <div class="q-line-main">
+          <input class="ad-input q-line-name" data-lf="name" value="${attr(l.name)}" placeholder="Description">
+          ${tag}
+        </div>
+        <div class="q-line-nums">
+          ${isDisc
+            ? `<label class="q-nf"><span>Amount $</span><input class="ad-input" type="number" min="0" step="1" data-lf="amountCents" value="${attr(l.amountCents ? l.amountCents / 100 : '')}"></label>`
+            : `<label class="q-nf"><span>Qty</span><input class="ad-input" type="number" min="0" step="1" data-lf="qty" value="${attr(l.qty)}"></label>
+               <label class="q-nf"><span>Unit $</span><input class="ad-input" type="number" min="0" step="1" data-lf="unitCents" value="${attr(l.unitCents ? l.unitCents / 100 : '')}"></label>
+               ${isMulti ? `<label class="q-nf"><span>Extra day $</span><input class="ad-input" type="number" min="0" step="1" data-lf="extraDayCents" value="${attr(l.extraDayCents ? l.extraDayCents / 100 : '')}"></label>` : ''}`}
+          <span class="q-line-total">${esc(money(quoteLineCents(l, days)))}</span>
+        </div>
+      </div>`;
+  }).join('');
+  renderQuoteTotals();
+}
+
+function renderQuoteTotals() {
+  const host = document.getElementById('q-totals');
+  if (!host) return;
+  const m = quoteDraftMoney(quoteDraft);
+  const row = (k, v, cls) => `<div class="q-total-row ${cls || ''}"><span>${esc(k)}</span><span>${esc(v)}</span></div>`;
+  host.innerHTML =
+    row('Subtotal (ex GST)', money(m.subtotalCents))
+    + (m.discountCents ? row('Discount', '−' + money(m.discountCents)) : '')
+    + row('GST (10%)', money(m.gstCents))
+    + row('Total (incl GST)', money(m.totalCents), 'q-total-grand');
+}
+
+function addInvLineToQuote(itemId) {
+  const items = typeof invItems === 'function' ? invItems() : [];
+  const byId = {};
+  items.forEach((it) => { byId[it.id] = it; });
+  const it = byId[itemId];
+  if (!it) return;
+  const days = Math.max(1, Math.round(quoteDraft.hire.days || 1));
+
+  quoteDraft.lines.push({
+    type: 'item', itemId: it.id, name: it.name, description: it.subtitle || '',
+    qty: 1, unitCents: it.priceCents || 0, extraDayCents: it.extraDayCents || 0, days,
+  });
+
+  // Auto-add the required kit for one of these.
+  const kit = expandKit({ [it.id]: 1 }, byId);
+  kit.required.forEach((r) => {
+    const kitItem = byId[r.itemId] || {};
+    const multi = r.charge === 'normal';
+    quoteDraft.lines.push({
+      type: 'kit', itemId: r.itemId, name: r.name + (r.charge === 'free' ? ' (included)' : ''),
+      qty: r.qty, unitCents: r.unitCents, charge: r.charge,
+      days: multi ? days : 1, extraDayCents: multi ? (kitItem.extraDayCents || 0) : 0,
+    });
+  });
+
+  renderQuoteLines();
+}
+
+function wireQuoteBuilder() {
+  renderQuoteLines();
+
+  const wrap = document.querySelector('.q-build');
+  if (!wrap) return;
+
+  const back = document.getElementById('q-back');
+  if (back) back.addEventListener('click', () => { state.openQuoteId = null; render(); });
+
+  // customer / hire / meta fields
+  wrap.addEventListener('input', (e) => {
+    const t = e.target;
+    if (t.dataset.qc) { quoteDraft.customer[t.dataset.qc] = t.value; return; }
+    if (t.dataset.qmeta) { quoteDraft[t.dataset.qmeta] = t.value; return; }
+    if (t.dataset.qh) {
+      if (t.dataset.qh === 'days') quoteDraft.hire.days = Math.max(1, Math.round(Number(t.value) || 1));
+      else {
+        quoteDraft.hire[t.dataset.qh] = t.value;
+        const d = daysBetween(quoteDraft.hire.startDate, quoteDraft.hire.endDate);
+        if (d) { quoteDraft.hire.days = d; const di = wrap.querySelector('[data-qh="days"]'); if (di) di.value = d; }
+      }
+      renderQuoteLines();   // days affect multi-day line totals
+      return;
+    }
+    // line fields
+    const line = t.closest('[data-ql]');
+    if (line && t.dataset.lf) {
+      const i = Number(line.getAttribute('data-ql'));
+      const l = quoteDraft.lines[i]; if (!l) return;
+      const f = t.dataset.lf;
+      if (f === 'amountCents' || f === 'unitCents' || f === 'extraDayCents') l[f] = Math.max(0, Math.round(Number(t.value || 0) * 100));
+      else if (f === 'qty') l.qty = Math.max(0, Math.round(Number(t.value || 0)));
+      else l[f] = t.value;
+      // update just this line's total + the grand totals, without a full re-render
+      const tot = line.querySelector('.q-line-total');
+      if (tot) tot.textContent = money(quoteLineCents(l, Math.max(1, Math.round(quoteDraft.hire.days || 1))));
+      renderQuoteTotals();
+    }
+  });
+
+  // add buttons
+  const addInv = document.getElementById('q-add-inv');
+  if (addInv) addInv.addEventListener('change', () => { if (addInv.value) { addInvLineToQuote(addInv.value); addInv.value = ''; } });
+  const addCustom = document.getElementById('q-add-custom');
+  if (addCustom) addCustom.addEventListener('click', () => { quoteDraft.lines.push({ type: 'custom', name: '', qty: 1, unitCents: 0 }); renderQuoteLines(); });
+  const addDisc = document.getElementById('q-add-discount');
+  if (addDisc) addDisc.addEventListener('click', () => { quoteDraft.lines.push({ type: 'discount', name: 'Discount', amountCents: 0 }); renderQuoteLines(); });
+
+  // remove line
+  const lines = document.getElementById('q-lines');
+  if (lines) lines.addEventListener('click', (e) => {
+    const del = e.target.closest('[data-ql-del]');
+    if (!del) return;
+    const i = Number(del.closest('[data-ql]').getAttribute('data-ql'));
+    quoteDraft.lines.splice(i, 1);
+    renderQuoteLines();
+  });
+
+  const save = document.getElementById('q-save');
+  if (save) save.addEventListener('click', () => saveQuoteDoc(save));
+
+  wireQuoteActions();
+}
+
+function wireQuoteActions() {
+  const msg = () => document.getElementById('q-msg');
+  const run = async (name, data, ok) => {
+    const m = msg(); if (m) { m.textContent = 'Working…'; m.className = 'ad-quote-msg'; }
+    try { const res = await call(name, data); if (m) { m.textContent = ok || 'Done.'; m.className = 'ad-quote-msg is-ok'; } return res; }
+    catch (err) { if (m) { m.textContent = err.message || 'Failed.'; m.className = 'ad-quote-msg is-bad'; } throw err; }
+  };
+
+  const send = document.getElementById('q-send');
+  if (send) send.addEventListener('click', async () => {
+    await saveQuoteDoc(send, true);
+    if (state.openQuoteId === '__new__') return;
+    try {
+      const res = await run('adminSendQuote', { id: state.openQuoteId }, 'Sent to the customer.');
+      if (res && !res.sent) { const m = msg(); if (m) { m.textContent = 'Not sent: ' + (res.error || res.reason || 'unknown'); m.className = 'ad-quote-msg is-bad'; } }
+      render();
+    } catch (e) { /* message shown */ }
+  });
+
+  const accept = document.getElementById('q-accept');
+  if (accept) accept.addEventListener('click', async () => { try { await run('adminSetQuoteStatus', { id: state.openQuoteId, status: 'accepted' }, 'Marked accepted.'); render(); } catch (e) {} });
+
+  const invoice = document.getElementById('q-invoice');
+  if (invoice) invoice.addEventListener('click', async () => { try { await run('adminSetQuoteStatus', { id: state.openQuoteId, status: 'invoiced' }, 'Converted to invoice.'); render(); } catch (e) {} });
+
+  const paid = document.getElementById('q-paid');
+  if (paid) paid.addEventListener('click', async () => { try { await run('adminSetQuoteStatus', { id: state.openQuoteId, status: 'paid' }, 'Marked paid.'); render(); } catch (e) {} });
+
+  const cancel = document.getElementById('q-cancel');
+  if (cancel) cancel.addEventListener('click', async () => {
+    if (!window.confirm('Cancel this quote? The customer link will stop working.')) return;
+    try { await run('adminSetQuoteStatus', { id: state.openQuoteId, status: 'cancelled' }, 'Cancelled.'); state.openQuoteId = null; render(); } catch (e) {}
+  });
+
+  const copy = document.getElementById('q-copy');
+  if (copy) copy.addEventListener('click', () => {
+    const el = document.getElementById('q-link');
+    if (el) { el.select(); try { document.execCommand('copy'); copy.textContent = 'Copied'; setTimeout(() => { copy.textContent = 'Copy'; }, 1500); } catch (e) {} }
+  });
+}
+
+async function saveQuoteDoc(btn, quiet) {
+  const m = document.getElementById('q-msg');
+  if (btn) btn.disabled = true;
+  try {
+    const id = state.openQuoteId === '__new__' ? null : state.openQuoteId;
+    const res = await call('adminSaveQuote', { id, quote: quoteDraft });
+    if (res && res.id) state.openQuoteId = res.id;
+    if (!quiet) {
+      if (m) { m.textContent = 'Saved.'; m.className = 'ad-quote-msg is-ok'; }
+      render();   // repaint so the number, link and actions appear
+      const m2 = document.getElementById('q-msg'); if (m2) { m2.textContent = 'Saved.'; m2.className = 'ad-quote-msg is-ok'; }
+    }
+    return res;
+  } catch (err) {
+    if (m) { m.textContent = err.message || 'Could not save.'; m.className = 'ad-quote-msg is-bad'; }
+    throw err;
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+/*  Whole days between two yyyy-mm-dd dates, inclusive (from a <input type=date>).
+    Returns 0 when either is missing or the range is backwards.            */
+function daysBetween(a, b) {
+  if (!a || !b) return 0;
+  const da = new Date(a + 'T00:00:00');
+  const db = new Date(b + 'T00:00:00');
+  if (isNaN(da) || isNaN(db)) return 0;
+  const diff = Math.round((db - da) / 86400000) + 1;
+  return diff > 0 ? diff : 0;
 }

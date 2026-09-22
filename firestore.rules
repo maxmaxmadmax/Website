@@ -203,6 +203,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    //  Quotes / invoices. A quote carries a customer's details, prices and a
+    //  secret token for its public link. Admins read and work them in the
+    //  desk; everything else goes through Cloud Functions - a customer views
+    //  and accepts theirs through getQuote / acceptQuote (Admin SDK, by
+    //  token), never by reading the collection. So it is closed to browsers.
+    match /quotes/{quoteId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // ---------------------------------------------------------------
     // Anything not named above is closed.
     // ---------------------------------------------------------------
