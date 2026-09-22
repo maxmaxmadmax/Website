@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=145';
+} from './firebase-config.js?v=146';
 
-import { expandKit } from './kit.js?v=145';
+import { expandKit } from './kit.js?v=146';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -120,6 +120,7 @@ const state = {
   resources: null,
   openResourceId: null,
   resFilter: 'all',
+  resSearch: '',
 };
 
 let fb = null;
@@ -6586,77 +6587,151 @@ VIEWS.resources = {
   wire() { if (state.openResourceId) wireResourceBuilder(); else wireResourceList(); },
 };
 
-/* ---- list ---- */
-function resourceListHtml() {
-  const rows = state.resources;
-  const header = `
-    <div class="ad-mail-head-row">
-      <span class="ad-mail-icon" aria-hidden="true">&#128666;</span>
-      <div class="ad-mail-title">
-        <h1>Crew &amp; Vehicles</h1>
-        <p>Your staff, vehicles and trailers. Each has a day rate, so it can be added to a quote as a billable line.</p>
-      </div>
-      <div class="ad-mail-status res-addbtns">
-        <button type="button" class="ad-btn ad-btn-small" data-res-new="staff">+ Staff</button>
-        <button type="button" class="ad-btn ad-btn-small" data-res-new="vehicle">+ Vehicle</button>
-        <button type="button" class="ad-btn ad-btn-small" data-res-new="trailer">+ Trailer</button>
-      </div>
-    </div>`;
+/* ---- list (built to match the Inventory manager) ---- */
+function resStats() {
+  const rows = state.resources || [];
+  const byType = (t) => rows.filter((r) => (r.type || 'staff') === t).length;
+  return { total: rows.length, staff: byType('staff'), vehicle: byType('vehicle'), trailer: byType('trailer') };
+}
 
-  if (rows == null) return header + '<p class="ad-loading">Loading…</p>';
-  if (!rows.length) {
-    return header + `
-      <section class="ad-card ad-panel"><p class="ad-panel-sub">
-        Nothing here yet. Add your first staff member, vehicle or trailer with the buttons above.
-        Give each a day rate and you'll be able to drop it straight onto a quote.
-      </p></section>`;
-  }
-
-  return header + ['staff', 'vehicle', 'trailer'].map((t) => {
-    const inType = rows.filter((r) => (r.type || 'staff') === t);
-    if (!inType.length) return '';
-    return renderResGroup(RES_GROUP[t], t, inType);
-  }).join('');
+function resFiltered() {
+  const rows = state.resources || [];
+  const f = state.resFilter || 'all';
+  const needle = (state.resSearch || '').trim().toLowerCase();
+  return rows.filter((r) => {
+    if (f !== 'all' && (r.type || 'staff') !== f) return false;
+    if (!needle) return true;
+    return [r.name, r.role, r.rego, r.capacity, RES_TYPES[r.type]]
+      .filter(Boolean).join(' ').toLowerCase().includes(needle);
+  });
 }
 
 function resSub(r) {
-  if (r.type === 'staff') return [r.role, r.phone].filter(Boolean).join(' · ');
+  if ((r.type || 'staff') === 'staff') return [r.role, r.phone].filter(Boolean).join(' · ');
   return [r.rego, r.capacity].filter(Boolean).join(' · ');
 }
 
-function renderResGroup(title, type, list) {
-  const rows = list.map((r) => `
-    <tr class="ad-quote-row" data-open-res="${attr(r.id)}">
-      <td class="ad-cell-strong">${esc(r.name || 'Untitled')}</td>
-      <td class="ad-cell-muted">${esc(resSub(r) || '—')}</td>
-      <td class="inv-num">${esc(money(r.dayRateCents))}/day</td>
-      <td>${r.active === false ? '<span class="ad-pill ad-pill-grey">Off</span>' : '<span class="ad-pill ad-pill-green">Active</span>'}</td>
-      <td class="ad-cell-right"><span class="ad-quote-caret">&#8250;</span></td>
-    </tr>`).join('');
+function resThumb(r) {
+  const letter = (r.name || RES_TYPES[r.type] || '?').trim().charAt(0).toUpperCase();
+  return `<span class="inv-thumb ${invCatClass(RES_TYPES[r.type] || '')}">${esc(letter)}</span>`;
+}
+
+const RES_TYPE_PILL = { staff: 'inv-st-green', vehicle: 'inv-st-blue', trailer: 'inv-st-amber' };
+function resTypePill(type) {
+  const t = RES_TYPES[type] ? type : 'staff';
+  return `<span class="inv-pill ${RES_TYPE_PILL[t]}">${esc(RES_TYPES[t])}</span>`;
+}
+function resActivePill(r) {
+  return r.active === false
+    ? '<span class="inv-pill inv-st-slate">Off</span>'
+    : '<span class="inv-pill inv-st-green">Active</span>';
+}
+
+function resourceListHtml() {
+  const rows = state.resources;
+  const s = resStats();
+  const f = state.resFilter;
+  const opt = (v, l) => `<option value="${v}"${f === v ? ' selected' : ''}>${l}</option>`;
+
   return `
-    <section class="ad-card ad-panel">
-      <header class="ad-panel-head"><div><h2>${esc(title)}</h2></div></header>
-      <div class="ad-table-wrap"><table class="ad-table">
-        <thead><tr><th>Name</th><th>${type === 'staff' ? 'Role · phone' : 'Rego · capacity'}</th>
-          <th class="inv-num">Day rate</th><th>Status</th><th></th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table></div>
-    </section>`;
+    <div class="inv-wrap">
+      <div class="inv-main">
+        <div class="inv-head">
+          <div class="inv-head-title">
+            <span class="ad-mail-icon" aria-hidden="true">&#128666;</span>
+            <div>
+              <h1>Crew &amp; Vehicles</h1>
+              <p>Your staff, vehicles and trailers. Each has a day rate, so it can be added to a quote as a billable line.</p>
+            </div>
+          </div>
+          <div class="inv-head-actions res-addbtns">
+            <button type="button" class="ad-btn ad-btn-small" data-res-new="staff">+ Staff</button>
+            <button type="button" class="ad-btn ad-btn-small" data-res-new="vehicle">+ Vehicle</button>
+            <button type="button" class="ad-btn ad-btn-primary" data-res-new="trailer">+ Trailer</button>
+          </div>
+        </div>
+
+        <div class="inv-tiles">
+          ${invTile('&#128100;', 'inv-t-green', s.staff, 'Staff', '')}
+          ${invTile('&#128666;', 'inv-t-blue', s.vehicle, 'Vehicles', '')}
+          ${invTile('&#128230;', 'inv-t-amber', s.trailer, 'Trailers', '')}
+          ${invTile('&#9776;', 'inv-t-slate', s.total, 'Total', '')}
+        </div>
+
+        <div class="inv-toolbar">
+          <input type="search" id="res-search" class="ad-search" placeholder="Search crew &amp; vehicles..."
+                 value="${attr(state.resSearch)}" aria-label="Search crew and vehicles">
+          <select id="res-f-type" class="ad-select" aria-label="Filter by type">
+            ${opt('all', 'All types')}${opt('staff', 'Staff')}${opt('vehicle', 'Vehicles')}${opt('trailer', 'Trailers')}
+          </select>
+        </div>
+
+        <div class="ad-table-wrap inv-table-wrap">
+          <table class="ad-table inv-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Details</th>
+                <th class="inv-num">Day rate</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="res-rows"></tbody>
+          </table>
+        </div>
+
+        <div class="inv-foot" id="res-foot"></div>
+      </div>
+    </div>`;
+}
+
+function renderResRows() {
+  const host = document.getElementById('res-rows');
+  const foot = document.getElementById('res-foot');
+  if (!host) return;
+  const rows = resFiltered();
+  host.innerHTML = rows.length ? rows.map((r) => `
+    <tr class="inv-row" data-open-res="${attr(r.id)}">
+      <td class="inv-item-cell">
+        ${resThumb(r)}
+        <span class="inv-item-text"><span class="inv-item-name">${esc(r.name || 'Untitled')}</span></span>
+      </td>
+      <td>${resTypePill(r.type)}</td>
+      <td>${resSub(r) ? esc(resSub(r)) : '<span class="ad-cell-muted">—</span>'}</td>
+      <td class="inv-num">${esc(money(r.dayRateCents))}<span class="inv-perday">/day</span></td>
+      <td>${resActivePill(r)}</td>
+      <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-open-res="${attr(r.id)}" aria-label="Edit">&#8250;</button></td>
+    </tr>`).join('')
+    : `<tr><td colspan="6" class="ad-cell-muted">No records match. Try clearing the search, or add one above.</td></tr>`;
+  if (foot) foot.innerHTML = `<p class="inv-foot-count">${rows.length} record${rows.length === 1 ? '' : 's'}</p>`;
 }
 
 function wireResourceList() {
+  renderResRows();
+
   document.querySelectorAll('[data-res-new]').forEach((b) => b.addEventListener('click', () => {
     resourceDraft = blankResource(b.getAttribute('data-res-new'));
     state.openResourceId = '__new__';
     render();
   }));
-  document.querySelectorAll('[data-open-res]').forEach((r) => r.addEventListener('click', () => {
+
+  const search = document.getElementById('res-search');
+  if (search) search.addEventListener('input', () => { state.resSearch = search.value; renderResRows(); });
+  const typeSel = document.getElementById('res-f-type');
+  if (typeSel) typeSel.addEventListener('change', () => { state.resFilter = typeSel.value; renderResRows(); });
+
+  const host = document.getElementById('res-rows');
+  if (host) host.addEventListener('click', (e) => {
+    const r = e.target.closest('[data-open-res]');
+    if (!r) return;
     const id = r.getAttribute('data-open-res');
     const doc = (state.resources || []).find((x) => x.id === id);
     resourceDraft = doc ? resourceFromDoc(doc) : blankResource();
     state.openResourceId = id;
     render();
-  }));
+  });
 }
 
 function resourceFromDoc(doc) {
