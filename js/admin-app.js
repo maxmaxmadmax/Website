@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=143';
+} from './firebase-config.js?v=144';
 
-import { expandKit } from './kit.js?v=143';
+import { expandKit } from './kit.js?v=144';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -477,10 +477,14 @@ function subscribeToInventory() {
     (snap) => {
       const items = [];
       snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+      //  Category first, then A-Z by name within it. Names starting with a
+      //  letter come before ones starting with a number/symbol (so "A…"
+      //  beats "18…"), matching the column-sort behaviour.
+      const nameRank = (s) => (/^\s*[a-z]/i.test(s || '') ? 0 : 1);
       items.sort((a, b) =>
         (a.category || '').localeCompare(b.category || '')
-        || (a.order || 0) - (b.order || 0)
-        || (a.name || '').localeCompare(b.name || ''));
+        || nameRank(a.name) - nameRank(b.name)
+        || (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }));
       state.inventory = items;
       /*  Never rebuild the whole view while a detail panel is open - that
           would wipe whatever the user is part-way through typing. Refresh
