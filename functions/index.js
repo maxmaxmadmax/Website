@@ -2616,7 +2616,7 @@ const QUOTE_DOC_STATES = ['draft', 'sent', 'accepted', 'declined', 'invoiced', '
 function quoteMoney(quote) {
   const days = Math.max(1, Math.round((quote.hire && quote.hire.days) || 1));
   let subtotal = 0;
-  let discount = 0;
+  let discount = Math.max(0, Math.round(quote.discountCents || 0));   // discount off the whole total
   (quote.lines || []).forEach((l) => {
     if (l.type === 'discount') { discount += Math.max(0, Math.round(l.amountCents || 0)); return; }
     const qty = Math.max(0, Math.round(l.qty || 0));
@@ -2668,6 +2668,7 @@ function sanitizeQuote(q) {
   const kind = ['estimate', 'quote', 'invoice'].includes(q.kind) ? q.kind : 'quote';
   return {
     customer, hire, lines, kind,
+    discountCents: Math.max(0, Math.round(Number(q.discountCents) || 0)),
     notes: text(q.notes, 3000),
     terms: text(q.terms, 3000),
   };

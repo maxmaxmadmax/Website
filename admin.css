@@ -2526,6 +2526,9 @@ body.ad-fit .ad-main{ min-height:0; }
 .qb-sumgrand{ border-top:2px solid var(--ad-text); margin-top:6px; padding-top:10px;
               font-weight:800; font-size:1.15rem; }
 .qb-sumgrand span:first-child{ color:var(--ad-text); }
+.qb-sumdisc{ align-items:center; }
+.qb-discinput{ display:inline-flex; align-items:center; gap:1px; color:var(--ad-green); }
+.qb-discinput .qb-num-total{ max-width:78px; color:var(--ad-text); font-weight:600; background:#fff; }
 
 /* lifecycle strip below the paper */
 .qb-lifecycle{ margin-top:18px; background:var(--ad-card); border:1px solid var(--ad-line);

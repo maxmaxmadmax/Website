@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=140';
+} from './firebase-config.js?v=141';
 
-import { expandKit } from './kit.js?v=140';
+import { expandKit } from './kit.js?v=141';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5306,6 +5306,7 @@ function blankQuote() {
     customer: { name: '', business: '', email: '', phone: '', address: '', eventName: '', eventDate: '' },
     hire: { startDate: '', endDate: '', days: 1 },
     lines: [],
+    discountCents: 0,
     notes: '',
     terms: '',
   };
@@ -5328,7 +5329,8 @@ function qdocPill(s) { const [c, l] = QDOC_STATUS[s] || QDOC_STATUS.draft; retur
     discounts off the net, GST 10% on top.                                 */
 function quoteDraftMoney(d) {
   const docDays = Math.max(1, Math.round((d.hire && d.hire.days) || 1));
-  let subtotal = 0; let discount = 0;
+  let subtotal = 0;
+  let discount = Math.max(0, Math.round(d.discountCents || 0));   // discount off the whole total
   (d.lines || []).forEach((l) => {
     if (l.type === 'discount') { discount += Math.max(0, Math.round(l.amountCents || 0)); return; }
     subtotal += quoteLineCents(l, docDays);
@@ -5443,6 +5445,7 @@ function quoteFromDoc(doc) {
     customer: { ...blankQuote().customer, ...(doc.customer || {}) },
     hire: { ...blankQuote().hire, ...(doc.hire || {}) },
     lines: (doc.lines || []).map((l) => ({ ...l })),
+    discountCents: Math.max(0, Math.round(doc.discountCents || 0)),
     notes: doc.notes || '',
     terms: doc.terms || '',
   };
@@ -5561,7 +5564,6 @@ function quoteBuilderHtml() {
                 <div class="qb-results" id="q-inv-results" hidden></div>
               </div>
               <button type="button" class="ad-btn ad-btn-small" id="q-add-custom">+ Custom item</button>
-              <button type="button" class="ad-btn ad-btn-small" id="q-add-discount">+ Discount</button>
             </div>
           </div>
         </div>
@@ -5667,12 +5669,23 @@ function renderQuoteTotals() {
   const host = document.getElementById('q-totals');
   if (!host) return;
   const m = quoteDraftMoney(quoteDraft);
-  const row = (k, v, cls) => `<div class="qb-sumrow ${cls || ''}"><span>${esc(k)}</span><span>${esc(v)}</span></div>`;
-  host.innerHTML =
-    row('Subtotal (ex GST)', money(m.subtotalCents))
-    + (m.discountCents ? row('Discount', '−' + money(m.discountCents)) : '')
-    + row('GST (10%)', money(m.gstCents))
-    + row('Total (incl GST)', money(m.totalCents), 'qb-sumgrand');
+  const discVal = quoteDraft.discountCents ? quoteDraft.discountCents / 100 : '';
+  host.innerHTML = `
+    <div class="qb-sumrow"><span>Subtotal (ex GST)</span><span id="qsum-sub">${esc(money(m.subtotalCents))}</span></div>
+    <div class="qb-sumrow qb-sumdisc"><span>Discount</span>
+      <span class="qb-discinput">&minus;<span class="qb-inline-dollar">$</span><input class="qb-num qb-num-total" type="number" min="0" step="1" data-qdisc value="${attr(discVal)}" placeholder="0"></span></div>
+    <div class="qb-sumrow"><span>GST (10%)</span><span id="qsum-gst">${esc(money(m.gstCents))}</span></div>
+    <div class="qb-sumrow qb-sumgrand"><span>Total (incl GST)</span><span id="qsum-total">${esc(money(m.totalCents))}</span></div>`;
+}
+
+/*  Update just the computed figures (used while typing in the discount box,
+    so the input keeps focus instead of being rebuilt out from under you).  */
+function updateQuoteTotalsValues() {
+  const m = quoteDraftMoney(quoteDraft);
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('qsum-sub', money(m.subtotalCents));
+  set('qsum-gst', money(m.gstCents));
+  set('qsum-total', money(m.totalCents));
 }
 
 function addInvLineToQuote(itemId) {
@@ -5875,6 +5888,11 @@ function wireQuoteBuilder() {
     const t = e.target;
     if (t.dataset.qc) { quoteDraft.customer[t.dataset.qc] = t.value; return; }
     if (t.dataset.qmeta) { quoteDraft[t.dataset.qmeta] = t.value; return; }
+    if (t.hasAttribute('data-qdisc')) {
+      quoteDraft.discountCents = Math.max(0, Math.round(Number(t.value || 0) * 100));
+      updateQuoteTotalsValues();
+      return;
+    }
     if (t.dataset.qh) {
       if (t.dataset.qh === 'days') quoteDraft.hire.days = Math.max(1, Math.round(Number(t.value) || 1));
       else {
@@ -5906,8 +5924,6 @@ function wireQuoteBuilder() {
   const days0 = () => Math.max(1, Math.round(quoteDraft.hire.days || 1));
   const addCustom = document.getElementById('q-add-custom');
   if (addCustom) addCustom.addEventListener('click', () => { quoteDraft.lines.push({ type: 'custom', name: '', qty: 1, unitCents: 0, days: days0() }); renderQuoteLines(); });
-  const addDisc = document.getElementById('q-add-discount');
-  if (addDisc) addDisc.addEventListener('click', () => { quoteDraft.lines.push({ type: 'discount', name: 'Discount', amountCents: 0 }); renderQuoteLines(); });
 
   // inventory typeahead (top 3 as you type)
   wireInvTypeahead();
