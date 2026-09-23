@@ -21,13 +21,22 @@
 
 import {
   firebaseConfig, functionsRegion, isFirebaseConfigured,
-} from './firebase-config.js?v=153';
+} from './firebase-config.js?v=154';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
 /*  The bot no longer prices in the browser: all matching and pricing runs in
     the submitBotQuote function, so the page ships only the little UI below.  */
 const dollars = (cents) => '$' + Math.round((cents || 0) / 100).toLocaleString('en-AU');
+
+/*  The date input hands back yyyy-mm-dd; store it as a friendly string so it
+    reads well on the quote (e.g. "Sat 4 Apr 2027"). */
+function formatEventDate(s) {
+  if (!s) return '';
+  const d = new Date(s + 'T00:00:00');
+  if (isNaN(d)) return s;
+  return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
 
 function rangeLabel(est) {
   const lo = dollars(est.lowCents);
@@ -254,7 +263,7 @@ async function askContact() {
       </label>
       <label class="sgq-field">
         <span>Event date <em>(optional)</em></span>
-        <input type="text" name="eventDate" placeholder="e.g. Sat 14 Mar 2026">
+        <input type="date" name="eventDate">
       </label>
       <label class="sgq-field">
         <span>Anything else? <em>(optional)</em></span>
@@ -296,7 +305,7 @@ async function submit(form) {
   answers.name = name;
   answers.email = email;
   answers.phone = val('phone');
-  answers.eventDate = val('eventDate');
+  answers.eventDate = formatEventDate(val('eventDate'));
 
   btn.disabled = true;
   btn.textContent = 'Working it out…';

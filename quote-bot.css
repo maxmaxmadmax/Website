@@ -229,6 +229,8 @@
   font-family: inherit;
   resize: vertical;
 }
+/* native date picker: dark theme so the calendar icon + popup are visible */
+.sgq-field input[type="date"] { color-scheme: dark; }
 .sgq-field input:focus,
 .sgq-field textarea:focus {
   outline: none;
