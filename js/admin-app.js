@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=151';
+} from './firebase-config.js?v=152';
 
-import { expandKit } from './kit.js?v=151';
+import { expandKit } from './kit.js?v=152';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6226,6 +6226,7 @@ function daysBetween(a, b) {
 function blankPackage() {
   return {
     name: '', eventType: '', description: '', active: true,
+    maxGuests: '',                        // '' = any size; the bot picks the smallest that fits
     items: [], extras: [],
     discountCents: 0, overrideCents: 0,   // overrideCents > 0 replaces the auto price
   };
@@ -6436,11 +6437,14 @@ function packageFromDoc(doc) {
     items = doc.tiers[0].items || [];
     if (!discountCents) discountCents = Math.max(0, Math.round(doc.tiers[0].discountCents || 0));
   }
+  let maxGuests = doc.maxGuests;
+  if (maxGuests == null && Array.isArray(doc.tiers) && doc.tiers.length) maxGuests = doc.tiers[0].maxGuests;
   return {
     name: doc.name || '',
     eventType: doc.eventType || '',
     description: doc.description || '',
     active: doc.active !== false,
+    maxGuests: maxGuests == null || maxGuests === '' ? '' : Math.max(0, Math.round(maxGuests)),
     items: (items || []).map((i) => ({ itemId: i.itemId, qty: Math.max(1, Math.round(i.qty || 1)) })),
     extras: (doc.extras || []).map((i) => ({ itemId: i.itemId, qty: Math.max(1, Math.round(i.qty || 1)) })),
     discountCents,
@@ -6594,9 +6598,11 @@ function pkgDetailsTab() {
     <div class="inv-fgrid">
       <label class="ad-field inv-span2"><span>Package name *</span>
         <input class="ad-input" data-pf="name" value="${attr(p.name)}" placeholder="e.g. DJ Package – Small"></label>
-      <label class="ad-field inv-span2"><span>Event type</span>
+      <label class="ad-field"><span>Event type</span>
         <input class="ad-input" list="pkg-types" data-pf="eventType" value="${attr(p.eventType)}" placeholder="e.g. DJ / Party">
         <datalist id="pkg-types">${datalist}</datalist></label>
+      <label class="ad-field"><span>Suits up to N guests</span>
+        <input class="ad-input" type="number" min="0" step="1" data-pf="maxGuests" value="${attr(p.maxGuests)}" placeholder="blank = any size"></label>
       <label class="ad-field inv-span2"><span>Short description</span>
         <textarea class="ad-input" rows="2" data-pf="description" placeholder="Shown to the customer, e.g. Perfect for small parties &amp; functions.">${esc(p.description || '')}</textarea></label>
     </div>
@@ -6778,6 +6784,7 @@ async function savePackage(btn) {
     eventType: String(p.eventType || '').trim().slice(0, 80),
     description: String(p.description || '').trim().slice(0, 600),
     active: p.active !== false,
+    maxGuests: p.maxGuests === '' || p.maxGuests == null ? null : Math.max(0, Math.round(Number(p.maxGuests) || 0)),
     items: (p.items || []).filter((i) => i.itemId).map((i) => ({ itemId: i.itemId, qty: Math.max(1, Math.round(i.qty || 1)) })),
     extras: (p.extras || []).filter((i) => i.itemId).map((i) => ({ itemId: i.itemId, qty: Math.max(1, Math.round(i.qty || 1)) })),
     discountCents: Math.max(0, Math.round(p.discountCents || 0)),
