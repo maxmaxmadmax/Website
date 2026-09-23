@@ -21,7 +21,7 @@
 
 import {
   firebaseConfig, functionsRegion, isFirebaseConfigured,
-} from './firebase-config.js?v=158';
+} from './firebase-config.js?v=159';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -78,7 +78,7 @@ const ACCESS_OPTS = [
 const EXTRA_OPTS = [
   { key: 'mic', label: 'Extra mic (speeches / MC)' },
   { key: 'dancefloor', label: 'Dance floor' },
-  { key: 'staging', label: 'Staging' },
+  { key: 'staging', label: 'Stage / riser' },
   { key: 'lighting', label: 'Extra lighting' },
   { key: 'projector', label: 'Projector & screen' },
   { key: 'haze', label: 'Haze / smoke machine' },

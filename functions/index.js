@@ -2879,7 +2879,7 @@ const BOT_GENERATOR_CENTS = 25000;   // $250/day estimate when there's no mains 
 const BOT_EXTRA_MAP = {
   mic: { label: 'Extra mic (speeches / MC)', kw: ['glxd', 'wireless'], qty: 1 },
   dancefloor: { label: 'Dance floor', kw: ['dance floor'], qty: 1 },
-  staging: { label: 'Staging', kw: ['stage 6m x 2m', 'stage 6m'], qty: 1 },
+  staging: { label: 'Stage / riser', kw: ['stage 6m x 2m', 'stage 6m'], qty: 1 },
   lighting: { label: 'Extra lighting', kw: ['moving head', 'm1s80w'], qty: 2 },
   projector: { label: 'Projector & screen', kw: ['projector'], qty: 1 },
   haze: { label: 'Haze / smoke machine', kw: ['haze'], qty: 1 },
@@ -2945,8 +2945,11 @@ exports.submitBotQuote = onCall(async (request) => {
       lines.push({ type: 'kit', itemId: r.itemId, name: r.name + (r.charge === 'free' ? ' (included)' : ''), qty: r.qty, unitCents: charged ? r.unitCents : 0, charge: r.charge, days: charged ? days : 1 });
     });
     const gearValue = kit.base.reduce((s, b) => s + b.lineCents, 0) + kit.addCents;
-    const target = pkg.overrideCents > 0 ? pkg.overrideCents : Math.max(0, gearValue - Math.max(0, Math.round(pkg.discountCents || 0)));
-    discountCents = Math.max(0, gearValue - target);
+    const afterDisc = Math.max(0, gearValue - Math.max(0, Math.round(pkg.discountCents || 0)));
+    const target = pkg.overrideCents > 0 ? pkg.overrideCents : Math.max(Math.max(0, Math.round(pkg.minCents || 0)), afterDisc);
+    const adjust = target - gearValue;
+    if (adjust < 0) discountCents = -adjust;                        // discount down to target
+    else if (adjust > 0) lines.push({ type: 'custom', name: (pkg.name || 'Package') + ' — package price', qty: 1, unitCents: adjust, days: 1 });   // top up to the floor/override
   }
 
   // Customer-picked extras, each mapped to a real inventory item (full price).

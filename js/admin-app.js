@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=158';
+} from './firebase-config.js?v=159';
 
-import { expandKit } from './kit.js?v=158';
+import { expandKit } from './kit.js?v=159';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6275,7 +6275,7 @@ function blankPackage() {
     name: '', eventType: '', description: '', active: true,
     maxGuests: '',                        // '' = any size; the bot picks the smallest that fits
     items: [], extras: [],
-    discountCents: 0, overrideCents: 0,   // overrideCents > 0 replaces the auto price
+    discountCents: 0, minCents: 0, overrideCents: 0,   // overrideCents > 0 replaces the auto price; minCents = price floor
   };
 }
 
@@ -6287,7 +6287,8 @@ function pkgValueCents(p, byId) {
 function pkgCustomerCents(p, byId) {
   if (p && p.overrideCents > 0) return p.overrideCents;
   const val = pkgValueCents(p, byId);
-  return Math.max(0, val - Math.max(0, Math.round((p && p.discountCents) || 0)));
+  const afterDisc = Math.max(0, val - Math.max(0, Math.round((p && p.discountCents) || 0)));
+  return Math.max(Math.max(0, Math.round((p && p.minCents) || 0)), afterDisc);   // never below the floor
 }
 
 let packageDraft = blankPackage();
@@ -6495,6 +6496,7 @@ function packageFromDoc(doc) {
     items: (items || []).map((i) => ({ itemId: i.itemId, qty: Math.max(1, Math.round(i.qty || 1)) })),
     extras: (doc.extras || []).map((i) => ({ itemId: i.itemId, qty: Math.max(1, Math.round(i.qty || 1)) })),
     discountCents,
+    minCents: Math.max(0, Math.round(doc.minCents || 0)),
     overrideCents: Math.max(0, Math.round(doc.overrideCents || 0)),
   };
 }
@@ -6726,6 +6728,8 @@ function pkgPricingTab() {
         <div class="pkg-priceline"><span>Total inventory value</span><span>${esc(money(val))}</span></div>
         <div class="pkg-priceline"><span>Package discount</span>
           <span class="pkg-discinput">&minus;<span class="qb-inline-dollar">$</span><input class="qb-num qb-num-total" type="number" min="0" step="1" data-pdisc value="${attr(disc ? disc / 100 : '')}"></span></div>
+        <div class="pkg-priceline"><span>Minimum price <em class="pkg-minhint">(floor)</em></span>
+          <span class="pkg-discinput"><span class="qb-inline-dollar">$</span><input class="qb-num qb-num-total" type="number" min="0" step="1" data-pmin value="${attr(p.minCents ? p.minCents / 100 : '')}"></span></div>
         <div class="pkg-priceline pkg-pricecust"><span>Customer price</span><span>${esc(money(cust))}/day</span></div>
       </div>
       ${disc ? `<p class="pkg-savechip">${pct}% off inventory value</p>` : ''}`}`;
@@ -6788,6 +6792,7 @@ function wirePackageDetail() {
     }
     if (t.hasAttribute('data-poverride')) { packageDraft.overrideCents = Math.max(0, Math.round(Number(t.value || 0) * 100)); updatePkgPriceView(); return; }
     if (t.hasAttribute('data-pdisc')) { packageDraft.discountCents = Math.max(0, Math.round(Number(t.value || 0) * 100)); updatePkgPriceView(); return; }
+    if (t.hasAttribute('data-pmin')) { packageDraft.minCents = Math.max(0, Math.round(Number(t.value || 0) * 100)); updatePkgPriceView(); return; }
   });
 
   // steppers, deletes, add-item focus (delegated)
@@ -6835,6 +6840,7 @@ async function savePackage(btn) {
     items: (p.items || []).filter((i) => i.itemId).map((i) => ({ itemId: i.itemId, qty: Math.max(1, Math.round(i.qty || 1)) })),
     extras: (p.extras || []).filter((i) => i.itemId).map((i) => ({ itemId: i.itemId, qty: Math.max(1, Math.round(i.qty || 1)) })),
     discountCents: Math.max(0, Math.round(p.discountCents || 0)),
+    minCents: Math.max(0, Math.round(p.minCents || 0)),
     overrideCents: Math.max(0, Math.round(p.overrideCents || 0)),
     tiers: null,   // clear any legacy tier data now the model is flat
     updatedAt: Date.now(),

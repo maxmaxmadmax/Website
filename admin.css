@@ -2653,6 +2653,7 @@ body.ad-fit .ad-main{ min-height:0; }
 .pkg-discinput .qb-num-total{ max-width:78px; background:#fff; }
 .pkg-savechip{ margin:10px 0 0; display:inline-block; font-size:.74rem; font-weight:700;
                background:var(--ad-green-bg); color:var(--ad-green); padding:4px 10px; border-radius:999px; }
+.pkg-minhint{ font-style:normal; color:var(--ad-faint); font-size:.72rem; }
 
 /* preview */
 .pkg-preview h3{ margin:0 0 2px; font-size:1.15rem; }
