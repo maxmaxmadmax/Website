@@ -2404,6 +2404,20 @@ body.ad-fit .ad-main{ min-height:0; }
 .qb-bar-title h1{ margin:0; font-size:1.3rem; }
 .qb-bar-spacer{ flex:1 1 auto; }
 
+/* "from the estimate bot" card - staff-only, sits above the paper */
+.qb-botcard{ background:var(--ad-orange-soft); border:1px solid #ffd9b3; border-radius:12px;
+             padding:14px 18px; margin-bottom:16px; }
+.qb-botcard-h{ font-size:.8rem; font-weight:800; color:var(--ad-orange); text-transform:uppercase;
+               letter-spacing:.03em; margin-bottom:10px; }
+.qb-botgrid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px 18px; }
+.qb-botcell{ display:flex; flex-direction:column; gap:2px; }
+.qb-botcell span{ font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; color:var(--ad-muted); }
+.qb-botcell strong{ font-size:.92rem; color:var(--ad-text); }
+.qb-botmsg{ margin:12px 0 0; font-size:.88rem; color:var(--ad-text); background:#fff;
+            border:1px solid #ffd9b3; border-radius:9px; padding:9px 11px; }
+.qb-botmsg span{ font-weight:700; color:var(--ad-orange); }
+.qb-botnote{ margin:10px 0 0; font-size:.76rem; color:var(--ad-muted); }
+
 /* the white paper */
 .qb-paper{ background:#fff; border:1px solid var(--ad-line); border-radius:14px;
            box-shadow:0 10px 30px rgba(20,22,30,.06); padding:38px 40px; }

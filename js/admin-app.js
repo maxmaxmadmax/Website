@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=154';
+} from './firebase-config.js?v=155';
 
-import { expandKit } from './kit.js?v=154';
+import { expandKit } from './kit.js?v=155';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5604,6 +5604,25 @@ function quoteBuilderHtml() {
     ? `${esc(h.startDate || '…')} &rarr; ${esc(h.endDate || '…')}`
     : '<span class="qb-faint">Set below</span>';
 
+  const botCard = (doc && doc.source === 'bot') ? (() => {
+    const chip = (label, value) => value ? `<div class="qb-botcell"><span>${label}</span><strong>${esc(value)}</strong></div>` : '';
+    const support = { full: 'Full service (deliver, set up + on-site tech)', delivery: 'Delivery & setup only', pickup: 'Self-collect from Bowen' }[doc.botSupport] || '—';
+    return `
+      <section class="qb-botcard">
+        <div class="qb-botcard-h">&#128233; From the estimate bot &mdash; what the customer told us</div>
+        <div class="qb-botgrid">
+          ${chip('Package matched', doc.packageName)}
+          ${chip('Guests', doc.guests)}
+          ${chip('Support', support)}
+          ${chip('Venue', (doc.delivery && doc.delivery.town) || doc.botTown)}
+          ${chip('Days', (doc.hire && doc.hire.days) || 1)}
+          ${chip('Event date', c.eventDate)}
+        </div>
+        ${doc.botMessage ? `<p class="qb-botmsg"><span>Their message:</span> ${esc(doc.botMessage)}</p>` : ''}
+        <p class="qb-botnote">Review the gear &amp; price against this, adjust anything, then Send.</p>
+      </section>`;
+  })() : '';
+
   return `
     <div class="q-build qb">
 
@@ -5616,6 +5635,8 @@ function quoteBuilderHtml() {
         <button type="button" class="ad-btn${doc ? '' : ' ad-btn-primary'}" id="q-save">Save</button>
         ${doc ? `<button type="button" class="ad-btn ad-btn-primary" id="q-send">${status === 'draft' ? '&#9993; Send Quote' : '&#9993; Resend'}</button>` : ''}
       </div>
+
+      ${botCard}
 
       <!-- the paper -->
       <div class="qb-paper">

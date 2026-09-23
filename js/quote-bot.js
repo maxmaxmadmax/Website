@@ -21,7 +21,7 @@
 
 import {
   firebaseConfig, functionsRegion, isFirebaseConfigured,
-} from './firebase-config.js?v=154';
+} from './firebase-config.js?v=155';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -306,6 +306,7 @@ async function submit(form) {
   answers.email = email;
   answers.phone = val('phone');
   answers.eventDate = formatEventDate(val('eventDate'));
+  answers.message = val('message');
 
   btn.disabled = true;
   btn.textContent = 'Working it out…';

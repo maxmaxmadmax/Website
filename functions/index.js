@@ -2891,6 +2891,7 @@ exports.submitBotQuote = onCall(async (request) => {
   const email = String(a.email || '').trim().slice(0, 200);
   const phone = String(a.phone || '').trim().slice(0, 40);
   const eventDate = String(a.eventDate || '').trim().slice(0, 60);
+  const message = String(a.message || '').trim().slice(0, 2000);
 
   if (!eventType) throw new HttpsError('invalid-argument', 'Please choose an event type.');
   if (!name || !(email || phone)) throw new HttpsError('invalid-argument', 'Please leave your name and a contact.');
@@ -2969,6 +2970,7 @@ exports.submitBotQuote = onCall(async (request) => {
   await db.collection('quotes').add({
     number, token, status: 'draft', ...clean, ...money,
     source: 'bot', packageId: pkg.id, packageName: pkg.name || '', guests, botSupport: support,
+    botMessage: message, botTown: town,
     createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(), createdBy: 'bot',
   });
 
