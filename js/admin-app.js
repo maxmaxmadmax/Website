@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=147';
+} from './firebase-config.js?v=148';
 
-import { expandKit } from './kit.js?v=147';
+import { expandKit } from './kit.js?v=148';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -4273,6 +4273,7 @@ function invItem(raw) {
     priceCents: invNum(r.priceCents, 0),
     extraDayCents: invNum(r.extraDayCents, 0),
     replacementCents: invNum(r.replacementCents, 0),
+    setupMins: Math.max(0, invNum(r.setupMins, 0)),   // man-minutes to set up one unit; feeds labour
     internalNotes: r.internalNotes || '',
     specs: r.specs || '',
     weight: r.weight || '',
@@ -4702,6 +4703,10 @@ function invDetail() {
           <label class="ad-field"><span>Extra day price $</span>
             <input class="ad-input" type="number" min="0" step="1" data-f="extraDayCents" value="${attr(dollars(it.extraDayCents))}"></label>
 
+          <label class="ad-field inv-span2"><span>Setup time (min per unit)</span>
+            <input class="ad-input" type="number" min="0" step="1" data-f="setupMins" value="${attr(it.setupMins || '')}"
+                   placeholder="e.g. 10"><em class="inv-field-hint">Man-minutes to set one up. Feeds the labour charge on delivered quotes.</em></label>
+
           <label class="ad-field inv-span2"><span>Replacement value $</span>
             <input class="ad-input" type="number" min="0" step="1" data-f="replacementCents" value="${attr(dollars(it.replacementCents))}"></label>
 
@@ -5073,6 +5078,7 @@ async function saveInvItem(btn) {
     priceCents: dollarsToCents(get('priceCents')),
     extraDayCents: dollarsToCents(get('extraDayCents')),
     replacementCents: dollarsToCents(get('replacementCents')),
+    setupMins: int(get('setupMins')),
     internalNotes: String(get('internalNotes') || '').trim().slice(0, 2000),
     repairFault: String(get('repairFault') || '').trim().slice(0, 1000),
     repairWith: String(get('repairWith') || '').trim().slice(0, 200),
@@ -5326,9 +5332,37 @@ function blankQuote() {
     hire: { startDate: '', endDate: '', days: 1 },
     lines: [],
     discountCents: 0,
+    labourExcluded: false,     // setup & pack-down labour is on by default (delivered jobs)
     notes: '',
     terms: '',
   };
+}
+
+/*  Labour: setup time is a man-minute figure on each inventory item. Total
+    setup across the (already kit-expanded) cart, plus pack-down at 75%, is
+    billed at $60/hr, rounded UP to a whole hour, minimum one hour. Setup
+    times default to 0, so until they're entered this simply comes to $0.   */
+const LABOUR_RATE_CENTS = 6000;   // $60 / hour
+const PACKDOWN_PCT = 0.75;
+
+function quoteSetupMins(d) {
+  const byId = (typeof invByIdMap === 'function') ? invByIdMap() : {};
+  let mins = 0;
+  (d.lines || []).forEach((l) => {
+    if (!l.itemId) return;                         // custom / crew / discount: no setup
+    const inv = byId[l.itemId];
+    if (!inv) return;
+    mins += Math.max(0, Math.round(inv.setupMins || 0)) * Math.max(0, Math.round(l.qty || 0));
+  });
+  return mins;
+}
+
+function quoteLabour(d) {
+  const setup = quoteSetupMins(d);
+  if (!setup) return { setupMins: 0, totalMins: 0, hours: 0, cents: 0 };
+  const total = setup + Math.round(setup * PACKDOWN_PCT);
+  const hours = Math.max(1, Math.ceil(total / 60));
+  return { setupMins: setup, totalMins: total, hours, cents: hours * LABOUR_RATE_CENTS };
 }
 
 let quoteDraft = blankQuote();
@@ -5354,9 +5388,10 @@ function quoteDraftMoney(d) {
     if (l.type === 'discount') { discount += Math.max(0, Math.round(l.amountCents || 0)); return; }
     subtotal += quoteLineCents(l, docDays);
   });
-  const net = Math.max(0, subtotal - discount);
+  const labourCents = d.labourExcluded === true ? 0 : quoteLabour(d).cents;
+  const net = Math.max(0, subtotal + labourCents - discount);
   const gst = Math.round(net * 0.10);
-  return { subtotalCents: subtotal, discountCents: discount, netCents: net, gstCents: gst, totalCents: net + gst };
+  return { subtotalCents: subtotal, labourCents, discountCents: discount, netCents: net, gstCents: gst, totalCents: net + gst };
 }
 
 /*  A line's own total: quantity x day rate x number of days.
@@ -5463,8 +5498,10 @@ function quoteFromDoc(doc) {
     kind: doc.kind || 'quote',
     customer: { ...blankQuote().customer, ...(doc.customer || {}) },
     hire: { ...blankQuote().hire, ...(doc.hire || {}) },
-    lines: (doc.lines || []).map((l) => ({ ...l })),
+    // The labour line is recomputed live, so drop any stored one when editing.
+    lines: (doc.lines || []).filter((l) => l.type !== 'labour').map((l) => ({ ...l })),
     discountCents: Math.max(0, Math.round(doc.discountCents || 0)),
+    labourExcluded: doc.labourExcluded === true,
     notes: doc.notes || '',
     terms: doc.terms || '',
   };
@@ -5688,9 +5725,17 @@ function renderQuoteTotals() {
   const host = document.getElementById('q-totals');
   if (!host) return;
   const m = quoteDraftMoney(quoteDraft);
+  const lab = quoteLabour(quoteDraft);
   const discVal = quoteDraft.discountCents ? quoteDraft.discountCents / 100 : '';
+  const labourRow = lab.cents ? `
+    <div class="qb-sumrow qb-sumlabour">
+      <span><label class="qb-labtoggle"><input type="checkbox" data-qlabour${quoteDraft.labourExcluded ? '' : ' checked'}> Setup &amp; pack-down</label>
+        <em class="qb-labnote">${lab.hours} hr${lab.hours === 1 ? '' : 's'} @ $60</em></span>
+      <span class="${quoteDraft.labourExcluded ? 'qb-laboff' : ''}">${quoteDraft.labourExcluded ? 'excluded' : esc(money(lab.cents))}</span>
+    </div>` : '';
   host.innerHTML = `
     <div class="qb-sumrow"><span>Subtotal (ex GST)</span><span id="qsum-sub">${esc(money(m.subtotalCents))}</span></div>
+    ${labourRow}
     <div class="qb-sumrow qb-sumdisc"><span>Discount</span>
       <span class="qb-discinput">&minus;<span class="qb-inline-dollar">$</span><input class="qb-num qb-num-total" type="number" min="0" step="1" data-qdisc value="${attr(discVal)}" placeholder="0"></span></div>
     <div class="qb-sumrow"><span>GST (10%)</span><span id="qsum-gst">${esc(money(m.gstCents))}</span></div>
@@ -5919,6 +5964,11 @@ function wireQuoteBuilder() {
       updateQuoteTotalsValues();
       return;
     }
+    if (t.hasAttribute('data-qlabour')) {
+      quoteDraft.labourExcluded = !t.checked;
+      renderQuoteTotals();   // rebuild so the labour row & total reflect it
+      return;
+    }
     if (t.dataset.qh) {
       if (t.dataset.qh === 'days') quoteDraft.hire.days = Math.max(1, Math.round(Number(t.value) || 1));
       else {
@@ -6015,12 +6065,27 @@ function wireQuoteActions() {
   });
 }
 
+/*  Materialise the live labour figure as a real line so the server total and
+    the customer's copy include it. Stripped again on load (quoteFromDoc).   */
+function quoteDraftForSave() {
+  const lab = quoteLabour(quoteDraft);
+  const lines = quoteDraft.lines.filter((l) => l.type !== 'labour').map((l) => ({ ...l }));
+  if (quoteDraft.labourExcluded !== true && lab.cents > 0) {
+    lines.push({
+      type: 'labour', name: 'Setup & pack-down',
+      description: `${lab.hours} hr${lab.hours === 1 ? '' : 's'} @ $60/hr`,
+      qty: 1, unitCents: lab.cents, days: 1, hours: lab.hours,
+    });
+  }
+  return { ...quoteDraft, lines, labourExcluded: quoteDraft.labourExcluded === true };
+}
+
 async function saveQuoteDoc(btn, quiet) {
   const m = document.getElementById('q-msg');
   if (btn) btn.disabled = true;
   try {
     const id = state.openQuoteId === '__new__' ? null : state.openQuoteId;
-    const res = await call('adminSaveQuote', { id, quote: quoteDraft });
+    const res = await call('adminSaveQuote', { id, quote: quoteDraftForSave() });
     if (res && res.id) state.openQuoteId = res.id;
     if (!quiet) {
       if (m) { m.textContent = 'Saved.'; m.className = 'ad-quote-msg is-ok'; }

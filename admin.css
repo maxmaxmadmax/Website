@@ -2190,6 +2190,7 @@ body.ad-fit .ad-main{ min-height:0; }
 .inv-st-amber{ background:var(--ad-amber-bg); color:var(--ad-amber); }
 .inv-st-slate{ background:#eef1f6; color:#475569; }
 .inv-perday{ color:var(--ad-faint); font-weight:400; margin-left:1px; }
+.inv-field-hint{ display:block; margin-top:4px; font-size:.72rem; font-style:normal; color:var(--ad-faint); line-height:1.4; }
 
 /* ---- pagination footer ---- */
 .inv-foot{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap; }
@@ -2535,6 +2536,11 @@ body.ad-fit .ad-main{ min-height:0; }
 .qb-sumdisc{ align-items:center; }
 .qb-discinput{ display:inline-flex; align-items:center; gap:1px; color:var(--ad-green); }
 .qb-discinput .qb-num-total{ max-width:78px; color:var(--ad-text); font-weight:600; background:#fff; }
+.qb-sumlabour{ align-items:flex-start; }
+.qb-labtoggle{ display:inline-flex; align-items:center; gap:6px; cursor:pointer; color:var(--ad-muted); }
+.qb-labtoggle input{ width:15px; height:15px; }
+.qb-labnote{ display:block; font-size:.72rem; color:var(--ad-faint); margin:2px 0 0 21px; font-style:normal; }
+.qb-laboff{ color:var(--ad-faint); font-style:italic; }
 
 /* lifecycle strip below the paper */
 .qb-lifecycle{ margin-top:18px; background:var(--ad-card); border:1px solid var(--ad-line);
