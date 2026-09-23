@@ -2875,6 +2875,20 @@ function botPickPackage(packages, eventType, guests) {
   return typed.slice().sort((a, b) => (b.maxGuests || 0) - (a.maxGuests || 0))[0];
 }
 
+const BOT_GENERATOR_CENTS = 25000;   // $250/day estimate when there's no mains power
+const BOT_EXTRA_MAP = {
+  mic: { label: 'Extra mic (speeches / MC)', kw: ['glxd', 'wireless'], qty: 1 },
+  dancefloor: { label: 'Dance floor', kw: ['dance floor'], qty: 1 },
+  staging: { label: 'Staging', kw: ['stage 6m x 2m', 'stage 6m'], qty: 1 },
+  lighting: { label: 'Extra lighting', kw: ['moving head', 'm1s80w'], qty: 2 },
+  projector: { label: 'Projector & screen', kw: ['projector'], qty: 1 },
+  haze: { label: 'Haze / smoke machine', kw: ['haze'], qty: 1 },
+};
+function botFindItem(inv, kws) {
+  const low = (s) => String(s || '').toLowerCase();
+  return inv.find((it) => it && it.name && kws.some((k) => low(it.name).includes(k))) || null;
+}
+
 exports.submitBotQuote = onCall(async (request) => {
   const d = request.data || {};
   if (String(d.website || d.company_url || '').trim()) return { ok: true };   // honeypot
@@ -2887,6 +2901,12 @@ exports.submitBotQuote = onCall(async (request) => {
   const support = ['full', 'delivery', 'pickup'].includes(a.support) ? a.support : 'delivery';
   const delivered = support !== 'pickup';
   const km = delivered ? (a.km != null ? Math.max(0, Math.round(Number(a.km) || 0)) : (botZoneKm(town) || 0)) : 0;
+  const indoor = ['indoor', 'outdoor', 'mixed'].includes(a.indoor) ? a.indoor : '';
+  const power = ['yes', 'no', 'unsure'].includes(a.power) ? a.power : '';
+  const startTime = String(a.startTime || '').trim().slice(0, 40);
+  const finishTime = String(a.finishTime || '').trim().slice(0, 40);
+  const access = ['easy', 'stairs', 'tricky'].includes(a.access) ? a.access : 'easy';
+  const extras = Array.isArray(a.extras) ? a.extras.filter((k) => typeof k === 'string').slice(0, 12) : [];
   const name = String(a.name || '').trim().slice(0, 120);
   const email = String(a.email || '').trim().slice(0, 200);
   const phone = String(a.phone || '').trim().slice(0, 40);
@@ -2921,17 +2941,39 @@ exports.submitBotQuote = onCall(async (request) => {
     lines.push({ type: 'kit', itemId: r.itemId, name: r.name + (r.charge === 'free' ? ' (included)' : ''), qty: r.qty, unitCents: charged ? r.unitCents : 0, charge: r.charge, days: charged ? days : 1 });
   });
 
+  // Package discount applies to the package gear only (before extras).
   const gearValue = kit.base.reduce((s, b) => s + b.lineCents, 0) + kit.addCents;
   const target = pkg.overrideCents > 0 ? pkg.overrideCents : Math.max(0, gearValue - Math.max(0, Math.round(pkg.discountCents || 0)));
   const discountCents = Math.max(0, gearValue - target);
 
+  // Customer-picked extras, each mapped to a real inventory item (full price).
+  const chosenExtras = [];
+  extras.forEach((key) => {
+    const spec = BOT_EXTRA_MAP[key];
+    if (!spec) return;
+    const it = botFindItem(inv, spec.kw);
+    if (!it) return;
+    lines.push({ type: 'item', itemId: it.id, name: it.name, description: it.subtitle || '', qty: spec.qty, unitCents: it.priceCents || 0, days });
+    chosenExtras.push(spec.label);
+  });
+
+  // Generator when it's outdoors with no mains power.
+  const needsGenerator = (indoor === 'outdoor' || indoor === 'mixed') && power === 'no';
+  if (needsGenerator) {
+    lines.push({ type: 'custom', name: 'Generator (no mains power)', description: 'Estimate — confirmed on review', qty: 1, unitCents: BOT_GENERATOR_CENTS, days });
+  }
+
   if (delivered) {
     let mins = 0;
     lines.forEach((l) => { if (l.itemId && byId[l.itemId]) mins += Math.max(0, Math.round(byId[l.itemId].setupMins || 0)) * Math.max(0, Math.round(l.qty || 0)); });
-    if (mins > 0) {
-      const totalMins = mins + Math.round(mins * BOT_PACKDOWN_PCT);
+    // Harder access = more crew time on site.
+    const accessMins = access === 'tricky' ? 120 : (access === 'stairs' ? 60 : 0);
+    const setupTotal = mins + accessMins;
+    if (setupTotal > 0) {
+      const totalMins = setupTotal + Math.round(setupTotal * BOT_PACKDOWN_PCT);
       const hrs = Math.max(1, Math.ceil(totalMins / 60));
-      lines.push({ type: 'labour', name: 'Setup & pack-down', description: `${hrs} hr${hrs === 1 ? '' : 's'} @ $60/hr`, qty: 1, unitCents: hrs * BOT_LABOUR_RATE_CENTS, days: 1 });
+      const note = accessMins ? ` (incl. ${access} access)` : '';
+      lines.push({ type: 'labour', name: 'Setup & pack-down', description: `${hrs} hr${hrs === 1 ? '' : 's'} @ $60/hr${note}`, qty: 1, unitCents: hrs * BOT_LABOUR_RATE_CENTS, days: 1 });
     }
     const del = km * 2 * BOT_KM_RATE_CENTS;
     if (del > 0) lines.push({ type: 'delivery', name: 'Delivery & pickup' + (town ? ' — ' + town : ''), description: `${km}km each way`, qty: 1, unitCents: del, days: 1 });
@@ -2971,6 +3013,8 @@ exports.submitBotQuote = onCall(async (request) => {
     number, token, status: 'draft', ...clean, ...money,
     source: 'bot', packageId: pkg.id, packageName: pkg.name || '', guests, botSupport: support,
     botMessage: message, botTown: town,
+    botIndoor: indoor, botPower: power, botStart: startTime, botFinish: finishTime,
+    botAccess: access, botExtras: chosenExtras, botGenerator: needsGenerator,
     createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(), createdBy: 'bot',
   });
 

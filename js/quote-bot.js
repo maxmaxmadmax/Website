@@ -21,7 +21,7 @@
 
 import {
   firebaseConfig, functionsRegion, isFirebaseConfigured,
-} from './firebase-config.js?v=155';
+} from './firebase-config.js?v=156';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -47,7 +47,10 @@ function rangeLabel(est) {
 /* -------------------------------------------------------------------------
    State
    ------------------------------------------------------------------------- */
-const answers = { eventType: '', guests: 0, days: 1, town: '', support: '', name: '', email: '', phone: '', eventDate: '' };
+const answers = {
+  eventType: '', guests: 0, indoor: '', power: '', days: 1, startTime: '', finishTime: '',
+  town: '', access: '', extras: [], support: '', name: '', email: '', phone: '', eventDate: '', message: '',
+};
 let packages = [];      // {name, eventType, maxGuests} summaries, for the event-type menu
 let fb = null;          // { submit } once the SDK is up
 let stream;             // the messages column
@@ -57,8 +60,29 @@ const GUEST_OPTS = [
   { label: 'Up to 50', guests: 50 }, { label: '50–100', guests: 100 }, { label: '100–150', guests: 150 },
   { label: '150–250', guests: 250 }, { label: '250+', guests: 400 },
 ];
+const VENUE_OPTS = [
+  { label: 'Indoors', value: 'indoor' }, { label: 'Outdoors', value: 'outdoor' }, { label: 'A bit of both', value: 'mixed' },
+];
+const POWER_OPTS = [
+  { label: 'Yes, mains power', value: 'yes' }, { label: 'No power on site', value: 'no' }, { label: 'Not sure', value: 'unsure' },
+];
 const DAY_OPTS = [{ label: 'Just the day', days: 1 }, { label: '2 days', days: 2 }, { label: '3 days', days: 3 }];
+const START_OPTS = ['Morning', 'Midday', 'Afternoon', 'Evening'];
+const FINISH_OPTS = ['Afternoon', 'Early evening', 'Late (10pm–12am)', 'After midnight'];
 const TOWN_OPTS = ['Bowen (local)', 'Proserpine', 'Airlie Beach', 'Cannonvale', 'Collinsville', 'Ayr', 'Home Hill', 'Mackay', 'Townsville'];
+const ACCESS_OPTS = [
+  { label: 'Easy — ground level, close to parking', value: 'easy' },
+  { label: 'Some stairs or a bit of a carry', value: 'stairs' },
+  { label: 'Tricky — upstairs / long carry', value: 'tricky' },
+];
+const EXTRA_OPTS = [
+  { key: 'mic', label: 'Extra mic (speeches / MC)' },
+  { key: 'dancefloor', label: 'Dance floor' },
+  { key: 'staging', label: 'Staging' },
+  { key: 'lighting', label: 'Extra lighting' },
+  { key: 'projector', label: 'Projector & screen' },
+  { key: 'haze', label: 'Haze / smoke machine' },
+];
 const SUPPORT_OPTS = [
   { label: 'Full service — delivered, set up + on-site tech', value: 'full' },
   { label: 'Delivery & setup only', value: 'delivery' },
@@ -202,6 +226,27 @@ async function askGuests() {
   offerChips(GUEST_OPTS.map((g) => ({ label: g.label, value: g.guests })), (o) => {
     answers.guests = o.value;
     meSay(o.label);
+    askVenue();
+  });
+}
+
+async function askVenue() {
+  clearDock();
+  await botSay('Is it indoors or outdoors?');
+  offerChips(VENUE_OPTS, (o) => {
+    answers.indoor = o.value;
+    meSay(o.label);
+    if (o.value === 'indoor') { answers.power = 'yes'; askDays(); }
+    else askPower();
+  });
+}
+
+async function askPower() {
+  clearDock();
+  await botSay('Is there mains power at the site?');
+  offerChips(POWER_OPTS, (o) => {
+    answers.power = o.value;
+    meSay(o.label);
     askDays();
   });
 }
@@ -211,6 +256,26 @@ async function askDays() {
   await botSay('How many days do you need us for?');
   offerChips(DAY_OPTS.map((d) => ({ label: d.label, value: d.days })), (o) => {
     answers.days = o.value;
+    meSay(o.label);
+    askStart();
+  });
+}
+
+async function askStart() {
+  clearDock();
+  await botSay('Roughly when does it start?');
+  offerChips(START_OPTS.map((t) => ({ label: t, value: t })), (o) => {
+    answers.startTime = o.value;
+    meSay(o.label);
+    askFinish();
+  });
+}
+
+async function askFinish() {
+  clearDock();
+  await botSay('And when does it wrap up? (so we allow for pack-down)');
+  offerChips(FINISH_OPTS.map((t) => ({ label: t, value: t })), (o) => {
+    answers.finishTime = o.value;
     meSay(o.label);
     askTown();
   });
@@ -223,8 +288,55 @@ async function askTown() {
   offerChips(opts, (o) => {
     answers.town = o.value;
     meSay(o.label || 'Somewhere else');
+    askAccess();
+  });
+}
+
+async function askAccess() {
+  clearDock();
+  await botSay('How’s the access for load-in?');
+  offerChips(ACCESS_OPTS, (o) => {
+    answers.access = o.value;
+    meSay(o.label);
+    askExtras();
+  });
+}
+
+/*  Extras is the one multi-select step: tap any that apply, then Done. */
+async function askExtras() {
+  clearDock();
+  await botSay('Anything to add on top of the standard kit? Tap any that apply.');
+  renderExtraChips();
+}
+
+function renderExtraChips() {
+  dock.innerHTML = '';
+  dock.className = 'sgq-dock sgq-dock-multi';
+  EXTRA_OPTS.forEach((x) => {
+    const on = answers.extras.includes(x.key);
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'sgq-chip sgq-chip-toggle' + (on ? ' is-on' : '');
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.innerHTML = (on ? '✓ ' : '') + esc(x.label);
+    b.addEventListener('click', () => {
+      const i = answers.extras.indexOf(x.key);
+      if (i >= 0) answers.extras.splice(i, 1); else answers.extras.push(x.key);
+      renderExtraChips();
+    });
+    dock.appendChild(b);
+  });
+  const done = document.createElement('button');
+  done.type = 'button';
+  done.className = 'sgq-chip sgq-chip-go';
+  done.textContent = answers.extras.length ? 'That’s everything →' : 'Nothing extra →';
+  done.addEventListener('click', () => {
+    const chosen = EXTRA_OPTS.filter((x) => answers.extras.includes(x.key)).map((x) => x.label);
+    meSay(chosen.length ? chosen.join(', ') : 'Nothing extra');
     askSupport();
   });
+  dock.appendChild(done);
+  scrollDown();
 }
 
 async function askSupport() {

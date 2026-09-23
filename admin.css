@@ -2417,6 +2417,8 @@ body.ad-fit .ad-main{ min-height:0; }
             border:1px solid #ffd9b3; border-radius:9px; padding:9px 11px; }
 .qb-botmsg span{ font-weight:700; color:var(--ad-orange); }
 .qb-botnote{ margin:10px 0 0; font-size:.76rem; color:var(--ad-muted); }
+.qb-botflag{ margin:10px 0 0; font-size:.82rem; font-weight:600; color:var(--ad-red);
+             background:var(--ad-red-bg); border-radius:9px; padding:8px 11px; }
 
 /* the white paper */
 .qb-paper{ background:#fff; border:1px solid var(--ad-line); border-radius:14px;

@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=155';
+} from './firebase-config.js?v=156';
 
-import { expandKit } from './kit.js?v=155';
+import { expandKit } from './kit.js?v=156';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5607,17 +5607,27 @@ function quoteBuilderHtml() {
   const botCard = (doc && doc.source === 'bot') ? (() => {
     const chip = (label, value) => value ? `<div class="qb-botcell"><span>${label}</span><strong>${esc(value)}</strong></div>` : '';
     const support = { full: 'Full service (deliver, set up + on-site tech)', delivery: 'Delivery & setup only', pickup: 'Self-collect from Bowen' }[doc.botSupport] || '—';
+    const venueSetting = { indoor: 'Indoors', outdoor: 'Outdoors', mixed: 'Indoor & outdoor' }[doc.botIndoor] || '';
+    const powerLbl = { yes: 'Mains power', no: 'No power', unsure: 'Power unsure' }[doc.botPower] || '';
+    const accessLbl = { easy: 'Easy', stairs: 'Some stairs / carry', tricky: 'Tricky — upstairs / long carry' }[doc.botAccess] || '';
+    const timing = [doc.botStart, doc.botFinish].filter(Boolean).join(' → ');
+    const extrasLbl = Array.isArray(doc.botExtras) && doc.botExtras.length ? doc.botExtras.join(', ') : '';
     return `
       <section class="qb-botcard">
         <div class="qb-botcard-h">&#128233; From the estimate bot &mdash; what the customer told us</div>
         <div class="qb-botgrid">
           ${chip('Package matched', doc.packageName)}
           ${chip('Guests', doc.guests)}
-          ${chip('Support', support)}
           ${chip('Venue', (doc.delivery && doc.delivery.town) || doc.botTown)}
+          ${chip('Setting', venueSetting + (powerLbl ? ' · ' + powerLbl : ''))}
+          ${chip('Timing', timing)}
+          ${chip('Access', accessLbl)}
           ${chip('Days', (doc.hire && doc.hire.days) || 1)}
           ${chip('Event date', c.eventDate)}
+          ${chip('Support', support)}
         </div>
+        ${extrasLbl ? `<p class="qb-botmsg"><span>Extras chosen:</span> ${esc(extrasLbl)}</p>` : ''}
+        ${doc.botGenerator ? '<p class="qb-botflag">⚠ Outdoors with no mains power — a generator estimate is in the lines; confirm the right size.</p>' : ''}
         ${doc.botMessage ? `<p class="qb-botmsg"><span>Their message:</span> ${esc(doc.botMessage)}</p>` : ''}
         <p class="qb-botnote">Review the gear &amp; price against this, adjust anything, then Send.</p>
       </section>`;
