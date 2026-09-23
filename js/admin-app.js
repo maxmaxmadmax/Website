@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=149';
+} from './firebase-config.js?v=150';
 
-import { expandKit } from './kit.js?v=149';
+import { expandKit } from './kit.js?v=150';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -114,6 +114,8 @@ const state = {
       editor.                                                              */
   packages: null,
   openPackageId: null,
+  pkgFilter: 'all',
+  pkgSearch: '',
 
   /*  Crew & vehicles - staff / vehicle / trailer records, billable onto a
       quote. null until first load.                                        */
@@ -6241,8 +6243,10 @@ function subscribeToPackages() {
         || (a.order || 0) - (b.order || 0)
         || (a.name || '').localeCompare(b.name || ''));
       state.packages = rows;
-      // Don't repaint while the editor is open - it would wipe the draft.
-      if (state.view === 'packages' && !state.openPackageId) render();
+      if (state.view === 'packages') {
+        if (state.openPackageId) renderPkgRows();   // panel open: refresh list only
+        else render();
+      }
     },
     (err) => console.error('packages', err)
   ));
@@ -6277,78 +6281,139 @@ function pkgEventTypes() {
 }
 
 VIEWS.packages = {
-  html() { return state.openPackageId ? packageBuilderHtml() : packageListHtml(); },
-  wire() { if (state.openPackageId) wirePackageBuilder(); else wirePackageList(); },
+  html() {
+    const open = state.openPackageId != null;
+    return `<div class="inv-wrap${open ? ' has-detail' : ''}">
+      ${packageMainHtml()}
+      ${open ? packageDetailHtml() : ''}
+    </div>`;
+  },
+  wire() { wirePackageList(); if (state.openPackageId != null) wirePackageDetail(); },
 };
 
-/* ---- list ---- */
-function packageListHtml() {
-  const pkgs = state.packages;
-  const header = `
-    <div class="ad-mail-head-row">
-      <span class="ad-mail-icon" aria-hidden="true">&#128230;</span>
-      <div class="ad-mail-title">
-        <h1>Packages</h1>
-        <p>Reusable bundles the quote bot builds from. Grouped by event type; the price is live from Inventory.</p>
-      </div>
-      <div class="ad-mail-status">
-        <button type="button" class="ad-btn ad-btn-primary" id="pkg-new">+ New package</button>
-      </div>
-    </div>`;
-
-  if (pkgs == null) return header + '<p class="ad-loading">Loading…</p>';
-  if (!pkgs.length) {
-    return header + `
-      <section class="ad-card ad-panel"><p class="ad-panel-sub">
-        No packages yet. Hit &ldquo;New package&rdquo; to build your first bundle &mdash;
-        name it, give it an event type, add a size tier or two, and drop in the gear.
-        Everything downstream (the bot, instant estimates) builds on these.
-      </p></section>`;
-  }
-
-  const byId = invByIdMap();
-  const typed = pkgEventTypes().map((t) => renderPkgGroup(t, pkgs.filter((p) => (p.eventType || '') === t), byId)).join('');
-  const untyped = pkgs.filter((p) => !p.eventType);
-  return header + typed + (untyped.length ? renderPkgGroup('Uncategorised', untyped, byId) : '');
+/* ---- list (built to match the Inventory manager) ---- */
+function pkgStats() {
+  const rows = state.packages || [];
+  return {
+    total: rows.length,
+    active: rows.filter((p) => p.active !== false).length,
+    off: rows.filter((p) => p.active === false).length,
+    types: pkgEventTypes().length,
+  };
 }
 
-function renderPkgGroup(title, list, byId) {
-  const rows = list.map((p) => {
+function pkgFiltered() {
+  const rows = state.packages || [];
+  const f = state.pkgFilter || 'all';
+  const needle = (state.pkgSearch || '').trim().toLowerCase();
+  return rows.filter((p) => {
+    if (f !== 'all' && (p.eventType || '') !== f) return false;
+    if (!needle) return true;
+    return [p.name, p.eventType].filter(Boolean).join(' ').toLowerCase().includes(needle);
+  });
+}
+
+function pkgThumb(p) {
+  const letter = (p.name || p.eventType || '?').trim().charAt(0).toUpperCase();
+  return `<span class="inv-thumb ${invCatClass(p.eventType || '')}">${esc(letter)}</span>`;
+}
+
+function packageMainHtml() {
+  const s = pkgStats();
+  const f = state.pkgFilter;
+  const types = pkgEventTypes();
+  const opt = (v, l) => `<option value="${attr(v)}"${f === v ? ' selected' : ''}>${esc(l)}</option>`;
+
+  return `
+      <div class="inv-main">
+        <div class="inv-head">
+          <div class="inv-head-title">
+            <span class="ad-mail-icon" aria-hidden="true">&#128230;</span>
+            <div>
+              <h1>Packages</h1>
+              <p>Reusable bundles the quote bot builds from. The price is live from Inventory.</p>
+            </div>
+          </div>
+          <div class="inv-head-actions">
+            <button type="button" class="ad-btn ad-btn-primary" id="pkg-new">+ New package</button>
+          </div>
+        </div>
+
+        <div class="inv-tiles">
+          ${invTile('&#128230;', 'inv-t-slate', s.total, 'Packages', '')}
+          ${invTile('&#10003;', 'inv-t-green', s.active, 'Active', '')}
+          ${invTile('&#9711;', 'inv-t-amber', s.off, 'Off', '')}
+          ${invTile('&#9635;', 'inv-t-blue', s.types, 'Event types', '')}
+        </div>
+
+        <div class="inv-toolbar">
+          <input type="search" id="pkg-search" class="ad-search" placeholder="Search packages..."
+                 value="${attr(state.pkgSearch)}" aria-label="Search packages">
+          <select id="pkg-f-type" class="ad-select" aria-label="Filter by event type">
+            ${opt('all', 'All event types')}${types.map((t) => opt(t, t)).join('')}
+          </select>
+        </div>
+
+        <div class="ad-table-wrap inv-table-wrap">
+          <table class="ad-table inv-table">
+            <thead><tr>
+              <th>Package</th><th>Event type</th><th>Sizes</th><th>Extras</th>
+              <th class="inv-num">Price</th><th>Status</th><th></th>
+            </tr></thead>
+            <tbody id="pkg-rows"></tbody>
+          </table>
+        </div>
+
+        <div class="inv-foot" id="pkg-foot"></div>
+      </div>`;
+}
+
+function renderPkgRows() {
+  const host = document.getElementById('pkg-rows');
+  const foot = document.getElementById('pkg-foot');
+  if (!host) return;
+  const byId = invByIdMap();
+  const rows = pkgFiltered();
+  host.innerHTML = rows.length ? rows.map((p) => {
     const tiers = Array.isArray(p.tiers) ? p.tiers : [];
     const first = tiers[0];
     const price = first ? packageItemsPriceCents(first.items, byId).dayCents : 0;
-    const label = (tiers.length > 1 ? 'from ' : '') + money(price) + '/day';
+    const label = (tiers.length > 1 ? 'from ' : '') + money(price);
     const xtra = (p.extras || []).length;
     return `
-      <tr class="ad-quote-row" data-open-pkg="${attr(p.id)}">
-        <td class="ad-cell-strong">${esc(p.name || 'Untitled')}</td>
+      <tr class="inv-row${state.openPackageId === p.id ? ' is-open' : ''}" data-open-pkg="${attr(p.id)}">
+        <td class="inv-item-cell">${pkgThumb(p)}
+          <span class="inv-item-text"><span class="inv-item-name">${esc(p.name || 'Untitled')}</span></span></td>
+        <td>${p.eventType ? `<span class="inv-pill ${invCatClass(p.eventType)}">${esc(p.eventType)}</span>` : '<span class="ad-cell-muted">—</span>'}</td>
         <td>${tiers.length} size${tiers.length === 1 ? '' : 's'}</td>
         <td>${xtra} extra${xtra === 1 ? '' : 's'}</td>
-        <td class="inv-num">${esc(label)}</td>
-        <td>${p.active === false ? '<span class="ad-pill ad-pill-grey">Off</span>' : '<span class="ad-pill ad-pill-green">Active</span>'}</td>
-        <td class="ad-cell-right"><span class="ad-quote-caret">&#8250;</span></td>
+        <td class="inv-num">${esc(label)}<span class="inv-perday">/day</span></td>
+        <td>${p.active === false ? '<span class="inv-pill inv-st-slate">Off</span>' : '<span class="inv-pill inv-st-green">Active</span>'}</td>
+        <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-open-pkg="${attr(p.id)}" aria-label="Edit">&#8250;</button></td>
       </tr>`;
-  }).join('');
-  return `
-    <section class="ad-card ad-panel">
-      <header class="ad-panel-head"><div><h2>${esc(title)}</h2></div></header>
-      <div class="ad-table-wrap"><table class="ad-table">
-        <thead><tr><th>Package</th><th>Sizes</th><th>Extras</th><th class="inv-num">Price</th><th>Status</th><th></th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table></div>
-    </section>`;
+  }).join('')
+    : `<tr><td colspan="7" class="ad-cell-muted">No packages match. Try clearing the search, or hit &ldquo;New package&rdquo;.</td></tr>`;
+  if (foot) foot.innerHTML = `<p class="inv-foot-count">${rows.length} package${rows.length === 1 ? '' : 's'}</p>`;
 }
 
 function wirePackageList() {
+  renderPkgRows();
   const nw = document.getElementById('pkg-new');
   if (nw) nw.addEventListener('click', () => { packageDraft = blankPackage(); state.openPackageId = '__new__'; render(); });
-  document.querySelectorAll('[data-open-pkg]').forEach((r) => r.addEventListener('click', () => {
+  const search = document.getElementById('pkg-search');
+  if (search) search.addEventListener('input', () => { state.pkgSearch = search.value; renderPkgRows(); });
+  const typeSel = document.getElementById('pkg-f-type');
+  if (typeSel) typeSel.addEventListener('change', () => { state.pkgFilter = typeSel.value; renderPkgRows(); });
+  const host = document.getElementById('pkg-rows');
+  if (host) host.addEventListener('click', (e) => {
+    const r = e.target.closest('[data-open-pkg]');
+    if (!r) return;
     const id = r.getAttribute('data-open-pkg');
     const doc = (state.packages || []).find((x) => x.id === id);
     packageDraft = doc ? packageFromDoc(doc) : blankPackage();
     state.openPackageId = id;
     render();
-  }));
+  });
 }
 
 function packageFromDoc(doc) {
@@ -6369,55 +6434,61 @@ function packageFromDoc(doc) {
   };
 }
 
-/* ---- builder ---- */
-function packageBuilderHtml() {
+/* ---- detail panel (slides in from the right, like Inventory) ---- */
+function packageDetailHtml() {
   const isNew = state.openPackageId === '__new__';
   const p = packageDraft;
   const datalist = pkgEventTypes().map((t) => `<option value="${attr(t)}">`).join('');
-  const pill = p.active === false
-    ? '<span class="ad-pill ad-pill-grey">Off</span>'
-    : '<span class="ad-pill ad-pill-green">Active</span>';
 
   return `
-    <div class="pkg-build">
-      <div class="qb-bar">
-        <button type="button" class="qb-back" id="pkg-back">&larr; All packages</button>
-        <div class="qb-bar-title"><h1>${esc(p.name || 'New package')}</h1>${pill}</div>
-        <div class="qb-bar-spacer"></div>
-        ${!isNew ? '<button type="button" class="ad-btn inv-del" id="pkg-del">Delete</button>' : ''}
-        <button type="button" class="ad-btn ad-btn-primary" id="pkg-save">Save package</button>
-        <span class="ad-quote-msg" id="pkg-msg"></span>
-      </div>
+    <aside class="inv-detail" aria-label="Package details">
+      <header class="inv-detail-head">
+        <div>
+          <h2>${isNew ? 'New package' : esc(p.name || 'Package')}</h2>
+          ${!isNew && p.eventType ? `<p class="inv-detail-sub">${esc(p.eventType)}</p>` : ''}
+        </div>
+        <button type="button" class="inv-detail-close" id="pkg-close" aria-label="Close">&times;</button>
+      </header>
 
-      <section class="ad-card ad-panel">
-        <div class="pkg-fgrid">
-          <label class="ad-field pkg-span2"><span>Package name</span>
+      <div class="inv-detail-body">
+        <div class="inv-fgrid">
+          <label class="ad-field inv-span2"><span>Package name</span>
             <input class="ad-input" data-pf="name" value="${attr(p.name)}" placeholder="e.g. Wedding – Ceremony + Reception"></label>
           <label class="ad-field"><span>Event type</span>
             <input class="ad-input" list="pkg-types" data-pf="eventType" value="${attr(p.eventType)}" placeholder="e.g. Wedding">
             <datalist id="pkg-types">${datalist}</datalist></label>
           <label class="ad-field"><span>Estimate range &plusmn;%</span>
             <input class="ad-input" type="number" min="0" max="50" step="1" data-pf="rangePct" value="${attr(p.rangePct)}"></label>
-          <label class="ad-field pkg-switchfield"><span>Active</span>
-            <label class="pkg-switch"><input type="checkbox" data-pf="active"${p.active !== false ? ' checked' : ''}><span>Offered by the bot</span></label></label>
-          <label class="ad-field pkg-span2"><span>Internal notes</span>
+          <label class="ad-field inv-span2"><span>Internal notes</span>
             <input class="ad-input" data-pf="notes" value="${attr(p.notes)}" placeholder="Only you see this"></label>
         </div>
-      </section>
 
-      <section class="ad-card ad-panel">
-        <header class="ad-panel-head"><div><h2>Size tiers</h2>
-          <p class="ad-panel-sub">The bot picks the smallest tier that fits the guest count. Leave a single tier if size doesn't matter. Prices include any auto-added required gear.</p></div></header>
-        <div id="pkg-tiers"></div>
-        <button type="button" class="ad-btn ad-btn-small" id="pkg-add-tier">+ Add size tier</button>
-      </section>
+        <label class="inv-toggle">
+          <span><strong>Active</strong><em>Offered by the quote bot.</em></span>
+          <input type="checkbox" data-pf="active"${p.active !== false ? ' checked' : ''}>
+          <span class="inv-switch" aria-hidden="true"></span>
+        </label>
 
-      <section class="ad-card ad-panel">
-        <header class="ad-panel-head"><div><h2>Optional extras</h2>
-          <p class="ad-panel-sub">Add-ons the customer can tick on top of any tier.</p></div></header>
-        <div id="pkg-extras"></div>
-      </section>
-    </div>`;
+        <div class="inv-detail-section">
+          <div class="inv-reqs-head"><h3>Size tiers</h3>
+            <button type="button" class="ad-btn ad-btn-small" id="pkg-add-tier">+ Add tier</button></div>
+          <p class="inv-reqs-intro">The bot picks the smallest tier that fits the guest count. Prices include any auto-added required gear.</p>
+          <div id="pkg-tiers"></div>
+        </div>
+
+        <div class="inv-detail-section">
+          <h3>Optional extras</h3>
+          <p class="inv-reqs-intro">Add-ons the customer can tick on top of any tier.</p>
+          <div id="pkg-extras"></div>
+        </div>
+      </div>
+
+      <footer class="inv-detail-foot">
+        ${isNew ? '' : '<button type="button" class="ad-btn inv-del" id="pkg-del">Delete</button>'}
+        <button type="button" class="ad-btn ad-btn-primary" id="pkg-save">${isNew ? 'Add package' : 'Save package'}</button>
+        <span class="ad-quote-msg" id="pkg-msg"></span>
+      </footer>
+    </aside>`;
 }
 
 /*  A generic inventory typeahead: wires an input + results box so typing shows
@@ -6563,15 +6634,15 @@ function updatePkgExtraPrices() {
   });
 }
 
-function wirePackageBuilder() {
+function wirePackageDetail() {
   renderPkgTiers();
   renderPkgExtras();
 
-  const wrap = document.querySelector('.pkg-build');
+  const wrap = document.querySelector('.inv-detail');
   if (!wrap) return;
 
-  const back = document.getElementById('pkg-back');
-  if (back) back.addEventListener('click', () => { state.openPackageId = null; render(); });
+  const close = document.getElementById('pkg-close');
+  if (close) close.addEventListener('click', () => { state.openPackageId = null; render(); });
 
   wrap.addEventListener('input', (e) => {
     const t = e.target;
