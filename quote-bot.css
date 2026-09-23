@@ -231,6 +231,11 @@
 }
 /* native date picker: dark theme so the calendar icon + popup are visible */
 .sgq-field input[type="date"] { color-scheme: dark; }
+.sgq-numrow { display: flex; gap: 8px; width: 100%; }
+.sgq-numin { flex: 1 1 auto; min-width: 0; padding: 10px 12px; border-radius: 10px;
+             border: 1px solid var(--q-line); background: var(--q-card); color: var(--q-text);
+             font-size: 14px; font-family: inherit; color-scheme: dark; }
+.sgq-numin:focus { outline: none; border-color: var(--q-orange); box-shadow: 0 0 0 3px rgba(255,107,0,.15); }
 .sgq-field input:focus,
 .sgq-field textarea:focus {
   outline: none;

@@ -2924,27 +2924,30 @@ exports.submitBotQuote = onCall(async (request) => {
   const packages = [];
   pkgSnap.forEach((x) => packages.push({ id: x.id, ...x.data() }));
 
-  const pkg = botPickPackage(packages, eventType, guests);
-  if (!pkg) throw new HttpsError('failed-precondition', 'We could not match a package automatically - a team member will be in touch.');
+  const isOther = /^other/i.test(eventType);
+  const pkg = isOther ? null : botPickPackage(packages, eventType, guests);
 
-  // Build itemised lines from the package via the kit engine.
-  const cart = {};
-  (pkg.items || []).forEach((i) => { if (i.itemId) cart[i.itemId] = (cart[i.itemId] || 0) + Math.max(0, Math.round(i.qty || 0)); });
-  const kit = botExpandKit(cart, byId);
+  // Build itemised lines from the matched package (if any) via the kit engine.
+  // "Other" / no match still creates a draft from the extras + services below and
+  // returns no instant range - staff build a custom quote from the intake.
   const lines = [];
-  kit.base.forEach((b) => {
-    const it = byId[b.itemId] || {};
-    lines.push({ type: 'item', itemId: b.itemId, name: it.name || b.itemId, description: it.subtitle || '', qty: b.qty, unitCents: it.priceCents || 0, days });
-  });
-  kit.required.forEach((r) => {
-    const charged = r.charge === 'normal';
-    lines.push({ type: 'kit', itemId: r.itemId, name: r.name + (r.charge === 'free' ? ' (included)' : ''), qty: r.qty, unitCents: charged ? r.unitCents : 0, charge: r.charge, days: charged ? days : 1 });
-  });
-
-  // Package discount applies to the package gear only (before extras).
-  const gearValue = kit.base.reduce((s, b) => s + b.lineCents, 0) + kit.addCents;
-  const target = pkg.overrideCents > 0 ? pkg.overrideCents : Math.max(0, gearValue - Math.max(0, Math.round(pkg.discountCents || 0)));
-  const discountCents = Math.max(0, gearValue - target);
+  let discountCents = 0;
+  if (pkg) {
+    const cart = {};
+    (pkg.items || []).forEach((i) => { if (i.itemId) cart[i.itemId] = (cart[i.itemId] || 0) + Math.max(0, Math.round(i.qty || 0)); });
+    const kit = botExpandKit(cart, byId);
+    kit.base.forEach((b) => {
+      const it = byId[b.itemId] || {};
+      lines.push({ type: 'item', itemId: b.itemId, name: it.name || b.itemId, description: it.subtitle || '', qty: b.qty, unitCents: it.priceCents || 0, days });
+    });
+    kit.required.forEach((r) => {
+      const charged = r.charge === 'normal';
+      lines.push({ type: 'kit', itemId: r.itemId, name: r.name + (r.charge === 'free' ? ' (included)' : ''), qty: r.qty, unitCents: charged ? r.unitCents : 0, charge: r.charge, days: charged ? days : 1 });
+    });
+    const gearValue = kit.base.reduce((s, b) => s + b.lineCents, 0) + kit.addCents;
+    const target = pkg.overrideCents > 0 ? pkg.overrideCents : Math.max(0, gearValue - Math.max(0, Math.round(pkg.discountCents || 0)));
+    discountCents = Math.max(0, gearValue - target);
+  }
 
   // Customer-picked extras, each mapped to a real inventory item (full price).
   const chosenExtras = [];
@@ -3011,16 +3014,22 @@ exports.submitBotQuote = onCall(async (request) => {
 
   await db.collection('quotes').add({
     number, token, status: 'draft', ...clean, ...money,
-    source: 'bot', packageId: pkg.id, packageName: pkg.name || '', guests, botSupport: support,
+    source: 'bot', packageId: pkg ? pkg.id : '', packageName: pkg ? (pkg.name || '') : '', guests, botSupport: support,
     botMessage: message, botTown: town,
     botIndoor: indoor, botPower: power, botStart: startTime, botFinish: finishTime,
     botAccess: access, botExtras: chosenExtras, botGenerator: needsGenerator,
     createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(), createdBy: 'bot',
   });
 
-  // On-screen range: +/- 10%, rounded out to the nearest $10.
-  const total = money.totalCents;
-  const low = Math.max(0, Math.floor((total * 0.9) / 1000) * 1000);
-  const high = Math.ceil((total * 1.1) / 1000) * 1000;
-  return { ok: true, lowCents: low, highCents: high, packageName: pkg.name || '' };
+  // On-screen range (+/- 10%, rounded to $10) only when a package matched.
+  // "Other" enquiries return no range - the team builds a custom quote.
+  const resp = { ok: true, packageName: pkg ? (pkg.name || '') : '' };
+  if (pkg) {
+    const total = money.totalCents;
+    resp.lowCents = Math.max(0, Math.floor((total * 0.9) / 1000) * 1000);
+    resp.highCents = Math.ceil((total * 1.1) / 1000) * 1000;
+  } else {
+    resp.custom = true;
+  }
+  return resp;
 });

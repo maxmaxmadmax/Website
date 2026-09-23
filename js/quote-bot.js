@@ -21,7 +21,7 @@
 
 import {
   firebaseConfig, functionsRegion, isFirebaseConfigured,
-} from './firebase-config.js?v=156';
+} from './firebase-config.js?v=158';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -213,7 +213,9 @@ async function start() {
 
 async function askEventType() {
   await botSay('What type of event is it?');
-  offerChips(eventTypeOptions().map((t) => ({ label: t, value: t })), (o) => {
+  const opts = eventTypeOptions().map((t) => ({ label: t, value: t }));
+  opts.push({ label: 'Something else', value: 'Other' });
+  offerChips(opts, (o) => {
     answers.eventType = o.value;
     meSay(o.label);
     askGuests();
@@ -254,31 +256,59 @@ async function askPower() {
 async function askDays() {
   clearDock();
   await botSay('How many days do you need us for?');
-  offerChips(DAY_OPTS.map((d) => ({ label: d.label, value: d.days })), (o) => {
+  const opts = DAY_OPTS.map((d) => ({ label: d.label, value: d.days })).concat([{ label: 'Other', value: 'other' }]);
+  offerChips(opts, (o) => {
+    if (o.value === 'other') { meSay('Other'); askDaysOther(); return; }
     answers.days = o.value;
     meSay(o.label);
-    askStart();
+    askTimes();
   });
 }
 
-async function askStart() {
-  clearDock();
-  await botSay('Roughly when does it start?');
-  offerChips(START_OPTS.map((t) => ({ label: t, value: t })), (o) => {
-    answers.startTime = o.value;
-    meSay(o.label);
-    askFinish();
-  });
+/*  "Other" days: a quick number entry for longer / custom hires. */
+function askDaysOther() {
+  dock.innerHTML = '';
+  dock.className = 'sgq-dock';
+  const row = document.createElement('div');
+  row.className = 'sgq-numrow';
+  row.innerHTML = '<input type="number" min="1" step="1" class="sgq-numin" placeholder="How many days?">'
+    + '<button type="button" class="sgq-chip sgq-chip-go">OK →</button>';
+  const input = row.querySelector('input');
+  const submit = () => {
+    const n = Math.max(1, Math.round(Number(input.value) || 1));
+    answers.days = n;
+    meSay(n + ' day' + (n === 1 ? '' : 's'));
+    askTimes();
+  };
+  row.querySelector('button').addEventListener('click', submit);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+  dock.appendChild(row);
+  input.focus();
+  scrollDown();
 }
 
-async function askFinish() {
+async function askTimes() {
   clearDock();
-  await botSay('And when does it wrap up? (so we allow for pack-down)');
-  offerChips(FINISH_OPTS.map((t) => ({ label: t, value: t })), (o) => {
-    answers.finishTime = o.value;
-    meSay(o.label);
+  await botSay('What are the event times? Let us know what time doors open.');
+  dock.className = 'sgq-dock';
+  dock.innerHTML = '';
+  const row = document.createElement('div');
+  row.className = 'sgq-numrow';
+  row.innerHTML = '<input type="text" class="sgq-numin" placeholder="e.g. Doors 6pm, finish midnight">'
+    + '<button type="button" class="sgq-chip sgq-chip-go">OK →</button>';
+  const input = row.querySelector('input');
+  const submit = () => {
+    const v = input.value.trim();
+    answers.startTime = v;
+    answers.finishTime = '';
+    meSay(v || 'Not sure yet');
     askTown();
-  });
+  };
+  row.querySelector('button').addEventListener('click', submit);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+  dock.appendChild(row);
+  input.focus();
+  scrollDown();
 }
 
 async function askTown() {
