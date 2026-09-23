@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=150';
+} from './firebase-config.js?v=151';
 
-import { expandKit } from './kit.js?v=150';
+import { expandKit } from './kit.js?v=151';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -116,6 +116,8 @@ const state = {
   openPackageId: null,
   pkgFilter: 'all',
   pkgSearch: '',
+  pkgTab: 'details',
+  pkgTierSel: 0,
 
   /*  Crew & vehicles - staff / vehicle / trailer records, billable onto a
       quote. null until first load.                                        */
@@ -6223,10 +6225,21 @@ function daysBetween(a, b) {
 
 function blankPackage() {
   return {
-    name: '', eventType: '', active: true, rangePct: 10, notes: '',
-    tiers: [{ label: '', maxGuests: '', items: [] }],
-    extras: [],
+    name: '', eventType: '', description: '', active: true,
+    items: [], extras: [],
+    discountCents: 0, overrideCents: 0,   // overrideCents > 0 replaces the auto price
   };
+}
+
+/*  Price helpers. Value = the gear day-rate sum (incl. kit-required gear).
+    Customer price = a manual override, else value minus the package discount. */
+function pkgValueCents(p, byId) {
+  return packageItemsPriceCents((p && p.items) || [], byId).dayCents;
+}
+function pkgCustomerCents(p, byId) {
+  if (p && p.overrideCents > 0) return p.overrideCents;
+  const val = pkgValueCents(p, byId);
+  return Math.max(0, val - Math.max(0, Math.round((p && p.discountCents) || 0)));
 }
 
 let packageDraft = blankPackage();
@@ -6357,7 +6370,7 @@ function packageMainHtml() {
         <div class="ad-table-wrap inv-table-wrap">
           <table class="ad-table inv-table">
             <thead><tr>
-              <th>Package</th><th>Event type</th><th>Sizes</th><th>Extras</th>
+              <th>Package</th><th>Event type</th><th>Gear</th><th>Extras</th>
               <th class="inv-num">Price</th><th>Status</th><th></th>
             </tr></thead>
             <tbody id="pkg-rows"></tbody>
@@ -6375,19 +6388,17 @@ function renderPkgRows() {
   const byId = invByIdMap();
   const rows = pkgFiltered();
   host.innerHTML = rows.length ? rows.map((p) => {
-    const tiers = Array.isArray(p.tiers) ? p.tiers : [];
-    const first = tiers[0];
-    const price = first ? packageItemsPriceCents(first.items, byId).dayCents : 0;
-    const label = (tiers.length > 1 ? 'from ' : '') + money(price);
-    const xtra = (p.extras || []).length;
+    const draft = packageFromDoc(p);           // handles legacy tier data too
+    const gearN = (draft.items || []).length;
+    const xtra = (draft.extras || []).length;
     return `
       <tr class="inv-row${state.openPackageId === p.id ? ' is-open' : ''}" data-open-pkg="${attr(p.id)}">
         <td class="inv-item-cell">${pkgThumb(p)}
-          <span class="inv-item-text"><span class="inv-item-name">${esc(p.name || 'Untitled')}</span></span></td>
+          <span class="inv-item-text"><span class="inv-item-name">${esc(p.name || 'Untitled')}</span>${p.description ? `<span class="inv-item-sub">${esc(p.description)}</span>` : ''}</span></td>
         <td>${p.eventType ? `<span class="inv-pill ${invCatClass(p.eventType)}">${esc(p.eventType)}</span>` : '<span class="ad-cell-muted">—</span>'}</td>
-        <td>${tiers.length} size${tiers.length === 1 ? '' : 's'}</td>
+        <td>${gearN} item${gearN === 1 ? '' : 's'}</td>
         <td>${xtra} extra${xtra === 1 ? '' : 's'}</td>
-        <td class="inv-num">${esc(label)}<span class="inv-perday">/day</span></td>
+        <td class="inv-num">${esc(money(pkgCustomerCents(draft, byId)))}<span class="inv-perday">/day</span></td>
         <td>${p.active === false ? '<span class="inv-pill inv-st-slate">Off</span>' : '<span class="inv-pill inv-st-green">Active</span>'}</td>
         <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-open-pkg="${attr(p.id)}" aria-label="Edit">&#8250;</button></td>
       </tr>`;
@@ -6399,7 +6410,7 @@ function renderPkgRows() {
 function wirePackageList() {
   renderPkgRows();
   const nw = document.getElementById('pkg-new');
-  if (nw) nw.addEventListener('click', () => { packageDraft = blankPackage(); state.openPackageId = '__new__'; render(); });
+  if (nw) nw.addEventListener('click', () => { packageDraft = blankPackage(); state.pkgTab = 'details'; state.openPackageId = '__new__'; render(); });
   const search = document.getElementById('pkg-search');
   if (search) search.addEventListener('input', () => { state.pkgSearch = search.value; renderPkgRows(); });
   const typeSel = document.getElementById('pkg-f-type');
@@ -6411,80 +6422,59 @@ function wirePackageList() {
     const id = r.getAttribute('data-open-pkg');
     const doc = (state.packages || []).find((x) => x.id === id);
     packageDraft = doc ? packageFromDoc(doc) : blankPackage();
+    state.pkgTab = 'details';
     state.openPackageId = id;
     render();
   });
 }
 
 function packageFromDoc(doc) {
-  const b = blankPackage();
-  const tiers = (Array.isArray(doc.tiers) && doc.tiers.length ? doc.tiers : b.tiers).map((t) => ({
-    label: t.label || '',
-    maxGuests: t.maxGuests == null ? '' : t.maxGuests,
-    items: (t.items || []).map((i) => ({ itemId: i.itemId, qty: Math.max(1, Math.round(i.qty || 1)) })),
-  }));
+  // Migrate old tier-based packages: fold the first tier's gear into the flat list.
+  let items = Array.isArray(doc.items) ? doc.items : null;
+  let discountCents = Math.max(0, Math.round(doc.discountCents || 0));
+  if (!items && Array.isArray(doc.tiers) && doc.tiers.length) {
+    items = doc.tiers[0].items || [];
+    if (!discountCents) discountCents = Math.max(0, Math.round(doc.tiers[0].discountCents || 0));
+  }
   return {
     name: doc.name || '',
     eventType: doc.eventType || '',
+    description: doc.description || '',
     active: doc.active !== false,
-    rangePct: doc.rangePct != null ? doc.rangePct : 10,
-    notes: doc.notes || '',
-    tiers,
+    items: (items || []).map((i) => ({ itemId: i.itemId, qty: Math.max(1, Math.round(i.qty || 1)) })),
     extras: (doc.extras || []).map((i) => ({ itemId: i.itemId, qty: Math.max(1, Math.round(i.qty || 1)) })),
+    discountCents,
+    overrideCents: Math.max(0, Math.round(doc.overrideCents || 0)),
   };
 }
 
 /* ---- detail panel (slides in from the right, like Inventory) ---- */
+const PKG_TABS = [['details', 'Details'], ['equipment', 'Equipment'], ['extras', 'Extras'], ['pricing', 'Pricing'], ['preview', 'Preview']];
+
 function packageDetailHtml() {
   const isNew = state.openPackageId === '__new__';
   const p = packageDraft;
-  const datalist = pkgEventTypes().map((t) => `<option value="${attr(t)}">`).join('');
+  const pill = p.active !== false
+    ? '<span class="inv-pill inv-st-green pkg-head-pill">Active</span>'
+    : '<span class="inv-pill inv-st-slate pkg-head-pill">Off</span>';
+  const tabs = PKG_TABS.map(([k, l]) => `<button type="button" class="pkg-tab${state.pkgTab === k ? ' is-on' : ''}" data-pkg-tab="${k}">${l}</button>`).join('');
 
   return `
-    <aside class="inv-detail" aria-label="Package details">
+    <aside class="inv-detail pkg-detail" aria-label="Package details">
       <header class="inv-detail-head">
         <div>
-          <h2>${isNew ? 'New package' : esc(p.name || 'Package')}</h2>
-          ${!isNew && p.eventType ? `<p class="inv-detail-sub">${esc(p.eventType)}</p>` : ''}
+          <h2>${isNew ? 'New package' : esc(p.name || 'Package')} ${pill}</h2>
+          ${p.description ? `<p class="inv-detail-sub">${esc(p.description)}</p>` : ''}
         </div>
         <button type="button" class="inv-detail-close" id="pkg-close" aria-label="Close">&times;</button>
       </header>
 
-      <div class="inv-detail-body">
-        <div class="inv-fgrid">
-          <label class="ad-field inv-span2"><span>Package name</span>
-            <input class="ad-input" data-pf="name" value="${attr(p.name)}" placeholder="e.g. Wedding – Ceremony + Reception"></label>
-          <label class="ad-field"><span>Event type</span>
-            <input class="ad-input" list="pkg-types" data-pf="eventType" value="${attr(p.eventType)}" placeholder="e.g. Wedding">
-            <datalist id="pkg-types">${datalist}</datalist></label>
-          <label class="ad-field"><span>Estimate range &plusmn;%</span>
-            <input class="ad-input" type="number" min="0" max="50" step="1" data-pf="rangePct" value="${attr(p.rangePct)}"></label>
-          <label class="ad-field inv-span2"><span>Internal notes</span>
-            <input class="ad-input" data-pf="notes" value="${attr(p.notes)}" placeholder="Only you see this"></label>
-        </div>
+      <nav class="pkg-tabs">${tabs}</nav>
 
-        <label class="inv-toggle">
-          <span><strong>Active</strong><em>Offered by the quote bot.</em></span>
-          <input type="checkbox" data-pf="active"${p.active !== false ? ' checked' : ''}>
-          <span class="inv-switch" aria-hidden="true"></span>
-        </label>
-
-        <div class="inv-detail-section">
-          <div class="inv-reqs-head"><h3>Size tiers</h3>
-            <button type="button" class="ad-btn ad-btn-small" id="pkg-add-tier">+ Add tier</button></div>
-          <p class="inv-reqs-intro">The bot picks the smallest tier that fits the guest count. Prices include any auto-added required gear.</p>
-          <div id="pkg-tiers"></div>
-        </div>
-
-        <div class="inv-detail-section">
-          <h3>Optional extras</h3>
-          <p class="inv-reqs-intro">Add-ons the customer can tick on top of any tier.</p>
-          <div id="pkg-extras"></div>
-        </div>
-      </div>
+      <div class="inv-detail-body" id="pkg-tabbody"></div>
 
       <footer class="inv-detail-foot">
-        ${isNew ? '' : '<button type="button" class="ad-btn inv-del" id="pkg-del">Delete</button>'}
+        ${isNew ? '' : '<button type="button" class="ad-btn inv-del" id="pkg-del">Delete package</button>'}
         <button type="button" class="ad-btn ad-btn-primary" id="pkg-save">${isNew ? 'Add package' : 'Save package'}</button>
         <span class="ad-quote-msg" id="pkg-msg"></span>
       </footer>
@@ -6539,104 +6529,181 @@ function addPkgItem(list, itemId) {
   else list.push({ itemId, qty: 1 });
 }
 
-function pkgItemRowHtml(it, byId, attrName, idx) {
+/*  A gear thumbnail: the inventory item's photo, or a tinted initial - same
+    look as the Inventory list. */
+function pkgThumbItem(inv) {
+  if (inv && inv.photoUrl) return `<span class="pkg-gthumb inv-thumb-img"><img src="${attr(inv.photoUrl)}" alt="" loading="lazy"></span>`;
+  const l = (((inv && (inv.category || inv.name)) || '?')).trim().charAt(0).toUpperCase();
+  return `<span class="pkg-gthumb ${invCatClass((inv && inv.category) || '')}">${esc(l)}</span>`;
+}
+
+/*  A row of gear (included or extra) with an image, +/- qty stepper, rate and
+    total. attrName is 'pi' (included) or 'xi' (extra). */
+function pkgGearRow(it, byId, attrName, idx) {
   const inv = byId[it.itemId] || {};
-  const line = (inv.priceCents || 0) * Math.max(1, Math.round(it.qty || 1));
+  const qty = Math.max(1, Math.round(it.qty || 1));
+  const line = (inv.priceCents || 0) * qty;
   return `
-    <div class="pkg-item" ${attrName}="${idx}">
-      <span class="pkg-item-name">${esc(inv.name || it.itemId)}</span>
-      <label class="pkg-qtyf"><span>Qty</span><input class="qb-num" type="number" min="1" step="1" data-${attrName === 'data-pi' ? 'pi' : 'xi'}-qty value="${attr(Math.max(1, Math.round(it.qty || 1)))}"></label>
-      <span class="pkg-item-price">${esc(money(line))}/day</span>
-      <button type="button" class="qb-del" data-${attrName === 'data-pi' ? 'pi' : 'xi'}-del title="Remove">&times;</button>
-    </div>`;
-}
-
-function renderPkgTiers() {
-  const host = document.getElementById('pkg-tiers');
-  if (!host) return;
-  const byId = invByIdMap();
-  host.innerHTML = packageDraft.tiers.map((t, ti) => {
-    const price = packageItemsPriceCents(t.items, byId);
-    const itemsHtml = (t.items || []).length
-      ? t.items.map((it, ii) => pkgItemRowHtml(it, byId, 'data-pi', ii)).join('')
-      : '<p class="pkg-empty">No gear in this tier yet — search below to add.</p>';
-    const short = price.shortages && price.shortages.length
-      ? `<p class="pkg-short">Not enough stock for ${esc(price.shortages.map((s) => s.name).join(', '))} at this size.</p>` : '';
-    return `
-      <div class="pkg-tier" data-tier="${ti}">
-        <div class="pkg-tier-head">
-          <label class="ad-field"><span>Tier label</span><input class="ad-input" data-tf="label" value="${attr(t.label)}" placeholder="e.g. Up to 150"></label>
-          <label class="ad-field"><span>Up to N guests</span><input class="ad-input" type="number" min="0" step="1" data-tf="maxGuests" value="${attr(t.maxGuests)}" placeholder="blank = any size"></label>
-          <span class="pkg-tier-price" title="Day rate incl. required gear">${esc(money(price.dayCents))}/day</span>
-          ${packageDraft.tiers.length > 1 ? '<button type="button" class="ad-btn ad-btn-small pkg-tier-del" data-tier-del>Remove</button>' : ''}
-        </div>
-        <div class="pkg-items">${itemsHtml}</div>
-        <div class="pkg-adder">
-          <div class="qb-searchwrap">
-            <input type="text" class="qb-searchin" data-tier-search autocomplete="off" placeholder="&#128269;  Search inventory to add to this tier…">
-            <div class="qb-results pkg-results" data-tier-results hidden></div>
-          </div>
-        </div>
-        ${short}
-      </div>`;
-  }).join('');
-  document.querySelectorAll('#pkg-tiers .pkg-tier').forEach((el) => {
-    const ti = Number(el.getAttribute('data-tier'));
-    attachTypeahead(el.querySelector('[data-tier-search]'), el.querySelector('[data-tier-results]'),
-      (id) => { addPkgItem(packageDraft.tiers[ti].items, id); renderPkgTiers(); });
-  });
-}
-
-function renderPkgExtras() {
-  const host = document.getElementById('pkg-extras');
-  if (!host) return;
-  const byId = invByIdMap();
-  const itemsHtml = (packageDraft.extras || []).length
-    ? packageDraft.extras.map((it, ii) => pkgItemRowHtml(it, byId, 'data-xi', ii)).join('')
-    : '<p class="pkg-empty">No extras yet — search below to offer add-ons.</p>';
-  host.innerHTML = `
-    <div class="pkg-items">${itemsHtml}</div>
-    <div class="pkg-adder">
-      <div class="qb-searchwrap">
-        <input type="text" class="qb-searchin" id="pkg-extra-search" autocomplete="off" placeholder="&#128269;  Search inventory to add an extra…">
-        <div class="qb-results pkg-results" id="pkg-extra-results" hidden></div>
+    <div class="pkg-gearrow" data-${attrName}="${idx}">
+      <div class="pkg-gear-name">${pkgThumbItem(inv)}<span>${esc(inv.name || it.itemId)}</span></div>
+      <div class="pkg-gear-qty">
+        <button type="button" class="pkg-step" data-${attrName}-dec title="Less">&minus;</button>
+        <span class="pkg-qtyval">${qty}</span>
+        <button type="button" class="pkg-step" data-${attrName}-inc title="More">+</button>
       </div>
+      <div class="pkg-gear-rate">${esc(money(inv.priceCents || 0))}</div>
+      <div class="pkg-gear-total">${esc(money(line))}</div>
+      <button type="button" class="qb-del" data-${attrName}-del title="Remove">&times;</button>
     </div>`;
-  attachTypeahead(document.getElementById('pkg-extra-search'), document.getElementById('pkg-extra-results'),
-    (id) => { addPkgItem(packageDraft.extras, id); renderPkgExtras(); });
 }
 
-function updatePkgTierPrices(tierEl, ti) {
-  const byId = invByIdMap();
-  const tier = packageDraft.tiers[ti];
-  if (!tier) return;
-  tierEl.querySelectorAll('[data-pi]').forEach((piEl) => {
-    const ii = Number(piEl.getAttribute('data-pi'));
-    const it = tier.items[ii];
-    if (!it) return;
-    const inv = byId[it.itemId] || {};
-    const el = piEl.querySelector('.pkg-item-price');
-    if (el) el.textContent = money((inv.priceCents || 0) * Math.max(1, Math.round(it.qty || 1))) + '/day';
-  });
-  const tp = tierEl.querySelector('.pkg-tier-price');
-  if (tp) tp.textContent = money(packageItemsPriceCents(tier.items, byId).dayCents) + '/day';
+function pkgSearchAdder(target) {
+  return `
+    <div class="qb-searchwrap pkg-searchwrap">
+      <input type="text" class="qb-searchin" data-pkg-search="${target}" autocomplete="off" placeholder="&#128269;  Add inventory item&hellip;">
+      <div class="qb-results pkg-results" data-pkg-results hidden></div>
+    </div>`;
 }
 
-function updatePkgExtraPrices() {
-  const byId = invByIdMap();
-  document.querySelectorAll('#pkg-extras [data-xi]').forEach((xiEl) => {
-    const ii = Number(xiEl.getAttribute('data-xi'));
-    const it = packageDraft.extras[ii];
-    if (!it) return;
-    const inv = byId[it.itemId] || {};
-    const el = xiEl.querySelector('.pkg-item-price');
-    if (el) el.textContent = money((inv.priceCents || 0) * Math.max(1, Math.round(it.qty || 1))) + '/day';
+/*  Render the active tab into the panel body, and wire its search box(es). */
+function renderPkgTab() {
+  const host = document.getElementById('pkg-tabbody');
+  if (!host) return;
+  const tab = state.pkgTab || 'details';
+  host.innerHTML = tab === 'details' ? pkgDetailsTab()
+    : tab === 'equipment' ? pkgEquipmentTab()
+    : tab === 'extras' ? pkgExtrasTab()
+    : tab === 'pricing' ? pkgPricingTab()
+    : pkgPreviewTab();
+
+  host.querySelectorAll('[data-pkg-search]').forEach((input) => {
+    const box = input.parentElement.querySelector('[data-pkg-results]');
+    const target = input.getAttribute('data-pkg-search');
+    attachTypeahead(input, box, (id) => {
+      addPkgItem(target === 'extras' ? packageDraft.extras : packageDraft.items, id);
+      renderPkgTab();
+    });
   });
+}
+
+function pkgDetailsTab() {
+  const p = packageDraft;
+  const datalist = pkgEventTypes().map((t) => `<option value="${attr(t)}">`).join('');
+  return `
+    <div class="pkg-sec-h">Package details</div>
+    <div class="inv-fgrid">
+      <label class="ad-field inv-span2"><span>Package name *</span>
+        <input class="ad-input" data-pf="name" value="${attr(p.name)}" placeholder="e.g. DJ Package – Small"></label>
+      <label class="ad-field inv-span2"><span>Event type</span>
+        <input class="ad-input" list="pkg-types" data-pf="eventType" value="${attr(p.eventType)}" placeholder="e.g. DJ / Party">
+        <datalist id="pkg-types">${datalist}</datalist></label>
+      <label class="ad-field inv-span2"><span>Short description</span>
+        <textarea class="ad-input" rows="2" data-pf="description" placeholder="Shown to the customer, e.g. Perfect for small parties &amp; functions.">${esc(p.description || '')}</textarea></label>
+    </div>
+    <label class="inv-toggle">
+      <span><strong>Active</strong><em>Offered by the quote bot.</em></span>
+      <input type="checkbox" data-pf="active"${p.active !== false ? ' checked' : ''}>
+      <span class="inv-switch" aria-hidden="true"></span>
+    </label>`;
+}
+
+function pkgEquipmentTab() {
+  const byId = invByIdMap();
+  const p = packageDraft;
+  const gear = (p.items || []).length
+    ? p.items.map((it, i) => pkgGearRow(it, byId, 'pi', i)).join('')
+    : '<p class="pkg-empty">No gear yet — search above to add.</p>';
+
+  const cart = {};
+  (p.items || []).forEach((it) => { if (it.itemId) cart[it.itemId] = (cart[it.itemId] || 0) + Math.max(0, Math.round(it.qty || 0)); });
+  const kit = Object.keys(cart).length ? expandKit(cart, byId) : { required: [] };
+  const reqRows = (kit.required || []).map((r) => `
+    <div class="pkg-reqrow">
+      <div class="pkg-gear-name">${pkgThumbItem(byId[r.itemId] || {})}<span>${esc(r.name)}</span></div>
+      <div class="pkg-req-qty">&times;${esc(r.qty)}</div>
+      <div class="pkg-req-tag">${r.charge === 'free' || !r.unitCents ? 'Included' : esc(money(r.lineCents))}</div>
+    </div>`).join('');
+
+  return `
+    <div class="pkg-sec-h">Included gear
+      <button type="button" class="ad-btn ad-btn-small pkg-addbtn" data-pkg-focus>+ Add inventory item</button></div>
+    ${pkgSearchAdder('items')}
+    ${(p.items || []).length ? '<div class="pkg-gearhead"><span>Item</span><span>Qty</span><span>Rate</span><span>Total</span><span></span></div>' : ''}
+    <div class="pkg-gearlist">${gear}</div>
+    ${reqRows ? `
+      <div class="pkg-sec-h pkg-sec-req">Required gear <span class="pkg-auto">AUTO</span></div>
+      <p class="inv-reqs-intro">Automatically included from inventory requirements. Duplicates are consolidated.</p>
+      <div class="pkg-gearlist">${reqRows}</div>` : ''}`;
+}
+
+function pkgExtrasTab() {
+  const byId = invByIdMap();
+  const rows = (packageDraft.extras || []).length
+    ? packageDraft.extras.map((it, i) => pkgGearRow(it, byId, 'xi', i)).join('')
+    : '<p class="pkg-empty">No extras yet — search above to offer add-ons.</p>';
+  return `
+    <div class="pkg-sec-h">Optional extras</div>
+    <p class="inv-reqs-intro">Add-ons the customer can tick on top of the package.</p>
+    ${pkgSearchAdder('extras')}
+    ${(packageDraft.extras || []).length ? '<div class="pkg-gearhead"><span>Item</span><span>Qty</span><span>Rate</span><span>Total</span><span></span></div>' : ''}
+    <div class="pkg-gearlist">${rows}</div>`;
+}
+
+function pkgPricingTab() {
+  const byId = invByIdMap();
+  const p = packageDraft;
+  const val = pkgValueCents(p, byId);
+  const useOverride = p.overrideCents > 0;
+  const cust = pkgCustomerCents(p, byId);
+  const disc = Math.max(0, Math.round(p.discountCents || 0));
+  const pct = val ? Math.round((disc / val) * 100) : 0;
+  return `
+    <div class="pkg-sec-h">Pricing</div>
+    <label class="inv-toggle">
+      <span><strong>Use inventory pricing</strong><em>Customer price = gear value minus discount.</em></span>
+      <input type="checkbox" data-pf-useinv${useOverride ? '' : ' checked'}>
+      <span class="inv-switch" aria-hidden="true"></span>
+    </label>
+    ${useOverride ? `
+      <div class="inv-fgrid"><label class="ad-field inv-span2"><span>Override price $ / day</span>
+        <input class="ad-input" type="number" min="0" step="1" data-poverride value="${attr(p.overrideCents ? p.overrideCents / 100 : '')}"></label></div>
+      <div class="pkg-pricebox"><div class="pkg-priceline pkg-pricecust"><span>Customer price</span><span>${esc(money(cust))}/day</span></div></div>`
+    : `
+      <div class="pkg-pricebox">
+        <div class="pkg-priceline"><span>Total inventory value</span><span>${esc(money(val))}</span></div>
+        <div class="pkg-priceline"><span>Package discount</span>
+          <span class="pkg-discinput">&minus;<span class="qb-inline-dollar">$</span><input class="qb-num qb-num-total" type="number" min="0" step="1" data-pdisc value="${attr(disc ? disc / 100 : '')}"></span></div>
+        <div class="pkg-priceline pkg-pricecust"><span>Customer price</span><span>${esc(money(cust))}/day</span></div>
+      </div>
+      ${disc ? `<p class="pkg-savechip">${pct}% off inventory value</p>` : ''}`}`;
+}
+
+function pkgPreviewTab() {
+  const byId = invByIdMap();
+  const p = packageDraft;
+  const cust = pkgCustomerCents(p, byId);
+  const gear = (p.items || []).map((it) => { const inv = byId[it.itemId] || {}; return `<li>${Math.max(1, Math.round(it.qty || 1))}&times; ${esc(inv.name || it.itemId)}</li>`; }).join('');
+  const extras = (p.extras || []).map((it) => { const inv = byId[it.itemId] || {}; return `<li>${esc(inv.name || it.itemId)}${it.qty > 1 ? ' &times;' + it.qty : ''}</li>`; }).join('');
+  return `
+    <div class="pkg-preview">
+      <h3>${esc(p.name || 'Package')}</h3>
+      ${p.eventType ? `<p class="pkg-prev-type">${esc(p.eventType)}</p>` : ''}
+      ${p.description ? `<p>${esc(p.description)}</p>` : ''}
+      <p class="pkg-prev-price">${esc(money(cust))}<span>/day</span></p>
+      ${gear ? `<h4>Included</h4><ul>${gear}</ul>` : ''}
+      ${extras ? `<h4>Optional extras</h4><ul>${extras}</ul>` : ''}
+    </div>`;
+}
+
+/*  Live-update the customer price figure while typing in discount/override,
+    without rebuilding the input. */
+function updatePkgPriceView() {
+  const el = document.querySelector('.pkg-pricecust span:last-child');
+  if (el) el.textContent = money(pkgCustomerCents(packageDraft, invByIdMap())) + '/day';
 }
 
 function wirePackageDetail() {
-  renderPkgTiers();
-  renderPkgExtras();
+  renderPkgTab();
 
   const wrap = document.querySelector('.inv-detail');
   if (!wrap) return;
@@ -6644,66 +6711,54 @@ function wirePackageDetail() {
   const close = document.getElementById('pkg-close');
   if (close) close.addEventListener('click', () => { state.openPackageId = null; render(); });
 
+  // tab switching
+  wrap.querySelectorAll('[data-pkg-tab]').forEach((b) => b.addEventListener('click', () => {
+    state.pkgTab = b.getAttribute('data-pkg-tab');
+    wrap.querySelectorAll('[data-pkg-tab]').forEach((x) => x.classList.toggle('is-on', x === b));
+    renderPkgTab();
+  }));
+
+  // field edits (delegated, survives tab re-renders)
   wrap.addEventListener('input', (e) => {
     const t = e.target;
     if (t.dataset.pf) {
       const f = t.dataset.pf;
       if (f === 'active') packageDraft.active = t.checked;
-      else if (f === 'rangePct') packageDraft.rangePct = Math.max(0, Math.min(50, Math.round(Number(t.value || 0))));
       else packageDraft[f] = t.value;
       return;
     }
-    const tierEl = t.closest('[data-tier]');
-    if (tierEl && t.dataset.tf) {
-      const ti = Number(tierEl.getAttribute('data-tier'));
-      const tier = packageDraft.tiers[ti];
-      if (!tier) return;
-      if (t.dataset.tf === 'maxGuests') tier.maxGuests = t.value === '' ? '' : Math.max(0, Math.round(Number(t.value || 0)));
-      else tier.label = t.value;
+    if (t.hasAttribute('data-pf-useinv')) {
+      if (t.checked) packageDraft.overrideCents = 0;
+      else packageDraft.overrideCents = Math.max(1, packageDraft.overrideCents || pkgCustomerCents(packageDraft, invByIdMap()));
+      renderPkgTab();
       return;
     }
-    if (tierEl && t.hasAttribute('data-pi-qty')) {
-      const ti = Number(tierEl.getAttribute('data-tier'));
-      const piEl = t.closest('[data-pi]');
-      if (!piEl) return;
-      const it = packageDraft.tiers[ti].items[Number(piEl.getAttribute('data-pi'))];
-      if (!it) return;
-      it.qty = Math.max(1, Math.round(Number(t.value || 1)));
-      updatePkgTierPrices(tierEl, ti);
-      return;
-    }
-    const xiEl = t.closest('[data-xi]');
-    if (xiEl && t.hasAttribute('data-xi-qty')) {
-      const it = packageDraft.extras[Number(xiEl.getAttribute('data-xi'))];
-      if (!it) return;
-      it.qty = Math.max(1, Math.round(Number(t.value || 1)));
-      updatePkgExtraPrices();
-    }
+    if (t.hasAttribute('data-poverride')) { packageDraft.overrideCents = Math.max(0, Math.round(Number(t.value || 0) * 100)); updatePkgPriceView(); return; }
+    if (t.hasAttribute('data-pdisc')) { packageDraft.discountCents = Math.max(0, Math.round(Number(t.value || 0) * 100)); updatePkgPriceView(); return; }
   });
 
+  // steppers, deletes, add-item focus (delegated)
   wrap.addEventListener('click', (e) => {
-    const piDel = e.target.closest('[data-pi-del]');
-    if (piDel) {
-      const ti = Number(piDel.closest('[data-tier]').getAttribute('data-tier'));
-      packageDraft.tiers[ti].items.splice(Number(piDel.closest('[data-pi]').getAttribute('data-pi')), 1);
-      renderPkgTiers();
-      return;
+    const focusAdd = e.target.closest('[data-pkg-focus]');
+    if (focusAdd) { const s = wrap.querySelector('[data-pkg-search]'); if (s) s.focus(); return; }
+
+    const inc = e.target.closest('[data-pi-inc]'); const dec = e.target.closest('[data-pi-dec]'); const pdel = e.target.closest('[data-pi-del]');
+    if (inc || dec || pdel) {
+      const row = e.target.closest('[data-pi]'); if (!row) return;
+      const i = Number(row.getAttribute('data-pi')); const it = packageDraft.items[i]; if (!it) return;
+      if (pdel) packageDraft.items.splice(i, 1);
+      else it.qty = Math.max(1, Math.round((it.qty || 1) + (inc ? 1 : -1)));
+      renderPkgTab(); return;
     }
-    const xiDel = e.target.closest('[data-xi-del]');
-    if (xiDel) {
-      packageDraft.extras.splice(Number(xiDel.closest('[data-xi]').getAttribute('data-xi')), 1);
-      renderPkgExtras();
-      return;
-    }
-    const tierDel = e.target.closest('[data-tier-del]');
-    if (tierDel) {
-      packageDraft.tiers.splice(Number(tierDel.closest('[data-tier]').getAttribute('data-tier')), 1);
-      renderPkgTiers();
+    const xinc = e.target.closest('[data-xi-inc]'); const xdec = e.target.closest('[data-xi-dec]'); const xdel = e.target.closest('[data-xi-del]');
+    if (xinc || xdec || xdel) {
+      const row = e.target.closest('[data-xi]'); if (!row) return;
+      const i = Number(row.getAttribute('data-xi')); const it = packageDraft.extras[i]; if (!it) return;
+      if (xdel) packageDraft.extras.splice(i, 1);
+      else it.qty = Math.max(1, Math.round((it.qty || 1) + (xinc ? 1 : -1)));
+      renderPkgTab(); return;
     }
   });
-
-  const addTier = document.getElementById('pkg-add-tier');
-  if (addTier) addTier.addEventListener('click', () => { packageDraft.tiers.push({ label: '', maxGuests: '', items: [] }); renderPkgTiers(); });
 
   const save = document.getElementById('pkg-save');
   if (save) save.addEventListener('click', () => savePackage(save));
@@ -6721,18 +6776,15 @@ async function savePackage(btn) {
   const clean = {
     name: String(p.name).trim().slice(0, 160),
     eventType: String(p.eventType || '').trim().slice(0, 80),
+    description: String(p.description || '').trim().slice(0, 600),
     active: p.active !== false,
-    rangePct: Math.max(0, Math.min(50, Math.round(Number(p.rangePct || 0)))),
-    notes: String(p.notes || '').trim().slice(0, 1000),
-    tiers: (p.tiers || []).map((t) => ({
-      label: String(t.label || '').trim().slice(0, 80),
-      maxGuests: t.maxGuests === '' || t.maxGuests == null ? null : Math.max(0, Math.round(Number(t.maxGuests || 0))),
-      items: (t.items || []).filter((i) => i.itemId).map((i) => ({ itemId: i.itemId, qty: Math.max(1, Math.round(i.qty || 1)) })),
-    })).filter((t) => t.items.length || t.label || t.maxGuests != null),
+    items: (p.items || []).filter((i) => i.itemId).map((i) => ({ itemId: i.itemId, qty: Math.max(1, Math.round(i.qty || 1)) })),
     extras: (p.extras || []).filter((i) => i.itemId).map((i) => ({ itemId: i.itemId, qty: Math.max(1, Math.round(i.qty || 1)) })),
+    discountCents: Math.max(0, Math.round(p.discountCents || 0)),
+    overrideCents: Math.max(0, Math.round(p.overrideCents || 0)),
+    tiers: null,   // clear any legacy tier data now the model is flat
     updatedAt: Date.now(),
   };
-  if (!clean.tiers.length) clean.tiers = [{ label: '', maxGuests: null, items: [] }];
 
   if (msg) { msg.textContent = 'Saving…'; msg.className = 'ad-quote-msg'; }
   if (btn) btn.disabled = true;
