@@ -21,106 +21,12 @@
 
 import {
   firebaseConfig, functionsRegion, isFirebaseConfigured,
-} from './firebase-config.js?v=152';
+} from './firebase-config.js?v=153';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
-/*  DEFAULT PRICES - a mirror of functions/lib/quote-pricing.js. The bot
-    reads the live table from Firestore; this is only what it shows before
-    Max has saved one, and the fallback if the read fails. Keep the SHAPE in
-    step with the server file; the numbers are Max's to change in admin.   */
-const DEFAULT_PRICING = {
-  spreadPct: 15,
-  roundToCents: 5000,
-  freeHours: 4,
-  hourlyCents: 0,
-  eventTypes: [
-    { key: 'wedding', label: 'Wedding', baseCents: 120000 },
-    { key: 'corporate', label: 'Corporate', baseCents: 150000 },
-    { key: 'private', label: 'Private Function', baseCents: 80000 },
-    { key: 'festival', label: 'Festival', baseCents: 250000 },
-  ],
-  sizes: [
-    { key: 's', label: 'Up to 50 guests', multiplier: 1 },
-    { key: 'm', label: '50 to 150 guests', multiplier: 1.25 },
-    { key: 'l', label: '150 to 400 guests', multiplier: 1.6 },
-    { key: 'xl', label: '400+ guests', multiplier: 2.2 },
-  ],
-  locations: [
-    { key: 'bowen', label: 'Bowen', travelCents: 0 },
-    { key: 'airlie', label: 'Airlie Beach', travelCents: 15000 },
-    { key: 'whitsundays', label: 'Whitsundays', travelCents: 20000 },
-    { key: 'other', label: 'Somewhere else', travelCents: 25000 },
-  ],
-  durations: [
-    { key: '3', label: 'A few hours', hours: 3 },
-    { key: '5', label: 'Half a day', hours: 5 },
-    { key: '7', label: 'A full evening', hours: 7 },
-    { key: '10', label: 'All day', hours: 10 },
-  ],
-};
-
-/*  DEFAULT INVENTORY - a mirror of functions/lib/quote-pricing.js. The bot
-    reads the live `inventory` collection; this is the fallback so it still
-    offers something before Max has saved his gear. Only inBot items are
-    offered. Keep the SHAPE in step with the server file.                  */
-const DEFAULT_INVENTORY = [
-  { id: 'dj', name: 'DJ Package', category: 'DJ / MC', priceCents: 60000, period: 'event', quantity: 2, inBot: true },
-  { id: 'mc', name: 'MC / Host', category: 'DJ / MC', priceCents: 35000, period: 'event', quantity: 1, inBot: true },
-  { id: 'pa', name: 'Live Sound / PA System', category: 'Audio', priceCents: 45000, period: 'event', quantity: 3, inBot: true },
-  { id: 'lighting', name: 'Lighting Package', category: 'Lighting', priceCents: 40000, period: 'event', quantity: 4, inBot: true },
-  { id: 'staging', name: 'Staging', category: 'Staging', priceCents: 50000, period: 'event', quantity: 1, inBot: true },
-  { id: 'dryhire', name: 'Dry Hire Gear', category: 'Dry Hire', priceCents: 25000, period: 'day', quantity: 10, inBot: true },
-  { id: 'setup', name: 'Setup & Pack-down', category: 'Crew', priceCents: 30000, period: 'event', quantity: 1, inBot: true },
-];
-
-/* -------------------------------------------------------------------------
-   Estimator - the same formula as functions/lib/quote-pricing.js
-   ------------------------------------------------------------------------- */
-function roundCents(cents, step) {
-  const s = step && step > 0 ? step : 1;
-  const r = Math.round(cents / s) * s;
-  return r < 0 ? 0 : r;
-}
-
-function find(list, key) {
-  return (Array.isArray(list) ? list : []).find((x) => x && x.key === key) || null;
-}
-
-function estimate(pricing, inv, answers) {
-  const p = pricing || DEFAULT_PRICING;
-  const items = (Array.isArray(inv) && inv.length) ? inv : DEFAULT_INVENTORY;
-  const a = answers || {};
-
-  const evt = find(p.eventTypes, a.eventType);
-  const loc = find(p.locations, a.location);
-  const size = find(p.sizes, a.size);
-  const dur = find(p.durations, a.hours);
-
-  const byId = {};
-  items.forEach((it) => { if (it && it.id) byId[it.id] = it; });
-  const picked = (a.services || [])
-    .map((id) => byId[id])
-    .filter((it) => it && it.inBot);
-
-  const base = evt ? evt.baseCents || 0 : 0;
-  const addons = picked.reduce((s, x) => s + (x.priceCents || 0), 0);
-  const travel = loc ? loc.travelCents || 0 : 0;
-  const overage = Math.max(0, (dur ? dur.hours || 0 : 0) - (p.freeHours || 0));
-  const duration = overage * (p.hourlyCents || 0);
-
-  const subtotal = base + addons + travel + duration;
-  const mult = size ? size.multiplier || 1 : 1;
-  const step = p.roundToCents || 5000;
-  const point = roundCents(subtotal * mult, step);
-  const spread = (p.spreadPct || 0) / 100;
-
-  return {
-    lowCents: roundCents(point * (1 - spread), step),
-    highCents: roundCents(point * (1 + spread), step),
-  };
-}
-
+/*  The bot no longer prices in the browser: all matching and pricing runs in
+    the submitBotQuote function, so the page ships only the little UI below.  */
 const dollars = (cents) => '$' + Math.round((cents || 0) / 100).toLocaleString('en-AU');
 
 function rangeLabel(est) {
@@ -132,12 +38,23 @@ function rangeLabel(est) {
 /* -------------------------------------------------------------------------
    State
    ------------------------------------------------------------------------- */
-const answers = { eventType: '', location: '', size: '', hours: '', services: [] };
-let pricing = DEFAULT_PRICING;
-let inventory = DEFAULT_INVENTORY;
-let fb = null;          // { functions, callable } once the SDK is up
+const answers = { eventType: '', guests: 0, days: 1, town: '', support: '', name: '', email: '', phone: '', eventDate: '' };
+let packages = [];      // {name, eventType, maxGuests} summaries, for the event-type menu
+let fb = null;          // { submit } once the SDK is up
 let stream;             // the messages column
 let dock;              // where the current choices sit
+
+const GUEST_OPTS = [
+  { label: 'Up to 50', guests: 50 }, { label: '50–100', guests: 100 }, { label: '100–150', guests: 150 },
+  { label: '150–250', guests: 250 }, { label: '250+', guests: 400 },
+];
+const DAY_OPTS = [{ label: 'Just the day', days: 1 }, { label: '2 days', days: 2 }, { label: '3 days', days: 3 }];
+const TOWN_OPTS = ['Bowen (local)', 'Proserpine', 'Airlie Beach', 'Cannonvale', 'Collinsville', 'Ayr', 'Home Hill', 'Mackay', 'Townsville'];
+const SUPPORT_OPTS = [
+  { label: 'Full service — delivered, set up + on-site tech', value: 'full' },
+  { label: 'Delivery & setup only', value: 'delivery' },
+  { label: 'I’ll collect from Bowen', value: 'pickup' },
+];
 
 /* -------------------------------------------------------------------------
    Firebase - loaded lazily, only what the bot needs
@@ -156,36 +73,37 @@ async function initFirebase() {
     const fns = functions.getFunctions(app, functionsRegion);
 
     fb = {
-      submit: functions.httpsCallable(fns, 'submitQuoteLead'),
+      submit: functions.httpsCallable(fns, 'submitBotQuote'),
     };
 
-    // Live prices and the live inventory, if Max has saved them. A missing
-    // or empty one leaves the default in place rather than emptying the menus.
+    // Just the package summaries for the event-type menu - the gear, prices
+    // and matching all live server-side, so nothing bulky ships to the page.
     try {
-      const snap = await firestore.getDoc(
-        firestore.doc(db, 'config', 'quotePricing'));
-      if (snap.exists()) {
-        const data = snap.data() || {};
-        if (Array.isArray(data.eventTypes) && data.eventTypes.length) {
-          pricing = data;
-        }
-      }
+      const snap = await firestore.getDocs(firestore.collection(db, 'packages'));
+      const rows = [];
+      snap.forEach((d) => {
+        const x = d.data() || {};
+        if (x.active !== false) rows.push({ name: x.name || '', eventType: x.eventType || '', maxGuests: x.maxGuests || 0 });
+      });
+      if (rows.length) packages = rows;
     } catch (err) {
-      /* keep the default */
-    }
-
-    try {
-      const invSnap = await firestore.getDocs(
-        firestore.collection(db, 'inventory'));
-      const items = [];
-      invSnap.forEach((d) => items.push({ id: d.id, ...d.data() }));
-      if (items.length) inventory = items;
-    } catch (err) {
-      /* keep the default */
+      /* keep the fallback event-type list */
     }
   } catch (err) {
     fb = null;   // the bot still runs, it just cannot send
   }
+}
+
+/*  The event types offered, taken from the active packages (falls back to a
+    sensible default before any package is read). */
+function eventTypeOptions() {
+  const seen = new Set();
+  const out = [];
+  packages.forEach((p) => {
+    const t = (p.eventType || '').trim();
+    if (t && !seen.has(t.toLowerCase())) { seen.add(t.toLowerCase()); out.push(t); }
+  });
+  return out.length ? out : ['Wedding', 'Party', 'Corporate', 'Live Music'];
 }
 
 /* -------------------------------------------------------------------------
@@ -255,134 +173,68 @@ function clearDock() {
    The flow
    ------------------------------------------------------------------------- */
 async function start() {
-  await botSay('Hey! 👋 I’m the SoundzGood estimate assistant. Answer a few quick '
-    + 'questions and I’ll give you a ballpark on the spot.', 200);
-  await botSay('What type of event are you planning?');
+  await botSay('Hi! I’m the SoundzGood estimate assistant. A few quick questions and '
+    + 'I’ll get you a ballpark — then our team follows up with a formal quote.', 200);
   askEventType();
 }
 
-function askEventType() {
-  offerChips(pricing.eventTypes, (opt) => {
-    answers.eventType = opt.key;
-    meSay(opt.label);
-    askLocation();
+async function askEventType() {
+  await botSay('What type of event is it?');
+  offerChips(eventTypeOptions().map((t) => ({ label: t, value: t })), (o) => {
+    answers.eventType = o.value;
+    meSay(o.label);
+    askGuests();
   });
 }
 
-async function askLocation() {
+async function askGuests() {
   clearDock();
-  await botSay('Nice one. Where will it be held?');
-  offerChips(pricing.locations, (opt) => {
-    answers.location = opt.key;
-    meSay(opt.label);
-    askSize();
+  await botSay('Roughly how many guests?');
+  offerChips(GUEST_OPTS.map((g) => ({ label: g.label, value: g.guests })), (o) => {
+    answers.guests = o.value;
+    meSay(o.label);
+    askDays();
   });
 }
 
-async function askSize() {
+async function askDays() {
   clearDock();
-  await botSay('Roughly how many guests are you expecting?');
-  offerChips(pricing.sizes, (opt) => {
-    answers.size = opt.key;
-    meSay(opt.label);
-    askServices();
+  await botSay('How many days do you need us for?');
+  offerChips(DAY_OPTS.map((d) => ({ label: d.label, value: d.days })), (o) => {
+    answers.days = o.value;
+    meSay(o.label);
+    askTown();
   });
 }
 
-/*  Services is the one multi-select step: tap as many as you like, then a
-    Done button moves on. The dock rebuilds after each tap so the chosen
-    ones show as filled.                                                   */
-async function askServices() {
+async function askTown() {
   clearDock();
-  await botSay('What are you after? Tap everything that applies.');
-  renderServiceChips();
-}
-
-/*  The extras the bot offers: inventory items flagged inBot, in the order
-    they were saved, grouped under their category.                         */
-function botItems() {
-  return (inventory || []).filter((it) => it && it.inBot && it.name);
-}
-
-function renderServiceChips() {
-  dock.innerHTML = '';
-  dock.className = 'sgq-dock sgq-dock-multi';
-
-  const items = botItems();
-
-  //  Grouped by category, each group under a small heading. A single flat
-  //  list if nothing has a category, so it never looks broken.
-  let lastCat = null;
-  items.forEach((item) => {
-    const cat = item.category || '';
-    if (cat && cat !== lastCat) {
-      const h = document.createElement('span');
-      h.className = 'sgq-cat';
-      h.textContent = cat;
-      dock.appendChild(h);
-      lastCat = cat;
-    }
-
-    const on = answers.services.includes(item.id);
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'sgq-chip sgq-chip-toggle' + (on ? ' is-on' : '');
-    b.setAttribute('aria-pressed', on ? 'true' : 'false');
-    b.innerHTML = (on ? '✓ ' : '') + esc(item.name);
-    b.addEventListener('click', () => {
-      const i = answers.services.indexOf(item.id);
-      if (i >= 0) answers.services.splice(i, 1);
-      else answers.services.push(item.id);
-      renderServiceChips();
-    });
-    dock.appendChild(b);
+  await botSay('Where’s the venue?');
+  const opts = TOWN_OPTS.map((t) => ({ label: t, value: t })).concat([{ label: 'Somewhere else', value: '' }]);
+  offerChips(opts, (o) => {
+    answers.town = o.value;
+    meSay(o.label || 'Somewhere else');
+    askSupport();
   });
-
-  const done = document.createElement('button');
-  done.type = 'button';
-  done.className = 'sgq-chip sgq-chip-go';
-  done.textContent = answers.services.length ? "That's everything →" : 'Skip →';
-  done.addEventListener('click', () => {
-    const chosen = items
-      .filter((s) => answers.services.includes(s.id))
-      .map((s) => s.name);
-    meSay(chosen.length ? chosen.join(', ') : 'Not sure yet');
-    askDuration();
-  });
-  dock.appendChild(done);
-  scrollDown();
 }
 
-async function askDuration() {
+async function askSupport() {
   clearDock();
-  await botSay('About how long do you need us for?');
-  offerChips(pricing.durations, (opt) => {
-    answers.hours = opt.key;
-    meSay(opt.label);
-    showEstimate();
+  await botSay('How much hands-on support do you need on the day?');
+  offerChips(SUPPORT_OPTS, (o) => {
+    answers.support = o.value;
+    meSay(o.label);
+    askContact();
   });
-}
-
-async function showEstimate() {
-  clearDock();
-  const est = estimate(pricing, inventory, answers);
-  answers._est = est;
-
-  await botSay('Thanks! Based on that, an event like yours usually lands around:');
-  await botSay(`<span class="sgq-range">${rangeLabel(est)}</span>
-    <span class="sgq-range-note">Ballpark only — every event’s different, so the
-    final price depends on the details.</span>`, 250);
-  await botSay('Want us to lock in an exact quote? Pop your details in and the team '
-    + 'will be in touch — you’ll get this estimate by email too.', 250);
-  askContact();
 }
 
 /*  The contact form goes INSIDE the scrollable conversation, not in the
     fixed dock at the foot: as a dock it was tall enough to cover the chat,
     so you could not scroll back up to read your estimate. In the stream it
     scrolls with everything else.                                          */
-function askContact() {
+async function askContact() {
   clearDock();
+  await botSay('Great — last step. Pop your details in and I’ll work out your estimate.');
 
   const card = document.createElement('div');
   card.className = 'sgq-formwrap';
@@ -416,7 +268,7 @@ function askContact() {
       </div>
 
       <p class="sgq-err" hidden></p>
-      <button type="submit" class="sgq-submit">Send me my estimate</button>
+      <button type="submit" class="sgq-submit">Get my estimate</button>
     </form>`;
 
   stream.appendChild(card);
@@ -441,50 +293,43 @@ async function submit(form) {
     return showErr(err, 'That email doesn’t look right.');
   }
 
-  const payload = {
-    name,
-    email,
-    phone: val('phone'),
-    eventDate: val('eventDate'),
-    message: val('message'),
-    website: val('website'),   // honeypot
-    eventType: answers.eventType,
-    location: answers.location,
-    size: answers.size,
-    hours: answers.hours,
-    services: answers.services.slice(),
-  };
+  answers.name = name;
+  answers.email = email;
+  answers.phone = val('phone');
+  answers.eventDate = val('eventDate');
 
   btn.disabled = true;
-  btn.textContent = 'Sending…';
+  btn.textContent = 'Working it out…';
   err.hidden = true;
 
-  /*  No Firebase (preview or a load failure): the bot cannot send, so it
-      says so plainly and hands the visitor the contact page rather than
-      pretending it worked.                                                */
   const card = form.closest('.sgq-formwrap');
 
+  /*  No Firebase (preview or a load failure): the bot cannot price, so it
+      says so plainly and hands the visitor the contact page.              */
   if (!fb) {
     if (card) card.remove();
     meSay(`${name} — ${email}`);
-    await botSay('Thanks! We can’t send from this preview, but you can reach the '
-      + 'team on the <a href="/contact">contact page</a> and quote your estimate of '
-      + `<strong>${rangeLabel(answers._est)}</strong>.`);
+    await botSay('Thanks! We can’t price from this preview, but reach the team on the '
+      + '<a href="/contact">contact page</a> and we’ll sort your quote.');
     return;
   }
 
   try {
-    await fb.submit(payload);
+    const res = await fb.submit({ answers, website: val('website') });
+    const d = (res && res.data) || {};
     if (card) card.remove();
     meSay(`${name} — ${email}`);
-    await botSay(`Perfect, thanks ${esc(name)}! 🎉 Your estimate of `
-      + `<strong>${rangeLabel(answers._est)}</strong> is on its way to your inbox, `
-      + 'and the team will follow up shortly.');
-    await botSay('Planning more than one event? <a href="/contact">Get in touch</a> '
-      + 'any time.', 250);
+    if (d.lowCents != null) {
+      await botSay(`Thanks ${esc(name)}! For a ${esc(answers.eventType)} like yours, we’re looking at roughly:`);
+      await botSay(`<span class="sgq-range">${rangeLabel({ lowCents: d.lowCents, highCents: d.highCents })}</span>
+        <span class="sgq-range-note">Estimate only — our team will confirm the details and email your formal quote${d.packageName ? ` (based on our ${esc(d.packageName)})` : ''}. Nothing’s booked until a deposit is paid.</span>`, 250);
+      await botSay('We’ll be in touch shortly. 🎧', 250);
+    } else {
+      await botSay('Thanks! Our team will review the details and be in touch with your quote.');
+    }
   } catch (ex) {
     btn.disabled = false;
-    btn.textContent = 'Send me my estimate';
+    btn.textContent = 'Get my estimate';
     showErr(err, (ex && ex.message) || 'Something went wrong. Please try again.');
   }
 }

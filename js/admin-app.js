@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=152';
+} from './firebase-config.js?v=153';
 
-import { expandKit } from './kit.js?v=152';
+import { expandKit } from './kit.js?v=153';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -510,6 +510,21 @@ function subscribeToInventory() {
   ));
 }
 
+/*  A count badge on the Quotes & Invoices rail item for quotes the bot
+    created and nobody has actioned yet (still draft). */
+function updateBotBadge() {
+  const n = (state.quoteDocs || []).filter((q) => q.source === 'bot' && q.status === 'draft').length;
+  const btn = document.querySelector('.ad-nav-item[data-view="quoteDocs"]');
+  if (!btn) return;
+  let b = btn.querySelector('.ad-nav-badge');
+  if (n > 0) {
+    if (!b) { b = document.createElement('span'); b.className = 'ad-nav-badge'; btn.appendChild(b); }
+    b.textContent = String(n);
+  } else if (b) {
+    b.remove();
+  }
+}
+
 /*  Quotes / invoices, live. Only re-render the list when it is on screen;
     while the builder is open the draft is edited off to the side, so a
     snapshot must not repaint over it.                                     */
@@ -520,6 +535,7 @@ function subscribeToQuoteDocs() {
     (snap) => {
       state.quoteDocs = [];
       snap.forEach((d) => state.quoteDocs.push({ id: d.id, ...d.data() }));
+      updateBotBadge();
       if (state.view === 'quoteDocs' && !state.openQuoteId) render();
     },
     (err) => console.error('quotes', err)
@@ -5513,7 +5529,7 @@ function renderQuoteDocRows() {
     const c = q.customer || {};
     return `
       <tr class="ad-quote-row" data-open-q="${attr(q.id)}">
-        <td class="ad-cell-strong">${esc(num || '')}</td>
+        <td class="ad-cell-strong">${esc(num || '')}${q.source === 'bot' ? '<span class="ad-bot-tag">Bot</span>' : ''}</td>
         <td>${esc(c.name || c.business || '')}</td>
         <td>${esc(c.eventName || '—')}</td>
         <td class="inv-num">${esc(money(q.totalCents))}</td>

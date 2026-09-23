@@ -153,6 +153,12 @@ body{
 }
 
 .ad-nav-item:hover{ background:var(--ad-ink-2); color:#fff; }
+.ad-nav-badge{ margin-left:auto; min-width:18px; height:18px; padding:0 5px; border-radius:999px;
+               background:var(--ad-orange); color:#fff; font-size:.68rem; font-weight:800;
+               display:inline-flex; align-items:center; justify-content:center; }
+.ad-bot-tag{ display:inline-block; font-size:.6rem; font-weight:800; letter-spacing:.03em;
+             background:var(--ad-orange-soft); color:var(--ad-orange); padding:1px 6px;
+             border-radius:999px; margin-left:6px; vertical-align:middle; }
 
 .ad-nav-item.is-active{
     background:var(--ad-orange);

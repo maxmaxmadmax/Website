@@ -2827,3 +2827,154 @@ exports.acceptQuote = onCall(async (request) => {
   });
   return { ok: true };
 });
+
+/* =========================================================================
+   BOT QUOTE  -  the public estimate bot (Phase 2)
+
+   A visitor answers a few questions; the server matches the best package,
+   prices it (gear + kit-required gear + labour + delivery + optional tech),
+   creates a DRAFT quote for staff to review and send, and returns only an
+   on-screen price range. Nothing bulky ships to the browser; the inventory
+   and packages are read here, not in the page.
+   ========================================================================= */
+const { expandKit: botExpandKit } = require('./lib/kit');
+
+const BOT_KM_RATE_CENTS = 80;        // $0.80/km travelled
+const BOT_LABOUR_RATE_CENTS = 6000;  // $60/hr
+const BOT_PACKDOWN_PCT = 0.75;
+const BOT_ZONES = [
+  ['Bowen (local)', 0], ['Merinda', 12], ['Guthalungra', 38], ['Proserpine', 64],
+  ['Home Hill', 79], ['Cannonvale', 84], ['Collinsville', 86], ['Scottville', 88],
+  ['Airlie Beach', 88], ['Jubilee Pocket', 90], ['Ayr', 91], ['Bloomsbury', 95],
+  ['Shute Harbour', 98], ['Brandon', 98], ['Giru', 130], ['Glenden', 150],
+  ['Mackay', 189], ['Townsville', 200], ['Charters Towers', 245], ['Moranbah', 300],
+  ['Clermont', 400], ['Hughenden', 450], ['Emerald', 500], ['Richmond', 560],
+  ['Winton', 660], ['Julia Creek', 670], ['Cloncurry', 780], ['Longreach', 810],
+  ['Mount Isa', 900], ['Barcaldine', 900],
+];
+function botZoneKm(town) {
+  const t = String(town || '').trim().toLowerCase();
+  const z = BOT_ZONES.find((z) => z[0].toLowerCase() === t);
+  return z ? z[1] : null;
+}
+
+function botPickPackage(packages, eventType, guests) {
+  const et = String(eventType || '').toLowerCase();
+  const active = packages.filter((p) => p.active !== false && Array.isArray(p.items) && p.items.length);
+  let typed = active.filter((p) => String(p.eventType || '').toLowerCase() === et);
+  if (!typed.length) typed = active.filter((p) => {
+    const pe = String(p.eventType || '').toLowerCase();
+    return pe && (pe.includes(et) || et.includes(pe));
+  });
+  if (!typed.length) typed = active;
+  if (!typed.length) return null;
+  const fits = typed
+    .filter((p) => !p.maxGuests || guests <= p.maxGuests)
+    .sort((a, b) => (a.maxGuests || 1e9) - (b.maxGuests || 1e9));
+  if (fits.length) return fits[0];
+  return typed.slice().sort((a, b) => (b.maxGuests || 0) - (a.maxGuests || 0))[0];
+}
+
+exports.submitBotQuote = onCall(async (request) => {
+  const d = request.data || {};
+  if (String(d.website || d.company_url || '').trim()) return { ok: true };   // honeypot
+
+  const a = d.answers || {};
+  const eventType = String(a.eventType || '').trim().slice(0, 80);
+  const guests = Math.max(0, Math.round(Number(a.guests) || 0));
+  const days = Math.max(1, Math.round(Number(a.days) || 1));
+  const town = String(a.town || '').trim().slice(0, 80);
+  const support = ['full', 'delivery', 'pickup'].includes(a.support) ? a.support : 'delivery';
+  const delivered = support !== 'pickup';
+  const km = delivered ? (a.km != null ? Math.max(0, Math.round(Number(a.km) || 0)) : (botZoneKm(town) || 0)) : 0;
+  const name = String(a.name || '').trim().slice(0, 120);
+  const email = String(a.email || '').trim().slice(0, 200);
+  const phone = String(a.phone || '').trim().slice(0, 40);
+  const eventDate = String(a.eventDate || '').trim().slice(0, 60);
+
+  if (!eventType) throw new HttpsError('invalid-argument', 'Please choose an event type.');
+  if (!name || !(email || phone)) throw new HttpsError('invalid-argument', 'Please leave your name and a contact.');
+
+  const inv = await loadQuoteInventory();
+  const byId = {};
+  inv.forEach((it) => { byId[it.id] = it; });
+
+  const pkgSnap = await db.collection('packages').get();
+  const packages = [];
+  pkgSnap.forEach((x) => packages.push({ id: x.id, ...x.data() }));
+
+  const pkg = botPickPackage(packages, eventType, guests);
+  if (!pkg) throw new HttpsError('failed-precondition', 'We could not match a package automatically - a team member will be in touch.');
+
+  // Build itemised lines from the package via the kit engine.
+  const cart = {};
+  (pkg.items || []).forEach((i) => { if (i.itemId) cart[i.itemId] = (cart[i.itemId] || 0) + Math.max(0, Math.round(i.qty || 0)); });
+  const kit = botExpandKit(cart, byId);
+  const lines = [];
+  kit.base.forEach((b) => {
+    const it = byId[b.itemId] || {};
+    lines.push({ type: 'item', itemId: b.itemId, name: it.name || b.itemId, description: it.subtitle || '', qty: b.qty, unitCents: it.priceCents || 0, days });
+  });
+  kit.required.forEach((r) => {
+    const charged = r.charge === 'normal';
+    lines.push({ type: 'kit', itemId: r.itemId, name: r.name + (r.charge === 'free' ? ' (included)' : ''), qty: r.qty, unitCents: charged ? r.unitCents : 0, charge: r.charge, days: charged ? days : 1 });
+  });
+
+  const gearValue = kit.base.reduce((s, b) => s + b.lineCents, 0) + kit.addCents;
+  const target = pkg.overrideCents > 0 ? pkg.overrideCents : Math.max(0, gearValue - Math.max(0, Math.round(pkg.discountCents || 0)));
+  const discountCents = Math.max(0, gearValue - target);
+
+  if (delivered) {
+    let mins = 0;
+    lines.forEach((l) => { if (l.itemId && byId[l.itemId]) mins += Math.max(0, Math.round(byId[l.itemId].setupMins || 0)) * Math.max(0, Math.round(l.qty || 0)); });
+    if (mins > 0) {
+      const totalMins = mins + Math.round(mins * BOT_PACKDOWN_PCT);
+      const hrs = Math.max(1, Math.ceil(totalMins / 60));
+      lines.push({ type: 'labour', name: 'Setup & pack-down', description: `${hrs} hr${hrs === 1 ? '' : 's'} @ $60/hr`, qty: 1, unitCents: hrs * BOT_LABOUR_RATE_CENTS, days: 1 });
+    }
+    const del = km * 2 * BOT_KM_RATE_CENTS;
+    if (del > 0) lines.push({ type: 'delivery', name: 'Delivery & pickup' + (town ? ' — ' + town : ''), description: `${km}km each way`, qty: 1, unitCents: del, days: 1 });
+  }
+
+  if (support === 'full') {
+    let techRate = 60000;   // $600 default; use the highest active staff rate if set
+    try {
+      const rs = await db.collection('resources').where('type', '==', 'staff').limit(10).get();
+      rs.forEach((x) => { const r = x.data(); if (r.active !== false && r.dayRateCents) techRate = Math.max(techRate, r.dayRateCents); });
+    } catch (e) { /* default */ }
+    lines.push({ type: 'custom', name: 'On-site AV technician', qty: 1, unitCents: techRate, days });
+  }
+
+  const quote = {
+    kind: 'quote',
+    customer: { name, email, phone, business: '', address: '', eventName: eventType, eventDate },
+    hire: { startDate: '', endDate: '', days },
+    lines, discountCents, labourExcluded: false,
+    delivery: { town: delivered ? town : '', km: delivered ? km : 0 },
+    notes: '', terms: '',
+  };
+  const clean = sanitizeQuote(quote);
+  const money = quoteMoney(clean);
+
+  const counterRef = db.collection('config').doc('counters');
+  const seq = await db.runTransaction(async (tx) => {
+    const c = await tx.get(counterRef);
+    const n = ((c.exists && c.data().quoteSeq) || 0) + 1;
+    tx.set(counterRef, { quoteSeq: n }, { merge: true });
+    return n;
+  });
+  const number = 'SG-Q-' + String(seq).padStart(4, '0');
+  const token = crypto.randomBytes(16).toString('hex');
+
+  await db.collection('quotes').add({
+    number, token, status: 'draft', ...clean, ...money,
+    source: 'bot', packageId: pkg.id, packageName: pkg.name || '', guests, botSupport: support,
+    createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(), createdBy: 'bot',
+  });
+
+  // On-screen range: +/- 10%, rounded out to the nearest $10.
+  const total = money.totalCents;
+  const low = Math.max(0, Math.floor((total * 0.9) / 1000) * 1000);
+  const high = Math.ceil((total * 1.1) / 1000) * 1000;
+  return { ok: true, lowCents: low, highCents: high, packageName: pkg.name || '' };
+});
