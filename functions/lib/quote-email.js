@@ -67,6 +67,13 @@ function summaryRows(lead) {
   return rows;
 }
 
+/*  True when we have a price guide to show. "Other"/no-match enquiries come
+    through with no range - those still get a confirmation email, just without
+    a number.                                                                */
+function hasRange(lead) {
+  return lead.estimateLowCents != null || lead.estimateHighCents != null;
+}
+
 function rangeText(lead) {
   const lo = money(lead.estimateLowCents);
   const hi = money(lead.estimateHighCents);
@@ -81,6 +88,16 @@ function leadHtml(lead) {
       <td style="padding:7px 0;text-align:right;font-size:14px;color:#111;">${esc(v)}</td>
     </tr>`;
 
+  const priceBlock = hasRange(lead)
+    ? `<div style="background:#fff7ef;border:1px solid #ffd9b3;border-radius:10px;padding:18px 20px;margin:0 0 20px;text-align:center;">
+        <p style="margin:0 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#b25b00;">Estimated range</p>
+        <p style="margin:0;font-size:28px;font-weight:bold;color:#111;">${esc(rangeText(lead))}</p>
+        <p style="margin:8px 0 0;font-size:12px;color:#b25b00;">Price guide only</p>
+      </div>`
+    : `<div style="background:#fff7ef;border:1px solid #ffd9b3;border-radius:10px;padding:18px 20px;margin:0 0 20px;text-align:center;">
+        <p style="margin:0;font-size:15px;color:#111;">Thanks for the details - we'll price this up for you by hand.</p>
+      </div>`;
+
   return `<!doctype html>
 <html><body style="margin:0;padding:24px;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
   <div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;overflow:hidden;">
@@ -92,24 +109,24 @@ function leadHtml(lead) {
 
     <div style="padding:24px;">
       <p style="margin:0 0 16px;font-size:15px;color:#111;">
-        Thanks ${esc(lead.name || 'there')} - here's the ballpark from our quick estimate,
+        Thanks ${esc(lead.name || 'there')} - here's a price guide for your event,
         and a copy of what you told us.
       </p>
 
-      <div style="background:#fff7ef;border:1px solid #ffd9b3;border-radius:10px;padding:18px 20px;margin:0 0 20px;text-align:center;">
-        <p style="margin:0 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#b25b00;">Estimated range</p>
-        <p style="margin:0;font-size:28px;font-weight:bold;color:#111;">${esc(rangeText(lead))}</p>
-      </div>
+      ${priceBlock}
 
       ${rows.length ? `<table style="width:100%;border-collapse:collapse;border-top:1px solid #eee;margin:0 0 18px;">
         ${rows.map((r) => row(r[0], r[1])).join('')}
       </table>` : ''}
 
-      <p style="margin:0 0 6px;font-size:14px;color:#111;"><strong>This is a guide, not a fixed quote.</strong></p>
-      <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.6;">
-        Every event is different, so the final price depends on the details. Want us
-        to put together an exact quote? Just reply to this email - we'll be in touch soon.
-      </p>
+      <div style="background:#f6f8ff;border:1px solid #d7e0ff;border-radius:10px;padding:16px 20px;margin:0 0 20px;">
+        <p style="margin:0 0 6px;font-size:14px;color:#111;"><strong>What happens next</strong></p>
+        <p style="margin:0;font-size:14px;color:#444;line-height:1.6;">
+          This is a guide only, not a fixed quote. Our team will review your event and
+          send you an <strong>official quote to look over</strong> - we'll be in touch soon.
+          Any questions in the meantime, just reply to this email.
+        </p>
+      </div>
 
       <p style="margin:0;font-size:14px;color:#444;line-height:1.6;">
         Cheers,<br>The SoundzGood team
@@ -130,14 +147,18 @@ function leadText(lead) {
   return [
     'Your estimate - SoundzGood Whitsundays',
     '',
-    `Thanks ${lead.name || 'there'} - here's the ballpark from our quick estimate.`,
+    `Thanks ${lead.name || 'there'} - here's a price guide for your event.`,
     '',
-    `ESTIMATED RANGE: ${rangeText(lead)}`,
+    hasRange(lead)
+      ? `ESTIMATED RANGE (guide only): ${rangeText(lead)}`
+      : "We'll price this up for you by hand.",
     '',
     ...rows.map((r) => `${r[0]}: ${r[1]}`),
     '',
-    'This is a guide, not a fixed quote. Every event is different, so the final',
-    'price depends on the details. Want an exact quote? Just reply to this email.',
+    'WHAT HAPPENS NEXT',
+    'This is a guide only, not a fixed quote. Our team will review your event and',
+    "send you an official quote to look over - we'll be in touch soon. Any questions,",
+    'just reply to this email.',
     '',
     'Cheers, The SoundzGood team',
     `${SELLER.name} - ${SELLER.email} - ${SELLER.site}`,

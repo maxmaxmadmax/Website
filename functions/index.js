@@ -2305,9 +2305,11 @@ exports.adminSendTestVendorEmail = onCall(
 /* =========================================================================
    ESTIMATE BOT
 
-   The quote bot on the services page. Three functions:
+   The legacy price table + lead admin. The public estimate bot itself is now
+   submitBotQuote (further down) - it prices from packages, emails the visitor
+   a price guide, and creates a reviewable draft. These remain for the old
+   `quoteLeads` records:
 
-     submitQuoteLead      public - a visitor finishes the bot
      adminSaveQuotePricing  admin  - Max edits the price table
      adminUpdateQuoteLead   admin  - Max moves a lead along / adds a note
      adminResendQuoteEmail  admin  - Max re-sends a visitor their estimate
@@ -2358,111 +2360,12 @@ async function loadQuoteInventory() {
 
 const QUOTE_STATES = ['new', 'contacted', 'quoted', 'won', 'lost'];
 
-exports.submitQuoteLead = onCall(
-  { secrets: [SMTP_USER, SMTP_PASS] },
-  async (request) => {
-    const d = request.data || {};
-
-    /*  A honeypot: a field no human ever fills, hidden off-screen on the
-        form. A bot that dumps text into every input trips it, and we drop
-        the submission quietly - a 200 so it does not learn what caught it. */
-    if (String(d.website || d.company_url || '').trim()) {
-      logger.info('quote lead rejected: honeypot filled');
-      return { ok: true };
-    }
-
-    const text = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
-
-    const name = text(d.name, 120);
-    const email = text(d.email, 200);
-    const phone = text(d.phone, 40);
-    const eventDate = text(d.eventDate, 60);
-    const message = text(d.message, 2000);
-
-    if (!name) throw new HttpsError('invalid-argument', 'Please add your name.');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      throw new HttpsError('invalid-argument', 'That email does not look right.');
-    }
-
-    /*  The answers that drive the price. Kept as keys; the pricing table
-        turns them into labels and dollars. Anything unrecognised is simply
-        dropped by the estimator.                                          */
-    const answers = {
-      eventType: text(d.eventType, 40),
-      location: text(d.location, 40),
-      size: text(d.size, 40),
-      hours: text(d.hours, 40),
-      services: (Array.isArray(d.services) ? d.services : [])
-        .slice(0, 30)
-        .map((k) => text(k, 40))
-        .filter(Boolean),
-    };
-
-    const [pricing, inventory] = await Promise.all([
-      loadQuotePricing(), loadQuoteInventory(),
-    ]);
-    const est = estimateQuote(pricing, inventory, answers);
-
-    const lead = {
-      source: 'services-quote-bot',
-      status: 'new',
-
-      name,
-      email,
-      phone,
-      eventDate,
-      message,
-
-      // the raw answers, and the readable version, so the admin table needs
-      // no lookup and a later pricing edit never rewrites an old lead
-      eventType: answers.eventType,
-      eventTypeLabel: est.labels.eventType,
-      location: answers.location,
-      locationLabel: est.labels.location,
-      size: answers.size,
-      sizeLabel: est.labels.size,
-      hours: answers.hours,
-      durationLabel: est.labels.duration,
-      services: answers.services,
-      serviceLabels: est.labels.services,
-
-      estimateLowCents: est.lowCents,
-      estimateHighCents: est.highCents,
-      estimatePointCents: est.pointCents,
-
-      createdAt: FieldValue.serverTimestamp(),
-    };
-
-    const ref = await db.collection('quoteLeads').add(lead);
-
-    /*  Auto-reply to the visitor. Never blocks the lead: it is already
-        saved, and the status is written back so the admin table can show
-        whether it went.                                                   */
-    const mail = await sendQuoteEmail(lead);
-    try {
-      await ref.update({
-        emailStatus: mail.sent ? 'sent' : 'failed',
-        emailAt: FieldValue.serverTimestamp(),
-        emailError: mail.sent ? FieldValue.delete()
-          : String(mail.error || mail.reason || '').slice(0, 500),
-      });
-    } catch (err) {
-      logger.warn('could not record quote email status', { message: err && err.message });
-    }
-
-    logger.info('quote lead', { id: ref.id, emailSent: mail.sent });
-
-    /*  The visitor sees the range regardless of the email. Returned so the
-        bot can show the same figure the server computed.                  */
-    return {
-      ok: true,
-      id: ref.id,
-      lowCents: est.lowCents,
-      highCents: est.highCents,
-      emailSent: mail.sent,
-    };
-  },
-);
+/*  RETIRED: submitQuoteLead was the original services estimate bot. It
+    auto-emailed the visitor a price with no staff review and saved a
+    `quoteLeads` doc. The package bot (submitBotQuote, below) replaced it -
+    it emails the same price guide AND creates a reviewable draft quote.
+    The estimate-email system it used (lib/quote-email.js) is kept and now
+    reused by submitBotQuote. Deleted from deploy via functions:delete.    */
 
 exports.adminSaveQuotePricing = onCall(async (request) => {
   requireAdmin(request);
@@ -2889,7 +2792,7 @@ function botFindItem(inv, kws) {
   return inv.find((it) => it && it.name && kws.some((k) => low(it.name).includes(k))) || null;
 }
 
-exports.submitBotQuote = onCall(async (request) => {
+exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
   const d = request.data || {};
   if (String(d.website || d.company_url || '').trim()) return { ok: true };   // honeypot
 
@@ -3015,7 +2918,7 @@ exports.submitBotQuote = onCall(async (request) => {
   const number = 'SG-Q-' + String(seq).padStart(4, '0');
   const token = crypto.randomBytes(16).toString('hex');
 
-  await db.collection('quotes').add({
+  const draftRef = await db.collection('quotes').add({
     number, token, status: 'draft', ...clean, ...money,
     source: 'bot', packageId: pkg ? pkg.id : '', packageName: pkg ? (pkg.name || '') : '', guests, botSupport: support,
     botMessage: message, botTown: town,
@@ -3027,12 +2930,47 @@ exports.submitBotQuote = onCall(async (request) => {
   // On-screen range (+/- 10%, rounded to $10) only when a package matched.
   // "Other" enquiries return no range - the team builds a custom quote.
   const resp = { ok: true, packageName: pkg ? (pkg.name || '') : '' };
+  let lowCents = null;
+  let highCents = null;
   if (pkg) {
     const total = money.totalCents;
-    resp.lowCents = Math.max(0, Math.floor((total * 0.9) / 1000) * 1000);
-    resp.highCents = Math.ceil((total * 1.1) / 1000) * 1000;
+    lowCents = Math.max(0, Math.floor((total * 0.9) / 1000) * 1000);
+    highCents = Math.ceil((total * 1.1) / 1000) * 1000;
+    resp.lowCents = lowCents;
+    resp.highCents = highCents;
   } else {
     resp.custom = true;
   }
+
+  /*  Instant price-guide email to the visitor. Reuses the same estimate
+      template as the retired services bot (working as intended). It never
+      throws - the draft is already saved, so a mail hiccup can't lose the
+      enquiry; the send result is logged and folded back onto the draft.   */
+  if (email) {
+    const extraLabels = chosenExtras.slice();
+    if (needsGenerator) extraLabels.push('Generator');
+    if (support === 'full') extraLabels.push('On-site technician');
+    const lead = {
+      name, email,
+      eventTypeLabel: eventType,
+      locationLabel: town,
+      sizeLabel: guests ? guests + ' guests' : '',
+      durationLabel: days > 1 ? days + ' days' : '',
+      serviceLabels: extraLabels,
+      eventDate,
+      estimateLowCents: lowCents,
+      estimateHighCents: highCents,
+    };
+    const mail = await sendQuoteEmail(lead);
+    try {
+      await draftRef.update({
+        emailStatus: mail.sent ? 'sent' : 'failed',
+        emailAt: FieldValue.serverTimestamp(),
+        emailError: mail.sent ? FieldValue.delete()
+          : String(mail.error || mail.reason || '').slice(0, 500),
+      });
+    } catch (e) { /* logged inside sendQuoteEmail; don't fail the enquiry */ }
+  }
+
   return resp;
 });
