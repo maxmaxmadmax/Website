@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=148';
+} from './firebase-config.js?v=149';
 
-import { expandKit } from './kit.js?v=148';
+import { expandKit } from './kit.js?v=149';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5333,9 +5333,53 @@ function blankQuote() {
     lines: [],
     discountCents: 0,
     labourExcluded: false,     // setup & pack-down labour is on by default (delivered jobs)
+    deliveryTown: '',          // '' = pickup / no delivery
+    deliveryKm: 0,             // one-way road km from Bowen
     notes: '',
     terms: '',
   };
+}
+
+/*  Delivery: a town -> one-way km lookup from the Bowen base. The charge is
+    $0.80/km RETURN, so delivery = km x 2 x $0.80. No base fee. "Other" lets
+    staff type a km for anywhere not listed. Edit distances here for now.    */
+const DELIVERY_RATE_PER_KM_CENTS = 80;   // $0.80 per km travelled
+const DELIVERY_ZONES = [
+  { town: 'Bowen (local)', km: 0 },
+  { town: 'Merinda', km: 12 },
+  { town: 'Guthalungra', km: 38 },
+  { town: 'Proserpine', km: 64 },
+  { town: 'Home Hill', km: 79 },
+  { town: 'Cannonvale', km: 84 },
+  { town: 'Collinsville', km: 86 },
+  { town: 'Scottville', km: 88 },
+  { town: 'Airlie Beach', km: 88 },
+  { town: 'Jubilee Pocket', km: 90 },
+  { town: 'Ayr', km: 91 },
+  { town: 'Bloomsbury', km: 95 },
+  { town: 'Shute Harbour', km: 98 },
+  { town: 'Brandon', km: 98 },
+  { town: 'Giru', km: 130 },
+  { town: 'Glenden', km: 150 },
+  { town: 'Mackay', km: 189 },
+  { town: 'Townsville', km: 200 },
+  { town: 'Charters Towers', km: 245 },
+  { town: 'Moranbah', km: 300 },
+  { town: 'Clermont', km: 400 },
+  { town: 'Hughenden', km: 450 },
+  { town: 'Emerald', km: 500 },
+  { town: 'Richmond', km: 560 },
+  { town: 'Winton', km: 660 },
+  { town: 'Julia Creek', km: 670 },
+  { town: 'Cloncurry', km: 780 },
+  { town: 'Longreach', km: 810 },
+  { town: 'Mount Isa', km: 900 },
+  { town: 'Barcaldine', km: 900 },
+];
+
+function quoteDeliveryCents(d) {
+  const km = Math.max(0, Math.round(d.deliveryKm || 0));
+  return km * 2 * DELIVERY_RATE_PER_KM_CENTS;   // return trip
 }
 
 /*  Labour: setup time is a man-minute figure on each inventory item. Total
@@ -5389,9 +5433,10 @@ function quoteDraftMoney(d) {
     subtotal += quoteLineCents(l, docDays);
   });
   const labourCents = d.labourExcluded === true ? 0 : quoteLabour(d).cents;
-  const net = Math.max(0, subtotal + labourCents - discount);
+  const deliveryCents = quoteDeliveryCents(d);
+  const net = Math.max(0, subtotal + labourCents + deliveryCents - discount);
   const gst = Math.round(net * 0.10);
-  return { subtotalCents: subtotal, labourCents, discountCents: discount, netCents: net, gstCents: gst, totalCents: net + gst };
+  return { subtotalCents: subtotal, labourCents, deliveryCents, discountCents: discount, netCents: net, gstCents: gst, totalCents: net + gst };
 }
 
 /*  A line's own total: quantity x day rate x number of days.
@@ -5498,10 +5543,12 @@ function quoteFromDoc(doc) {
     kind: doc.kind || 'quote',
     customer: { ...blankQuote().customer, ...(doc.customer || {}) },
     hire: { ...blankQuote().hire, ...(doc.hire || {}) },
-    // The labour line is recomputed live, so drop any stored one when editing.
-    lines: (doc.lines || []).filter((l) => l.type !== 'labour').map((l) => ({ ...l })),
+    // Labour and delivery lines are recomputed live, so drop stored ones here.
+    lines: (doc.lines || []).filter((l) => l.type !== 'labour' && l.type !== 'delivery').map((l) => ({ ...l })),
     discountCents: Math.max(0, Math.round(doc.discountCents || 0)),
     labourExcluded: doc.labourExcluded === true,
+    deliveryTown: (doc.delivery && doc.delivery.town) || '',
+    deliveryKm: Math.max(0, Math.round((doc.delivery && doc.delivery.km) || 0)),
     notes: doc.notes || '',
     terms: doc.terms || '',
   };
@@ -5590,6 +5637,15 @@ function quoteBuilderHtml() {
             <p class="qb-block-h">Hire period</p>
             <label class="qb-dfield"><span>From</span><input class="qb-date" type="date" data-qh="startDate" value="${attr(h.startDate)}"></label>
             <label class="qb-dfield"><span>To</span><input class="qb-date" type="date" data-qh="endDate" value="${attr(h.endDate)}"></label>
+
+            <p class="qb-block-h" style="margin-top:14px">Delivery</p>
+            <label class="qb-dfield"><span>To</span>
+              <select class="qb-date qb-delsel" data-qdel-town>
+                <option value="__pickup__"${!quoteDraft.deliveryTown ? ' selected' : ''}>Pickup / no delivery</option>
+                ${DELIVERY_ZONES.map((z) => `<option value="${z.km}" data-town="${attr(z.town)}"${quoteDraft.deliveryTown === z.town ? ' selected' : ''}>${esc(z.town)}${z.km ? ` — ${z.km}km` : ''}</option>`).join('')}
+                <option value="__other__"${quoteDraft.deliveryTown === 'Other' ? ' selected' : ''}>Other (enter km)…</option>
+              </select></label>
+            ${quoteDraft.deliveryTown === 'Other' ? `<label class="qb-dfield"><span>Km ea way</span><input class="qb-date" type="number" min="0" step="1" data-qdel-km value="${attr(quoteDraft.deliveryKm || '')}"></label>` : ''}
           </div>
         </div>
 
@@ -5733,9 +5789,17 @@ function renderQuoteTotals() {
         <em class="qb-labnote">${lab.hours} hr${lab.hours === 1 ? '' : 's'} @ $60</em></span>
       <span class="${quoteDraft.labourExcluded ? 'qb-laboff' : ''}">${quoteDraft.labourExcluded ? 'excluded' : esc(money(lab.cents))}</span>
     </div>` : '';
+  const delCents = quoteDeliveryCents(quoteDraft);
+  const deliveryRow = delCents ? `
+    <div class="qb-sumrow">
+      <span>Delivery &amp; pickup${quoteDraft.deliveryTown ? ' — ' + esc(quoteDraft.deliveryTown) : ''}
+        <em class="qb-labnote" style="margin-left:0">${quoteDraft.deliveryKm}km each way · $0.80/km return</em></span>
+      <span>${esc(money(delCents))}</span>
+    </div>` : '';
   host.innerHTML = `
     <div class="qb-sumrow"><span>Subtotal (ex GST)</span><span id="qsum-sub">${esc(money(m.subtotalCents))}</span></div>
     ${labourRow}
+    ${deliveryRow}
     <div class="qb-sumrow qb-sumdisc"><span>Discount</span>
       <span class="qb-discinput">&minus;<span class="qb-inline-dollar">$</span><input class="qb-num qb-num-total" type="number" min="0" step="1" data-qdisc value="${attr(discVal)}" placeholder="0"></span></div>
     <div class="qb-sumrow"><span>GST (10%)</span><span id="qsum-gst">${esc(money(m.gstCents))}</span></div>
@@ -5969,6 +6033,23 @@ function wireQuoteBuilder() {
       renderQuoteTotals();   // rebuild so the labour row & total reflect it
       return;
     }
+    if (t.hasAttribute('data-qdel-town')) {
+      const v = t.value;
+      if (v === '__pickup__') { quoteDraft.deliveryTown = ''; quoteDraft.deliveryKm = 0; }
+      else if (v === '__other__') { quoteDraft.deliveryTown = 'Other'; }
+      else {
+        const opt = t.selectedOptions && t.selectedOptions[0];
+        quoteDraft.deliveryTown = opt ? (opt.getAttribute('data-town') || '') : '';
+        quoteDraft.deliveryKm = Math.max(0, Math.round(Number(v) || 0));
+      }
+      render();   // toggles the "Other km" field + updates totals
+      return;
+    }
+    if (t.hasAttribute('data-qdel-km')) {
+      quoteDraft.deliveryKm = Math.max(0, Math.round(Number(t.value || 0)));
+      renderQuoteTotals();
+      return;
+    }
     if (t.dataset.qh) {
       if (t.dataset.qh === 'days') quoteDraft.hire.days = Math.max(1, Math.round(Number(t.value) || 1));
       else {
@@ -6069,7 +6150,9 @@ function wireQuoteActions() {
     the customer's copy include it. Stripped again on load (quoteFromDoc).   */
 function quoteDraftForSave() {
   const lab = quoteLabour(quoteDraft);
-  const lines = quoteDraft.lines.filter((l) => l.type !== 'labour').map((l) => ({ ...l }));
+  const del = quoteDeliveryCents(quoteDraft);
+  const km = Math.max(0, Math.round(quoteDraft.deliveryKm || 0));
+  const lines = quoteDraft.lines.filter((l) => l.type !== 'labour' && l.type !== 'delivery').map((l) => ({ ...l }));
   if (quoteDraft.labourExcluded !== true && lab.cents > 0) {
     lines.push({
       type: 'labour', name: 'Setup & pack-down',
@@ -6077,7 +6160,19 @@ function quoteDraftForSave() {
       qty: 1, unitCents: lab.cents, days: 1, hours: lab.hours,
     });
   }
-  return { ...quoteDraft, lines, labourExcluded: quoteDraft.labourExcluded === true };
+  if (del > 0) {
+    lines.push({
+      type: 'delivery',
+      name: 'Delivery & pickup' + (quoteDraft.deliveryTown ? ' — ' + quoteDraft.deliveryTown : ''),
+      description: `${km}km each way`,
+      qty: 1, unitCents: del, days: 1,
+    });
+  }
+  return {
+    ...quoteDraft, lines,
+    labourExcluded: quoteDraft.labourExcluded === true,
+    delivery: { town: quoteDraft.deliveryTown || '', km },
+  };
 }
 
 async function saveQuoteDoc(btn, quiet) {

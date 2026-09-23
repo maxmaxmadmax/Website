@@ -2649,7 +2649,7 @@ function sanitizeQuote(q) {
     days,
   };
   const lines = (Array.isArray(q.lines) ? q.lines : []).slice(0, 200).map((l) => {
-    const type = ['item', 'kit', 'custom', 'discount', 'labour'].includes(l.type) ? l.type : 'custom';
+    const type = ['item', 'kit', 'custom', 'discount', 'labour', 'delivery'].includes(l.type) ? l.type : 'custom';
     const line = {
       type,
       itemId: text(l.itemId, 60),
@@ -2670,6 +2670,10 @@ function sanitizeQuote(q) {
     customer, hire, lines, kind,
     discountCents: Math.max(0, Math.round(Number(q.discountCents) || 0)),
     labourExcluded: q.labourExcluded === true,
+    delivery: {
+      town: text(q.delivery && q.delivery.town, 80),
+      km: Math.max(0, Math.round(Number(q.delivery && q.delivery.km) || 0)),
+    },
     notes: text(q.notes, 3000),
     terms: text(q.terms, 3000),
   };
