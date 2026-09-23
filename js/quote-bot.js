@@ -21,7 +21,7 @@
 
 import {
   firebaseConfig, functionsRegion, isFirebaseConfigured,
-} from './firebase-config.js?v=159';
+} from './firebase-config.js?v=160';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -208,6 +208,7 @@ function clearDock() {
 async function start() {
   await botSay('Hi! I’m the SoundzGood estimate assistant. A few quick questions and '
     + 'I’ll get you a ballpark — then our team follows up with a formal quote.', 200);
+  await botSay('<em>This estimator is in beta — every quote is checked by our team before it’s confirmed.</em>', 250);
   askEventType();
 }
 
@@ -508,7 +509,7 @@ function mount() {
         <header class="sgq-head">
           <span class="sgq-avatar sgq-avatar-lg" aria-hidden="true">SG</span>
           <div class="sgq-head-text">
-            <p class="sgq-head-name">SoundzGood Estimate Bot</p>
+            <p class="sgq-head-name">SoundzGood Estimate Bot <span class="sgq-beta">Beta</span></p>
             <p class="sgq-head-status"><span class="sgq-dot"></span> Online now</p>
           </div>
           <button type="button" class="sgq-close" id="sgq-close" aria-label="Close">&times;</button>

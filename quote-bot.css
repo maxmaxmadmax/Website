@@ -62,6 +62,9 @@
 
 .sgq-head-text { min-width: 0; }
 .sgq-head-name { margin: 0; font-weight: 700; font-size: 16px; }
+.sgq-beta { display: inline-block; vertical-align: middle; margin-left: 6px; font-size: 10px;
+            font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #fff;
+            background: rgba(255, 255, 255, .22); padding: 2px 7px; border-radius: 999px; }
 .sgq-head-status {
   margin: 2px 0 0;
   font-size: 12px;
