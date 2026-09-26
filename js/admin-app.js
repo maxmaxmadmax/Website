@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=162';
+} from './firebase-config.js?v=163';
 
-import { expandKit } from './kit.js?v=162';
+import { expandKit } from './kit.js?v=163';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -136,6 +136,8 @@ const state = {
   leadCatFilter: 'all',
   leadGrokFilter: 'all',
   leadContactFilter: 'all',
+  leadMonth: '',           // 'YYYY-MM' picked on the calendar strip, '' = any
+  leadCalOffset: 0,        // months the strip is scrolled from this month
   leadSearch: '',
   leadCompose: null,
 };
@@ -7319,6 +7321,39 @@ function leadNeedsContact(r) {
   return !String(r.email || '').trim() && !String(r.phone || '').trim();
 }
 
+/*  Which month a lead sits in, as 'YYYY-MM' - from the exact date when
+    there is one, else read out of the date as the research listed it
+    ("Oct 2026", "~Jun/Jul 2027", "May annual"). A month with no year is
+    taken as its next occurrence. '' when there is no month at all
+    ("TBC 2027", "Recurring / seasonal").                                  */
+const LEAD_MON = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+function leadMonthKey(r) {
+  if (r.eventDate && /^\d{4}-\d{2}/.test(r.eventDate)) return r.eventDate.slice(0, 7);
+  const s = String(r.dateText || '');
+  const m = s.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b/i);
+  if (!m) return '';
+  const mon = LEAD_MON.indexOf(m[1].toLowerCase()) + 1;
+  const y = s.match(/\b(20\d\d)\b/);
+  let year = y ? Number(y[1]) : 0;
+  if (!year) {
+    const now = new Date();
+    year = now.getFullYear() + (mon < now.getMonth() + 1 ? 1 : 0);
+  }
+  return year + '-' + String(mon).padStart(2, '0');
+}
+
+/*  High / medium / low for the calendar dots. Max's own stars win once he
+    has rated a lead; until then the research heat stands in.             */
+function leadPriority(r) {
+  const n = Math.round(r.rating || 0);
+  if (n >= 4) return 'high';
+  if (n === 3) return 'medium';
+  if (n >= 1) return 'low';
+  if (r.grokRating === 'Hot' || r.grokRating === 'Existing') return 'high';
+  if (r.grokRating === 'Warm') return 'medium';
+  return 'low';
+}
+
 let leadDraft = blankLead();
 
 function subscribeToLeads() {
@@ -7340,7 +7375,7 @@ function subscribeToLeads() {
         || (a.title || '').localeCompare(b.title || '', undefined, { numeric: true, sensitivity: 'base' }));
       state.leads = rows;
       if (state.view === 'leads') {
-        if (state.openLeadId) renderLeadRows();
+        if (state.openLeadId) renderLeadListParts();
         else render();
       }
     },
@@ -7390,7 +7425,7 @@ function leadCategories() {
   return [...set].sort((a, b) => a.localeCompare(b));
 }
 
-function leadFiltered() {
+function leadFiltered(ignoreMonth) {
   const rows = state.leads || [];
   const f = state.leadFilter || 'all';
   const tf = state.leadTypeFilter || 'all';
@@ -7406,6 +7441,7 @@ function leadFiltered() {
     if (kf === 'needs' && !leadNeedsContact(r)) return false;
     if (kf === 'email' && !String(r.email || '').trim()) return false;
     if (kf === 'phone' && !String(r.phone || '').trim()) return false;
+    if (!ignoreMonth && state.leadMonth && leadMonthKey(r) !== state.leadMonth) return false;
     if (!needle) return true;
     return [r.title, r.contactName, r.decisionMaker, r.eventName, r.town, r.venue, r.email, r.phone,
       r.category, r.nextAction, r.incumbent]
@@ -7445,6 +7481,96 @@ function fmtLeadDate(iso) {
   return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+/* ---- the month strip across the top: a dot per lead, coloured by
+        priority. Click a month to filter to it, click again to clear. ---- */
+const LEAD_CAL_MONTHS = 12;
+const LEAD_CAL_DOTS = 8;       // dots drawn per month before it says +n
+
+function leadCalendarHtml() {
+  const now = new Date();
+  const nowKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  const start = new Date(now.getFullYear(), now.getMonth() + (state.leadCalOffset || 0), 1);
+
+  // Leads matching every other filter, bucketed by month.
+  const buckets = {};
+  let undated = 0;
+  leadFiltered(true).forEach((r) => {
+    const k = leadMonthKey(r);
+    if (!k) { undated++; return; }
+    (buckets[k] = buckets[k] || []).push(leadPriority(r));
+  });
+
+  const rank = { high: 0, medium: 1, low: 2 };
+  const tally = { high: 0, medium: 0, low: 0 };
+  let cells = '';
+  for (let i = 0; i < LEAD_CAL_MONTHS; i++) {
+    const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    const pri = (buckets[key] || []).slice().sort((a, b) => rank[a] - rank[b]);
+    pri.forEach((p) => { tally[p]++; });
+    const dots = pri.slice(0, LEAD_CAL_DOTS).map((p) => `<i class="lead-dot is-${p}"></i>`).join('');
+    const more = pri.length > LEAD_CAL_DOTS ? `<em class="lead-dot-more">+${pri.length - LEAD_CAL_DOTS}</em>` : '';
+    const cls = ['lead-cal-m', key === nowKey ? 'is-now' : '', key === state.leadMonth ? 'is-sel' : '', pri.length ? '' : 'is-empty']
+      .filter(Boolean).join(' ');
+    cells += `
+      <button type="button" class="${cls}" data-lead-month="${key}"
+              aria-pressed="${key === state.leadMonth}" aria-label="${d.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}: ${pri.length} lead${pri.length === 1 ? '' : 's'}">
+        <span class="lead-cal-mon">${LEAD_MON[d.getMonth()].toUpperCase()}</span>
+        <span class="lead-cal-yr">${d.getFullYear()}</span>
+        <span class="lead-cal-dots">${dots}${more}</span>
+        <span class="lead-cal-n">${pri.length || ''}</span>
+      </button>`;
+  }
+
+  const picked = state.leadMonth
+    ? (() => { const [y, m] = state.leadMonth.split('-'); return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' }); })()
+    : '';
+
+  return `
+    <div class="lead-cal">
+      <button type="button" class="lead-cal-arrow" data-lead-cal="-3" aria-label="Earlier months">&#8249;</button>
+      <div class="lead-cal-track">${cells}</div>
+      <button type="button" class="lead-cal-arrow" data-lead-cal="3" aria-label="Later months">&#8250;</button>
+    </div>
+    <div class="lead-cal-legend">
+      <span><i class="lead-dot is-high"></i> High (${tally.high})</span>
+      <span><i class="lead-dot is-medium"></i> Medium (${tally.medium})</span>
+      <span><i class="lead-dot is-low"></i> Low (${tally.low})</span>
+      <span class="lead-cal-undated">No month yet: ${undated}</span>
+      ${state.leadCalOffset ? '<button type="button" class="lead-cal-link" data-lead-cal="today">Back to this month</button>' : ''}
+      ${picked ? `<button type="button" class="lead-cal-clear" data-lead-month="${state.leadMonth}">Showing ${esc(picked)} &times;</button>` : ''}
+    </div>`;
+}
+
+/*  The strip and the rows both follow the filters, so any filter change
+    redraws both. The strip wires itself by delegation on its host, which
+    survives the redraw.                                                  */
+function renderLeadListParts() {
+  const cal = document.getElementById('lead-cal');
+  if (cal) cal.innerHTML = leadCalendarHtml();
+  renderLeadRows();
+}
+
+function wireLeadCalendar() {
+  const cal = document.getElementById('lead-cal');
+  if (!cal) return;
+  cal.addEventListener('click', (e) => {
+    const m = e.target.closest('[data-lead-month]');
+    if (m) {
+      const key = m.getAttribute('data-lead-month');
+      state.leadMonth = state.leadMonth === key ? '' : key;
+      renderLeadListParts();
+      return;
+    }
+    const a = e.target.closest('[data-lead-cal]');
+    if (a) {
+      const v = a.getAttribute('data-lead-cal');
+      state.leadCalOffset = v === 'today' ? 0 : (state.leadCalOffset || 0) + Number(v);
+      renderLeadListParts();
+    }
+  });
+}
+
 function leadMainHtml() {
   const s = leadStats();
   const f = state.leadFilter;
@@ -7470,6 +7596,8 @@ function leadMainHtml() {
             <button type="button" class="ad-btn ad-btn-primary" data-lead-new="venue">+ Venue</button>
           </div>
         </div>
+
+        <div id="lead-cal">${leadCalendarHtml()}</div>
 
         <div class="inv-tiles">
           ${invTile('&#10022;', 'inv-t-blue', s.fresh, 'New', '')}
@@ -7547,6 +7675,7 @@ function renderLeadRows() {
 
 function wireLeadList() {
   renderLeadRows();
+  wireLeadCalendar();
 
   document.querySelectorAll('[data-lead-new]').forEach((b) => b.addEventListener('click', () => {
     leadDraft = blankLead(b.getAttribute('data-lead-new'));
@@ -7555,17 +7684,17 @@ function wireLeadList() {
   }));
 
   const search = document.getElementById('lead-search');
-  if (search) search.addEventListener('input', () => { state.leadSearch = search.value; renderLeadRows(); });
+  if (search) search.addEventListener('input', () => { state.leadSearch = search.value; renderLeadListParts(); });
   const stageSel = document.getElementById('lead-f-stage');
-  if (stageSel) stageSel.addEventListener('change', () => { state.leadFilter = stageSel.value; renderLeadRows(); });
+  if (stageSel) stageSel.addEventListener('change', () => { state.leadFilter = stageSel.value; renderLeadListParts(); });
   const typeSel = document.getElementById('lead-f-type');
-  if (typeSel) typeSel.addEventListener('change', () => { state.leadTypeFilter = typeSel.value; renderLeadRows(); });
+  if (typeSel) typeSel.addEventListener('change', () => { state.leadTypeFilter = typeSel.value; renderLeadListParts(); });
   const catSel = document.getElementById('lead-f-cat');
-  if (catSel) catSel.addEventListener('change', () => { state.leadCatFilter = catSel.value; renderLeadRows(); });
+  if (catSel) catSel.addEventListener('change', () => { state.leadCatFilter = catSel.value; renderLeadListParts(); });
   const grokSel = document.getElementById('lead-f-grok');
-  if (grokSel) grokSel.addEventListener('change', () => { state.leadGrokFilter = grokSel.value; renderLeadRows(); });
+  if (grokSel) grokSel.addEventListener('change', () => { state.leadGrokFilter = grokSel.value; renderLeadListParts(); });
   const contactSel = document.getElementById('lead-f-contact');
-  if (contactSel) contactSel.addEventListener('change', () => { state.leadContactFilter = contactSel.value; renderLeadRows(); });
+  if (contactSel) contactSel.addEventListener('change', () => { state.leadContactFilter = contactSel.value; renderLeadListParts(); });
 
   const host = document.getElementById('lead-rows');
   if (host) host.addEventListener('click', (e) => {
