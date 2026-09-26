@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=163';
+} from './firebase-config.js?v=164';
 
-import { expandKit } from './kit.js?v=163';
+import { expandKit } from './kit.js?v=164';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -137,6 +137,7 @@ const state = {
   leadGrokFilter: 'all',
   leadContactFilter: 'all',
   leadMonth: '',           // 'YYYY-MM' picked on the calendar strip, '' = any
+  leadWeek: 0,             // 1-4 week block within leadMonth, 0 = whole month
   leadCalOffset: 0,        // months the strip is scrolled from this month
   leadSearch: '',
   leadCompose: null,
@@ -7342,6 +7343,15 @@ function leadMonthKey(r) {
   return year + '-' + String(mon).padStart(2, '0');
 }
 
+/*  Which 4-day-block week of its month a lead falls in: 1 = 1st-7th,
+    2 = 8th-14th, 3 = 15th-21st, 4 = 22nd-end. Exact dates only - a lead
+    that only knows its month has no week (0) and stays off the week rows. */
+function leadWeekOf(r) {
+  if (!r.eventDate || !/^\d{4}-\d{2}-\d{2}/.test(r.eventDate)) return 0;
+  const day = Number(r.eventDate.slice(8, 10));
+  return day <= 7 ? 1 : day <= 14 ? 2 : day <= 21 ? 3 : 4;
+}
+
 /*  High / medium / low for the calendar dots. Max's own stars win once he
     has rated a lead; until then the research heat stands in.             */
 function leadPriority(r) {
@@ -7442,6 +7452,7 @@ function leadFiltered(ignoreMonth) {
     if (kf === 'email' && !String(r.email || '').trim()) return false;
     if (kf === 'phone' && !String(r.phone || '').trim()) return false;
     if (!ignoreMonth && state.leadMonth && leadMonthKey(r) !== state.leadMonth) return false;
+    if (!ignoreMonth && state.leadMonth && state.leadWeek && leadWeekOf(r) !== state.leadWeek) return false;
     if (!needle) return true;
     return [r.title, r.contactName, r.decisionMaker, r.eventName, r.town, r.venue, r.email, r.phone,
       r.category, r.nextAction, r.incumbent]
@@ -7491,40 +7502,72 @@ function leadCalendarHtml() {
   const nowKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
   const start = new Date(now.getFullYear(), now.getMonth() + (state.leadCalOffset || 0), 1);
 
-  // Leads matching every other filter, bucketed by month.
-  const buckets = {};
+  /*  Leads matching every other filter, bucketed by month - and, for the
+      ones with an exact date, by week block within it.                  */
+  const months = {};
   let undated = 0;
   leadFiltered(true).forEach((r) => {
     const k = leadMonthKey(r);
     if (!k) { undated++; return; }
-    (buckets[k] = buckets[k] || []).push(leadPriority(r));
+    const b = months[k] = months[k] || { all: [], weeks: [[], [], [], []] };
+    const p = leadPriority(r);
+    b.all.push(p);
+    const w = leadWeekOf(r);
+    if (w) b.weeks[w - 1].push(p);
   });
 
   const rank = { high: 0, medium: 1, low: 2 };
+  const byRank = (a, b) => rank[a] - rank[b];
+  const dots = (list, max) => {
+    const pri = list.slice().sort(byRank);
+    return pri.slice(0, max).map((p) => `<i class="lead-dot is-${p}"></i>`).join('')
+      + (pri.length > max ? `<em class="lead-dot-more">+${pri.length - max}</em>` : '');
+  };
+  const WEEK_DAYS = ['1–7', '8–14', '15–21', '22+'];
   const tally = { high: 0, medium: 0, low: 0 };
+  let dated = 0;
   let cells = '';
+
   for (let i = 0; i < LEAD_CAL_MONTHS; i++) {
     const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
     const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-    const pri = (buckets[key] || []).slice().sort((a, b) => rank[a] - rank[b]);
-    pri.forEach((p) => { tally[p]++; });
-    const dots = pri.slice(0, LEAD_CAL_DOTS).map((p) => `<i class="lead-dot is-${p}"></i>`).join('');
-    const more = pri.length > LEAD_CAL_DOTS ? `<em class="lead-dot-more">+${pri.length - LEAD_CAL_DOTS}</em>` : '';
-    const cls = ['lead-cal-m', key === nowKey ? 'is-now' : '', key === state.leadMonth ? 'is-sel' : '', pri.length ? '' : 'is-empty']
+    const b = months[key] || { all: [], weeks: [[], [], [], []] };
+    b.all.forEach((p) => { tally[p]++; });
+    const monthSel = key === state.leadMonth && !state.leadWeek;
+    const cls = ['lead-cal-m', key === nowKey ? 'is-now' : '', monthSel ? 'is-sel' : '', b.all.length ? '' : 'is-empty']
       .filter(Boolean).join(' ');
+    const longName = d.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+
+    const weeks = b.weeks.map((list, wi) => {
+      dated += list.length;
+      const wSel = key === state.leadMonth && state.leadWeek === wi + 1;
+      return `
+          <button type="button" class="lead-wk${wSel ? ' is-sel' : ''}${list.length ? '' : ' is-empty'}"
+                  data-lead-week="${key}|${wi + 1}" aria-pressed="${wSel}"
+                  aria-label="${longName}, week ${wi + 1} (${WEEK_DAYS[wi]}): ${list.length} dated lead${list.length === 1 ? '' : 's'}">
+            <span class="lead-wk-lbl">W${wi + 1}</span>
+            <span class="lead-wk-dots">${list.length ? dots(list, 4) : ''}</span>
+          </button>`;
+    }).join('');
+
     cells += `
-      <button type="button" class="${cls}" data-lead-month="${key}"
-              aria-pressed="${key === state.leadMonth}" aria-label="${d.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}: ${pri.length} lead${pri.length === 1 ? '' : 's'}">
-        <span class="lead-cal-mon">${LEAD_MON[d.getMonth()].toUpperCase()}</span>
-        <span class="lead-cal-yr">${d.getFullYear()}</span>
-        <span class="lead-cal-dots">${dots}${more}</span>
-        <span class="lead-cal-n">${pri.length || ''}</span>
-      </button>`;
+      <div class="${cls}">
+        <button type="button" class="lead-cal-head" data-lead-month="${key}" aria-pressed="${monthSel}"
+                aria-label="${longName}: ${b.all.length} lead${b.all.length === 1 ? '' : 's'}">
+          <span class="lead-cal-mon">${LEAD_MON[d.getMonth()].toUpperCase()}</span>
+          <span class="lead-cal-yr">${d.getFullYear()}</span>
+        </button>
+        <div class="lead-wks">${weeks}</div>
+        <span class="lead-cal-n">${b.all.length ? b.all.length + ' lead' + (b.all.length === 1 ? '' : 's') : '—'}</span>
+      </div>`;
   }
 
-  const picked = state.leadMonth
-    ? (() => { const [y, m] = state.leadMonth.split('-'); return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' }); })()
-    : '';
+  let picked = '';
+  if (state.leadMonth) {
+    const [y, m] = state.leadMonth.split('-');
+    const mName = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+    picked = state.leadWeek ? `${mName} · Wk${state.leadWeek} (${WEEK_DAYS[state.leadWeek - 1]})` : mName;
+  }
 
   return `
     <div class="lead-cal">
@@ -7536,9 +7579,9 @@ function leadCalendarHtml() {
       <span><i class="lead-dot is-high"></i> High (${tally.high})</span>
       <span><i class="lead-dot is-medium"></i> Medium (${tally.medium})</span>
       <span><i class="lead-dot is-low"></i> Low (${tally.low})</span>
-      <span class="lead-cal-undated">No month yet: ${undated}</span>
+      <span class="lead-cal-undated">Week dots = exact dates only (${dated}) · No month yet: ${undated}</span>
       ${state.leadCalOffset ? '<button type="button" class="lead-cal-link" data-lead-cal="today">Back to this month</button>' : ''}
-      ${picked ? `<button type="button" class="lead-cal-clear" data-lead-month="${state.leadMonth}">Showing ${esc(picked)} &times;</button>` : ''}
+      ${picked ? `<button type="button" class="lead-cal-clear" data-lead-clear="1">Showing ${esc(picked)} &times;</button>` : ''}
     </div>`;
 }
 
@@ -7555,10 +7598,23 @@ function wireLeadCalendar() {
   const cal = document.getElementById('lead-cal');
   if (!cal) return;
   cal.addEventListener('click', (e) => {
+    const clear = e.target.closest('[data-lead-clear]');
+    if (clear) { state.leadMonth = ''; state.leadWeek = 0; renderLeadListParts(); return; }
+    const wk = e.target.closest('[data-lead-week]');
+    if (wk) {
+      const [key, w] = wk.getAttribute('data-lead-week').split('|');
+      const same = state.leadMonth === key && state.leadWeek === Number(w);
+      state.leadMonth = same ? '' : key;
+      state.leadWeek = same ? 0 : Number(w);
+      renderLeadListParts();
+      return;
+    }
     const m = e.target.closest('[data-lead-month]');
     if (m) {
       const key = m.getAttribute('data-lead-month');
-      state.leadMonth = state.leadMonth === key ? '' : key;
+      const same = state.leadMonth === key && !state.leadWeek;
+      state.leadMonth = same ? '' : key;
+      state.leadWeek = 0;
       renderLeadListParts();
       return;
     }

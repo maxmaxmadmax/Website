@@ -2781,3 +2781,31 @@ body.ad-fit .ad-main{ min-height:0; }
 }
 .lead-cal-link{ color:var(--ad-blue); }
 .lead-cal-clear{ margin-left:auto; background:var(--ad-text); color:#fff; padding:3px 10px; border-radius:999px; }
+
+/* ---- Leads calendar: 4 week rows under each month (exact dates only) ---- */
+.lead-cal-track{ grid-template-columns:repeat(12, minmax(70px, 1fr)); }
+.lead-cal-m{ cursor:default; min-height:0; padding:6px 4px; gap:0; }
+.lead-cal-m:hover{ background:transparent; }
+.lead-cal-head{
+  display:flex; flex-direction:column; align-items:center; gap:1px; width:100%;
+  border:0; background:transparent; font:inherit; color:inherit; cursor:pointer;
+  padding:2px 0 4px; border-radius:8px;
+}
+.lead-cal-head:hover{ background:var(--ad-desk); }
+.lead-cal-m.is-sel{ box-shadow:none; border-color:var(--ad-line); }
+.lead-cal-m.is-sel .lead-cal-head{ box-shadow:inset 0 0 0 1.5px var(--ad-text); }
+.lead-wks{ display:flex; flex-direction:column; gap:2px; width:100%; margin-top:2px; }
+.lead-wk{
+  display:flex; align-items:center; gap:4px; width:100%; min-height:17px;
+  padding:3px 5px; border:0; border-radius:6px; background:var(--ad-desk);
+  font:inherit; cursor:pointer; text-align:left;
+}
+.lead-cal-m.is-now .lead-wk{ background:#fff; }
+.lead-wk:hover{ background:var(--ad-orange-soft); }
+.lead-wk.is-empty{ background:transparent; }
+.lead-wk.is-empty .lead-wk-lbl{ color:#c9ced6; }
+.lead-wk.is-sel{ background:#fff; box-shadow:inset 0 0 0 1.5px var(--ad-text); }
+.lead-wk-lbl{ flex:0 0 14px; font-size:9px; font-weight:700; color:var(--ad-faint); }
+.lead-wk-dots{ display:flex; align-items:center; gap:2px; flex-wrap:nowrap; }
+.lead-wk .lead-dot{ width:6px; height:6px; }
+.lead-cal-n{ margin-top:5px; font-size:10px; color:var(--ad-muted); }
