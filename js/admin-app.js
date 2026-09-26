@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=166';
+} from './firebase-config.js?v=167';
 
-import { expandKit } from './kit.js?v=166';
+import { expandKit } from './kit.js?v=167';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -143,7 +143,8 @@ const state = {
   leadCompose: null,
   leadChip: 'all',         // quick-filter chip: all / high / medium / low / inplay / won / lost / needs
   leadRange: 'all',        // Showing: all / next12 / next3 / month / nodate / past
-  leadSort: 'date',        // Sort: date / priority / value / name / updated
+  leadSort: 'date',        // Sort column: date / priority / value / name / location / category / stage / last / updated
+  leadSortDir: '',         // 'asc' / 'desc'; '' = that column's natural direction
   leadPage: 1,
   leadPerPage: 10,
   quoteFromLeadId: '',     // set while a quote started from a lead is unsaved
@@ -7780,34 +7781,95 @@ function leadSortDate(r) {
   return k ? k + '-15' : '';
 }
 
+/*  Column sorting, built like the Inventory table: click a header to sort
+    by it, click the active one again to flip. Each column starts in its
+    natural direction (soonest date, High heat, biggest value, most recent
+    contact, else A-Z), and blanks always sit at the bottom.              */
+const LEAD_SORT_DIR = {
+  date: 'asc', name: 'asc', location: 'asc', category: 'asc', priority: 'asc',
+  stage: 'asc', value: 'desc', last: 'desc', updated: 'desc',
+};
+const LEAD_SORT_LABEL = {
+  date: 'Date (soonest)', priority: 'Heat (High first)', value: 'Value', name: 'Name (A–Z)',
+  location: 'Location', category: 'Category', stage: 'Stage', last: 'Last contact', updated: 'Recently updated',
+};
+
+/*  The value a column sorts on; '' or null = blank (always last). */
+function leadSortValue(r, key) {
+  switch (key) {
+    case 'name': return r.title || r.contactName || '';
+    case 'date': return leadSortDate(r);
+    case 'location': return r.venue || r.town || '';
+    case 'category': return r.category || LEAD_TYPES[r.type] || '';
+    case 'priority': {
+      const p = { high: 0, medium: 1, low: 2 }[leadPriority(r)];
+      const g = GROK_ORDER.indexOf(r.grokRating);
+      return p * 1000 + (5 - Math.round(r.rating || 0)) * 100 + (g < 0 ? 99 : g) * 1 - (Number(r.winPct) || 0) / 1000;
+    }
+    case 'stage': return LEAD_STAGE_ORDER.indexOf(r.stage || 'new');
+    case 'value': { const v = leadValue(r); return v ? v.cents : null; }
+    case 'last': return r.lastContacted || '';
+    case 'updated': return r.updatedAt || null;
+    default: return '';
+  }
+}
+
 function leadSorted(rows) {
-  const s = state.leadSort || 'date';
+  const key = LEAD_SORT_DIR[state.leadSort] ? state.leadSort : 'date';
+  const dir = state.leadSortDir === 'asc' || state.leadSortDir === 'desc' ? state.leadSortDir : LEAD_SORT_DIR[key];
   const out = rows.slice();
   const byName = (a, b) => (a.title || '').localeCompare(b.title || '', undefined, { numeric: true, sensitivity: 'base' });
-  const prio = { high: 0, medium: 1, low: 2 };
-  const grokRank = (r) => { const i = GROK_ORDER.indexOf(r.grokRating); return i < 0 ? 99 : i; };
-  if (s === 'date') {
-    // upcoming soonest first, then undated, then past (most recent first)
+
+  //  "Date (soonest)": upcoming first, then no-date-yet, then past (most
+  //  recent first) - so the top of the list is always what's next.
+  if (key === 'date' && dir === 'asc') {
     const grp = (r) => (!leadMonthKey(r) ? 1 : leadIsPast(r) ? 2 : 0);
-    out.sort((a, b) => {
+    return out.sort((a, b) => {
       const g = grp(a) - grp(b);
       if (g) return g;
       const da = leadSortDate(a), db = leadSortDate(b);
       if (grp(a) === 2) return db.localeCompare(da) || byName(a, b);
-      return da.localeCompare(db) || prio[leadPriority(a)] - prio[leadPriority(b)] || byName(a, b);
+      return da.localeCompare(db) || leadSortValue(a, 'priority') - leadSortValue(b, 'priority') || byName(a, b);
     });
-  } else if (s === 'priority') {
-    out.sort((a, b) => prio[leadPriority(a)] - prio[leadPriority(b)] || (b.rating || 0) - (a.rating || 0)
-      || grokRank(a) - grokRank(b) || (Number(b.winPct) || 0) - (Number(a.winPct) || 0) || byName(a, b));
-  } else if (s === 'value') {
-    const v = (r) => { const x = leadValue(r); return x ? x.cents : -1; };
-    out.sort((a, b) => v(b) - v(a) || byName(a, b));
-  } else if (s === 'name') {
-    out.sort(byName);
-  } else if (s === 'updated') {
-    out.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0) || byName(a, b));
   }
-  return out;
+
+  const mul = dir === 'desc' ? -1 : 1;
+  const blank = (v) => v === null || v === undefined || v === '';
+  return out.sort((a, b) => {
+    const va = leadSortValue(a, key), vb = leadSortValue(b, key);
+    const ea = blank(va), eb = blank(vb);
+    if (ea || eb) return ea && eb ? byName(a, b) : ea ? 1 : -1;
+    const c = typeof va === 'number' && typeof vb === 'number'
+      ? va - vb
+      : String(va).localeCompare(String(vb), undefined, { numeric: true, sensitivity: 'base' });
+    return c * mul || byName(a, b);
+  });
+}
+
+/*  A sortable header, same look as Inventory's (inv-th-sort / inv-caret). */
+function leadTh(key, label, cls) {
+  const on = state.leadSort === key;
+  const dir = state.leadSortDir || LEAD_SORT_DIR[key];
+  const glyph = on ? (dir === 'asc' ? '▲' : '▼') : '⇅';
+  return `<th class="${cls ? cls + ' ' : ''}inv-th-sort${on ? ' is-sorted' : ''}" data-lead-sort="${key}"
+              aria-sort="${on ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}">${esc(label)}<span class="inv-caret${on ? '' : ' inv-caret-idle'}">${glyph}</span></th>`;
+}
+
+/*  Refresh the carets and the Sort menu in place after a sort change. */
+function updateLeadSortHeaders() {
+  const dir = state.leadSortDir || LEAD_SORT_DIR[state.leadSort] || 'asc';
+  document.querySelectorAll('.lead-table thead [data-lead-sort]').forEach((th) => {
+    const on = th.getAttribute('data-lead-sort') === state.leadSort;
+    th.classList.toggle('is-sorted', on);
+    th.setAttribute('aria-sort', on ? (dir === 'asc' ? 'ascending' : 'descending') : 'none');
+    const caret = th.querySelector('.inv-caret');
+    if (caret) {
+      caret.textContent = on ? (dir === 'asc' ? '▲' : '▼') : '⇅';
+      caret.classList.toggle('inv-caret-idle', !on);
+    }
+  });
+  const sel = document.getElementById('lead-sort');
+  if (sel) sel.value = state.leadSort;
 }
 
 /*  Quick-filter chip counts, always over every lead so they stay steady. */
@@ -7963,7 +8025,7 @@ function leadMainHtml() {
               </select></label>
             <label>Sort:
               <select id="lead-sort" class="lead-mini-select" aria-label="Sort leads">
-                ${opt(so, 'date', 'Date (soonest)')}${opt(so, 'priority', 'Priority')}${opt(so, 'value', 'Value')}${opt(so, 'name', 'Name (A–Z)')}${opt(so, 'updated', 'Recently updated')}
+                ${Object.keys(LEAD_SORT_LABEL).map((k) => opt(so, k, LEAD_SORT_LABEL[k])).join('')}
               </select></label>
           </div>
         </div>
@@ -7992,14 +8054,14 @@ function leadMainHtml() {
           <table class="ad-table lead-table">
             <thead>
               <tr>
-                <th>Event / Organiser</th>
-                <th>Date</th>
-                <th class="lead-where">Location</th>
-                <th>Category</th>
-                <th>Heat</th>
-                <th>Stage</th>
-                <th class="lead-num">Value</th>
-                <th class="lead-last">Last contact</th>
+                ${leadTh('name', 'Event / Organiser')}
+                ${leadTh('date', 'Date')}
+                ${leadTh('location', 'Location', 'lead-where')}
+                ${leadTh('category', 'Category')}
+                ${leadTh('priority', 'Heat')}
+                ${leadTh('stage', 'Stage')}
+                ${leadTh('value', 'Value', 'lead-num')}
+                ${leadTh('last', 'Last contact', 'lead-last')}
                 <th></th>
               </tr>
             </thead>
@@ -8102,9 +8164,33 @@ function wireLeadList() {
   onSel('lead-f-grok', 'leadGrokFilter');
   onSel('lead-f-contact', 'leadContactFilter');
   onSel('lead-range', 'leadRange');
-  onSel('lead-sort', 'leadSort');
+  const sortSel = document.getElementById('lead-sort');
+  if (sortSel) sortSel.addEventListener('change', () => {
+    state.leadSort = sortSel.value;
+    state.leadSortDir = '';
+    state.leadPage = 1;
+    updateLeadSortHeaders();
+    renderLeadRows();
+  });
   const search = document.getElementById('lead-search');
   if (search) search.addEventListener('input', () => { state.leadSearch = search.value; renderLeadListParts(); });
+
+  const thead = document.querySelector('.lead-table thead');
+  if (thead) thead.addEventListener('click', (e) => {
+    const th = e.target.closest('[data-lead-sort]');
+    if (!th) return;
+    const k = th.getAttribute('data-lead-sort');
+    if (state.leadSort === k) {
+      const cur = state.leadSortDir || LEAD_SORT_DIR[k];
+      state.leadSortDir = cur === 'asc' ? 'desc' : 'asc';
+    } else {
+      state.leadSort = k;
+      state.leadSortDir = '';
+    }
+    state.leadPage = 1;
+    updateLeadSortHeaders();
+    renderLeadRows();
+  });
 
   const chips = document.getElementById('lead-chips');
   if (chips) chips.addEventListener('click', (e) => {
