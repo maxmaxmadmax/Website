@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=167';
+} from './firebase-config.js?v=168';
 
-import { expandKit } from './kit.js?v=167';
+import { expandKit } from './kit.js?v=168';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -7719,6 +7719,78 @@ function leadValue(r) {
 function leadDollars(cents) {
   return '$' + Math.round((cents || 0) / 100).toLocaleString('en-AU');
 }
+/*  Contact details as a row of small clickable icons under the lead name:
+    phone (tap to call), email, website and social pages. Hover shows the
+    number / address; clicking an icon does its job without opening the lead. */
+const LEAD_SVG = {
+  phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>',
+  mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>',
+  web: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>',
+  facebook: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 8h3V4h-3a4 4 0 0 0-4 4v2H8v4h2v8h4v-8h3l1-4h-4V8.5a.5.5 0 0 1 .5-.5z"/></svg>',
+  instagram: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor"/></svg>',
+  tiktok: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 3h3a4 4 0 0 0 4 4v3a7 7 0 0 1-4-1.3V15a6 6 0 1 1-6-6h.5v3.2A3 3 0 1 0 14 15z"/></svg>',
+  youtube: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 8.2a3 3 0 0 0-2.1-2.1C18 5.6 12 5.6 12 5.6s-6 0-7.9.5A3 3 0 0 0 2 8.2 31 31 0 0 0 1.6 12 31 31 0 0 0 2 15.8a3 3 0 0 0 2.1 2.1c1.9.5 7.9.5 7.9.5s6 0 7.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .4-3.8 31 31 0 0 0-.4-3.8zM10 15V9l5.2 3z"/></svg>',
+  person: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+};
+const LEAD_SOCIAL_HOSTS = [
+  ['facebook', /(^|\.)(facebook\.com|fb\.com|fb\.me)$/i],
+  ['instagram', /(^|\.)instagram\.com$/i],
+  ['tiktok', /(^|\.)tiktok\.com$/i],
+  ['youtube', /(^|\.)(youtube\.com|youtu\.be)$/i],
+];
+
+/*  A web address as a safe http(s) URL, or null. */
+function leadSafeUrl(raw) {
+  let u = String(raw || '').trim();
+  if (!u) return null;
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(u)) u = 'https://' + u;
+  try {
+    const x = new URL(u);
+    return (x.protocol === 'http:' || x.protocol === 'https:') ? x : null;
+  } catch (e) { return null; }
+}
+function leadSocialKind(x) {
+  const host = x.hostname.replace(/^www\./, '');
+  const hit = LEAD_SOCIAL_HOSTS.find(([, re]) => re.test(host));
+  return hit ? hit[0] : '';
+}
+
+/*  Website + social pages, read from the website and Socials fields.
+    Socials can be links ("facebook.com/xyz") or an @handle (Instagram). */
+function leadLinks(r) {
+  const out = [];
+  const seen = new Set();
+  const add = (kind, x) => { if (seen.has(kind + x.href)) return; seen.add(kind + x.href); out.push({ kind, x }); };
+  const web = leadSafeUrl(r.website);
+  if (web) add(leadSocialKind(web) || 'web', web);
+  String(r.socials || '').split(/[\s,;|]+/).filter(Boolean).forEach((tok) => {
+    if (/^@[\w.]{2,}$/.test(tok)) { const x = leadSafeUrl('instagram.com/' + tok.slice(1)); if (x) add('instagram', x); return; }
+    if (!/\.[a-z]{2,}/i.test(tok)) return;
+    const x = leadSafeUrl(tok);
+    if (x) add(leadSocialKind(x) || 'web', x);
+  });
+  return out;
+}
+
+function leadContactIconsHtml(r) {
+  const ic = [];
+  const phone = String(r.phone || '').trim();
+  if (phone) {
+    ic.push(`<a class="lead-ic is-phone" href="tel:${attr(phone.replace(/[^\d+]/g, ''))}" title="Call ${attr(phone)}" aria-label="Call ${attr(phone)}">${LEAD_SVG.phone}</a>`);
+  }
+  const email = String(r.email || '').trim();
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    ic.push(`<a class="lead-ic is-mail" href="mailto:${attr(email)}" title="Email ${attr(email)}" aria-label="Email ${attr(email)}">${LEAD_SVG.mail}</a>`);
+  }
+  const names = { web: 'Website', facebook: 'Facebook', instagram: 'Instagram', tiktok: 'TikTok', youtube: 'YouTube' };
+  leadLinks(r).forEach(({ kind, x }) => {
+    const label = x.hostname.replace(/^www\./, '') + (x.pathname.length > 1 ? x.pathname.replace(/\/$/, '') : '');
+    ic.push(`<a class="lead-ic is-${kind}" href="${attr(x.href)}" target="_blank" rel="noopener noreferrer" title="${attr(names[kind] + ': ' + label)}" aria-label="${attr(names[kind] + ': ' + label)}">${LEAD_SVG[kind]}</a>`);
+  });
+  const crowd = r.crowd ? `<span class="lead-ev-crowd" title="Expected attendance">👥 ${esc(r.crowd)}</span>` : '';
+  return ic.length || crowd ? `<span class="lead-ev-icons">${ic.join('')}${crowd}</span>` : '';
+}
+
 function leadValueHtml(r) {
   const v = leadValue(r);
   if (!v) return '<span class="ad-cell-muted">—</span>';
@@ -8108,7 +8180,8 @@ function renderLeadRows() {
           ${leadCatTile(r)}
           <span class="lead-ev-text">
             <span class="lead-ev-name">${esc(r.title || r.contactName || 'Untitled lead')}</span>
-            ${org ? `<span class="lead-ev-org">${esc(org)}</span>` : ''}
+            ${org ? `<span class="lead-ev-org"><span class="lead-ev-person" aria-hidden="true">${LEAD_SVG.person}</span>${esc(org)}</span>` : ''}
+            ${leadContactIconsHtml(r)}
             ${leadNeedsContact(r) ? '<span class="lead-flag">Needs contact</span>' : ''}
           </span>
         </div>
@@ -8223,6 +8296,7 @@ function wireLeadList() {
 
   const host = document.getElementById('lead-rows');
   if (host) host.addEventListener('click', (e) => {
+    if (e.target.closest('a')) return;   // the website link opens itself, not the lead
     const r = e.target.closest('[data-open-lead]');
     if (!r) return;
     const id = r.getAttribute('data-open-lead');
