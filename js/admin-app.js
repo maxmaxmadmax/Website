@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=165';
+} from './firebase-config.js?v=166';
 
-import { expandKit } from './kit.js?v=165';
+import { expandKit } from './kit.js?v=166';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -141,6 +141,12 @@ const state = {
   leadCalOffset: 0,        // months the strip is scrolled from this month
   leadSearch: '',
   leadCompose: null,
+  leadChip: 'all',         // quick-filter chip: all / high / medium / low / inplay / won / lost / needs
+  leadRange: 'all',        // Showing: all / next12 / next3 / month / nodate / past
+  leadSort: 'date',        // Sort: date / priority / value / name / updated
+  leadPage: 1,
+  leadPerPage: 10,
+  quoteFromLeadId: '',     // set while a quote started from a lead is unsaved
 };
 
 let fb = null;
@@ -5560,7 +5566,7 @@ function renderQuoteDocRows() {
 function wireQuoteList() {
   renderQuoteDocRows();
   const nw = document.getElementById('q-new');
-  if (nw) nw.addEventListener('click', () => { quoteDraft = blankQuote(); state.openQuoteId = '__new__'; render(); });
+  if (nw) nw.addEventListener('click', () => { quoteDraft = blankQuote(); state.quoteFromLeadId = ''; state.openQuoteId = '__new__'; render(); });
   const filter = document.getElementById('q-filter');
   if (filter) filter.addEventListener('change', () => { state.quoteDocFilter = filter.value; renderQuoteDocRows(); });
   const rows = document.getElementById('q-rows');
@@ -6250,6 +6256,10 @@ async function saveQuoteDoc(btn, quiet) {
     const id = state.openQuoteId === '__new__' ? null : state.openQuoteId;
     const res = await call('adminSaveQuote', { id, quote: quoteDraftForSave() });
     if (res && res.id) state.openQuoteId = res.id;
+    if (res && res.id && state.quoteFromLeadId) {
+      linkQuoteToLead(state.quoteFromLeadId, res.id, res.number);
+      state.quoteFromLeadId = '';
+    }
     if (!quiet) {
       if (m) { m.textContent = 'Saved.'; m.className = 'ad-quote-msg is-ok'; }
       render();   // repaint so the number, link and actions appear
@@ -7292,7 +7302,6 @@ const LEAD_TYPES = { production: 'Production hire', dj: 'DJ / Performance', venu
 const LEAD_SOURCES = { manual: 'Manual', auto: 'Auto-found', website: 'Website', directory: 'Directory' };
 const LEAD_STAGE_ORDER = ['new', 'contacted', 'quoted', 'negotiating', 'won', 'lost'];
 const LEAD_STAGES = { new: 'New', contacted: 'Contacted', quoted: 'Quoted', negotiating: 'Negotiating', won: 'Won', lost: 'Lost' };
-const LEAD_STAGE_PILL = { new: 'inv-st-blue', contacted: 'inv-st-amber', quoted: 'inv-st-amber', negotiating: 'inv-st-amber', won: 'inv-st-green', lost: 'inv-st-slate' };
 
 /*  Heat rating carried over from the research import (Grok's Hot/Warm/...).
     Kept apart from Max's own 5-star rating, which is his call alone.
@@ -7313,6 +7322,7 @@ function blankLead(type) {
     haul: '', whyFit: '', decisionMaker: '',
     linkedQuoteId: '', linkedQuoteNumber: '',
     lastContacted: '', notes: '', importBatch: '',
+    estValueCents: 0,
   };
 }
 
@@ -7412,7 +7422,7 @@ function subscribeToLeads() {
         || (a.title || '').localeCompare(b.title || '', undefined, { numeric: true, sensitivity: 'base' }));
       state.leads = rows;
       if (state.view === 'leads') {
-        if (state.openLeadId) renderLeadListParts();
+        if (state.openLeadId) renderLeadListParts(true);
         else render();
       }
     },
@@ -7446,14 +7456,6 @@ function leadStars(n, editable) {
   return `<span class="lead-stars${editable ? ' is-edit' : ''}">${out}</span>`;
 }
 
-/* ---- list (built to match the Inventory / Crew managers) ---- */
-function leadStats() {
-  const rows = state.leads || [];
-  const by = (s) => rows.filter((r) => (r.stage || 'new') === s).length;
-  const inPlay = by('contacted') + by('quoted') + by('negotiating');
-  return { total: rows.length, fresh: by('new'), inPlay, won: by('won'), needsContact: rows.filter(leadNeedsContact).length };
-}
-
 /*  The categories actually in use, for the filter - so it grows with the
     data instead of being a hard-coded list.                              */
 function leadCategories() {
@@ -7478,6 +7480,15 @@ function leadFiltered(ignoreMonth) {
     if (kf === 'needs' && !leadNeedsContact(r)) return false;
     if (kf === 'email' && !String(r.email || '').trim()) return false;
     if (kf === 'phone' && !String(r.phone || '').trim()) return false;
+    const chip = state.leadChip || 'all';
+    if (chip !== 'all') {
+      const st = r.stage || 'new';
+      if (chip === 'high' || chip === 'medium' || chip === 'low') { if (leadPriority(r) !== chip) return false; }
+      else if (chip === 'inplay') { if (st !== 'contacted' && st !== 'quoted' && st !== 'negotiating') return false; }
+      else if (chip === 'needs') { if (!leadNeedsContact(r)) return false; }
+      else if (st !== chip) return false;
+    }
+    if ((state.leadRange || 'all') !== 'all' && !leadInRange(r, state.leadRange)) return false;
     if (!ignoreMonth && state.leadMonth && leadMonthKey(r) !== state.leadMonth) return false;
     if (!ignoreMonth && state.leadWeek && leadWeekKey(r) !== state.leadWeek) return false;
     if (!needle) return true;
@@ -7487,25 +7498,10 @@ function leadFiltered(ignoreMonth) {
   });
 }
 
-function leadThumb(r) {
-  const letter = (r.title || r.contactName || LEAD_TYPES[r.type] || '?').trim().charAt(0).toUpperCase();
-  return `<span class="inv-thumb ${invCatClass(LEAD_TYPES[r.type] || 'Lead')}">${esc(letter || '?')}</span>`;
-}
-
-function leadStagePill(stage) {
-  const s = LEAD_STAGES[stage] ? stage : 'new';
-  return `<span class="inv-pill ${LEAD_STAGE_PILL[s]}">${esc(LEAD_STAGES[s])}</span>`;
-}
-
 /*  A real date when there is one; otherwise the date as the research listed
     it ("TBC 2027", "Sep annual") rather than inventing a day.            */
 function leadWhen(r) {
   return r.eventDate ? fmtLeadDate(r.eventDate) : (r.dateText || '');
-}
-
-function leadSub(r) {
-  return [leadWhen(r), r.town || r.venue, r.crowd ? r.crowd + ' pax' : '']
-    .filter(Boolean).join(' · ');
 }
 
 function grokPill(g) {
@@ -7637,7 +7633,8 @@ function leadCalendarHtml() {
 /*  The strip and the rows both follow the filters, so any filter change
     redraws both. The strip wires itself by delegation on its host, which
     survives the redraw.                                                  */
-function renderLeadListParts() {
+function renderLeadListParts(keepPage) {
+  if (!keepPage) state.leadPage = 1;
   const cal = document.getElementById('lead-cal');
   if (cal) cal.innerHTML = leadCalendarHtml();
   renderLeadRows();
@@ -7674,52 +7671,314 @@ function wireLeadCalendar() {
   });
 }
 
+/* ---- look & feel helpers for the Event Opportunities (Leads) screen ---- */
+
+/*  A coloured tile + icon per category stands in for a photo until real
+    images arrive. Unknown categories fall back to the lead's type.      */
+const LEAD_CAT_STYLE = {
+  'Race days': ['🏇', 'lc-race'],
+  'Rodeos/campdraft': ['🤠', 'lc-rodeo'],
+  'Ag shows': ['🐄', 'lc-ag'],
+  'Fishing/sports': ['🎣', 'lc-fish'],
+  'Tourism/chamber': ['🌴', 'lc-tour'],
+  'Council/civic': ['🏛️', 'lc-civic'],
+  'Formal/debutante': ['💃', 'lc-formal'],
+  'Corporate/mining': ['⛏️', 'lc-corp'],
+  'Sport finals': ['🏆', 'lc-sport'],
+};
+const LEAD_TYPE_STYLE = { production: ['🎛️', 'lc-prod'], dj: ['🎧', 'lc-dj'], venue: ['🍻', 'lc-venue'] };
+function leadCatStyle(r) {
+  return LEAD_CAT_STYLE[r.category] || LEAD_TYPE_STYLE[r.type] || LEAD_TYPE_STYLE.production;
+}
+function leadCatTile(r, big) {
+  const [icon, cls] = leadCatStyle(r);
+  return `<span class="lead-tile ${cls}${big ? ' is-big' : ''}" aria-hidden="true">${icon}</span>`;
+}
+
+const LEAD_PRIO_LABEL = { high: 'High', medium: 'Medium', low: 'Low' };
+function leadHeatPill(r) {
+  const p = leadPriority(r);
+  return `<span class="lead-heat is-${p}">${LEAD_PRIO_LABEL[p]}</span>`;
+}
+
+function leadStagePill2(stage) {
+  const s = LEAD_STAGES[stage] ? stage : 'new';
+  return `<span class="lead-stage is-${s}">${esc(LEAD_STAGES[s])}</span>`;
+}
+
+/*  Value: the linked quote's total when there is one, else Max's estimate. */
+function leadValue(r) {
+  if (r.linkedQuoteId) {
+    const q = (state.quoteDocs || []).find((x) => x.id === r.linkedQuoteId);
+    if (q && q.totalCents > 0) return { cents: q.totalCents, src: 'quote', number: q.number || '' };
+  }
+  const e = Math.round(r.estValueCents || 0);
+  return e > 0 ? { cents: e, src: 'est' } : null;
+}
+function leadDollars(cents) {
+  return '$' + Math.round((cents || 0) / 100).toLocaleString('en-AU');
+}
+function leadValueHtml(r) {
+  const v = leadValue(r);
+  if (!v) return '<span class="ad-cell-muted">—</span>';
+  return v.src === 'quote'
+    ? `<span class="lead-val" title="Linked quote ${attr(v.number)}">${leadDollars(v.cents)}</span>`
+    : `<span class="lead-val is-est" title="Your estimate">~${leadDollars(v.cents)}</span>`;
+}
+
+function leadTodayIso() {
+  const t = new Date();
+  return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+}
+
+/*  "2 days ago" for the last-contact column. */
+function leadRelDay(iso) {
+  if (!iso) return '';
+  const d = new Date(String(iso).slice(0, 10) + 'T00:00:00');
+  if (isNaN(d)) return String(iso);
+  const t = new Date(); t.setHours(0, 0, 0, 0);
+  const n = Math.round((t - d) / 86400000);
+  if (n < 0) return fmtLeadDate(String(iso).slice(0, 10));
+  if (n === 0) return 'Today';
+  if (n === 1) return 'Yesterday';
+  if (n < 7) return n + ' days ago';
+  if (n < 35) { const w = Math.round(n / 7); return w + ' week' + (w === 1 ? '' : 's') + ' ago'; }
+  return fmtLeadDate(String(iso).slice(0, 10));
+}
+
+function leadHasExactDate(r) {
+  return !!(r.eventDate && /^\d{4}-\d{2}-\d{2}/.test(r.eventDate));
+}
+/*  A month-only lead is taken as mid-month (the 15th) - the same day it
+    sorts on - so late in a month, "Sep annual" counts as been and gone.  */
+function leadIsPast(r) {
+  if (leadHasExactDate(r)) return r.eventDate.slice(0, 10) < leadTodayIso();
+  const k = leadMonthKey(r);
+  return !!k && (k + '-15') < leadTodayIso();
+}
+
+/*  The "Showing:" range. Past events never count as upcoming, even when
+    they fall earlier in this month.                                       */
+function leadInRange(r, rg) {
+  const k = leadMonthKey(r);
+  if (rg === 'nodate') return !k;
+  if (!k) return false;
+  const past = leadIsPast(r);
+  if (rg === 'past') return past;
+  if (past) return false;
+  const now = new Date();
+  const span = rg === 'month' ? 1 : rg === 'next3' ? 3 : 12;
+  const end = new Date(now.getFullYear(), now.getMonth() + span - 1, 1);
+  const endKey = end.getFullYear() + '-' + String(end.getMonth() + 1).padStart(2, '0');
+  return k <= endKey;
+}
+
+/*  Sort key date: the exact day, else mid-month for a month-only lead. */
+function leadSortDate(r) {
+  if (leadHasExactDate(r)) return r.eventDate.slice(0, 10);
+  const k = leadMonthKey(r);
+  return k ? k + '-15' : '';
+}
+
+function leadSorted(rows) {
+  const s = state.leadSort || 'date';
+  const out = rows.slice();
+  const byName = (a, b) => (a.title || '').localeCompare(b.title || '', undefined, { numeric: true, sensitivity: 'base' });
+  const prio = { high: 0, medium: 1, low: 2 };
+  const grokRank = (r) => { const i = GROK_ORDER.indexOf(r.grokRating); return i < 0 ? 99 : i; };
+  if (s === 'date') {
+    // upcoming soonest first, then undated, then past (most recent first)
+    const grp = (r) => (!leadMonthKey(r) ? 1 : leadIsPast(r) ? 2 : 0);
+    out.sort((a, b) => {
+      const g = grp(a) - grp(b);
+      if (g) return g;
+      const da = leadSortDate(a), db = leadSortDate(b);
+      if (grp(a) === 2) return db.localeCompare(da) || byName(a, b);
+      return da.localeCompare(db) || prio[leadPriority(a)] - prio[leadPriority(b)] || byName(a, b);
+    });
+  } else if (s === 'priority') {
+    out.sort((a, b) => prio[leadPriority(a)] - prio[leadPriority(b)] || (b.rating || 0) - (a.rating || 0)
+      || grokRank(a) - grokRank(b) || (Number(b.winPct) || 0) - (Number(a.winPct) || 0) || byName(a, b));
+  } else if (s === 'value') {
+    const v = (r) => { const x = leadValue(r); return x ? x.cents : -1; };
+    out.sort((a, b) => v(b) - v(a) || byName(a, b));
+  } else if (s === 'name') {
+    out.sort(byName);
+  } else if (s === 'updated') {
+    out.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0) || byName(a, b));
+  }
+  return out;
+}
+
+/*  Quick-filter chip counts, always over every lead so they stay steady. */
+function leadChipCounts() {
+  const rows = state.leads || [];
+  const c = { all: rows.length, high: 0, medium: 0, low: 0, inplay: 0, won: 0, lost: 0, needs: 0 };
+  rows.forEach((r) => {
+    c[leadPriority(r)]++;
+    const s = r.stage || 'new';
+    if (s === 'contacted' || s === 'quoted' || s === 'negotiating') c.inplay++;
+    if (s === 'won') c.won++;
+    if (s === 'lost') c.lost++;
+    if (leadNeedsContact(r)) c.needs++;
+  });
+  return c;
+}
+
+/* ---- the research log written by the web research pass ---- */
+const LEAD_CHECK = {
+  verified: ['is-green', 'Contacts verified'],
+  added: ['is-blue', 'Contacts added'],
+  updated: ['is-amber', 'Contact corrected'],
+  partial: ['is-amber', 'Partly verified'],
+  unverified: ['is-red', 'Contacts unverified'],
+  none: ['is-slate', 'No public contact'],
+  skipped: ['is-slate', 'Not researched'],
+};
+const LEAD_FIELD_LABEL = {
+  dateText: 'date', contactName: 'contact', phone: 'phone', email: 'email', website: 'website',
+  venue: 'venue', crowd: 'attendance', needs: 'need', whyFit: 'why it fits', ticketUrl: 'ticket link',
+};
+function leadResearchHtml(doc) {
+  if (!doc || !doc.enrichedAt) return '';
+  const [cls, label] = LEAD_CHECK[doc.contactCheck] || LEAD_CHECK.partial;
+  const prev = doc.enrichPrev && typeof doc.enrichPrev === 'object' ? Object.entries(doc.enrichPrev) : [];
+  const sources = (Array.isArray(doc.enrichSources) ? doc.enrichSources : [])
+    .filter((u) => /^https?:\/\//i.test(String(u)));
+  const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } };
+  return `
+        <div class="lead-research">
+          <div class="lead-research-head">
+            <strong>🔎 Researched ${esc(fmtLeadDate(String(doc.enrichedAt).slice(0, 10)))}</strong>
+            <span class="lead-check ${cls}">${esc(label)}</span>
+          </div>
+          ${doc.enrichNotes ? `<p class="lead-research-notes">${esc(doc.enrichNotes)}</p>` : ''}
+          ${prev.length ? `<p class="lead-research-prev">Replaced: ${prev.map(([k, v]) => `${esc(LEAD_FIELD_LABEL[k] || k)} was “${esc(v)}”`).join(' · ')}</p>` : ''}
+          ${sources.length ? `<p class="lead-research-src">Sources: ${sources.map((u) => `<a href="${attr(u)}" target="_blank" rel="noopener noreferrer">${esc(host(u))}</a>`).join(' · ')}</p>` : ''}
+        </div>`;
+}
+
+/* ---- quick actions ---- */
+
+/*  An all-day calendar entry for the event, downloaded as an .ics file. */
+function leadIcsDownload(r, id) {
+  if (!leadHasExactDate(r)) return;
+  const day = r.eventDate.slice(0, 10);
+  const start = day.replace(/-/g, '');
+  const n = new Date(day + 'T00:00:00'); n.setDate(n.getDate() + 1);
+  const end = n.getFullYear() + String(n.getMonth() + 1).padStart(2, '0') + String(n.getDate()).padStart(2, '0');
+  const ic = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const desc = [r.dateText, r.contactName, r.phone, r.email, r.needs ? 'Needs: ' + r.needs : ''].filter(Boolean).join('\n');
+  const ics = [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//SoundzGood//Leads//EN', 'BEGIN:VEVENT',
+    'UID:lead-' + (id || day) + '@soundzgood.com.au', 'DTSTAMP:' + stamp,
+    'DTSTART;VALUE=DATE:' + start, 'DTEND;VALUE=DATE:' + end,
+    'SUMMARY:' + ic(r.title || r.eventName || 'Event'), 'LOCATION:' + ic(r.venue || r.town), 'DESCRIPTION:' + ic(desc),
+    'END:VEVENT', 'END:VCALENDAR',
+  ].join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+  a.download = (r.title || 'event').replace(/[^\w]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) + '.ics';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+/*  Start a new quote already filled in from the lead. When that quote is
+    first saved, saveQuoteDoc links it back here (state.quoteFromLeadId). */
+function createQuoteFromLead() {
+  const r = leadDraft;
+  quoteDraft = blankQuote();
+  quoteDraft.customer = {
+    ...quoteDraft.customer,
+    name: r.contactName || r.decisionMaker || '',
+    email: r.email || '',
+    phone: r.phone || '',
+    address: r.venue || r.town || '',
+    eventName: r.eventName || r.title || '',
+    eventDate: leadHasExactDate(r) ? r.eventDate.slice(0, 10) : '',
+  };
+  if (leadHasExactDate(r)) {
+    quoteDraft.hire.startDate = r.eventDate.slice(0, 10);
+    quoteDraft.hire.endDate = r.eventDate.slice(0, 10);
+  }
+  state.quoteFromLeadId = state.openLeadId;
+  state.openLeadId = null;
+  state.openQuoteId = '__new__';
+  location.hash = '#/quoteDocs';
+}
+
+/*  Called once the quote made from a lead is first saved: link it, and move
+    a New/Contacted lead on to Quoted.                                      */
+async function linkQuoteToLead(leadId, quoteId, number) {
+  try {
+    const cur = (state.leads || []).find((x) => x.id === leadId);
+    const stage = cur && (cur.stage === 'new' || cur.stage === 'contacted' || !cur.stage) ? 'quoted' : (cur ? cur.stage : 'quoted');
+    const patchData = { linkedQuoteId: quoteId, linkedQuoteNumber: number || '', stage, updatedAt: Date.now() };
+    const { doc, setDoc } = fb.f;
+    await setDoc(doc(fb.db, 'leads', leadId), patchData, { merge: true });
+    if (cur) Object.assign(cur, patchData);
+  } catch (err) {
+    console.error('link quote to lead', err);
+  }
+}
+
 function leadMainHtml() {
-  const s = leadStats();
   const f = state.leadFilter;
   const tf = state.leadTypeFilter;
   const cf = state.leadCatFilter;
   const gf = state.leadGrokFilter;
   const kf = state.leadContactFilter;
   const opt = (cur, v, l) => `<option value="${attr(v)}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`;
+  const c = leadChipCounts();
+  const chip = (k, label, dot) => `
+          <button type="button" class="lead-chip${(state.leadChip || 'all') === k ? ' is-active' : ''}" data-lead-chip="${k}">
+            ${dot ? `<i class="lead-dot is-${dot}"></i>` : ''}${label} <span>(${c[k]})</span>
+          </button>`;
+  const rg = state.leadRange || 'all';
+  const so = state.leadSort || 'date';
 
   return `
-      <div class="inv-main">
-        <div class="inv-head">
-          <div class="inv-head-title">
-            <span class="ad-mail-icon" aria-hidden="true">&#9733;</span>
-            <div>
-              <h1>Leads</h1>
-              <p>Prospects for gigs and hire work. Rate them, move them along the pipeline, and email them from here.</p>
-            </div>
+      <div class="inv-main lead-page">
+        <div class="lead-top">
+          <div>
+            <h1>Event Opportunities</h1>
+            <p class="lead-tagline">Find. Plan. Connect. More Events for a Louder Tomorrow.</p>
           </div>
-          <div class="inv-head-actions res-addbtns">
-            <button type="button" class="ad-btn ad-btn-small" data-lead-new="production">+ Production</button>
-            <button type="button" class="ad-btn ad-btn-small" data-lead-new="dj">+ DJ / gig</button>
-            <button type="button" class="ad-btn ad-btn-primary" data-lead-new="venue">+ Venue</button>
-          </div>
+          <button type="button" class="lead-cta" data-lead-new="production">＋ New Lead</button>
         </div>
 
         <div id="lead-cal">${leadCalendarHtml()}</div>
 
-        <div class="inv-tiles">
-          ${invTile('&#10022;', 'inv-t-blue', s.fresh, 'New', '')}
-          ${invTile('&#9203;', 'inv-t-amber', s.inPlay, 'In play', '')}
-          ${invTile('&#127881;', 'inv-t-green', s.won, 'Won', '')}
-          ${invTile('&#9742;', 'inv-t-slate', s.needsContact, 'Needs contact', '')}
+        <div class="lead-chipbar">
+          <div class="lead-chips" id="lead-chips">
+            ${chip('all', 'All Leads')}${chip('high', 'High', 'high')}${chip('medium', 'Medium', 'medium')}${chip('low', 'Low', 'low')}
+            ${chip('inplay', 'In Play')}${chip('won', 'Won')}${chip('lost', 'Lost')}${chip('needs', 'Needs contact')}
+          </div>
+          <div class="lead-sorts">
+            <label>Showing:
+              <select id="lead-range" class="lead-mini-select" aria-label="Date range">
+                ${opt(rg, 'all', 'All dates')}${opt(rg, 'next12', 'Next 12 months')}${opt(rg, 'next3', 'Next 3 months')}${opt(rg, 'month', 'This month')}${opt(rg, 'nodate', 'No date yet')}${opt(rg, 'past', 'Past')}
+              </select></label>
+            <label>Sort:
+              <select id="lead-sort" class="lead-mini-select" aria-label="Sort leads">
+                ${opt(so, 'date', 'Date (soonest)')}${opt(so, 'priority', 'Priority')}${opt(so, 'value', 'Value')}${opt(so, 'name', 'Name (A–Z)')}${opt(so, 'updated', 'Recently updated')}
+              </select></label>
+          </div>
         </div>
 
         <div class="inv-toolbar lead-toolbar">
-          <input type="search" id="lead-search" class="ad-search" placeholder="Search leads..."
+          <input type="search" id="lead-search" class="ad-search" placeholder="Search leads, events, organisers..."
                  value="${attr(state.leadSearch)}" aria-label="Search leads">
           <select id="lead-f-stage" class="ad-select" aria-label="Filter by stage">
             ${opt(f, 'all', 'All stages')}${LEAD_STAGE_ORDER.map((k) => opt(f, k, LEAD_STAGES[k])).join('')}
           </select>
           <select id="lead-f-cat" class="ad-select" aria-label="Filter by category">
-            ${opt(cf, 'all', 'All categories')}${leadCategories().map((c) => opt(cf, c, c)).join('')}
+            ${opt(cf, 'all', 'All categories')}${leadCategories().map((x) => opt(cf, x, x)).join('')}
           </select>
-          <select id="lead-f-grok" class="ad-select" aria-label="Filter by heat">
-            ${opt(gf, 'all', 'Any heat')}${GROK_ORDER.map((g) => opt(gf, g, g)).join('')}
+          <select id="lead-f-grok" class="ad-select" aria-label="Filter by research heat">
+            ${opt(gf, 'all', 'Any research heat')}${GROK_ORDER.map((g) => opt(gf, g, g)).join('')}
           </select>
           <select id="lead-f-contact" class="ad-select" aria-label="Filter by contact details">
             ${opt(kf, 'all', 'Any contact')}${opt(kf, 'email', 'Has email')}${opt(kf, 'phone', 'Has phone')}${opt(kf, 'needs', 'Needs contact')}
@@ -7729,16 +7988,18 @@ function leadMainHtml() {
           </select>
         </div>
 
-        <div class="ad-table-wrap inv-table-wrap">
-          <table class="ad-table inv-table">
+        <div class="ad-table-wrap inv-table-wrap lead-table-wrap">
+          <table class="ad-table lead-table">
             <thead>
               <tr>
-                <th>Lead</th>
+                <th>Event / Organiser</th>
+                <th>Date</th>
+                <th class="lead-where">Location</th>
                 <th>Category</th>
-                <th>Event</th>
-                <th>Rating</th>
+                <th>Heat</th>
                 <th>Stage</th>
-                <th>Source</th>
+                <th class="lead-num">Value</th>
+                <th class="lead-last">Last contact</th>
                 <th></th>
               </tr>
             </thead>
@@ -7746,34 +8007,79 @@ function leadMainHtml() {
           </table>
         </div>
 
-        <div class="inv-foot" id="lead-foot"></div>
+        <div class="lead-foot" id="lead-foot"></div>
       </div>`;
+}
+
+/*  Page numbers: first, last and the current page's neighbours, with …
+    where pages are skipped.                                             */
+function leadPageList(page, pages) {
+  const want = new Set([1, pages, page - 1, page, page + 1]);
+  if (page <= 3) [2, 3, 4, 5].forEach((n) => want.add(n));
+  if (page >= pages - 2) [pages - 4, pages - 3, pages - 2].forEach((n) => want.add(n));
+  const list = [...want].filter((n) => n >= 1 && n <= pages).sort((a, b) => a - b);
+  const out = [];
+  list.forEach((n, i) => { if (i && n - list[i - 1] > 1) out.push('…'); out.push(n); });
+  return out;
 }
 
 function renderLeadRows() {
   const host = document.getElementById('lead-rows');
   const foot = document.getElementById('lead-foot');
   if (!host) return;
-  const rows = leadFiltered();
-  host.innerHTML = rows.length ? rows.map((r) => `
-    <tr class="inv-row${state.openLeadId === r.id ? ' is-open' : ''}" data-open-lead="${attr(r.id)}">
-      <td class="inv-item-cell">
-        ${leadThumb(r)}
-        <span class="inv-item-text">
-          <span class="inv-item-name">${esc(r.title || r.contactName || 'Untitled lead')}</span>
-          ${r.title && (r.contactName || r.decisionMaker) ? `<span class="inv-item-sub">${esc(r.contactName || r.decisionMaker)}</span>` : ''}
-          ${leadNeedsContact(r) ? '<span class="inv-pill inv-st-red lead-needs">Needs contact</span>' : ''}
-        </span>
+  const all = leadSorted(leadFiltered());
+  const per = state.leadPerPage || 10;
+  const pages = Math.max(1, Math.ceil(all.length / per));
+  if (state.leadPage > pages) state.leadPage = pages;
+  if (!state.leadPage || state.leadPage < 1) state.leadPage = 1;
+  const start = (state.leadPage - 1) * per;
+  const rows = all.slice(start, start + per);
+
+  host.innerHTML = rows.length ? rows.map((r) => {
+    const org = r.contactName || r.decisionMaker || '';
+    const when = leadWhen(r);
+    const where = r.venue || r.town || '';
+    return `
+    <tr class="lead-row${state.openLeadId === r.id ? ' is-open' : ''}" data-open-lead="${attr(r.id)}">
+      <td>
+        <div class="lead-ev">
+          ${leadCatTile(r)}
+          <span class="lead-ev-text">
+            <span class="lead-ev-name">${esc(r.title || r.contactName || 'Untitled lead')}</span>
+            ${org ? `<span class="lead-ev-org">${esc(org)}</span>` : ''}
+            ${leadNeedsContact(r) ? '<span class="lead-flag">Needs contact</span>' : ''}
+          </span>
+        </div>
       </td>
-      <td>${r.category ? esc(r.category) : `<span class="ad-cell-muted">${esc(LEAD_TYPES[r.type] || 'Lead')}</span>`}</td>
-      <td>${leadSub(r) ? esc(leadSub(r)) : '<span class="ad-cell-muted">—</span>'}</td>
-      <td><span class="lead-rate-cell">${leadStars(r.rating)}${grokPill(r.grokRating)}</span></td>
-      <td>${leadStagePill(r.stage)}</td>
-      <td><span class="ad-cell-muted">${esc(LEAD_SOURCES[r.source] || 'Manual')}</span></td>
-      <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-open-lead="${attr(r.id)}" aria-label="Edit">&#8250;</button></td>
-    </tr>`).join('')
-    : `<tr><td colspan="7" class="ad-cell-muted">No leads match. Try clearing the search, or add one above.</td></tr>`;
-  if (foot) foot.innerHTML = `<p class="inv-foot-count">${rows.length} lead${rows.length === 1 ? '' : 's'}</p>`;
+      <td class="lead-when">${when ? `<span class="lead-ico" aria-hidden="true">📅</span>${esc(when)}` : '<span class="ad-cell-muted">—</span>'}</td>
+      <td class="lead-where">${where ? `<span class="lead-ico" aria-hidden="true">📍</span>${esc(where)}` : '<span class="ad-cell-muted">—</span>'}</td>
+      <td>${r.category ? `<span class="lead-cat">${esc(r.category)}</span>` : `<span class="lead-cat is-type">${esc(LEAD_TYPES[r.type] || 'Lead')}</span>`}</td>
+      <td><span class="lead-heatcell">${leadHeatPill(r)}${r.rating ? leadStars(r.rating) : ''}</span></td>
+      <td>${leadStagePill2(r.stage)}</td>
+      <td class="lead-num">${leadValueHtml(r)}</td>
+      <td class="lead-last">${r.lastContacted ? esc(leadRelDay(r.lastContacted)) : '<span class="ad-cell-muted">—</span>'}</td>
+      <td class="ad-cell-right"><button type="button" class="lead-more" data-open-lead="${attr(r.id)}" aria-label="Open ${attr(r.title || 'lead')}">···</button></td>
+    </tr>`;
+  }).join('')
+    : `<tr><td colspan="9" class="ad-cell-muted">No leads match. Try clearing the filters, or add one with ＋ New Lead.</td></tr>`;
+
+  if (foot) {
+    const from = all.length ? start + 1 : 0;
+    const to = Math.min(start + per, all.length);
+    const pager = leadPageList(state.leadPage, pages).map((n) => n === '…'
+      ? '<span class="lead-pg-gap">…</span>'
+      : `<button type="button" class="lead-pg${n === state.leadPage ? ' is-on' : ''}" data-lead-page="${n}"${n === state.leadPage ? ' aria-current="page"' : ''}>${n}</button>`).join('');
+    const perOpt = (n) => `<option value="${n}"${per === n ? ' selected' : ''}>${n} per page</option>`;
+    foot.innerHTML = `
+      <div class="lead-foot-count"><strong>${all.length} lead${all.length === 1 ? '' : 's'}</strong>
+        <span>Showing ${from}–${to} of ${all.length}</span></div>
+      <div class="lead-pager">
+        <button type="button" class="lead-pg" data-lead-page="${state.leadPage - 1}"${state.leadPage <= 1 ? ' disabled' : ''} aria-label="Previous page">&#8249;</button>
+        ${pager}
+        <button type="button" class="lead-pg" data-lead-page="${state.leadPage + 1}"${state.leadPage >= pages ? ' disabled' : ''} aria-label="Next page">&#8250;</button>
+      </div>
+      <select class="lead-mini-select lead-per" id="lead-per" aria-label="Leads per page">${[10, 25, 50, 100].map(perOpt).join('')}</select>`;
+  }
 }
 
 function wireLeadList() {
@@ -7786,18 +8092,48 @@ function wireLeadList() {
     render();
   }));
 
+  const onSel = (id, key) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', () => { state[key] = el.value; renderLeadListParts(); });
+  };
+  onSel('lead-f-stage', 'leadFilter');
+  onSel('lead-f-type', 'leadTypeFilter');
+  onSel('lead-f-cat', 'leadCatFilter');
+  onSel('lead-f-grok', 'leadGrokFilter');
+  onSel('lead-f-contact', 'leadContactFilter');
+  onSel('lead-range', 'leadRange');
+  onSel('lead-sort', 'leadSort');
   const search = document.getElementById('lead-search');
   if (search) search.addEventListener('input', () => { state.leadSearch = search.value; renderLeadListParts(); });
-  const stageSel = document.getElementById('lead-f-stage');
-  if (stageSel) stageSel.addEventListener('change', () => { state.leadFilter = stageSel.value; renderLeadListParts(); });
-  const typeSel = document.getElementById('lead-f-type');
-  if (typeSel) typeSel.addEventListener('change', () => { state.leadTypeFilter = typeSel.value; renderLeadListParts(); });
-  const catSel = document.getElementById('lead-f-cat');
-  if (catSel) catSel.addEventListener('change', () => { state.leadCatFilter = catSel.value; renderLeadListParts(); });
-  const grokSel = document.getElementById('lead-f-grok');
-  if (grokSel) grokSel.addEventListener('change', () => { state.leadGrokFilter = grokSel.value; renderLeadListParts(); });
-  const contactSel = document.getElementById('lead-f-contact');
-  if (contactSel) contactSel.addEventListener('change', () => { state.leadContactFilter = contactSel.value; renderLeadListParts(); });
+
+  const chips = document.getElementById('lead-chips');
+  if (chips) chips.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-lead-chip]');
+    if (!b) return;
+    const k = b.getAttribute('data-lead-chip');
+    state.leadChip = (state.leadChip === k && k !== 'all') ? 'all' : k;
+    chips.querySelectorAll('[data-lead-chip]').forEach((x) =>
+      x.classList.toggle('is-active', x.getAttribute('data-lead-chip') === state.leadChip));
+    renderLeadListParts();
+  });
+
+  const foot = document.getElementById('lead-foot');
+  if (foot) {
+    foot.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-lead-page]');
+      if (!b || b.disabled) return;
+      state.leadPage = Number(b.getAttribute('data-lead-page')) || 1;
+      renderLeadRows();
+      const wrap = document.querySelector('.lead-table-wrap');
+      if (wrap) wrap.scrollIntoView({ block: 'nearest' });
+    });
+    foot.addEventListener('change', (e) => {
+      if (e.target.id !== 'lead-per') return;
+      state.leadPerPage = Number(e.target.value) || 10;
+      state.leadPage = 1;
+      renderLeadRows();
+    });
+  }
 
   const host = document.getElementById('lead-rows');
   if (host) host.addEventListener('click', (e) => {
@@ -7817,117 +8153,170 @@ function leadFromDoc(doc) {
   b.rating = Math.max(0, Math.min(5, Math.round(doc.rating || 0)));
   b.stage = LEAD_STAGES[doc.stage] ? doc.stage : 'new';
   b.source = LEAD_SOURCES[doc.source] ? doc.source : 'manual';
+  b.estValueCents = Math.max(0, Math.round(doc.estValueCents || 0));
   return b;
 }
 
-/* ---- detail panel (slides in from the right, like Inventory) ---- */
+/* ---- the editor: slides in from the right, styled like the mockup ---- */
 function leadDetailHtml() {
   const isNew = state.openLeadId === '__new__';
   const r = leadDraft;
+  const doc = isNew ? null : (state.leads || []).find((x) => x.id === state.openLeadId);
   const type = LEAD_TYPES[r.type] ? r.type : 'production';
   const typeOpt = (v) => `<option value="${v}"${type === v ? ' selected' : ''}>${LEAD_TYPES[v]}</option>`;
   const srcOpt = (v) => `<option value="${v}"${r.source === v ? ' selected' : ''}>${LEAD_SOURCES[v]}</option>`;
   const stageOpt = (v) => `<option value="${v}"${r.stage === v ? ' selected' : ''}>${LEAD_STAGES[v]}</option>`;
-
-  /*  Quotes you can link this lead to - your live quote docs. */
   const quotes = (state.quoteDocs || []).filter((q) => q && q.number);
   const qOpt = (q) => `<option value="${attr(q.id)}"${r.linkedQuoteId === q.id ? ' selected' : ''}>${esc(q.number)}${q.customer && q.customer.name ? ' — ' + esc(q.customer.name) : ''}</option>`;
+  const prio = leadPriority(r);
+  const when = r.dateText || leadWhen(r);
+  const where = r.venue || r.town || '';
+  const recurring = /annual|recurring|seasonal|every|weekly|monthly/i.test(r.dateText || '');
+  const linkedQ = r.linkedQuoteId ? (state.quoteDocs || []).find((x) => x.id === r.linkedQuoteId) : null;
+  const est = r.estValueCents ? r.estValueCents / 100 : '';
 
   return `
     <aside class="inv-detail lead-detail" aria-label="Lead details">
-      <header class="inv-detail-head">
-        <div>
-          <h2>${isNew ? 'New lead' : esc(r.title || r.contactName || 'Lead')}</h2>
-          ${!isNew ? `<p class="inv-detail-sub">${esc(LEAD_TYPES[type])} · ${esc(LEAD_STAGES[r.stage] || 'New')}</p>` : ''}
-        </div>
-        <button type="button" class="inv-detail-close" id="lead-close" aria-label="Close">&times;</button>
-      </header>
+      <div class="lead-hero ${leadCatStyle(r)[1]}">
+        <span class="lead-hero-ico" aria-hidden="true">${leadCatStyle(r)[0]}</span>
+        ${isNew ? '' : `<span class="lead-prio is-${prio}">${LEAD_PRIO_LABEL[prio]} priority</span>`}
+        <button type="button" class="lead-hero-close" id="lead-close" aria-label="Close">&times;</button>
+      </div>
 
-      <div class="inv-detail-body">
+      <div class="lead-dhead">
+        <h2>${isNew ? 'New lead' : esc(r.title || r.contactName || 'Lead')}</h2>
+        ${!isNew && (when || where) ? `<p class="lead-dmeta">
+          ${when ? `<span><span class="lead-ico" aria-hidden="true">📅</span>${esc(when)}</span>` : ''}
+          ${where ? `<span><span class="lead-ico" aria-hidden="true">📍</span>${esc(where)}</span>` : ''}</p>` : ''}
+        ${!isNew ? `<div class="lead-dtags">
+          ${r.category ? `<span class="lead-cat">${esc(r.category)}</span>` : ''}
+          <span class="lead-cat is-type">${esc(LEAD_TYPES[type])}</span>
+          ${recurring ? '<span class="lead-cat is-recur">Recurring event</span>' : ''}
+          ${leadNeedsContact(r) ? '<span class="lead-flag">Needs contact</span>' : ''}
+        </div>` : ''}
         <div class="lead-rate-row">
           <span class="lead-rate-label">Your rating ${r.grokRating ? `<span class="lead-rate-hint">research says ${grokPill(r.grokRating)}${r.winPct ? ` · ${esc(r.winPct)}% win` : ''}</span>` : ''}</span>
           ${leadStars(r.rating, true)}
         </div>
+      </div>
 
-        <div class="inv-fgrid">
-          <label class="ad-field"><span>Type</span>
-            <select class="ad-select" data-lf="type">${typeOpt('production')}${typeOpt('dj')}${typeOpt('venue')}</select></label>
-          <label class="ad-field"><span>Stage</span>
-            <select class="ad-select" data-lf="stage">${LEAD_STAGE_ORDER.map(stageOpt).join('')}</select></label>
+      ${isNew ? '' : `
+      <div class="lead-actions">
+        <button type="button" class="lead-act is-primary" id="lead-email">✉ Prepare Outreach</button>
+        <button type="button" class="lead-act" id="lead-mkquote">${linkedQ ? '▦ Open Quote ' + esc(linkedQ.number || '') : '＋ Create Quote'}</button>
+        <button type="button" class="lead-act" id="lead-ics"${leadHasExactDate(r) ? '' : ' disabled title="Needs an exact event date"'}>📅 Add to Calendar</button>
+        <button type="button" class="lead-act" id="lead-won"${r.stage === 'won' ? ' disabled' : ''}>${r.stage === 'won' ? '🎉 Won' : '✓ Mark as Won'}</button>
+      </div>`}
 
-          <label class="ad-field inv-span2"><span>Lead name / headline</span>
-            <input class="ad-input" data-lf="title" value="${attr(r.title)}" placeholder="e.g. Airlie Beach Festival 2027, or The Reef Hotel"></label>
+      <div class="inv-detail-body">
+        ${leadResearchHtml(doc)}
 
-          <label class="ad-field"><span>Contact name</span><input class="ad-input" data-lf="contactName" value="${attr(r.contactName)}" placeholder="Who you deal with"></label>
-          <label class="ad-field"><span>Phone</span><input class="ad-input" data-lf="phone" value="${attr(r.phone)}" placeholder="Mobile"></label>
-          <label class="ad-field"><span>Email</span><input class="ad-input" type="email" data-lf="email" value="${attr(r.email)}" placeholder="name@example.com"></label>
-          <label class="ad-field"><span>Website</span><input class="ad-input" data-lf="website" value="${attr(r.website)}" placeholder="https://"></label>
-          <label class="ad-field inv-span2"><span>Socials</span><input class="ad-input" data-lf="socials" value="${attr(r.socials)}" placeholder="Instagram / Facebook handle or link"></label>
-        </div>
+        <section class="lead-card">
+          <h3>Event Overview</h3>
+          <div class="inv-fgrid">
+            <label class="ad-field"><span>Type</span>
+              <select class="ad-select" data-lf="type">${typeOpt('production')}${typeOpt('dj')}${typeOpt('venue')}</select></label>
+            <label class="ad-field"><span>Stage</span>
+              <select class="ad-select" data-lf="stage">${LEAD_STAGE_ORDER.map(stageOpt).join('')}</select></label>
+            <label class="ad-field inv-span2"><span>Lead name / headline</span>
+              <input class="ad-input" data-lf="title" value="${attr(r.title)}" placeholder="e.g. Airlie Beach Festival 2027, or The Reef Hotel"></label>
+            <label class="ad-field inv-span2"><span>Event name</span>
+              <input class="ad-input" data-lf="eventName" value="${attr(r.eventName)}" placeholder="What's on"></label>
+            <label class="ad-field"><span>Date</span>
+              <input class="ad-input" type="date" data-lf="eventDate" value="${attr(r.eventDate)}"></label>
+            <label class="ad-field"><span>Date as listed</span>
+              <input class="ad-input" data-lf="dateText" value="${attr(r.dateText)}" placeholder="e.g. Sat 10 Oct, gates 12pm"></label>
+            <label class="ad-field"><span>Expected attendance</span>
+              <input class="ad-input" data-lf="crowd" value="${attr(r.crowd)}" placeholder="e.g. ~3,000"></label>
+            <label class="ad-field"><span>Estimated value $</span>
+              <input class="ad-input" type="number" min="0" step="100" data-lf="estValue" value="${attr(est)}" placeholder="e.g. 5000"></label>
+            ${linkedQ ? `<p class="lead-quote-note inv-span2">Linked quote ${esc(linkedQ.number || '')}: <strong>${leadDollars(linkedQ.totalCents)}</strong> — shown as the value instead of the estimate.</p>` : ''}
+            <label class="ad-field"><span>Venue</span>
+              <input class="ad-input" data-lf="venue" value="${attr(r.venue)}" placeholder="Where"></label>
+            <label class="ad-field"><span>Town</span>
+              <input class="ad-input" data-lf="town" value="${attr(r.town)}" placeholder="e.g. Airlie Beach"></label>
+          </div>
+        </section>
 
-        <p class="lead-group-label">The event</p>
-        <div class="inv-fgrid">
-          <label class="ad-field inv-span2"><span>Event name</span><input class="ad-input" data-lf="eventName" value="${attr(r.eventName)}" placeholder="What's on"></label>
-          <label class="ad-field"><span>Date</span><input class="ad-input" type="date" data-lf="eventDate" value="${attr(r.eventDate)}"></label>
-          <label class="ad-field"><span>Crowd size</span><input class="ad-input" data-lf="crowd" value="${attr(r.crowd)}" placeholder="e.g. 300"></label>
-          <label class="ad-field"><span>Venue</span><input class="ad-input" data-lf="venue" value="${attr(r.venue)}" placeholder="Where"></label>
-          <label class="ad-field"><span>Town</span><input class="ad-input" data-lf="town" value="${attr(r.town)}" placeholder="e.g. Airlie Beach"></label>
-          <label class="ad-field inv-span2"><span>What they'd likely need</span><input class="ad-input" data-lf="needs" value="${attr(r.needs)}" placeholder="e.g. PA + 2 wedges, lighting, stage"></label>
-          <label class="ad-field inv-span2"><span>Budget signals</span><input class="ad-input" data-lf="budget" value="${attr(r.budget)}" placeholder="Ticketed? Sponsored? Council-backed?"></label>
-        </div>
+        <section class="lead-card">
+          <h3>Contacts</h3>
+          <div class="inv-fgrid">
+            <label class="ad-field"><span>Contact / organiser</span>
+              <input class="ad-input" data-lf="contactName" value="${attr(r.contactName)}" placeholder="Who you deal with"></label>
+            <label class="ad-field"><span>Decision maker</span>
+              <input class="ad-input" data-lf="decisionMaker" value="${attr(r.decisionMaker)}"></label>
+            <label class="ad-field"><span>Phone</span>
+              <input class="ad-input" data-lf="phone" value="${attr(r.phone)}" placeholder="Mobile"></label>
+            <label class="ad-field"><span>Email</span>
+              <input class="ad-input" type="email" data-lf="email" value="${attr(r.email)}" placeholder="name@example.com"></label>
+            <label class="ad-field"><span>Website</span>
+              <input class="ad-input" data-lf="website" value="${attr(r.website)}" placeholder="https://"></label>
+            <label class="ad-field"><span>Socials</span>
+              <input class="ad-input" data-lf="socials" value="${attr(r.socials)}" placeholder="Instagram / Facebook"></label>
+          </div>
+        </section>
 
-        <p class="lead-group-label">Research</p>
-        <div class="inv-fgrid">
-          <label class="ad-field"><span>Category</span>
-            <input class="ad-input" data-lf="category" value="${attr(r.category)}" list="lead-cat-list" placeholder="e.g. Race days"></label>
-          <label class="ad-field"><span>Heat (research)</span>
-            <select class="ad-select" data-lf="grokRating">
-              <option value="">—</option>
-              ${GROK_ORDER.map((g) => `<option value="${g}"${r.grokRating === g ? ' selected' : ''}>${g}</option>`).join('')}
-            </select></label>
-          <label class="ad-field"><span>Win chance %</span>
-            <input class="ad-input" type="number" min="0" max="100" data-lf="winPct" value="${attr(r.winPct)}"></label>
-          <label class="ad-field"><span>Date as listed</span>
-            <input class="ad-input" data-lf="dateText" value="${attr(r.dateText)}" placeholder="e.g. TBC 2027"></label>
-          <label class="ad-field inv-span2"><span>Next action</span>
-            <input class="ad-input" data-lf="nextAction" value="${attr(r.nextAction)}"></label>
-          <label class="ad-field inv-span2"><span>Who's doing it now</span>
-            <input class="ad-input" data-lf="incumbent" value="${attr(r.incumbent)}" placeholder="Current AV supplier, if known"></label>
-          <label class="ad-field inv-span2"><span>Why it fits</span>
-            <input class="ad-input" data-lf="whyFit" value="${attr(r.whyFit)}"></label>
-          <label class="ad-field"><span>Haul from Bowen</span>
-            <input class="ad-input" data-lf="haul" value="${attr(r.haul)}" placeholder="e.g. ~4 hr / 340 km"></label>
-          <label class="ad-field"><span>Decision maker</span>
-            <input class="ad-input" data-lf="decisionMaker" value="${attr(r.decisionMaker)}"></label>
-        </div>
-        <datalist id="lead-cat-list">${leadCategories().map((c) => `<option value="${attr(c)}">`).join('')}</datalist>
+        <section class="lead-card">
+          <h3>Why It Fits SoundzGood</h3>
+          <div class="inv-fgrid">
+            <label class="ad-field inv-span2"><span>Likely requirements</span>
+              <input class="ad-input" data-lf="needs" value="${attr(r.needs)}" placeholder="e.g. PA + stage + lighting"></label>
+            <label class="ad-field inv-span2"><span>Why it fits</span>
+              <input class="ad-input" data-lf="whyFit" value="${attr(r.whyFit)}"></label>
+            <label class="ad-field inv-span2"><span>Budget signals</span>
+              <input class="ad-input" data-lf="budget" value="${attr(r.budget)}" placeholder="Ticketed? Sponsored? Council-backed?"></label>
+          </div>
+        </section>
 
-        <p class="lead-group-label">Where it came from</p>
-        <div class="inv-fgrid">
-          <label class="ad-field"><span>Source</span>
-            <select class="ad-select" data-lf="source">${srcOpt('manual')}${srcOpt('auto')}${srcOpt('website')}${srcOpt('directory')}</select></label>
-          <label class="ad-field"><span>Last contacted</span><input class="ad-input" type="date" data-lf="lastContacted" value="${attr(r.lastContacted)}"></label>
-          <label class="ad-field inv-span2"><span>Source link</span><input class="ad-input" data-lf="sourceUrl" value="${attr(r.sourceUrl)}" placeholder="Where you found it"></label>
-          <label class="ad-field inv-span2"><span>Ticket / listing link</span><input class="ad-input" data-lf="ticketUrl" value="${attr(r.ticketUrl)}" placeholder="Eventbrite / Humanitix / etc."></label>
-        </div>
+        <section class="lead-card">
+          <h3>Research</h3>
+          <div class="inv-fgrid">
+            <label class="ad-field"><span>Category</span>
+              <input class="ad-input" data-lf="category" value="${attr(r.category)}" list="lead-cat-list" placeholder="e.g. Race days"></label>
+            <label class="ad-field"><span>Research heat</span>
+              <select class="ad-select" data-lf="grokRating">
+                <option value="">—</option>
+                ${GROK_ORDER.map((g) => `<option value="${g}"${r.grokRating === g ? ' selected' : ''}>${g}</option>`).join('')}
+              </select></label>
+            <label class="ad-field"><span>Win chance %</span>
+              <input class="ad-input" type="number" min="0" max="100" data-lf="winPct" value="${attr(r.winPct)}"></label>
+            <label class="ad-field"><span>Haul from Bowen</span>
+              <input class="ad-input" data-lf="haul" value="${attr(r.haul)}" placeholder="e.g. ~4 hr / 340 km"></label>
+            <label class="ad-field inv-span2"><span>Next action</span>
+              <input class="ad-input" data-lf="nextAction" value="${attr(r.nextAction)}"></label>
+            <label class="ad-field inv-span2"><span>Who's doing it now</span>
+              <input class="ad-input" data-lf="incumbent" value="${attr(r.incumbent)}" placeholder="Current AV supplier, if known"></label>
+          </div>
+          <datalist id="lead-cat-list">${leadCategories().map((x) => `<option value="${attr(x)}">`).join('')}</datalist>
+        </section>
 
-        <p class="lead-group-label">Quote</p>
-        <div class="inv-fgrid">
-          <label class="ad-field inv-span2"><span>Linked quote</span>
-            <select class="ad-select" data-lf="linkedQuoteId">
-              <option value="">— none —</option>
-              ${quotes.map(qOpt).join('')}
-            </select></label>
-          ${r.linkedQuoteId ? '<button type="button" class="ad-btn ad-btn-small inv-span2" id="lead-openquote">Open linked quote →</button>' : ''}
-        </div>
+        <section class="lead-card">
+          <h3>Source &amp; Quote</h3>
+          <div class="inv-fgrid">
+            <label class="ad-field"><span>Source</span>
+              <select class="ad-select" data-lf="source">${srcOpt('manual')}${srcOpt('auto')}${srcOpt('website')}${srcOpt('directory')}</select></label>
+            <label class="ad-field"><span>Last contacted</span>
+              <input class="ad-input" type="date" data-lf="lastContacted" value="${attr(r.lastContacted)}"></label>
+            <label class="ad-field inv-span2"><span>Source link</span>
+              <input class="ad-input" data-lf="sourceUrl" value="${attr(r.sourceUrl)}" placeholder="Where you found it"></label>
+            <label class="ad-field inv-span2"><span>Ticket / listing link</span>
+              <input class="ad-input" data-lf="ticketUrl" value="${attr(r.ticketUrl)}" placeholder="Eventbrite / Humanitix / etc."></label>
+            <label class="ad-field inv-span2"><span>Linked quote</span>
+              <select class="ad-select" data-lf="linkedQuoteId">
+                <option value="">— none —</option>
+                ${quotes.map(qOpt).join('')}
+              </select></label>
+          </div>
+        </section>
 
-        <label class="ad-field"><span>Notes</span>
-          <textarea class="ad-input" rows="3" data-lf="notes" placeholder="Anything worth remembering...">${esc(r.notes)}</textarea></label>
+        <section class="lead-card">
+          <h3>Notes</h3>
+          <textarea class="ad-input" rows="4" data-lf="notes" placeholder="Anything worth remembering...">${esc(r.notes)}</textarea>
+        </section>
       </div>
 
       <footer class="inv-detail-foot">
         ${isNew ? '' : '<button type="button" class="ad-btn inv-del" id="lead-delete">Delete</button>'}
-        ${isNew ? '' : '<button type="button" class="ad-btn" id="lead-email">✉ Email</button>'}
         <button type="button" class="ad-btn ad-btn-primary" id="lead-save">${isNew ? 'Add lead' : 'Save changes'}</button>
         <span class="ad-quote-msg" id="lead-msg"></span>
       </footer>
@@ -7944,7 +8333,8 @@ function wireLeadDetail() {
   panel.addEventListener('input', (e) => {
     const t = e.target;
     if (!t.dataset.lf) return;
-    leadDraft[t.dataset.lf] = t.value;
+    if (t.dataset.lf === 'estValue') leadDraft.estValueCents = Math.max(0, Math.round(Number(t.value || 0) * 100));
+    else leadDraft[t.dataset.lf] = t.value;
   });
   panel.addEventListener('change', (e) => {
     const t = e.target;
@@ -7970,20 +8360,21 @@ function wireLeadDetail() {
     stars.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { const el = e.target.closest('[data-star]'); if (el) { e.preventDefault(); set(el); } } });
   }
 
-  const openq = document.getElementById('lead-openquote');
-  if (openq) openq.addEventListener('click', () => {
-    if (!leadDraft.linkedQuoteId) return;
-    state.openLeadId = null;
-    state.openQuoteId = leadDraft.linkedQuoteId;
-    location.hash = '#/quoteDocs';
+  const on = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', () => fn(el)); };
+  on('lead-save', (b) => saveLead(b));
+  on('lead-delete', (b) => deleteLead(b));
+  on('lead-email', () => openLeadCompose());
+  on('lead-ics', () => leadIcsDownload(leadDraft, state.openLeadId));
+  on('lead-won', (b) => { leadDraft.stage = 'won'; saveLead(b); });
+  on('lead-mkquote', () => {
+    if (leadDraft.linkedQuoteId) {
+      state.openLeadId = null;
+      state.openQuoteId = leadDraft.linkedQuoteId;
+      location.hash = '#/quoteDocs';
+    } else {
+      createQuoteFromLead();
+    }
   });
-
-  const save = document.getElementById('lead-save');
-  if (save) save.addEventListener('click', () => saveLead(save));
-  const del = document.getElementById('lead-delete');
-  if (del) del.addEventListener('click', () => deleteLead(del));
-  const email = document.getElementById('lead-email');
-  if (email) email.addEventListener('click', () => openLeadCompose());
 }
 
 function leadClean(r) {
@@ -7993,7 +8384,7 @@ function leadClean(r) {
     type,
     title: s(r.title, 160), contactName: s(r.contactName, 120),
     phone: s(r.phone, 40), email: s(r.email, 200), website: s(r.website, 300), socials: s(r.socials, 300),
-    eventName: s(r.eventName, 200), eventDate: s(r.eventDate, 20), venue: s(r.venue, 160), town: s(r.town, 80), crowd: s(r.crowd, 40),
+    eventName: s(r.eventName, 200), eventDate: s(r.eventDate, 20), venue: s(r.venue, 160), town: s(r.town, 80), crowd: s(r.crowd, 80),
     source: LEAD_SOURCES[r.source] ? r.source : 'manual', sourceUrl: s(r.sourceUrl, 500), ticketUrl: s(r.ticketUrl, 500),
     budget: s(r.budget, 300), needs: s(r.needs, 500),
     rating: Math.max(0, Math.min(5, Math.round(r.rating || 0))),
@@ -8007,6 +8398,7 @@ function leadClean(r) {
     nextAction: s(r.nextAction, 1000), incumbent: s(r.incumbent, 1000),
     haul: s(r.haul, 120), whyFit: s(r.whyFit, 1000), decisionMaker: s(r.decisionMaker, 300),
     importBatch: s(r.importBatch, 60),
+    estValueCents: Math.max(0, Math.round(Number(r.estValueCents) || 0)),
     updatedAt: Date.now(),
   };
 }
