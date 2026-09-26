@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=161';
+} from './firebase-config.js?v=162';
 
-import { expandKit } from './kit.js?v=161';
+import { expandKit } from './kit.js?v=162';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -133,6 +133,9 @@ const state = {
   openLeadId: null,
   leadFilter: 'all',
   leadTypeFilter: 'all',
+  leadCatFilter: 'all',
+  leadGrokFilter: 'all',
+  leadContactFilter: 'all',
   leadSearch: '',
   leadCompose: null,
 };
@@ -7288,17 +7291,32 @@ const LEAD_STAGE_ORDER = ['new', 'contacted', 'quoted', 'negotiating', 'won', 'l
 const LEAD_STAGES = { new: 'New', contacted: 'Contacted', quoted: 'Quoted', negotiating: 'Negotiating', won: 'Won', lost: 'Lost' };
 const LEAD_STAGE_PILL = { new: 'inv-st-blue', contacted: 'inv-st-amber', quoted: 'inv-st-amber', negotiating: 'inv-st-amber', won: 'inv-st-green', lost: 'inv-st-slate' };
 
+/*  Heat rating carried over from the research import (Grok's Hot/Warm/...).
+    Kept apart from Max's own 5-star rating, which is his call alone.
+    Existing = a job SoundzGood already has/won; Locked = someone else is on
+    it. Both are flags only - nothing is blocked.                          */
+const GROK_ORDER = ['Hot', 'Existing', 'Warm', 'Cool', 'Locked', 'Skip'];
+const GROK_PILL = { Hot: 'inv-st-red', Existing: 'inv-st-green', Warm: 'inv-st-amber', Cool: 'inv-st-blue', Locked: 'inv-st-slate', Skip: 'inv-st-slate' };
+
 function blankLead(type) {
   return {
     type: LEAD_TYPES[type] ? type : 'production',
     title: '', contactName: '', phone: '', email: '', website: '', socials: '',
-    eventName: '', eventDate: '', venue: '', town: '', crowd: '',
+    eventName: '', eventDate: '', dateText: '', venue: '', town: '', crowd: '',
     source: 'manual', sourceUrl: '', ticketUrl: '',
     budget: '', needs: '',
     rating: 0, stage: 'new',
+    category: '', grokRating: '', winPct: '', nextAction: '', incumbent: '',
+    haul: '', whyFit: '', decisionMaker: '',
     linkedQuoteId: '', linkedQuoteNumber: '',
-    lastContacted: '', notes: '',
+    lastContacted: '', notes: '', importBatch: '',
   };
+}
+
+/*  No phone and no email = can't be worked yet. Worked out live, so it
+    clears itself the moment a contact detail is added.                    */
+function leadNeedsContact(r) {
+  return !String(r.email || '').trim() && !String(r.phone || '').trim();
 }
 
 let leadDraft = blankLead();
@@ -7310,11 +7328,15 @@ function subscribeToLeads() {
     (snap) => {
       const rows = [];
       snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
-      /*  Open leads first (by pipeline order), then higher-rated, then by
-          name. Won/Lost fall to the bottom - they are done with.          */
+      /*  Open leads first (by pipeline order), then Max's stars, then the
+          imported heat (Hot first) and win %, then name. Won/Lost fall to
+          the bottom - they are done with.                                 */
+      const grokRank = (r) => { const i = GROK_ORDER.indexOf(r.grokRating); return i < 0 ? 99 : i; };
       rows.sort((a, b) =>
         (LEAD_STAGE_ORDER.indexOf(a.stage || 'new') - LEAD_STAGE_ORDER.indexOf(b.stage || 'new'))
         || (b.rating || 0) - (a.rating || 0)
+        || grokRank(a) - grokRank(b)
+        || (Number(b.winPct) || 0) - (Number(a.winPct) || 0)
         || (a.title || '').localeCompare(b.title || '', undefined, { numeric: true, sensitivity: 'base' }));
       state.leads = rows;
       if (state.view === 'leads') {
@@ -7357,19 +7379,36 @@ function leadStats() {
   const rows = state.leads || [];
   const by = (s) => rows.filter((r) => (r.stage || 'new') === s).length;
   const inPlay = by('contacted') + by('quoted') + by('negotiating');
-  return { total: rows.length, fresh: by('new'), inPlay, won: by('won') };
+  return { total: rows.length, fresh: by('new'), inPlay, won: by('won'), needsContact: rows.filter(leadNeedsContact).length };
+}
+
+/*  The categories actually in use, for the filter - so it grows with the
+    data instead of being a hard-coded list.                              */
+function leadCategories() {
+  const set = new Set();
+  (state.leads || []).forEach((r) => { if (r.category) set.add(r.category); });
+  return [...set].sort((a, b) => a.localeCompare(b));
 }
 
 function leadFiltered() {
   const rows = state.leads || [];
   const f = state.leadFilter || 'all';
   const tf = state.leadTypeFilter || 'all';
+  const cf = state.leadCatFilter || 'all';
+  const gf = state.leadGrokFilter || 'all';
+  const kf = state.leadContactFilter || 'all';
   const needle = (state.leadSearch || '').trim().toLowerCase();
   return rows.filter((r) => {
     if (f !== 'all' && (r.stage || 'new') !== f) return false;
     if (tf !== 'all' && (r.type || 'production') !== tf) return false;
+    if (cf !== 'all' && (r.category || '') !== cf) return false;
+    if (gf !== 'all' && (r.grokRating || '') !== gf) return false;
+    if (kf === 'needs' && !leadNeedsContact(r)) return false;
+    if (kf === 'email' && !String(r.email || '').trim()) return false;
+    if (kf === 'phone' && !String(r.phone || '').trim()) return false;
     if (!needle) return true;
-    return [r.title, r.contactName, r.eventName, r.town, r.venue, r.email, r.phone]
+    return [r.title, r.contactName, r.decisionMaker, r.eventName, r.town, r.venue, r.email, r.phone,
+      r.category, r.nextAction, r.incumbent]
       .filter(Boolean).join(' ').toLowerCase().includes(needle);
   });
 }
@@ -7384,9 +7423,19 @@ function leadStagePill(stage) {
   return `<span class="inv-pill ${LEAD_STAGE_PILL[s]}">${esc(LEAD_STAGES[s])}</span>`;
 }
 
+/*  A real date when there is one; otherwise the date as the research listed
+    it ("TBC 2027", "Sep annual") rather than inventing a day.            */
+function leadWhen(r) {
+  return r.eventDate ? fmtLeadDate(r.eventDate) : (r.dateText || '');
+}
+
 function leadSub(r) {
-  return [r.eventDate ? fmtLeadDate(r.eventDate) : '', r.town, r.crowd ? r.crowd + ' pax' : '']
+  return [leadWhen(r), r.town || r.venue, r.crowd ? r.crowd + ' pax' : '']
     .filter(Boolean).join(' · ');
+}
+
+function grokPill(g) {
+  return GROK_PILL[g] ? `<span class="inv-pill ${GROK_PILL[g]}">${esc(g)}</span>` : '';
 }
 
 function fmtLeadDate(iso) {
@@ -7400,7 +7449,10 @@ function leadMainHtml() {
   const s = leadStats();
   const f = state.leadFilter;
   const tf = state.leadTypeFilter;
-  const opt = (cur, v, l) => `<option value="${v}"${cur === v ? ' selected' : ''}>${l}</option>`;
+  const cf = state.leadCatFilter;
+  const gf = state.leadGrokFilter;
+  const kf = state.leadContactFilter;
+  const opt = (cur, v, l) => `<option value="${attr(v)}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`;
 
   return `
       <div class="inv-main">
@@ -7423,14 +7475,23 @@ function leadMainHtml() {
           ${invTile('&#10022;', 'inv-t-blue', s.fresh, 'New', '')}
           ${invTile('&#9203;', 'inv-t-amber', s.inPlay, 'In play', '')}
           ${invTile('&#127881;', 'inv-t-green', s.won, 'Won', '')}
-          ${invTile('&#9776;', 'inv-t-slate', s.total, 'Total', '')}
+          ${invTile('&#9742;', 'inv-t-slate', s.needsContact, 'Needs contact', '')}
         </div>
 
-        <div class="inv-toolbar">
+        <div class="inv-toolbar lead-toolbar">
           <input type="search" id="lead-search" class="ad-search" placeholder="Search leads..."
                  value="${attr(state.leadSearch)}" aria-label="Search leads">
           <select id="lead-f-stage" class="ad-select" aria-label="Filter by stage">
             ${opt(f, 'all', 'All stages')}${LEAD_STAGE_ORDER.map((k) => opt(f, k, LEAD_STAGES[k])).join('')}
+          </select>
+          <select id="lead-f-cat" class="ad-select" aria-label="Filter by category">
+            ${opt(cf, 'all', 'All categories')}${leadCategories().map((c) => opt(cf, c, c)).join('')}
+          </select>
+          <select id="lead-f-grok" class="ad-select" aria-label="Filter by heat">
+            ${opt(gf, 'all', 'Any heat')}${GROK_ORDER.map((g) => opt(gf, g, g)).join('')}
+          </select>
+          <select id="lead-f-contact" class="ad-select" aria-label="Filter by contact details">
+            ${opt(kf, 'all', 'Any contact')}${opt(kf, 'email', 'Has email')}${opt(kf, 'phone', 'Has phone')}${opt(kf, 'needs', 'Needs contact')}
           </select>
           <select id="lead-f-type" class="ad-select" aria-label="Filter by type">
             ${opt(tf, 'all', 'All types')}${Object.keys(LEAD_TYPES).map((k) => opt(tf, k, LEAD_TYPES[k])).join('')}
@@ -7442,7 +7503,7 @@ function leadMainHtml() {
             <thead>
               <tr>
                 <th>Lead</th>
-                <th>Type</th>
+                <th>Category</th>
                 <th>Event</th>
                 <th>Rating</th>
                 <th>Stage</th>
@@ -7469,12 +7530,13 @@ function renderLeadRows() {
         ${leadThumb(r)}
         <span class="inv-item-text">
           <span class="inv-item-name">${esc(r.title || r.contactName || 'Untitled lead')}</span>
-          ${r.contactName && r.title ? `<span class="inv-item-sub">${esc(r.contactName)}</span>` : ''}
+          ${r.title && (r.contactName || r.decisionMaker) ? `<span class="inv-item-sub">${esc(r.contactName || r.decisionMaker)}</span>` : ''}
+          ${leadNeedsContact(r) ? '<span class="inv-pill inv-st-red lead-needs">Needs contact</span>' : ''}
         </span>
       </td>
-      <td><span class="inv-pill inv-st-slate">${esc(LEAD_TYPES[r.type] || 'Lead')}</span></td>
+      <td>${r.category ? esc(r.category) : `<span class="ad-cell-muted">${esc(LEAD_TYPES[r.type] || 'Lead')}</span>`}</td>
       <td>${leadSub(r) ? esc(leadSub(r)) : '<span class="ad-cell-muted">—</span>'}</td>
-      <td>${leadStars(r.rating)}</td>
+      <td><span class="lead-rate-cell">${leadStars(r.rating)}${grokPill(r.grokRating)}</span></td>
       <td>${leadStagePill(r.stage)}</td>
       <td><span class="ad-cell-muted">${esc(LEAD_SOURCES[r.source] || 'Manual')}</span></td>
       <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-open-lead="${attr(r.id)}" aria-label="Edit">&#8250;</button></td>
@@ -7498,6 +7560,12 @@ function wireLeadList() {
   if (stageSel) stageSel.addEventListener('change', () => { state.leadFilter = stageSel.value; renderLeadRows(); });
   const typeSel = document.getElementById('lead-f-type');
   if (typeSel) typeSel.addEventListener('change', () => { state.leadTypeFilter = typeSel.value; renderLeadRows(); });
+  const catSel = document.getElementById('lead-f-cat');
+  if (catSel) catSel.addEventListener('change', () => { state.leadCatFilter = catSel.value; renderLeadRows(); });
+  const grokSel = document.getElementById('lead-f-grok');
+  if (grokSel) grokSel.addEventListener('change', () => { state.leadGrokFilter = grokSel.value; renderLeadRows(); });
+  const contactSel = document.getElementById('lead-f-contact');
+  if (contactSel) contactSel.addEventListener('change', () => { state.leadContactFilter = contactSel.value; renderLeadRows(); });
 
   const host = document.getElementById('lead-rows');
   if (host) host.addEventListener('click', (e) => {
@@ -7545,7 +7613,7 @@ function leadDetailHtml() {
 
       <div class="inv-detail-body">
         <div class="lead-rate-row">
-          <span class="lead-rate-label">Your rating</span>
+          <span class="lead-rate-label">Your rating ${r.grokRating ? `<span class="lead-rate-hint">research says ${grokPill(r.grokRating)}${r.winPct ? ` · ${esc(r.winPct)}% win` : ''}</span>` : ''}</span>
           ${leadStars(r.rating, true)}
         </div>
 
@@ -7575,6 +7643,32 @@ function leadDetailHtml() {
           <label class="ad-field inv-span2"><span>What they'd likely need</span><input class="ad-input" data-lf="needs" value="${attr(r.needs)}" placeholder="e.g. PA + 2 wedges, lighting, stage"></label>
           <label class="ad-field inv-span2"><span>Budget signals</span><input class="ad-input" data-lf="budget" value="${attr(r.budget)}" placeholder="Ticketed? Sponsored? Council-backed?"></label>
         </div>
+
+        <p class="lead-group-label">Research</p>
+        <div class="inv-fgrid">
+          <label class="ad-field"><span>Category</span>
+            <input class="ad-input" data-lf="category" value="${attr(r.category)}" list="lead-cat-list" placeholder="e.g. Race days"></label>
+          <label class="ad-field"><span>Heat (research)</span>
+            <select class="ad-select" data-lf="grokRating">
+              <option value="">—</option>
+              ${GROK_ORDER.map((g) => `<option value="${g}"${r.grokRating === g ? ' selected' : ''}>${g}</option>`).join('')}
+            </select></label>
+          <label class="ad-field"><span>Win chance %</span>
+            <input class="ad-input" type="number" min="0" max="100" data-lf="winPct" value="${attr(r.winPct)}"></label>
+          <label class="ad-field"><span>Date as listed</span>
+            <input class="ad-input" data-lf="dateText" value="${attr(r.dateText)}" placeholder="e.g. TBC 2027"></label>
+          <label class="ad-field inv-span2"><span>Next action</span>
+            <input class="ad-input" data-lf="nextAction" value="${attr(r.nextAction)}"></label>
+          <label class="ad-field inv-span2"><span>Who's doing it now</span>
+            <input class="ad-input" data-lf="incumbent" value="${attr(r.incumbent)}" placeholder="Current AV supplier, if known"></label>
+          <label class="ad-field inv-span2"><span>Why it fits</span>
+            <input class="ad-input" data-lf="whyFit" value="${attr(r.whyFit)}"></label>
+          <label class="ad-field"><span>Haul from Bowen</span>
+            <input class="ad-input" data-lf="haul" value="${attr(r.haul)}" placeholder="e.g. ~4 hr / 340 km"></label>
+          <label class="ad-field"><span>Decision maker</span>
+            <input class="ad-input" data-lf="decisionMaker" value="${attr(r.decisionMaker)}"></label>
+        </div>
+        <datalist id="lead-cat-list">${leadCategories().map((c) => `<option value="${attr(c)}">`).join('')}</datalist>
 
         <p class="lead-group-label">Where it came from</p>
         <div class="inv-fgrid">
@@ -7673,7 +7767,14 @@ function leadClean(r) {
     rating: Math.max(0, Math.min(5, Math.round(r.rating || 0))),
     stage: LEAD_STAGES[r.stage] ? r.stage : 'new',
     linkedQuoteId: s(r.linkedQuoteId, 60), linkedQuoteNumber: s(r.linkedQuoteNumber, 40),
-    lastContacted: s(r.lastContacted, 20), notes: s(r.notes, 2000),
+    lastContacted: s(r.lastContacted, 20), notes: s(r.notes, 6000),
+    dateText: s(r.dateText, 120),
+    category: s(r.category, 80),
+    grokRating: GROK_PILL[r.grokRating] ? r.grokRating : '',
+    winPct: s(r.winPct, 4),
+    nextAction: s(r.nextAction, 1000), incumbent: s(r.incumbent, 1000),
+    haul: s(r.haul, 120), whyFit: s(r.whyFit, 1000), decisionMaker: s(r.decisionMaker, 300),
+    importBatch: s(r.importBatch, 60),
     updatedAt: Date.now(),
   };
 }

@@ -2674,50 +2674,55 @@ body.ad-fit .ad-main{ min-height:0; }
 
 /* ==========================================================================
    LEADS — the gig lead generator. Reuses the Inventory / Crew list + slide-out
-   styles; only the star rating, group labels and email composer are new.
+   styles; only the star rating, group labels, row extras and the email
+   composer are new. Uses the desk's own colour tokens (light desk).
    ========================================================================== */
 .lead-detail .inv-detail-body{ display:block; }
 
 .lead-rate-row{
-  display:flex; align-items:center; justify-content:space-between;
-  gap:12px; padding:10px 14px; margin:0 0 14px;
-  background:#12161d; border:1px solid #232a35; border-radius:10px;
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;
+  gap:10px; padding:10px 14px; margin:0 0 14px;
+  background:var(--ad-desk); border:1px solid var(--ad-line); border-radius:10px;
 }
-.lead-rate-label{ font-size:13px; color:#9aa4b2; font-weight:600; }
+.lead-rate-label{ font-size:13px; color:var(--ad-text); font-weight:600; }
+.lead-rate-hint{ display:inline-flex; align-items:center; gap:4px; margin-left:6px; font-weight:400; color:var(--ad-muted); font-size:12px; }
 
-.lead-stars{ display:inline-flex; gap:2px; font-size:16px; line-height:1; white-space:nowrap; }
-.lead-star{ color:#39414d; }
-.lead-star.is-on{ color:#ffb020; }
-.lead-stars.is-edit{ font-size:22px; gap:4px; }
+.lead-stars{ display:inline-flex; gap:1px; font-size:15px; line-height:1; white-space:nowrap; }
+.lead-star{ color:#d6d9df; }
+.lead-star.is-on{ color:#f5a623; }
+.lead-stars.is-edit{ font-size:24px; gap:4px; }
 .lead-stars.is-edit .lead-star{ cursor:pointer; transition:transform .08s ease, color .08s ease; }
-.lead-stars.is-edit .lead-star:hover{ transform:scale(1.15); color:#ffc65c; }
+.lead-stars.is-edit .lead-star:hover{ transform:scale(1.15); color:#f7b84a; }
+
+.lead-rate-cell{ display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.lead-needs{ display:inline-block; margin-top:4px; font-size:10px; padding:2px 7px; }
 
 .lead-group-label{
   margin:18px 0 8px; font-size:11px; letter-spacing:1px; text-transform:uppercase;
-  color:#7d8794; font-weight:700;
+  color:var(--ad-faint); font-weight:700;
 }
 
 /* email composer — a light modal over the leads view */
 .lead-compose-back{
   position:fixed; inset:0; z-index:60;
-  background:rgba(6,8,12,.6); backdrop-filter:blur(2px);
+  background:rgba(18,20,26,.45); backdrop-filter:blur(2px);
   display:flex; align-items:flex-start; justify-content:center; padding:6vh 16px;
 }
 .lead-compose{
-  width:100%; max-width:600px; background:#161b23; border:1px solid #2a323d;
-  border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,.5); overflow:hidden;
+  width:100%; max-width:600px; background:var(--ad-card); border:1px solid var(--ad-line);
+  border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,.25); overflow:hidden;
   display:flex; flex-direction:column; max-height:88vh;
 }
 .lead-compose-head{
   display:flex; align-items:center; justify-content:space-between;
-  padding:16px 18px; border-bottom:1px solid #232a35;
+  padding:16px 18px; border-bottom:1px solid var(--ad-line);
 }
-.lead-compose-head h3{ margin:0; font-size:16px; color:#e8ecf1; }
+.lead-compose-head h3{ margin:0; font-size:16px; color:var(--ad-text); }
 .lead-compose-body{ padding:16px 18px; overflow:auto; display:flex; flex-direction:column; gap:12px; }
-.lead-compose-note{ margin:2px 0 0; font-size:12px; color:#7d8794; }
+.lead-compose-note{ margin:2px 0 0; font-size:12px; color:var(--ad-muted); }
 .lead-compose-foot{
   display:flex; align-items:center; gap:10px;
-  padding:14px 18px; border-top:1px solid #232a35;
+  padding:14px 18px; border-top:1px solid var(--ad-line);
 }
 .lead-compose-foot .ad-quote-msg{ margin-left:auto; }
 
