@@ -2809,3 +2809,16 @@ body.ad-fit .ad-main{ min-height:0; }
 .lead-wk-dots{ display:flex; align-items:center; gap:2px; flex-wrap:nowrap; }
 .lead-wk .lead-dot{ width:6px; height:6px; }
 .lead-cal-n{ margin-top:5px; font-size:10px; color:var(--ad-muted); }
+
+/* ---- Leads calendar: real week numbers (W1-W53) + this week highlighted ---- */
+.lead-wk-lbl{ flex:0 0 22px; }
+.lead-wk.is-today{ background:var(--ad-orange-soft); box-shadow:inset 3px 0 0 var(--ad-orange); }
+.lead-wk.is-today .lead-wk-lbl{ color:var(--ad-orange); }
+.lead-wk.is-today.is-sel{ box-shadow:inset 3px 0 0 var(--ad-orange), inset 0 0 0 1.5px var(--ad-text); }
+.lead-cal-today{
+  font-weight:700; color:var(--ad-orange); background:var(--ad-orange-soft);
+  padding:2px 9px; border-radius:999px;
+}
+.lead-wk{ gap:3px; padding:3px 4px; }
+.lead-wk-lbl{ flex:0 0 20px; }
+.lead-wk .lead-dot-more{ font-size:9px; white-space:nowrap; }
