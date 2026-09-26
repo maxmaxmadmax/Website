@@ -215,6 +215,15 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    //  Leads. Prospects for gigs and hire work, worked from the admin panel's
+    //  lead generator. They hold contact details, private notes and ratings, so
+    //  they are staff-only - never public. Written straight from the admin desk
+    //  like inventory/resources; auto-found event leads are written server-side
+    //  by a Cloud Function (Admin SDK), which bypasses these rules.
+    match /leads/{leadId} {
+      allow read, write: if isAdmin();
+    }
+
     match /quoteLeads/{leadId} {
       allow read: if isAdmin();
       allow write: if false;

@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=160';
+} from './firebase-config.js?v=161';
 
-import { expandKit } from './kit.js?v=160';
+import { expandKit } from './kit.js?v=161';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -125,6 +125,16 @@ const state = {
   openResourceId: null,
   resFilter: 'all',
   resSearch: '',
+
+  /*  Leads - the gig lead generator. null until first load; openLeadId is
+      null on the list, an id (or '__new__') in the editor. leadCompose holds
+      the email draft while the composer is open.                          */
+  leads: null,
+  openLeadId: null,
+  leadFilter: 'all',
+  leadTypeFilter: 'all',
+  leadSearch: '',
+  leadCompose: null,
 };
 
 let fb = null;
@@ -163,6 +173,7 @@ async function init() {
     subscribeToQuoteDocs();
     subscribeToPackages();
     subscribeToResources();
+    subscribeToLeads();
     loadQuotePricing();
     routeFromHash();
   });
@@ -355,7 +366,7 @@ function wireChrome() {
    ------------------------------------------------------------------------- */
 const BUILT = ['events', 'vendors', 'applications', 'map', 'entertainment',
                'settings', 'vendorEmail', 'quotes', 'inventory', 'botSettings',
-               'quoteDocs', 'packages', 'resources'];
+               'quoteDocs', 'packages', 'resources', 'leads'];
 
 /*  Vendors is where the work is, so it is what you land on. */
 const HOME = 'vendors';
@@ -7257,4 +7268,558 @@ function addResourceLineToQuote(res) {
   const days = Math.max(1, Math.round(quoteDraft.hire.days || 1));
   quoteDraft.lines.push({ type: 'custom', name: res.name, qty: 1, unitCents: res.priceCents || 0, days, resourceId: res.id });
   renderQuoteLines();
+}
+
+/* =========================================================================
+   LEADS — the gig lead generator, built into the admin panel.
+
+   A lead is a prospect for work: production hire, a DJ/performance booking,
+   or a venue/regular slot. They arrive from four places (auto-found events,
+   manual add, website enquiries, a venue directory), you rate each one
+   yourself with 1-5 stars, move it along a pipeline (New -> Contacted ->
+   Quoted -> Negotiating -> Won/Lost), link a quote once you build one, and
+   email them straight from here (draft + send, never auto-send). Styled to
+   match Inventory and Crew & Vehicles.
+   ========================================================================= */
+
+const LEAD_TYPES = { production: 'Production hire', dj: 'DJ / Performance', venue: 'Venue / regular' };
+const LEAD_SOURCES = { manual: 'Manual', auto: 'Auto-found', website: 'Website', directory: 'Directory' };
+const LEAD_STAGE_ORDER = ['new', 'contacted', 'quoted', 'negotiating', 'won', 'lost'];
+const LEAD_STAGES = { new: 'New', contacted: 'Contacted', quoted: 'Quoted', negotiating: 'Negotiating', won: 'Won', lost: 'Lost' };
+const LEAD_STAGE_PILL = { new: 'inv-st-blue', contacted: 'inv-st-amber', quoted: 'inv-st-amber', negotiating: 'inv-st-amber', won: 'inv-st-green', lost: 'inv-st-slate' };
+
+function blankLead(type) {
+  return {
+    type: LEAD_TYPES[type] ? type : 'production',
+    title: '', contactName: '', phone: '', email: '', website: '', socials: '',
+    eventName: '', eventDate: '', venue: '', town: '', crowd: '',
+    source: 'manual', sourceUrl: '', ticketUrl: '',
+    budget: '', needs: '',
+    rating: 0, stage: 'new',
+    linkedQuoteId: '', linkedQuoteNumber: '',
+    lastContacted: '', notes: '',
+  };
+}
+
+let leadDraft = blankLead();
+
+function subscribeToLeads() {
+  const { collection, onSnapshot } = fb.f;
+  unsubscribes.push(onSnapshot(
+    collection(fb.db, 'leads'),
+    (snap) => {
+      const rows = [];
+      snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
+      /*  Open leads first (by pipeline order), then higher-rated, then by
+          name. Won/Lost fall to the bottom - they are done with.          */
+      rows.sort((a, b) =>
+        (LEAD_STAGE_ORDER.indexOf(a.stage || 'new') - LEAD_STAGE_ORDER.indexOf(b.stage || 'new'))
+        || (b.rating || 0) - (a.rating || 0)
+        || (a.title || '').localeCompare(b.title || '', undefined, { numeric: true, sensitivity: 'base' }));
+      state.leads = rows;
+      if (state.view === 'leads') {
+        if (state.openLeadId) renderLeadRows();
+        else render();
+      }
+    },
+    (err) => console.error('leads', err)
+  ));
+}
+
+VIEWS.leads = {
+  html() {
+    const open = state.openLeadId != null;
+    return `<div class="inv-wrap${open ? ' has-detail' : ''}">
+      ${leadMainHtml()}
+      ${open ? leadDetailHtml() : ''}
+      ${state.leadCompose ? leadComposeHtml() : ''}
+    </div>`;
+  },
+  wire() {
+    wireLeadList();
+    if (state.openLeadId != null) wireLeadDetail();
+    if (state.leadCompose) wireLeadCompose();
+  },
+};
+
+/* ---- little star rating: read-only in rows, clickable in the editor ---- */
+function leadStars(n, editable) {
+  const v = Math.max(0, Math.min(5, Math.round(n || 0)));
+  let out = '';
+  for (let i = 1; i <= 5; i++) {
+    out += `<span class="lead-star${i <= v ? ' is-on' : ''}"${editable ? ` data-star="${i}" role="button" tabindex="0" aria-label="${i} star${i === 1 ? '' : 's'}"` : ''}>&#9733;</span>`;
+  }
+  return `<span class="lead-stars${editable ? ' is-edit' : ''}">${out}</span>`;
+}
+
+/* ---- list (built to match the Inventory / Crew managers) ---- */
+function leadStats() {
+  const rows = state.leads || [];
+  const by = (s) => rows.filter((r) => (r.stage || 'new') === s).length;
+  const inPlay = by('contacted') + by('quoted') + by('negotiating');
+  return { total: rows.length, fresh: by('new'), inPlay, won: by('won') };
+}
+
+function leadFiltered() {
+  const rows = state.leads || [];
+  const f = state.leadFilter || 'all';
+  const tf = state.leadTypeFilter || 'all';
+  const needle = (state.leadSearch || '').trim().toLowerCase();
+  return rows.filter((r) => {
+    if (f !== 'all' && (r.stage || 'new') !== f) return false;
+    if (tf !== 'all' && (r.type || 'production') !== tf) return false;
+    if (!needle) return true;
+    return [r.title, r.contactName, r.eventName, r.town, r.venue, r.email, r.phone]
+      .filter(Boolean).join(' ').toLowerCase().includes(needle);
+  });
+}
+
+function leadThumb(r) {
+  const letter = (r.title || r.contactName || LEAD_TYPES[r.type] || '?').trim().charAt(0).toUpperCase();
+  return `<span class="inv-thumb ${invCatClass(LEAD_TYPES[r.type] || 'Lead')}">${esc(letter || '?')}</span>`;
+}
+
+function leadStagePill(stage) {
+  const s = LEAD_STAGES[stage] ? stage : 'new';
+  return `<span class="inv-pill ${LEAD_STAGE_PILL[s]}">${esc(LEAD_STAGES[s])}</span>`;
+}
+
+function leadSub(r) {
+  return [r.eventDate ? fmtLeadDate(r.eventDate) : '', r.town, r.crowd ? r.crowd + ' pax' : '']
+    .filter(Boolean).join(' · ');
+}
+
+function fmtLeadDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function leadMainHtml() {
+  const s = leadStats();
+  const f = state.leadFilter;
+  const tf = state.leadTypeFilter;
+  const opt = (cur, v, l) => `<option value="${v}"${cur === v ? ' selected' : ''}>${l}</option>`;
+
+  return `
+      <div class="inv-main">
+        <div class="inv-head">
+          <div class="inv-head-title">
+            <span class="ad-mail-icon" aria-hidden="true">&#9733;</span>
+            <div>
+              <h1>Leads</h1>
+              <p>Prospects for gigs and hire work. Rate them, move them along the pipeline, and email them from here.</p>
+            </div>
+          </div>
+          <div class="inv-head-actions res-addbtns">
+            <button type="button" class="ad-btn ad-btn-small" data-lead-new="production">+ Production</button>
+            <button type="button" class="ad-btn ad-btn-small" data-lead-new="dj">+ DJ / gig</button>
+            <button type="button" class="ad-btn ad-btn-primary" data-lead-new="venue">+ Venue</button>
+          </div>
+        </div>
+
+        <div class="inv-tiles">
+          ${invTile('&#10022;', 'inv-t-blue', s.fresh, 'New', '')}
+          ${invTile('&#9203;', 'inv-t-amber', s.inPlay, 'In play', '')}
+          ${invTile('&#127881;', 'inv-t-green', s.won, 'Won', '')}
+          ${invTile('&#9776;', 'inv-t-slate', s.total, 'Total', '')}
+        </div>
+
+        <div class="inv-toolbar">
+          <input type="search" id="lead-search" class="ad-search" placeholder="Search leads..."
+                 value="${attr(state.leadSearch)}" aria-label="Search leads">
+          <select id="lead-f-stage" class="ad-select" aria-label="Filter by stage">
+            ${opt(f, 'all', 'All stages')}${LEAD_STAGE_ORDER.map((k) => opt(f, k, LEAD_STAGES[k])).join('')}
+          </select>
+          <select id="lead-f-type" class="ad-select" aria-label="Filter by type">
+            ${opt(tf, 'all', 'All types')}${Object.keys(LEAD_TYPES).map((k) => opt(tf, k, LEAD_TYPES[k])).join('')}
+          </select>
+        </div>
+
+        <div class="ad-table-wrap inv-table-wrap">
+          <table class="ad-table inv-table">
+            <thead>
+              <tr>
+                <th>Lead</th>
+                <th>Type</th>
+                <th>Event</th>
+                <th>Rating</th>
+                <th>Stage</th>
+                <th>Source</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="lead-rows"></tbody>
+          </table>
+        </div>
+
+        <div class="inv-foot" id="lead-foot"></div>
+      </div>`;
+}
+
+function renderLeadRows() {
+  const host = document.getElementById('lead-rows');
+  const foot = document.getElementById('lead-foot');
+  if (!host) return;
+  const rows = leadFiltered();
+  host.innerHTML = rows.length ? rows.map((r) => `
+    <tr class="inv-row${state.openLeadId === r.id ? ' is-open' : ''}" data-open-lead="${attr(r.id)}">
+      <td class="inv-item-cell">
+        ${leadThumb(r)}
+        <span class="inv-item-text">
+          <span class="inv-item-name">${esc(r.title || r.contactName || 'Untitled lead')}</span>
+          ${r.contactName && r.title ? `<span class="inv-item-sub">${esc(r.contactName)}</span>` : ''}
+        </span>
+      </td>
+      <td><span class="inv-pill inv-st-slate">${esc(LEAD_TYPES[r.type] || 'Lead')}</span></td>
+      <td>${leadSub(r) ? esc(leadSub(r)) : '<span class="ad-cell-muted">—</span>'}</td>
+      <td>${leadStars(r.rating)}</td>
+      <td>${leadStagePill(r.stage)}</td>
+      <td><span class="ad-cell-muted">${esc(LEAD_SOURCES[r.source] || 'Manual')}</span></td>
+      <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-open-lead="${attr(r.id)}" aria-label="Edit">&#8250;</button></td>
+    </tr>`).join('')
+    : `<tr><td colspan="7" class="ad-cell-muted">No leads match. Try clearing the search, or add one above.</td></tr>`;
+  if (foot) foot.innerHTML = `<p class="inv-foot-count">${rows.length} lead${rows.length === 1 ? '' : 's'}</p>`;
+}
+
+function wireLeadList() {
+  renderLeadRows();
+
+  document.querySelectorAll('[data-lead-new]').forEach((b) => b.addEventListener('click', () => {
+    leadDraft = blankLead(b.getAttribute('data-lead-new'));
+    state.openLeadId = '__new__';
+    render();
+  }));
+
+  const search = document.getElementById('lead-search');
+  if (search) search.addEventListener('input', () => { state.leadSearch = search.value; renderLeadRows(); });
+  const stageSel = document.getElementById('lead-f-stage');
+  if (stageSel) stageSel.addEventListener('change', () => { state.leadFilter = stageSel.value; renderLeadRows(); });
+  const typeSel = document.getElementById('lead-f-type');
+  if (typeSel) typeSel.addEventListener('change', () => { state.leadTypeFilter = typeSel.value; renderLeadRows(); });
+
+  const host = document.getElementById('lead-rows');
+  if (host) host.addEventListener('click', (e) => {
+    const r = e.target.closest('[data-open-lead]');
+    if (!r) return;
+    const id = r.getAttribute('data-open-lead');
+    const doc = (state.leads || []).find((x) => x.id === id);
+    leadDraft = doc ? leadFromDoc(doc) : blankLead();
+    state.openLeadId = id;
+    render();
+  });
+}
+
+function leadFromDoc(doc) {
+  const b = blankLead(doc.type);
+  Object.keys(b).forEach((k) => { if (doc[k] != null) b[k] = doc[k]; });
+  b.rating = Math.max(0, Math.min(5, Math.round(doc.rating || 0)));
+  b.stage = LEAD_STAGES[doc.stage] ? doc.stage : 'new';
+  b.source = LEAD_SOURCES[doc.source] ? doc.source : 'manual';
+  return b;
+}
+
+/* ---- detail panel (slides in from the right, like Inventory) ---- */
+function leadDetailHtml() {
+  const isNew = state.openLeadId === '__new__';
+  const r = leadDraft;
+  const type = LEAD_TYPES[r.type] ? r.type : 'production';
+  const typeOpt = (v) => `<option value="${v}"${type === v ? ' selected' : ''}>${LEAD_TYPES[v]}</option>`;
+  const srcOpt = (v) => `<option value="${v}"${r.source === v ? ' selected' : ''}>${LEAD_SOURCES[v]}</option>`;
+  const stageOpt = (v) => `<option value="${v}"${r.stage === v ? ' selected' : ''}>${LEAD_STAGES[v]}</option>`;
+
+  /*  Quotes you can link this lead to - your live quote docs. */
+  const quotes = (state.quoteDocs || []).filter((q) => q && q.number);
+  const qOpt = (q) => `<option value="${attr(q.id)}"${r.linkedQuoteId === q.id ? ' selected' : ''}>${esc(q.number)}${q.customer && q.customer.name ? ' — ' + esc(q.customer.name) : ''}</option>`;
+
+  return `
+    <aside class="inv-detail lead-detail" aria-label="Lead details">
+      <header class="inv-detail-head">
+        <div>
+          <h2>${isNew ? 'New lead' : esc(r.title || r.contactName || 'Lead')}</h2>
+          ${!isNew ? `<p class="inv-detail-sub">${esc(LEAD_TYPES[type])} · ${esc(LEAD_STAGES[r.stage] || 'New')}</p>` : ''}
+        </div>
+        <button type="button" class="inv-detail-close" id="lead-close" aria-label="Close">&times;</button>
+      </header>
+
+      <div class="inv-detail-body">
+        <div class="lead-rate-row">
+          <span class="lead-rate-label">Your rating</span>
+          ${leadStars(r.rating, true)}
+        </div>
+
+        <div class="inv-fgrid">
+          <label class="ad-field"><span>Type</span>
+            <select class="ad-select" data-lf="type">${typeOpt('production')}${typeOpt('dj')}${typeOpt('venue')}</select></label>
+          <label class="ad-field"><span>Stage</span>
+            <select class="ad-select" data-lf="stage">${LEAD_STAGE_ORDER.map(stageOpt).join('')}</select></label>
+
+          <label class="ad-field inv-span2"><span>Lead name / headline</span>
+            <input class="ad-input" data-lf="title" value="${attr(r.title)}" placeholder="e.g. Airlie Beach Festival 2027, or The Reef Hotel"></label>
+
+          <label class="ad-field"><span>Contact name</span><input class="ad-input" data-lf="contactName" value="${attr(r.contactName)}" placeholder="Who you deal with"></label>
+          <label class="ad-field"><span>Phone</span><input class="ad-input" data-lf="phone" value="${attr(r.phone)}" placeholder="Mobile"></label>
+          <label class="ad-field"><span>Email</span><input class="ad-input" type="email" data-lf="email" value="${attr(r.email)}" placeholder="name@example.com"></label>
+          <label class="ad-field"><span>Website</span><input class="ad-input" data-lf="website" value="${attr(r.website)}" placeholder="https://"></label>
+          <label class="ad-field inv-span2"><span>Socials</span><input class="ad-input" data-lf="socials" value="${attr(r.socials)}" placeholder="Instagram / Facebook handle or link"></label>
+        </div>
+
+        <p class="lead-group-label">The event</p>
+        <div class="inv-fgrid">
+          <label class="ad-field inv-span2"><span>Event name</span><input class="ad-input" data-lf="eventName" value="${attr(r.eventName)}" placeholder="What's on"></label>
+          <label class="ad-field"><span>Date</span><input class="ad-input" type="date" data-lf="eventDate" value="${attr(r.eventDate)}"></label>
+          <label class="ad-field"><span>Crowd size</span><input class="ad-input" data-lf="crowd" value="${attr(r.crowd)}" placeholder="e.g. 300"></label>
+          <label class="ad-field"><span>Venue</span><input class="ad-input" data-lf="venue" value="${attr(r.venue)}" placeholder="Where"></label>
+          <label class="ad-field"><span>Town</span><input class="ad-input" data-lf="town" value="${attr(r.town)}" placeholder="e.g. Airlie Beach"></label>
+          <label class="ad-field inv-span2"><span>What they'd likely need</span><input class="ad-input" data-lf="needs" value="${attr(r.needs)}" placeholder="e.g. PA + 2 wedges, lighting, stage"></label>
+          <label class="ad-field inv-span2"><span>Budget signals</span><input class="ad-input" data-lf="budget" value="${attr(r.budget)}" placeholder="Ticketed? Sponsored? Council-backed?"></label>
+        </div>
+
+        <p class="lead-group-label">Where it came from</p>
+        <div class="inv-fgrid">
+          <label class="ad-field"><span>Source</span>
+            <select class="ad-select" data-lf="source">${srcOpt('manual')}${srcOpt('auto')}${srcOpt('website')}${srcOpt('directory')}</select></label>
+          <label class="ad-field"><span>Last contacted</span><input class="ad-input" type="date" data-lf="lastContacted" value="${attr(r.lastContacted)}"></label>
+          <label class="ad-field inv-span2"><span>Source link</span><input class="ad-input" data-lf="sourceUrl" value="${attr(r.sourceUrl)}" placeholder="Where you found it"></label>
+          <label class="ad-field inv-span2"><span>Ticket / listing link</span><input class="ad-input" data-lf="ticketUrl" value="${attr(r.ticketUrl)}" placeholder="Eventbrite / Humanitix / etc."></label>
+        </div>
+
+        <p class="lead-group-label">Quote</p>
+        <div class="inv-fgrid">
+          <label class="ad-field inv-span2"><span>Linked quote</span>
+            <select class="ad-select" data-lf="linkedQuoteId">
+              <option value="">— none —</option>
+              ${quotes.map(qOpt).join('')}
+            </select></label>
+          ${r.linkedQuoteId ? '<button type="button" class="ad-btn ad-btn-small inv-span2" id="lead-openquote">Open linked quote →</button>' : ''}
+        </div>
+
+        <label class="ad-field"><span>Notes</span>
+          <textarea class="ad-input" rows="3" data-lf="notes" placeholder="Anything worth remembering...">${esc(r.notes)}</textarea></label>
+      </div>
+
+      <footer class="inv-detail-foot">
+        ${isNew ? '' : '<button type="button" class="ad-btn inv-del" id="lead-delete">Delete</button>'}
+        ${isNew ? '' : '<button type="button" class="ad-btn" id="lead-email">✉ Email</button>'}
+        <button type="button" class="ad-btn ad-btn-primary" id="lead-save">${isNew ? 'Add lead' : 'Save changes'}</button>
+        <span class="ad-quote-msg" id="lead-msg"></span>
+      </footer>
+    </aside>`;
+}
+
+function wireLeadDetail() {
+  const panel = document.querySelector('.lead-detail');
+  if (!panel) return;
+
+  const close = document.getElementById('lead-close');
+  if (close) close.addEventListener('click', () => { state.openLeadId = null; render(); });
+
+  panel.addEventListener('input', (e) => {
+    const t = e.target;
+    if (!t.dataset.lf) return;
+    leadDraft[t.dataset.lf] = t.value;
+  });
+  panel.addEventListener('change', (e) => {
+    const t = e.target;
+    if (t.dataset.lf === 'linkedQuoteId') {
+      leadDraft.linkedQuoteId = t.value;
+      const q = (state.quoteDocs || []).find((x) => x.id === t.value);
+      leadDraft.linkedQuoteNumber = q ? (q.number || '') : '';
+      render();
+    } else if (t.dataset.lf === 'type') {
+      leadDraft.type = t.value;
+    }
+  });
+
+  // clickable star rating
+  const stars = panel.querySelector('.lead-stars.is-edit');
+  if (stars) {
+    const set = (el) => {
+      const v = Number(el.getAttribute('data-star') || 0);
+      leadDraft.rating = (leadDraft.rating === v) ? v - 1 : v;   // click the current top star to clear one
+      panel.querySelectorAll('.lead-star').forEach((s2, i) => s2.classList.toggle('is-on', i < leadDraft.rating));
+    };
+    stars.addEventListener('click', (e) => { const el = e.target.closest('[data-star]'); if (el) set(el); });
+    stars.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { const el = e.target.closest('[data-star]'); if (el) { e.preventDefault(); set(el); } } });
+  }
+
+  const openq = document.getElementById('lead-openquote');
+  if (openq) openq.addEventListener('click', () => {
+    if (!leadDraft.linkedQuoteId) return;
+    state.openLeadId = null;
+    state.openQuoteId = leadDraft.linkedQuoteId;
+    location.hash = '#/quoteDocs';
+  });
+
+  const save = document.getElementById('lead-save');
+  if (save) save.addEventListener('click', () => saveLead(save));
+  const del = document.getElementById('lead-delete');
+  if (del) del.addEventListener('click', () => deleteLead(del));
+  const email = document.getElementById('lead-email');
+  if (email) email.addEventListener('click', () => openLeadCompose());
+}
+
+function leadClean(r) {
+  const type = LEAD_TYPES[r.type] ? r.type : 'production';
+  const s = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
+  return {
+    type,
+    title: s(r.title, 160), contactName: s(r.contactName, 120),
+    phone: s(r.phone, 40), email: s(r.email, 200), website: s(r.website, 300), socials: s(r.socials, 300),
+    eventName: s(r.eventName, 200), eventDate: s(r.eventDate, 20), venue: s(r.venue, 160), town: s(r.town, 80), crowd: s(r.crowd, 40),
+    source: LEAD_SOURCES[r.source] ? r.source : 'manual', sourceUrl: s(r.sourceUrl, 500), ticketUrl: s(r.ticketUrl, 500),
+    budget: s(r.budget, 300), needs: s(r.needs, 500),
+    rating: Math.max(0, Math.min(5, Math.round(r.rating || 0))),
+    stage: LEAD_STAGES[r.stage] ? r.stage : 'new',
+    linkedQuoteId: s(r.linkedQuoteId, 60), linkedQuoteNumber: s(r.linkedQuoteNumber, 40),
+    lastContacted: s(r.lastContacted, 20), notes: s(r.notes, 2000),
+    updatedAt: Date.now(),
+  };
+}
+
+async function saveLead(btn) {
+  const msg = document.getElementById('lead-msg');
+  const r = leadDraft;
+  if (!String(r.title || '').trim() && !String(r.contactName || '').trim()) {
+    if (msg) { msg.textContent = 'Give it a name or a contact first.'; msg.className = 'ad-quote-msg is-bad'; }
+    return;
+  }
+  const clean = leadClean(r);
+  if (msg) { msg.textContent = 'Saving…'; msg.className = 'ad-quote-msg'; }
+  if (btn) btn.disabled = true;
+  try {
+    const { collection, doc, setDoc, addDoc } = fb.f;
+    state.leads = state.leads || [];
+    if (state.openLeadId === '__new__') {
+      clean.createdAt = Date.now();
+      const ref = await addDoc(collection(fb.db, 'leads'), clean);
+      state.openLeadId = ref.id;
+      state.leads.push({ id: ref.id, ...clean });
+    } else {
+      const id = state.openLeadId;
+      await setDoc(doc(fb.db, 'leads', id), clean, { merge: true });
+      const cur = state.leads.find((x) => x.id === id);
+      if (cur) Object.assign(cur, clean); else state.leads.push({ id, ...clean });
+    }
+    if (msg) { msg.textContent = 'Saved.'; msg.className = 'ad-quote-msg is-ok'; }
+    render();
+  } catch (err) {
+    if (msg) { msg.textContent = err.message || 'Could not save.'; msg.className = 'ad-quote-msg is-bad'; }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function deleteLead(btn) {
+  if (!window.confirm('Delete this lead? This cannot be undone.')) return;
+  const id = state.openLeadId;
+  if (id === '__new__') { state.openLeadId = null; render(); return; }
+  if (btn) btn.disabled = true;
+  try {
+    const { doc, deleteDoc } = fb.f;
+    await deleteDoc(doc(fb.db, 'leads', id));
+    state.leads = (state.leads || []).filter((x) => x.id !== id);
+    state.openLeadId = null;
+    render();
+  } catch (err) {
+    const msg = document.getElementById('lead-msg');
+    if (msg) { msg.textContent = err.message || 'Could not delete.'; msg.className = 'ad-quote-msg is-bad'; }
+    if (btn) btn.disabled = false;
+  }
+}
+
+/* ---- email composer: draft + send, never auto-send ---- */
+function openLeadCompose() {
+  const r = leadDraft;
+  if (!String(r.email || '').trim()) {
+    const msg = document.getElementById('lead-msg');
+    if (msg) { msg.textContent = 'Add an email address first.'; msg.className = 'ad-quote-msg is-bad'; }
+    return;
+  }
+  const who = (r.contactName || '').trim().split(/\s+/)[0] || 'there';
+  const ev = r.eventName || r.title || 'your event';
+  const subject = `SoundzGood Whitsundays — ${r.eventName || r.title || 'your event'}`;
+  const body =
+`Hi ${who},
+
+I'm Max from SoundzGood Whitsundays — we do sound, lighting, staging and DJ/entertainment for events around the Whitsundays and beyond.
+
+I came across ${ev} and wanted to see whether you've got your audio/production sorted. We're local, reliable, and can put together a package to suit whatever you're planning.
+
+If you'd like a quick quote or a chat, just reply here or give me a call.
+
+Cheers,
+Max
+SoundzGood Whitsundays
+www.soundzgood.com.au`;
+  state.leadCompose = { to: r.email.trim(), subject, body, leadId: state.openLeadId };
+  render();
+}
+
+function leadComposeHtml() {
+  const c = state.leadCompose;
+  return `
+    <div class="lead-compose-back" id="lead-compose-back">
+      <div class="lead-compose" role="dialog" aria-label="Email lead">
+        <header class="lead-compose-head">
+          <h3>Email lead</h3>
+          <button type="button" class="inv-detail-close" id="lead-compose-close" aria-label="Close">&times;</button>
+        </header>
+        <div class="lead-compose-body">
+          <label class="ad-field"><span>To</span><input class="ad-input" id="lc-to" value="${attr(c.to)}"></label>
+          <label class="ad-field"><span>Subject</span><input class="ad-input" id="lc-subject" value="${attr(c.subject)}"></label>
+          <label class="ad-field"><span>Message</span><textarea class="ad-input" id="lc-body" rows="12">${esc(c.body)}</textarea></label>
+          <p class="lead-compose-note">Sends from bookings@soundzgood.com.au. Nothing goes out until you press Send.</p>
+        </div>
+        <footer class="lead-compose-foot">
+          <button type="button" class="ad-btn" id="lc-cancel">Cancel</button>
+          <button type="button" class="ad-btn ad-btn-primary" id="lc-send">Send email</button>
+          <span class="ad-quote-msg" id="lc-msg"></span>
+        </footer>
+      </div>
+    </div>`;
+}
+
+function wireLeadCompose() {
+  const close = () => { state.leadCompose = null; render(); };
+  const x = document.getElementById('lead-compose-close');
+  const cancel = document.getElementById('lc-cancel');
+  const back = document.getElementById('lead-compose-back');
+  if (x) x.addEventListener('click', close);
+  if (cancel) cancel.addEventListener('click', close);
+  if (back) back.addEventListener('click', (e) => { if (e.target === back) close(); });
+
+  const send = document.getElementById('lc-send');
+  if (send) send.addEventListener('click', async () => {
+    const to = (document.getElementById('lc-to').value || '').trim();
+    const subject = (document.getElementById('lc-subject').value || '').trim();
+    const body = document.getElementById('lc-body').value || '';
+    const msg = document.getElementById('lc-msg');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) { if (msg) { msg.textContent = 'That email does not look right.'; msg.className = 'ad-quote-msg is-bad'; } return; }
+    if (!subject || !body.trim()) { if (msg) { msg.textContent = 'Add a subject and a message.'; msg.className = 'ad-quote-msg is-bad'; } return; }
+    if (msg) { msg.textContent = 'Sending…'; msg.className = 'ad-quote-msg'; }
+    send.disabled = true;
+    try {
+      await call('sendLeadEmail', { to, subject, body, leadId: state.leadCompose.leadId || '' });
+      // record that we made contact: stamp the date and nudge the stage forward
+      const today = new Date().toISOString().slice(0, 10);
+      leadDraft.lastContacted = today;
+      if (leadDraft.stage === 'new') leadDraft.stage = 'contacted';
+      const id = state.leadCompose.leadId;
+      if (id && id !== '__new__') {
+        const { doc, setDoc } = fb.f;
+        await setDoc(doc(fb.db, 'leads', id), { lastContacted: today, stage: leadDraft.stage, updatedAt: Date.now() }, { merge: true });
+        const cur = (state.leads || []).find((x) => x.id === id);
+        if (cur) { cur.lastContacted = today; cur.stage = leadDraft.stage; }
+      }
+      state.leadCompose = null;
+      render();
+      const m2 = document.getElementById('lead-msg');
+      if (m2) { m2.textContent = 'Email sent.'; m2.className = 'ad-quote-msg is-ok'; }
+    } catch (err) {
+      if (msg) { msg.textContent = (err && err.message) || 'Could not send.'; msg.className = 'ad-quote-msg is-bad'; }
+      send.disabled = false;
+    }
+  });
 }

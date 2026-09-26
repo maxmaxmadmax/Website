@@ -25,6 +25,7 @@ const layout = require('./lib/layout');
 const { sendBookingEmails } = require('./lib/email');
 const { sendQuoteEmail } = require('./lib/quote-email');
 const { sendQuoteLinkEmail } = require('./lib/quote-doc-email');
+const { sendLeadEmail } = require('./lib/lead-email');
 const {
   DEFAULT_QUOTE_PRICING, DEFAULT_INVENTORY, estimate: estimateQuote,
 } = require('./lib/quote-pricing');
@@ -2728,6 +2729,41 @@ exports.acceptQuote = onCall(async (request) => {
     acceptedAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   });
+  return { ok: true };
+});
+
+/*  sendLeadEmail  admin - outreach to a prospect from the lead generator.
+    The admin drafts and edits the message in the panel, then presses Send;
+    this delivers it through the same SMTP as the rest of the site. Never
+    auto-sends - it is always a human action. Stamps lastContacted / emailedAt
+    onto the lead so the panel shows the mail went.                          */
+exports.sendLeadEmail = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  requireAdmin(request);
+  const d = request.data || {};
+  const to = String(d.to || '').trim().slice(0, 200);
+  const subject = String(d.subject || '').trim().slice(0, 200);
+  const body = String(d.body || '').slice(0, 20000);
+  const leadId = String(d.leadId || '').trim().slice(0, 60);
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) throw new HttpsError('invalid-argument', 'That email does not look right.');
+  if (!subject || !body.trim()) throw new HttpsError('invalid-argument', 'Add a subject and a message.');
+
+  const mail = await sendLeadEmail({ to, subject, body });
+  if (!mail.sent) {
+    throw new HttpsError('internal', mail.reason === 'no-smtp'
+      ? 'Email is not configured yet.'
+      : ('Could not send: ' + (mail.error || mail.reason || 'unknown')));
+  }
+
+  if (leadId) {
+    try {
+      await db.collection('leads').doc(leadId).set({
+        lastContacted: new Date().toISOString().slice(0, 10),
+        emailedAt: FieldValue.serverTimestamp(),
+        updatedAt: Date.now(),
+      }, { merge: true });
+    } catch (e) { logger.warn('lead email sent but stamp failed', { leadId, message: e && e.message }); }
+  }
   return { ok: true };
 });
 
