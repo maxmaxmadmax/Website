@@ -3553,3 +3553,6 @@ body.ad-fit .ad-main{ min-height:0; }
 .lead-hero:has(.lead-hero-img){ height:120px; }
 /* every row tile the same size, photo or not */
 .lead-evcol .lead-tile, .ad-desk.is-leads .lead-evcol .lead-tile{ width:112px; height:64px; border-radius:8px; font-size:26px; flex:0 0 112px; }
+/* photo tiles: give the event column the room, keep date tight */
+.lead-table .lead-evcol{ width:34%; }
+.lead-table thead th:nth-child(2){ width:150px; }
