@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=175';
+} from './firebase-config.js?v=176';
 
-import { expandKit } from './kit.js?v=175';
+import { expandKit } from './kit.js?v=176';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -7335,6 +7335,7 @@ function blankLead(type) {
     estValueCents: 0,
     followUp: '', target: false, contacts: [], files: [], history: [], km: '',
     organiser: '', startTime: '',
+    imageUrl: '', imageBroken: false,
   };
 }
 
@@ -7452,6 +7453,7 @@ VIEWS.leads = {
     </div>`;
   },
   wire() {
+    wireLeadImageErrors();
     wireLeadList();
     if (state.openLeadId != null) wireLeadDetail();
     if (state.leadCompose) wireLeadCompose();
@@ -7520,6 +7522,7 @@ function leadChipMatch(r, chip) {
     case 'hot': case 'high': return leadPriority(r) === 'high';
     case 'medium': case 'low': return leadPriority(r) === chip;
     case 'needs': return leadNeedsContact(r);
+    case 'stale': return !!r.imageBroken;
     case 'followups': return leadFollowState(r) !== '';
     case 'quotes': return st === 'quoted';
     case 'inplay': return st === 'contacted' || st === 'quoted' || st === 'negotiating';
@@ -7826,9 +7829,58 @@ const LEAD_TYPE_STYLE = { production: ['🎛️', 'lc-prod'], dj: ['🎧', 'lc-d
 function leadCatStyle(r) {
   return LEAD_CAT_STYLE[r.category] || LEAD_TYPE_STYLE[r.type] || LEAD_TYPE_STYLE.production;
 }
+/*  A lead's photo is a LINK to the image on their own site - nothing is
+    stored. If it stops loading, they've changed their site, so the lead is
+    flagged "may be out of date" and queued for the research to re-check. */
+function leadImageUrl(r) {
+  const u = String(r.imageUrl || '').trim();
+  if (/^https:\/\//i.test(u)) return u;
+  if (/^http:\/\//i.test(u)) return 'https://' + u.slice(7);   // a secure page can't show http images
+  return '';
+}
 function leadCatTile(r, big) {
   const [icon, cls] = leadCatStyle(r);
-  return `<span class="lead-tile ${cls}${big ? ' is-big' : ''}" aria-hidden="true">${icon}</span>`;
+  const url = r.imageBroken ? '' : leadImageUrl(r);
+  const img = url ? `<img src="${attr(url)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-lead-img="${attr(r.id || '')}">` : '';
+  return `<span class="lead-tile ${cls}${big ? ' is-big' : ''}${img ? ' has-img' : ''}${r.imageBroken ? ' is-stale' : ''}" aria-hidden="true">${icon}${img}${r.imageBroken ? '<em class="lead-stale-badge">!</em>' : ''}</span>`;
+}
+
+/*  One page-wide listener catches any lead photo that fails to load. */
+let leadImgErrWired = false;
+function wireLeadImageErrors() {
+  if (leadImgErrWired) return;
+  leadImgErrWired = true;
+  document.addEventListener('error', (e) => {
+    const img = e.target;
+    if (!img || img.tagName !== 'IMG' || !img.hasAttribute('data-lead-img')) return;
+    const holder = img.parentElement;
+    const id = img.getAttribute('data-lead-img');
+    img.remove();
+    if (holder) {
+      holder.classList.remove('has-img');
+      holder.classList.add('is-stale');
+      if (holder.classList.contains('lead-tile') && !holder.querySelector('.lead-stale-badge')) {
+        holder.insertAdjacentHTML('beforeend', '<em class="lead-stale-badge">!</em>');
+      }
+    }
+    if (navigator.onLine !== false) markLeadImageBroken(id);   // offline isn't "out of date"
+  }, true);
+}
+
+async function markLeadImageBroken(id) {
+  if (!id || id === '__new__') return;
+  const cur = (state.leads || []).find((x) => x.id === id);
+  if (!cur || cur.imageBroken) return;
+  cur.imageBroken = true;
+  if (state.openLeadId === id) leadDraft.imageBroken = true;
+  try {
+    const e = { at: Date.now(), text: 'Photo link stopped working — info may be out of date (queued for re-check)' };
+    const { doc, setDoc, arrayUnion } = fb.f;
+    await setDoc(doc(fb.db, 'leads', id), { imageBroken: true, imageBrokenAt: Date.now(), history: arrayUnion(e) }, { merge: true });
+    cur.history = [...(cur.history || []), e];
+  } catch (err) {
+    console.error('photo flag', err);
+  }
 }
 
 const LEAD_PRIO_LABEL = { high: 'High', medium: 'Medium', low: 'Low' };
@@ -8093,13 +8145,14 @@ function leadChipCounts() {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
   const year = now.getFullYear();
   const c = {
-    all: rows.length, targets: 0, hot: 0, needs: 0, followups: 0, quotes: 0, inplay: 0, won: 0, lost: 0,
+    all: rows.length, targets: 0, hot: 0, needs: 0, stale: 0, followups: 0, quotes: 0, inplay: 0, won: 0, lost: 0,
     hotNew: 0, needsHot: 0, overdue: 0, quotesCents: 0, wonYear: 0, wonCents: 0,
   };
   rows.forEach((r) => {
     const st = r.stage || 'new';
     const hot = leadPriority(r) === 'high';
     if (r.target) c.targets++;
+    if (r.imageBroken) c.stale++;
     if (hot) { c.hot++; if ((r.createdAt || 0) >= monthStart) c.hotNew++; }
     if (leadNeedsContact(r)) { c.needs++; if (hot) c.needsHot++; }
     const fu = leadFollowState(r);
@@ -8294,7 +8347,7 @@ function leadMainHtml() {
 
         <div class="lead-chipbar">
           <div class="lead-chips" id="lead-chips">
-            ${chip('all', 'All Leads')}${chip('targets', '☆ My Targets')}${chip('hot', 'Hot', 'high')}${chip('needs', 'Need contact')}
+            ${chip('all', 'All Leads')}${chip('targets', '☆ My Targets')}${chip('hot', 'Hot', 'high')}${chip('needs', 'Need contact')}${c.stale ? chip('stale', '⚠ Out of date') : ''}
             ${chip('followups', 'Follow-ups')}${chip('quotes', 'Quotes')}${chip('inplay', 'In Play')}${chip('won', 'Won')}${chip('lost', 'Lost')}
           </div>
           <div class="lead-sorts">
@@ -9021,6 +9074,9 @@ function leadDetailHtml() {
           <input class="ad-input" data-lf="incumbent" value="${attr(r.incumbent)}" placeholder="Who does their AV now, if known"></label>
         <label class="ad-field inv-span2"><span>Ticket / listing link</span>
           <input class="ad-input" data-lf="ticketUrl" value="${attr(r.ticketUrl)}" placeholder="Eventbrite / Humanitix / etc."></label>
+        <label class="ad-field inv-span2"><span>Photo link</span>
+          <input class="ad-input" data-lf="imageUrl" value="${attr(r.imageUrl)}" placeholder="https://…  (on their site: right-click the photo → Copy image address)"></label>
+        ${/fbcdn|cdninstagram|scontent\./i.test(r.imageUrl || '') ? '<p class="lead-quote-note inv-span2">Facebook / Instagram photo links expire within days on their own — use a photo from their website if you can.</p>' : ''}
       </div>
       <datalist id="lead-cat-list">${leadCategories().map((x) => `<option value="${attr(x)}">`).join('')}</datalist>`;
 
@@ -9062,6 +9118,7 @@ function leadDetailHtml() {
     <aside class="inv-detail lead-detail" aria-label="Lead details">
       <div class="lead-hero ${leadCatStyle(r)[1]}">
         <span class="lead-hero-ico" aria-hidden="true">${leadCatStyle(r)[0]}</span>
+        ${!isNew && !r.imageBroken && leadImageUrl(r) ? `<img class="lead-hero-img" src="${attr(leadImageUrl(r))}" alt="" referrerpolicy="no-referrer" data-lead-img="${attr(state.openLeadId)}">` : ''}
         ${isNew ? '' : `<span class="lead-prio is-${prio}">${LEAD_PRIO_LABEL[prio]} priority</span>`}
         <button type="button" class="lead-hero-close" id="lead-close" aria-label="Close">&times;</button>
       </div>
@@ -9080,6 +9137,7 @@ function leadDetailHtml() {
           ${leadStagePill2(r.stage)}
           ${r.grokRating ? `${grokPill(r.grokRating)}${r.winPct ? `<span class="lead-win">${esc(r.winPct)}% win</span>` : ''}` : ''}
           ${leadNeedsContact(r) ? '<span class="lead-flag">Needs contact</span>' : ''}
+          ${r.imageBroken ? '<span class="lead-flag is-stale" title="Their photo link stopped working - they have probably updated their site. Queued for the research to re-check.">⚠ Photo gone — may be out of date</span>' : ''}
           ${doc && doc.enrichedAt ? `<button type="button" class="lead-research-pill ${(LEAD_CHECK[doc.contactCheck] || LEAD_CHECK.partial)[0]}" data-lead-tab="notes" title="Researched ${attr(fmtLeadDate(String(doc.enrichedAt).slice(0, 10)))} — open notes &amp; sources">🔎 ${esc((LEAD_CHECK[doc.contactCheck] || LEAD_CHECK.partial)[1])}</button>` : ''}
           <span class="lead-dfit">${leadFitRater(r.rating, true, state.openLeadId)}</span>
         </div>` : `<div class="lead-drate"><span>Fit</span>${leadFitRater(r.rating, true, '')}</div>`}
@@ -9238,6 +9296,7 @@ function leadClean(r) {
     followUp: /^\d{4}-\d{2}-\d{2}$/.test(s(r.followUp, 10)) ? s(r.followUp, 10) : '',
     target: !!r.target,
     organiser: s(r.organiser, 160), startTime: s(r.startTime, 120),
+    imageUrl: /^https?:\/\//i.test(s(r.imageUrl, 1000)) ? s(r.imageUrl, 1000) : '',
     km: String(r.km == null ? '' : r.km).trim() === '' ? '' : Math.max(0, Math.round(Number(r.km) || 0)),
     contacts: (Array.isArray(r.contacts) ? r.contacts : [])
       .map((c) => ({ name: s(c.name, 120), role: s(c.role, 80), phone: s(c.phone, 40), email: s(c.email, 200) }))
@@ -9260,6 +9319,7 @@ function leadChanges(prev, next) {
   if (pc !== next.contacts.length) out.push(next.contacts.length > pc ? 'Contact added' : 'Contact removed');
   if ((prev.email || '') !== next.email || (prev.phone || '') !== next.phone) out.push('Contact details updated');
   if ((prev.lastContacted || '') !== next.lastContacted && next.lastContacted) out.push(`Marked contacted on ${fmtLeadDate(next.lastContacted)}`);
+  if ((prev.imageUrl || '') !== next.imageUrl) out.push(next.imageUrl ? 'Photo link updated' : 'Photo link removed');
   return out;
 }
 
@@ -9278,6 +9338,7 @@ async function saveLead(btn) {
     state.leads = state.leads || [];
     const isNew = state.openLeadId === '__new__';
     const prev = isNew ? null : state.leads.find((x) => x.id === state.openLeadId);
+    if (!prev || (prev.imageUrl || '') !== clean.imageUrl) clean.imageBroken = false;   // a new link gets a fresh chance
     const log = leadChanges(prev, clean).map((text, i) => ({ at: Date.now() + i, text }));
     if (isNew) {
       clean.createdAt = Date.now();

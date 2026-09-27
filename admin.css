@@ -3513,3 +3513,17 @@ body.ad-fit .ad-main{ min-height:0; }
 /* calendar lanes: an empty lane keeps its space so the colours line up */
 .lead-cdot.is-empty{ background:transparent; box-shadow:none; }
 .lead-wslot-dots{ margin-top:3px; padding-top:0; }
+
+/* linked event photos: fill the tile / banner; a broken link falls back to the category tile + a badge */
+.lead-tile{ position:relative; }
+.lead-tile.has-img{ overflow:hidden; background:#e9ecf1; }
+.lead-tile img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.lead-stale-badge{
+  position:absolute; top:-4px; right:-4px; width:15px; height:15px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:#f59e0b; color:#fff; font-style:normal; font-size:10px; font-weight:800; line-height:1;
+  box-shadow:0 0 0 2px var(--ad-card);
+}
+.lead-hero-img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:inherit; }
+.lead-hero .lead-prio, .lead-hero .lead-hero-close{ z-index:2; }
+.lead-flag.is-stale{ color:#b45309; background:#fef3c7; }
