@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=193';
+} from './firebase-config.js?v=194';
 
-import { expandKit } from './kit.js?v=193';
+import { expandKit } from './kit.js?v=194';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -9633,6 +9633,7 @@ function rateCardHtml(r, pos, total) {
     ['Organiser', [org, contacts].filter(Boolean).join(' — ')],
     ['Size', [r.crowd, r.budget].filter(Boolean).join(' · ')],
     ['Runs', [r.recurrence, r.lastEdition ? 'Last year: ' + r.lastEdition : ''].filter(Boolean).join(' · ')],
+    ['🎸 Live music', r.liveMusic],
     ['Entertainment/AV', [r.incumbent, r.needs ? 'Needs: ' + r.needs : '', r.power && r.power !== 'unknown' ? (r.power === 'generator' ? 'Generator needed' : 'Mains power') : ''].filter(Boolean).join(' · ')],
     ['Supplier deadline', r.eoiDate ? fmtLeadDate(r.eoiDate) + (r.eoiNote ? ' — ' + r.eoiNote : '') : ''],
   ].filter(([, x]) => String(x || '').trim());
@@ -9864,6 +9865,7 @@ const RATE_EDIT_FIELDS = [
   ['contactName', 'Contact person', 'text'], ['phone', 'Phone', 'tel'], ['email', 'Email', 'email'],
   ['website', 'Website', 'url', 'https://'], ['socials', 'Social links', 'text', 'Facebook / Instagram links'],
   ['summary', 'What is this event?', 'textarea'], ['pitch', 'Worth it for us?', 'textarea'],
+  ['liveMusic', 'Live music (who played?)', 'text', 'e.g. Yes — 2025: The Wolfe Brothers'],
   ['needs', 'What they need', 'text'], ['incumbent', 'Current supplier', 'text'], ['notes', 'Notes', 'textarea'],
 ];
 function rateEditHtml(r) {
