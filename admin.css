@@ -3178,3 +3178,93 @@ body.ad-fit .ad-main{ min-height:0; }
 .lead-research-pill.is-amber{ background:var(--ad-amber-bg); color:var(--ad-amber); }
 .lead-research-pill.is-red{ background:var(--ad-red-bg); color:var(--ad-red); }
 .lead-research-pill.is-slate{ background:var(--ad-grey-bg); color:var(--ad-muted); }
+
+/* ==========================================================================
+   LEADS: one-screen app layout
+   On a desktop-sized screen the Leads view is exactly one window tall: the
+   header, calendar, chips and filters stay put, the pager sits at the
+   bottom, the side panel runs full height, and ONLY the list of leads
+   scrolls (with its column headings stuck to the top of it). The height
+   chain is the same one the bookings view uses (body.ad-fit) - every box
+   from the shell down needs a definite height and min-height:0.
+   Phones keep ordinary page scrolling.
+   ========================================================================== */
+@media (min-width:900px){
+  body.ad-fit-leads .ad-shell{ height:100vh; height:100svh; min-height:0; overflow:hidden; }
+  body.ad-fit-leads .ad-main{ min-height:0; overflow:hidden; }
+
+  .ad-desk.is-leads{
+    display:flex; flex-direction:column; min-height:0; overflow:hidden;
+    padding:14px 22px 12px;
+  }
+  .ad-desk.is-leads > .inv-wrap{ flex:1 1 auto; min-height:0; align-items:stretch; }
+
+  .ad-desk.is-leads .lead-page{ display:flex; flex-direction:column; min-height:0; }
+  .ad-desk.is-leads .lead-page > *{ flex:0 0 auto; }
+
+  /* the list is the only thing that scrolls */
+  .ad-desk.is-leads .lead-page > .lead-table-wrap{
+    flex:1 1 auto; min-height:120px; overflow:auto; overscroll-behavior:contain;
+  }
+  .ad-desk.is-leads .lead-table thead th{
+    position:sticky; top:0; z-index:2; background:var(--ad-card);
+    box-shadow:inset 0 -1px 0 var(--ad-line);
+  }
+  .ad-desk.is-leads .lead-foot{ padding:10px 2px 0; }
+
+  /* side panel: full height beside the list, scrolls itself if ever needed */
+  .ad-desk.is-leads .inv-detail.lead-detail{
+    position:relative; top:auto; align-self:stretch; max-height:none; min-height:0; height:auto;
+  }
+
+  /* a tighter top so more leads show at once */
+  .ad-desk.is-leads .lead-top{ margin:0 0 10px; align-items:center; }
+  .ad-desk.is-leads .lead-top h1{ font-size:1.45rem; }
+  .ad-desk.is-leads .lead-tagline{ margin-top:1px; font-size:.84rem; }
+  .ad-desk.is-leads .lead-cta{ padding:9px 16px; }
+  .ad-desk.is-leads .lead-cal{ padding:6px; margin-bottom:6px; }
+  .ad-desk.is-leads .lead-cal-legend{ margin-bottom:10px; }
+
+  /* chips and Showing/Sort share one line; the chips scroll sideways if tight */
+  .ad-desk.is-leads .lead-chipbar{ flex-wrap:nowrap; margin-bottom:10px; }
+  .ad-desk.is-leads .lead-chips{
+    flex:1 1 auto; min-width:0; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; gap:6px;
+  }
+  .ad-desk.is-leads .lead-chips::-webkit-scrollbar{ display:none; }
+  .ad-desk.is-leads .lead-chip{ flex:0 0 auto; padding:6px 11px; }
+  .ad-desk.is-leads .lead-sorts{ flex:0 0 auto; flex-wrap:nowrap; gap:10px; }
+  .ad-desk.is-leads .lead-toolbar{ margin-bottom:10px; }
+}
+
+/* one-screen layout, tightened so ~5 leads show at once on a laptop */
+@media (min-width:900px){
+  .ad-desk.is-leads .lead-top{ margin-bottom:8px; }
+  .ad-desk.is-leads .lead-top h1{ font-size:1.35rem; }
+
+  /* compact week calendar */
+  .ad-desk.is-leads .lead-cal-m{ padding:3px 3px 4px; }
+  .ad-desk.is-leads .lead-cal-head{ padding:0 0 2px; }
+  .ad-desk.is-leads .lead-cal-mon{ font-size:12px; }
+  .ad-desk.is-leads .lead-cal-yr{ font-size:10px; }
+  .ad-desk.is-leads .lead-wks{ gap:1px; margin-top:1px; }
+  .ad-desk.is-leads .lead-wk{ min-height:15px; padding:1px 4px; }
+  .ad-desk.is-leads .lead-cal-n{ margin-top:3px; font-size:9.5px; }
+  .ad-desk.is-leads .lead-cal-legend{ margin-bottom:8px; }
+  .ad-desk.is-leads .lead-chipbar{ margin-bottom:8px; }
+
+  /* filters on one line */
+  .ad-desk.is-leads .lead-toolbar{ flex-wrap:nowrap; gap:8px; margin-bottom:8px; }
+  .ad-desk.is-leads .lead-toolbar .ad-search{ flex:2 1 150px; min-width:0; }
+  .ad-desk.is-leads .lead-toolbar .ad-select{ flex:1 1 0; min-width:0; max-width:175px; font-size:.82rem; }
+
+  /* slimmer rows */
+  .ad-desk.is-leads .lead-table th{ padding:8px 14px; }
+  .ad-desk.is-leads .lead-table td{ padding:8px 14px; }
+  .ad-desk.is-leads .lead-tile{ width:46px; height:40px; font-size:20px; }
+  .ad-desk.is-leads .lead-ev{ gap:10px; }
+  .ad-desk.is-leads .lead-ev-org{ margin-top:1px; }
+  .ad-desk.is-leads .lead-ev-icons{ margin-top:4px; gap:4px; }
+  .ad-desk.is-leads .lead-ic{ width:22px; height:22px; border-radius:6px; }
+  .ad-desk.is-leads .lead-ic svg{ width:13px; height:13px; }
+  .ad-desk.is-leads .lead-flag{ margin-top:3px; }
+}

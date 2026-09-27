@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=169';
+} from './firebase-config.js?v=170';
 
-import { expandKit } from './kit.js?v=169';
+import { expandKit } from './kit.js?v=170';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -592,6 +592,11 @@ function render() {
   desk.classList.toggle('is-bookings', state.view === 'entertainment');
   desk.classList.toggle('show-roster',
     state.view === 'entertainment' && state.showRoster);
+
+  /*  Leads works like an app: one screen tall, the top fixed, only the
+      list scrolls (see "LEADS: one-screen app layout" in admin.css).  */
+  desk.classList.toggle('is-leads', state.view === 'leads');
+  document.body.classList.toggle('ad-fit-leads', state.view === 'leads');
 
   /*  The page can only be one screen tall if the shell is, and that is
       three boxes above the desk - see the note in admin.css.         */
@@ -7636,7 +7641,11 @@ function leadCalendarHtml() {
     redraws both. The strip wires itself by delegation on its host, which
     survives the redraw.                                                  */
 function renderLeadListParts(keepPage) {
-  if (!keepPage) state.leadPage = 1;
+  if (!keepPage) {
+    state.leadPage = 1;
+    const wrap = document.querySelector('.lead-table-wrap');
+    if (wrap) wrap.scrollTop = 0;
+  }
   const cal = document.getElementById('lead-cal');
   if (cal) cal.innerHTML = leadCalendarHtml();
   renderLeadRows();
@@ -7943,6 +7952,8 @@ function updateLeadSortHeaders() {
   });
   const sel = document.getElementById('lead-sort');
   if (sel) sel.value = state.leadSort;
+  const wrap = document.querySelector('.lead-table-wrap');
+  if (wrap) wrap.scrollTop = 0;
 }
 
 /*  Quick-filter chip counts, always over every lead so they stay steady. */
@@ -8286,7 +8297,11 @@ function wireLeadList() {
       state.leadPage = Number(b.getAttribute('data-lead-page')) || 1;
       renderLeadRows();
       const wrap = document.querySelector('.lead-table-wrap');
-      if (wrap) wrap.scrollIntoView({ block: 'nearest' });
+      if (wrap) {
+        wrap.scrollTop = 0;
+        // on a phone the page scrolls, not the list, so bring the list into view
+        if (!window.matchMedia('(min-width: 900px)').matches) wrap.scrollIntoView({ block: 'nearest' });
+      }
     });
     foot.addEventListener('change', (e) => {
       if (e.target.id !== 'lead-per') return;
