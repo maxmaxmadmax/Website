@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=186';
+} from './firebase-config.js?v=187';
 
-import { expandKit } from './kit.js?v=186';
+import { expandKit } from './kit.js?v=187';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -383,7 +383,7 @@ function wireChrome() {
    ------------------------------------------------------------------------- */
 const BUILT = ['events', 'vendors', 'applications', 'map', 'entertainment',
                'settings', 'vendorEmail', 'quotes', 'inventory', 'botSettings',
-               'quoteDocs', 'packages', 'resources', 'leads'];
+               'quoteDocs', 'packages', 'resources', 'leads', 'leadRate'];
 
 /*  Vendors is where the work is, so it is what you land on. */
 const HOME = 'vendors';
@@ -7439,6 +7439,8 @@ function subscribeToLeads() {
         if (state.openLeadId) renderLeadListParts(true);
         else render();
       }
+      // the rating deck redraws on outside changes, but not mid-save
+      if (state.view === 'leadRate' && !(state.rate && state.rate.busy)) render();
     },
     (err) => console.error('leads', err)
   ));
@@ -8568,7 +8570,7 @@ function renderLeadRows() {
         ${where ? `<span class="lead-loc" title="${attr(where)}"><span class="lead-ico" aria-hidden="true">📍</span>${esc(where)}</span>` : '<span class="ad-cell-muted">—</span>'}
         ${km ? `<span class="lead-km">${esc(km)}</span>` : ''}
       </td>
-      <td class="lead-catcol">${r.category ? `<span class="lead-cat">${esc(r.category)}</span>` : `<span class="lead-cat is-type">${esc(LEAD_TYPES[r.type] || 'Lead')}</span>`}</td>
+      <td class="lead-catcol">${r.category ? `<span class="lead-cat">${esc(r.category)}</span>` : `<span class="lead-cat is-type">${esc(LEAD_TYPES[r.type] || 'Lead')}</span>`}${r.verdict ? `<span class="lead-verdict is-${attr(r.verdict)}">${esc(LEAD_VERDICT[r.verdict] || r.verdict)}</span>` : ''}${r.needsResearch ? '<span class="lead-verdict is-info">More info queued</span>' : ''}</td>
       <td>${leadFitRater(r.rating, true, r.id)}</td>
       <td class="lead-num">${leadValueHtml(r)}</td>
       <td>${leadNextActHtml(r)}${fu ? `<span class="lead-fu is-${fu}">${fu === 'overdue' ? 'Overdue ' : 'Due '}${esc(fmtLeadDate(String(r.followUp).slice(0, 10)))}</span>` : ''}${(() => { const e = leadEoi(r); return e && e.state !== 'closed' ? `<span class="lead-eoi is-${e.state}" title="${attr(e.note || 'Supplier deadline')}">EOI closes ${esc(fmtLeadDate(e.date))}</span>` : ''; })()}</td>
@@ -9542,3 +9544,267 @@ function wireLeadCompose() {
     }
   });
 }
+
+/* =========================================================================
+   LEAD RATING — a phone-sized card deck for rating every lead quickly.
+   Only Max's own Fit rating (1-5) counts here; imported heat / win % are
+   not shown. Rate, then an action:
+     Won        -> stage Won
+     More info  -> queued for the nightly research (needsResearch), leaves
+                   the deck until the research is done
+     Locked     -> tagged "Locked - another supplier" (verdict)
+     Pass       -> tagged "Not for us" (verdict)
+     Next       -> saves the rating if one is picked, else skips for now
+   Nothing is ever hidden or deleted: Pass / Locked are tags only.
+   ========================================================================= */
+const LEAD_VERDICT = { pass: 'Not for us', locked: 'Locked — another supplier' };
+
+function rateState() {
+  if (!state.rate) state.rate = { tab: 'review', pick: 0, skip: [], back: [], focus: '', busy: false };
+  return state.rate;
+}
+function rateSortKey(r) {
+  const d = leadSortDate(r);
+  // upcoming soonest first, then undated, then past events
+  if (!d) return '1';
+  return (d < leadTodayIso() ? '2' : '0') + d;
+}
+function rateDeck() {
+  const s = rateState();
+  const list = (state.leads || []).filter((r) => !Number(r.rating) && !r.needsResearch)
+    .sort((a, b) => rateSortKey(a).localeCompare(rateSortKey(b)) || String(a.title || '').localeCompare(String(b.title || '')));
+  // "Next" without a rating sends a lead to the back for this session
+  const skipped = list.filter((r) => s.skip.includes(r.id));
+  return list.filter((r) => !s.skip.includes(r.id)).concat(skipped);
+}
+function rateWaiting() { return (state.leads || []).filter((r) => r.needsResearch); }
+function rateRated() { return (state.leads || []).filter((r) => Number(r.rating)).sort((a, b) => rateSortKey(a).localeCompare(rateSortKey(b))); }
+
+function rateMissing(r) {
+  const miss = [];
+  if (!leadHasExactDate(r)) miss.push('Exact date');
+  if (leadNeedsContact(r)) miss.push('Contact');
+  if (!String(r.website || '').trim()) miss.push('Website');
+  if (!String(r.crowd || '').trim()) miss.push('Crowd size');
+  return miss;
+}
+
+function rateCardHtml(r, pos, total) {
+  const s = rateState();
+  const [icon, cls] = leadCatStyle(r);
+  const img = r.imageBroken ? '' : leadImageUrl(r);
+  const when = leadWhen(r) || 'Date TBC';
+  const where = r.venue || r.town || '';
+  const km = leadKmText(r);
+  const v = leadValue(r);
+  const org = leadOrganiser(r);
+  const about = String(r.whyFit || r.needs || r.enrichNotes || r.notes || '').split('\n— Earlier')[0].trim();
+  const facts = [
+    ['Organiser', org], ['Crowd', r.crowd], ['Needs', r.needs], ['Venue setup', r.venueSetup],
+    ['Power', r.power && r.power !== 'unknown' ? (r.power === 'generator' ? 'Generator needed' : 'Mains on site') : ''],
+    ['Runs', r.recurrence], ['Last year', r.lastEdition], ['Supplier now', r.incumbent],
+    ['Supplier deadline', r.eoiDate ? fmtLeadDate(r.eoiDate) + (r.eoiNote ? ' — ' + r.eoiNote : '') : ''],
+  ].filter(([, x]) => String(x || '').trim());
+  const miss = rateMissing(r);
+  const pick = s.pick || Number(r.rating) || 0;
+  const tags = [
+    r.category ? `<span class="rt-chip">${esc(r.category)}</span>` : '',
+    r.stage === 'won' ? '<span class="rt-chip is-won">🏆 Won</span>' : '',
+    r.verdict ? `<span class="rt-chip is-verdict">${esc(LEAD_VERDICT[r.verdict] || r.verdict)}</span>` : '',
+    r.needsResearch ? '<span class="rt-chip is-info">Waiting on research</span>' : '',
+  ].join('');
+  return `
+    <article class="rt-card" data-rate-id="${attr(r.id)}">
+      <div class="rt-hero ${cls}">
+        ${img ? `<img src="${attr(img)}" alt="" referrerpolicy="no-referrer" data-lead-img="${attr(r.id)}">` : `<span class="rt-hero-ico" aria-hidden="true">${icon}</span>`}
+        ${total ? `<span class="rt-count">${pos} of ${total}</span>` : ''}
+        <div class="rt-hero-text">
+          <h2>${esc(r.title || r.eventName || 'Lead')}</h2>
+          <p>📅 ${esc(when)}</p>
+          ${where ? `<p>📍 ${esc(where)}${km ? ` <span>· ${esc(km)}</span>` : ''}</p>` : (km ? `<p>🚚 ${esc(km)}</p>` : '')}
+        </div>
+      </div>
+      <div class="rt-body">
+        ${tags.trim() ? `<div class="rt-chips">${tags}</div>` : ''}
+        <div class="rt-stats">
+          <div><b>${esc(r.crowd || '—')}</b><span>Expected crowd</span></div>
+          <div><b>${v ? leadDollars(v.cents) : '—'}</b><span>${v && v.src === 'quote' ? 'Quote value' : 'Est. value'}</span></div>
+        </div>
+        <div class="rt-links">${leadWebIconsHtml(r)}${leadContactIconsHtml(r)}</div>
+        ${about ? `<p class="rt-about">${esc(about.length > 320 ? about.slice(0, 317) + '…' : about)}</p>` : ''}
+        ${facts.length ? `<dl class="rt-facts">${facts.map(([k, x]) => `<div><dt>${esc(k)}</dt><dd>${esc(x)}</dd></div>`).join('')}</dl>` : ''}
+        ${miss.length ? `<p class="rt-miss">Missing: ${miss.map(esc).join(' · ')}</p>` : ''}
+        <button type="button" class="rt-open" data-rate-open="${attr(r.id)}">Open full lead ›</button>
+      </div>
+    </article>
+    <div class="rt-rate">
+      <p>Rate this lead <span>(1 = low, 5 = high fit)</span></p>
+      <div class="rt-bar" role="radiogroup" aria-label="Fit rating">
+        ${[1, 2, 3, 4, 5].map((n) => `<button type="button" role="radio" aria-checked="${pick === n}" class="rt-seg${n <= pick ? ' is-fill' : ''}${n === pick ? ' is-on' : ''}" data-rate-pick="${n}">${n}</button>`).join('')}
+      </div>
+    </div>
+    <div class="rt-acts">
+      <button type="button" class="rt-act is-won" data-rate-act="won"><i>🏆</i>Won</button>
+      <button type="button" class="rt-act is-info" data-rate-act="info"><i>?</i>More info</button>
+      <button type="button" class="rt-act is-locked" data-rate-act="locked"><i>🔒</i>Locked</button>
+      <button type="button" class="rt-act is-pass" data-rate-act="pass"><i>✕</i>Pass</button>
+      <button type="button" class="rt-act is-next" data-rate-act="next"><i>»</i>Next</button>
+    </div>
+    <p class="rt-hint" id="rt-hint">${pick ? 'Now pick an action' : 'Choose a rating, then an action'}</p>`;
+}
+
+function rateListHtml(rows, empty) {
+  if (!rows.length) return `<p class="rt-empty">${empty}</p>`;
+  return `<ul class="rt-list">${rows.map((r) => `
+    <li><button type="button" data-rate-focus="${attr(r.id)}">
+      <span class="rt-li-t">${esc(r.title || 'Lead')}</span>
+      <span class="rt-li-m">${esc(leadWhen(r) || 'Date TBC')}${Number(r.rating) ? ` · Fit ${Number(r.rating)}/5` : ''}${r.verdict ? ' · ' + esc(LEAD_VERDICT[r.verdict] || '') : ''}${r.stage === 'won' ? ' · 🏆 Won' : ''}</span>
+    </button></li>`).join('')}</ul>`;
+}
+
+function leadRateHtml() {
+  const s = rateState();
+  const deck = rateDeck();
+  const all = (state.leads || []).length;
+  const rated = rateRated();
+  const waiting = rateWaiting();
+  const pct = all ? Math.round((rated.length / all) * 100) : 0;
+  const focus = s.focus && (state.leads || []).find((x) => x.id === s.focus);
+  let body;
+  if (focus) {
+    body = `<button type="button" class="rt-backlist" data-rate-unfocus>‹ Back to list</button>${rateCardHtml(focus, 0, 0)}`;
+  } else if (s.tab === 'review') {
+    body = deck.length ? rateCardHtml(deck[0], 1, deck.length) : '<p class="rt-empty">🎉 Every lead is rated. New leads and researched ones will show up here.</p>';
+  } else if (s.tab === 'waiting') {
+    body = rateListHtml(waiting, 'Nothing waiting — tap "More info" on a lead to queue it for the nightly research.');
+  } else {
+    body = rateListHtml(rated, 'No leads rated yet.');
+  }
+  return `
+    <div class="rt-wrap">
+      <div class="rt-phone">
+        <div class="rt-top">
+          ${s.back.length && !focus && s.tab === 'review' ? '<button type="button" class="rt-prev" data-rate-prev aria-label="Previous lead">‹</button>' : ''}
+          <nav class="rt-tabs">
+            ${[['review', 'Review', deck.length], ['waiting', 'More info', waiting.length], ['rated', 'Rated', rated.length]]
+              .map(([k, label, n]) => `<button type="button" class="rt-tab${s.tab === k && !focus ? ' is-on' : ''}" data-rate-tab="${k}">${label} <span>${n}</span></button>`).join('')}
+          </nav>
+        </div>
+        <div class="rt-prog"><span>${deck.length} left to review</span><span>${rated.length} of ${all} rated · ${pct}%</span></div>
+        <div class="rt-progbar"><i style="width:${pct}%"></i></div>
+        ${body}
+      </div>
+    </div>`;
+}
+
+async function rateSave(r, patchData, logText) {
+  const s = rateState();
+  s.busy = true;
+  try {
+    const e = { at: Date.now(), text: logText };
+    const { doc, setDoc, arrayUnion } = fb.f;
+    const data = { ...patchData, updatedAt: Date.now(), history: arrayUnion(e) };
+    await setDoc(doc(fb.db, 'leads', r.id), data, { merge: true });
+    Object.assign(r, patchData);
+    r.history = [...(r.history || []), e];
+  } catch (err) {
+    console.error('rate save', err);
+    const h = document.getElementById('rt-hint');
+    if (h) { h.textContent = 'Could not save — check your connection.'; h.classList.add('is-bad'); }
+    s.busy = false;
+    return false;
+  }
+  s.busy = false;
+  return true;
+}
+
+async function rateAct(act) {
+  const s = rateState();
+  if (s.busy) return;
+  const id = (document.querySelector('.rt-card') || {}).getAttribute && document.querySelector('.rt-card').getAttribute('data-rate-id');
+  const r = id && (state.leads || []).find((x) => x.id === id);
+  if (!r) return;
+  const pick = s.pick || 0;
+  const hint = document.getElementById('rt-hint');
+  if (['won', 'locked', 'pass'].includes(act) && !pick && !Number(r.rating)) {
+    if (hint) { hint.textContent = 'Pick a rating (1–5) first'; hint.classList.add('is-bad'); }
+    return;
+  }
+  const patchData = {};
+  const log = [];
+  if (pick && pick !== Number(r.rating)) { patchData.rating = pick; log.push(`Fit ${pick}/5`); }
+  if (act === 'won') { patchData.stage = 'won'; patchData.verdict = ''; log.push('Stage → Won'); }
+  if (act === 'locked') { patchData.verdict = 'locked'; log.push('Tagged: Locked — another supplier'); }
+  if (act === 'pass') { patchData.verdict = 'pass'; log.push('Tagged: Not for us'); }
+  if (act === 'info') { patchData.needsResearch = true; log.push('Queued for research (more info)'); }
+  if (act === 'next' && !log.length) {
+    // skip for now - it comes back at the end of the deck
+    if (!s.focus) { s.skip = s.skip.filter((x) => x !== r.id).concat(r.id); s.back.push(r.id); }
+    s.pick = 0; s.focus = '';
+    render();
+    return;
+  }
+  if (log.length && !(await rateSave(r, patchData, 'Lead Rating: ' + log.join(' · ')))) return;
+  if (!s.focus) s.back.push(r.id);
+  s.skip = s.skip.filter((x) => x !== r.id);
+  s.pick = 0;
+  s.focus = '';
+  render();
+}
+
+function wireLeadRate() {
+  const root = document.querySelector('.rt-phone');
+  if (!root) return;
+  wireLeadImageErrors();
+  const s = rateState();
+  root.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-rate-tab], [data-rate-pick], [data-rate-act], [data-rate-focus], [data-rate-unfocus], [data-rate-prev], [data-rate-open]');
+    if (!t) return;
+    if (t.hasAttribute('data-rate-tab')) { s.tab = t.getAttribute('data-rate-tab'); s.focus = ''; s.pick = 0; render(); return; }
+    if (t.hasAttribute('data-rate-pick')) {
+      const n = Number(t.getAttribute('data-rate-pick'));
+      s.pick = s.pick === n ? 0 : n;
+      root.querySelectorAll('[data-rate-pick]').forEach((b) => {
+        const k = Number(b.getAttribute('data-rate-pick'));
+        b.classList.toggle('is-fill', k <= s.pick);
+        b.classList.toggle('is-on', k === s.pick);
+        b.setAttribute('aria-checked', String(k === s.pick));
+      });
+      const h = document.getElementById('rt-hint');
+      if (h) { h.textContent = s.pick ? 'Now pick an action' : 'Choose a rating, then an action'; h.classList.remove('is-bad'); }
+      return;
+    }
+    if (t.hasAttribute('data-rate-act')) { rateAct(t.getAttribute('data-rate-act')); return; }
+    if (t.hasAttribute('data-rate-focus')) { s.focus = t.getAttribute('data-rate-focus'); s.pick = 0; render(); window.scrollTo(0, 0); return; }
+    if (t.hasAttribute('data-rate-unfocus')) { s.focus = ''; s.pick = 0; render(); return; }
+    if (t.hasAttribute('data-rate-prev')) {
+      // step back to the last lead you acted on, to change your mind
+      const id = s.back.pop();
+      if (id) { s.focus = id; s.pick = 0; render(); }
+      return;
+    }
+    if (t.hasAttribute('data-rate-open')) {
+      const id = t.getAttribute('data-rate-open');
+      if (openLead(id, 'overview')) location.hash = '#/leads';
+    }
+  });
+}
+
+/*  Keys on a computer: 1-5 rate, W / I / L / P / N act. */
+let rateKeysWired = false;
+function wireRateKeys() {
+  if (rateKeysWired) return;
+  rateKeysWired = true;
+  document.addEventListener('keydown', (e) => {
+    if (state.view !== 'leadRate' || e.altKey || e.ctrlKey || e.metaKey || e.target.closest('input, select, textarea')) return;
+    const k = e.key.toLowerCase();
+    if (/^[1-5]$/.test(k)) { const b = document.querySelector(`[data-rate-pick="${k}"]`); if (b) b.click(); return; }
+    const act = { w: 'won', i: 'info', l: 'locked', p: 'pass', n: 'next', arrowright: 'next' }[k];
+    if (act && document.querySelector('.rt-card')) rateAct(act);
+  });
+}
+
+VIEWS.leadRate = {
+  html() { return leadRateHtml(); },
+  wire() { wireRateKeys(); wireLeadRate(); },
+};

@@ -3582,3 +3582,80 @@ body.ad-fit .ad-main{ min-height:0; }
 .lead-ctrophy{ position:absolute; top:-11px; left:50%; transform:translateX(-50%); font-size:11px; font-style:normal; line-height:1; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25)); pointer-events:none; z-index:1; }
 /* long dates wrap inside the date column instead of running into Location */
 .lead-table td:nth-child(2), .lead-table td:nth-child(2) *{ white-space:normal; }
+
+/* =====================================================================
+   LEAD RATING — phone-sized card deck (dark, like the mockup)
+   ===================================================================== */
+.lead-verdict{ display:inline-block; margin:4px 0 0; padding:2px 7px; border-radius:6px; font-size:.68rem; font-weight:700; background:#eef0f4; color:#475569; }
+.lead-verdict.is-pass{ background:#fde8e8; color:#b91c1c; }
+.lead-verdict.is-locked{ background:#eceff3; color:#334155; }
+.lead-verdict.is-info{ background:#fff4d6; color:#92400e; }
+
+.rt-wrap{ display:flex; justify-content:center; padding:8px 0 24px; }
+.rt-phone{ width:100%; max-width:430px; background:#0f1115; color:#e8eaee; border-radius:22px; padding:14px 14px 18px; box-shadow:0 10px 30px rgba(0,0,0,.25); }
+.rt-top{ display:flex; align-items:center; gap:8px; }
+.rt-prev{ flex:0 0 38px; height:38px; border-radius:50%; border:1px solid #2a2e36; background:#181b21; color:#fff; font-size:22px; line-height:1; cursor:pointer; }
+.rt-tabs{ flex:1; display:flex; gap:6px; }
+.rt-tab{ flex:1; padding:9px 4px; border-radius:12px; border:1px solid #2a2e36; background:#181b21; color:#c9ced8; font-weight:700; font-size:.82rem; cursor:pointer; }
+.rt-tab span{ opacity:.7; font-weight:600; }
+.rt-tab.is-on{ background:var(--ad-orange, #f36f21); border-color:transparent; color:#fff; }
+.rt-prog{ display:flex; justify-content:space-between; margin:12px 2px 6px; font-size:.78rem; color:#aab0bb; }
+.rt-progbar{ height:6px; border-radius:6px; background:#23262d; overflow:hidden; margin-bottom:12px; }
+.rt-progbar i{ display:block; height:100%; background:var(--ad-orange, #f36f21); }
+.rt-card{ border-radius:18px; overflow:hidden; background:#171a20; border:1px solid #252932; }
+.rt-hero{ position:relative; height:250px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#3b2a63,#1c2440); }
+.rt-hero img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.rt-hero::after{ content:''; position:absolute; inset:0; background:linear-gradient(180deg,rgba(0,0,0,0) 35%,rgba(0,0,0,.85) 100%); }
+.rt-hero-ico{ font-size:64px; opacity:.85; margin-bottom:70px; }
+.rt-count{ position:absolute; top:10px; right:10px; z-index:2; padding:4px 10px; border-radius:10px; background:rgba(0,0,0,.6); font-size:.75rem; font-weight:700; }
+.rt-hero-text{ position:absolute; left:14px; right:14px; bottom:12px; z-index:2; }
+.rt-hero-text h2{ margin:0 0 6px; font-size:1.4rem; line-height:1.15; color:#fff; }
+.rt-hero-text p{ margin:2px 0 0; font-size:.85rem; color:#e3e6ec; }
+.rt-hero-text p span{ color:#b8bec9; }
+.rt-body{ padding:12px 14px 14px; }
+.rt-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+.rt-chip{ padding:4px 10px; border-radius:999px; background:#2a2250; color:#d9d0ff; font-size:.75rem; font-weight:700; }
+.rt-chip.is-won{ background:#3d3210; color:#ffd666; }
+.rt-chip.is-verdict{ background:#3a1d1d; color:#ffb4b4; }
+.rt-chip.is-info{ background:#3a2f12; color:#ffcf6b; }
+.rt-stats{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+.rt-stats div{ padding:10px; border-radius:12px; background:#1e222a; }
+.rt-stats b{ display:block; font-size:1rem; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rt-stats span{ font-size:.72rem; color:#9aa1ad; }
+.rt-links{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+.rt-links a{ filter:none; }
+.rt-about{ margin:0 0 10px; font-size:.84rem; line-height:1.45; color:#d3d7de; }
+.rt-facts{ margin:0 0 8px; display:grid; gap:5px; }
+.rt-facts div{ display:grid; grid-template-columns:104px 1fr; gap:8px; font-size:.8rem; }
+.rt-facts dt{ color:#8f96a3; }
+.rt-facts dd{ margin:0; color:#e6e9ee; }
+.rt-miss{ margin:6px 0 8px; padding:6px 9px; border-radius:8px; background:#2c2412; color:#ffcf6b; font-size:.76rem; }
+.rt-open{ border:0; background:none; color:var(--ad-orange, #f36f21); font-weight:700; font-size:.82rem; padding:4px 0; cursor:pointer; }
+.rt-rate{ margin-top:12px; padding:10px 12px; border-radius:14px; background:#171a20; border:1px solid #252932; }
+.rt-rate p{ margin:0 0 8px; font-size:.85rem; font-weight:700; }
+.rt-rate p span{ font-weight:500; color:#9aa1ad; }
+.rt-bar{ display:grid; grid-template-columns:repeat(5,1fr); gap:4px; }
+.rt-seg{ height:40px; border-radius:10px; border:1px solid #1f5a39; background:#12291d; color:#7fd6a2; font-weight:800; font-size:1rem; cursor:pointer; }
+.rt-seg.is-fill{ background:#16a34a; border-color:#16a34a; color:#fff; }
+.rt-seg.is-on{ background:#22c55e; box-shadow:0 0 0 2px #bbf7d0, 0 0 14px rgba(34,197,94,.6); }
+.rt-acts{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-top:10px; }
+.rt-act{ display:flex; flex-direction:column; align-items:center; gap:3px; padding:9px 2px; border-radius:12px; border:1.5px solid; background:#15181e; font-size:.72rem; font-weight:700; cursor:pointer; }
+.rt-act i{ font-style:normal; font-size:1.15rem; line-height:1; }
+.rt-act.is-won{ border-color:#22c55e; color:#86efac; }
+.rt-act.is-info{ border-color:#eab308; color:#fde047; }
+.rt-act.is-locked{ border-color:#64748b; color:#cbd5e1; }
+.rt-act.is-pass{ border-color:#ef4444; color:#fca5a5; }
+.rt-act.is-next{ border-color:#3b82f6; background:#1d4ed8; color:#fff; }
+.rt-hint{ margin:8px 0 0; text-align:center; font-size:.76rem; color:#9aa1ad; }
+.rt-hint.is-bad{ color:#fca5a5; }
+.rt-empty{ padding:40px 12px; text-align:center; color:#aab0bb; }
+.rt-list{ list-style:none; margin:0; padding:0; display:grid; gap:6px; }
+.rt-list button{ width:100%; text-align:left; padding:10px 12px; border-radius:12px; border:1px solid #252932; background:#171a20; color:#e8eaee; cursor:pointer; }
+.rt-li-t{ display:block; font-weight:700; font-size:.88rem; }
+.rt-li-m{ display:block; font-size:.75rem; color:#9aa1ad; margin-top:2px; }
+.rt-backlist{ border:0; background:none; color:var(--ad-orange, #f36f21); font-weight:700; padding:0 0 10px; cursor:pointer; }
+@media (max-width:520px){
+  .rt-wrap{ padding:0; }
+  .rt-phone{ border-radius:0; padding:10px 10px 16px; }
+  .rt-hero{ height:220px; }
+}
