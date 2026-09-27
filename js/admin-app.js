@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=182';
+} from './firebase-config.js?v=183';
 
-import { expandKit } from './kit.js?v=182';
+import { expandKit } from './kit.js?v=183';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -8570,7 +8570,7 @@ function renderLeadRows() {
       <td>${leadFitRater(r.rating, true, r.id)}</td>
       <td class="lead-num">${leadValueHtml(r)}</td>
       <td>${leadNextActHtml(r)}${fu ? `<span class="lead-fu is-${fu}">${fu === 'overdue' ? 'Overdue ' : 'Due '}${esc(fmtLeadDate(String(r.followUp).slice(0, 10)))}</span>` : ''}${(() => { const e = leadEoi(r); return e && e.state !== 'closed' ? `<span class="lead-eoi is-${e.state}" title="${attr(e.note || 'Supplier deadline')}">EOI closes ${esc(fmtLeadDate(e.date))}</span>` : ''; })()}</td>
-      <td class="ad-cell-right"><button type="button" class="lead-more" data-open-lead="${attr(r.id)}" aria-label="Open ${attr(name)}">···</button></td>
+      <td class="ad-cell-right"><button type="button" class="lead-more" data-open-lead="${attr(r.id)}" aria-label="Open ${attr(name)}">More</button></td>
     </tr>`;
   }).join('')
     : `<tr><td colspan="8" class="ad-cell-muted">No leads match. Try clearing the filters, or add one with ＋ Add Lead.</td></tr>`;

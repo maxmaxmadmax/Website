@@ -3570,3 +3570,7 @@ body.ad-fit .ad-main{ min-height:0; }
 .lead-table thead th:nth-child(7){ width:160px; }
 .lead-table thead th:nth-child(8){ width:44px; }
 .lead-table td{ overflow-wrap:anywhere; }
+/* row "More" button */
+.lead-table thead th:nth-child(8){ width:76px; }
+.lead-more{ width:auto; height:auto; padding:5px 10px; border:1px solid var(--ad-line); border-radius:7px; background:var(--ad-card); color:var(--ad-ink, #1f2937); font-size:.78rem; font-weight:600; letter-spacing:0; line-height:1.2; white-space:nowrap; cursor:pointer; }
+.lead-more:hover{ border-color:var(--ad-orange); color:var(--ad-orange); }
