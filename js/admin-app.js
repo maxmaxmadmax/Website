@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=194';
+} from './firebase-config.js?v=195';
 
-import { expandKit } from './kit.js?v=194';
+import { expandKit } from './kit.js?v=195';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -7970,14 +7970,16 @@ function leadSocialKind(x) {
 function leadLinks(r) {
   const out = [];
   const seen = new Set();
-  const add = (kind, x) => { if (seen.has(kind + x.href)) return; seen.add(kind + x.href); out.push({ kind, x }); };
+  // one icon per kind: the website, then the first Facebook / Instagram / TikTok / YouTube page
+  const add = (kind, x) => { if (seen.has(kind)) return; seen.add(kind); out.push({ kind, x }); };
   const web = leadSafeUrl(r.website);
   if (web) add(leadSocialKind(web) || 'web', web);
   String(r.socials || '').split(/[\s,;|]+/).filter(Boolean).forEach((tok) => {
     if (/^@[\w.]{2,}$/.test(tok)) { const x = leadSafeUrl('instagram.com/' + tok.slice(1)); if (x) add('instagram', x); return; }
     if (!/\.[a-z]{2,}/i.test(tok)) return;
     const x = leadSafeUrl(tok);
-    if (x) add(leadSocialKind(x) || 'web', x);
+    const kind = x && leadSocialKind(x);
+    if (kind) add(kind, x);   // other links (X, LinkedIn, sub-sites) aren't shown as extra globes
   });
   return out;
 }
@@ -9663,7 +9665,7 @@ function rateCardHtml(r, pos, total) {
           <div><i aria-hidden="true">👥</i><b>${esc(r.crowd || '—')}</b><span>Expected crowd</span></div>
           <div><i aria-hidden="true">📊</i><b>${v ? leadDollars(v.cents) : '—'}</b><span>${v && v.src === 'quote' ? 'Quote value' : 'Est. value'}</span></div>
         </div>
-        <div class="rt-links">${leadWebIconsHtml(r)}${leadContactIconsHtml(r)}</div>
+        <div class="rt-links">${leadContactIconsHtml(r)}</div>
         ${about ? `<p class="rt-about"><b>${esc(r.eventName || r.title || '')}</b> — ${esc(about.length > 320 ? about.slice(0, 317) + '…' : about)}</p>` : ''}
         ${facts.length ? `<ul class="rt-brief">${facts.map(([k, x]) => `<li><b>${esc(k)}:</b> ${esc(x)}</li>`).join('')}</ul>` : ''}
         ${String(r.pitch || '').trim() ? `<p class="rt-pitch"><b>Worth it for you?</b> ${esc(r.pitch)}</p>` : ''}
