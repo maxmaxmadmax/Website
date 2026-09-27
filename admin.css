@@ -3556,3 +3556,6 @@ body.ad-fit .ad-main{ min-height:0; }
 /* photo tiles: give the event column the room, keep date tight */
 .lead-table .lead-evcol{ width:34%; }
 .lead-table thead th:nth-child(2){ width:150px; }
+/* bigger banner: never let the header or tab bar get squeezed away */
+.lead-detail > *:not(.lead-panes){ flex-shrink:0; }
+.lead-tabs{ flex-shrink:0; min-height:38px; }
