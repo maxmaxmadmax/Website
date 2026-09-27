@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=188';
+} from './firebase-config.js?v=189';
 
-import { expandKit } from './kit.js?v=188';
+import { expandKit } from './kit.js?v=189';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -600,6 +600,11 @@ function render() {
       list scrolls (see "LEADS: one-screen app layout" in admin.css).  */
   desk.classList.toggle('is-leads', state.view === 'leads');
   document.body.classList.toggle('ad-fit-leads', state.view === 'leads');
+  // Lead Rating runs full-screen on a phone, like an app
+  document.body.classList.toggle('ad-rate-app', state.view === 'leadRate');
+  // ...and only there, pinch / double-tap zoom is locked so it feels like an app
+  const vp = document.querySelector('meta[name="viewport"]');
+  if (vp) vp.setAttribute('content', 'width=device-width, initial-scale=1.0, viewport-fit=cover' + (state.view === 'leadRate' ? ', maximum-scale=1.0, user-scalable=no' : ''));
 
   /*  The page can only be one screen tall if the shell is, and that is
       three boxes above the desk - see the note in admin.css.         */
@@ -9685,6 +9690,7 @@ function leadRateHtml() {
     <div class="rt-wrap">
       <div class="rt-phone">
         <div class="rt-top">
+          <a class="rt-exit" href="#/leads" aria-label="Close Lead Rating">✕</a>
           ${s.back.length && !focus && s.tab === 'review' ? '<button type="button" class="rt-prev" data-rate-prev aria-label="Previous lead">‹</button>' : ''}
           <nav class="rt-tabs">
             ${[['review', 'Review', deck.length], ['waiting', 'More info', waiting.length], ['rated', 'Rated', rated.length]]
@@ -9693,7 +9699,7 @@ function leadRateHtml() {
         </div>
         <div class="rt-prog"><span>${deck.length} left to review</span><span>${rated.length} of ${all} rated · ${pct}%</span></div>
         <div class="rt-progbar"><i style="width:${pct}%"></i></div>
-        ${body}
+        <div class="rt-main">${body}</div>
       </div>
     </div>`;
 }

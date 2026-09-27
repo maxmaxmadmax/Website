@@ -3673,3 +3673,35 @@ body.ad-fit .ad-main{ min-height:0; }
 .rt-edit-btns button{ flex:1; padding:11px; border-radius:12px; font-weight:800; cursor:pointer; }
 .rt-edit-cancel{ border:1px solid #3a3f4a; background:#1e222a; color:#e8eaee; }
 .rt-edit-save{ border:0; background:var(--ad-orange, #f36f21); color:#fff; }
+
+/* Lead Rating as an app: one screen, nothing scrolls but the card details.
+   Tabs on top, card in the middle, rating + actions pinned at the bottom. */
+.rt-phone{ display:flex; flex-direction:column; height:min(880px, calc(100dvh - 110px)); box-sizing:border-box; }
+.rt-top, .rt-prog, .rt-progbar{ flex:none; }
+.rt-main{ flex:1; min-height:0; display:flex; flex-direction:column; }
+.rt-main > .rt-card{ flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+.rt-main > .rt-rate, .rt-main > .rt-acts, .rt-main > .rt-hint, .rt-main > .rt-backlist{ flex:none; }
+.rt-main > .rt-list, .rt-main > .rt-empty{ flex:1; min-height:0; overflow-y:auto; }
+.rt-hero{ height:clamp(140px, 30dvh, 250px); flex:none; }
+.rt-exit{ display:none; }
+.rt-prog{ margin:8px 2px 4px; }
+.rt-progbar{ margin-bottom:8px; }
+.rt-rate{ margin-top:8px; padding:8px 10px; }
+.rt-rate p{ margin-bottom:6px; }
+.rt-seg{ height:36px; }
+.rt-acts{ margin-top:8px; }
+.rt-hint{ margin-top:4px; }
+@media (max-width:760px){
+  body.ad-rate-app{ overflow:hidden; }
+  body.ad-rate-app .rt-wrap{ position:fixed; inset:0; z-index:2000; padding:0; background:#0f1115; }
+  body.ad-rate-app .rt-phone{
+    max-width:none; height:100dvh; border-radius:0; box-shadow:none;
+    padding:calc(env(safe-area-inset-top) + 8px) 10px calc(env(safe-area-inset-bottom) + 8px);
+  }
+  .rt-exit{ display:flex; align-items:center; justify-content:center; flex:0 0 36px; height:36px; border-radius:50%; background:#181b21; border:1px solid #2a2e36; color:#fff; text-decoration:none; font-size:16px; }
+  .rt-tab{ padding:8px 2px; font-size:.78rem; }
+  .rt-hero-text h2{ font-size:1.2rem; }
+  .rt-act{ padding:7px 2px; font-size:.68rem; }
+}
+/* no pinch-zoom / double-tap zoom in the rating app */
+body.ad-rate-app .rt-wrap, body.ad-rate-app .rt-wrap *{ touch-action:pan-y; }
