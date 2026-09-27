@@ -3450,3 +3450,30 @@ body.ad-fit .ad-main{ min-height:0; }
 .lead-supplier{ margin:6px 0 0; font-size:.78rem; color:var(--ad-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .lead-supplier strong{ color:var(--ad-text); font-weight:700; }
 .lead-detail .inv-detail-foot{ padding:10px 16px; }
+
+/* v4 table: slim Event column (name over 2 lines), location + km, Fit 1-5 bars */
+.lead-table .lead-evcol{ width:24%; }
+.lead-ev{ min-width:190px; max-width:290px; align-items:center; gap:9px; }
+.lead-tile{ width:38px; height:34px; font-size:17px; margin-top:0; }
+.lead-ev-name{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height:1.3; }
+.lead-where{ max-width:210px; }
+.lead-loc{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height:1.3; }
+.lead-km{ display:block; margin-top:2px; font-size:.74rem; font-weight:600; color:var(--ad-muted); }
+.lead-fitr{ display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+.lead-frs{ display:inline-flex; gap:2px; }
+.lead-fr{ display:block; width:11px; height:8px; border-radius:2px; background:#e3e6eb; }
+.lead-fitr.is-edit .lead-fr{ cursor:pointer; }
+.lead-fitr.is-edit:hover .lead-fr{ background:#d5d9df; }
+.lead-fitr .lead-fr.on{ background:var(--ad-orange); }
+.lead-fitr.is-5 .lead-fr.on, .lead-fitr.is-4 .lead-fr.on{ background:var(--ad-green); }
+.lead-fitr.is-3 .lead-fr.on{ background:#f5a623; }
+.lead-fitr.is-2 .lead-fr.on, .lead-fitr.is-1 .lead-fr.on{ background:#9aa1ac; }
+.lead-fitr em{ font-style:normal; font-size:.74rem; font-weight:700; color:var(--ad-text); min-width:22px; }
+.lead-fitr.is-unset em{ color:var(--ad-faint); font-weight:600; }
+.lead-fr:focus-visible{ outline:2px solid var(--ad-orange); outline-offset:1px; }
+.lead-dfit{ margin-left:auto; }
+/* with the panel open keep Location (it has the km) and drop only Category */
+.inv-wrap.has-detail .lead-table .lead-where{ display:table-cell; }
+@media (min-width:900px){ .ad-desk.is-leads .lead-table td{ padding-top:7px; padding-bottom:7px; } }
+.lead-when{ white-space:nowrap; }
+.lead-km{ white-space:nowrap; }

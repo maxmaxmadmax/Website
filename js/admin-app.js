@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=171';
+} from './firebase-config.js?v=172';
 
-import { expandKit } from './kit.js?v=171';
+import { expandKit } from './kit.js?v=172';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -7333,7 +7333,7 @@ function blankLead(type) {
     linkedQuoteId: '', linkedQuoteNumber: '',
     lastContacted: '', notes: '', importBatch: '',
     estValueCents: 0,
-    followUp: '', target: false, contacts: [], files: [], history: [],
+    followUp: '', target: false, contacts: [], files: [], history: [], km: '',
   };
 }
 
@@ -7497,7 +7497,8 @@ function leadFiltered(ignoreMonth) {
     if (kf === 'phone' && !String(r.phone || '').trim()) return false;
     if (rf !== 'all' && leadRegion(r) !== rf) return false;
     if (sf !== 'all' && leadSize(r) !== sf) return false;
-    if (ff !== 'all' && leadPriority(r) !== ff) return false;
+    if (ff === 'unrated' && Math.round(r.rating || 0)) return false;
+    if (ff !== 'all' && ff !== 'unrated' && Math.round(r.rating || 0) !== Number(ff)) return false;
     if (!leadChipMatch(r, chip)) return false;
     if ((state.leadRange || 'all') !== 'all' && !leadInRange(r, state.leadRange)) return false;
     if (!ignoreMonth && state.leadMonth && leadMonthKey(r) !== state.leadMonth) return false;
@@ -7987,11 +7988,11 @@ function leadSortDate(r) {
     contact, else A-Z), and blanks always sit at the bottom.              */
 const LEAD_SORT_DIR = {
   date: 'asc', name: 'asc', location: 'asc', category: 'asc', priority: 'asc',
-  stage: 'asc', value: 'desc', last: 'desc', updated: 'desc', nextact: 'asc', followup: 'asc',
+  stage: 'asc', value: 'desc', last: 'desc', updated: 'desc', nextact: 'asc', followup: 'asc', fit: 'desc',
 };
 const LEAD_SORT_LABEL = {
-  date: 'Date (soonest)', nextact: 'Next action', followup: 'Follow-up date', priority: 'Fit (Strong first)', value: 'Est. value',
-  name: 'Name (A–Z)', location: 'Location', category: 'Category', stage: 'Stage', last: 'Last contact', updated: 'Recently updated',
+  date: 'Date (soonest)', nextact: 'Next action', followup: 'Follow-up date', fit: 'Fit (5 first)', value: 'Est. value',
+  location: 'Distance from Bowen', name: 'Name (A–Z)', category: 'Category', stage: 'Stage', last: 'Last contact', updated: 'Recently updated',
 };
 
 /*  The value a column sorts on; '' or null = blank (always last). */
@@ -7999,7 +8000,8 @@ function leadSortValue(r, key) {
   switch (key) {
     case 'name': return r.title || r.contactName || '';
     case 'date': return leadSortDate(r);
-    case 'location': return r.venue || r.town || '';
+    case 'location': { const k = leadKm(r); return k == null ? null : k; }
+    case 'fit': return Math.round(r.rating || 0) || null;
     case 'category': return r.category || LEAD_TYPES[r.type] || '';
     case 'priority': {
       const p = { high: 0, medium: 1, low: 2 }[leadPriority(r)];
@@ -8317,7 +8319,7 @@ function leadMainHtml() {
             ${opt(sf, 'all', 'Any size')}${LEAD_SIZES.map(([k, l]) => opt(sf, k, l)).join('')}
           </select>
           <select id="lead-f-fit" class="ad-select" aria-label="Filter by fit">
-            ${opt(ff, 'all', 'Any fit')}${opt(ff, 'high', 'Strong')}${opt(ff, 'medium', 'Medium')}${opt(ff, 'low', 'Possible')}
+            ${opt(ff, 'all', 'Any fit')}${['5', '4', '3', '2', '1'].map((n) => opt(ff, n, 'Fit ' + n + '/5')).join('')}${opt(ff, 'unrated', 'Not rated yet')}
           </select>
         </div>
 
@@ -8325,14 +8327,13 @@ function leadMainHtml() {
           <table class="ad-table lead-table">
             <thead>
               <tr>
-                ${leadTh('name', 'Event / Organiser')}
+                ${leadTh('name', 'Event', 'lead-evcol')}
                 ${leadTh('date', 'Date')}
                 ${leadTh('location', 'Location', 'lead-where')}
                 ${leadTh('category', 'Category', 'lead-catcol')}
-                ${leadTh('priority', 'Fit')}
+                ${leadTh('fit', 'Fit')}
                 ${leadTh('value', 'Est. Value', 'lead-num')}
                 ${leadTh('nextact', 'Next Action')}
-                ${leadTh('stage', 'Stage')}
                 <th></th>
               </tr>
             </thead>
@@ -8356,6 +8357,65 @@ function leadPageList(page, pages) {
   return out;
 }
 
+/*  Road km from Bowen: Max's own figure if he set one, else the km in the
+    research's haul note ("~4 hr / 340 km"), else the delivery-zone distance
+    of a town named in the venue / town / title. null = unknown, 0 = local. */
+function leadKm(r) {
+  const own = Number(r.km);
+  if (String(r.km || '').trim() !== '' && own >= 0) return Math.round(own);
+  const haul = String(r.haul || '');
+  const h = haul.match(/(\d[\d,]*)\s*km/i);
+  if (h) return Number(h[1].replace(/,/g, ''));
+  if (/\blocal\b/i.test(haul)) return 0;
+  const text = [r.town, r.venue, r.title].filter(Boolean).join(' ');
+  let best = null;
+  DELIVERY_ZONES.forEach((z) => {
+    const name = String(z.town || '').replace(/\s*\(.*\)\s*/, '').trim();
+    if (!name || !(z.km >= 0)) return;
+    const re = new RegExp('\\b' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+    if (re.test(text) && (!best || name.length > best.name.length)) best = { name, km: z.km };
+  });
+  return best ? best.km : null;
+}
+function leadKmText(r) {
+  const km = leadKm(r);
+  if (km == null) return '';
+  return km === 0 ? 'Local (Bowen)' : km.toLocaleString('en-AU') + ' km from Bowen';
+}
+
+/*  Fit, 1-5, set by Max: five bars. Click a bar to set it; click the top
+    lit bar again to step down one. Saves straight away.                  */
+function leadFitRater(n, editable, id) {
+  const v = Math.max(0, Math.min(5, Math.round(n || 0)));
+  let bars = '';
+  for (let i = 1; i <= 5; i++) {
+    bars += `<span class="lead-fr${i <= v ? ' on' : ''}"${editable ? ` data-fit="${i}" role="button" tabindex="0" aria-label="Fit ${i} of 5"` : ''}></span>`;
+  }
+  return `<span class="lead-fitr${editable ? ' is-edit' : ''}${v ? ' is-' + v : ' is-unset'}"${id ? ` data-fit-id="${attr(id)}"` : ''}
+                title="${v ? 'Fit ' + v + ' / 5' : 'Fit not set'}${editable ? ' — click to set' : ''}"><span class="lead-frs">${bars}</span><em>${v ? v + '/5' : 'Set'}</em></span>`;
+}
+
+async function setLeadFit(id, n) {
+  const cur = (state.leads || []).find((x) => x.id === id);
+  if (!cur) return;
+  const v = Math.max(0, Math.min(5, Math.round(n)));
+  const next = Math.round(cur.rating || 0) === v ? v - 1 : v;
+  cur.rating = next;
+  if (state.openLeadId === id) leadDraft.rating = next;
+  renderLeadListParts(true);
+  document.querySelectorAll(`.lead-detail .lead-fitr[data-fit-id="${CSS.escape(id)}"]`).forEach((el) => {
+    el.outerHTML = leadFitRater(next, true, id);
+  });
+  try {
+    const e = { at: Date.now(), text: next ? `Fit set to ${next}/5` : 'Fit cleared' };
+    const { doc, setDoc, arrayUnion } = fb.f;
+    await setDoc(doc(fb.db, 'leads', id), { rating: next, updatedAt: Date.now(), history: arrayUnion(e) }, { merge: true });
+    cur.history = [...(cur.history || []), e];
+  } catch (err) {
+    console.error('fit', err);
+  }
+}
+
 function renderLeadRows() {
   const host = document.getElementById('lead-rows');
   const foot = document.getElementById('lead-foot');
@@ -8369,34 +8429,32 @@ function renderLeadRows() {
   const rows = all.slice(start, start + per);
 
   host.innerHTML = rows.length ? rows.map((r) => {
-    const org = r.contactName || r.decisionMaker || '';
     const when = leadWhen(r);
     const where = r.venue || r.town || '';
+    const km = leadKmText(r);
     const fu = leadFollowState(r);
+    const name = r.title || r.eventName || r.contactName || 'Untitled lead';
     return `
     <tr class="lead-row${state.openLeadId === r.id ? ' is-open' : ''}" data-open-lead="${attr(r.id)}">
-      <td>
+      <td class="lead-evcol">
         <div class="lead-ev">
           ${leadCatTile(r)}
-          <span class="lead-ev-text">
-            <span class="lead-ev-name">${esc(r.title || r.contactName || 'Untitled lead')}${r.target ? ' <span class="lead-ev-star" title="My target">★</span>' : ''}</span>
-            ${org ? `<span class="lead-ev-org"><span class="lead-ev-person" aria-hidden="true">${LEAD_SVG.person}</span>${esc(org)}</span>` : ''}
-            ${leadContactIconsHtml(r)}
-            ${leadNeedsContact(r) ? '<span class="lead-flag">Needs contact</span>' : ''}
-          </span>
+          <span class="lead-ev-name" title="${attr(name)}">${esc(name)}${r.target ? ' <span class="lead-ev-star" title="My target">★</span>' : ''}</span>
         </div>
       </td>
       <td class="lead-when">${when ? `<span class="lead-ico" aria-hidden="true">📅</span>${esc(when)}` : '<span class="ad-cell-muted">—</span>'}</td>
-      <td class="lead-where">${where ? `<span class="lead-ico" aria-hidden="true">📍</span>${esc(where)}` : '<span class="ad-cell-muted">—</span>'}</td>
+      <td class="lead-where">
+        ${where ? `<span class="lead-loc" title="${attr(where)}"><span class="lead-ico" aria-hidden="true">📍</span>${esc(where)}</span>` : '<span class="ad-cell-muted">—</span>'}
+        ${km ? `<span class="lead-km">${esc(km)}</span>` : ''}
+      </td>
       <td class="lead-catcol">${r.category ? `<span class="lead-cat">${esc(r.category)}</span>` : `<span class="lead-cat is-type">${esc(LEAD_TYPES[r.type] || 'Lead')}</span>`}</td>
-      <td>${leadFitHtml(r)}</td>
+      <td>${leadFitRater(r.rating, true, r.id)}</td>
       <td class="lead-num">${leadValueHtml(r)}</td>
       <td>${leadNextActHtml(r)}${fu ? `<span class="lead-fu is-${fu}">${fu === 'overdue' ? 'Overdue ' : 'Due '}${esc(fmtLeadDate(String(r.followUp).slice(0, 10)))}</span>` : ''}</td>
-      <td>${leadStagePill2(r.stage)}</td>
-      <td class="ad-cell-right"><button type="button" class="lead-more" data-open-lead="${attr(r.id)}" aria-label="Open ${attr(r.title || 'lead')}">···</button></td>
+      <td class="ad-cell-right"><button type="button" class="lead-more" data-open-lead="${attr(r.id)}" aria-label="Open ${attr(name)}">···</button></td>
     </tr>`;
   }).join('')
-    : `<tr><td colspan="9" class="ad-cell-muted">No leads match. Try clearing the filters, or add one with ＋ Add Lead.</td></tr>`;
+    : `<tr><td colspan="8" class="ad-cell-muted">No leads match. Try clearing the filters, or add one with ＋ Add Lead.</td></tr>`;
 
   if (foot) {
     const from = all.length ? start + 1 : 0;
@@ -8537,8 +8595,18 @@ function wireLeadList() {
   }
 
   const host = document.getElementById('lead-rows');
+  if (host) host.addEventListener('keydown', (e) => {
+    const el = e.target.closest('.lead-fitr.is-edit [data-fit]');
+    if (el && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); el.click(); }
+  });
   if (host) host.addEventListener('click', (e) => {
     if (e.target.closest('a')) return;   // contact icons / search links open themselves
+    const fitBar = e.target.closest('.lead-fitr.is-edit [data-fit]');
+    if (fitBar) {
+      const id = fitBar.closest('[data-fit-id]').getAttribute('data-fit-id');
+      setLeadFit(id, Number(fitBar.getAttribute('data-fit')));
+      return;
+    }
     const act = e.target.closest('[data-lead-nact]');
     if (act) {
       // the Next Action button: open the lead and do the thing
@@ -8665,7 +8733,7 @@ function leadOverviewHtml(r, doc) {
       <div>
         ${leadOvItem(LEAD_OV_SVG.users, r.crowd ? esc(r.crowd) : dash, 'Expected attendance')}
         ${v ? leadOvItem(LEAD_OV_SVG.money, v.src === 'quote' ? leadDollars(v.cents) + ' (quote)' : '~' + leadDollars(v.cents), 'Value') : ''}
-        ${r.haul ? leadOvItem(LEAD_OV_SVG.road, esc(r.haul), 'Haul from Bowen') : ''}
+        ${leadKmText(r) || r.haul ? leadOvItem(LEAD_OV_SVG.road, esc([leadKmText(r), r.haul].filter(Boolean).join(' · ')), 'From Bowen') : ''}
       </div>
       <div>
         ${leadOvItem(LEAD_OV_SVG.org, r.contactName || r.decisionMaker ? esc(r.contactName || r.decisionMaker) : dash, 'Organiser')}
@@ -8890,6 +8958,8 @@ function leadDetailHtml() {
           <input class="ad-input" type="number" min="0" max="100" data-lf="winPct" value="${attr(r.winPct)}"></label>
         <label class="ad-field"><span>Haul from Bowen</span>
           <input class="ad-input" data-lf="haul" value="${attr(r.haul)}" placeholder="e.g. ~4 hr / 340 km"></label>
+        <label class="ad-field"><span>Km from Bowen</span>
+          <input class="ad-input" type="number" min="0" step="1" data-lf="km" value="${attr(r.km)}" placeholder="${attr(leadKm(r) == null ? 'e.g. 340' : 'auto: ' + leadKm(r))}"></label>
         <label class="ad-field inv-span2"><span>Current / previous supplier</span>
           <input class="ad-input" data-lf="incumbent" value="${attr(r.incumbent)}" placeholder="Who does their AV now, if known"></label>
         <label class="ad-field inv-span2"><span>Ticket / listing link</span>
@@ -8952,8 +9022,8 @@ function leadDetailHtml() {
           ${r.grokRating ? `${grokPill(r.grokRating)}${r.winPct ? `<span class="lead-win">${esc(r.winPct)}% win</span>` : ''}` : ''}
           ${leadNeedsContact(r) ? '<span class="lead-flag">Needs contact</span>' : ''}
           ${doc && doc.enrichedAt ? `<button type="button" class="lead-research-pill ${(LEAD_CHECK[doc.contactCheck] || LEAD_CHECK.partial)[0]}" data-lead-tab="notes" title="Researched ${attr(fmtLeadDate(String(doc.enrichedAt).slice(0, 10)))} — open notes &amp; sources">🔎 ${esc((LEAD_CHECK[doc.contactCheck] || LEAD_CHECK.partial)[1])}</button>` : ''}
-          <span class="lead-dstars" title="Your rating">${leadStars(r.rating, true)}</span>
-        </div>` : `<div class="lead-drate"><span>Your rating</span><span class="lead-dstars">${leadStars(r.rating, true)}</span></div>`}
+          <span class="lead-dfit">${leadFitRater(r.rating, true, state.openLeadId)}</span>
+        </div>` : `<div class="lead-drate"><span>Fit</span>${leadFitRater(r.rating, true, '')}</div>`}
       </div>
 
       <nav class="lead-tabs" role="tablist" aria-label="Lead sections">
@@ -9030,19 +9100,23 @@ function wireLeadDetail() {
     }
   });
 
-  const setStar = (el) => {
-    const v = Number(el.getAttribute('data-star') || 0);
-    leadDraft.rating = (leadDraft.rating === v) ? v - 1 : v;   // click the current top star to clear one
-    panel.querySelectorAll('.lead-dstars .lead-star').forEach((s2, i) => s2.classList.toggle('is-on', i < leadDraft.rating));
-  };
+  // keyboard: Enter / Space on a Fit bar sets it
   panel.addEventListener('keydown', (e) => {
-    const el = e.target.closest('.lead-stars.is-edit [data-star]');
-    if (el && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setStar(el); }
+    const el = e.target.closest('.lead-fitr.is-edit [data-fit]');
+    if (el && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); el.click(); }
   });
 
   panel.addEventListener('click', (e) => {
-    const star = e.target.closest('.lead-stars.is-edit [data-star]');
-    if (star) { setStar(star); return; }
+    const fitBar = e.target.closest('.lead-fitr.is-edit [data-fit]');
+    if (fitBar) {
+      const n = Number(fitBar.getAttribute('data-fit'));
+      if (state.openLeadId && state.openLeadId !== '__new__') { setLeadFit(state.openLeadId, n); return; }
+      // a new lead: just the draft, saved with the lead
+      leadDraft.rating = Math.round(leadDraft.rating || 0) === n ? n - 1 : n;
+      const holder = fitBar.closest('.lead-fitr');
+      if (holder) holder.outerHTML = leadFitRater(leadDraft.rating, true, '');
+      return;
+    }
     const tabBtn = e.target.closest('[data-lead-tab]');
     if (tabBtn) { showTab(tabBtn.getAttribute('data-lead-tab')); return; }
     const menu = panel.querySelector('.lead-more-menu');
@@ -9104,6 +9178,7 @@ function leadClean(r) {
     estValueCents: Math.max(0, Math.round(Number(r.estValueCents) || 0)),
     followUp: /^\d{4}-\d{2}-\d{2}$/.test(s(r.followUp, 10)) ? s(r.followUp, 10) : '',
     target: !!r.target,
+    km: String(r.km == null ? '' : r.km).trim() === '' ? '' : Math.max(0, Math.round(Number(r.km) || 0)),
     contacts: (Array.isArray(r.contacts) ? r.contacts : [])
       .map((c) => ({ name: s(c.name, 120), role: s(c.role, 80), phone: s(c.phone, 40), email: s(c.email, 200) }))
       .filter((c) => c.name || c.phone || c.email)
@@ -9119,7 +9194,7 @@ function leadChanges(prev, next) {
   const st = (x) => LEAD_STAGES[x || 'new'] || x;
   if ((prev.stage || 'new') !== next.stage) out.push(`Stage: ${st(prev.stage)} → ${st(next.stage)}`);
   if ((prev.followUp || '') !== next.followUp) out.push(next.followUp ? `Follow-up set for ${fmtLeadDate(next.followUp)}` : 'Follow-up cleared');
-  if (Math.round(prev.rating || 0) !== next.rating) out.push(next.rating ? `Rated ${next.rating}★` : 'Rating cleared');
+  if (Math.round(prev.rating || 0) !== next.rating) out.push(next.rating ? `Fit set to ${next.rating}/5` : 'Fit cleared');
   if ((prev.linkedQuoteId || '') !== next.linkedQuoteId && next.linkedQuoteId) out.push(`Quote ${next.linkedQuoteNumber || ''} linked`);
   const pc = (prev.contacts || []).length;
   if (pc !== next.contacts.length) out.push(next.contacts.length > pc ? 'Contact added' : 'Contact removed');
