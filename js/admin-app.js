@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=191';
+} from './firebase-config.js?v=192';
 
-import { expandKit } from './kit.js?v=191';
+import { expandKit } from './kit.js?v=192';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -9636,7 +9636,6 @@ function rateCardHtml(r, pos, total) {
   const miss = rateMissing(r);
   const pick = s.pick || Number(r.rating) || 0;
   const tags = [
-    r.category ? `<span class="rt-chip">${esc(r.category)}</span>` : '',
     r.stage === 'won' ? '<span class="rt-chip is-won">🏆 Won</span>' : '',
     r.verdict ? `<span class="rt-chip is-verdict">${esc(LEAD_VERDICT[r.verdict] || r.verdict)}</span>` : '',
     r.needsResearch ? '<span class="rt-chip is-info">Waiting on research</span>' : '',
@@ -9646,17 +9645,19 @@ function rateCardHtml(r, pos, total) {
       <div class="rt-hero ${cls}">
         ${img ? `<img src="${attr(img)}" alt="" referrerpolicy="no-referrer" data-lead-img="${attr(r.id)}">` : `<span class="rt-hero-ico" aria-hidden="true">${icon}</span>`}
         ${total ? `<span class="rt-count">${pos} of ${total}</span>` : ''}
-        <div class="rt-hero-text">
-          <h2>${esc(r.title || r.eventName || 'Lead')}</h2>
-          <p>📅 ${esc(when)}</p>
-          ${where ? `<p>📍 ${esc(where)}${km ? ` <span>· ${esc(km)}</span>` : ''}</p>` : (km ? `<p>🚚 ${esc(km)}</p>` : '')}
-        </div>
       </div>
       <div class="rt-body">
+        ${r.category ? `<span class="rt-catchip">${esc(r.category)}</span>` : ''}
+        <h2 class="rt-title">${esc(r.title || r.eventName || 'Lead')}</h2>
+        <ul class="rt-when">
+          <li><span aria-hidden="true">📅</span>${esc(when)}</li>
+          ${where ? `<li><span aria-hidden="true">📍</span>${esc(where)}</li>` : ''}
+          ${km ? `<li><span aria-hidden="true">🧭</span>${esc(km)}</li>` : ''}
+        </ul>
         ${tags.trim() ? `<div class="rt-chips">${tags}</div>` : ''}
         <div class="rt-stats">
-          <div><b>${esc(r.crowd || '—')}</b><span>Expected crowd</span></div>
-          <div><b>${v ? leadDollars(v.cents) : '—'}</b><span>${v && v.src === 'quote' ? 'Quote value' : 'Est. value'}</span></div>
+          <div><i aria-hidden="true">👥</i><b>${esc(r.crowd || '—')}</b><span>Expected crowd</span></div>
+          <div><i aria-hidden="true">📊</i><b>${v ? leadDollars(v.cents) : '—'}</b><span>${v && v.src === 'quote' ? 'Quote value' : 'Est. value'}</span></div>
         </div>
         <div class="rt-links">${leadWebIconsHtml(r)}${leadContactIconsHtml(r)}</div>
         ${about ? `<p class="rt-about"><b>${esc(r.eventName || r.title || '')}</b> — ${esc(about.length > 320 ? about.slice(0, 317) + '…' : about)}</p>` : ''}
