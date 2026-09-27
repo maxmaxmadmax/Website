@@ -3788,3 +3788,12 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .lead-fresh.is-stale{ color:#dc2626; }
 .lead-fresh.is-none{ color:#6b7280; }
 .lead-detail .lead-fresh{ margin:6px 0 2px; }
+/* notes for the researcher + its replies */
+.rt-cardbtns{ flex-wrap:wrap; }
+.rt-tips{ display:grid; gap:6px; margin:0 0 10px; }
+.rt-tip{ padding:8px 10px; border-radius:10px; background:#eff6ff; border:1px solid #dbeafe; font-size:.8rem; line-height:1.4; color:#1e3a8a; }
+.rt-tip.is-done{ background:#f0fdf4; border-color:#dcfce7; color:#14532d; }
+.rt-tip p{ margin:0; }
+.rt-tip-reply{ margin-top:4px !important; }
+.rt-tip-wait{ margin-top:3px !important; font-size:.72rem; color:#6b7280; }
+.lead-detail .rt-tips{ margin:6px 0; }

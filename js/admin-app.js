@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=196';
+} from './firebase-config.js?v=197';
 
-import { expandKit } from './kit.js?v=196';
+import { expandKit } from './kit.js?v=197';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -7445,7 +7445,7 @@ function subscribeToLeads() {
         else render();
       }
       // the rating deck redraws on outside changes, but not mid-save
-      if (state.view === 'leadRate' && !(state.rate && (state.rate.busy || state.rate.edit))) render();
+      if (state.view === 'leadRate' && !(state.rate && (state.rate.busy || state.rate.edit || state.rate.tip))) render();
     },
     (err) => console.error('leads', err)
   ));
@@ -8909,6 +8909,7 @@ function leadOverviewHtml(r, doc) {
     </div>` : ''}
 
     ${leadFreshHtml(doc || r)}
+    ${leadTipsHtml(doc || r)}
     <h3 class="lead-sec">About the Event</h3>
     ${about ? `<p class="lead-about" title="${attr(about)}">${esc(about)}</p>` : ''}
     ${String(r.pitch || '').trim() ? `<p class="lead-pitch" title="${attr(r.pitch)}"><b>Worth it?</b> ${esc(r.pitch)}</p>` : ''}
@@ -9689,9 +9690,11 @@ function rateCardHtml(r, pos, total) {
         ${about ? `<p class="rt-about"><b>${esc(r.eventName || r.title || '')}</b> — ${esc(about.length > 320 ? about.slice(0, 317) + '…' : about)}</p>` : ''}
         ${facts.length ? `<ul class="rt-brief">${facts.map(([k, x]) => `<li><b>${esc(k)}:</b> ${esc(x)}</li>`).join('')}</ul>` : ''}
         ${String(r.pitch || '').trim() ? `<p class="rt-pitch"><b>Worth it for you?</b> ${esc(r.pitch)}</p>` : ''}
+        ${leadTipsHtml(r)}
         ${miss.length ? `<p class="rt-miss">Missing: ${miss.map(esc).join(' · ')}</p>` : ''}
-        <div class="rt-cardbtns"><button type="button" class="rt-addinfo" data-rate-edit>✏️ Add info</button><button type="button" class="rt-open" data-rate-open="${attr(r.id)}">Open full lead ›</button></div>
+        <div class="rt-cardbtns"><button type="button" class="rt-addinfo" data-rate-edit>✏️ Add info</button><button type="button" class="rt-addinfo" data-rate-tip>📝 Note for research</button><button type="button" class="rt-open" data-rate-open="${attr(r.id)}">Open full lead ›</button></div>
       </div>
+      ${s.tip ? rateTipFormHtml(r) : ''}
       ${s.edit ? rateEditHtml(r) : ''}
     </article>
     <div class="rt-rate">
@@ -9781,6 +9784,7 @@ async function rateAct(act) {
   const s = rateState();
   if (s.busy) return;
   s.edit = false;
+  s.tip = false;
   const id = (document.querySelector('.rt-card') || {}).getAttribute && document.querySelector('.rt-card').getAttribute('data-rate-id');
   const r = id && (state.leads || []).find((x) => x.id === id);
   if (!r) return;
@@ -9824,17 +9828,21 @@ function wireLeadRate() {
   wireLeadImageErrors();
   const s = rateState();
   root.addEventListener('submit', (e) => {
+    const tf = e.target.closest('[data-rate-tip-form]');
+    if (tf) { e.preventDefault(); rateTipSave(tf); return; }
     const f = e.target.closest('[data-rate-edit-form]');
     if (!f) return;
     e.preventDefault();
     rateEditSave(f);
   });
   root.addEventListener('click', (e) => {
-    const t = e.target.closest('[data-rate-edit], [data-rate-edit-cancel], [data-rate-tab], [data-rate-pick], [data-rate-act], [data-rate-focus], [data-rate-unfocus], [data-rate-prev], [data-rate-open]');
+    const t = e.target.closest('[data-rate-tip], [data-rate-tip-cancel], [data-rate-edit], [data-rate-edit-cancel], [data-rate-tab], [data-rate-pick], [data-rate-act], [data-rate-focus], [data-rate-unfocus], [data-rate-prev], [data-rate-open]');
     if (!t) return;
-    if (t.hasAttribute('data-rate-edit')) { s.edit = !s.edit; render(); const f = document.querySelector('.rt-edit'); if (f) f.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
+    if (t.hasAttribute('data-rate-tip')) { s.tip = !s.tip; s.edit = false; render(); const f = document.querySelector('[data-rate-tip-form] textarea'); if (f) { f.scrollIntoView({ block: 'center', behavior: 'smooth' }); f.focus(); } return; }
+    if (t.hasAttribute('data-rate-tip-cancel')) { s.tip = false; render(); return; }
+    if (t.hasAttribute('data-rate-edit')) { s.tip = false; s.edit = !s.edit; render(); const f = document.querySelector('.rt-edit'); if (f) f.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
     if (t.hasAttribute('data-rate-edit-cancel')) { s.edit = false; render(); return; }
-    if (t.hasAttribute('data-rate-tab')) { s.edit = false; s.tab = t.getAttribute('data-rate-tab'); s.focus = ''; s.pick = 0; render(); return; }
+    if (t.hasAttribute('data-rate-tab')) { s.edit = false; s.tip = false; s.tab = t.getAttribute('data-rate-tab'); s.focus = ''; s.pick = 0; render(); return; }
     if (t.hasAttribute('data-rate-pick')) {
       const n = Number(t.getAttribute('data-rate-pick'));
       s.pick = s.pick === n ? 0 : n;
@@ -9922,6 +9930,53 @@ async function rateEditSave(form) {
   }
   if (changed.length && !(await rateSave(r, patchData, 'Lead Rating: added info — ' + changed.join(', ')))) return;
   s.edit = false;
+  render();
+}
+
+/*  Notes for the researcher: Max jots what he knows or wants checked
+    ("Luke Geiger played last year, ABMC did production, Heath was the
+    contact - check the location"). Saving queues the lead for the next
+    research run, which sorts the facts into the lead, does the checks and
+    writes a reply back onto the note.                                   */
+function leadTipsHtml(r) {
+  const tips = (r.tips || []).slice().sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 3);
+  if (!tips.length) return '';
+  return `<div class="rt-tips">${tips.map((t) => `
+    <div class="rt-tip${t.done ? ' is-done' : ''}">
+      <p><b>📝 You (${esc(leadRelDay(new Date(t.at || Date.now()).toISOString().slice(0, 10)).toLowerCase())}):</b> ${esc(t.text || '')}</p>
+      ${t.done ? `<p class="rt-tip-reply"><b>🔎 Research:</b> ${esc(t.reply || 'Done.')}</p>` : '<p class="rt-tip-wait">Waiting for the next research run</p>'}
+    </div>`).join('')}</div>`;
+}
+function rateTipFormHtml(r) {
+  return `<form class="rt-edit" data-rate-tip-form="${attr(r.id)}">
+    <p class="rt-edit-h">Note for the researcher <span>— what you know, or what to check</span></p>
+    <label><textarea name="tip" rows="4" placeholder="e.g. Luke Geiger played last year. ABMC did production, Heath was the contact. Check the location."></textarea></label>
+    <div class="rt-edit-btns"><button type="button" class="rt-edit-cancel" data-rate-tip-cancel>Cancel</button><button type="submit" class="rt-edit-save">Send to research</button></div>
+  </form>`;
+}
+async function rateTipSave(form) {
+  const s = rateState();
+  const r = (state.leads || []).find((x) => x.id === form.getAttribute('data-rate-tip-form'));
+  const text = String(form.elements.tip.value || '').trim().slice(0, 1500);
+  if (!r || !text) { s.tip = false; render(); return; }
+  const tip = { at: Date.now(), text, done: false, reply: '' };
+  s.busy = true;
+  try {
+    const e = { at: Date.now(), text: 'Note for research: ' + text.slice(0, 200) };
+    const { doc, setDoc, arrayUnion } = fb.f;
+    await setDoc(doc(fb.db, 'leads', r.id), { tips: arrayUnion(tip), needsResearch: true, updatedAt: Date.now(), history: arrayUnion(e) }, { merge: true });
+    r.tips = [...(r.tips || []), tip];
+    r.needsResearch = true;
+    r.history = [...(r.history || []), e];
+  } catch (err) {
+    console.error('tip save', err);
+    const h = form.querySelector('.rt-edit-h span');
+    if (h) { h.textContent = '— could not save, check your connection'; h.style.color = '#dc2626'; }
+    s.busy = false;
+    return;
+  }
+  s.busy = false;
+  s.tip = false;
   render();
 }
 
