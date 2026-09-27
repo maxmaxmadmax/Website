@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=184';
+} from './firebase-config.js?v=185';
 
-import { expandKit } from './kit.js?v=184';
+import { expandKit } from './kit.js?v=185';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -7691,6 +7691,7 @@ function leadCalendarHtml() {
   const byMonth = {};
   const byWeek = {};
   let undated = 0;
+  const wonWeek = {};   // won jobs per week - a gold trophy sits above that week's dots
   leadFiltered(true).forEach((r) => {
     const k = leadMonthKey(r);
     if (!k) { undated++; return; }
@@ -7698,6 +7699,7 @@ function leadCalendarHtml() {
     (byMonth[k] = byMonth[k] || []).push(p);
     const wk = leadWeekKey(r);
     if (wk) (byWeek[wk] = byWeek[wk] || []).push(p);
+    if (wk && r.stage === 'won') wonWeek[wk] = (wonWeek[wk] || 0) + 1;
   });
 
   const rank = { high: 0, medium: 1, low: 2 };
@@ -7732,7 +7734,7 @@ function leadCalendarHtml() {
       const breakdown = ['high', 'medium', 'low'].filter((p) => cnt[p]).map((p) => `${cnt[p]} ${p}`).join(', ');
       return `<button type="button" class="lead-wslot${on ? ' is-sel' : ''}${isToday ? ' is-today' : ''}${list.length ? '' : ' is-empty'}"
                 data-lead-week="${w.key}" aria-pressed="${on}"
-                title="Week ${fy.week} (${fy.label}) · ${range}${isToday ? ' · this week' : ''} · ${list.length} dated lead${list.length === 1 ? '' : 's'}${breakdown ? ' (' + breakdown + ')' : ''}"><span class="lead-wslot-no">${fy.week}</span><span class="lead-wslot-dots">${dots || '<i class="lead-cdot is-empty"></i><i class="lead-cdot is-empty"></i><i class="lead-cdot is-empty"></i>'}</span></button>`;
+                title="Week ${fy.week} (${fy.label}) · ${range}${isToday ? ' · this week' : ''}${wonWeek[w.key] ? ' · ' + wonWeek[w.key] + ' won' : ''} · ${list.length} dated lead${list.length === 1 ? '' : 's'}${breakdown ? ' (' + breakdown + ')' : ''}"><span class="lead-wslot-no">${fy.week}</span><span class="lead-wslot-dots">${wonWeek[w.key] ? '<i class="lead-ctrophy" aria-label="Won">🏆</i>' : ''}${dots || '<i class="lead-cdot is-empty"></i><i class="lead-cdot is-empty"></i><i class="lead-cdot is-empty"></i>'}</span></button>`;
     }).join('');
 
     cells += `
