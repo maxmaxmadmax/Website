@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=176';
+} from './firebase-config.js?v=177';
 
-import { expandKit } from './kit.js?v=176';
+import { expandKit } from './kit.js?v=177';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -7336,6 +7336,7 @@ function blankLead(type) {
     followUp: '', target: false, contacts: [], files: [], history: [], km: '',
     organiser: '', startTime: '',
     imageUrl: '', imageBroken: false,
+    eoiDate: '', eoiNote: '', recurrence: '', lastEdition: '', venueSetup: '', power: '',
   };
 }
 
@@ -7543,6 +7544,16 @@ function leadFollowState(r) {
   const wkIso = wk.getFullYear() + '-' + String(wk.getMonth() + 1).padStart(2, '0') + '-' + String(wk.getDate()).padStart(2, '0');
   return fu <= wkIso ? 'due' : '';
 }
+
+/*  A published supplier deadline (EOI / tender): when it closes and how
+    close that is. null when there isn't one.                           */
+function leadEoi(r) {
+  const d = String(r.eoiDate || '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return null;
+  const days = Math.round((new Date(d + 'T00:00:00') - new Date(leadTodayIso() + 'T00:00:00')) / 86400000);
+  return { date: d, days, state: days < 0 ? 'closed' : days <= 30 ? 'soon' : 'later', note: String(r.eoiNote || '').trim() };
+}
+const LEAD_POWER = { mains: 'Mains power on site', generator: 'Generator needed', unknown: 'Power unknown' };
 
 /*  Region, read from the venue / town / name. North QLD focused.        */
 const LEAD_REGIONS = [
@@ -8558,7 +8569,7 @@ function renderLeadRows() {
       <td class="lead-catcol">${r.category ? `<span class="lead-cat">${esc(r.category)}</span>` : `<span class="lead-cat is-type">${esc(LEAD_TYPES[r.type] || 'Lead')}</span>`}</td>
       <td>${leadFitRater(r.rating, true, r.id)}</td>
       <td class="lead-num">${leadValueHtml(r)}</td>
-      <td>${leadNextActHtml(r)}${fu ? `<span class="lead-fu is-${fu}">${fu === 'overdue' ? 'Overdue ' : 'Due '}${esc(fmtLeadDate(String(r.followUp).slice(0, 10)))}</span>` : ''}</td>
+      <td>${leadNextActHtml(r)}${fu ? `<span class="lead-fu is-${fu}">${fu === 'overdue' ? 'Overdue ' : 'Due '}${esc(fmtLeadDate(String(r.followUp).slice(0, 10)))}</span>` : ''}${(() => { const e = leadEoi(r); return e && e.state !== 'closed' ? `<span class="lead-eoi is-${e.state}" title="${attr(e.note || 'Supplier deadline')}">EOI closes ${esc(fmtLeadDate(e.date))}</span>` : ''; })()}</td>
       <td class="ad-cell-right"><button type="button" class="lead-more" data-open-lead="${attr(r.id)}" aria-label="Open ${attr(name)}">···</button></td>
     </tr>`;
   }).join('')
@@ -8813,6 +8824,7 @@ function leadOverviewHtml(r, doc) {
   const fu = leadFollowState(r);
   const fuDate = /^\d{4}-\d{2}-\d{2}/.test(String(r.followUp || '')) ? fmtLeadDate(String(r.followUp).slice(0, 10)) : '';
   const about = leadAbout(r, doc);
+  const eoi = leadEoi(r);
 
   return `
     <div class="lead-actions">
@@ -8830,7 +8842,8 @@ function leadOverviewHtml(r, doc) {
       </div>
     </div>
 
-    ${fuDate || r.nextAction ? `<div class="lead-next${fu === 'overdue' ? ' is-overdue' : ''}">
+    ${fuDate || r.nextAction || eoi ? `<div class="lead-next${fu === 'overdue' || (eoi && eoi.state === 'soon') ? ' is-overdue' : ''}">
+      ${eoi ? `<p title="${attr(eoi.note)}"><strong>Supplier deadline:</strong> ${esc(fmtLeadDate(eoi.date))}${eoi.state === 'closed' ? ' (closed)' : eoi.state === 'soon' ? ` — ${eoi.days} day${eoi.days === 1 ? '' : 's'} left` : ''}${eoi.note ? ' · ' + esc(eoi.note) : ''}</p>` : ''}
       ${fuDate ? `<p><strong>Follow up:</strong> ${esc(fuDate)}${fu === 'overdue' ? ' <span class="lead-fu is-overdue">overdue</span>' : fu === 'due' ? ' <span class="lead-fu is-due">this week</span>' : ''}</p>` : ''}
       ${r.nextAction ? `<p class="lead-next-note" title="${attr(r.nextAction)}"><strong>Next step:</strong> ${esc(r.nextAction)}</p>` : ''}
     </div>` : ''}
@@ -8857,7 +8870,12 @@ function leadOverviewHtml(r, doc) {
       : '<p class="lead-ov-empty">No requirements yet — add them under Details.</p>'}
     ${r.whyFit ? `<p class="lead-fit-why">${esc(r.whyFit)}</p>` : ''}
 
-    ${r.incumbent ? `<p class="lead-supplier" title="${attr(r.incumbent)}"><strong>Current / previous supplier:</strong> ${esc(r.incumbent)}</p>` : ''}`;
+    ${[r.venueSetup, LEAD_POWER[r.power], r.recurrence, r.incumbent].some(Boolean) ? `<p class="lead-facts">
+      ${r.venueSetup ? `<span title="Venue setup">🏟 ${esc(r.venueSetup)}</span>` : ''}
+      ${LEAD_POWER[r.power] ? `<span class="is-power-${r.power}" title="Power">⚡ ${esc(LEAD_POWER[r.power])}</span>` : ''}
+      ${r.recurrence ? `<span title="When it runs">🔁 ${esc(r.recurrence)}</span>` : ''}
+      ${r.incumbent ? `<span title="${attr(r.incumbent)}">🎤 Supplier: ${esc(r.incumbent)}</span>` : ''}
+    </p>` : ''}`;
 }
 
 /* ---- contacts: the main contact plus any number of others ---- */
@@ -8878,8 +8896,11 @@ function leadOtherContactsHtml(r) {
 /* ---- history: the timeline ---- */
 function leadHistoryHtml(r) {
   const items = leadTimeline(r);
-  if (!items.length) return '<p class="lead-ov-empty">Nothing recorded yet.</p>';
-  return `<ol class="lead-tl">${items.map((h) => {
+  const past = r.lastEdition || r.recurrence
+    ? `<div class="lead-lastyr">${r.lastEdition ? `<p><strong>Last edition:</strong> ${esc(r.lastEdition)}</p>` : ''}${r.recurrence ? `<p><strong>Runs:</strong> ${esc(r.recurrence)}</p>` : ''}</div>`
+    : '';
+  if (!items.length) return past + '<p class="lead-ov-empty">Nothing recorded yet.</p>';
+  return past + `<ol class="lead-tl">${items.map((h) => {
     const d = new Date(h.at);
     const when = d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
       + ' · ' + d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' });
@@ -9072,6 +9093,18 @@ function leadDetailHtml() {
           <input class="ad-input" type="number" min="0" step="1" data-lf="km" value="${attr(r.km)}" placeholder="${attr(leadKm(r) == null ? 'e.g. 340' : 'auto: ' + leadKm(r))}"></label>
         <label class="ad-field inv-span2"><span>Current / previous supplier</span>
           <input class="ad-input" data-lf="incumbent" value="${attr(r.incumbent)}" placeholder="Who does their AV now, if known"></label>
+        <label class="ad-field"><span>Supplier deadline (EOI / tender)</span>
+          <input class="ad-input" type="date" data-lf="eoiDate" value="${attr(r.eoiDate)}"></label>
+        <label class="ad-field"><span>Deadline note</span>
+          <input class="ad-input" data-lf="eoiNote" value="${attr(r.eoiNote)}" placeholder="e.g. Council EOI via VendorPanel"></label>
+        <label class="ad-field inv-span2"><span>Runs (recurring pattern)</span>
+          <input class="ad-input" data-lf="recurrence" value="${attr(r.recurrence)}" placeholder="e.g. 2nd Saturday of October, every year"></label>
+        <label class="ad-field inv-span2"><span>Last year's edition</span>
+          <input class="ad-input" data-lf="lastEdition" value="${attr(r.lastEdition)}" placeholder="e.g. Sat 11 Oct 2025 · ~2,800 people · lineup: …"></label>
+        <label class="ad-field"><span>Venue setup</span>
+          <input class="ad-input" data-lf="venueSetup" value="${attr(r.venueSetup)}" placeholder="e.g. Outdoor showground, marquee"></label>
+        <label class="ad-field"><span>Power</span>
+          <select class="ad-select" data-lf="power">${[['', '—'], ['mains', 'Mains power on site'], ['generator', 'Generator needed'], ['unknown', 'Unknown']].map(([v, l]) => `<option value="${v}"${(r.power || '') === v ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
         <label class="ad-field inv-span2"><span>Ticket / listing link</span>
           <input class="ad-input" data-lf="ticketUrl" value="${attr(r.ticketUrl)}" placeholder="Eventbrite / Humanitix / etc."></label>
         <label class="ad-field inv-span2"><span>Photo link</span>
@@ -9297,6 +9330,9 @@ function leadClean(r) {
     target: !!r.target,
     organiser: s(r.organiser, 160), startTime: s(r.startTime, 120),
     imageUrl: /^https?:\/\//i.test(s(r.imageUrl, 1000)) ? s(r.imageUrl, 1000) : '',
+    eoiDate: /^\d{4}-\d{2}-\d{2}$/.test(s(r.eoiDate, 10)) ? s(r.eoiDate, 10) : '', eoiNote: s(r.eoiNote, 300),
+    recurrence: s(r.recurrence, 160), lastEdition: s(r.lastEdition, 400), venueSetup: s(r.venueSetup, 200),
+    power: ['mains', 'generator', 'unknown'].includes(r.power) ? r.power : '',
     km: String(r.km == null ? '' : r.km).trim() === '' ? '' : Math.max(0, Math.round(Number(r.km) || 0)),
     contacts: (Array.isArray(r.contacts) ? r.contacts : [])
       .map((c) => ({ name: s(c.name, 120), role: s(c.role, 80), phone: s(c.phone, 40), email: s(c.email, 200) }))
@@ -9320,6 +9356,7 @@ function leadChanges(prev, next) {
   if ((prev.email || '') !== next.email || (prev.phone || '') !== next.phone) out.push('Contact details updated');
   if ((prev.lastContacted || '') !== next.lastContacted && next.lastContacted) out.push(`Marked contacted on ${fmtLeadDate(next.lastContacted)}`);
   if ((prev.imageUrl || '') !== next.imageUrl) out.push(next.imageUrl ? 'Photo link updated' : 'Photo link removed');
+  if ((prev.eoiDate || '') !== next.eoiDate && next.eoiDate) out.push(`Supplier deadline noted: ${fmtLeadDate(next.eoiDate)}`);
   return out;
 }
 
