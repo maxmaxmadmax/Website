@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=192';
+} from './firebase-config.js?v=193';
 
-import { expandKit } from './kit.js?v=192';
+import { expandKit } from './kit.js?v=193';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -7527,8 +7527,8 @@ function leadChipMatch(r, chip) {
   switch (chip) {
     case 'all': return true;
     case 'targets': return !!r.target;
-    case 'hot': case 'high': return leadPriority(r) === 'high';
-    case 'medium': case 'low': return leadPriority(r) === chip;
+    case 'hot': case 'high': return !!Number(r.rating) && leadPriority(r) === 'high';
+    case 'medium': case 'low': return !!Number(r.rating) && leadPriority(r) === chip;
     case 'needs': return leadNeedsContact(r);
     case 'stale': return !!r.imageBroken;
     case 'followups': return leadFollowState(r) !== '';
@@ -7702,10 +7702,13 @@ function leadCalendarHtml() {
   leadFiltered(true).forEach((r) => {
     const k = leadMonthKey(r);
     if (!k) { undated++; return; }
-    const p = leadPriority(r);
-    (byMonth[k] = byMonth[k] || []).push(p);
     const wk = leadWeekKey(r);
-    if (wk) (byWeek[wk] = byWeek[wk] || []).push(p);
+    // only leads Max has rated get a dot - imported heat doesn't count
+    if (Number(r.rating)) {
+      const p = leadPriority(r);
+      (byMonth[k] = byMonth[k] || []).push(p);
+      if (wk) (byWeek[wk] = byWeek[wk] || []).push(p);
+    }
     if (wk && r.stage === 'won') wonWeek[wk] = (wonWeek[wk] || 0) + 1;
   });
 
@@ -7779,7 +7782,7 @@ function leadCalendarHtml() {
       <span><i class="lead-dot is-high"></i> High (${tally.high})</span>
       <span><i class="lead-dot is-medium"></i> Medium (${tally.medium})</span>
       <span><i class="lead-dot is-low"></i> Low (${tally.low})</span>
-      <span class="lead-cal-undated">Numbers = leads that week (exact dates: ${dated}) · No month yet: ${undated}</span>
+      <span class="lead-cal-undated">Numbers = leads you have rated that week (${dated}) · No month yet: ${undated}</span>
       ${state.leadCalOffset ? '<button type="button" class="lead-cal-link" data-lead-cal="today">Back to this month</button>' : ''}
       ${picked ? `<button type="button" class="lead-cal-clear" data-lead-clear="1">Showing ${esc(picked)} &times;</button>` : ''}
     </div>`;
@@ -8170,7 +8173,7 @@ function leadChipCounts() {
   };
   rows.forEach((r) => {
     const st = r.stage || 'new';
-    const hot = leadPriority(r) === 'high';
+    const hot = !!Number(r.rating) && leadPriority(r) === 'high';
     if (r.target) c.targets++;
     if (r.imageBroken) c.stale++;
     if (hot) { c.hot++; if ((r.createdAt || 0) >= monthStart) c.hotNew++; }
