@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=189';
+} from './firebase-config.js?v=190';
 
-import { expandKit } from './kit.js?v=189';
+import { expandKit } from './kit.js?v=190';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -8828,6 +8828,9 @@ function leadOvItem(icon, value, label) {
 /*  "About the event": the opening of the research notes (they lead with
     what the event is), else the why-it-fits line.                        */
 function leadAbout(r, doc) {
+  // the research's plain-English 'what is this event' wins when there is one
+  const sum = String(r.summary || (doc && doc.summary) || '').trim();
+  if (sum) return sum;
   const notes = String((doc && doc.enrichNotes) || '').trim();
   if (notes) {
     const parts = notes.match(/[^.!?]+[.!?]+/g) || [notes];
@@ -8884,6 +8887,7 @@ function leadOverviewHtml(r, doc) {
 
     <h3 class="lead-sec">About the Event</h3>
     ${about ? `<p class="lead-about" title="${attr(about)}">${esc(about)}</p>` : ''}
+    ${String(r.pitch || '').trim() ? `<p class="lead-pitch" title="${attr(r.pitch)}"><b>Worth it?</b> ${esc(r.pitch)}</p>` : ''}
     <div class="lead-ov-grid">
       <div>
         ${leadOvItem(LEAD_OV_SVG.users, r.crowd ? esc(r.crowd) : dash, 'Expected attendance')}
@@ -9603,11 +9607,18 @@ function rateCardHtml(r, pos, total) {
   const km = leadKmText(r);
   const v = leadValue(r);
   const org = leadOrganiser(r);
-  const about = String(r.whyFit || r.needs || r.enrichNotes || r.notes || '').split('\n— Earlier')[0].trim();
+  const about = String(r.summary || r.whyFit || r.needs || r.enrichNotes || r.notes || '').split('\n— Earlier')[0].trim();
+  // the brief, in the same shape as Claude's written answer about a lead:
+  // When / Where / Organiser / Size / Runs every year / Entertainment-AV
+  const soon = leadHasExactDate(r) && !leadIsPast(r) && (new Date(r.eventDate.slice(0, 10) + 'T00:00:00') - new Date()) < 21 * 864e5;
+  const contacts = [r.email, r.phone].map((x) => String(x || '').trim()).filter(Boolean).join(' · ');
   const facts = [
-    ['Organiser', org], ['Crowd', r.crowd], ['Needs', r.needs], ['Venue setup', r.venueSetup],
-    ['Power', r.power && r.power !== 'unknown' ? (r.power === 'generator' ? 'Generator needed' : 'Mains on site') : ''],
-    ['Runs', r.recurrence], ['Last year', r.lastEdition], ['Supplier now', r.incumbent],
+    ['When', [when, r.startTime, leadIsPast(r) ? 'Already happened — next edition' : soon ? 'Under 3 weeks away — likely too late this year' : ''].filter(Boolean).join(' · ')],
+    ['Where', [where, r.venueSetup, km].filter(Boolean).join(' · ')],
+    ['Organiser', [org, contacts].filter(Boolean).join(' — ')],
+    ['Size', [r.crowd, r.budget].filter(Boolean).join(' · ')],
+    ['Runs', [r.recurrence, r.lastEdition ? 'Last year: ' + r.lastEdition : ''].filter(Boolean).join(' · ')],
+    ['Entertainment/AV', [r.incumbent, r.needs ? 'Needs: ' + r.needs : '', r.power && r.power !== 'unknown' ? (r.power === 'generator' ? 'Generator needed' : 'Mains power') : ''].filter(Boolean).join(' · ')],
     ['Supplier deadline', r.eoiDate ? fmtLeadDate(r.eoiDate) + (r.eoiNote ? ' — ' + r.eoiNote : '') : ''],
   ].filter(([, x]) => String(x || '').trim());
   const miss = rateMissing(r);
@@ -9636,8 +9647,9 @@ function rateCardHtml(r, pos, total) {
           <div><b>${v ? leadDollars(v.cents) : '—'}</b><span>${v && v.src === 'quote' ? 'Quote value' : 'Est. value'}</span></div>
         </div>
         <div class="rt-links">${leadWebIconsHtml(r)}${leadContactIconsHtml(r)}</div>
-        ${about ? `<p class="rt-about">${esc(about.length > 320 ? about.slice(0, 317) + '…' : about)}</p>` : ''}
-        ${facts.length ? `<dl class="rt-facts">${facts.map(([k, x]) => `<div><dt>${esc(k)}</dt><dd>${esc(x)}</dd></div>`).join('')}</dl>` : ''}
+        ${about ? `<p class="rt-about"><b>${esc(r.eventName || r.title || '')}</b> — ${esc(about.length > 320 ? about.slice(0, 317) + '…' : about)}</p>` : ''}
+        ${facts.length ? `<ul class="rt-brief">${facts.map(([k, x]) => `<li><b>${esc(k)}:</b> ${esc(x)}</li>`).join('')}</ul>` : ''}
+        ${String(r.pitch || '').trim() ? `<p class="rt-pitch"><b>Worth it for you?</b> ${esc(r.pitch)}</p>` : ''}
         ${miss.length ? `<p class="rt-miss">Missing: ${miss.map(esc).join(' · ')}</p>` : ''}
         <div class="rt-cardbtns"><button type="button" class="rt-addinfo" data-rate-edit>✏️ Add info</button><button type="button" class="rt-open" data-rate-open="${attr(r.id)}">Open full lead ›</button></div>
       </div>
@@ -9828,6 +9840,7 @@ const RATE_EDIT_FIELDS = [
   ['organiser', 'Organiser', 'text'], ['crowd', 'Crowd', 'text', 'e.g. ~3,000'], ['estValue', 'Est. value ($)', 'number'],
   ['contactName', 'Contact person', 'text'], ['phone', 'Phone', 'tel'], ['email', 'Email', 'email'],
   ['website', 'Website', 'url', 'https://'], ['socials', 'Social links', 'text', 'Facebook / Instagram links'],
+  ['summary', 'What is this event?', 'textarea'], ['pitch', 'Worth it for us?', 'textarea'],
   ['needs', 'What they need', 'text'], ['incumbent', 'Current supplier', 'text'], ['notes', 'Notes', 'textarea'],
 ];
 function rateEditHtml(r) {
