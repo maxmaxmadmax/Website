@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=197';
+} from './firebase-config.js?v=198';
 
-import { expandKit } from './kit.js?v=197';
+import { expandKit } from './kit.js?v=198';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -9617,11 +9617,15 @@ function rateSortKey(r) {
 }
 function rateDeck() {
   const s = rateState();
-  const list = (state.leads || []).filter((r) => !Number(r.rating) && !r.needsResearch)
+  // a lead Max just left a note on stays on screen until he picks an action
+  const list = (state.leads || []).filter((r) => (!Number(r.rating) && !r.needsResearch) || r.id === s.stay)
     .sort((a, b) => rateSortKey(a).localeCompare(rateSortKey(b)) || String(a.title || '').localeCompare(String(b.title || '')));
   // "Next" without a rating sends a lead to the back for this session
   const skipped = list.filter((r) => s.skip.includes(r.id));
-  return list.filter((r) => !s.skip.includes(r.id)).concat(skipped);
+  const out = list.filter((r) => !s.skip.includes(r.id)).concat(skipped);
+  const at = out.findIndex((r) => r.id === s.stay);
+  if (at > 0) out.unshift(out.splice(at, 1)[0]);
+  return out;
 }
 function rateWaiting() { return (state.leads || []).filter((r) => r.needsResearch); }
 function rateRated() { return (state.leads || []).filter((r) => Number(r.rating)).sort((a, b) => rateSortKey(a).localeCompare(rateSortKey(b))); }
@@ -9785,6 +9789,7 @@ async function rateAct(act) {
   if (s.busy) return;
   s.edit = false;
   s.tip = false;
+  s.stay = '';
   const id = (document.querySelector('.rt-card') || {}).getAttribute && document.querySelector('.rt-card').getAttribute('data-rate-id');
   const r = id && (state.leads || []).find((x) => x.id === id);
   if (!r) return;
@@ -9977,6 +9982,7 @@ async function rateTipSave(form) {
   }
   s.busy = false;
   s.tip = false;
+  if (!s.focus) s.stay = r.id;
   render();
 }
 
