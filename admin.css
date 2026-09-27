@@ -3546,3 +3546,8 @@ body.ad-fit .ad-main{ min-height:0; }
 .lead-fit-why{ margin-top:4px; }
 .lead-pane .lead-actions{ margin-bottom:6px; }
 .lead-facts{ margin-top:4px; }
+
+/* bigger event photos: table thumbnails + panel banner when a photo exists */
+.lead-tile.has-img{ width:112px; height:64px; border-radius:8px; }
+.ad-desk.is-leads .lead-tile.has-img{ width:112px; height:64px; }
+.lead-hero:has(.lead-hero-img){ height:120px; }
