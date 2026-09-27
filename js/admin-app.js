@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=198';
+} from './firebase-config.js?v=199';
 
-import { expandKit } from './kit.js?v=198';
+import { expandKit } from './kit.js?v=199';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -9662,6 +9662,8 @@ function rateCardHtml(r, pos, total) {
     ['🎸 Live music', r.liveMusic],
     ['Entertainment/AV', [r.incumbent, r.needs ? 'Needs: ' + r.needs : '', r.power && r.power !== 'unknown' ? (r.power === 'generator' ? 'Generator needed' : 'Mains power') : ''].filter(Boolean).join(' · ')],
     ['Supplier deadline', r.eoiDate ? fmtLeadDate(r.eoiDate) + (r.eoiNote ? ' — ' + r.eoiNote : '') : ''],
+    ...(r.tips || []).filter((t) => t && !t.done).map((t) => ['📝 Your note', (t.text || '') + ' (waiting for research)']),
+    ...(r.tips || []).filter((t) => t && t.done && t.reply).slice(-3).map((t) => ['🔎 From your note', t.reply]),
   ].filter(([, x]) => String(x || '').trim());
   const miss = rateMissing(r);
   const pick = s.pick || Number(r.rating) || 0;
@@ -9694,7 +9696,6 @@ function rateCardHtml(r, pos, total) {
         ${about ? `<p class="rt-about"><b>${esc(r.eventName || r.title || '')}</b> — ${esc(about.length > 320 ? about.slice(0, 317) + '…' : about)}</p>` : ''}
         ${facts.length ? `<ul class="rt-brief">${facts.map(([k, x]) => `<li><b>${esc(k)}:</b> ${esc(x)}</li>`).join('')}</ul>` : ''}
         ${String(r.pitch || '').trim() ? `<p class="rt-pitch"><b>Worth it for you?</b> ${esc(r.pitch)}</p>` : ''}
-        ${leadTipsHtml(r)}
         ${miss.length ? `<p class="rt-miss">Missing: ${miss.map(esc).join(' · ')}</p>` : ''}
         <div class="rt-cardbtns"><button type="button" class="rt-addinfo" data-rate-edit>✏️ Add info</button><button type="button" class="rt-addinfo" data-rate-tip>📝 Note for research</button><button type="button" class="rt-open" data-rate-open="${attr(r.id)}">Open full lead ›</button></div>
       </div>
