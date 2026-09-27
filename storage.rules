@@ -39,6 +39,14 @@ service firebase.storage {
       allow delete: if isAdmin();
     }
 
+    // Lead files - briefs, event maps, stage plots attached to a lead in the
+    // admin lead generator. Private: admins only, any common file type,
+    // capped in size.
+    match /lead-files/{leadId}/{allPaths=**} {
+      allow read, delete: if isAdmin();
+      allow write: if isAdmin() && request.resource.size < 20 * 1024 * 1024;
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }
