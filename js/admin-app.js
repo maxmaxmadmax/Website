@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=172';
+} from './firebase-config.js?v=173';
 
-import { expandKit } from './kit.js?v=172';
+import { expandKit } from './kit.js?v=173';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -7334,6 +7334,7 @@ function blankLead(type) {
     lastContacted: '', notes: '', importBatch: '',
     estValueCents: 0,
     followUp: '', target: false, contacts: [], files: [], history: [], km: '',
+    organiser: '', startTime: '',
   };
 }
 
@@ -7504,7 +7505,7 @@ function leadFiltered(ignoreMonth) {
     if (!ignoreMonth && state.leadMonth && leadMonthKey(r) !== state.leadMonth) return false;
     if (!ignoreMonth && state.leadWeek && leadWeekKey(r) !== state.leadWeek) return false;
     if (!needle) return true;
-    return [r.title, r.contactName, r.decisionMaker, r.eventName, r.town, r.venue, r.email, r.phone,
+    return [r.title, r.organiser, r.contactName, r.decisionMaker, r.eventName, r.town, r.venue, r.email, r.phone,
       r.category, r.nextAction, r.incumbent, ...(r.contacts || []).map((c) => c.name + ' ' + c.email)]
       .filter(Boolean).join(' ').toLowerCase().includes(needle);
   });
@@ -7708,11 +7709,14 @@ function leadCalendarHtml() {
       const range = weekRangeLabel(w.monday);
       const on = state.leadWeek === w.key;
       const isToday = w.key === today.key;
-      const dots = list.slice(0, 3).map((p) => `<i class="lead-dot is-${p}"></i>`).join('')
-        + (list.length > 3 ? '<em class="lead-wslot-more">+</em>' : '');
+      const cnt = { high: 0, medium: 0, low: 0 };
+      list.forEach((p) => { cnt[p]++; });
+      const dots = ['high', 'medium', 'low'].filter((p) => cnt[p])
+        .map((p) => `<i class="lead-cdot is-${p}">${cnt[p]}</i>`).join('');
+      const breakdown = ['high', 'medium', 'low'].filter((p) => cnt[p]).map((p) => `${cnt[p]} ${p}`).join(', ');
       return `<button type="button" class="lead-wslot${on ? ' is-sel' : ''}${isToday ? ' is-today' : ''}${list.length ? '' : ' is-empty'}"
                 data-lead-week="${w.key}" aria-pressed="${on}"
-                title="Week ${fy.week} (${fy.label}) · ${range}${isToday ? ' · this week' : ''} · ${list.length} dated lead${list.length === 1 ? '' : 's'}">${dots || '<i class="lead-wslot-tick"></i>'}</button>`;
+                title="Week ${fy.week} (${fy.label}) · ${range}${isToday ? ' · this week' : ''} · ${list.length} dated lead${list.length === 1 ? '' : 's'}${breakdown ? ' (' + breakdown + ')' : ''}">${dots || '<i class="lead-wslot-tick"></i>'}</button>`;
     }).join('');
 
     cells += `
@@ -7750,7 +7754,7 @@ function leadCalendarHtml() {
       <span><i class="lead-dot is-high"></i> High (${tally.high})</span>
       <span><i class="lead-dot is-medium"></i> Medium (${tally.medium})</span>
       <span><i class="lead-dot is-low"></i> Low (${tally.low})</span>
-      <span class="lead-cal-undated">Dots sit in their week (exact dates: ${dated}) · No month yet: ${undated}</span>
+      <span class="lead-cal-undated">Numbers = leads that week (exact dates: ${dated}) · No month yet: ${undated}</span>
       ${state.leadCalOffset ? '<button type="button" class="lead-cal-link" data-lead-cal="today">Back to this month</button>' : ''}
       ${picked ? `<button type="button" class="lead-cal-clear" data-lead-clear="1">Showing ${esc(picked)} &times;</button>` : ''}
     </div>`;
@@ -8416,6 +8420,49 @@ async function setLeadFit(id, n) {
   }
 }
 
+/*  The organiser (club / committee / company): Max's own field if set,
+    else read off the contact - "Helen Daley (Bowen Turf Club)" or
+    "Andrew Watts — Longreach Jockey Club" give the organisation; a plain
+    name is shown as it is.                                               */
+function leadOrganiser(r) {
+  const own = String(r.organiser || '').trim();
+  if (own) return own;
+  const c = String(r.contactName || '').trim();
+  if (!c) return '';
+  const paren = c.match(/\(([^()]+)\)\s*$/);
+  if (paren) {
+    // "(Bowen Turf Club)" is the organisation; "(functions/events)", "(Sec)"
+    // or "(organiser)" is a role, so the name in front of it is used instead
+    const inside = paren[1].trim();
+    const role = /^(pres|president|sec|secretary|treasurer|chair|organi[sz]er|manager|owner|office|events?|functions?|admin|ops|contact|booking)/i;
+    if (/^[A-Z]/.test(inside) && !role.test(inside)) return inside;
+    return c.slice(0, paren.index).trim() || inside;
+  }
+  const parts = c.split(/\s[—–-]\s/);
+  return parts.length > 1 ? parts[parts.length - 1].trim() : c;
+}
+
+/*  Start times: Max's own field if set, else the times written into the
+    date text ("Sat 31 Oct 2026 — gates 5pm, main event 7pm" -> "gates 5pm,
+    main event 7pm"; "Sat 17 Oct 2026, 12–5pm" -> "12–5pm").              */
+function leadStartTime(r) {
+  const own = String(r.startTime || '').trim();
+  if (own) return own;
+  const t = String(r.dateText || '');
+  const m = t.match(/(?:\b[A-Za-z][A-Za-z-]*\s){0,3}\b\d{1,2}(?::\d{2})?\s*(?:[–-]\s*\d{1,2}(?::\d{2})?\s*)?(?:am|pm)\b/gi);
+  return m ? m.map((s) => s.trim()).join(', ') : '';
+}
+
+/*  Website + social pages as small clickable icons (no phone / email). */
+function leadWebIconsHtml(r) {
+  const names = { web: 'Website', facebook: 'Facebook', instagram: 'Instagram', tiktok: 'TikTok', youtube: 'YouTube' };
+  const ic = leadLinks(r).map(({ kind, x }) => {
+    const label = x.hostname.replace(/^www\./, '') + (x.pathname.length > 1 ? x.pathname.replace(/\/$/, '') : '');
+    return `<a class="lead-ic is-${kind}" href="${attr(x.href)}" target="_blank" rel="noopener noreferrer" title="${attr(names[kind] + ': ' + label)}" aria-label="${attr(names[kind] + ': ' + label)}">${LEAD_SVG[kind]}</a>`;
+  });
+  return ic.length ? `<span class="lead-ev-icons">${ic.join('')}</span>` : '';
+}
+
 function renderLeadRows() {
   const host = document.getElementById('lead-rows');
   const foot = document.getElementById('lead-foot');
@@ -8434,15 +8481,21 @@ function renderLeadRows() {
     const km = leadKmText(r);
     const fu = leadFollowState(r);
     const name = r.title || r.eventName || r.contactName || 'Untitled lead';
+    const org = leadOrganiser(r);
+    const time = leadStartTime(r);
     return `
     <tr class="lead-row${state.openLeadId === r.id ? ' is-open' : ''}" data-open-lead="${attr(r.id)}">
       <td class="lead-evcol">
         <div class="lead-ev">
           ${leadCatTile(r)}
-          <span class="lead-ev-name" title="${attr(name)}">${esc(name)}${r.target ? ' <span class="lead-ev-star" title="My target">★</span>' : ''}</span>
+          <span class="lead-ev-text">
+            <span class="lead-ev-name" title="${attr(name)}">${esc(name)}${r.target ? ' <span class="lead-ev-star" title="My target">★</span>' : ''}</span>
+            ${org ? `<span class="lead-ev-org" title="${attr(org)}">${esc(org)}</span>` : ''}
+            ${leadWebIconsHtml(r)}
+          </span>
         </div>
       </td>
-      <td class="lead-when">${when ? `<span class="lead-ico" aria-hidden="true">📅</span>${esc(when)}` : '<span class="ad-cell-muted">—</span>'}</td>
+      <td class="lead-when">${when ? `<span class="lead-ico" aria-hidden="true">📅</span>${esc(when)}` : '<span class="ad-cell-muted">—</span>'}${time && !String(when).includes(time) ? `<span class="lead-time" title="${attr(time)}">${esc(time)}</span>` : ''}</td>
       <td class="lead-where">
         ${where ? `<span class="lead-loc" title="${attr(where)}"><span class="lead-ico" aria-hidden="true">📍</span>${esc(where)}</span>` : '<span class="ad-cell-muted">—</span>'}
         ${km ? `<span class="lead-km">${esc(km)}</span>` : ''}
@@ -8736,7 +8789,7 @@ function leadOverviewHtml(r, doc) {
         ${leadKmText(r) || r.haul ? leadOvItem(LEAD_OV_SVG.road, esc([leadKmText(r), r.haul].filter(Boolean).join(' · ')), 'From Bowen') : ''}
       </div>
       <div>
-        ${leadOvItem(LEAD_OV_SVG.org, r.contactName || r.decisionMaker ? esc(r.contactName || r.decisionMaker) : dash, 'Organiser')}
+        ${leadOvItem(LEAD_OV_SVG.org, leadOrganiser(r) || r.decisionMaker ? esc(leadOrganiser(r) || r.decisionMaker) : dash, 'Organiser')}
         ${web || !socials.length ? leadOvItem(LEAD_SVG.web, web ? a(web.x, short(web.x)) : dash, 'Website') : ''}
         ${socials.length ? leadOvItem(LEAD_SVG[socials[0].kind] || LEAD_SVG.web, socials.map((s) => a(s.x, socialNames[s.kind] || 'Social')).join(' · '), 'Social media') : ''}
         ${leadOvItem(LEAD_SVG.mail, contactBits.length ? contactBits.join('<br>') : dash, 'Contact')}
@@ -8921,6 +8974,8 @@ function leadDetailHtml() {
           <input class="ad-input" type="date" data-lf="eventDate" value="${attr(r.eventDate)}"></label>
         <label class="ad-field"><span>Date as listed</span>
           <input class="ad-input" data-lf="dateText" value="${attr(r.dateText)}" placeholder="e.g. Sat 10 Oct, gates 12pm"></label>
+        <label class="ad-field inv-span2"><span>Start time(s)</span>
+          <input class="ad-input" data-lf="startTime" value="${attr(r.startTime)}" placeholder="${attr(leadStartTime(r) ? 'auto: ' + leadStartTime(r) : 'e.g. Gates 5pm · main event 7pm')}"></label>
         <label class="ad-field"><span>Follow up on</span>
           <input class="ad-input" type="date" data-lf="followUp" value="${attr(r.followUp)}"></label>
         <label class="ad-field"><span>Last contacted</span>
@@ -8971,7 +9026,9 @@ function leadDetailHtml() {
       ${isNew ? '' : leadContactIconsHtml(r)}
       <h4 class="lead-sub">Main contact</h4>
       <div class="inv-fgrid">
-        <label class="ad-field"><span>Contact / organiser</span>
+        <label class="ad-field inv-span2"><span>Organiser (club / committee / company)</span>
+          <input class="ad-input" data-lf="organiser" value="${attr(r.organiser)}" placeholder="${attr(leadOrganiser(r) ? 'auto: ' + leadOrganiser(r) : 'e.g. Bowen Turf Club')}"></label>
+        <label class="ad-field"><span>Contact person</span>
           <input class="ad-input" data-lf="contactName" value="${attr(r.contactName)}" placeholder="Who you deal with"></label>
         <label class="ad-field"><span>Decision maker</span>
           <input class="ad-input" data-lf="decisionMaker" value="${attr(r.decisionMaker)}"></label>
@@ -9178,6 +9235,7 @@ function leadClean(r) {
     estValueCents: Math.max(0, Math.round(Number(r.estValueCents) || 0)),
     followUp: /^\d{4}-\d{2}-\d{2}$/.test(s(r.followUp, 10)) ? s(r.followUp, 10) : '',
     target: !!r.target,
+    organiser: s(r.organiser, 160), startTime: s(r.startTime, 120),
     km: String(r.km == null ? '' : r.km).trim() === '' ? '' : Math.max(0, Math.round(Number(r.km) || 0)),
     contacts: (Array.isArray(r.contacts) ? r.contacts : [])
       .map((c) => ({ name: s(c.name, 120), role: s(c.role, 80), phone: s(c.phone, 40), email: s(c.email, 200) }))
