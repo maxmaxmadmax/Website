@@ -3503,3 +3503,9 @@ body.ad-fit .ad-main{ min-height:0; }
 .lead-cdot.is-medium{ background:var(--ad-blue); }
 .lead-cdot.is-low{ background:var(--ad-green); }
 .lead-cal-m.is-now .lead-wslot.is-today .lead-cdot{ box-shadow:0 0 0 1.5px #fff; }
+
+/* calendar: week number on top of each week slot, circles along the bottom */
+.lead-wslot{ justify-content:flex-start; gap:0; }
+.lead-wslot-no{ font-size:8.5px; font-weight:600; line-height:1; color:var(--ad-faint); padding-top:1px; }
+.lead-wslot.is-today .lead-wslot-no{ color:var(--ad-orange); font-weight:800; }
+.lead-wslot-dots{ margin-top:auto; padding-top:3px; display:flex; flex-direction:column; align-items:center; gap:2px; }
