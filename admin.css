@@ -3559,3 +3559,14 @@ body.ad-fit .ad-main{ min-height:0; }
 /* bigger banner: never let the header or tab bar get squeezed away */
 .lead-detail > *:not(.lead-panes){ flex-shrink:0; }
 .lead-tabs{ flex-shrink:0; min-height:38px; }
+/* fixed column widths so spare room can't pile up in one column */
+.lead-table{ table-layout:fixed; min-width:1124px; }
+.lead-table thead th:nth-child(1){ width:300px; }
+.lead-table thead th:nth-child(2){ width:140px; }
+.lead-table thead th:nth-child(3){ width:160px; }
+.lead-table thead th:nth-child(4){ width:130px; }
+.lead-table thead th:nth-child(5){ width:100px; }
+.lead-table thead th:nth-child(6){ width:90px; }
+.lead-table thead th:nth-child(7){ width:160px; }
+.lead-table thead th:nth-child(8){ width:44px; }
+.lead-table td{ overflow-wrap:anywhere; }
