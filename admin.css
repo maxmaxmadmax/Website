@@ -3551,3 +3551,5 @@ body.ad-fit .ad-main{ min-height:0; }
 .lead-tile.has-img{ width:112px; height:64px; border-radius:8px; }
 .ad-desk.is-leads .lead-tile.has-img{ width:112px; height:64px; }
 .lead-hero:has(.lead-hero-img){ height:120px; }
+/* every row tile the same size, photo or not */
+.lead-evcol .lead-tile, .ad-desk.is-leads .lead-evcol .lead-tile{ width:112px; height:64px; border-radius:8px; font-size:26px; flex:0 0 112px; }
