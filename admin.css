@@ -3714,3 +3714,10 @@ body.ad-rate-app .rt-wrap, body.ad-rate-app .rt-wrap *{ touch-action:pan-y; }
 .rt-brief{ margin:0 0 10px; padding-left:18px; display:grid; gap:5px; font-size:.82rem; line-height:1.4; color:#dfe3e9; }
 .rt-brief b{ color:#fff; }
 .rt-pitch{ margin:0 0 10px; }
+/* six actions: Won · More info · Target '27 · Locked · Pass · Next */
+.rt-acts{ grid-template-columns:repeat(6,1fr); gap:5px; }
+.rt-act{ font-size:.66rem; padding:8px 1px; }
+.rt-act.is-target{ border-color:#a855f7; color:#e9d5ff; }
+.lead-verdict.is-nextyear{ background:#f3e8ff; color:#7e22ce; }
+.rt-chip.is-verdict{ background:#3a1d1d; color:#ffb4b4; }
+@media (max-width:760px){ .rt-act{ font-size:.62rem; padding:7px 0; } .rt-act i{ font-size:1.05rem; } }

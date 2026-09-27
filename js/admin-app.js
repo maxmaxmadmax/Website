@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=190';
+} from './firebase-config.js?v=191';
 
-import { expandKit } from './kit.js?v=190';
+import { expandKit } from './kit.js?v=191';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -9566,7 +9566,19 @@ function wireLeadCompose() {
      Next       -> saves the rating if one is picked, else skips for now
    Nothing is ever hidden or deleted: Pass / Locked are tags only.
    ========================================================================= */
-const LEAD_VERDICT = { pass: 'Not for us', locked: 'Locked — another supplier' };
+const LEAD_VERDICT = { pass: 'Not for us', locked: 'Locked — another supplier', nextyear: 'Target next year' };
+/*  'Target next year': the next edition's year as '27, and a follow-up about
+    4 months before it (when the date is known) so Max gets in early.  */
+function rateNextYear(r) {
+  const base = leadHasExactDate(r) ? new Date(r.eventDate.slice(0, 10) + 'T00:00:00') : null;
+  const y = (base ? base.getFullYear() : new Date().getFullYear()) + 1;
+  let followUp = '';
+  if (base) {
+    const d = new Date(base); d.setFullYear(y); d.setDate(d.getDate() - 120);
+    followUp = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  return { label: "'" + String(y).slice(2), followUp };
+}
 
 function rateState() {
   if (!state.rate) state.rate = { tab: 'review', pick: 0, skip: [], back: [], focus: '', busy: false };
@@ -9664,6 +9676,7 @@ function rateCardHtml(r, pos, total) {
     <div class="rt-acts">
       <button type="button" class="rt-act is-won" data-rate-act="won"><i>🏆</i>Won</button>
       <button type="button" class="rt-act is-info" data-rate-act="info"><i>?</i>More info</button>
+      <button type="button" class="rt-act is-target" data-rate-act="nextyear"><i>🎯</i>Target ${esc(rateNextYear(r).label)}</button>
       <button type="button" class="rt-act is-locked" data-rate-act="locked"><i>🔒</i>Locked</button>
       <button type="button" class="rt-act is-pass" data-rate-act="pass"><i>✕</i>Pass</button>
       <button type="button" class="rt-act is-next" data-rate-act="next"><i>»</i>Next</button>
@@ -9746,7 +9759,7 @@ async function rateAct(act) {
   if (!r) return;
   const pick = s.pick || 0;
   const hint = document.getElementById('rt-hint');
-  if (['won', 'locked', 'pass'].includes(act) && !pick && !Number(r.rating)) {
+  if (['won', 'locked', 'pass', 'nextyear'].includes(act) && !pick && !Number(r.rating)) {
     if (hint) { hint.textContent = 'Pick a rating (1–5) first'; hint.classList.add('is-bad'); }
     return;
   }
@@ -9756,6 +9769,12 @@ async function rateAct(act) {
   if (act === 'won') { patchData.stage = 'won'; patchData.verdict = ''; log.push('Stage → Won'); }
   if (act === 'locked') { patchData.verdict = 'locked'; log.push('Tagged: Locked — another supplier'); }
   if (act === 'pass') { patchData.verdict = 'pass'; log.push('Tagged: Not for us'); }
+  if (act === 'nextyear') {
+    const ny = rateNextYear(r);
+    patchData.verdict = 'nextyear'; patchData.target = true;
+    log.push('Tagged: Target next year (' + ny.label + ')');
+    if (ny.followUp && (!r.followUp || String(r.followUp) > ny.followUp)) { patchData.followUp = ny.followUp; log.push('Follow-up ' + ny.followUp); }
+  }
   if (act === 'info') { patchData.needsResearch = true; log.push('Queued for research (more info)'); }
   if (act === 'next' && !log.length) {
     // skip for now - it comes back at the end of the deck
@@ -9827,7 +9846,7 @@ function wireRateKeys() {
     if (state.view !== 'leadRate' || e.altKey || e.ctrlKey || e.metaKey || e.target.closest('input, select, textarea')) return;
     const k = e.key.toLowerCase();
     if (/^[1-5]$/.test(k)) { const b = document.querySelector(`[data-rate-pick="${k}"]`); if (b) b.click(); return; }
-    const act = { w: 'won', i: 'info', l: 'locked', p: 'pass', n: 'next', arrowright: 'next' }[k];
+    const act = { w: 'won', i: 'info', t: 'nextyear', l: 'locked', p: 'pass', n: 'next', arrowright: 'next' }[k];
     if (act && document.querySelector('.rt-card')) rateAct(act);
   });
 }
