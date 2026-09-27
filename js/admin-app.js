@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=185';
+} from './firebase-config.js?v=186';
 
-import { expandKit } from './kit.js?v=185';
+import { expandKit } from './kit.js?v=186';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -8608,7 +8608,30 @@ function openLead(id, tab) {
   return true;
 }
 
+/*  Up / Down arrow keys step through the leads on screen, opening each
+    in the side panel (ignored while typing in a field). */
+let leadKeysWired = false;
+function wireLeadKeys() {
+  if (leadKeysWired) return;
+  leadKeysWired = true;
+  document.addEventListener('keydown', (e) => {
+    if (state.view !== 'leads' || (e.key !== 'ArrowDown' && e.key !== 'ArrowUp')) return;
+    if (e.altKey || e.ctrlKey || e.metaKey || e.target.closest('input, select, textarea, [contenteditable]')) return;
+    const ids = [...document.querySelectorAll('.lead-table tr.lead-row[data-open-lead]')].map((tr) => tr.getAttribute('data-open-lead'));
+    if (!ids.length) return;
+    e.preventDefault();
+    const at = ids.indexOf(state.openLeadId);
+    const next = at < 0 ? ids[0] : ids[Math.max(0, Math.min(ids.length - 1, at + (e.key === 'ArrowDown' ? 1 : -1)))];
+    if (next === state.openLeadId) return;
+    if (!openLead(next, state.leadTab || 'overview')) return;
+    render();
+    const row = document.querySelector('.lead-table tr.lead-row.is-open');
+    if (row) row.scrollIntoView({ block: 'nearest' });
+  });
+}
+
 function wireLeadList() {
+  wireLeadKeys();
   renderLeadRows();
   wireLeadCalendar();
 
