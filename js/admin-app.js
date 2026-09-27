@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=187';
+} from './firebase-config.js?v=188';
 
-import { expandKit } from './kit.js?v=187';
+import { expandKit } from './kit.js?v=188';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -7440,7 +7440,7 @@ function subscribeToLeads() {
         else render();
       }
       // the rating deck redraws on outside changes, but not mid-save
-      if (state.view === 'leadRate' && !(state.rate && state.rate.busy)) render();
+      if (state.view === 'leadRate' && !(state.rate && (state.rate.busy || state.rate.edit))) render();
     },
     (err) => console.error('leads', err)
   ));
@@ -9634,8 +9634,9 @@ function rateCardHtml(r, pos, total) {
         ${about ? `<p class="rt-about">${esc(about.length > 320 ? about.slice(0, 317) + '…' : about)}</p>` : ''}
         ${facts.length ? `<dl class="rt-facts">${facts.map(([k, x]) => `<div><dt>${esc(k)}</dt><dd>${esc(x)}</dd></div>`).join('')}</dl>` : ''}
         ${miss.length ? `<p class="rt-miss">Missing: ${miss.map(esc).join(' · ')}</p>` : ''}
-        <button type="button" class="rt-open" data-rate-open="${attr(r.id)}">Open full lead ›</button>
+        <div class="rt-cardbtns"><button type="button" class="rt-addinfo" data-rate-edit>✏️ Add info</button><button type="button" class="rt-open" data-rate-open="${attr(r.id)}">Open full lead ›</button></div>
       </div>
+      ${s.edit ? rateEditHtml(r) : ''}
     </article>
     <div class="rt-rate">
       <p>Rate this lead <span>(1 = low, 5 = high fit)</span></p>
@@ -9721,6 +9722,7 @@ async function rateSave(r, patchData, logText) {
 async function rateAct(act) {
   const s = rateState();
   if (s.busy) return;
+  s.edit = false;
   const id = (document.querySelector('.rt-card') || {}).getAttribute && document.querySelector('.rt-card').getAttribute('data-rate-id');
   const r = id && (state.leads || []).find((x) => x.id === id);
   if (!r) return;
@@ -9757,10 +9759,18 @@ function wireLeadRate() {
   if (!root) return;
   wireLeadImageErrors();
   const s = rateState();
+  root.addEventListener('submit', (e) => {
+    const f = e.target.closest('[data-rate-edit-form]');
+    if (!f) return;
+    e.preventDefault();
+    rateEditSave(f);
+  });
   root.addEventListener('click', (e) => {
-    const t = e.target.closest('[data-rate-tab], [data-rate-pick], [data-rate-act], [data-rate-focus], [data-rate-unfocus], [data-rate-prev], [data-rate-open]');
+    const t = e.target.closest('[data-rate-edit], [data-rate-edit-cancel], [data-rate-tab], [data-rate-pick], [data-rate-act], [data-rate-focus], [data-rate-unfocus], [data-rate-prev], [data-rate-open]');
     if (!t) return;
-    if (t.hasAttribute('data-rate-tab')) { s.tab = t.getAttribute('data-rate-tab'); s.focus = ''; s.pick = 0; render(); return; }
+    if (t.hasAttribute('data-rate-edit')) { s.edit = !s.edit; render(); const f = document.querySelector('.rt-edit'); if (f) f.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
+    if (t.hasAttribute('data-rate-edit-cancel')) { s.edit = false; render(); return; }
+    if (t.hasAttribute('data-rate-tab')) { s.edit = false; s.tab = t.getAttribute('data-rate-tab'); s.focus = ''; s.pick = 0; render(); return; }
     if (t.hasAttribute('data-rate-pick')) {
       const n = Number(t.getAttribute('data-rate-pick'));
       s.pick = s.pick === n ? 0 : n;
@@ -9775,12 +9785,12 @@ function wireLeadRate() {
       return;
     }
     if (t.hasAttribute('data-rate-act')) { rateAct(t.getAttribute('data-rate-act')); return; }
-    if (t.hasAttribute('data-rate-focus')) { s.focus = t.getAttribute('data-rate-focus'); s.pick = 0; render(); window.scrollTo(0, 0); return; }
-    if (t.hasAttribute('data-rate-unfocus')) { s.focus = ''; s.pick = 0; render(); return; }
+    if (t.hasAttribute('data-rate-focus')) { s.focus = t.getAttribute('data-rate-focus'); s.pick = 0; s.edit = false; render(); window.scrollTo(0, 0); return; }
+    if (t.hasAttribute('data-rate-unfocus')) { s.focus = ''; s.pick = 0; s.edit = false; render(); return; }
     if (t.hasAttribute('data-rate-prev')) {
       // step back to the last lead you acted on, to change your mind
       const id = s.back.pop();
-      if (id) { s.focus = id; s.pick = 0; render(); }
+      if (id) { s.focus = id; s.pick = 0; s.edit = false; render(); }
       return;
     }
     if (t.hasAttribute('data-rate-open')) {
@@ -9802,6 +9812,51 @@ function wireRateKeys() {
     const act = { w: 'won', i: 'info', l: 'locked', p: 'pass', n: 'next', arrowright: 'next' }[k];
     if (act && document.querySelector('.rt-card')) rateAct(act);
   });
+}
+
+/*  "Add info" on a rating card: Max types what he already knows and it is
+    saved straight onto the lead (logged in its History).                 */
+const RATE_EDIT_FIELDS = [
+  ['eventDate', 'Date', 'date'], ['startTime', 'Start time', 'text', 'e.g. Gates 5pm · main event 7pm'],
+  ['dateText', 'Date notes', 'text', 'e.g. Fri 23 – Sun 25 Oct'], ['venue', 'Venue', 'text'], ['town', 'Town', 'text'],
+  ['organiser', 'Organiser', 'text'], ['crowd', 'Crowd', 'text', 'e.g. ~3,000'], ['estValue', 'Est. value ($)', 'number'],
+  ['contactName', 'Contact person', 'text'], ['phone', 'Phone', 'tel'], ['email', 'Email', 'email'],
+  ['website', 'Website', 'url', 'https://'], ['socials', 'Social links', 'text', 'Facebook / Instagram links'],
+  ['needs', 'What they need', 'text'], ['incumbent', 'Current supplier', 'text'], ['notes', 'Notes', 'textarea'],
+];
+function rateEditHtml(r) {
+  const val = (k) => (k === 'estValue' ? (r.estValueCents ? r.estValueCents / 100 : '') : (r[k] == null ? '' : r[k]));
+  return `<form class="rt-edit" data-rate-edit-form="${attr(r.id)}">
+    <p class="rt-edit-h">Add what you know <span>— saves straight to the lead</span></p>
+    ${RATE_EDIT_FIELDS.map(([k, label, type, ph]) => `<label><span>${esc(label)}</span>${type === 'textarea'
+      ? `<textarea name="${k}" rows="3">${esc(val(k))}</textarea>`
+      : `<input name="${k}" type="${type}" value="${attr(val(k))}"${ph ? ` placeholder="${attr(ph)}"` : ''}${type === 'number' ? ' min="0" step="50" inputmode="numeric"' : ''}>`}</label>`).join('')}
+    <div class="rt-edit-btns"><button type="button" class="rt-edit-cancel" data-rate-edit-cancel>Cancel</button><button type="submit" class="rt-edit-save">Save info</button></div>
+  </form>`;
+}
+async function rateEditSave(form) {
+  const s = rateState();
+  const r = (state.leads || []).find((x) => x.id === form.getAttribute('data-rate-edit-form'));
+  if (!r) return;
+  const patchData = {};
+  const changed = [];
+  RATE_EDIT_FIELDS.forEach(([k, label]) => {
+    const raw = String(form.elements[k].value || '').trim();
+    if (k === 'estValue') {
+      const cents = Math.max(0, Math.round(Number(raw || 0) * 100));
+      if (cents !== Math.round(r.estValueCents || 0)) { patchData.estValueCents = cents; changed.push(label); }
+      return;
+    }
+    if (raw !== String(r[k] == null ? '' : r[k]).trim()) { patchData[k] = raw; changed.push(label); }
+  });
+  if (patchData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(patchData.email)) {
+    const h = form.querySelector('.rt-edit-h span');
+    if (h) { h.textContent = '— that email looks wrong'; h.style.color = '#fca5a5'; }
+    return;
+  }
+  if (changed.length && !(await rateSave(r, patchData, 'Lead Rating: added info — ' + changed.join(', ')))) return;
+  s.edit = false;
+  render();
 }
 
 VIEWS.leadRate = {

@@ -3659,3 +3659,17 @@ body.ad-fit .ad-main{ min-height:0; }
   .rt-phone{ border-radius:0; padding:10px 10px 16px; }
   .rt-hero{ height:220px; }
 }
+/* Lead Rating: add info */
+.rt-cardbtns{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.rt-addinfo{ padding:7px 12px; border-radius:10px; border:1px solid #3a3f4a; background:#1e222a; color:#fff; font-weight:700; font-size:.8rem; cursor:pointer; }
+.rt-edit{ padding:12px 14px 14px; border-top:1px solid #252932; display:grid; gap:8px; }
+.rt-edit-h{ margin:0 0 2px; font-weight:800; font-size:.9rem; }
+.rt-edit-h span{ font-weight:500; color:#9aa1ad; font-size:.78rem; }
+.rt-edit label{ display:grid; gap:3px; }
+.rt-edit label span{ font-size:.72rem; color:#9aa1ad; font-weight:600; }
+.rt-edit input, .rt-edit textarea{ width:100%; box-sizing:border-box; padding:9px 10px; border-radius:10px; border:1px solid #2f343e; background:#0f1115; color:#fff; font:inherit; font-size:16px; }
+.rt-edit input:focus, .rt-edit textarea:focus{ outline:none; border-color:var(--ad-orange, #f36f21); }
+.rt-edit-btns{ display:flex; gap:8px; margin-top:4px; }
+.rt-edit-btns button{ flex:1; padding:11px; border-radius:12px; font-weight:800; cursor:pointer; }
+.rt-edit-cancel{ border:1px solid #3a3f4a; background:#1e222a; color:#e8eaee; }
+.rt-edit-save{ border:0; background:var(--ad-orange, #f36f21); color:#fff; }
