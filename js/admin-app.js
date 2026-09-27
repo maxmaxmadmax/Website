@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=174';
+} from './firebase-config.js?v=175';
 
-import { expandKit } from './kit.js?v=174';
+import { expandKit } from './kit.js?v=175';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -7711,12 +7711,14 @@ function leadCalendarHtml() {
       const isToday = w.key === today.key;
       const cnt = { high: 0, medium: 0, low: 0 };
       list.forEach((p) => { cnt[p]++; });
-      const dots = ['high', 'medium', 'low'].filter((p) => cnt[p])
-        .map((p) => `<i class="lead-cdot is-${p}">${cnt[p]}</i>`).join('');
+      // fixed lanes - high on top, medium in the middle, low at the bottom -
+      // so each colour lines up across the whole year
+      const dots = list.length ? ['high', 'medium', 'low']
+        .map((p) => (cnt[p] ? `<i class="lead-cdot is-${p}">${cnt[p]}</i>` : '<i class="lead-cdot is-empty"></i>')).join('') : '';
       const breakdown = ['high', 'medium', 'low'].filter((p) => cnt[p]).map((p) => `${cnt[p]} ${p}`).join(', ');
       return `<button type="button" class="lead-wslot${on ? ' is-sel' : ''}${isToday ? ' is-today' : ''}${list.length ? '' : ' is-empty'}"
                 data-lead-week="${w.key}" aria-pressed="${on}"
-                title="Week ${fy.week} (${fy.label}) · ${range}${isToday ? ' · this week' : ''} · ${list.length} dated lead${list.length === 1 ? '' : 's'}${breakdown ? ' (' + breakdown + ')' : ''}"><span class="lead-wslot-no">${fy.week}</span><span class="lead-wslot-dots">${dots || '<i class="lead-wslot-tick"></i>'}</span></button>`;
+                title="Week ${fy.week} (${fy.label}) · ${range}${isToday ? ' · this week' : ''} · ${list.length} dated lead${list.length === 1 ? '' : 's'}${breakdown ? ' (' + breakdown + ')' : ''}"><span class="lead-wslot-no">${fy.week}</span><span class="lead-wslot-dots">${dots || '<i class="lead-cdot is-empty"></i><i class="lead-cdot is-empty"></i><i class="lead-cdot is-empty"></i>'}</span></button>`;
     }).join('');
 
     cells += `

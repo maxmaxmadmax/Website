@@ -3509,3 +3509,7 @@ body.ad-fit .ad-main{ min-height:0; }
 .lead-wslot-no{ font-size:8.5px; font-weight:600; line-height:1; color:var(--ad-faint); padding-top:1px; }
 .lead-wslot.is-today .lead-wslot-no{ color:var(--ad-orange); font-weight:800; }
 .lead-wslot-dots{ margin-top:auto; padding-top:3px; display:flex; flex-direction:column; align-items:center; gap:2px; }
+
+/* calendar lanes: an empty lane keeps its space so the colours line up */
+.lead-cdot.is-empty{ background:transparent; box-shadow:none; }
+.lead-wslot-dots{ margin-top:3px; padding-top:0; }
