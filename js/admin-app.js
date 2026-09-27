@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=195';
+} from './firebase-config.js?v=196';
 
-import { expandKit } from './kit.js?v=195';
+import { expandKit } from './kit.js?v=196';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -8017,6 +8017,24 @@ function leadTodayIso() {
 }
 
 /*  "2 days ago" for the last-contact column. */
+/*  How fresh a lead's info is: when the research last checked it (green
+    under a month, amber under 3 months, red older) and when Max last
+    changed it himself (the newest History entry).                     */
+function leadFreshHtml(r) {
+  const at = String(r.enrichedAt || '').slice(0, 10);
+  let cls = 'is-none';
+  let txt = 'Not researched yet';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(at)) {
+    const days = Math.round((new Date().setHours(0, 0, 0, 0) - new Date(at + 'T00:00:00')) / 86400000);
+    cls = days <= 30 ? 'is-fresh' : days <= 90 ? 'is-aging' : 'is-stale';
+    const rel = leadRelDay(at);
+    txt = 'Info checked ' + fmtLeadDate(at) + (/ago|Today|Yesterday/.test(rel) ? ' · ' + rel.toLowerCase() : '');
+  }
+  const mine = (r.history || []).reduce((m, e) => Math.max(m, Number(e && e.at) || 0), 0);
+  const you = mine ? ' · you updated ' + leadRelDay(new Date(mine).toISOString().slice(0, 10)).toLowerCase() : '';
+  return `<p class="lead-fresh ${cls}"><span aria-hidden="true">🔎</span> ${esc(txt + you)}</p>`;
+}
+
 function leadRelDay(iso) {
   if (!iso) return '';
   const d = new Date(String(iso).slice(0, 10) + 'T00:00:00');
@@ -8890,6 +8908,7 @@ function leadOverviewHtml(r, doc) {
       ${r.nextAction ? `<p class="lead-next-note" title="${attr(r.nextAction)}"><strong>Next step:</strong> ${esc(r.nextAction)}</p>` : ''}
     </div>` : ''}
 
+    ${leadFreshHtml(doc || r)}
     <h3 class="lead-sec">About the Event</h3>
     ${about ? `<p class="lead-about" title="${attr(about)}">${esc(about)}</p>` : ''}
     ${String(r.pitch || '').trim() ? `<p class="lead-pitch" title="${attr(r.pitch)}"><b>Worth it?</b> ${esc(r.pitch)}</p>` : ''}
@@ -9660,6 +9679,7 @@ function rateCardHtml(r, pos, total) {
           ${where ? `<li><span aria-hidden="true">📍</span>${esc(where)}</li>` : ''}
           ${km ? `<li><span aria-hidden="true">🧭</span>${esc(km)}</li>` : ''}
         </ul>
+        ${leadFreshHtml(r)}
         ${tags.trim() ? `<div class="rt-chips">${tags}</div>` : ''}
         <div class="rt-stats">
           <div><i aria-hidden="true">👥</i><b>${esc(r.crowd || '—')}</b><span>Expected crowd</span></div>

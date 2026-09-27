@@ -3781,3 +3781,10 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .rt-empty{ color:#6b7280; }
 .rt-list button{ background:#fff; border-color:#eceef2; color:#111827; }
 .rt-li-m{ color:#6b7280; }
+/* how fresh a lead's info is */
+.lead-fresh{ margin:0 0 10px; font-size:.76rem; font-weight:600; display:flex; gap:6px; align-items:center; }
+.lead-fresh.is-fresh{ color:#15803d; }
+.lead-fresh.is-aging{ color:#b45309; }
+.lead-fresh.is-stale{ color:#dc2626; }
+.lead-fresh.is-none{ color:#6b7280; }
+.lead-detail .lead-fresh{ margin:6px 0 2px; }
