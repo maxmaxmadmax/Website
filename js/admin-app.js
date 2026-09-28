@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=211';
+} from './firebase-config.js?v=212';
 
-import { expandKit } from './kit.js?v=211';
+import { expandKit } from './kit.js?v=212';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -8583,7 +8583,7 @@ function leadIsMobile(phone) {
 }
 function leadFirstName(r) {
   const c = String(r.contactName || '').split('(')[0].trim();
-  if (!c || /club|council|society|committee|association|events?|team|inc|pty|ltd|festival|shire|rotary|ops/i.test(c)) return '';
+  if (!c || /club|council|society|committee|association|events?|team|inc|pty|ltd|festival|shire|rotary|ops|park|hotel|resort|venue|leagues|pub|bar|centre|center|stadium|racecourse|turf|functions|office|admin/i.test(c)) return '';
   return c.split(/\s+/)[0];
 }
 function leadEventYear(r) {
@@ -8592,39 +8592,57 @@ function leadEventYear(r) {
 }
 /*  The intro SMS: Scout's draft if Max asked for one, otherwise written
     from what the lead holds - the event, the year, what they need.       */
-/*  Every intro SMS asks ONE question, so they reply - and the right one for
-    what we know about the event (Max, 28 Sep 2026).                     */
-function leadSmsQuestion(r, ev) {
-  const music = String(r.liveMusic || '');
-  const supplier = String(r.incumbent || '');
-  const hasSupplier = supplier && !/soundzgood|not named|not found|unknown|may be diy|tbc/i.test(supplier);
-  if (leadIsPast(r) || r.verdict === 'nextyear') return 'Have you started planning the production yet?';
-  if (hasSupplier) return 'Would you need any extra sound, lighting or an FOH engineer on the day?';
-  if (/^\s*(none|no live|not found)/i.test(music)) return 'Do you have your entertainment booked yet? We can look after a DJ/MC as well as the sound and lighting.';
-  if (/^\s*yes/i.test(music)) return 'Do you have the sound and lighting sorted for the live music?';
-  return 'Do you have your production sorted yet?';
+/*  Intro SMS - trained with Max, 28 Sep 2026:
+    1. ONE simple question. No either/or, no package upsell, no extra pitch.
+    2. Default: "Do you have your entertainment booked for this event?"
+       (outdoor community events: "stage, sound and entertainment").
+    3. A similar job we've done goes in as proof - two points max + a link
+       (fishing comps: the Stonka Fishing Challenge).
+    4. Council / civic events never get an SMS - email, listing what we do.
+    5. No named contact: ask who the right person is.
+    6. Target '27 leads: contact them after this year's event.            */
+const LEAD_SAMPLE_JOBS = [
+  { match: /fish|barra|angl/i,
+    line: 'We recently did the production for the Stonka Fishing Challenge, including our live online scoreboard on a large LED screen for the leaderboard.',   // add the Stonka page link once it's live
+    ask: 'Would something like that suit your comp and presentation night?' },
+];
+function leadIsCouncil(r) {
+  return /council|civic/i.test(String(r.category || '')) || /\bcouncil\b|\bshire\b|\bMECC\b/i.test(String(r.organiser || ''));
+}
+function leadSampleJob(r) {
+  const text = [r.title, r.eventName, r.category, r.summary].join(' ');
+  return LEAD_SAMPLE_JOBS.find((j) => j.match.test(text)) || null;
 }
 function leadSmsBody(r) {
   if (r.smsDraft && String(r.smsDraft).trim()) return String(r.smsDraft).trim();
-  // Max's wording (28 Sep 2026) + a link to what we do + one right question
   const who = leadFirstName(r);
   const ev = String(r.eventName || r.title || 'your event').replace(/\s+\d{1,2}\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b.*$/i, '').replace(/\s+20\d\d\b.*$/, '').replace(/\s*[—–-]\s*$/, '').trim();
+  const nextYear = leadIsPast(r) || r.verdict === 'nextyear';
   let when = '';
-  if (leadHasExactDate(r) && !leadIsPast(r)) {
+  if (!nextYear && leadHasExactDate(r)) {
     const d = new Date(r.eventDate.slice(0, 10) + 'T00:00:00');
     when = ' on ' + d.toLocaleDateString('en-AU', { weekday: 'short' }) + ' ' + d.getDate() + ' ' + d.toLocaleDateString('en-AU', { month: 'short' });
-  } else {
-    when = ' ' + leadEventYear(r);
   }
   const where = r.town || r.venue ? ' in ' + String(r.town || r.venue).split(',')[0].replace(/\s+(QLD|Queensland)$/i, '').trim() : '';
+  const evFull = nextYear ? `${ev} ${leadEventYear(r)}` : ev;
+  const job = leadSampleJob(r);
+  // street parties, parks, foreshores - community events that need a stage (race days / venues don't)
+  const outdoor = /street|park\b|foreshore/i.test(String(r.venueSetup || '') + ' ' + String(r.venue || '')) && !/racecourse|race ?day|turf/i.test(String(r.venueSetup || '') + ' ' + String(r.venue || '') + ' ' + String(r.title || ''));
+  let middle;
+  if (!who) {
+    middle = `I'm just reaching out regarding ${evFull}${where}${when}. Who would be the best person to speak with about entertainment and production for it?`;
+  } else if (job) {
+    middle = `I'm just reaching out regarding ${evFull}${where}${when}. ${job.line}\n\n${job.ask}`;
+  } else {
+    const what = outdoor ? 'stage, sound and entertainment sorted' : 'entertainment booked';
+    middle = `I'm just reaching out regarding ${evFull}${where}${when}. Do you have your ${what} for ${nextYear ? 'next year' : outdoor ? 'this year' : 'this event'}?`;
+  }
   return [
     `Hi ${who || 'there'},`,
     '',
     'My name is Max from SoundzGood in North Queensland. We provide production services for events: www.soundzgood.com.au/services.html',
     '',
-    (leadIsPast(r) || r.verdict === 'nextyear'
-      ? `I'm just reaching out ahead of ${ev} ${leadEventYear(r)}${where}. `
-      : `I'm just reaching out regarding ${ev}${where}${when}. `) + leadSmsQuestion(r, ev),
+    middle,
     '',
     'When you have some time, would love to discuss this further.',
     '',
@@ -8692,7 +8710,9 @@ function leadMobileCardHtml(r) {
     <div class="lead-mc-acts">
       <button type="button" class="lead-mc-btn is-email" data-mc-email="${attr(r.id)}"${okEmail ? '' : ' disabled'}>✉️ Email</button>
       ${phone ? `<a class="lead-mc-btn is-call" href="tel:${attr(phone.replace(/[^\d+]/g, ''))}">📞 Call</a>` : '<span class="lead-mc-btn is-call is-off">📞 Call</span>'}
-      ${mobile ? `<a class="lead-mc-btn is-sms" href="${attr(leadSmsHref(r))}">💬 SMS</a>` : `<span class="lead-mc-btn is-sms is-off" title="${phone ? 'Not a mobile number' : 'No phone number'}">💬 SMS</span>`}
+      ${leadIsCouncil(r) ? '<span class="lead-mc-btn is-sms is-off" title="Council event - email, not SMS">💬 SMS</span>'
+        : mobile ? `<a class="lead-mc-btn is-sms" href="${attr(leadSmsHref(r))}"${r.verdict === 'nextyear' && !leadIsPast(r) && leadHasExactDate(r) ? ` title="Target next year - best sent after ${attr(fmtLeadDate(r.eventDate.slice(0, 10)))}"` : ''}>💬 ${r.verdict === 'nextyear' && !leadIsPast(r) && leadHasExactDate(r) ? 'After ' + esc(fmtLeadDate(r.eventDate.slice(0, 10)).replace(/\s+20\d\d$/, '')) : 'SMS'}</a>`
+        : `<span class="lead-mc-btn is-sms is-off" title="${phone ? 'Not a mobile number' : 'No phone number'}">💬 SMS</span>`}
       <button type="button" class="lead-mc-btn is-view" data-mc-view="${attr(r.id)}">View</button>
       <button type="button" class="lead-mc-btn is-next" data-mc-next="${attr(r.id)}">Next ›</button>
     </div>
@@ -9637,6 +9657,31 @@ async function deleteLead(btn) {
 }
 
 /* ---- email composer: draft + send, never auto-send ---- */
+/*  Council / civic events: an introduction that lists what we do (Max, 28 Sep 2026). */
+function leadCouncilEmail(r, who, ev) {
+  return [
+    `Hi ${who === 'there' ? 'there' : who},`,
+    '',
+    `My name is Max from SoundzGood in North Queensland. I'm reaching out to introduce ourselves ahead of ${ev}.`,
+    '',
+    'We provide event production across the region, including:',
+    '• Sound systems (PA) for stages, parks and street events',
+    '• Lighting and staging',
+    '• Large LED screens (live leaderboards, sponsors, video)',
+    '• DJs and MCs',
+    '• Crew and technicians, bump-in to bump-out',
+    '',
+    'You can see more of what we do here: www.soundzgood.com.au/services.html',
+    '',
+    'When you have some time, would love to discuss this further.',
+    '',
+    'Cheers,',
+    'Max',
+    'SoundzGood Whitsundays',
+    'www.soundzgood.com.au',
+  ].join('\n');
+}
+
 function openLeadCompose() {
   const r = leadDraft;
   if (!String(r.email || '').trim()) {
@@ -9650,6 +9695,11 @@ function openLeadCompose() {
   const draft = ((state.leads || []).find((x) => x.id === state.openLeadId) || {}).outreachDraft;
   if (draft && String(draft.body || '').trim()) {
     state.leadCompose = { to: r.email.trim(), subject: draft.subject || `SoundzGood Whitsundays — ${ev}`, body: draft.body, leadId: state.openLeadId };
+    render();
+    return;
+  }
+  if (leadIsCouncil(r)) {
+    state.leadCompose = { to: r.email.trim(), subject: `SoundzGood — event production for ${ev}`, body: leadCouncilEmail(r, who, ev), leadId: state.openLeadId };
     render();
     return;
   }
