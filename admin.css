@@ -3869,3 +3869,9 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 }
 .lead-mc-btn.is-sms:not(.is-checked):not(.is-off){ border-style:dashed; }
 .rt-ask.is-inline{ margin:12px 0 2px; background:#f9fafb; }
+/* browse the deck by swiping */
+.rt-main > .rt-card{ transition:transform .18s ease; touch-action:pan-y; }
+@keyframes rtInRight{ from{ transform:translateX(40px); opacity:.4; } to{ transform:none; opacity:1; } }
+@keyframes rtInLeft{ from{ transform:translateX(-40px); opacity:.4; } to{ transform:none; opacity:1; } }
+.rt-card.is-in-right{ animation:rtInRight .2s ease; }
+.rt-card.is-in-left{ animation:rtInLeft .2s ease; }

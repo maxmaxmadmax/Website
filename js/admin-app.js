@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=217';
+} from './firebase-config.js?v=218';
 
-import { expandKit } from './kit.js?v=217';
+import { expandKit } from './kit.js?v=218';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -9846,8 +9846,6 @@ function rateDeck() {
   // "Next" without a rating sends a lead to the back for this session
   const skipped = list.filter((r) => s.skip.includes(r.id));
   const out = list.filter((r) => !s.skip.includes(r.id)).concat(skipped);
-  const at = out.findIndex((r) => r.id === s.stay);
-  if (at > 0) out.unshift(out.splice(at, 1)[0]);
   return out;
 }
 function rateWaiting() { return (state.leads || []).filter((r) => r.needsResearch); }
@@ -9940,7 +9938,7 @@ function rateCardHtml(r, pos, total) {
       <button type="button" class="rt-act is-pass" data-rate-act="pass"><i>✕</i>Pass</button>
       <button type="button" class="rt-act is-next" data-rate-act="next"><i>»</i>Next</button>
     </div>
-    <p class="rt-hint" id="rt-hint">${pick ? 'Now pick an action' : 'Choose a rating, then an action'}</p>`;
+    <p class="rt-hint" id="rt-hint">${pick ? 'Now pick an action' : 'Choose a rating, then an action · swipe the card to browse'}</p>`;
 }
 
 function rateListHtml(rows, empty) {
@@ -9981,7 +9979,9 @@ function leadRateHtml() {
   if (focus) {
     body = `<button type="button" class="rt-backlist" data-rate-unfocus>‹ Back to list</button>${rateCardHtml(focus, 0, 0)}`;
   } else if (s.tab === 'review') {
-    body = deck.length ? rateCardHtml(deck[0], 1, deck.length) : '<p class="rt-empty">🎉 Every lead is rated. New leads and researched ones will show up here.</p>';
+    if (!Number.isInteger(s.pos) || s.pos < 0) s.pos = 0;
+    if (s.pos >= deck.length) s.pos = Math.max(0, deck.length - 1);
+    body = deck.length ? rateCardHtml(deck[s.pos], s.pos + 1, deck.length) : '<p class="rt-empty">🎉 Every lead is rated. New leads and researched ones will show up here.</p>';
   } else if (s.tab === 'waiting') {
     body = rateListHtml(waiting, 'Nothing with Phil — tap "To Phil" on a lead and Phil fills it in tonight.');
   } else {
@@ -10094,11 +10094,46 @@ async function rateAct(act) {
   render();
 }
 
+/*  Browse the deck without answering: swipe the card left (next) or right
+    (previous), or use the arrow keys. Nothing is saved; the rating you've
+    picked and any Ask Scout text are cleared as you move on.            */
+function rateBrowse(dir) {
+  const s = rateState();
+  const n = rateDeck().length;
+  if (!n) return;
+  s.pos = ((Number(s.pos) || 0) + dir + n) % n;
+  s.pick = 0; s.tipDraft = ''; s.edit = false; s.tip = false; s.stay = '';
+  render();
+  const card = document.querySelector('.rt-card');
+  if (card) card.classList.add(dir > 0 ? 'is-in-right' : 'is-in-left');
+}
+
 function wireLeadRate() {
   const root = document.querySelector('.rt-phone');
   if (!root) return;
   wireLeadImageErrors();
   const s = rateState();
+  const card = root.querySelector('.rt-card');
+  if (card && !s.focus && s.tab === 'review') {
+    let x0 = 0, y0 = 0, on = false;
+    card.addEventListener('touchstart', (e) => {
+      if (e.target.closest('textarea, input, a, button')) { on = false; return; }
+      on = true; x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+    }, { passive: true });
+    card.addEventListener('touchmove', (e) => {
+      if (!on) return;
+      const dx = e.touches[0].clientX - x0, dy = e.touches[0].clientY - y0;
+      if (Math.abs(dx) > Math.abs(dy)) card.style.transform = `translateX(${dx * 0.6}px) rotate(${dx * 0.02}deg)`;
+    }, { passive: true });
+    card.addEventListener('touchend', (e) => {
+      if (!on) return;
+      on = false;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - x0, dy = t.clientY - y0;
+      card.style.transform = '';
+      if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) rateBrowse(dx < 0 ? 1 : -1);
+    });
+  }
   root.addEventListener('input', (e) => {
     if (e.target.matches('[data-rate-tip-text]')) s.tipDraft = e.target.value;
   });
@@ -10163,7 +10198,8 @@ function wireRateKeys() {
     if (state.view !== 'leadRate' || e.altKey || e.ctrlKey || e.metaKey || e.target.closest('input, select, textarea')) return;
     const k = e.key.toLowerCase();
     if (/^[1-5]$/.test(k)) { const b = document.querySelector(`[data-rate-pick="${k}"]`); if (b) b.click(); return; }
-    const act = { w: 'won', t: 'nextyear', l: 'locked', p: 'pass', n: 'next', arrowright: 'next' }[k];
+    if ((k === 'arrowright' || k === 'arrowleft') && document.querySelector('.rt-card') && !rateState().focus) { rateBrowse(k === 'arrowright' ? 1 : -1); return; }
+    const act = { w: 'won', t: 'nextyear', l: 'locked', p: 'pass', n: 'next' }[k];
     if (act && document.querySelector('.rt-card')) rateAct(act);
   });
 }
