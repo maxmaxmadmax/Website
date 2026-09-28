@@ -224,6 +224,11 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Scout (Max's on-demand assistant): the admin's "Ask Scout now" button + Scout's status
+    match /scout/{docId} {
+      allow read, write: if isAdmin();
+    }
+
     match /quoteLeads/{leadId} {
       allow read: if isAdmin();
       allow write: if false;

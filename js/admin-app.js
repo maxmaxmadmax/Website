@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=200';
+} from './firebase-config.js?v=201';
 
-import { expandKit } from './kit.js?v=200';
+import { expandKit } from './kit.js?v=201';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -191,6 +191,7 @@ async function init() {
     subscribeToPackages();
     subscribeToResources();
     subscribeToLeads();
+    subscribeToScout();
     loadQuotePricing();
     routeFromHash();
   });
@@ -7422,6 +7423,14 @@ function leadPriority(r) {
 
 let leadDraft = blankLead();
 
+function subscribeToScout() {
+  const { doc, onSnapshot } = fb.f;
+  unsubscribes.push(onSnapshot(doc(fb.db, 'scout', 'state'), (d) => {
+    state.scoutState = d.exists() ? d.data() : {};
+    if (state.view === 'leadRate' && !(state.rate && (state.rate.busy || state.rate.edit || state.rate.tip))) render();
+  }, (err) => console.error('scout', err)));
+}
+
 function subscribeToLeads() {
   const { collection, onSnapshot } = fb.f;
   unsubscribes.push(onSnapshot(
@@ -8023,16 +8032,16 @@ function leadTodayIso() {
 function leadFreshHtml(r) {
   const at = String(r.enrichedAt || '').slice(0, 10);
   let cls = 'is-none';
-  let txt = 'Not scouted yet';
+  let txt = 'Phil hasn\'t checked this yet';
   if (/^\d{4}-\d{2}-\d{2}$/.test(at)) {
     const days = Math.round((new Date().setHours(0, 0, 0, 0) - new Date(at + 'T00:00:00')) / 86400000);
     cls = days <= 30 ? 'is-fresh' : days <= 90 ? 'is-aging' : 'is-stale';
     const rel = leadRelDay(at);
-    txt = 'Scouted ' + fmtLeadDate(at) + (/ago|Today|Yesterday/.test(rel) ? ' · ' + rel.toLowerCase() : '');
+    txt = 'Phil checked ' + fmtLeadDate(at) + (/ago|Today|Yesterday/.test(rel) ? ' · ' + rel.toLowerCase() : '');
   }
   const mine = (r.history || []).reduce((m, e) => Math.max(m, Number(e && e.at) || 0), 0);
   const you = mine ? ' · you updated ' + leadRelDay(new Date(mine).toISOString().slice(0, 10)).toLowerCase() : '';
-  return `<p class="lead-fresh ${cls}"><span aria-hidden="true">🔭</span> ${esc(txt + you)}</p>`;
+  return `<p class="lead-fresh ${cls}"><span aria-hidden="true">🔍</span> ${esc(txt + you)}</p>`;
 }
 
 function leadRelDay(iso) {
@@ -8598,7 +8607,7 @@ function renderLeadRows() {
         ${where ? `<span class="lead-loc" title="${attr(where)}"><span class="lead-ico" aria-hidden="true">📍</span>${esc(where)}</span>` : '<span class="ad-cell-muted">—</span>'}
         ${km ? `<span class="lead-km">${esc(km)}</span>` : ''}
       </td>
-      <td class="lead-catcol">${r.category ? `<span class="lead-cat">${esc(r.category)}</span>` : `<span class="lead-cat is-type">${esc(LEAD_TYPES[r.type] || 'Lead')}</span>`}${r.verdict ? `<span class="lead-verdict is-${attr(r.verdict)}">${esc(LEAD_VERDICT[r.verdict] || r.verdict)}</span>` : ''}${r.needsResearch ? '<span class="lead-verdict is-info">🔭 With Scout</span>' : ''}</td>
+      <td class="lead-catcol">${r.category ? `<span class="lead-cat">${esc(r.category)}</span>` : `<span class="lead-cat is-type">${esc(LEAD_TYPES[r.type] || 'Lead')}</span>`}${r.verdict ? `<span class="lead-verdict is-${attr(r.verdict)}">${esc(LEAD_VERDICT[r.verdict] || r.verdict)}</span>` : ''}${r.needsResearch ? '<span class="lead-verdict is-info">🔍 With Phil</span>' : ''}</td>
       <td>${leadFitRater(r.rating, true, r.id)}</td>
       <td class="lead-num">${leadValueHtml(r)}</td>
       <td>${leadNextActHtml(r)}${fu ? `<span class="lead-fu is-${fu}">${fu === 'overdue' ? 'Overdue ' : 'Due '}${esc(fmtLeadDate(String(r.followUp).slice(0, 10)))}</span>` : ''}${(() => { const e = leadEoi(r); return e && e.state !== 'closed' ? `<span class="lead-eoi is-${e.state}" title="${attr(e.note || 'Supplier deadline')}">EOI closes ${esc(fmtLeadDate(e.date))}</span>` : ''; })()}</td>
@@ -9662,7 +9671,7 @@ function rateCardHtml(r, pos, total) {
     ['🎸 Live music', r.liveMusic],
     ['Entertainment/AV', [r.incumbent, r.needs ? 'Needs: ' + r.needs : '', r.power && r.power !== 'unknown' ? (r.power === 'generator' ? 'Generator needed' : 'Mains power') : ''].filter(Boolean).join(' · ')],
     ['Supplier deadline', r.eoiDate ? fmtLeadDate(r.eoiDate) + (r.eoiNote ? ' — ' + r.eoiNote : '') : ''],
-    ...(r.tips || []).filter((t) => t && !t.done).map((t) => ['📝 You asked Scout', (t.text || '') + ' (Scout will check tonight)']),
+    ...(r.tips || []).filter((t) => t && !t.done).map((t) => ['📝 You asked Scout', (t.text || '') + ' (waiting for Scout)']),
     ...(r.tips || []).filter((t) => t && t.done && t.reply).slice(-3).map((t) => ['🔭 Scout', t.reply]),
   ].filter(([, x]) => String(x || '').trim());
   const miss = rateMissing(r);
@@ -9670,7 +9679,7 @@ function rateCardHtml(r, pos, total) {
   const tags = [
     r.stage === 'won' ? '<span class="rt-chip is-won">🏆 Won</span>' : '',
     r.verdict ? `<span class="rt-chip is-verdict">${esc(LEAD_VERDICT[r.verdict] || r.verdict)}</span>` : '',
-    r.needsResearch ? '<span class="rt-chip is-info">🔭 With Scout</span>' : '',
+    r.needsResearch ? '<span class="rt-chip is-info">🔍 With Phil</span>' : '',
   ].join('');
   return `
     <article class="rt-card" data-rate-id="${attr(r.id)}">
@@ -9710,7 +9719,7 @@ function rateCardHtml(r, pos, total) {
     </div>
     <div class="rt-acts">
       <button type="button" class="rt-act is-won" data-rate-act="won"><i>🏆</i>Won</button>
-      <button type="button" class="rt-act is-info" data-rate-act="info"><i>🔭</i>To Scout</button>
+      <button type="button" class="rt-act is-info" data-rate-act="info"><i>🔍</i>To Phil</button>
       <button type="button" class="rt-act is-target" data-rate-act="nextyear"><i>🎯</i>Target ${esc(rateNextYear(r).label)}</button>
       <button type="button" class="rt-act is-locked" data-rate-act="locked"><i>🔒</i>Locked</button>
       <button type="button" class="rt-act is-pass" data-rate-act="pass"><i>✕</i>Pass</button>
@@ -9728,6 +9737,27 @@ function rateListHtml(rows, empty) {
     </button></li>`).join('')}</ul>`;
 }
 
+/*  "Ask Scout now": Scout (a routine on Max's computer) checks every 15 min
+    from 6am-10pm and only works when this has been pressed.            */
+function scoutBarHtml() {
+  const st = state.scoutState || {};
+  const asks = (state.leads || []).reduce((n, l) => n + (l.tips || []).filter((t) => t && !t.done).length, 0);
+  const req = Number(st.requestedAt || 0);
+  const started = Number(st.startedAt || 0);
+  const done = Number(st.doneAt || 0);
+  const ago = (ms) => { const m = Math.round((Date.now() - ms) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
+  let status;
+  if (req > started) status = 'Asked ' + ago(req) + ' — Scout starts within 15 min (6am–10pm, computer on)';
+  else if (started > done) status = '🔭 Scout is working on it…';
+  else if (done) status = 'Last run ' + ago(done) + (st.lastSummary ? ' — ' + st.lastSummary : '');
+  else status = 'Write asks with 🔭 Ask Scout on any lead, then press the button.';
+  const waiting = req > started || started > done;
+  return `<div class="rt-scout">
+    <button type="button" class="rt-scout-btn" data-scout-now ${asks && !waiting ? '' : 'disabled'}>🔭 Ask Scout now${asks ? ` <span>${asks}</span>` : ''}</button>
+    <p>${esc(status)}</p>
+  </div>`;
+}
+
 function leadRateHtml() {
   const s = rateState();
   const deck = rateDeck();
@@ -9742,7 +9772,7 @@ function leadRateHtml() {
   } else if (s.tab === 'review') {
     body = deck.length ? rateCardHtml(deck[0], 1, deck.length) : '<p class="rt-empty">🎉 Every lead is rated. New leads and researched ones will show up here.</p>';
   } else if (s.tab === 'waiting') {
-    body = rateListHtml(waiting, 'Nothing with Scout — tap "To Scout" or "Ask Scout" on a lead and Scout checks it tonight.');
+    body = rateListHtml(waiting, 'Nothing with Phil — tap "To Phil" on a lead and Phil fills it in tonight.');
   } else {
     body = rateListHtml(rated, 'No leads rated yet.');
   }
@@ -9753,12 +9783,13 @@ function leadRateHtml() {
           <a class="rt-exit" href="#/leads" aria-label="Close Lead Rating">✕</a>
           ${s.back.length && !focus && s.tab === 'review' ? '<button type="button" class="rt-prev" data-rate-prev aria-label="Previous lead">‹</button>' : ''}
           <nav class="rt-tabs">
-            ${[['review', 'Review', deck.length], ['waiting', 'Scout', waiting.length], ['rated', 'Rated', rated.length]]
+            ${[['review', 'Review', deck.length], ['waiting', 'Phil', waiting.length], ['rated', 'Rated', rated.length]]
               .map(([k, label, n]) => `<button type="button" class="rt-tab${s.tab === k && !focus ? ' is-on' : ''}" data-rate-tab="${k}">${label} <span>${n}</span></button>`).join('')}
           </nav>
         </div>
         <div class="rt-prog"><span>${deck.length} left to review</span><span>${rated.length} of ${all} rated · ${pct}%</span></div>
         <div class="rt-progbar"><i style="width:${pct}%"></i></div>
+        ${scoutBarHtml()}
         <div class="rt-main">${body}</div>
       </div>
     </div>`;
@@ -9812,7 +9843,7 @@ async function rateAct(act) {
     log.push('Tagged: Target next year (' + ny.label + ')');
     if (ny.followUp && (!r.followUp || String(r.followUp) > ny.followUp)) { patchData.followUp = ny.followUp; log.push('Follow-up ' + ny.followUp); }
   }
-  if (act === 'info') { patchData.needsResearch = true; log.push('Sent to Scout'); }
+  if (act === 'info') { patchData.needsResearch = true; log.push('Sent to Phil'); }
   if (act === 'next' && !log.length) {
     // skip for now - it comes back at the end of the deck
     if (!s.focus) { s.skip = s.skip.filter((x) => x !== r.id).concat(r.id); s.back.push(r.id); }
@@ -9842,8 +9873,15 @@ function wireLeadRate() {
     rateEditSave(f);
   });
   root.addEventListener('click', (e) => {
-    const t = e.target.closest('[data-rate-tip], [data-rate-tip-cancel], [data-rate-edit], [data-rate-edit-cancel], [data-rate-tab], [data-rate-pick], [data-rate-act], [data-rate-focus], [data-rate-unfocus], [data-rate-prev], [data-rate-open]');
+    const t = e.target.closest('[data-scout-now], [data-rate-tip], [data-rate-tip-cancel], [data-rate-edit], [data-rate-edit-cancel], [data-rate-tab], [data-rate-pick], [data-rate-act], [data-rate-focus], [data-rate-unfocus], [data-rate-prev], [data-rate-open]');
     if (!t) return;
+    if (t.hasAttribute('data-scout-now')) {
+      t.disabled = true;
+      const { doc, setDoc } = fb.f;
+      setDoc(doc(fb.db, 'scout', 'state'), { requestedAt: Date.now() }, { merge: true })
+        .catch((err) => { console.error('scout ask', err); t.disabled = false; });
+      return;
+    }
     if (t.hasAttribute('data-rate-tip')) { s.tip = !s.tip; s.edit = false; render(); const f = document.querySelector('[data-rate-tip-form] textarea'); if (f) { f.scrollIntoView({ block: 'center', behavior: 'smooth' }); f.focus(); } return; }
     if (t.hasAttribute('data-rate-tip-cancel')) { s.tip = false; render(); return; }
     if (t.hasAttribute('data-rate-edit')) { s.tip = false; s.edit = !s.edit; render(); const f = document.querySelector('.rt-edit'); if (f) f.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
@@ -9950,7 +9988,7 @@ function leadTipsHtml(r) {
   return `<div class="rt-tips">${tips.map((t) => `
     <div class="rt-tip${t.done ? ' is-done' : ''}">
       <p><b>📝 You (${esc(leadRelDay(new Date(t.at || Date.now()).toISOString().slice(0, 10)).toLowerCase())}):</b> ${esc(t.text || '')}</p>
-      ${t.done ? `<p class="rt-tip-reply"><b>🔭 Scout:</b> ${esc(t.reply || 'Done.')}</p>` : '<p class="rt-tip-wait">Scout will check this tonight</p>'}
+      ${t.done ? `<p class="rt-tip-reply"><b>🔭 Scout:</b> ${esc(t.reply || 'Done.')}</p>` : '<p class="rt-tip-wait">Waiting for Scout — press Ask Scout now</p>'}
     </div>`).join('')}</div>`;
 }
 function rateTipFormHtml(r) {
@@ -9970,9 +10008,8 @@ async function rateTipSave(form) {
   try {
     const e = { at: Date.now(), text: 'Asked Scout: ' + text.slice(0, 200) };
     const { doc, setDoc, arrayUnion } = fb.f;
-    await setDoc(doc(fb.db, 'leads', r.id), { tips: arrayUnion(tip), needsResearch: true, updatedAt: Date.now(), history: arrayUnion(e) }, { merge: true });
+    await setDoc(doc(fb.db, 'leads', r.id), { tips: arrayUnion(tip), updatedAt: Date.now(), history: arrayUnion(e) }, { merge: true });
     r.tips = [...(r.tips || []), tip];
-    r.needsResearch = true;
     r.history = [...(r.history || []), e];
   } catch (err) {
     console.error('tip save', err);

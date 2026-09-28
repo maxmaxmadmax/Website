@@ -3797,3 +3797,9 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .rt-tip-reply{ margin-top:4px !important; }
 .rt-tip-wait{ margin-top:3px !important; font-size:.72rem; color:#6b7280; }
 .lead-detail .rt-tips{ margin:6px 0; }
+/* Ask Scout now bar */
+.rt-scout{ flex:none; display:flex; align-items:center; gap:10px; margin:0 0 8px; }
+.rt-scout-btn{ flex:none; padding:8px 12px; border-radius:12px; border:0; background:#111827; color:#fff; font-weight:800; font-size:.8rem; cursor:pointer; }
+.rt-scout-btn span{ display:inline-block; min-width:18px; margin-left:4px; padding:1px 6px; border-radius:999px; background:var(--ad-orange, #f36f21); font-size:.72rem; }
+.rt-scout-btn:disabled{ opacity:.45; cursor:default; }
+.rt-scout p{ margin:0; font-size:.72rem; line-height:1.3; color:#6b7280; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
