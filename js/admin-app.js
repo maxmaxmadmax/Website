@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=228';
+} from './firebase-config.js?v=229';
 
-import { expandKit } from './kit.js?v=228';
+import { expandKit } from './kit.js?v=229';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6343,6 +6343,9 @@ function subscribeToPackages() {
     (snap) => {
       const rows = [];
       snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
+      // Findo's new finds stay with Phil until he's checked and filled them in
+      state.withPhil = rows.filter((r) => r.foundBy === 'Findo' && !r.enrichedAt).length;
+      for (let i = rows.length - 1; i >= 0; i--) if (rows[i].foundBy === 'Findo' && !rows[i].enrichedAt) rows.splice(i, 1);
       rows.sort((a, b) =>
         (a.eventType || '').localeCompare(b.eventType || '')
         || (a.order || 0) - (b.order || 0)
@@ -10010,6 +10013,7 @@ function leadRateHtml() {
           <div class="rt-menu-prog"><span>${deck.length} left to review</span><span>${rated.length} of ${all} rated · ${pct}%</span></div>
           <div class="rt-progbar"><i style="width:${pct}%"></i></div>
           ${scoutBarHtml() || '<p class="rt-scout-line">🔭 Scout: nothing on right now</p>'}
+          ${state.withPhil ? `<p class="rt-scout-line">🔍 Phil is checking ${state.withPhil} new find${state.withPhil === 1 ? '' : 's'} from Findo</p>` : ''}
         </div>` : ''}
         <div class="rt-main">${body}</div>
       </div>
