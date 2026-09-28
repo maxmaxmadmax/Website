@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=232';
+} from './firebase-config.js?v=233';
 
-import { expandKit } from './kit.js?v=232';
+import { expandKit } from './kit.js?v=233';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -7430,7 +7430,7 @@ function subscribeToScout() {
   const { doc, onSnapshot } = fb.f;
   unsubscribes.push(onSnapshot(doc(fb.db, 'scout', 'state'), (d) => {
     state.scoutState = d.exists() ? d.data() : {};
-    if (state.view === 'leadRate' && !(state.rate && (state.rate.busy || state.rate.edit || state.rate.tip)) && !(document.activeElement && document.activeElement.matches && document.activeElement.matches('[data-rate-tip-text]'))) render();
+    if (state.view === 'leadRate' && !(state.rate && (state.rate.busy || state.rate.edit || state.rate.tip || state.rate.sheet)) && !(document.activeElement && document.activeElement.matches && document.activeElement.matches('[data-rate-tip-text]'))) render();
   }, (err) => console.error('scout', err)));
 }
 
@@ -7457,7 +7457,7 @@ function subscribeToLeads() {
         else render();
       }
       // the rating deck redraws on outside changes, but not mid-save
-      if (state.view === 'leadRate' && !(state.rate && (state.rate.busy || state.rate.edit || state.rate.tip)) && !(document.activeElement && document.activeElement.matches && document.activeElement.matches('[data-rate-tip-text]'))) render();
+      if (state.view === 'leadRate' && !(state.rate && (state.rate.busy || state.rate.edit || state.rate.tip || state.rate.sheet)) && !(document.activeElement && document.activeElement.matches && document.activeElement.matches('[data-rate-tip-text]'))) render();
     },
     (err) => console.error('leads', err)
   ));
@@ -7716,8 +7716,8 @@ function leadCalendarHtml() {
     if (!k) { undated++; return; }
     const wk = leadWeekKey(r);
     // only leads Max has rated get a dot - imported heat doesn't count
-    if (Number(r.rating)) {
-      const p = leadPriority(r);
+    const p = r.verdict === 'chase' || r.stage === 'won' ? 'high' : ['save', 'nextyear'].includes(r.verdict) ? 'medium' : ['pass', 'locked'].includes(r.verdict) ? 'low' : Number(r.rating) ? leadPriority(r) : '';
+    if (p) {
       (byMonth[k] = byMonth[k] || []).push(p);
       if (wk) (byWeek[wk] = byWeek[wk] || []).push(p);
     }
@@ -9886,7 +9886,7 @@ function rateSortKey(r) {
 function rateDeck() {
   const s = rateState();
   // a lead Max just left a note on stays on screen until he picks an action
-  const list = (state.leads || []).filter((r) => !Number(r.rating) || r.id === s.stay)
+  const list = (state.leads || []).filter((r) => !r2Decided(r) || r.id === s.stay)
     .sort((a, b) => rateSortKey(a).localeCompare(rateSortKey(b)) || String(a.title || '').localeCompare(String(b.title || '')));
   // "Next" without a rating sends a lead to the back for this session
   const skipped = list.filter((r) => s.skip.includes(r.id));
@@ -10078,9 +10078,9 @@ async function rateSave(r, patchData, logText) {
   return true;
 }
 
-const RATE_ACT_LABEL = { won: 'Won', info: 'To Phil', nextyear: 'Target next year', locked: 'Locked', pass: 'Pass', next: 'Next' };
+const RATE_ACT_LABEL = { won: 'Won', info: 'To Phil', nextyear: 'Target next year', locked: 'Locked', pass: 'Pass', next: 'Next', save: 'Save', chase: 'Chase', note: 'Note' };
 async function rateSendAsk(r, text, act) {
-  const ctx = [Number(r.rating) ? r.rating + '/5' : 'not rated', RATE_ACT_LABEL[act] || act].join(' · ');
+  const ctx = RATE_ACT_LABEL[act] || act;
   const tip = { at: Date.now(), text, done: false, reply: '', context: 'Max: ' + ctx };
   try {
     const e = { at: Date.now(), text: 'Asked Scout: ' + text.slice(0, 200) };
@@ -10369,7 +10369,305 @@ async function rateTipSave(form) {
   render();
 }
 
+
+/* =========================================================================
+   LEAD SORTING v2 (Max's mockup, 28 Sep 2026) - simpler: Pass / Save / Chase.
+     Pass  -> tagged "Not for us" (still visible everywhere)
+     Save  -> maybe later - the Saved list
+     Chase -> go after it - the Chasing list, and Scout starts on outreach
+   After a decision an optional note (quick chips + text) goes to Scout.
+   More info opens everything captured: Overview / Contacts / History / Notes.
+   No more 1-5 fit rating.
+   ========================================================================= */
+const R2_ACTS = {
+  pass: { label: 'Pass', ico: '✕', log: 'Pass — not for us' },
+  save: { label: 'Save', ico: '☆', log: 'Saved for later' },
+  chase: { label: 'Chase', ico: '✓', log: 'Chasing' },
+};
+const R2_CHIPS = ['Good potential', 'Contact after event', 'Look at 2027', 'Needs more info', 'Wedding / private', 'Send estimate'];
+function r2Decided(r) {
+  return ['pass', 'save', 'chase', 'nextyear', 'locked'].includes(r.verdict) || !!Number(r.rating) || r.stage === 'won';
+}
+function r2List(kind) {
+  const all = state.leads || [];
+  const pick = kind === 'saved' ? (r) => ['save', 'nextyear'].includes(r.verdict)
+    : kind === 'chasing' ? (r) => r.verdict === 'chase' || r.stage === 'won'
+      : (r) => ['pass', 'locked'].includes(r.verdict);
+  return all.filter(pick).sort((a, b) => rateSortKey(a).localeCompare(rateSortKey(b)));
+}
+function r2When(r) {
+  if (leadHasExactDate(r)) return fmtLeadDate(r.eventDate.slice(0, 10));
+  return leadWhen(r) || 'Date TBC';
+}
+function r2Photo(r, cls) {
+  const [icon, tint] = leadCatStyle(r);
+  const img = r.imageBroken ? '' : leadImageUrl(r);
+  return `<div class="${cls} ${tint}">${img ? `<img src="${attr(img)}" alt="" referrerpolicy="no-referrer" data-lead-img="${attr(r.id)}">` : `<span aria-hidden="true">${icon}</span>`}</div>`;
+}
+function r2Meta(r) {
+  const where = r.venue || r.town || '';
+  return `<p class="r2-meta"><span>📅 ${esc(r2When(r))}</span>${where ? `<span>📍 ${esc(where)}</span>` : ''}${leadKmText(r) ? `<span class="r2-km">${esc(leadKmText(r))}</span>` : ''}</p>`;
+}
+function r2Tip(r) {
+  const p = String(r.pitch || '').trim();
+  if (!p) return '';
+  const warm = /not worth|skip|too far|too small|locked|pass/i.test(p) ? 'is-cool' : /2027|next year|after/i.test(p) ? 'is-later' : 'is-good';
+  const ico = warm === 'is-good' ? '📈' : warm === 'is-later' ? '🗓️' : '⚠️';
+  return `<div class="r2-tip ${warm}"><span aria-hidden="true">${ico}</span><p>${esc(p.length > 150 ? p.slice(0, 147) + '…' : p)}</p></div>`;
+}
+function r2Buttons(r, withMore) {
+  return `<div class="r2-acts">
+    ${Object.entries(R2_ACTS).map(([k, a]) => `<button type="button" class="r2-act is-${k}${r.verdict === k ? ' is-on' : ''}" data-r2-act="${k}" data-r2-id="${attr(r.id)}"><i>${a.ico}</i><span>${a.label}</span></button>`).join('')}
+    ${withMore ? `<button type="button" class="r2-act is-more" data-r2-more="${attr(r.id)}"><i>···</i><span>More info</span></button>` : ''}
+  </div>`;
+}
+function r2CardHtml(r, pos, total) {
+  return `
+    <article class="r2-card rt-card" data-rate-id="${attr(r.id)}">
+      ${r2Photo(r, 'r2-photo')}
+      <div class="r2-body">
+        <h2 class="r2-title">${esc(r.title || r.eventName || 'Lead')}</h2>
+        ${r2Meta(r)}
+        ${r2Tip(r)}
+        <button type="button" class="r2-moredet" data-r2-more="${attr(r.id)}">More details ›</button>
+      </div>
+    </article>
+    ${r2Buttons(r, true)}`;
+}
+function r2Tile(ico, big, small) {
+  return `<div class="r2-tile"><span aria-hidden="true">${ico}</span><b>${esc(big || '—')}</b><small>${esc(small)}</small></div>`;
+}
+function r2DetailHtml(r) {
+  const s = rateState();
+  const tab = s.dtab || 'overview';
+  const v = leadValue(r);
+  const music = String(r.liveMusic || '').trim();
+  const musicShort = !music ? '—' : /^\s*(none|no live|not found)/i.test(music) ? 'None found' : /^\s*yes/i.test(music) ? 'Yes' : 'See notes';
+  const runs = String(r.recurrence || '').replace(/\s*[—–-].*$/, '').trim();
+  const brief = [
+    ['When', [r2When(r), r.startTime].filter(Boolean).join(' · ')],
+    ['Where', [r.venue || r.town, r.venueSetup, leadKmText(r)].filter(Boolean).join(' · ')],
+    ['Organiser', leadOrganiser(r)],
+    ['Live music', music],
+    ['Supplier now', r.incumbent],
+    ['Needs', r.needs],
+    ['Supplier deadline', r.eoiDate ? fmtLeadDate(r.eoiDate) + (r.eoiNote ? ' — ' + r.eoiNote : '') : ''],
+  ].filter(([, x]) => String(x || '').trim());
+  const src = leadSafeUrl(r.website) || leadSafeUrl(r.sourceUrl);
+  const phone = String(r.phone || '').trim();
+  const email = String(r.email || '').trim();
+  const okEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const mobile = leadIsMobile(phone);
+  const panes = {
+    overview: `
+      <div class="r2-tiles">
+        ${r2Tile('👥', r.crowd, 'Expected crowd')}
+        ${r2Tile('📊', v ? leadDollars(v.cents) : '', v && v.src === 'quote' ? 'Quote value' : 'Potential value')}
+        ${r2Tile('🎵', musicShort, 'Live music')}
+        ${r2Tile('🔁', runs, 'Runs')}
+      </div>
+      ${String(r.summary || '').trim() ? `<h3 class="r2-h">About</h3><p class="r2-p">${esc(r.summary)}</p>` : ''}
+      ${r2Tip(r)}
+      ${brief.length ? `<ul class="r2-brief">${brief.map(([k, x]) => `<li><b>${esc(k)}:</b> ${esc(x)}</li>`).join('')}</ul>` : ''}
+      ${leadFreshHtml(r)}
+      ${src ? `<h3 class="r2-h">Source</h3><p class="r2-p"><a href="${attr(src.href)}" target="_blank" rel="noopener noreferrer">${esc(src.hostname.replace(/^www\./, '') + (src.pathname.length > 1 ? src.pathname : ''))}</a></p>` : ''}`,
+    contacts: `
+      <dl class="r2-dl">
+        <div><dt>Contact</dt><dd>${esc(r.contactName || '') || '<span class="lead-mc-none">Not provided</span>'}</dd></div>
+        ${r.decisionMaker ? `<div><dt>Decision maker</dt><dd>${esc(r.decisionMaker)}</dd></div>` : ''}
+        <div><dt>Phone</dt><dd>${phone ? `<a href="tel:${attr(phone.replace(/[^\d+]/g, ''))}">${esc(phone)}</a>` : '<span class="lead-mc-none">Not provided</span>'}</dd></div>
+        <div><dt>Email</dt><dd>${okEmail ? `<a href="mailto:${attr(email)}">${esc(email)}</a>` : '<span class="lead-mc-none">Not provided</span>'}</dd></div>
+        <div><dt>Website</dt><dd>${leadSafeUrl(r.website) ? `<a href="${attr(leadSafeUrl(r.website).href)}" target="_blank" rel="noopener noreferrer">${esc(leadSafeUrl(r.website).hostname.replace(/^www\./, ''))}</a>` : '<span class="lead-mc-none">Not provided</span>'}</dd></div>
+      </dl>
+      <div class="r2-links">${leadContactIconsHtml(r)}</div>
+      <div class="r2-reach">
+        ${leadIsCouncil(r) ? '<span class="r2-reachbtn is-off">💬 SMS (council: email)</span>'
+          : mobile ? `<a class="r2-reachbtn is-sms" href="${attr(leadSmsHref(r))}">💬 SMS${r.smsDraft ? ' ✓' : ''}</a>` : `<span class="r2-reachbtn is-off">💬 SMS</span>`}
+        ${phone ? `<a class="r2-reachbtn is-call" href="tel:${attr(phone.replace(/[^\d+]/g, ''))}">📞 Call</a>` : '<span class="r2-reachbtn is-off">📞 Call</span>'}
+        ${okEmail ? `<button type="button" class="r2-reachbtn is-email" data-r2-email="${attr(r.id)}">✉️ Email</button>` : '<span class="r2-reachbtn is-off">✉️ Email</span>'}
+      </div>`,
+    history: `
+      ${r.lastEdition ? `<h3 class="r2-h">Last edition</h3><p class="r2-p">${esc(r.lastEdition)}</p>` : ''}
+      ${music ? `<h3 class="r2-h">Live music</h3><p class="r2-p">${esc(music)}</p>` : ''}
+      ${r.recurrence ? `<h3 class="r2-h">Runs</h3><p class="r2-p">${esc(r.recurrence)}</p>` : ''}
+      <h3 class="r2-h">Activity</h3>
+      <ul class="r2-hist">${(r.history || []).slice().sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 12)
+        .map((e) => `<li><small>${esc(leadRelDay(new Date(e.at || Date.now()).toISOString().slice(0, 10)))}</small> ${esc(e.text || '')}</li>`).join('') || '<li>Nothing yet.</li>'}</ul>`,
+    notes: `
+      ${leadTipsHtml(r) || '<p class="r2-p r2-muted">No asks yet.</p>'}
+      ${r.notes ? `<h3 class="r2-h">Notes</h3><p class="r2-p">${esc(String(r.notes).slice(0, 600))}</p>` : ''}
+      <label class="r2-ask"><span aria-hidden="true">🔭</span><textarea rows="3" data-r2-asktext placeholder="Ask Scout — what you know or what to do">${esc(s.tipDraft || '')}</textarea></label>
+      <button type="button" class="r2-send" data-r2-ask="${attr(r.id)}">Send to Scout</button>`,
+  };
+  return `
+    <div class="r2-detail" data-rate-id="${attr(r.id)}">
+      <div class="r2-dtop"><button type="button" class="r2-back" data-r2-back aria-label="Back">‹</button><h2>${esc(r.title || 'Lead')}</h2></div>
+      <div class="r2-dscroll">
+        ${r2Photo(r, 'r2-dphoto')}
+        ${r2Meta(r)}
+        <nav class="r2-tabs">${[['overview', 'Overview'], ['contacts', 'Contacts'], ['history', 'History'], ['notes', 'Notes']]
+          .map(([k, l]) => `<button type="button" class="${tab === k ? 'is-on' : ''}" data-r2-tab="${k}">${l}</button>`).join('')}</nav>
+        <div class="r2-pane">${panes[tab]}</div>
+      </div>
+      ${r2Buttons(r, false)}
+    </div>`;
+}
+function r2SheetHtml() {
+  const s = rateState();
+  const sh = s.sheet;
+  if (!sh) return '';
+  const a = R2_ACTS[sh.act] || {};
+  return `
+    <div class="r2-sheet-bg" data-r2-skip></div>
+    <div class="r2-sheet" role="dialog" aria-label="Add a note">
+      <div class="r2-sheet-top"><b>${esc(a.ico || '')} ${esc(a.label || '')} — add a note <span>(optional)</span></b><button type="button" data-r2-skip aria-label="Close">✕</button></div>
+      ${sh.act === 'chase' ? '<p class="r2-sheet-info">🔭 Scout will prepare outreach for this lead.</p>' : ''}
+      <div class="r2-chips">${R2_CHIPS.map((c) => `<button type="button" class="${(sh.chips || []).includes(c) ? 'is-on' : ''}" data-r2-chip="${attr(c)}">${esc(c)}</button>`).join('')}</div>
+      <textarea rows="3" data-r2-note placeholder="Type a note…">${esc(sh.text || '')}</textarea>
+      <button type="button" class="r2-savenext" data-r2-savenext>Save &amp; next</button>
+      <button type="button" class="r2-skip" data-r2-skip>Skip</button>
+    </div>`;
+}
+function leadSortHtml() {
+  const s = rateState();
+  const deck = rateDeck();
+  const focus = s.focus && (state.leads || []).find((x) => x.id === s.focus);
+  const lists = { saved: r2List('saved'), chasing: r2List('chasing'), passed: r2List('passed') };
+  let body;
+  if (focus) body = r2DetailHtml(focus);
+  else if (s.tab === 'review' || !lists[s.tab]) {
+    if (!Number.isInteger(s.pos) || s.pos < 0) s.pos = 0;
+    if (s.pos >= deck.length) s.pos = Math.max(0, deck.length - 1);
+    body = deck.length ? r2CardHtml(deck[s.pos], s.pos + 1, deck.length) : '<p class="rt-empty">🎉 All sorted. New leads show up here once Phil has filled them in.</p>';
+  } else {
+    const rows = lists[s.tab];
+    body = rows.length ? `<ul class="rt-list">${rows.map((r) => `<li><button type="button" data-r2-open="${attr(r.id)}"><span class="rt-li-t">${esc(r.title || 'Lead')}</span><span class="rt-li-m">${esc(r2When(r))}${leadKmText(r) ? ' · ' + esc(leadKmText(r)) : ''}</span></button></li>`).join('')}</ul>` : '<p class="rt-empty">Nothing here yet.</p>';
+  }
+  const titles = { review: 'Leads', saved: 'Saved', chasing: 'Chasing', passed: 'Passed' };
+  return `
+    <div class="rt-wrap">
+      <div class="rt-phone r2">
+        <div class="rt-top">
+          <a class="rt-exit" href="#/leads" aria-label="Close">✕</a>
+          <h1 class="r2-h1">${esc(titles[s.tab] || 'Leads')}</h1>
+          <span class="rt-top-fill"></span>
+          ${!focus && (s.tab === 'review' || !lists[s.tab]) && deck.length ? `<span class="r2-of">${s.pos + 1} of ${deck.length}</span>` : ''}
+          <button type="button" class="rt-burger${s.menu ? ' is-on' : ''}" data-rate-menu aria-label="Menu">☰</button>
+        </div>
+        ${s.menu ? `<div class="rt-menu">
+          <nav class="rt-tabs">${[['review', 'To sort', deck.length], ['chasing', 'Chasing', lists.chasing.length], ['saved', 'Saved', lists.saved.length], ['passed', 'Passed', lists.passed.length]]
+            .map(([k, l, n]) => `<button type="button" class="rt-tab${s.tab === k ? ' is-on' : ''}" data-r2-list="${k}">${l} <span>${n}</span></button>`).join('')}</nav>
+          ${scoutBarHtml() || '<p class="rt-scout-line">🔭 Scout: nothing on right now</p>'}
+          ${state.withPhil ? `<p class="rt-scout-line">🔍 Phil is checking ${state.withPhil} new find${state.withPhil === 1 ? '' : 's'} from Findo</p>` : ''}
+        </div>` : ''}
+        <div class="rt-main">${body}</div>
+        ${r2SheetHtml()}
+      </div>
+    </div>`;
+}
+
+async function r2Decide(id, act) {
+  const s = rateState();
+  const r = (state.leads || []).find((x) => x.id === id);
+  if (!r || s.busy || !R2_ACTS[act]) return;
+  if (r.verdict !== act) {
+    const patch = { verdict: act };
+    if (act === 'chase') patch.target = true;
+    if (!(await rateSave(r, patch, 'Lead sorting: ' + R2_ACTS[act].log))) return;
+  }
+  s.sheet = { id, act, chips: [], text: '' };
+  render();
+}
+async function r2Finish(withNote) {
+  const s = rateState();
+  const sh = s.sheet;
+  if (!sh) return;
+  const r = (state.leads || []).find((x) => x.id === sh.id);
+  const note = withNote ? [...(sh.chips || []), String(sh.text || '').trim()].filter(Boolean).join('. ') : '';
+  // Chase = Scout prepares outreach; any note rides along with it
+  const ask = sh.act === 'chase'
+    ? ['Chase: prepare outreach for this lead (check the details, then a checked intro SMS, or an email if council).', note].filter(Boolean).join(' Max adds: ')
+    : note;
+  if (r && ask && !(await rateSendAsk(r, ask, sh.act))) return;
+  s.sheet = null;
+  s.tipDraft = '';
+  if (s.focus === sh.id) s.focus = '';
+  render();
+}
+
+function wireLeadSort() {
+  const root = document.querySelector('.rt-phone');
+  if (!root) return;
+  wireLeadImageErrors();
+  const s = rateState();
+  root.addEventListener('input', (e) => {
+    if (e.target.matches('[data-r2-note]') && s.sheet) s.sheet.text = e.target.value;
+    if (e.target.matches('[data-r2-asktext]')) s.tipDraft = e.target.value;
+  });
+  root.addEventListener('click', async (e) => {
+    const t = e.target.closest('[data-rate-menu], [data-r2-list], [data-r2-act], [data-r2-more], [data-r2-open], [data-r2-back], [data-r2-tab], [data-r2-chip], [data-r2-savenext], [data-r2-skip], [data-r2-ask], [data-r2-email]');
+    if (!t) return;
+    if (t.hasAttribute('data-rate-menu')) { s.menu = !s.menu; render(); return; }
+    if (t.hasAttribute('data-r2-list')) { s.tab = t.getAttribute('data-r2-list'); s.menu = false; s.focus = ''; render(); return; }
+    if (t.hasAttribute('data-r2-act')) { r2Decide(t.getAttribute('data-r2-id'), t.getAttribute('data-r2-act')); return; }
+    if (t.hasAttribute('data-r2-more') || t.hasAttribute('data-r2-open')) { s.focus = t.getAttribute('data-r2-more') || t.getAttribute('data-r2-open'); s.dtab = 'overview'; s.tipDraft = ''; render(); return; }
+    if (t.hasAttribute('data-r2-back')) { s.focus = ''; render(); return; }
+    if (t.hasAttribute('data-r2-tab')) { s.dtab = t.getAttribute('data-r2-tab'); render(); return; }
+    if (t.hasAttribute('data-r2-chip') && s.sheet) {
+      const c = t.getAttribute('data-r2-chip');
+      s.sheet.chips = (s.sheet.chips || []).includes(c) ? s.sheet.chips.filter((x) => x !== c) : [...(s.sheet.chips || []), c];
+      t.classList.toggle('is-on');
+      return;
+    }
+    if (t.hasAttribute('data-r2-savenext')) { r2Finish(true); return; }
+    if (t.hasAttribute('data-r2-skip')) { r2Finish(false); return; }
+    if (t.hasAttribute('data-r2-ask')) {
+      const r = (state.leads || []).find((x) => x.id === t.getAttribute('data-r2-ask'));
+      const text = String(s.tipDraft || '').trim();
+      if (!r || !text) return;
+      t.disabled = true;
+      if (await rateSendAsk(r, text, 'note')) { s.tipDraft = ''; render(); } else t.disabled = false;
+      return;
+    }
+    if (t.hasAttribute('data-r2-email')) {
+      const id = t.getAttribute('data-r2-email');
+      if (openLead(id, 'overview')) { location.hash = '#/leads'; setTimeout(() => openLeadCompose(), 50); }
+    }
+  });
+  // swipe the card to browse (nothing is saved)
+  const card = root.querySelector('.r2-card');
+  if (card && !s.focus && !s.sheet) {
+    let x0 = 0, y0 = 0, t0 = 0, on = false, horiz = null;
+    const start = (x, y, target) => { if (target.closest('a, button, textarea')) { on = false; return; } on = true; horiz = null; x0 = x; y0 = y; t0 = Date.now(); };
+    const move = (x, y) => { if (!on) return; const dx = x - x0, dy = y - y0; if (horiz === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) horiz = Math.abs(dx) > Math.abs(dy); if (horiz) card.style.transform = `translateX(${dx}px) rotate(${dx * 0.03}deg)`; };
+    const finish = (x, y) => { if (!on) return; on = false; card.style.transform = ''; const dx = x - x0, dy = y - y0; const fast = Math.abs(dx) / Math.max(1, Date.now() - t0) > 0.45; if (horiz && (Math.abs(dx) > 45 || (fast && Math.abs(dx) > 20)) && Math.abs(dx) > Math.abs(dy)) rateBrowse(dx < 0 ? 1 : -1); };
+    card.addEventListener('touchstart', (e) => start(e.touches[0].clientX, e.touches[0].clientY, e.target), { passive: true });
+    card.addEventListener('touchmove', (e) => move(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+    card.addEventListener('touchend', (e) => finish(e.changedTouches[0].clientX, e.changedTouches[0].clientY));
+    card.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse' && e.button === 0) start(e.clientX, e.clientY, e.target); });
+    card.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') move(e.clientX, e.clientY); });
+    card.addEventListener('pointerup', (e) => { if (e.pointerType === 'mouse') finish(e.clientX, e.clientY); });
+    card.addEventListener('dragstart', (e) => e.preventDefault());
+  }
+}
+let r2KeysWired = false;
+function wireLeadSortKeys() {
+  if (r2KeysWired) return;
+  r2KeysWired = true;
+  document.addEventListener('keydown', (e) => {
+    if (state.view !== 'leadRate' || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.target && e.target.closest && e.target.closest('input, select, textarea')) return;
+    const s = rateState();
+    if (s.sheet || s.focus) return;
+    const k = e.key.toLowerCase();
+    if (k === 'arrowright' || k === 'arrowleft') { rateBrowse(k === 'arrowright' ? 1 : -1); return; }
+    const card = document.querySelector('.r2-card');
+    const act = { p: 'pass', s: 'save', c: 'chase' }[k];
+    if (act && card) r2Decide(card.getAttribute('data-rate-id'), act);
+  });
+}
+
 VIEWS.leadRate = {
-  html() { return leadRateHtml(); },
-  wire() { wireRateKeys(); wireLeadRate(); },
+  html() { return leadSortHtml(); },
+  wire() { wireLeadSortKeys(); wireLeadSort(); },
 };
