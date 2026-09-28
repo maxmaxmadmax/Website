@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=231';
+} from './firebase-config.js?v=232';
 
-import { expandKit } from './kit.js?v=231';
+import { expandKit } from './kit.js?v=232';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -8661,6 +8661,13 @@ function leadSmsBody(r) {
   const outdoor = /street|park\b|foreshore/i.test(String(r.venueSetup || '') + ' ' + String(r.venue || '')) && !/racecourse|race ?day|turf/i.test(String(r.venueSetup || '') + ' ' + String(r.venue || '') + ' ' + String(r.title || ''));
   let middle;
   const recent = leadHasExactDate(r) && leadIsPast(r) && (Date.now() - new Date(r.eventDate.slice(0, 10) + 'T00:00:00')) < 95 * 864e5;
+  // regular live-music venue (pub / club): ask about production for their bands
+  if (r.type === 'venue' || /pubs\/live music/i.test(String(r.category || ''))) {
+    const venue = String(r.title || r.venue || 'your venue').split(/\s+[—–-]\s+/)[0].split(',')[0].trim();
+    return [`Hi ${who || 'there'},`, '', 'My name is Max from SoundzGood in North Queensland. We provide production services for events: www.soundzgood.com.au/services.html', '',
+      `I'm just reaching out regarding the live music at ${venue}. Do you have someone looking after sound and production for your bands?`, '',
+      'When you have some time, would love to discuss this further.', '', 'Cheers,', 'Max'].join('\n');
+  }
   const opener = nextYear && (recent || !leadIsPast(r)) ? `Hope this year's ${/cup/i.test(ev) ? 'Cup' : /rodeo/i.test(ev) ? 'Rodeo Weekend' : /\bshow\b/i.test(ev) ? 'Show' : 'event'} went well. ` : '';
   if (!who) {
     middle = `${opener}I'm just reaching out regarding ${evFull}${where}${when}. Who would be the best person to speak with about the event production and entertainment for it?`;
