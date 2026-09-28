@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=203';
+} from './firebase-config.js?v=204';
 
-import { expandKit } from './kit.js?v=203';
+import { expandKit } from './kit.js?v=204';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -9727,7 +9727,6 @@ function rateCardHtml(r, pos, total) {
     </div>
     <div class="rt-acts">
       <button type="button" class="rt-act is-won" data-rate-act="won"><i>🏆</i>Won</button>
-      <button type="button" class="rt-act is-info" data-rate-act="info"><i>🔍</i>To Phil</button>
       <button type="button" class="rt-act is-target" data-rate-act="nextyear"><i>🎯</i>Target ${esc(rateNextYear(r).label)}</button>
       <button type="button" class="rt-act is-locked" data-rate-act="locked"><i>🔒</i>Locked</button>
       <button type="button" class="rt-act is-pass" data-rate-act="pass"><i>✕</i>Pass</button>
@@ -9960,7 +9959,7 @@ function wireRateKeys() {
     if (state.view !== 'leadRate' || e.altKey || e.ctrlKey || e.metaKey || e.target.closest('input, select, textarea')) return;
     const k = e.key.toLowerCase();
     if (/^[1-5]$/.test(k)) { const b = document.querySelector(`[data-rate-pick="${k}"]`); if (b) b.click(); return; }
-    const act = { w: 'won', i: 'info', t: 'nextyear', l: 'locked', p: 'pass', n: 'next', arrowright: 'next' }[k];
+    const act = { w: 'won', t: 'nextyear', l: 'locked', p: 'pass', n: 'next', arrowright: 'next' }[k];
     if (act && document.querySelector('.rt-card')) rateAct(act);
   });
 }
