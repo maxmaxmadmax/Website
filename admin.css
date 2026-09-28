@@ -3812,3 +3812,19 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .rt-ask span{ font-size:1.1rem; line-height:1.6; }
 .rt-ask textarea{ flex:1; min-height:40px; max-height:96px; resize:none; border:0; outline:none; background:transparent; color:#111827; font:inherit; font-size:16px; line-height:1.35; }
 .rt-ask:focus-within{ border-color:var(--ad-orange, #f36f21); box-shadow:0 0 0 3px rgba(243,111,33,.15); }
+
+/* ===== Leads table on a phone: each row becomes a card, no sideways scroll ===== */
+@media (max-width:760px){
+  .lead-table-wrap{ overflow-x:hidden; }
+  .lead-table{ min-width:0 !important; width:100%; table-layout:auto; display:block; }
+  .lead-table thead{ display:none; }
+  .lead-table tbody{ display:grid; gap:10px; }
+  .lead-table tr.lead-row{ display:grid; grid-template-columns:1fr 1fr; gap:8px 12px; padding:12px; border:1px solid var(--ad-line); border-radius:14px; background:var(--ad-card); }
+  .lead-table tr.lead-row > td{ display:block; padding:0 !important; border:0 !important; width:auto !important; min-width:0; }
+  .lead-table tr.lead-row > td:nth-child(1){ grid-column:1 / -1; }
+  .lead-table tr.lead-row > td:nth-child(6){ display:none; }            /* est. value - in the full lead */
+  .lead-table tr.lead-row > td:nth-child(7){ grid-column:1; align-self:center; }
+  .lead-table tr.lead-row > td:nth-child(8){ grid-column:2; justify-self:end; align-self:center; }
+  .lead-table .lead-evcol .lead-tile, .ad-desk.is-leads .lead-evcol .lead-tile{ width:96px; height:58px; flex:0 0 96px; }
+  .lead-table td:nth-child(2), .lead-table td:nth-child(3){ font-size:.85rem; }
+}
