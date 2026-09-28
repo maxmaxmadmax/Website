@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=215';
+} from './firebase-config.js?v=216';
 
-import { expandKit } from './kit.js?v=215';
+import { expandKit } from './kit.js?v=216';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -8601,10 +8601,15 @@ function leadEventYear(r) {
     4. Council / civic events never get an SMS - email, listing what we do.
     5. No named contact: ask who the right person is.
     6. Target '27 leads: contact them after this year's event.            */
+const LEAD_PROOF_LINK = 'www.soundzgood.com.au/services.html#sgs-annual-h';
 const LEAD_SAMPLE_JOBS = [
   { match: /fish|barra|angl/i,
-    line: 'We recently did the production for the Stonka Fishing Challenge, including our live online scoreboard on a large LED screen for the leaderboard.',   // add the Stonka page link once it's live
+    line: 'We recently did the production for the Stonka Fishing Challenge, including our live online scoreboard on a large LED screen for the leaderboard',
     ask: 'Would something like that suit your comp and presentation night?' },
+  { match: /\bshow\b|agricultural|pastoral/i,
+    line: 'We recently provided the audio and event production for the Don River Dash in Bowen' },
+  { match: /festival|music|concert|country|folk|rodeo/i,
+    line: 'We recently worked on Paradise Country at Cape Gloucester' },
 ];
 function leadIsCouncil(r) {
   return /council|civic/i.test(String(r.category || '')) || /\bcouncil\b|\bshire\b|\bMECC\b/i.test(String(r.organiser || ''));
@@ -8629,13 +8634,17 @@ function leadSmsBody(r) {
   // street parties, parks, foreshores - community events that need a stage (race days / venues don't)
   const outdoor = /street|park\b|foreshore/i.test(String(r.venueSetup || '') + ' ' + String(r.venue || '')) && !/racecourse|race ?day|turf/i.test(String(r.venueSetup || '') + ' ' + String(r.venue || '') + ' ' + String(r.title || ''));
   let middle;
-  const opener = nextYear ? `Hope this year's ${/cup/i.test(ev) ? 'Cup' : /rodeo/i.test(ev) ? 'Rodeo Weekend' : 'event'} went well. ` : '';
+  const recent = leadHasExactDate(r) && leadIsPast(r) && (Date.now() - new Date(r.eventDate.slice(0, 10) + 'T00:00:00')) < 95 * 864e5;
+  const opener = nextYear && (recent || !leadIsPast(r)) ? `Hope this year's ${/cup/i.test(ev) ? 'Cup' : /rodeo/i.test(ev) ? 'Rodeo Weekend' : /\bshow\b/i.test(ev) ? 'Show' : 'event'} went well. ` : '';
   if (!who) {
     middle = `${opener}I'm just reaching out regarding ${evFull}${where}${when}. Who would be the best person to speak with about the event production and entertainment for it?`;
   } else if (job) {
-    middle = `I'm just reaching out regarding ${evFull}${where}${when}. ${job.line}\n\n${job.ask}`;
+    const show = /\bshow\b|agricultural|pastoral/i.test([r.title, r.eventName, r.category].join(' '));
+    const ask = job.ask || (show ? `Do you have your audio and AV sorted for ${nextYear ? "next year's Show" : 'the Show'}?` : `Do you have your event production sorted for ${nextYear ? 'next year' : 'this event'}?`);
+    const lead = nextYear ? `${opener}I'm just reaching out ${opener ? 'regarding' : 'ahead of'} ${evFull}${where}.` : `I'm just reaching out regarding ${evFull}${where}${when}.`;
+    middle = `${lead} ${job.line}, which you can see here: ${LEAD_PROOF_LINK}\n\n${ask}`;
   } else if (nextYear) {
-    middle = `${opener}I'm just reaching out regarding ${evFull}${where}. Do you have your event production and entertainment sorted for next year?`;
+    middle = `${opener}I'm just reaching out ${opener ? 'regarding' : 'ahead of'} ${evFull}${where}. Do you have your event production and entertainment sorted for next year?`;
   } else if (outdoor) {
     middle = `I'm just reaching out regarding ${evFull}${where}${when}. Do you have your stage, sound and entertainment sorted for this year?`;
   } else {
@@ -8644,7 +8653,7 @@ function leadSmsBody(r) {
   return [
     `Hi ${who || 'there'},`,
     '',
-    'My name is Max from SoundzGood in North Queensland. We provide production services for events: www.soundzgood.com.au/services.html',
+    job ? 'My name is Max from SoundzGood in North Queensland. We provide production services for events.' : 'My name is Max from SoundzGood in North Queensland. We provide production services for events: www.soundzgood.com.au/services.html',
     '',
     middle,
     '',
