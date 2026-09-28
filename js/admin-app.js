@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=243';
+} from './firebase-config.js?v=244';
 
-import { expandKit } from './kit.js?v=243';
+import { expandKit } from './kit.js?v=244';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -7511,7 +7511,7 @@ function leadFiltered(ignoreMonth) {
   const kf = state.leadContactFilter || 'all';
   const rf = state.leadRegionFilter || 'all';
   const sf = state.leadSizeFilter || 'all';
-  const ff = state.leadFitFilter || 'all';
+  const ff = 'all';   // Fit filter retired (28 Sep 2026)
   const chip = state.leadChip || 'all';
   const needle = (state.leadSearch || '').trim().toLowerCase();
   return rows.filter((r) => {
@@ -8366,7 +8366,7 @@ function leadMainHtml() {
   const cf = state.leadCatFilter;
   const rf = state.leadRegionFilter || 'all';
   const sf = state.leadSizeFilter || 'all';
-  const ff = state.leadFitFilter || 'all';
+  const ff = 'all';   // Fit filter retired
   const opt = (cur, v, l) => `<option value="${attr(v)}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`;
   const c = leadChipCounts();
   const ch = state.leadChip || 'all';
@@ -8441,9 +8441,6 @@ function leadMainHtml() {
           <select id="lead-f-size" class="ad-select" aria-label="Filter by size">
             ${opt(sf, 'all', 'Any size')}${LEAD_SIZES.map(([k, l]) => opt(sf, k, l)).join('')}
           </select>
-          <select id="lead-f-fit" class="ad-select" aria-label="Filter by fit">
-            ${opt(ff, 'all', 'Any fit')}${['5', '4', '3', '2', '1'].map((n) => opt(ff, n, 'Fit ' + n + '/5')).join('')}${opt(ff, 'unrated', 'Not rated yet')}
-          </select>
         </div>
 
         <div class="lead-mcards" id="lead-mcards"></div>
@@ -8455,7 +8452,6 @@ function leadMainHtml() {
                 ${leadTh('date', 'Date')}
                 ${leadTh('location', 'Location', 'lead-where')}
                 ${leadTh('category', 'Category', 'lead-catcol')}
-                ${leadTh('fit', 'Fit')}
                 ${leadTh('value', 'Est. Value', 'lead-num')}
                 ${leadTh('nextact', 'Next Action')}
                 <th></th>
@@ -8810,7 +8806,6 @@ function renderLeadRows() {
         ${km ? `<span class="lead-km">${esc(km)}</span>` : ''}
       </td>
       <td class="lead-catcol">${r.category ? `<span class="lead-cat">${esc(r.category)}</span>` : `<span class="lead-cat is-type">${esc(LEAD_TYPES[r.type] || 'Lead')}</span>`}${r.verdict ? `<span class="lead-verdict is-${attr(r.verdict)}">${esc(LEAD_VERDICT[r.verdict] || r.verdict)}</span>` : ''}</td>
-      <td>${leadFitRater(r.rating, true, r.id)}</td>
       <td class="lead-num">${leadValueHtml(r)}</td>
       <td>${leadNextActHtml(r)}${fu ? `<span class="lead-fu is-${fu}">${fu === 'overdue' ? 'Overdue ' : 'Due '}${esc(fmtLeadDate(String(r.followUp).slice(0, 10)))}</span>` : ''}${(() => { const e = leadEoi(r); return e && e.state !== 'closed' ? `<span class="lead-eoi is-${e.state}" title="${attr(e.note || 'Supplier deadline')}">EOI closes ${esc(fmtLeadDate(e.date))}</span>` : ''; })()}</td>
       <td class="ad-cell-right"><button type="button" class="lead-more" data-open-lead="${attr(r.id)}" aria-label="${r.id === state.openLeadId ? 'Close' : 'Open'} ${attr(name)}">${r.id === state.openLeadId ? 'Less' : 'More'}</button></td>
@@ -9461,7 +9456,6 @@ function leadDetailHtml() {
           ${leadNeedsContact(r) ? '<span class="lead-flag">Needs contact</span>' : ''}
           ${r.imageBroken ? '<span class="lead-flag is-stale" title="Their photo link stopped working - they have probably updated their site. Queued for the research to re-check.">⚠ Photo gone — may be out of date</span>' : ''}
           ${doc && doc.enrichedAt ? `<button type="button" class="lead-research-pill ${(LEAD_CHECK[doc.contactCheck] || LEAD_CHECK.partial)[0]}" data-lead-tab="notes" title="Researched ${attr(fmtLeadDate(String(doc.enrichedAt).slice(0, 10)))} — open notes &amp; sources">🔎 ${esc((LEAD_CHECK[doc.contactCheck] || LEAD_CHECK.partial)[1])}</button>` : ''}
-          <span class="lead-dfit">${leadFitRater(r.rating, true, state.openLeadId)}</span>
         </div>` : `<div class="lead-drate"><span>Fit</span>${leadFitRater(r.rating, true, '')}</div>`}
       </div>
 

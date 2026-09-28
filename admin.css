@@ -4018,3 +4018,8 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .r2-sheet{ position:fixed; left:0; right:0; bottom:var(--r2-kb, 0px); max-height:calc(100dvh - var(--r2-kb, 0px) - 20px); overflow-y:auto; transition:bottom .15s ease; }
 .r2-sheet-bg{ position:fixed; }
 @media (min-width:761px){ .r2-sheet{ left:50%; right:auto; width:min(430px, 100%); transform:translateX(-50%); } }
+/* Fit column retired: 7 columns - Event, Date, Location, Category, Est. Value, Next Action, More */
+.lead-table{ min-width:1030px; }
+.lead-table thead th:nth-child(5){ width:100px; }
+.lead-table thead th:nth-child(6){ width:170px; }
+.lead-table thead th:nth-child(7){ width:76px; }
