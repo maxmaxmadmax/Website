@@ -3919,3 +3919,6 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .rt-seg.is-on[data-rate-pick="4"], .rt-seg.is-on[data-rate-pick="5"]{ background:#16a34a; border-color:#16a34a; color:#fff; box-shadow:0 2px 8px rgba(22,163,74,.35); }
 .rt-seg.is-on[data-rate-pick="1"], .rt-seg.is-on[data-rate-pick="2"]{ background:#f36f21; border-color:#f36f21; color:#fff; box-shadow:0 2px 8px rgba(243,111,33,.35); }
 .lead-fitr.is-3 .lead-fr.on{ background:#2563eb; }
+/* card content fades out at the bottom edge instead of being chopped against the deck lines */
+.rt-main > .rt-card::after{ content:''; position:sticky; bottom:-8px; display:block; height:30px; margin:-30px -8px -8px; background:linear-gradient(rgba(255,255,255,0), #fff 85%); pointer-events:none; border-radius:0 0 22px 22px; }
+.rt-body{ padding-bottom:18px; }
