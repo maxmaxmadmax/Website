@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=226';
+} from './firebase-config.js?v=227';
 
-import { expandKit } from './kit.js?v=226';
+import { expandKit } from './kit.js?v=227';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -9833,10 +9833,13 @@ function rateState() {
   return state.rate;
 }
 function rateSortKey(r) {
-  const d = leadSortDate(r);
-  // upcoming soonest first, then undated, then past events
-  if (!d) return '1';
-  return (d < leadTodayIso() ? '2' : '0') + d;
+  // one timeline, closest to furthest away: an event that has already
+  // happened is placed at its next edition (a year on); no date goes last
+  let d = leadSortDate(r);
+  if (!d) return '9';
+  const today = leadTodayIso();
+  while (d < today) d = (Number(d.slice(0, 4)) + 1) + d.slice(4);
+  return '0' + d;
 }
 function rateDeck() {
   const s = rateState();
