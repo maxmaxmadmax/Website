@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=245';
+} from './firebase-config.js?v=246';
 
-import { expandKit } from './kit.js?v=245';
+import { expandKit } from './kit.js?v=246';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -7721,7 +7721,7 @@ function leadCalendarHtml() {
     const wk = leadWeekKey(r);
     // only leads Max has rated get a dot - imported heat doesn't count
     // calendar lanes follow Max's sorting (28 Sep 2026): Won / Chase / Maybe (saved) / Skip (passed)
-    const p = r.stage === 'won' ? 'won' : r.verdict === 'chase' ? 'high' : ['save', 'nextyear'].includes(r.verdict) ? 'medium' : ['pass', 'locked'].includes(r.verdict) ? 'low' : Number(r.rating) ? leadPriority(r) : '';
+    const p = r.stage === 'won' ? 'won' : r.verdict === 'chase' ? 'high' : r.verdict === 'save' ? 'medium' : r.verdict === 'pass' ? 'low' : '';
     if (p) {
       (byMonth[k] = byMonth[k] || []).push(p);
       if (wk) (byWeek[wk] = byWeek[wk] || []).push(p);
@@ -10387,13 +10387,14 @@ const R2_ACTS = {
 };
 const R2_CHIPS = ['Good potential', 'Contact after event', 'Look at 2027', 'Needs more info', 'Wedding / private', 'Send estimate'];
 function r2Decided(r) {
-  return ['pass', 'save', 'chase', 'nextyear', 'locked'].includes(r.verdict) || !!Number(r.rating) || r.stage === 'won';
+  // only the new decisions count (Max, 28 Sep 2026): old 1-5 ratings and Target/Locked tags get re-sorted
+  return ['pass', 'save', 'chase'].includes(r.verdict) || r.stage === 'won';
 }
 function r2List(kind) {
   const all = state.leads || [];
-  const pick = kind === 'saved' ? (r) => ['save', 'nextyear'].includes(r.verdict)
+  const pick = kind === 'saved' ? (r) => r.verdict === 'save'
     : kind === 'chasing' ? (r) => r.verdict === 'chase' || r.stage === 'won'
-      : (r) => ['pass', 'locked'].includes(r.verdict);
+      : (r) => r.verdict === 'pass';
   return all.filter(pick).sort((a, b) => rateSortKey(a).localeCompare(rateSortKey(b)));
 }
 function r2When(r) {
