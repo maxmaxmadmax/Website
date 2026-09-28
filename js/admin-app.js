@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=230';
+} from './firebase-config.js?v=231';
 
-import { expandKit } from './kit.js?v=230';
+import { expandKit } from './kit.js?v=231';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -9859,13 +9859,13 @@ function rateState() {
   return state.rate;
 }
 /*  Deck order (Max, 28 Sep 2026): dominate our area first.
-    Distance band first - home turf (<=250 km), regional (<=500), far, unknown -
+    Distance band first - home turf (<=80 km), regional (80-300), far (300+), unknown -
     then soonest date within each band (an event that has already happened sits
     at its next edition; no date goes to the end of its band).           */
 function rateBand(r) {
   const km = leadKm(r);
   if (km == null) return 3;
-  return km <= 250 ? 0 : km <= 500 ? 1 : 2;
+  return km <= 80 ? 0 : km <= 300 ? 1 : 2;
 }
 function rateSortKey(r) {
   let d = leadSortDate(r);
