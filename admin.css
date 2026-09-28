@@ -3896,3 +3896,13 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 @media (max-width:760px){
   body.ad-rate-app .rt-phone{ padding-bottom:calc(env(safe-area-inset-bottom) + 4px); }
 }
+/* header: close / back on the left, menu on the right; tabs + progress + Scout live in the menu */
+.rt-top-fill{ flex:1; }
+.rt-burger{ flex:0 0 38px; height:38px; border-radius:50%; border:1px solid #e5e7eb; background:#fff; color:#111827; font-size:18px; line-height:1; cursor:pointer; }
+.rt-burger.is-on{ background:var(--ad-orange, #f36f21); border-color:transparent; color:#fff; }
+.rt-menu{ flex:none; margin:8px 0 4px; padding:10px; border-radius:14px; background:#fff; border:1px solid #eceef2; box-shadow:0 6px 18px rgba(15,23,42,.08); display:grid; gap:8px; }
+.rt-menu .rt-tabs{ display:flex; gap:6px; }
+.rt-menu-prog{ display:flex; justify-content:space-between; font-size:.76rem; color:#6b7280; }
+.rt-menu .rt-progbar{ margin:0; }
+.rt-menu .rt-scout-line{ margin:0; white-space:normal; }
+.rt-top + .rt-main{ margin-top:8px; }

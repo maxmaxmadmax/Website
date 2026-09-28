@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=220';
+} from './firebase-config.js?v=221';
 
-import { expandKit } from './kit.js?v=220';
+import { expandKit } from './kit.js?v=221';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -9993,14 +9993,18 @@ function leadRateHtml() {
         <div class="rt-top">
           <a class="rt-exit" href="#/leads" aria-label="Close Lead Rating">✕</a>
           ${s.back.length && !focus && s.tab === 'review' ? '<button type="button" class="rt-prev" data-rate-prev aria-label="Previous lead">‹</button>' : ''}
+          <span class="rt-top-fill"></span>
+          <button type="button" class="rt-burger${s.menu ? ' is-on' : ''}" data-rate-menu aria-label="Menu" aria-expanded="${!!s.menu}">☰</button>
+        </div>
+        ${s.menu ? `<div class="rt-menu">
           <nav class="rt-tabs">
             ${[['review', 'Review', deck.length], ['rated', 'Rated', rated.length]]
               .map(([k, label, n]) => `<button type="button" class="rt-tab${s.tab === k && !focus ? ' is-on' : ''}" data-rate-tab="${k}">${label} <span>${n}</span></button>`).join('')}
           </nav>
-        </div>
-        <div class="rt-prog"><span>${deck.length} left to review</span><span>${rated.length} of ${all} rated · ${pct}%</span></div>
-        <div class="rt-progbar"><i style="width:${pct}%"></i></div>
-        ${scoutBarHtml()}
+          <div class="rt-menu-prog"><span>${deck.length} left to review</span><span>${rated.length} of ${all} rated · ${pct}%</span></div>
+          <div class="rt-progbar"><i style="width:${pct}%"></i></div>
+          ${scoutBarHtml() || '<p class="rt-scout-line">🔭 Scout: nothing on right now</p>'}
+        </div>` : ''}
         <div class="rt-main">${body}</div>
       </div>
     </div>`;
@@ -10154,8 +10158,9 @@ function wireLeadRate() {
     rateEditSave(f);
   });
   root.addEventListener('click', (e) => {
-    const t = e.target.closest('[data-scout-now], [data-rate-tip], [data-rate-tip-cancel], [data-rate-edit], [data-rate-edit-cancel], [data-rate-tab], [data-rate-pick], [data-rate-act], [data-rate-focus], [data-rate-unfocus], [data-rate-prev], [data-rate-open]');
+    const t = e.target.closest('[data-rate-menu], [data-scout-now], [data-rate-tip], [data-rate-tip-cancel], [data-rate-edit], [data-rate-edit-cancel], [data-rate-tab], [data-rate-pick], [data-rate-act], [data-rate-focus], [data-rate-unfocus], [data-rate-prev], [data-rate-open]');
     if (!t) return;
+    if (t.hasAttribute('data-rate-menu')) { s.menu = !s.menu; render(); return; }
     if (t.hasAttribute('data-scout-now')) {
       t.disabled = true;
       const { doc, setDoc } = fb.f;
@@ -10167,7 +10172,7 @@ function wireLeadRate() {
     if (t.hasAttribute('data-rate-tip-cancel')) { s.tip = false; s.tipDraft = ''; render(); return; }
     if (t.hasAttribute('data-rate-edit')) { s.tip = false; s.edit = !s.edit; render(); const f = document.querySelector('.rt-edit'); if (f) f.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
     if (t.hasAttribute('data-rate-edit-cancel')) { s.edit = false; render(); return; }
-    if (t.hasAttribute('data-rate-tab')) { s.edit = false; s.tip = false; s.tipDraft = ''; s.tab = t.getAttribute('data-rate-tab'); s.focus = ''; s.pick = 0; render(); return; }
+    if (t.hasAttribute('data-rate-tab')) { s.menu = false; s.edit = false; s.tip = false; s.tipDraft = ''; s.tab = t.getAttribute('data-rate-tab'); s.focus = ''; s.pick = 0; render(); return; }
     if (t.hasAttribute('data-rate-pick')) {
       const n = Number(t.getAttribute('data-rate-pick'));
       s.pick = s.pick === n ? 0 : n;
