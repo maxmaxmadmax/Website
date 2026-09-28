@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=206';
+} from './firebase-config.js?v=207';
 
-import { expandKit } from './kit.js?v=206';
+import { expandKit } from './kit.js?v=207';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -7427,7 +7427,7 @@ function subscribeToScout() {
   const { doc, onSnapshot } = fb.f;
   unsubscribes.push(onSnapshot(doc(fb.db, 'scout', 'state'), (d) => {
     state.scoutState = d.exists() ? d.data() : {};
-    if (state.view === 'leadRate' && !(state.rate && (state.rate.busy || state.rate.edit || state.rate.tip))) render();
+    if (state.view === 'leadRate' && !(state.rate && (state.rate.busy || state.rate.edit || state.rate.tip)) && !(document.activeElement && document.activeElement.matches && document.activeElement.matches('[data-rate-tip-text]'))) render();
   }, (err) => console.error('scout', err)));
 }
 
@@ -7454,7 +7454,7 @@ function subscribeToLeads() {
         else render();
       }
       // the rating deck redraws on outside changes, but not mid-save
-      if (state.view === 'leadRate' && !(state.rate && (state.rate.busy || state.rate.edit || state.rate.tip))) render();
+      if (state.view === 'leadRate' && !(state.rate && (state.rate.busy || state.rate.edit || state.rate.tip)) && !(document.activeElement && document.activeElement.matches && document.activeElement.matches('[data-rate-tip-text]'))) render();
     },
     (err) => console.error('leads', err)
   ));
@@ -9714,11 +9714,13 @@ function rateCardHtml(r, pos, total) {
         ${facts.length ? `<ul class="rt-brief">${facts.map(([k, x]) => `<li><b>${esc(k)}:</b> ${esc(x)}</li>`).join('')}</ul>` : ''}
         ${String(r.pitch || '').trim() ? `<p class="rt-pitch"><b>Worth it for you?</b> ${esc(r.pitch)}</p>` : ''}
         ${miss.length ? `<p class="rt-miss">Missing: ${miss.map(esc).join(' · ')}</p>` : ''}
-        <div class="rt-cardbtns"><button type="button" class="rt-addinfo" data-rate-tip>🔭 Ask Scout</button><button type="button" class="rt-open" data-rate-open="${attr(r.id)}">Open full lead ›</button></div>
+        <div class="rt-cardbtns"><button type="button" class="rt-open" data-rate-open="${attr(r.id)}">Open full lead ›</button></div>
       </div>
-      ${s.tip ? rateTipFormHtml(r) : ''}
       ${s.edit ? rateEditHtml(r) : ''}
     </article>
+    <label class="rt-ask"><span aria-hidden="true">🔭</span>
+      <textarea rows="2" data-rate-tip-text placeholder="Ask Scout — what you know or what to do (sent with your action)">${esc(s.tipDraft || '')}</textarea>
+    </label>
     <div class="rt-rate">
       <p>Rate this lead <span>(1 = low, 5 = high fit)</span></p>
       <div class="rt-bar" role="radiogroup" aria-label="Fit rating">

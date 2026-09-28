@@ -3807,3 +3807,8 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 /* five actions again: Won · Target · Locked · Pass · Next */
 .rt-acts{ grid-template-columns:repeat(5,1fr); }
 .rt-scout-line{ flex:none; margin:0 2px 8px; font-size:.74rem; color:#4b5563; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+/* always-open Ask Scout box, pinned above the rating */
+.rt-ask{ flex:none; display:flex; gap:8px; align-items:flex-start; margin-top:8px; padding:8px 10px; border-radius:14px; background:#fff; border:1px solid #eceef2; }
+.rt-ask span{ font-size:1.1rem; line-height:1.6; }
+.rt-ask textarea{ flex:1; min-height:40px; max-height:96px; resize:none; border:0; outline:none; background:transparent; color:#111827; font:inherit; font-size:16px; line-height:1.35; }
+.rt-ask:focus-within{ border-color:var(--ad-orange, #f36f21); box-shadow:0 0 0 3px rgba(243,111,33,.15); }
