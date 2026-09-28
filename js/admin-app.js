@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=239';
+} from './firebase-config.js?v=240';
 
-import { expandKit } from './kit.js?v=239';
+import { expandKit } from './kit.js?v=240';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -10014,7 +10014,7 @@ function scoutBarHtml() {
   const done = Number(st.doneAt || 0);
   const ago = (ms) => { const m = Math.round((Date.now() - ms) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : Math.round(m / 60) + ' h ago'; };
   let status = '';
-  if (req > started) status = '🔭 Scout has your asks — starts within 15 min';
+  if (req > started) status = '🔭 Scout has your asks — he checks at 7am and 2pm';
   else if (started > done) status = '🔭 Scout is working on your asks…';
   else if (done && Date.now() - done < 6 * 3600000) status = '🔭 Scout ' + ago(done) + (st.lastSummary ? ': ' + st.lastSummary : '');
   return status ? `<p class="rt-scout-line">${esc(status)}</p>` : '';
@@ -10338,7 +10338,7 @@ function leadTipsHtml(r) {
   return `<div class="rt-tips">${tips.map((t) => `
     <div class="rt-tip${t.done ? ' is-done' : ''}">
       <p><b>📝 You (${esc(leadRelDay(new Date(t.at || Date.now()).toISOString().slice(0, 10)).toLowerCase())}):</b> ${esc(t.text || '')}</p>
-      ${t.done ? ((t.same || t.together) ? '<p class="rt-tip-wait">Answered together with the note above</p>' : `<p class="rt-tip-reply"><b>🔭 Scout:</b> ${esc(t.reply || 'Done.')}</p>`) : '<p class="rt-tip-wait">Waiting for Scout — he checks every 15 min</p>'}
+      ${t.done ? ((t.same || t.together) ? '<p class="rt-tip-wait">Answered together with the note above</p>' : `<p class="rt-tip-reply"><b>🔭 Scout:</b> ${esc(t.reply || 'Done.')}</p>`) : '<p class="rt-tip-wait">Waiting for Scout — he checks at 7am and 2pm</p>'}
     </div>`).join('')}</div>`;
 }
 function rateTipFormHtml(r) {
