@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=205';
+} from './firebase-config.js?v=206';
 
-import { expandKit } from './kit.js?v=205';
+import { expandKit } from './kit.js?v=206';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -9714,7 +9714,7 @@ function rateCardHtml(r, pos, total) {
         ${facts.length ? `<ul class="rt-brief">${facts.map(([k, x]) => `<li><b>${esc(k)}:</b> ${esc(x)}</li>`).join('')}</ul>` : ''}
         ${String(r.pitch || '').trim() ? `<p class="rt-pitch"><b>Worth it for you?</b> ${esc(r.pitch)}</p>` : ''}
         ${miss.length ? `<p class="rt-miss">Missing: ${miss.map(esc).join(' · ')}</p>` : ''}
-        <div class="rt-cardbtns"><button type="button" class="rt-addinfo" data-rate-edit>✏️ Add info</button><button type="button" class="rt-addinfo" data-rate-tip>🔭 Ask Scout</button><button type="button" class="rt-open" data-rate-open="${attr(r.id)}">Open full lead ›</button></div>
+        <div class="rt-cardbtns"><button type="button" class="rt-addinfo" data-rate-tip>🔭 Ask Scout</button><button type="button" class="rt-open" data-rate-open="${attr(r.id)}">Open full lead ›</button></div>
       </div>
       ${s.tip ? rateTipFormHtml(r) : ''}
       ${s.edit ? rateEditHtml(r) : ''}
