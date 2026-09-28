@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=240';
+} from './firebase-config.js?v=241';
 
-import { expandKit } from './kit.js?v=240';
+import { expandKit } from './kit.js?v=241';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -10543,13 +10543,17 @@ function r2Current() {
 }
 /*  Hard delete - Max only, by hand, from the Deleted list. The agents never delete. */
 async function r2DeleteForever(id) {
-  const r = (state.archivedLeads || []).find((x) => x.id === id);
+  const r = (state.leads || []).concat(state.archivedLeads || []).find((x) => x.id === id);
   if (!r) return;
-  if (!window.confirm('Delete "' + (r.title || 'this lead') + '" FOREVER?\n\nThis can\'t be undone - the lead, its notes and history are gone for good, and Findo may find it again later.')) return;
+  if (!window.confirm('Delete "' + (r.title || 'this lead') + '"?\n\nThis can\'t be undone.')) return;
   try {
     const { doc, deleteDoc } = fb.f;
     await deleteDoc(doc(fb.db, 'leads', id));
     state.archivedLeads = (state.archivedLeads || []).filter((x) => x.id !== id);
+    state.leads = (state.leads || []).filter((x) => x.id !== id);
+    const st = rateState();
+    st.menu = false;
+    if (st.focus === id) st.focus = '';
     render();
   } catch (err) {
     console.error('delete forever', err);
@@ -10654,7 +10658,7 @@ function wireLeadSort() {
     const t = e.target.closest('[data-r2-forever], [data-r2-delete], [data-r2-restore], [data-rate-menu], [data-r2-list], [data-r2-act], [data-r2-more], [data-r2-open], [data-r2-back], [data-r2-tab], [data-r2-chip], [data-r2-savenext], [data-r2-skip], [data-r2-ask], [data-r2-email]');
     if (!t) return;
     if (t.hasAttribute('data-r2-forever')) { r2DeleteForever(t.getAttribute('data-r2-forever')); return; }
-    if (t.hasAttribute('data-r2-delete')) { r2Archive(t.getAttribute('data-r2-delete'), true); return; }
+    if (t.hasAttribute('data-r2-delete')) { r2DeleteForever(t.getAttribute('data-r2-delete')); return; }
     if (t.hasAttribute('data-r2-restore')) { r2Archive(t.getAttribute('data-r2-restore'), false); return; }
     if (t.hasAttribute('data-rate-menu')) { s.menu = !s.menu; render(); return; }
     if (t.hasAttribute('data-r2-list')) { s.tab = t.getAttribute('data-r2-list'); s.menu = false; s.focus = ''; render(); return; }
