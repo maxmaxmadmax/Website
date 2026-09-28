@@ -3876,3 +3876,23 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .rt-card.is-in-right{ animation:rtInRight .2s ease; }
 .rt-card.is-in-left{ animation:rtInLeft .2s ease; }
 @media (hover:hover){ .rt-main > .rt-card{ cursor:grab; user-select:none; } .rt-main > .rt-card:active{ cursor:grabbing; } }
+
+/* ===== Lead Rating: more room - no headings, colour-coded 1-5 ===== */
+.rt-prog{ display:none; }
+.rt-progbar{ margin:6px 0 6px; height:4px; }
+.rt-rate{ margin-top:6px; padding:6px; border-radius:14px; }
+.rt-rate > p{ display:none; }
+.rt-acts{ margin-top:6px; }
+.rt-hint{ display:none; margin:4px 0 0; }
+.rt-hint.is-bad{ display:block; }
+/* 1-2 low = green, 3 medium = blue, 4-5 high = orange (same as the calendar dots) */
+.rt-seg[data-rate-pick="1"], .rt-seg[data-rate-pick="2"]{ background:#ecfdf3; border-color:#bbf7d0; color:#15803d; }
+.rt-seg[data-rate-pick="3"]{ background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; }
+.rt-seg[data-rate-pick="4"], .rt-seg[data-rate-pick="5"]{ background:#fff4ec; border-color:#fed7aa; color:#c2410c; }
+.rt-seg.is-fill{ filter:saturate(1.3); }
+.rt-seg.is-on[data-rate-pick="1"], .rt-seg.is-on[data-rate-pick="2"]{ background:#16a34a; border-color:#16a34a; color:#fff; box-shadow:0 2px 8px rgba(22,163,74,.35); }
+.rt-seg.is-on[data-rate-pick="3"]{ background:#2563eb; border-color:#2563eb; color:#fff; box-shadow:0 2px 8px rgba(37,99,235,.35); }
+.rt-seg.is-on[data-rate-pick="4"], .rt-seg.is-on[data-rate-pick="5"]{ background:#f36f21; border-color:#f36f21; color:#fff; box-shadow:0 2px 8px rgba(243,111,33,.35); }
+@media (max-width:760px){
+  body.ad-rate-app .rt-phone{ padding-bottom:calc(env(safe-area-inset-bottom) + 4px); }
+}
