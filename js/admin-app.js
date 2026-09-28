@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=236';
+} from './firebase-config.js?v=237';
 
-import { expandKit } from './kit.js?v=236';
+import { expandKit } from './kit.js?v=237';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -7716,7 +7716,8 @@ function leadCalendarHtml() {
     if (!k) { undated++; return; }
     const wk = leadWeekKey(r);
     // only leads Max has rated get a dot - imported heat doesn't count
-    const p = r.verdict === 'chase' || r.stage === 'won' ? 'high' : ['save', 'nextyear'].includes(r.verdict) ? 'medium' : ['pass', 'locked'].includes(r.verdict) ? 'low' : Number(r.rating) ? leadPriority(r) : '';
+    // calendar lanes follow Max's sorting (28 Sep 2026): Won / Chase / Maybe (saved) / Skip (passed)
+    const p = r.stage === 'won' ? 'won' : r.verdict === 'chase' ? 'high' : ['save', 'nextyear'].includes(r.verdict) ? 'medium' : ['pass', 'locked'].includes(r.verdict) ? 'low' : Number(r.rating) ? leadPriority(r) : '';
     if (p) {
       (byMonth[k] = byMonth[k] || []).push(p);
       if (wk) (byWeek[wk] = byWeek[wk] || []).push(p);
@@ -7724,8 +7725,8 @@ function leadCalendarHtml() {
     if (wk && r.stage === 'won') wonWeek[wk] = (wonWeek[wk] || 0) + 1;
   });
 
-  const rank = { high: 0, medium: 1, low: 2 };
-  const tally = { high: 0, medium: 0, low: 0 };
+  const rank = { won: -1, high: 0, medium: 1, low: 2 };
+  const tally = { won: 0, high: 0, medium: 0, low: 0 };
   let dated = 0;
   let cells = '';
 
@@ -7747,16 +7748,17 @@ function leadCalendarHtml() {
       const range = weekRangeLabel(w.monday);
       const on = state.leadWeek === w.key;
       const isToday = w.key === today.key;
-      const cnt = { high: 0, medium: 0, low: 0 };
+      const cnt = { won: 0, high: 0, medium: 0, low: 0 };
       list.forEach((p) => { cnt[p]++; });
       // fixed lanes - high on top, medium in the middle, low at the bottom -
       // so each colour lines up across the whole year
-      const dots = list.length ? ['high', 'medium', 'low']
+      const dots = list.length ? ['won', 'high', 'medium', 'low']
         .map((p) => (cnt[p] ? `<i class="lead-cdot is-${p}">${cnt[p]}</i>` : '<i class="lead-cdot is-empty"></i>')).join('') : '';
-      const breakdown = ['high', 'medium', 'low'].filter((p) => cnt[p]).map((p) => `${cnt[p]} ${p}`).join(', ');
+      const LANE = { won: 'won', high: 'chase', medium: 'maybe', low: 'skip' };
+      const breakdown = ['won', 'high', 'medium', 'low'].filter((p) => cnt[p]).map((p) => `${cnt[p]} ${LANE[p]}`).join(', ');
       return `<button type="button" class="lead-wslot${on ? ' is-sel' : ''}${isToday ? ' is-today' : ''}${list.length ? '' : ' is-empty'}"
                 data-lead-week="${w.key}" aria-pressed="${on}"
-                title="Week ${fy.week} (${fy.label}) · ${range}${isToday ? ' · this week' : ''}${wonWeek[w.key] ? ' · ' + wonWeek[w.key] + ' won' : ''} · ${list.length} dated lead${list.length === 1 ? '' : 's'}${breakdown ? ' (' + breakdown + ')' : ''}"><span class="lead-wslot-no">${fy.week}</span><span class="lead-wslot-dots">${wonWeek[w.key] ? '<i class="lead-ctrophy" aria-label="Won">🏆</i>' : ''}${dots || '<i class="lead-cdot is-empty"></i><i class="lead-cdot is-empty"></i><i class="lead-cdot is-empty"></i>'}</span></button>`;
+                title="Week ${fy.week} (${fy.label}) · ${range}${isToday ? ' · this week' : ''}${wonWeek[w.key] ? ' · ' + wonWeek[w.key] + ' won' : ''} · ${list.length} dated lead${list.length === 1 ? '' : 's'}${breakdown ? ' (' + breakdown + ')' : ''}"><span class="lead-wslot-no">${fy.week}</span><span class="lead-wslot-dots">${wonWeek[w.key] ? '<i class="lead-ctrophy" aria-label="Won">🏆</i>' : ''}${dots || '<i class="lead-cdot is-empty"></i><i class="lead-cdot is-empty"></i><i class="lead-cdot is-empty"></i><i class="lead-cdot is-empty"></i>'}</span></button>`;
     }).join('');
 
     cells += `
@@ -7791,10 +7793,11 @@ function leadCalendarHtml() {
     </div>
     <div class="lead-cal-legend">
       <span class="lead-cal-today">Today: Week ${todayFy.week} · ${todayFy.label}</span>
-      <span><i class="lead-dot is-high"></i> High (${tally.high})</span>
-      <span><i class="lead-dot is-medium"></i> Medium (${tally.medium})</span>
-      <span><i class="lead-dot is-low"></i> Low (${tally.low})</span>
-      <span class="lead-cal-undated">Numbers = leads you have rated that week (${dated}) · No month yet: ${undated}</span>
+      <span><i class="lead-dot is-won"></i> Won (${tally.won})</span>
+      <span><i class="lead-dot is-high"></i> Chase (${tally.high})</span>
+      <span><i class="lead-dot is-medium"></i> Maybe (${tally.medium})</span>
+      <span><i class="lead-dot is-low"></i> Skip (${tally.low})</span>
+      <span class="lead-cal-undated">Numbers = leads you've sorted that week (${dated}) · No month yet: ${undated}</span>
       ${state.leadCalOffset ? '<button type="button" class="lead-cal-link" data-lead-cal="today">Back to this month</button>' : ''}
       ${picked ? `<button type="button" class="lead-cal-clear" data-lead-clear="1">Showing ${esc(picked)} &times;</button>` : ''}
     </div>`;

@@ -4005,3 +4005,5 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 /* the card is only as tall as its content; the old gradient fade is not needed */
 .rt-main > .r2-card::after{ display:none; }
 .rt-main > .r2-card{ flex:0 1 auto; margin-top:auto; margin-bottom:auto; }
+/* Won lane - gold */
+.lead-dot.is-won, .lead-cdot.is-won{ background:#d4a017; color:#fff; }
