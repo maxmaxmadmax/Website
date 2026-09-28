@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=229';
+} from './firebase-config.js?v=230';
 
-import { expandKit } from './kit.js?v=229';
+import { expandKit } from './kit.js?v=230';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -8477,6 +8477,22 @@ function leadPageList(page, pages) {
 /*  Road km from Bowen: Max's own figure if he set one, else the km in the
     research's haul note ("~4 hr / 340 km"), else the delivery-zone distance
     of a town named in the venue / town / title. null = unknown, 0 = local. */
+/*  Approximate road km from Bowen for towns outside the delivery zones - only
+    used to sort leads by distance and show "~km from Bowen" (not for pricing). */
+const LEAD_TOWN_KM = {
+  'Hamilton Island': 100, 'Cape Gloucester': 60, 'Hydeaway Bay': 60, 'Dingo Beach': 70, 'Gumlu': 60, 'Magnetic Island': 210,
+  'Walkerston': 200, 'Marian': 205, 'Sarina': 225, 'Eungella': 250, 'Nebo': 280, 'Carmila': 290, 'Ravenswood': 240,
+  'Dysart': 380, 'Middlemount': 390, 'Capella': 470, 'Blackwater': 560, 'Springsure': 560, 'Rockhampton': 520, 'Yeppoon': 560,
+  'Emu Park': 565, 'Biloela': 640, 'Gladstone': 620, 'Ingham': 310, 'Cardwell': 360, 'Tully': 410, 'Mission Beach': 430,
+  'Innisfail': 460, 'Cairns': 550, 'Kuranda': 575, 'Port Douglas': 620, 'Mareeba': 600, 'Atherton': 620, 'Yungaburra': 630,
+  'Malanda': 640, 'Ellis Beach': 575, 'Laura': 850, 'Cooktown': 880, 'Greenvale': 500, 'Georgetown': 850, 'Normanton': 1100,
+  'Karumba': 1170, 'Aramac': 850, 'Ilfracombe': 840, 'Isisford': 1000, 'Blackall': 900, 'Tambo': 1000, 'Jundah': 1120,
+  'Boulia': 1200, 'Bedourie': 1400, 'Birdsville': 1500, 'Charleville': 1250, 'Quilpie': 1300, 'Noccundra': 1500, 'Cameron Corner': 1800,
+  'Daydream Island': 95, 'Long Island': 95, 'Hayman Island': 110, 'Whitehaven': 110, 'St Lawrence': 300, 'Clairview': 290, 'Lucinda': 340,
+  'Twin Hills': 350, 'Clarke Creek': 400, 'Prairie': 500, 'Bouldercombe': 540, 'Mount Surprise': 750, 'Forsayth': 820, 'Bundaberg': 800,
+  'Camooweal': 1200, 'Weipa': 1400, 'Cunnamulla': 1500,
+};
+
 function leadKm(r) {
   const own = Number(r.km);
   if (String(r.km || '').trim() !== '' && own >= 0) return Math.round(own);
@@ -8491,6 +8507,11 @@ function leadKm(r) {
     if (!name || !(z.km >= 0)) return;
     const re = new RegExp('\\b' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
     if (re.test(text) && (!best || name.length > best.name.length)) best = { name, km: z.km };
+  });
+  if (best) return best.km;
+  Object.entries(LEAD_TOWN_KM).forEach(([name, km]) => {
+    const re = new RegExp('\\b' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+    if (re.test(text) && (!best || name.length > best.name.length)) best = { name, km };
   });
   return best ? best.km : null;
 }
@@ -9837,15 +9858,24 @@ function rateState() {
   if (!state.rate) state.rate = { tab: 'review', pick: 0, skip: [], back: [], focus: '', busy: false };
   return state.rate;
 }
-function rateSortKey(r) {
-  // one timeline, closest to furthest away: an event that has already
-  // happened is placed at its next edition (a year on); no date goes last
-  let d = leadSortDate(r);
-  if (!d) return '9';
-  const today = leadTodayIso();
-  while (d < today) d = (Number(d.slice(0, 4)) + 1) + d.slice(4);
-  return '0' + d;
+/*  Deck order (Max, 28 Sep 2026): dominate our area first.
+    Distance band first - home turf (<=250 km), regional (<=500), far, unknown -
+    then soonest date within each band (an event that has already happened sits
+    at its next edition; no date goes to the end of its band).           */
+function rateBand(r) {
+  const km = leadKm(r);
+  if (km == null) return 3;
+  return km <= 250 ? 0 : km <= 500 ? 1 : 2;
 }
+function rateSortKey(r) {
+  let d = leadSortDate(r);
+  if (d) {
+    const today = leadTodayIso();
+    while (d < today) d = (Number(d.slice(0, 4)) + 1) + d.slice(4);
+  }
+  return rateBand(r) + (d ? '0' + d : '9');
+}
+
 function rateDeck() {
   const s = rateState();
   // a lead Max just left a note on stays on screen until he picks an action
