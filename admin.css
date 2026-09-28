@@ -4013,3 +4013,4 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .r2-delrow{ display:flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid #eceef2; border-radius:12px; background:#fff; }
 .r2-delrow > span{ flex:1; min-width:0; }
 .r2-delrow button{ padding:7px 12px; border-radius:10px; border:1px solid #86efac; background:#ecfdf3; color:#15803d; font-weight:700; cursor:pointer; }
+.r2-delrow button.is-forever{ border-color:#fecaca; background:#fef2f2; color:#b91c1c; }

@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=238';
+} from './firebase-config.js?v=239';
 
-import { expandKit } from './kit.js?v=238';
+import { expandKit } from './kit.js?v=239';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -10541,6 +10541,22 @@ function r2Current() {
   const deck = rateDeck();
   return deck.length ? deck[Math.min(Math.max(0, s.pos || 0), deck.length - 1)] : null;
 }
+/*  Hard delete - Max only, by hand, from the Deleted list. The agents never delete. */
+async function r2DeleteForever(id) {
+  const r = (state.archivedLeads || []).find((x) => x.id === id);
+  if (!r) return;
+  if (!window.confirm('Delete "' + (r.title || 'this lead') + '" FOREVER?\n\nThis can\'t be undone - the lead, its notes and history are gone for good, and Findo may find it again later.')) return;
+  try {
+    const { doc, deleteDoc } = fb.f;
+    await deleteDoc(doc(fb.db, 'leads', id));
+    state.archivedLeads = (state.archivedLeads || []).filter((x) => x.id !== id);
+    render();
+  } catch (err) {
+    console.error('delete forever', err);
+    window.alert('Could not delete - check your connection.');
+  }
+}
+
 async function r2Archive(id, on) {
   const s = rateState();
   const r = (state.leads || []).concat(state.archivedLeads || []).find((x) => x.id === id);
@@ -10566,7 +10582,7 @@ function leadSortHtml() {
     body = deck.length ? r2CardHtml(deck[s.pos], s.pos + 1, deck.length) : '<p class="rt-empty">🎉 All sorted. New leads show up here once Phil has filled them in.</p>';
   } else if (s.tab === 'deleted') {
     const rows = state.archivedLeads || [];
-    body = rows.length ? `<ul class="rt-list">${rows.map((r) => `<li class="r2-delrow"><span><span class="rt-li-t">${esc(r.title || 'Lead')}</span><span class="rt-li-m">${esc(r2When(r))}</span></span><button type="button" data-r2-restore="${attr(r.id)}">Restore</button></li>`).join('')}</ul>` : '<p class="rt-empty">Nothing deleted.</p>';
+    body = rows.length ? `<ul class="rt-list">${rows.map((r) => `<li class="r2-delrow"><span><span class="rt-li-t">${esc(r.title || 'Lead')}</span><span class="rt-li-m">${esc(r2When(r))}</span></span><button type="button" data-r2-restore="${attr(r.id)}">Restore</button><button type="button" class="is-forever" data-r2-forever="${attr(r.id)}">Delete forever</button></li>`).join('')}</ul>` : '<p class="rt-empty">Nothing deleted.</p>';
   } else {
     const rows = lists[s.tab];
     body = rows.length ? `<ul class="rt-list">${rows.map((r) => `<li><button type="button" data-r2-open="${attr(r.id)}"><span class="rt-li-t">${esc(r.title || 'Lead')}</span><span class="rt-li-m">${esc(r2When(r))}${leadKmText(r) ? ' · ' + esc(leadKmText(r)) : ''}</span></button></li>`).join('')}</ul>` : '<p class="rt-empty">Nothing here yet.</p>';
@@ -10635,8 +10651,9 @@ function wireLeadSort() {
     if (e.target.matches('[data-r2-asktext]')) s.tipDraft = e.target.value;
   });
   root.addEventListener('click', async (e) => {
-    const t = e.target.closest('[data-r2-delete], [data-r2-restore], [data-rate-menu], [data-r2-list], [data-r2-act], [data-r2-more], [data-r2-open], [data-r2-back], [data-r2-tab], [data-r2-chip], [data-r2-savenext], [data-r2-skip], [data-r2-ask], [data-r2-email]');
+    const t = e.target.closest('[data-r2-forever], [data-r2-delete], [data-r2-restore], [data-rate-menu], [data-r2-list], [data-r2-act], [data-r2-more], [data-r2-open], [data-r2-back], [data-r2-tab], [data-r2-chip], [data-r2-savenext], [data-r2-skip], [data-r2-ask], [data-r2-email]');
     if (!t) return;
+    if (t.hasAttribute('data-r2-forever')) { r2DeleteForever(t.getAttribute('data-r2-forever')); return; }
     if (t.hasAttribute('data-r2-delete')) { r2Archive(t.getAttribute('data-r2-delete'), true); return; }
     if (t.hasAttribute('data-r2-restore')) { r2Archive(t.getAttribute('data-r2-restore'), false); return; }
     if (t.hasAttribute('data-rate-menu')) { s.menu = !s.menu; render(); return; }
