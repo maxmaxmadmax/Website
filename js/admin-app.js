@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=234';
+} from './firebase-config.js?v=235';
 
-import { expandKit } from './kit.js?v=234';
+import { expandKit } from './kit.js?v=235';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -10429,7 +10429,6 @@ function r2CardHtml(r, pos, total) {
         <h2 class="r2-title">${esc(r.title || r.eventName || 'Lead')}</h2>
         ${r2Meta(r)}
         ${r2Tip(r)}
-        <button type="button" class="r2-moredet" data-r2-more="${attr(r.id)}">More details ›</button>
       </div>
     </article>
     ${r2Buttons(r, true)}`;

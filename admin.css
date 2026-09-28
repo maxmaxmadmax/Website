@@ -4002,3 +4002,6 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .r2-hist small{ color:#9ca3af; }
 .r2-ask{ display:flex; gap:8px; align-items:flex-start; }
 .r2-send{ padding:11px; border:0; border-radius:12px; background:#111827; color:#fff; font-weight:800; cursor:pointer; }
+/* the card is only as tall as its content; the old gradient fade is not needed */
+.rt-main > .r2-card::after{ display:none; }
+.rt-main > .r2-card{ flex:0 1 auto; margin-top:auto; margin-bottom:auto; }
