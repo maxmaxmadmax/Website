@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=210';
+} from './firebase-config.js?v=211';
 
-import { expandKit } from './kit.js?v=210';
+import { expandKit } from './kit.js?v=211';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -8592,9 +8592,21 @@ function leadEventYear(r) {
 }
 /*  The intro SMS: Scout's draft if Max asked for one, otherwise written
     from what the lead holds - the event, the year, what they need.       */
+/*  Every intro SMS asks ONE question, so they reply - and the right one for
+    what we know about the event (Max, 28 Sep 2026).                     */
+function leadSmsQuestion(r, ev) {
+  const music = String(r.liveMusic || '');
+  const supplier = String(r.incumbent || '');
+  const hasSupplier = supplier && !/soundzgood|not named|not found|unknown|may be diy|tbc/i.test(supplier);
+  if (leadIsPast(r) || r.verdict === 'nextyear') return 'Have you started planning the production yet?';
+  if (hasSupplier) return 'Would you need any extra sound, lighting or an FOH engineer on the day?';
+  if (/^\s*(none|no live|not found)/i.test(music)) return 'Do you have your entertainment booked yet? We can look after a DJ/MC as well as the sound and lighting.';
+  if (/^\s*yes/i.test(music)) return 'Do you have the sound and lighting sorted for the live music?';
+  return 'Do you have your production sorted yet?';
+}
 function leadSmsBody(r) {
   if (r.smsDraft && String(r.smsDraft).trim()) return String(r.smsDraft).trim();
-  // Max's wording (28 Sep 2026)
+  // Max's wording (28 Sep 2026) + a link to what we do + one right question
   const who = leadFirstName(r);
   const ev = String(r.eventName || r.title || 'your event').replace(/\s+\d{1,2}\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b.*$/i, '').replace(/\s+20\d\d\b.*$/, '').replace(/\s*[—–-]\s*$/, '').trim();
   let when = '';
@@ -8608,9 +8620,11 @@ function leadSmsBody(r) {
   return [
     `Hi ${who || 'there'},`,
     '',
-    'My name is Max from SoundzGood in North Queensland. We provide production services for events.',
+    'My name is Max from SoundzGood in North Queensland. We provide production services for events: www.soundzgood.com.au/services.html',
     '',
-    `I'm just reaching out regarding ${ev}${where}${when} to see if you have your production sorted.`,
+    (leadIsPast(r) || r.verdict === 'nextyear'
+      ? `I'm just reaching out ahead of ${ev} ${leadEventYear(r)}${where}. `
+      : `I'm just reaching out regarding ${ev}${where}${when}. `) + leadSmsQuestion(r, ev),
     '',
     'When you have some time, would love to discuss this further.',
     '',
