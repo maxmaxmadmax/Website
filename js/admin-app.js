@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=247';
+} from './firebase-config.js?v=248';
 
-import { expandKit } from './kit.js?v=247';
+import { expandKit } from './kit.js?v=248';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -8499,10 +8499,6 @@ const LEAD_TOWN_KM = {
 function leadKm(r) {
   const own = Number(r.km);
   if (String(r.km || '').trim() !== '' && own >= 0) return Math.round(own);
-  const haul = String(r.haul || '');
-  const h = haul.match(/(\d[\d,]*)\s*km/i);
-  if (h) return Number(h[1].replace(/,/g, ''));
-  if (/\blocal\b/i.test(haul)) return 0;
   const text = [r.town, r.venue, r.title].filter(Boolean).join(' ');
   let best = null;
   DELIVERY_ZONES.forEach((z) => {
@@ -8516,7 +8512,13 @@ function leadKm(r) {
     const re = new RegExp('\\b' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
     if (re.test(text) && (!best || name.length > best.name.length)) best = { name, km };
   });
-  return best ? best.km : null;
+  if (best) return best.km;
+  // the imported travel note (e.g. "~0.5 hr / 40 km") only when the town isn't known - it was often wrong
+  const haul = String(r.haul || '');
+  const h = haul.match(/(\d[\d,]*)\s*km/i);
+  if (h) return Number(h[1].replace(/,/g, ''));
+  if (/\blocal\b/i.test(haul)) return 0;
+  return null;
 }
 function leadKmText(r) {
   const km = leadKm(r);
