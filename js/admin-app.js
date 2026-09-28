@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=227';
+} from './firebase-config.js?v=228';
 
-import { expandKit } from './kit.js?v=227';
+import { expandKit } from './kit.js?v=228';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -7856,6 +7856,8 @@ const LEAD_CAT_STYLE = {
   'Formal/debutante': ['💃', 'lc-formal'],
   'Corporate/mining': ['⛏️', 'lc-corp'],
   'Sport finals': ['🏆', 'lc-sport'],
+  'Festivals/concerts': ['🎤', 'lc-fest'],
+  'Pubs/live music': ['🍻', 'lc-pub'],
 };
 const LEAD_TYPE_STYLE = { production: ['🎛️', 'lc-prod'], dj: ['🎧', 'lc-dj'], venue: ['🍻', 'lc-venue'] };
 function leadCatStyle(r) {

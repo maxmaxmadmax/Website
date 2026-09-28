@@ -3923,3 +3923,5 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .rt-main > .rt-card::after{ content:''; position:sticky; bottom:-8px; display:block; height:30px; margin:-30px -8px -8px; background:linear-gradient(rgba(255,255,255,0), #fff 85%); pointer-events:none; border-radius:0 0 22px 22px; }
 .rt-body{ padding-bottom:18px; }
 .rt-main > .rt-card{ transition:none; }
+.lc-fest{ --lc1:#7c2d92; --lc2:#e0559c; }
+.lc-pub{ --lc1:#8a4b12; --lc2:#e7a33e; }
