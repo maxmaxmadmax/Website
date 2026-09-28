@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=224';
+} from './firebase-config.js?v=225';
 
-import { expandKit } from './kit.js?v=224';
+import { expandKit } from './kit.js?v=225';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -9884,7 +9884,8 @@ function rateCardHtml(r, pos, total) {
     ['Entertainment/AV', [r.incumbent, r.needs ? 'Needs: ' + r.needs : '', r.power && r.power !== 'unknown' ? (r.power === 'generator' ? 'Generator needed' : 'Mains power') : ''].filter(Boolean).join(' · ')],
     ['Supplier deadline', r.eoiDate ? fmtLeadDate(r.eoiDate) + (r.eoiNote ? ' — ' + r.eoiNote : '') : ''],
     ...(r.tips || []).filter((t) => t && !t.done).map((t) => ['📝 You asked Scout', (t.text || '') + ' (waiting for Scout)']),
-    ...(r.tips || []).filter((t) => t && t.done && t.reply).slice(-3).map((t) => ['🔭 Scout', t.reply]),
+    // one line per distinct reply (Scout answers several asks in one go)
+    ...[...new Set((r.tips || []).filter((t) => t && t.done && t.reply).map((t) => String(t.reply).trim()))].slice(-3).map((t) => ['🔭 Scout', t]),
     ...(r.outreachDraft && r.outreachDraft.body ? [['✉️ Email draft ready', (r.outreachDraft.subject || '') + ' — open the lead → Prepare Outreach to review and send']] : []),
   ].filter(([, x]) => String(x || '').trim());
   const miss = rateMissing(r);
@@ -10270,12 +10271,15 @@ async function rateEditSave(form) {
     research run, which sorts the facts into the lead, does the checks and
     writes a reply back onto the note.                                   */
 function leadTipsHtml(r) {
-  const tips = (r.tips || []).slice().sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 3);
+  const seen = new Set();
+  const tips = (r.tips || []).slice().sort((a, b) => (b.at || 0) - (a.at || 0))
+    .map((t) => { const rep = String((t && t.reply) || '').trim(); if (rep && seen.has(rep)) return { ...t, reply: '', done: t.done, same: true }; if (rep) seen.add(rep); return t; })
+    .slice(0, 3);
   if (!tips.length) return '';
   return `<div class="rt-tips">${tips.map((t) => `
     <div class="rt-tip${t.done ? ' is-done' : ''}">
       <p><b>📝 You (${esc(leadRelDay(new Date(t.at || Date.now()).toISOString().slice(0, 10)).toLowerCase())}):</b> ${esc(t.text || '')}</p>
-      ${t.done ? `<p class="rt-tip-reply"><b>🔭 Scout:</b> ${esc(t.reply || 'Done.')}</p>` : '<p class="rt-tip-wait">Waiting for Scout — press Ask Scout now</p>'}
+      ${t.done ? ((t.same || t.together) ? '<p class="rt-tip-wait">Answered together with the note above</p>' : `<p class="rt-tip-reply"><b>🔭 Scout:</b> ${esc(t.reply || 'Done.')}</p>`) : '<p class="rt-tip-wait">Waiting for Scout — he checks every 15 min</p>'}
     </div>`).join('')}</div>`;
 }
 function rateTipFormHtml(r) {
