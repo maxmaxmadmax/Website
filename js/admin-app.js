@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=225';
+} from './firebase-config.js?v=226';
 
-import { expandKit } from './kit.js?v=225';
+import { expandKit } from './kit.js?v=226';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -10120,31 +10120,37 @@ function wireLeadRate() {
   const s = rateState();
   const card = root.querySelector('.rt-card');
   if (card && !s.focus && s.tab === 'review') {
-    // finger swipe on a phone, click-and-drag with a mouse
-    let x0 = 0, y0 = 0, on = false, moved = false;
-    card.addEventListener('pointerdown', (e) => {
-      if (e.button > 0 || e.target.closest('textarea, input, a, button')) { on = false; return; }
-      on = true; moved = false; x0 = e.clientX; y0 = e.clientY;
-    });
-    card.addEventListener('pointermove', (e) => {
+    // Swipe to browse: a short swipe (~45px) or a quick flick is enough.
+    // Fingers use touch events (the phone can cancel pointer events once it
+    // starts scrolling); a mouse uses click-and-drag.
+    const SWIPE = 45;
+    let x0 = 0, y0 = 0, t0 = 0, on = false, horiz = null;
+    const start = (x, y, target) => {
+      if (target.closest('textarea, input, a, button')) { on = false; return; }
+      on = true; horiz = null; x0 = x; y0 = y; t0 = Date.now();
+    };
+    const move = (x, y) => {
       if (!on) return;
-      const dx = e.clientX - x0, dy = e.clientY - y0;
-      if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) {
-        moved = true;
-        card.style.transform = `translateX(${dx * 0.6}px) rotate(${dx * 0.02}deg)`;
-      }
-    });
-    const release = (e) => {
+      const dx = x - x0, dy = y - y0;
+      if (horiz === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) horiz = Math.abs(dx) > Math.abs(dy);
+      if (horiz) card.style.transform = `translateX(${dx}px) rotate(${dx * 0.03}deg)`;
+    };
+    const finish = (x, y) => {
       if (!on) return;
       on = false;
-      const dx = e.clientX - x0, dy = e.clientY - y0;
       card.style.transform = '';
-      if (moved && Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) rateBrowse(dx < 0 ? 1 : -1);
+      const dx = x - x0, dy = y - y0;
+      const fast = Math.abs(dx) / Math.max(1, Date.now() - t0) > 0.45;   // a flick
+      if (horiz && (Math.abs(dx) > SWIPE || (fast && Math.abs(dx) > 20)) && Math.abs(dx) > Math.abs(dy)) rateBrowse(dx < 0 ? 1 : -1);
     };
-    card.addEventListener('pointerup', release);
-    card.addEventListener('pointercancel', () => { on = false; card.style.transform = ''; });
-    card.addEventListener('pointerleave', release);
-    // a drag shouldn't select text or drag the photo
+    card.addEventListener('touchstart', (e) => start(e.touches[0].clientX, e.touches[0].clientY, e.target), { passive: true });
+    card.addEventListener('touchmove', (e) => move(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+    card.addEventListener('touchend', (e) => finish(e.changedTouches[0].clientX, e.changedTouches[0].clientY));
+    card.addEventListener('touchcancel', () => { on = false; card.style.transform = ''; });
+    card.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse' && e.button === 0) start(e.clientX, e.clientY, e.target); });
+    card.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') move(e.clientX, e.clientY); });
+    card.addEventListener('pointerup', (e) => { if (e.pointerType === 'mouse') finish(e.clientX, e.clientY); });
+    card.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') finish(e.clientX, e.clientY); });
     card.addEventListener('dragstart', (e) => e.preventDefault());
   }
   root.addEventListener('input', (e) => {

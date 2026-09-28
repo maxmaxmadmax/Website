@@ -3922,3 +3922,4 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 /* card content fades out at the bottom edge instead of being chopped against the deck lines */
 .rt-main > .rt-card::after{ content:''; position:sticky; bottom:-8px; display:block; height:30px; margin:-30px -8px -8px; background:linear-gradient(rgba(255,255,255,0), #fff 85%); pointer-events:none; border-radius:0 0 22px 22px; }
 .rt-body{ padding-bottom:18px; }
+.rt-main > .rt-card{ transition:none; }
