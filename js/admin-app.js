@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=214';
+} from './firebase-config.js?v=215';
 
-import { expandKit } from './kit.js?v=214';
+import { expandKit } from './kit.js?v=215';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -8629,13 +8629,13 @@ function leadSmsBody(r) {
   // street parties, parks, foreshores - community events that need a stage (race days / venues don't)
   const outdoor = /street|park\b|foreshore/i.test(String(r.venueSetup || '') + ' ' + String(r.venue || '')) && !/racecourse|race ?day|turf/i.test(String(r.venueSetup || '') + ' ' + String(r.venue || '') + ' ' + String(r.title || ''));
   let middle;
+  const opener = nextYear ? `Hope this year's ${/cup/i.test(ev) ? 'Cup' : /rodeo/i.test(ev) ? 'Rodeo Weekend' : 'event'} went well. ` : '';
   if (!who) {
-    middle = `I'm just reaching out regarding ${evFull}${where}${when}. Who would be the best person to speak with about entertainment and production for it?`;
+    middle = `${opener}I'm just reaching out regarding ${evFull}${where}${when}. Who would be the best person to speak with about the event production and entertainment for it?`;
   } else if (job) {
     middle = `I'm just reaching out regarding ${evFull}${where}${when}. ${job.line}\n\n${job.ask}`;
   } else if (nextYear) {
-    const short = /cup/i.test(ev) ? 'Cup' : 'event';
-    middle = `Hope this year's ${short} went well. I'm just reaching out regarding ${evFull}${where}. Do you have your event production and entertainment sorted for next year?`;
+    middle = `${opener}I'm just reaching out regarding ${evFull}${where}. Do you have your event production and entertainment sorted for next year?`;
   } else if (outdoor) {
     middle = `I'm just reaching out regarding ${evFull}${where}${when}. Do you have your stage, sound and entertainment sorted for this year?`;
   } else {
