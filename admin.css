@@ -4007,3 +4007,9 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .rt-main > .r2-card{ flex:0 1 auto; margin-top:auto; margin-bottom:auto; }
 /* Won lane - gold */
 .lead-dot.is-won, .lead-cdot.is-won{ background:#d4a017; color:#fff; }
+/* menu: delete / deleted list */
+.r2-del{ padding:10px; border-radius:12px; border:1px solid #fecaca; background:#fef2f2; color:#b91c1c; font:inherit; font-weight:700; cursor:pointer; }
+.r2-dellist{ padding:8px; border:0; background:none; color:#6b7280; font:inherit; font-size:.8rem; text-decoration:underline; cursor:pointer; }
+.r2-delrow{ display:flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid #eceef2; border-radius:12px; background:#fff; }
+.r2-delrow > span{ flex:1; min-width:0; }
+.r2-delrow button{ padding:7px 12px; border-radius:10px; border:1px solid #86efac; background:#ecfdf3; color:#15803d; font-weight:700; cursor:pointer; }

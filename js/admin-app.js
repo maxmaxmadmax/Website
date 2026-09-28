@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=237';
+} from './firebase-config.js?v=238';
 
-import { expandKit } from './kit.js?v=237';
+import { expandKit } from './kit.js?v=238';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6346,6 +6346,10 @@ function subscribeToPackages() {
       // Findo's new finds stay with Phil until he's checked and filled them in
       state.withPhil = rows.filter((r) => r.foundBy === 'Findo' && !r.enrichedAt).length;
       for (let i = rows.length - 1; i >= 0; i--) if (rows[i].foundBy === 'Findo' && !rows[i].enrichedAt) rows.splice(i, 1);
+      // "Delete" is a safe delete (Max never hard-deletes): archived leads are kept
+      // so Findo won't re-add them and they can be restored from the menu
+      state.archivedLeads = rows.filter((r) => r.archived);
+      for (let i = rows.length - 1; i >= 0; i--) if (rows[i].archived) rows.splice(i, 1);
       rows.sort((a, b) =>
         (a.eventType || '').localeCompare(b.eventType || '')
         || (a.order || 0) - (b.order || 0)
@@ -10530,6 +10534,25 @@ function r2SheetHtml() {
       <button type="button" class="r2-skip" data-r2-skip>Skip</button>
     </div>`;
 }
+function r2Current() {
+  const s = rateState();
+  if (s.focus) return (state.leads || []).find((x) => x.id === s.focus) || null;
+  if (s.tab && s.tab !== 'review') return null;
+  const deck = rateDeck();
+  return deck.length ? deck[Math.min(Math.max(0, s.pos || 0), deck.length - 1)] : null;
+}
+async function r2Archive(id, on) {
+  const s = rateState();
+  const r = (state.leads || []).concat(state.archivedLeads || []).find((x) => x.id === id);
+  if (!r) return;
+  if (on && !window.confirm('Delete "' + (r.title || 'this lead') + '"?\n\nIt disappears from every list but is kept in the background, so Findo won\'t re-add it. You can restore it from the menu → Deleted.')) return;
+  const patch = on ? { archived: true, archivedAt: Date.now() } : { archived: false };
+  if (!(await rateSave(r, patch, on ? 'Deleted (archived) by Max' : 'Restored by Max'))) return;
+  s.menu = false;
+  if (on && s.focus === id) s.focus = '';
+  render();
+}
+
 function leadSortHtml() {
   const s = rateState();
   const deck = rateDeck();
@@ -10537,15 +10560,18 @@ function leadSortHtml() {
   const lists = { saved: r2List('saved'), chasing: r2List('chasing'), passed: r2List('passed') };
   let body;
   if (focus) body = r2DetailHtml(focus);
-  else if (s.tab === 'review' || !lists[s.tab]) {
+  else if (s.tab === 'review' || (!lists[s.tab] && s.tab !== 'deleted')) {
     if (!Number.isInteger(s.pos) || s.pos < 0) s.pos = 0;
     if (s.pos >= deck.length) s.pos = Math.max(0, deck.length - 1);
     body = deck.length ? r2CardHtml(deck[s.pos], s.pos + 1, deck.length) : '<p class="rt-empty">🎉 All sorted. New leads show up here once Phil has filled them in.</p>';
+  } else if (s.tab === 'deleted') {
+    const rows = state.archivedLeads || [];
+    body = rows.length ? `<ul class="rt-list">${rows.map((r) => `<li class="r2-delrow"><span><span class="rt-li-t">${esc(r.title || 'Lead')}</span><span class="rt-li-m">${esc(r2When(r))}</span></span><button type="button" data-r2-restore="${attr(r.id)}">Restore</button></li>`).join('')}</ul>` : '<p class="rt-empty">Nothing deleted.</p>';
   } else {
     const rows = lists[s.tab];
     body = rows.length ? `<ul class="rt-list">${rows.map((r) => `<li><button type="button" data-r2-open="${attr(r.id)}"><span class="rt-li-t">${esc(r.title || 'Lead')}</span><span class="rt-li-m">${esc(r2When(r))}${leadKmText(r) ? ' · ' + esc(leadKmText(r)) : ''}</span></button></li>`).join('')}</ul>` : '<p class="rt-empty">Nothing here yet.</p>';
   }
-  const titles = { review: 'Leads', saved: 'Saved', chasing: 'Chasing', passed: 'Passed' };
+  const titles = { review: 'Leads', saved: 'Saved', chasing: 'Chasing', passed: 'Passed', deleted: 'Deleted' };
   return `
     <div class="rt-wrap">
       <div class="rt-phone r2">
@@ -10561,6 +10587,8 @@ function leadSortHtml() {
             .map(([k, l, n]) => `<button type="button" class="rt-tab${s.tab === k ? ' is-on' : ''}" data-r2-list="${k}">${l} <span>${n}</span></button>`).join('')}</nav>
           ${scoutBarHtml() || '<p class="rt-scout-line">🔭 Scout: nothing on right now</p>'}
           ${state.withPhil ? `<p class="rt-scout-line">🔍 Phil is checking ${state.withPhil} new find${state.withPhil === 1 ? '' : 's'} from Findo</p>` : ''}
+          ${r2Current() ? `<button type="button" class="r2-del" data-r2-delete="${attr(r2Current().id)}">🗑 Delete this lead</button>` : ''}
+          ${(state.archivedLeads || []).length ? `<button type="button" class="r2-dellist" data-r2-list="deleted">Deleted (${state.archivedLeads.length})</button>` : ''}
         </div>` : ''}
         <div class="rt-main">${body}</div>
         ${r2SheetHtml()}
@@ -10607,8 +10635,10 @@ function wireLeadSort() {
     if (e.target.matches('[data-r2-asktext]')) s.tipDraft = e.target.value;
   });
   root.addEventListener('click', async (e) => {
-    const t = e.target.closest('[data-rate-menu], [data-r2-list], [data-r2-act], [data-r2-more], [data-r2-open], [data-r2-back], [data-r2-tab], [data-r2-chip], [data-r2-savenext], [data-r2-skip], [data-r2-ask], [data-r2-email]');
+    const t = e.target.closest('[data-r2-delete], [data-r2-restore], [data-rate-menu], [data-r2-list], [data-r2-act], [data-r2-more], [data-r2-open], [data-r2-back], [data-r2-tab], [data-r2-chip], [data-r2-savenext], [data-r2-skip], [data-r2-ask], [data-r2-email]');
     if (!t) return;
+    if (t.hasAttribute('data-r2-delete')) { r2Archive(t.getAttribute('data-r2-delete'), true); return; }
+    if (t.hasAttribute('data-r2-restore')) { r2Archive(t.getAttribute('data-r2-restore'), false); return; }
     if (t.hasAttribute('data-rate-menu')) { s.menu = !s.menu; render(); return; }
     if (t.hasAttribute('data-r2-list')) { s.tab = t.getAttribute('data-r2-list'); s.menu = false; s.focus = ''; render(); return; }
     if (t.hasAttribute('data-r2-act')) { r2Decide(t.getAttribute('data-r2-id'), t.getAttribute('data-r2-act')); return; }
