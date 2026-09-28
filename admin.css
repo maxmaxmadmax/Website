@@ -3806,3 +3806,4 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .rt-tip-how{ margin:2px 0 0; font-size:.74rem; color:#6b7280; }
 /* five actions again: Won · Target · Locked · Pass · Next */
 .rt-acts{ grid-template-columns:repeat(5,1fr); }
+.rt-scout-line{ flex:none; margin:0 2px 8px; font-size:.74rem; color:#4b5563; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }

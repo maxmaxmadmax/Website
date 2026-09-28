@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=204';
+} from './firebase-config.js?v=205';
 
-import { expandKit } from './kit.js?v=204';
+import { expandKit } from './kit.js?v=205';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -9747,22 +9747,18 @@ function rateListHtml(rows, empty) {
 /*  "Ask Scout now": Scout (a routine on Max's computer) checks every 15 min
     from 6am-10pm and only works when this has been pressed.            */
 function scoutBarHtml() {
+  // no button - an Ask Scout note is sent with the rating + action. This is
+  // just a quiet status line while Scout has something on, or just finished.
   const st = state.scoutState || {};
-  const asks = (state.leads || []).reduce((n, l) => n + (l.tips || []).filter((t) => t && !t.done).length, 0);
   const req = Number(st.requestedAt || 0);
   const started = Number(st.startedAt || 0);
   const done = Number(st.doneAt || 0);
-  const ago = (ms) => { const m = Math.round((Date.now() - ms) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
-  let status;
-  if (req > started) status = 'Asked ' + ago(req) + ' — Scout starts within 15 min (6am–10pm, computer on)';
-  else if (started > done) status = '🔭 Scout is working on it…';
-  else if (done) status = 'Last run ' + ago(done) + (st.lastSummary ? ' — ' + st.lastSummary : '');
-  else status = 'Write asks with 🔭 Ask Scout on any lead, then press the button.';
-  const waiting = req > started || started > done;
-  return `<div class="rt-scout">
-    <button type="button" class="rt-scout-btn" data-scout-now ${asks && !waiting ? '' : 'disabled'}>🔭 Ask Scout now${asks ? ` <span>${asks}</span>` : ''}</button>
-    <p>${esc(status)}</p>
-  </div>`;
+  const ago = (ms) => { const m = Math.round((Date.now() - ms) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : Math.round(m / 60) + ' h ago'; };
+  let status = '';
+  if (req > started) status = '🔭 Scout has your asks — starts within 15 min';
+  else if (started > done) status = '🔭 Scout is working on your asks…';
+  else if (done && Date.now() - done < 6 * 3600000) status = '🔭 Scout ' + ago(done) + (st.lastSummary ? ': ' + st.lastSummary : '');
+  return status ? `<p class="rt-scout-line">${esc(status)}</p>` : '';
 }
 
 function leadRateHtml() {
