@@ -3918,3 +3918,4 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .rt-seg[data-rate-pick="1"], .rt-seg[data-rate-pick="2"]{ background:#fff4ec; border-color:#fed7aa; color:#c2410c; }
 .rt-seg.is-on[data-rate-pick="4"], .rt-seg.is-on[data-rate-pick="5"]{ background:#16a34a; border-color:#16a34a; color:#fff; box-shadow:0 2px 8px rgba(22,163,74,.35); }
 .rt-seg.is-on[data-rate-pick="1"], .rt-seg.is-on[data-rate-pick="2"]{ background:#f36f21; border-color:#f36f21; color:#fff; box-shadow:0 2px 8px rgba(243,111,33,.35); }
+.lead-fitr.is-3 .lead-fr.on{ background:#2563eb; }
