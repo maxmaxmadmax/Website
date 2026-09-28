@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=241';
+} from './firebase-config.js?v=242';
 
-import { expandKit } from './kit.js?v=241';
+import { expandKit } from './kit.js?v=242';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -10528,8 +10528,8 @@ function r2SheetHtml() {
     <div class="r2-sheet" role="dialog" aria-label="Ask Scout">
       <div class="r2-sheet-top"><b>🔭 Ask Scout <span>(optional) · ${esc(a.label || '')}</span></b><button type="button" data-r2-skip aria-label="Close">✕</button></div>
       ${sh.act === 'chase' ? '<p class="r2-sheet-info">Scout is preparing outreach for this lead. Anything you add here goes with it.</p>' : ''}
-      <div class="r2-chips">${R2_CHIPS.map((c) => `<button type="button" class="${(sh.chips || []).includes(c) ? 'is-on' : ''}" data-r2-chip="${attr(c)}">${esc(c)}</button>`).join('')}</div>
       <textarea rows="3" data-r2-note placeholder="Tell Scout what you know or what to do…">${esc(sh.text || '')}</textarea>
+      <div class="r2-chips">${R2_CHIPS.map((c) => `<button type="button" class="${(sh.chips || []).includes(c) ? 'is-on' : ''}" data-r2-chip="${attr(c)}">${esc(c)}</button>`).join('')}</div>
       <button type="button" class="r2-savenext" data-r2-savenext>Send to Scout &amp; next</button>
       <button type="button" class="r2-skip" data-r2-skip>Skip</button>
     </div>`;
@@ -10703,6 +10703,25 @@ function wireLeadSort() {
     card.addEventListener('dragstart', (e) => e.preventDefault());
   }
 }
+let r2KbWired = false;
+function wireLeadSortKeyboard() {
+  if (r2KbWired || !window.visualViewport) return;
+  r2KbWired = true;
+  const vv = window.visualViewport;
+  const fit = () => {
+    const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    document.documentElement.style.setProperty('--r2-kb', kb + 'px');
+    const sheet = document.querySelector('.r2-sheet');
+    if (sheet && kb > 0) {
+      const ta = sheet.querySelector('textarea:focus');
+      if (ta) ta.scrollIntoView({ block: 'nearest' });
+    }
+  };
+  vv.addEventListener('resize', fit);
+  vv.addEventListener('scroll', fit);
+  fit();
+}
+
 let r2KeysWired = false;
 function wireLeadSortKeys() {
   if (r2KeysWired) return;
@@ -10722,5 +10741,5 @@ function wireLeadSortKeys() {
 
 VIEWS.leadRate = {
   html() { return leadSortHtml(); },
-  wire() { wireLeadSortKeys(); wireLeadSort(); },
+  wire() { wireLeadSortKeys(); wireLeadSortKeyboard(); wireLeadSort(); },
 };

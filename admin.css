@@ -4014,3 +4014,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .r2-delrow > span{ flex:1; min-width:0; }
 .r2-delrow button{ padding:7px 12px; border-radius:10px; border:1px solid #86efac; background:#ecfdf3; color:#15803d; font-weight:700; cursor:pointer; }
 .r2-delrow button.is-forever{ border-color:#fecaca; background:#fef2f2; color:#b91c1c; }
+/* the note sheet sits on top of the phone keyboard and never runs off-screen */
+.r2-sheet{ position:fixed; left:0; right:0; bottom:var(--r2-kb, 0px); max-height:calc(100dvh - var(--r2-kb, 0px) - 20px); overflow-y:auto; transition:bottom .15s ease; }
+.r2-sheet-bg{ position:fixed; }
+@media (min-width:761px){ .r2-sheet{ left:50%; right:auto; width:min(430px, 100%); transform:translateX(-50%); } }
