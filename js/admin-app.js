@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=242';
+} from './firebase-config.js?v=243';
 
-import { expandKit } from './kit.js?v=242';
+import { expandKit } from './kit.js?v=243';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -10625,6 +10625,7 @@ async function r2Decide(id, act) {
     if (act === 'chase') patch.target = true;
     if (!(await rateSave(r, patch, 'Lead sorting: ' + R2_ACTS[act].log))) return;
   }
+  s.menu = false;
   s.sheet = { id, act, chips: [], text: '' };
   render();
 }
