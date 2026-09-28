@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=201';
+} from './firebase-config.js?v=202';
 
-import { expandKit } from './kit.js?v=201';
+import { expandKit } from './kit.js?v=202';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -9816,12 +9816,30 @@ async function rateSave(r, patchData, logText) {
   return true;
 }
 
+const RATE_ACT_LABEL = { won: 'Won', info: 'To Phil', nextyear: 'Target next year', locked: 'Locked', pass: 'Pass', next: 'Next' };
+async function rateSendAsk(r, text, act) {
+  const ctx = [Number(r.rating) ? r.rating + '/5' : 'not rated', RATE_ACT_LABEL[act] || act].join(' · ');
+  const tip = { at: Date.now(), text, done: false, reply: '', context: 'Max: ' + ctx };
+  try {
+    const e = { at: Date.now(), text: 'Asked Scout: ' + text.slice(0, 200) };
+    const { doc, setDoc, arrayUnion } = fb.f;
+    await setDoc(doc(fb.db, 'leads', r.id), { tips: arrayUnion(tip), updatedAt: Date.now(), history: arrayUnion(e) }, { merge: true });
+    r.tips = [...(r.tips || []), tip];
+    r.history = [...(r.history || []), e];
+    // off he goes - Scout's 15-minute check sees this and starts
+    await setDoc(doc(fb.db, 'scout', 'state'), { requestedAt: Date.now() }, { merge: true });
+  } catch (err) {
+    console.error('ask scout', err);
+    const h = document.getElementById('rt-hint');
+    if (h) { h.textContent = 'Could not send to Scout — check your connection.'; h.classList.add('is-bad'); }
+    return false;
+  }
+  return true;
+}
+
 async function rateAct(act) {
   const s = rateState();
   if (s.busy) return;
-  s.edit = false;
-  s.tip = false;
-  s.stay = '';
   const id = (document.querySelector('.rt-card') || {}).getAttribute && document.querySelector('.rt-card').getAttribute('data-rate-id');
   const r = id && (state.leads || []).find((x) => x.id === id);
   if (!r) return;
@@ -9831,8 +9849,12 @@ async function rateAct(act) {
     if (hint) { hint.textContent = 'Pick a rating (1–5) first'; hint.classList.add('is-bad'); }
     return;
   }
+  s.edit = false;
+  s.tip = false;
+  s.stay = '';
   const patchData = {};
   const log = [];
+  const ask = String(s.tipDraft || '').trim().slice(0, 1500);
   if (pick && pick !== Number(r.rating)) { patchData.rating = pick; log.push(`Fit ${pick}/5`); }
   if (act === 'won') { patchData.stage = 'won'; patchData.verdict = ''; log.push('Stage → Won'); }
   if (act === 'locked') { patchData.verdict = 'locked'; log.push('Tagged: Locked — another supplier'); }
@@ -9844,7 +9866,7 @@ async function rateAct(act) {
     if (ny.followUp && (!r.followUp || String(r.followUp) > ny.followUp)) { patchData.followUp = ny.followUp; log.push('Follow-up ' + ny.followUp); }
   }
   if (act === 'info') { patchData.needsResearch = true; log.push('Sent to Phil'); }
-  if (act === 'next' && !log.length) {
+  if (act === 'next' && !log.length && !ask) {
     // skip for now - it comes back at the end of the deck
     if (!s.focus) { s.skip = s.skip.filter((x) => x !== r.id).concat(r.id); s.back.push(r.id); }
     s.pick = 0; s.focus = '';
@@ -9852,6 +9874,8 @@ async function rateAct(act) {
     return;
   }
   if (log.length && !(await rateSave(r, patchData, 'Lead Rating: ' + log.join(' · ')))) return;
+  if (ask && !(await rateSendAsk(r, ask, act))) return;
+  s.tipDraft = '';
   if (!s.focus) s.back.push(r.id);
   s.skip = s.skip.filter((x) => x !== r.id);
   s.pick = 0;
@@ -9864,6 +9888,9 @@ function wireLeadRate() {
   if (!root) return;
   wireLeadImageErrors();
   const s = rateState();
+  root.addEventListener('input', (e) => {
+    if (e.target.matches('[data-rate-tip-text]')) s.tipDraft = e.target.value;
+  });
   root.addEventListener('submit', (e) => {
     const tf = e.target.closest('[data-rate-tip-form]');
     if (tf) { e.preventDefault(); rateTipSave(tf); return; }
@@ -9882,11 +9909,11 @@ function wireLeadRate() {
         .catch((err) => { console.error('scout ask', err); t.disabled = false; });
       return;
     }
-    if (t.hasAttribute('data-rate-tip')) { s.tip = !s.tip; s.edit = false; render(); const f = document.querySelector('[data-rate-tip-form] textarea'); if (f) { f.scrollIntoView({ block: 'center', behavior: 'smooth' }); f.focus(); } return; }
-    if (t.hasAttribute('data-rate-tip-cancel')) { s.tip = false; render(); return; }
+    if (t.hasAttribute('data-rate-tip')) { s.tip = true; s.edit = false; render(); const f = document.querySelector('[data-rate-tip-form] textarea'); if (f) { f.scrollIntoView({ block: 'center', behavior: 'smooth' }); f.focus(); } return; }
+    if (t.hasAttribute('data-rate-tip-cancel')) { s.tip = false; s.tipDraft = ''; render(); return; }
     if (t.hasAttribute('data-rate-edit')) { s.tip = false; s.edit = !s.edit; render(); const f = document.querySelector('.rt-edit'); if (f) f.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
     if (t.hasAttribute('data-rate-edit-cancel')) { s.edit = false; render(); return; }
-    if (t.hasAttribute('data-rate-tab')) { s.edit = false; s.tip = false; s.tab = t.getAttribute('data-rate-tab'); s.focus = ''; s.pick = 0; render(); return; }
+    if (t.hasAttribute('data-rate-tab')) { s.edit = false; s.tip = false; s.tipDraft = ''; s.tab = t.getAttribute('data-rate-tab'); s.focus = ''; s.pick = 0; render(); return; }
     if (t.hasAttribute('data-rate-pick')) {
       const n = Number(t.getAttribute('data-rate-pick'));
       s.pick = s.pick === n ? 0 : n;
@@ -9901,12 +9928,12 @@ function wireLeadRate() {
       return;
     }
     if (t.hasAttribute('data-rate-act')) { rateAct(t.getAttribute('data-rate-act')); return; }
-    if (t.hasAttribute('data-rate-focus')) { s.focus = t.getAttribute('data-rate-focus'); s.pick = 0; s.edit = false; render(); window.scrollTo(0, 0); return; }
+    if (t.hasAttribute('data-rate-focus')) { s.focus = t.getAttribute('data-rate-focus'); s.pick = 0; s.edit = false; s.tip = false; s.tipDraft = ''; render(); window.scrollTo(0, 0); return; }
     if (t.hasAttribute('data-rate-unfocus')) { s.focus = ''; s.pick = 0; s.edit = false; render(); return; }
     if (t.hasAttribute('data-rate-prev')) {
       // step back to the last lead you acted on, to change your mind
       const id = s.back.pop();
-      if (id) { s.focus = id; s.pick = 0; s.edit = false; render(); }
+      if (id) { s.focus = id; s.pick = 0; s.edit = false; s.tip = false; s.tipDraft = ''; render(); }
       return;
     }
     if (t.hasAttribute('data-rate-open')) {
@@ -9992,11 +10019,13 @@ function leadTipsHtml(r) {
     </div>`).join('')}</div>`;
 }
 function rateTipFormHtml(r) {
-  return `<form class="rt-edit" data-rate-tip-form="${attr(r.id)}">
-    <p class="rt-edit-h">Ask Scout <span>— what you know, or what to check</span></p>
-    <label><textarea name="tip" rows="4" placeholder="e.g. Luke Geiger played last year. ABMC did production, Heath was the contact. Check the location."></textarea></label>
-    <div class="rt-edit-btns"><button type="button" class="rt-edit-cancel" data-rate-tip-cancel>Cancel</button><button type="submit" class="rt-edit-save">Send to Scout</button></div>
-  </form>`;
+  const s = rateState();
+  return `<div class="rt-edit" data-rate-tip-form="${attr(r.id)}">
+    <p class="rt-edit-h">Ask Scout <span>— sent with your rating + action</span></p>
+    <label><textarea name="tip" rows="4" data-rate-tip-text placeholder="e.g. Luke Geiger played last year. ABMC did production, Heath was the contact. Check the location.">${esc(s.tipDraft || '')}</textarea></label>
+    <div class="rt-edit-btns"><button type="button" class="rt-edit-cancel" data-rate-tip-cancel>Clear</button></div>
+    <p class="rt-tip-how">Now rate it and pick an action — Scout gets this note and starts on it.</p>
+  </div>`;
 }
 async function rateTipSave(form) {
   const s = rateState();
