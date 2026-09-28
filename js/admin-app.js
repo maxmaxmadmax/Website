@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=213';
+} from './firebase-config.js?v=214';
 
-import { expandKit } from './kit.js?v=213';
+import { expandKit } from './kit.js?v=214';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -8633,9 +8633,13 @@ function leadSmsBody(r) {
     middle = `I'm just reaching out regarding ${evFull}${where}${when}. Who would be the best person to speak with about entertainment and production for it?`;
   } else if (job) {
     middle = `I'm just reaching out regarding ${evFull}${where}${when}. ${job.line}\n\n${job.ask}`;
+  } else if (nextYear) {
+    const short = /cup/i.test(ev) ? 'Cup' : 'event';
+    middle = `Hope this year's ${short} went well. I'm just reaching out regarding ${evFull}${where}. Do you have your event production and entertainment sorted for next year?`;
+  } else if (outdoor) {
+    middle = `I'm just reaching out regarding ${evFull}${where}${when}. Do you have your stage, sound and entertainment sorted for this year?`;
   } else {
-    const what = outdoor ? 'stage, sound and entertainment sorted' : 'entertainment booked';
-    middle = `I'm just reaching out regarding ${evFull}${where}${when}. Do you have your ${what} for ${nextYear ? 'next year' : outdoor ? 'this year' : 'this event'}?`;
+    middle = `I'm just reaching out regarding ${evFull}${where}${when}. Do you have your event production and entertainment sorted for this event?`;
   }
   return [
     `Hi ${who || 'there'},`,
@@ -8756,7 +8760,7 @@ function renderLeadRows() {
         ${where ? `<span class="lead-loc" title="${attr(where)}"><span class="lead-ico" aria-hidden="true">📍</span>${esc(where)}</span>` : '<span class="ad-cell-muted">—</span>'}
         ${km ? `<span class="lead-km">${esc(km)}</span>` : ''}
       </td>
-      <td class="lead-catcol">${r.category ? `<span class="lead-cat">${esc(r.category)}</span>` : `<span class="lead-cat is-type">${esc(LEAD_TYPES[r.type] || 'Lead')}</span>`}${r.verdict ? `<span class="lead-verdict is-${attr(r.verdict)}">${esc(LEAD_VERDICT[r.verdict] || r.verdict)}</span>` : ''}${r.needsResearch ? '<span class="lead-verdict is-info">🔍 With Phil</span>' : ''}</td>
+      <td class="lead-catcol">${r.category ? `<span class="lead-cat">${esc(r.category)}</span>` : `<span class="lead-cat is-type">${esc(LEAD_TYPES[r.type] || 'Lead')}</span>`}${r.verdict ? `<span class="lead-verdict is-${attr(r.verdict)}">${esc(LEAD_VERDICT[r.verdict] || r.verdict)}</span>` : ''}</td>
       <td>${leadFitRater(r.rating, true, r.id)}</td>
       <td class="lead-num">${leadValueHtml(r)}</td>
       <td>${leadNextActHtml(r)}${fu ? `<span class="lead-fu is-${fu}">${fu === 'overdue' ? 'Overdue ' : 'Due '}${esc(fmtLeadDate(String(r.followUp).slice(0, 10)))}</span>` : ''}${(() => { const e = leadEoi(r); return e && e.state !== 'closed' ? `<span class="lead-eoi is-${e.state}" title="${attr(e.note || 'Supplier deadline')}">EOI closes ${esc(fmtLeadDate(e.date))}</span>` : ''; })()}</td>
@@ -9828,7 +9832,7 @@ function rateSortKey(r) {
 function rateDeck() {
   const s = rateState();
   // a lead Max just left a note on stays on screen until he picks an action
-  const list = (state.leads || []).filter((r) => (!Number(r.rating) && !r.needsResearch) || r.id === s.stay)
+  const list = (state.leads || []).filter((r) => !Number(r.rating) || r.id === s.stay)
     .sort((a, b) => rateSortKey(a).localeCompare(rateSortKey(b)) || String(a.title || '').localeCompare(String(b.title || '')));
   // "Next" without a rating sends a lead to the back for this session
   const skipped = list.filter((r) => s.skip.includes(r.id));
@@ -9881,7 +9885,6 @@ function rateCardHtml(r, pos, total) {
   const tags = [
     r.stage === 'won' ? '<span class="rt-chip is-won">🏆 Won</span>' : '',
     r.verdict ? `<span class="rt-chip is-verdict">${esc(LEAD_VERDICT[r.verdict] || r.verdict)}</span>` : '',
-    r.needsResearch ? '<span class="rt-chip is-info">🔍 With Phil</span>' : '',
   ].join('');
   return `
     <article class="rt-card" data-rate-id="${attr(r.id)}">
@@ -9982,7 +9985,7 @@ function leadRateHtml() {
           <a class="rt-exit" href="#/leads" aria-label="Close Lead Rating">✕</a>
           ${s.back.length && !focus && s.tab === 'review' ? '<button type="button" class="rt-prev" data-rate-prev aria-label="Previous lead">‹</button>' : ''}
           <nav class="rt-tabs">
-            ${[['review', 'Review', deck.length], ['waiting', 'Phil', waiting.length], ['rated', 'Rated', rated.length]]
+            ${[['review', 'Review', deck.length], ['rated', 'Rated', rated.length]]
               .map(([k, label, n]) => `<button type="button" class="rt-tab${s.tab === k && !focus ? ' is-on' : ''}" data-rate-tab="${k}">${label} <span>${n}</span></button>`).join('')}
           </nav>
         </div>
