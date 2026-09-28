@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=212';
+} from './firebase-config.js?v=213';
 
-import { expandKit } from './kit.js?v=212';
+import { expandKit } from './kit.js?v=213';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -8711,7 +8711,7 @@ function leadMobileCardHtml(r) {
       <button type="button" class="lead-mc-btn is-email" data-mc-email="${attr(r.id)}"${okEmail ? '' : ' disabled'}>✉️ Email</button>
       ${phone ? `<a class="lead-mc-btn is-call" href="tel:${attr(phone.replace(/[^\d+]/g, ''))}">📞 Call</a>` : '<span class="lead-mc-btn is-call is-off">📞 Call</span>'}
       ${leadIsCouncil(r) ? '<span class="lead-mc-btn is-sms is-off" title="Council event - email, not SMS">💬 SMS</span>'
-        : mobile ? `<a class="lead-mc-btn is-sms" href="${attr(leadSmsHref(r))}"${r.verdict === 'nextyear' && !leadIsPast(r) && leadHasExactDate(r) ? ` title="Target next year - best sent after ${attr(fmtLeadDate(r.eventDate.slice(0, 10)))}"` : ''}>💬 ${r.verdict === 'nextyear' && !leadIsPast(r) && leadHasExactDate(r) ? 'After ' + esc(fmtLeadDate(r.eventDate.slice(0, 10)).replace(/\s+20\d\d$/, '')) : 'SMS'}</a>`
+        : mobile ? `<a class="lead-mc-btn is-sms${r.smsDraft ? ' is-checked' : ''}" href="${attr(leadSmsHref(r))}"${r.verdict === 'nextyear' && !leadIsPast(r) && leadHasExactDate(r) ? ` title="Target next year - best sent after ${attr(fmtLeadDate(r.eventDate.slice(0, 10)))}"` : ''}>💬 ${r.verdict === 'nextyear' && !leadIsPast(r) && leadHasExactDate(r) ? 'After ' + esc(fmtLeadDate(r.eventDate.slice(0, 10)).replace(/\s+20\d\d$/, '')) : (r.smsDraft ? 'SMS ✓' : 'SMS')}</a>`
         : `<span class="lead-mc-btn is-sms is-off" title="${phone ? 'Not a mobile number' : 'No phone number'}">💬 SMS</span>`}
       <button type="button" class="lead-mc-btn is-view" data-mc-view="${attr(r.id)}">View</button>
       <button type="button" class="lead-mc-btn is-next" data-mc-next="${attr(r.id)}">Next ›</button>

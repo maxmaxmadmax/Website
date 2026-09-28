@@ -3867,3 +3867,4 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
   .lead-mc-btn.is-next{ border-color:var(--ad-orange); background:var(--ad-orange); color:#fff; }
   .lead-mc-btn.is-off, .lead-mc-btn:disabled{ border-color:#e5e7eb; background:#f9fafb; color:#c0c4cc; cursor:default; }
 }
+.lead-mc-btn.is-sms:not(.is-checked):not(.is-off){ border-style:dashed; }
