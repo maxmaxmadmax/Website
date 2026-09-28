@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=244';
+} from './firebase-config.js?v=245';
 
-import { expandKit } from './kit.js?v=244';
+import { expandKit } from './kit.js?v=245';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -8386,7 +8386,7 @@ function leadMainHtml() {
       <div class="inv-main lead-page">
         <div class="lead-top">
           <div>
-            <h1>Event Opportunities</h1>
+            <h1>Gig Opportunities</h1>
             <p class="lead-tagline">Find. Plan. Connect. More Events for a Louder Tomorrow.</p>
           </div>
           <div class="lead-add">
@@ -10585,13 +10585,13 @@ function leadSortHtml() {
     const rows = lists[s.tab];
     body = rows.length ? `<ul class="rt-list">${rows.map((r) => `<li><button type="button" data-r2-open="${attr(r.id)}"><span class="rt-li-t">${esc(r.title || 'Lead')}</span><span class="rt-li-m">${esc(r2When(r))}${leadKmText(r) ? ' · ' + esc(leadKmText(r)) : ''}</span></button></li>`).join('')}</ul>` : '<p class="rt-empty">Nothing here yet.</p>';
   }
-  const titles = { review: 'Leads', saved: 'Saved', chasing: 'Chasing', passed: 'Passed', deleted: 'Deleted' };
+  const titles = { review: 'Gig Match', saved: 'Saved', chasing: 'Chasing', passed: 'Passed', deleted: 'Deleted' };
   return `
     <div class="rt-wrap">
       <div class="rt-phone r2">
         <div class="rt-top">
           <a class="rt-exit" href="#/leads" aria-label="Close">✕</a>
-          <h1 class="r2-h1">${esc(titles[s.tab] || 'Leads')}</h1>
+          <h1 class="r2-h1">${esc(titles[s.tab] || 'Gig Match')}</h1>
           <span class="rt-top-fill"></span>
           ${!focus && (s.tab === 'review' || !lists[s.tab]) && deck.length ? `<span class="r2-of">${s.pos + 1} of ${deck.length}</span>` : ''}
           <button type="button" class="rt-burger${s.menu ? ' is-on' : ''}" data-rate-menu aria-label="Menu">☰</button>
