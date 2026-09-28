@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=199';
+} from './firebase-config.js?v=200';
 
-import { expandKit } from './kit.js?v=199';
+import { expandKit } from './kit.js?v=200';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -8023,16 +8023,16 @@ function leadTodayIso() {
 function leadFreshHtml(r) {
   const at = String(r.enrichedAt || '').slice(0, 10);
   let cls = 'is-none';
-  let txt = 'Not researched yet';
+  let txt = 'Not scouted yet';
   if (/^\d{4}-\d{2}-\d{2}$/.test(at)) {
     const days = Math.round((new Date().setHours(0, 0, 0, 0) - new Date(at + 'T00:00:00')) / 86400000);
     cls = days <= 30 ? 'is-fresh' : days <= 90 ? 'is-aging' : 'is-stale';
     const rel = leadRelDay(at);
-    txt = 'Info checked ' + fmtLeadDate(at) + (/ago|Today|Yesterday/.test(rel) ? ' · ' + rel.toLowerCase() : '');
+    txt = 'Scouted ' + fmtLeadDate(at) + (/ago|Today|Yesterday/.test(rel) ? ' · ' + rel.toLowerCase() : '');
   }
   const mine = (r.history || []).reduce((m, e) => Math.max(m, Number(e && e.at) || 0), 0);
   const you = mine ? ' · you updated ' + leadRelDay(new Date(mine).toISOString().slice(0, 10)).toLowerCase() : '';
-  return `<p class="lead-fresh ${cls}"><span aria-hidden="true">🔎</span> ${esc(txt + you)}</p>`;
+  return `<p class="lead-fresh ${cls}"><span aria-hidden="true">🔭</span> ${esc(txt + you)}</p>`;
 }
 
 function leadRelDay(iso) {
@@ -8598,7 +8598,7 @@ function renderLeadRows() {
         ${where ? `<span class="lead-loc" title="${attr(where)}"><span class="lead-ico" aria-hidden="true">📍</span>${esc(where)}</span>` : '<span class="ad-cell-muted">—</span>'}
         ${km ? `<span class="lead-km">${esc(km)}</span>` : ''}
       </td>
-      <td class="lead-catcol">${r.category ? `<span class="lead-cat">${esc(r.category)}</span>` : `<span class="lead-cat is-type">${esc(LEAD_TYPES[r.type] || 'Lead')}</span>`}${r.verdict ? `<span class="lead-verdict is-${attr(r.verdict)}">${esc(LEAD_VERDICT[r.verdict] || r.verdict)}</span>` : ''}${r.needsResearch ? '<span class="lead-verdict is-info">More info queued</span>' : ''}</td>
+      <td class="lead-catcol">${r.category ? `<span class="lead-cat">${esc(r.category)}</span>` : `<span class="lead-cat is-type">${esc(LEAD_TYPES[r.type] || 'Lead')}</span>`}${r.verdict ? `<span class="lead-verdict is-${attr(r.verdict)}">${esc(LEAD_VERDICT[r.verdict] || r.verdict)}</span>` : ''}${r.needsResearch ? '<span class="lead-verdict is-info">🔭 With Scout</span>' : ''}</td>
       <td>${leadFitRater(r.rating, true, r.id)}</td>
       <td class="lead-num">${leadValueHtml(r)}</td>
       <td>${leadNextActHtml(r)}${fu ? `<span class="lead-fu is-${fu}">${fu === 'overdue' ? 'Overdue ' : 'Due '}${esc(fmtLeadDate(String(r.followUp).slice(0, 10)))}</span>` : ''}${(() => { const e = leadEoi(r); return e && e.state !== 'closed' ? `<span class="lead-eoi is-${e.state}" title="${attr(e.note || 'Supplier deadline')}">EOI closes ${esc(fmtLeadDate(e.date))}</span>` : ''; })()}</td>
@@ -9662,15 +9662,15 @@ function rateCardHtml(r, pos, total) {
     ['🎸 Live music', r.liveMusic],
     ['Entertainment/AV', [r.incumbent, r.needs ? 'Needs: ' + r.needs : '', r.power && r.power !== 'unknown' ? (r.power === 'generator' ? 'Generator needed' : 'Mains power') : ''].filter(Boolean).join(' · ')],
     ['Supplier deadline', r.eoiDate ? fmtLeadDate(r.eoiDate) + (r.eoiNote ? ' — ' + r.eoiNote : '') : ''],
-    ...(r.tips || []).filter((t) => t && !t.done).map((t) => ['📝 Your note', (t.text || '') + ' (waiting for research)']),
-    ...(r.tips || []).filter((t) => t && t.done && t.reply).slice(-3).map((t) => ['🔎 From your note', t.reply]),
+    ...(r.tips || []).filter((t) => t && !t.done).map((t) => ['📝 You asked Scout', (t.text || '') + ' (Scout will check tonight)']),
+    ...(r.tips || []).filter((t) => t && t.done && t.reply).slice(-3).map((t) => ['🔭 Scout', t.reply]),
   ].filter(([, x]) => String(x || '').trim());
   const miss = rateMissing(r);
   const pick = s.pick || Number(r.rating) || 0;
   const tags = [
     r.stage === 'won' ? '<span class="rt-chip is-won">🏆 Won</span>' : '',
     r.verdict ? `<span class="rt-chip is-verdict">${esc(LEAD_VERDICT[r.verdict] || r.verdict)}</span>` : '',
-    r.needsResearch ? '<span class="rt-chip is-info">Waiting on research</span>' : '',
+    r.needsResearch ? '<span class="rt-chip is-info">🔭 With Scout</span>' : '',
   ].join('');
   return `
     <article class="rt-card" data-rate-id="${attr(r.id)}">
@@ -9697,7 +9697,7 @@ function rateCardHtml(r, pos, total) {
         ${facts.length ? `<ul class="rt-brief">${facts.map(([k, x]) => `<li><b>${esc(k)}:</b> ${esc(x)}</li>`).join('')}</ul>` : ''}
         ${String(r.pitch || '').trim() ? `<p class="rt-pitch"><b>Worth it for you?</b> ${esc(r.pitch)}</p>` : ''}
         ${miss.length ? `<p class="rt-miss">Missing: ${miss.map(esc).join(' · ')}</p>` : ''}
-        <div class="rt-cardbtns"><button type="button" class="rt-addinfo" data-rate-edit>✏️ Add info</button><button type="button" class="rt-addinfo" data-rate-tip>📝 Note for research</button><button type="button" class="rt-open" data-rate-open="${attr(r.id)}">Open full lead ›</button></div>
+        <div class="rt-cardbtns"><button type="button" class="rt-addinfo" data-rate-edit>✏️ Add info</button><button type="button" class="rt-addinfo" data-rate-tip>🔭 Ask Scout</button><button type="button" class="rt-open" data-rate-open="${attr(r.id)}">Open full lead ›</button></div>
       </div>
       ${s.tip ? rateTipFormHtml(r) : ''}
       ${s.edit ? rateEditHtml(r) : ''}
@@ -9710,7 +9710,7 @@ function rateCardHtml(r, pos, total) {
     </div>
     <div class="rt-acts">
       <button type="button" class="rt-act is-won" data-rate-act="won"><i>🏆</i>Won</button>
-      <button type="button" class="rt-act is-info" data-rate-act="info"><i>?</i>More info</button>
+      <button type="button" class="rt-act is-info" data-rate-act="info"><i>🔭</i>To Scout</button>
       <button type="button" class="rt-act is-target" data-rate-act="nextyear"><i>🎯</i>Target ${esc(rateNextYear(r).label)}</button>
       <button type="button" class="rt-act is-locked" data-rate-act="locked"><i>🔒</i>Locked</button>
       <button type="button" class="rt-act is-pass" data-rate-act="pass"><i>✕</i>Pass</button>
@@ -9742,7 +9742,7 @@ function leadRateHtml() {
   } else if (s.tab === 'review') {
     body = deck.length ? rateCardHtml(deck[0], 1, deck.length) : '<p class="rt-empty">🎉 Every lead is rated. New leads and researched ones will show up here.</p>';
   } else if (s.tab === 'waiting') {
-    body = rateListHtml(waiting, 'Nothing waiting — tap "More info" on a lead to queue it for the nightly research.');
+    body = rateListHtml(waiting, 'Nothing with Scout — tap "To Scout" or "Ask Scout" on a lead and Scout checks it tonight.');
   } else {
     body = rateListHtml(rated, 'No leads rated yet.');
   }
@@ -9753,7 +9753,7 @@ function leadRateHtml() {
           <a class="rt-exit" href="#/leads" aria-label="Close Lead Rating">✕</a>
           ${s.back.length && !focus && s.tab === 'review' ? '<button type="button" class="rt-prev" data-rate-prev aria-label="Previous lead">‹</button>' : ''}
           <nav class="rt-tabs">
-            ${[['review', 'Review', deck.length], ['waiting', 'More info', waiting.length], ['rated', 'Rated', rated.length]]
+            ${[['review', 'Review', deck.length], ['waiting', 'Scout', waiting.length], ['rated', 'Rated', rated.length]]
               .map(([k, label, n]) => `<button type="button" class="rt-tab${s.tab === k && !focus ? ' is-on' : ''}" data-rate-tab="${k}">${label} <span>${n}</span></button>`).join('')}
           </nav>
         </div>
@@ -9812,7 +9812,7 @@ async function rateAct(act) {
     log.push('Tagged: Target next year (' + ny.label + ')');
     if (ny.followUp && (!r.followUp || String(r.followUp) > ny.followUp)) { patchData.followUp = ny.followUp; log.push('Follow-up ' + ny.followUp); }
   }
-  if (act === 'info') { patchData.needsResearch = true; log.push('Queued for research (more info)'); }
+  if (act === 'info') { patchData.needsResearch = true; log.push('Sent to Scout'); }
   if (act === 'next' && !log.length) {
     // skip for now - it comes back at the end of the deck
     if (!s.focus) { s.skip = s.skip.filter((x) => x !== r.id).concat(r.id); s.back.push(r.id); }
@@ -9950,14 +9950,14 @@ function leadTipsHtml(r) {
   return `<div class="rt-tips">${tips.map((t) => `
     <div class="rt-tip${t.done ? ' is-done' : ''}">
       <p><b>📝 You (${esc(leadRelDay(new Date(t.at || Date.now()).toISOString().slice(0, 10)).toLowerCase())}):</b> ${esc(t.text || '')}</p>
-      ${t.done ? `<p class="rt-tip-reply"><b>🔎 Research:</b> ${esc(t.reply || 'Done.')}</p>` : '<p class="rt-tip-wait">Waiting for the next research run</p>'}
+      ${t.done ? `<p class="rt-tip-reply"><b>🔭 Scout:</b> ${esc(t.reply || 'Done.')}</p>` : '<p class="rt-tip-wait">Scout will check this tonight</p>'}
     </div>`).join('')}</div>`;
 }
 function rateTipFormHtml(r) {
   return `<form class="rt-edit" data-rate-tip-form="${attr(r.id)}">
-    <p class="rt-edit-h">Note for the researcher <span>— what you know, or what to check</span></p>
+    <p class="rt-edit-h">Ask Scout <span>— what you know, or what to check</span></p>
     <label><textarea name="tip" rows="4" placeholder="e.g. Luke Geiger played last year. ABMC did production, Heath was the contact. Check the location."></textarea></label>
-    <div class="rt-edit-btns"><button type="button" class="rt-edit-cancel" data-rate-tip-cancel>Cancel</button><button type="submit" class="rt-edit-save">Send to research</button></div>
+    <div class="rt-edit-btns"><button type="button" class="rt-edit-cancel" data-rate-tip-cancel>Cancel</button><button type="submit" class="rt-edit-save">Send to Scout</button></div>
   </form>`;
 }
 async function rateTipSave(form) {
@@ -9968,7 +9968,7 @@ async function rateTipSave(form) {
   const tip = { at: Date.now(), text, done: false, reply: '' };
   s.busy = true;
   try {
-    const e = { at: Date.now(), text: 'Note for research: ' + text.slice(0, 200) };
+    const e = { at: Date.now(), text: 'Asked Scout: ' + text.slice(0, 200) };
     const { doc, setDoc, arrayUnion } = fb.f;
     await setDoc(doc(fb.db, 'leads', r.id), { tips: arrayUnion(tip), needsResearch: true, updatedAt: Date.now(), history: arrayUnion(e) }, { merge: true });
     r.tips = [...(r.tips || []), tip];
