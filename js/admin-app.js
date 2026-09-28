@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=233';
+} from './firebase-config.js?v=234';
 
-import { expandKit } from './kit.js?v=233';
+import { expandKit } from './kit.js?v=234';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -10519,12 +10519,12 @@ function r2SheetHtml() {
   const a = R2_ACTS[sh.act] || {};
   return `
     <div class="r2-sheet-bg" data-r2-skip></div>
-    <div class="r2-sheet" role="dialog" aria-label="Add a note">
-      <div class="r2-sheet-top"><b>${esc(a.ico || '')} ${esc(a.label || '')} — add a note <span>(optional)</span></b><button type="button" data-r2-skip aria-label="Close">✕</button></div>
-      ${sh.act === 'chase' ? '<p class="r2-sheet-info">🔭 Scout will prepare outreach for this lead.</p>' : ''}
+    <div class="r2-sheet" role="dialog" aria-label="Ask Scout">
+      <div class="r2-sheet-top"><b>🔭 Ask Scout <span>(optional) · ${esc(a.label || '')}</span></b><button type="button" data-r2-skip aria-label="Close">✕</button></div>
+      ${sh.act === 'chase' ? '<p class="r2-sheet-info">Scout is preparing outreach for this lead. Anything you add here goes with it.</p>' : ''}
       <div class="r2-chips">${R2_CHIPS.map((c) => `<button type="button" class="${(sh.chips || []).includes(c) ? 'is-on' : ''}" data-r2-chip="${attr(c)}">${esc(c)}</button>`).join('')}</div>
-      <textarea rows="3" data-r2-note placeholder="Type a note…">${esc(sh.text || '')}</textarea>
-      <button type="button" class="r2-savenext" data-r2-savenext>Save &amp; next</button>
+      <textarea rows="3" data-r2-note placeholder="Tell Scout what you know or what to do…">${esc(sh.text || '')}</textarea>
+      <button type="button" class="r2-savenext" data-r2-savenext>Send to Scout &amp; next</button>
       <button type="button" class="r2-skip" data-r2-skip>Skip</button>
     </div>`;
 }
