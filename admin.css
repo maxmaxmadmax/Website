@@ -3875,3 +3875,4 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 @keyframes rtInLeft{ from{ transform:translateX(-40px); opacity:.4; } to{ transform:none; opacity:1; } }
 .rt-card.is-in-right{ animation:rtInRight .2s ease; }
 .rt-card.is-in-left{ animation:rtInLeft .2s ease; }
+@media (hover:hover){ .rt-main > .rt-card{ cursor:grab; user-select:none; } .rt-main > .rt-card:active{ cursor:grabbing; } }

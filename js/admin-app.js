@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=218';
+} from './firebase-config.js?v=219';
 
-import { expandKit } from './kit.js?v=218';
+import { expandKit } from './kit.js?v=219';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -10115,24 +10115,32 @@ function wireLeadRate() {
   const s = rateState();
   const card = root.querySelector('.rt-card');
   if (card && !s.focus && s.tab === 'review') {
-    let x0 = 0, y0 = 0, on = false;
-    card.addEventListener('touchstart', (e) => {
-      if (e.target.closest('textarea, input, a, button')) { on = false; return; }
-      on = true; x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
-    }, { passive: true });
-    card.addEventListener('touchmove', (e) => {
+    // finger swipe on a phone, click-and-drag with a mouse
+    let x0 = 0, y0 = 0, on = false, moved = false;
+    card.addEventListener('pointerdown', (e) => {
+      if (e.button > 0 || e.target.closest('textarea, input, a, button')) { on = false; return; }
+      on = true; moved = false; x0 = e.clientX; y0 = e.clientY;
+    });
+    card.addEventListener('pointermove', (e) => {
       if (!on) return;
-      const dx = e.touches[0].clientX - x0, dy = e.touches[0].clientY - y0;
-      if (Math.abs(dx) > Math.abs(dy)) card.style.transform = `translateX(${dx * 0.6}px) rotate(${dx * 0.02}deg)`;
-    }, { passive: true });
-    card.addEventListener('touchend', (e) => {
+      const dx = e.clientX - x0, dy = e.clientY - y0;
+      if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) {
+        moved = true;
+        card.style.transform = `translateX(${dx * 0.6}px) rotate(${dx * 0.02}deg)`;
+      }
+    });
+    const release = (e) => {
       if (!on) return;
       on = false;
-      const t = e.changedTouches[0];
-      const dx = t.clientX - x0, dy = t.clientY - y0;
+      const dx = e.clientX - x0, dy = e.clientY - y0;
       card.style.transform = '';
-      if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) rateBrowse(dx < 0 ? 1 : -1);
-    });
+      if (moved && Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) rateBrowse(dx < 0 ? 1 : -1);
+    };
+    card.addEventListener('pointerup', release);
+    card.addEventListener('pointercancel', () => { on = false; card.style.transform = ''; });
+    card.addEventListener('pointerleave', release);
+    // a drag shouldn't select text or drag the photo
+    card.addEventListener('dragstart', (e) => e.preventDefault());
   }
   root.addEventListener('input', (e) => {
     if (e.target.matches('[data-rate-tip-text]')) s.tipDraft = e.target.value;
