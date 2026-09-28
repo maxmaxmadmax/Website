@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=209';
+} from './firebase-config.js?v=210';
 
-import { expandKit } from './kit.js?v=209';
+import { expandKit } from './kit.js?v=210';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -8594,14 +8594,31 @@ function leadEventYear(r) {
     from what the lead holds - the event, the year, what they need.       */
 function leadSmsBody(r) {
   if (r.smsDraft && String(r.smsDraft).trim()) return String(r.smsDraft).trim();
+  // Max's wording (28 Sep 2026)
   const who = leadFirstName(r);
-  const ev = String(r.eventName || r.title || 'your event').replace(/\s+20\d\d\b.*$/, '').trim();
-  const needs = String(r.needs || '').split(/[.;]/)[0].trim();
-  return `Hi${who ? ' ' + who : ''}, Max here from SoundzGood Whitsundays (Bowen). We do sound, lighting, staging and DJ/MC for events across North Queensland. `
-    + `Have you got your production sorted for ${ev} ${leadEventYear(r)}? `
-    + (needs ? `If not, I'd love to put together a package for ${needs.charAt(0).toLowerCase() + needs.slice(1)}. ` : `If not, I'd love to put together a package for you. `)
-    + 'Happy to send a quote - just reply here. Cheers, Max';
+  const ev = String(r.eventName || r.title || 'your event').replace(/\s+\d{1,2}\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b.*$/i, '').replace(/\s+20\d\d\b.*$/, '').replace(/\s*[—–-]\s*$/, '').trim();
+  let when = '';
+  if (leadHasExactDate(r) && !leadIsPast(r)) {
+    const d = new Date(r.eventDate.slice(0, 10) + 'T00:00:00');
+    when = ' on ' + d.toLocaleDateString('en-AU', { weekday: 'short' }) + ' ' + d.getDate() + ' ' + d.toLocaleDateString('en-AU', { month: 'short' });
+  } else {
+    when = ' ' + leadEventYear(r);
+  }
+  const where = r.town || r.venue ? ' in ' + String(r.town || r.venue).split(',')[0].replace(/\s+(QLD|Queensland)$/i, '').trim() : '';
+  return [
+    `Hi ${who || 'there'},`,
+    '',
+    'My name is Max from SoundzGood in North Queensland. We provide production services for events.',
+    '',
+    `I'm just reaching out regarding ${ev}${where}${when} to see if you have your production sorted.`,
+    '',
+    'When you have some time, would love to discuss this further.',
+    '',
+    'Cheers,',
+    'Max',
+  ].join('\n');
 }
+
 function leadSmsHref(r) {
   const num = String(r.phone || '').replace(/[^\d+]/g, '');
   // iPhone reads "&body=", Android "?body="
