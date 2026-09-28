@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=216';
+} from './firebase-config.js?v=217';
 
-import { expandKit } from './kit.js?v=216';
+import { expandKit } from './kit.js?v=217';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -9921,12 +9921,12 @@ function rateCardHtml(r, pos, total) {
         ${String(r.pitch || '').trim() ? `<p class="rt-pitch"><b>Worth it for you?</b> ${esc(r.pitch)}</p>` : ''}
         ${miss.length ? `<p class="rt-miss">Missing: ${miss.map(esc).join(' · ')}</p>` : ''}
         <div class="rt-cardbtns"><button type="button" class="rt-open" data-rate-open="${attr(r.id)}">Open full lead ›</button></div>
+        <label class="rt-ask is-inline"><span aria-hidden="true">🔭</span>
+          <textarea rows="2" data-rate-tip-text placeholder="Ask Scout — what you know or what to do (sent with your action)">${esc(s.tipDraft || '')}</textarea>
+        </label>
       </div>
       ${s.edit ? rateEditHtml(r) : ''}
     </article>
-    <label class="rt-ask"><span aria-hidden="true">🔭</span>
-      <textarea rows="2" data-rate-tip-text placeholder="Ask Scout — what you know or what to do (sent with your action)">${esc(s.tipDraft || '')}</textarea>
-    </label>
     <div class="rt-rate">
       <p>Rate this lead <span>(1 = low, 5 = high fit)</span></p>
       <div class="rt-bar" role="radiogroup" aria-label="Fit rating">

@@ -3868,3 +3868,4 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
   .lead-mc-btn.is-off, .lead-mc-btn:disabled{ border-color:#e5e7eb; background:#f9fafb; color:#c0c4cc; cursor:default; }
 }
 .lead-mc-btn.is-sms:not(.is-checked):not(.is-off){ border-style:dashed; }
+.rt-ask.is-inline{ margin:12px 0 2px; background:#f9fafb; }
