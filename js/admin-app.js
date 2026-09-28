@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=208';
+} from './firebase-config.js?v=209';
 
-import { expandKit } from './kit.js?v=208';
+import { expandKit } from './kit.js?v=209';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -8434,6 +8434,7 @@ function leadMainHtml() {
           </select>
         </div>
 
+        <div class="lead-mcards" id="lead-mcards"></div>
         <div class="ad-table-wrap inv-table-wrap lead-table-wrap">
           <table class="ad-table lead-table">
             <thead>
@@ -8570,6 +8571,103 @@ function leadWebIconsHtml(r) {
   return ic.length ? `<span class="lead-ev-icons">${ic.join('')}</span>` : '';
 }
 
+/* -------------------------------------------------------------------------
+   Leads on a phone: one card per lead, always the same eight boxes in the
+   same order, so a gap ("Not provided") is obvious. Buttons: Email, Call,
+   SMS (opens the phone's Messages with an intro already written), View,
+   Next (rate it in Lead Rating).
+   ------------------------------------------------------------------------- */
+function leadIsMobile(phone) {
+  const d = String(phone || '').replace(/[^\d+]/g, '');
+  return /^(\+?61|0)4\d{8}$/.test(d);
+}
+function leadFirstName(r) {
+  const c = String(r.contactName || '').split('(')[0].trim();
+  if (!c || /club|council|society|committee|association|events?|team|inc|pty|ltd|festival|shire|rotary|ops/i.test(c)) return '';
+  return c.split(/\s+/)[0];
+}
+function leadEventYear(r) {
+  const y = leadHasExactDate(r) ? Number(r.eventDate.slice(0, 4)) : new Date().getFullYear();
+  return leadIsPast(r) ? y + 1 : y;
+}
+/*  The intro SMS: Scout's draft if Max asked for one, otherwise written
+    from what the lead holds - the event, the year, what they need.       */
+function leadSmsBody(r) {
+  if (r.smsDraft && String(r.smsDraft).trim()) return String(r.smsDraft).trim();
+  const who = leadFirstName(r);
+  const ev = String(r.eventName || r.title || 'your event').replace(/\s+20\d\d\b.*$/, '').trim();
+  const needs = String(r.needs || '').split(/[.;]/)[0].trim();
+  return `Hi${who ? ' ' + who : ''}, Max here from SoundzGood Whitsundays (Bowen). We do sound, lighting, staging and DJ/MC for events across North Queensland. `
+    + `Have you got your production sorted for ${ev} ${leadEventYear(r)}? `
+    + (needs ? `If not, I'd love to put together a package for ${needs.charAt(0).toLowerCase() + needs.slice(1)}. ` : `If not, I'd love to put together a package for you. `)
+    + 'Happy to send a quote - just reply here. Cheers, Max';
+}
+function leadSmsHref(r) {
+  const num = String(r.phone || '').replace(/[^\d+]/g, '');
+  // iPhone reads "&body=", Android "?body="
+  const sep = /iPad|iPhone|iPod/.test(navigator.userAgent) ? '&' : '?';
+  return `sms:${num}${sep}body=${encodeURIComponent(leadSmsBody(r))}`;
+}
+function leadMobileCardHtml(r) {
+  const verified = ['verified', 'added', 'updated'].includes(r.contactCheck);
+  const tick = verified ? '<i class="lead-mc-ok" title="Checked on an official page">✓</i>' : '';
+  const none = '<span class="lead-mc-none">Not provided</span>';
+  const box = (ico, label, val, extra = '') => `<div class="lead-mc-box"><span class="lead-mc-ico" aria-hidden="true">${ico}</span><div><span class="lead-mc-lbl">${label}</span>${val || none}${extra}</div></div>`;
+  const name = r.title || r.eventName || 'Untitled lead';
+  const org = leadOrganiser(r);
+  const img = r.imageBroken ? '' : leadImageUrl(r);
+  const [icon, cls] = leadCatStyle(r);
+  let date = '';
+  if (leadHasExactDate(r)) {
+    const d = new Date(r.eventDate.slice(0, 10) + 'T00:00:00');
+    date = `<b>${esc(fmtLeadDate(r.eventDate.slice(0, 10)))}</b><em>(${d.toLocaleDateString('en-AU', { weekday: 'short' })})</em>`;
+  } else if (leadWhen(r)) date = `<b>${esc(leadWhen(r))}</b>`;
+  const where = r.venue || r.town || '';
+  const km = leadKmText(r);
+  const type = `<span class="lead-cat">${esc(r.category || LEAD_TYPES[r.type] || 'Lead')}</span>`
+    + (r.verdict ? `<span class="lead-verdict is-${attr(r.verdict)}">${esc(LEAD_VERDICT[r.verdict] || r.verdict)}</span>` : '')
+    + (r.stage === 'won' ? '<span class="lead-verdict is-won">🏆 Won</span>' : '');
+  const contact = String(r.contactName || '').trim();
+  const phone = String(r.phone || '').trim();
+  const email = String(r.email || '').trim();
+  const okEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const web = leadSafeUrl(r.website);
+  const notes = String(r.summary || r.needs || '').trim();
+  const mobile = leadIsMobile(phone);
+  return `
+  <article class="lead-mc${state.openLeadId === r.id ? ' is-open' : ''}">
+    <header class="lead-mc-head">
+      <span class="lead-mc-img ${cls}">${img ? `<img src="${attr(img)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-lead-img="${attr(r.id)}">` : `<i aria-hidden="true">${icon}</i>`}</span>
+      <div class="lead-mc-title">
+        <h3>${esc(name)}${r.target ? ' <span class="lead-ev-star">★</span>' : ''}</h3>
+        ${org ? `<p>${esc(org)}</p>` : ''}
+        ${leadWebIconsHtml(r)}
+      </div>
+      <span class="lead-mc-stage">${esc(LEAD_STAGES[r.stage || 'new'] || 'New')}</span>
+    </header>
+    <div class="lead-mc-grid">
+      ${box('📅', 'Date', date)}
+      ${box('📍', 'Location', where ? `<b>${esc(where)}</b>` : '', km ? `<em>${esc(km)}</em>` : '')}
+      ${box('🏷️', 'Event type', type)}
+      ${box('👥', 'Est. attendance', r.crowd ? `<b>${esc(r.crowd)}</b>` : '')}
+    </div>
+    <div class="lead-mc-grid">
+      ${box('👤', 'Contact name', contact ? `<b>${esc(contact.split(' — ')[0].split('(')[0].trim() || contact)}</b>` : '')}
+      ${box('📞', 'Phone', phone ? `<a href="tel:${attr(phone.replace(/[^\d+]/g, ''))}">${esc(phone)}</a>${tick}` : '')}
+      ${box('✉️', 'Email', okEmail ? `<a href="mailto:${attr(email)}">${esc(email)}</a>${tick}` : '')}
+      ${box('🌐', 'Website', web ? `<a href="${attr(web.href)}" target="_blank" rel="noopener noreferrer">${esc(web.hostname.replace(/^www\./, ''))}</a>${tick}` : '')}
+    </div>
+    <p class="lead-mc-notes"><span>Event notes</span>${notes ? esc(notes.length > 180 ? notes.slice(0, 177) + '…' : notes) : '<span class="lead-mc-none">Not provided</span>'}</p>
+    <div class="lead-mc-acts">
+      <button type="button" class="lead-mc-btn is-email" data-mc-email="${attr(r.id)}"${okEmail ? '' : ' disabled'}>✉️ Email</button>
+      ${phone ? `<a class="lead-mc-btn is-call" href="tel:${attr(phone.replace(/[^\d+]/g, ''))}">📞 Call</a>` : '<span class="lead-mc-btn is-call is-off">📞 Call</span>'}
+      ${mobile ? `<a class="lead-mc-btn is-sms" href="${attr(leadSmsHref(r))}">💬 SMS</a>` : `<span class="lead-mc-btn is-sms is-off" title="${phone ? 'Not a mobile number' : 'No phone number'}">💬 SMS</span>`}
+      <button type="button" class="lead-mc-btn is-view" data-mc-view="${attr(r.id)}">View</button>
+      <button type="button" class="lead-mc-btn is-next" data-mc-next="${attr(r.id)}">Next ›</button>
+    </div>
+  </article>`;
+}
+
 function renderLeadRows() {
   const host = document.getElementById('lead-rows');
   const foot = document.getElementById('lead-foot');
@@ -8615,6 +8713,8 @@ function renderLeadRows() {
     </tr>`;
   }).join('')
     : `<tr><td colspan="8" class="ad-cell-muted">No leads match. Try clearing the filters, or add one with ＋ Add Lead.</td></tr>`;
+  const mc = document.getElementById('lead-mcards');
+  if (mc) mc.innerHTML = rows.length ? rows.map(leadMobileCardHtml).join('') : '<p class="ad-cell-muted">No leads match. Try clearing the filters.</p>';
 
   if (foot) {
     const from = all.length ? start + 1 : 0;
@@ -8777,6 +8877,19 @@ function wireLeadList() {
     });
   }
 
+  const mcHost = document.getElementById('lead-mcards');
+  if (mcHost) mcHost.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-mc-view], [data-mc-next], [data-mc-email]');
+    if (!b) return;
+    if (b.hasAttribute('data-mc-view')) { if (openLead(b.getAttribute('data-mc-view'), 'overview')) { render(); window.scrollTo(0, 0); } return; }
+    if (b.hasAttribute('data-mc-email')) { if (openLead(b.getAttribute('data-mc-email'), 'overview')) { render(); openLeadCompose(); } return; }
+    if (b.hasAttribute('data-mc-next')) {
+      // rate this one in Lead Rating
+      const rs = rateState();
+      rs.focus = b.getAttribute('data-mc-next'); rs.pick = 0; rs.tipDraft = '';
+      location.hash = '#/leadRate';
+    }
+  });
   const host = document.getElementById('lead-rows');
   if (host) host.addEventListener('keydown', (e) => {
     const el = e.target.closest('.lead-fitr.is-edit [data-fit]');
