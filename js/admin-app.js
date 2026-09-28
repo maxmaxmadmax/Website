@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=202';
+} from './firebase-config.js?v=203';
 
-import { expandKit } from './kit.js?v=202';
+import { expandKit } from './kit.js?v=203';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -9502,6 +9502,13 @@ function openLeadCompose() {
   }
   const who = (r.contactName || '').trim().split(/\s+/)[0] || 'there';
   const ev = r.eventName || r.title || 'your event';
+  // Scout's draft (asked for in Lead Rating) wins over the standard template
+  const draft = ((state.leads || []).find((x) => x.id === state.openLeadId) || {}).outreachDraft;
+  if (draft && String(draft.body || '').trim()) {
+    state.leadCompose = { to: r.email.trim(), subject: draft.subject || `SoundzGood Whitsundays — ${ev}`, body: draft.body, leadId: state.openLeadId };
+    render();
+    return;
+  }
   const subject = `SoundzGood Whitsundays — ${r.eventName || r.title || 'your event'}`;
   const body =
 `Hi ${who},
@@ -9673,6 +9680,7 @@ function rateCardHtml(r, pos, total) {
     ['Supplier deadline', r.eoiDate ? fmtLeadDate(r.eoiDate) + (r.eoiNote ? ' — ' + r.eoiNote : '') : ''],
     ...(r.tips || []).filter((t) => t && !t.done).map((t) => ['📝 You asked Scout', (t.text || '') + ' (waiting for Scout)']),
     ...(r.tips || []).filter((t) => t && t.done && t.reply).slice(-3).map((t) => ['🔭 Scout', t.reply]),
+    ...(r.outreachDraft && r.outreachDraft.body ? [['✉️ Email draft ready', (r.outreachDraft.subject || '') + ' — open the lead → Prepare Outreach to review and send']] : []),
   ].filter(([, x]) => String(x || '').trim());
   const miss = rateMissing(r);
   const pick = s.pick || Number(r.rating) || 0;
