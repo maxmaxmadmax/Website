@@ -4023,3 +4023,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .lead-table thead th:nth-child(5){ width:100px; }
 .lead-table thead th:nth-child(6){ width:170px; }
 .lead-table thead th:nth-child(7){ width:76px; }
+/* tags over the Gig Match photo: days to go (left), km away (right) */
+.r2-ptag{ position:absolute; bottom:10px; z-index:2; padding:5px 10px; border-radius:999px; background:rgba(17,24,39,.72); color:#fff; font-size:.78rem; font-weight:700; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); }
+.r2-ptag.is-when{ left:10px; }
+.r2-ptag.is-km{ right:10px; }

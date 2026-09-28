@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=246';
+} from './firebase-config.js?v=247';
 
-import { expandKit } from './kit.js?v=246';
+import { expandKit } from './kit.js?v=247';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -10401,10 +10401,24 @@ function r2When(r) {
   if (leadHasExactDate(r)) return fmtLeadDate(r.eventDate.slice(0, 10));
   return leadWhen(r) || 'Date TBC';
 }
-function r2Photo(r, cls) {
+function r2Photo(r, cls, extra) {
   const [icon, tint] = leadCatStyle(r);
   const img = r.imageBroken ? '' : leadImageUrl(r);
-  return `<div class="${cls} ${tint}">${img ? `<img src="${attr(img)}" alt="" referrerpolicy="no-referrer" data-lead-img="${attr(r.id)}">` : `<span aria-hidden="true">${icon}</span>`}</div>`;
+  return `<div class="${cls} ${tint}">${img ? `<img src="${attr(img)}" alt="" referrerpolicy="no-referrer" data-lead-img="${attr(r.id)}">` : `<span aria-hidden="true">${icon}</span>`}${extra || ''}</div>`;
+}
+/*  Tags over the card photo: days to the event (left) and km from Bowen (right). */
+function r2PhotoTags(r) {
+  let when = '';
+  if (leadHasExactDate(r)) {
+    const d = Math.round((new Date(r.eventDate.slice(0, 10) + 'T00:00:00') - new Date(new Date().toDateString())) / 864e5);
+    when = d === 0 ? '🎉 Today!' : d === 1 ? '⏳ Tomorrow' : d > 1 ? `⏳ ${d} days to go` : `Was ${-d} day${d === -1 ? '' : 's'} ago`;
+  } else {
+    const k = leadMonthKey(r);
+    if (k) when = '🗓️ ' + LEAD_MON[Number(k.slice(5, 7)) - 1].replace(/^./, (c) => c.toUpperCase()) + ' ' + k.slice(0, 4);
+  }
+  const km = leadKm(r);
+  const dist = km == null ? '' : km === 0 ? '📍 Local' : `🚚 ${km.toLocaleString('en-AU')} km`;
+  return (when ? `<span class="r2-ptag is-when">${esc(when)}</span>` : '') + (dist ? `<span class="r2-ptag is-km">${esc(dist)}</span>` : '');
 }
 function r2Meta(r) {
   const where = r.venue || r.town || '';
@@ -10426,7 +10440,7 @@ function r2Buttons(r, withMore) {
 function r2CardHtml(r, pos, total) {
   return `
     <article class="r2-card rt-card" data-rate-id="${attr(r.id)}">
-      ${r2Photo(r, 'r2-photo')}
+      ${r2Photo(r, 'r2-photo', r2PhotoTags(r))}
       <div class="r2-body">
         <h2 class="r2-title">${esc(r.title || r.eventName || 'Lead')}</h2>
         ${r2Meta(r)}
