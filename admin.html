@@ -16,11 +16,39 @@
       and the two would fight each other. Keeping them apart also means
       nothing done in here can reach the public site, and nothing done
       there can reach this.                                             -->
-<link rel="stylesheet" href="admin.css?v=235">
+<link rel="stylesheet" href="admin.css?v=236">
 <!--  The DJ list for the Friday Nights panel. Same roster the
         entertainment page shows.                                  -->
-  <script src="js/roster.js?v=235" defer></script>
-  <script type="module" src="js/admin-app.js?v=235"></script>
+  <script src="js/roster.js?v=236" defer></script>
+  <script type="module" src="js/admin-app.js?v=236"></script>
+  <!-- ADMIN AUTO-UPDATE: phones may keep this page for up to 10 min after a
+       change is published. On open (and when the tab comes back into view) we
+       ask for the live page, bypassing any cache; if its version is newer than
+       the one running, reload once with a fresh copy.                        -->
+  <script>
+  (function () {
+    var mine = (document.querySelector('script[src*="admin-app.js?v="]') || {}).src || '';
+    var cur = (mine.match(/v=(\d+)/) || [])[1];
+    function check() {
+      if (!cur) return;
+      fetch('admin.html?check=' + Date.now(), { cache: 'no-store' })
+        .then(function (r) { return r.text(); })
+        .then(function (t) {
+          var live = (t.match(/admin-app\.js\?v=(\d+)/) || [])[1];
+          if (!live || Number(live) <= Number(cur)) return;
+          var key = 'sg-admin-reloaded-' + live;
+          try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, '1'); } catch (e) {}
+          var u = new URL(location.href);
+          u.searchParams.set('v', live);
+          location.replace(u.toString());
+        })
+        .catch(function () {});
+    }
+    check();
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
+  })();
+  </script>
+
 </head>
 
 <body>
