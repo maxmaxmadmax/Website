@@ -3022,11 +3022,18 @@ exports.tellBot = onRequest({ secrets: [TELEGRAM_TOKEN], cors: false }, async (r
   const token = TELEGRAM_TOKEN.value();
   // one-off: GET ?setup=1 points the bot at this URL
   if (req.method === 'GET' && req.query.setup === '1') {
-    const self = `https://${req.get('host')}${req.originalUrl.split('?')[0]}`.replace(/\/+$/, '');
-    res.json(await tell.setup(token, self.includes('cloudfunctions.net') ? self : `https://australia-southeast1-soundzgood-8c86f.cloudfunctions.net/tellBot`));
+    // the public address of this function (Cloud Run strips the /tellBot path from req.url, so it's fixed here)
+    res.json(await tell.setup(token, 'https://australia-southeast1-soundzgood-8c86f.cloudfunctions.net/tellBot'));
     return;
   }
-  if (req.method !== 'POST' || req.get('X-Telegram-Bot-Api-Secret-Token') !== tell.hookSecret(token)) { res.status(403).send('no'); return; }
+  // status: GET ?info=1 shows Telegram's delivery status (no secrets)
+  if (req.method === 'GET' && req.query.info === '1') {
+    const r = await fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`).then((x) => x.json()).catch(() => ({}));
+    const i = r.result || {};
+    res.json({ url: i.url, pending: i.pending_update_count, lastError: i.last_error_message || '', lastErrorAt: i.last_error_date ? new Date(i.last_error_date * 1000).toISOString() : '' });
+    return;
+  }
+  if (req.method !== 'POST' || req.get('X-Telegram-Bot-Api-Secret-Token') !== tell.hookSecret(token)) { logger.warn('tellBot rejected', { method: req.method, hasHeader: !!req.get('X-Telegram-Bot-Api-Secret-Token') }); res.status(403).send('no'); return; }
   try { await tell.handleUpdate(token, req.body || {}); } catch (e) { logger.error('tellBot', e); }
   res.status(200).send('ok');   // always 200 so Telegram doesn't retry
 });
