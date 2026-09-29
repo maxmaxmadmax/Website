@@ -229,6 +229,11 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Tell (Telegram inbox): written by the tellBot function; admins can read
+    match /tellInbox/{id} { allow read: if isAdmin(); allow write: if false; }
+    match /tellOutbox/{id} { allow read: if isAdmin(); allow write: if false; }
+    match /tell/{id} { allow read: if isAdmin(); allow write: if false; }
+
     match /quoteLeads/{leadId} {
       allow read: if isAdmin();
       allow write: if false;

@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=248';
+} from './firebase-config.js?v=249';
 
-import { expandKit } from './kit.js?v=248';
+import { expandKit } from './kit.js?v=249';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6344,8 +6344,8 @@ function subscribeToPackages() {
       const rows = [];
       snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
       // Findo's new finds stay with Phil until he's checked and filled them in
-      state.withPhil = rows.filter((r) => r.foundBy === 'Findo' && !r.enrichedAt).length;
-      for (let i = rows.length - 1; i >= 0; i--) if (rows[i].foundBy === 'Findo' && !rows[i].enrichedAt) rows.splice(i, 1);
+      state.withPhil = rows.filter((r) => (r.foundBy === 'Findo' || r.foundBy === 'Tell') && !r.enrichedAt).length;
+      for (let i = rows.length - 1; i >= 0; i--) if ((rows[i].foundBy === 'Findo' || rows[i].foundBy === 'Tell') && !rows[i].enrichedAt) rows.splice(i, 1);
       // "Delete" is a safe delete (Max never hard-deletes): archived leads are kept
       // so Findo won't re-add them and they can be restored from the menu
       state.archivedLeads = rows.filter((r) => r.archived);
@@ -10053,7 +10053,7 @@ function leadRateHtml() {
           <div class="rt-menu-prog"><span>${deck.length} left to review</span><span>${rated.length} of ${all} rated · ${pct}%</span></div>
           <div class="rt-progbar"><i style="width:${pct}%"></i></div>
           ${scoutBarHtml() || '<p class="rt-scout-line">🔭 Scout: nothing on right now</p>'}
-          ${state.withPhil ? `<p class="rt-scout-line">🔍 Phil is checking ${state.withPhil} new find${state.withPhil === 1 ? '' : 's'} from Findo</p>` : ''}
+          ${state.withPhil ? `<p class="rt-scout-line">🔍 Phil is checking ${state.withPhil} new find${state.withPhil === 1 ? '' : 's'} (Findo / Tell)</p>` : ''}
         </div>` : ''}
         <div class="rt-main">${body}</div>
       </div>
@@ -10617,7 +10617,7 @@ function leadSortHtml() {
           <nav class="rt-tabs">${[['review', 'To sort', deck.length], ['chasing', 'Chasing', lists.chasing.length], ['saved', 'Saved', lists.saved.length], ['passed', 'Passed', lists.passed.length]]
             .map(([k, l, n]) => `<button type="button" class="rt-tab${s.tab === k ? ' is-on' : ''}" data-r2-list="${k}">${l} <span>${n}</span></button>`).join('')}</nav>
           ${scoutBarHtml() || '<p class="rt-scout-line">🔭 Scout: nothing on right now</p>'}
-          ${state.withPhil ? `<p class="rt-scout-line">🔍 Phil is checking ${state.withPhil} new find${state.withPhil === 1 ? '' : 's'} from Findo</p>` : ''}
+          ${state.withPhil ? `<p class="rt-scout-line">🔍 Phil is checking ${state.withPhil} new find${state.withPhil === 1 ? '' : 's'} (Findo / Tell)</p>` : ''}
           ${r2Current() ? `<button type="button" class="r2-del" data-r2-delete="${attr(r2Current().id)}">🗑 Delete this lead</button>` : ''}
           ${(state.archivedLeads || []).length ? `<button type="button" class="r2-dellist" data-r2-list="deleted">Deleted (${state.archivedLeads.length})</button>` : ''}
         </div>` : ''}
