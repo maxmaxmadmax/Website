@@ -3052,6 +3052,29 @@ exports.tellOutbox = onDocumentCreated({ document: 'tellOutbox/{id}', secrets: [
    category ONLY, and only for vendors who are confirmed AND paid (or
    marked free) - Max, 14 Oct 2026. Nothing else ever leaves here.
    ========================================================================= */
+/*  The vendor's own link, from the "Social media links" box they filled in
+    (free text). Only a real web address is used - the first one found,
+    https added if they left it off. A bare @handle is skipped: it could
+    be Instagram or Facebook, and a wrong guess sends people nowhere.    */
+const LINK_ENDINGS = ['com', 'au', 'net', 'org', 'nz', 'co', 'io', 'me', 'info', 'biz', 'shop', 'store', 'online', 'site', 'page', 'link', 'app'];
+
+function lineupLink(text) {
+  // word by word, so an email address (bob@gmail.com) is never taken for a website
+  for (const word of String(text || '').split(/[\s,;|]+/)) {
+    if (!word || word.includes('@')) continue;
+    if (!/^(?:https?:\/\/)?(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}(?:[/?#]\S*)?$/i.test(word)) continue;
+    let url = word.replace(/[).]+$/, '');
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    try {
+      const u = new URL(url);
+      // a real web ending only - "re.weaved" is an Instagram name, not a site
+      const end = u.hostname.split('.').pop();
+      if (/^https?:$/.test(u.protocol) && LINK_ENDINGS.includes(end)) return u.href.slice(0, 300);
+    } catch (e) { /* not a real address - try the next word */ }
+  }
+  return '';
+}
+
 exports.eventLineup = onRequest({ cors: true }, async (req, res) => {
   const eventId = String(req.query.event || '');
   if (!/^[a-z0-9-]{3,80}$/.test(eventId)) { res.status(400).json({ error: 'bad event' }); return; }
@@ -3071,7 +3094,7 @@ exports.eventLineup = onRequest({ cors: true }, async (req, res) => {
       if (!name || seen.has(name.toLowerCase())) return;   // one line per business
       seen.add(name.toLowerCase());
       const list = b.vendorType === 'food' ? out.food : out.market;
-      list.push({ name, category: String(catName[b.categoryId] || '').slice(0, 40) });
+      list.push({ name, category: String(catName[b.categoryId] || '').slice(0, 40), link: lineupLink(b.business && b.business.socials) });
     });
     out.food.sort((a, b) => a.name.localeCompare(b.name));
     out.market.sort((a, b) => a.name.localeCompare(b.name));

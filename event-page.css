@@ -194,3 +194,16 @@
     .ep-lineup{ grid-template-columns:1fr; }
     .ep-actions .btn{ width:100%; text-align:center; }
 }
+
+/* a vendor's name links to their page when they gave us one */
+.ep-list a{
+    color:var(--sg-text);
+    text-decoration:underline;
+    text-decoration-color:var(--sg-orange);
+    text-underline-offset:3px;
+}
+
+.ep-list a:hover,
+.ep-list a:focus-visible{ color:var(--sg-orange); }
+
+.ep-list a i{ font-style:normal; font-size:.8em; color:var(--sg-orange); }

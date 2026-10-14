@@ -44,7 +44,13 @@
         var el = document.getElementById(id);
         if (!el || !rows || !rows.length) return false;
         el.querySelector('ul').innerHTML = rows.map(function (r) {
-            return '<li><b>' + esc(r.name) + '</b>' +
+            /*  The vendor's own link (checked server side: http/https only).
+                Opens in a new tab; nofollow because we don't vouch for it. */
+            var name = r.link && /^https?:\/\//i.test(r.link)
+                ? '<a href="' + esc(r.link).replace(/"/g, '&quot;') + '" target="_blank" rel="noopener nofollow ugc">' +
+                  esc(r.name) + ' <i aria-hidden="true">&#8599;</i></a>'
+                : esc(r.name);
+            return '<li><b>' + name + '</b>' +
                    (r.category && !/^other/i.test(r.category) ? ' <span>' + esc(r.category) + '</span>' : '') + '</li>';
         }).join('');
         el.hidden = false;
