@@ -47,6 +47,8 @@
           photo:'images/talent/alex-emrik.jpg' },
         { slug:'dj-powerboi',        name:'DJ PowerBoi',        act:'dj',   genres:[], events:[],
           photo:'images/talent/dj-powerboi.jpg' },
+        { slug:'dougie',             name:'Dougie',             act:'dj',   genres:['R&B'], events:[],   // R&B per Max, 14 Oct 2026
+          photo:'images/talent/dougie.jpg' },
 
         /*  THE SOLO ARTISTS AND BANDS ARE PARKED, NOT GONE
 
