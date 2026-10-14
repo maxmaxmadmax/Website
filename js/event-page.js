@@ -65,6 +65,7 @@
         name  = how to show their name, if it differs from how they typed it
         photo = the vendor's OWN photo (images/vendors/<file>), used instead
                 of the generic picture for their kind of food
+        link  = their page, when Max gives us a better one than they typed
         logo  = true when that photo is a logo: shown whole on white, not cropped
         Keyed by the business name exactly as they typed it. A NEW vendor
         doesn't need a line here - they get the first sentence of their
@@ -74,12 +75,15 @@
         'Amazing wieners':      { tag: 'Hot dogs',      line: 'German bratwurst, cheesy kransky and kids’ hot dogs.' },
         'Ammos Shak':           { tag: 'Indian',        line: 'Indian food and curries.', name: 'Ammo’s Shak' },
         'Cheeky Chicky':        { tag: 'Fried chicken', line: 'Pork belly bites, crispy wings, loaded fries and chicken burgers.', cat: 'chicken-wings' },
-        'Grumpy Mas':           { tag: 'Burgers',       line: 'Hearty Kiwi fry bread burgers.', photo: 'images/vendors/grumpy-mas.webp' },   // photo from Max, 14 Oct 2026
-        'Loopy Scoops':         { tag: 'Ice cream',     line: 'Soft serve, premium scooped ice cream and snow cones.' },
+        'Grumpy Mas':           { tag: 'Burgers',       line: 'Hearty food.'   /* their own words - Max, 15 Oct 2026 */, photo: 'images/vendors/grumpy-mas.webp' },   // photo from Max, 14 Oct 2026
+        'Loopy Scoops':         { tag: 'Ice cream',     line: 'Soft serve, premium scooped ice cream and snow cones.',
+                                  link: 'https://www.facebook.com/p/Loopy-Scoops-61575237328097/' },   // Max, 15 Oct 2026
         'Sweet Wheels':         { tag: 'Sweet treats',  line: 'Sweet treats from the red food van.', cat: 'lollies-fairy-floss' },
         'Tropical Blendz':      { tag: 'Drinks',        line: 'Fresh drinks and smoothies.', cat: 'drinks-juice-smoothies', photo: 'images/vendors/tropical-blendz.webp', logo: true },   // their logo - Max, 14 Oct 2026
         'Tropical Pizza':       { tag: 'Pizza',         line: 'Pizza, wings and soft drinks.', photo: 'images/vendors/tropical-pizza.webp' },   // from their truck - Max, 14 Oct 2026
-        'Vandito Viesta':       { tag: 'Mexican',       line: 'A vibrant Mexican food van serving flavour-packed food.' },
+        'Vandito Viesta':       { tag: 'Mexican',       line: 'Nachos and tacos - beef, chicken, pulled pork and beans.',
+                                  photo: 'images/vendors/vandito-viesta.webp',
+                                  link: 'https://www.facebook.com/p/Vandito-Viesta-61586241928820/' },   // Max, 15 Oct 2026
 
         'Pretty Girl Ave':      { cat: 'gifts-novelty' },   // booked as Other
 
@@ -109,7 +113,9 @@
     var BAG = '<path ' + P + ' d="M5 8h14l-1 13H6zM9 8V6a3 3 0 016 0v2"/>';
 
     function linkOf(r) {
-        return r.link && /^https?:\/\//i.test(r.link) ? r.link : '';
+        var w = WORDS[r.name] || {};
+        var l = w.link || r.link;   // a link Max gave us beats the one they typed
+        return l && /^https?:\/\//i.test(l) ? l : '';
     }
 
     function foodCard(r) {
