@@ -75,7 +75,7 @@
         'Loopy Scoops':         { tag: 'Ice cream',     line: 'Soft serve, premium scooped ice cream and snow cones.' },
         'Sweet Wheels':         { tag: 'Sweet treats',  line: 'Sweet treats from the red food van.', cat: 'lollies-fairy-floss' },
         'Tropical Blendz':      { tag: 'Drinks',        line: 'Fresh drinks and smoothies.', cat: 'drinks-juice-smoothies' },
-        'Tropical Pizza':       { tag: 'Pizza',         line: 'Pizza, wings and soft drinks.' },
+        'Tropical Pizza':       { tag: 'Pizza',         line: 'Pizza, wings and soft drinks.', photo: 'images/vendors/tropical-pizza.webp' },   // from their truck - Max, 14 Oct 2026
         'Vandito Viesta':       { tag: 'Mexican',       line: 'A vibrant Mexican food van serving flavour-packed food.' },
 
         'Pretty Girl Ave':      { cat: 'gifts-novelty' },   // booked as Other
