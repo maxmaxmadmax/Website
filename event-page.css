@@ -592,92 +592,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-ent-badge{ position:static; display:inline-block; margin-bottom:10px; }
 }
 
-/* ==========================================================================
-   PRINT - an A4 mini magazine (Max, 14 Oct 2026)
-   Page 1 cover (title + poster), page 2 food, page 3 market + what's on +
-   good to know. Website menus, buttons and the footer are left off.
-   In the print box: tick "Background graphics" if the orange is missing.
-   ========================================================================== */
-@media print{
-    @page{ size:A4; margin:10mm; }
 
-    html, body.event-page{
-        -webkit-print-color-adjust:exact;
-        print-color-adjust:exact;
-        background:#f39243 !important;   /* one solid orange, so no pale strip at the end */
-        font-size:11pt;
-    }
-
-    #navbar, #footer, .navbar, .footer, .ep-actions, .ep-share-note{ display:none !important; }
-
-    /* page 2 (food) and page 3 (market etc.) each start a new sheet */
-    #ep-food, .ep-page-3, .ep-page-4{ break-before:page; }
-
-    /* the cover fills the sheet: the words on top, the poster big below */
-    .ep-hero-inner{ display:block; padding:2mm 0 0; }
-    .ep-hero-body{ position:relative; }
-    .ep-title{ font-size:60pt; }
-    .ep-intro{ max-width:none; margin:5mm 0 4mm; }
-    .ep-facts{ max-width:none; grid-template-columns:repeat(4, 1fr); }
-    .ep-hero-art{ min-height:0; margin:4mm auto 0; width:125mm; }
-    .ep-skeleton{ width:100%; filter:none; }
-    .ep-palm-1{ right:-18mm; width:40mm; height:64mm; }
-    .ep-palm-2{ left:-8mm; width:30mm; height:48mm; }
-    .ep-badge-round{ width:34mm; height:34mm; font-size:13pt; left:-4mm; box-shadow:2px 2px 0 var(--ep-ink); }
-    .ep-badge-free{ bottom:18mm; left:-10mm; font-size:14pt; box-shadow:2px 2px 0 var(--ep-ink); }
-
-    .ep-section{ padding:6mm 0 0; max-width:none; }
-    .ep-food{ grid-template-columns:1fr 1fr; gap:3mm; }
-    .ep-fv{ min-height:30mm; box-shadow:none; border:1px solid #e9c9a6; break-inside:avoid; }
-    .ep-fv-go{ display:none; }
-    /* on paper: title across the top, then 4 tiles a row using the full width */
-    .ep-market-panel{ grid-template-columns:1fr; gap:5mm; }
-    .ep-big{ font-size:24pt; }
-    .ep-market{ grid-template-columns:repeat(4, 1fr); gap:3mm; }
-    .ep-mt{ box-shadow:none; padding:3mm 4mm; break-inside:avoid; }
-    .ep-mt li{ font-size:7pt; }
-    .ep-grid{ grid-template-columns:repeat(4, 1fr); }
-    /* side by side on paper too (A4 is narrow enough to trip the tablet rule) */
-    .ep-ent{ grid-template-columns:1.4fr 1fr; }
-    .ep-ent-band{ grid-row:span 3; }
-    .ep-ent-photo{ aspect-ratio:auto; height:62mm; }
-    .ep-ent{ grid-template-rows:auto auto auto; align-items:start; }
-    .ep-page-3 .ep-times li{ padding:2.5mm 4mm; }
-    .ep-ent-band-text{ padding:4mm 6mm 5mm; }
-    .ep-ent-band-text p:not(.ep-kicker){ font-size:9pt; margin-bottom:0; }
-    .ep-ent-link{ display:none; }
-    .ep-ent-card h3{ font-size:20pt; margin-bottom:2mm; }
-    .ep-ent-card{ padding:5mm 7mm; }
-    .ep-ent-card{ padding:7mm; }
-    .ep-ent-badge{ position:static; display:inline-block; margin-bottom:3mm; }
-    /* page 4 holds market + good to know + sponsors, so keep it tight */
-    .ep-page-4 .ep-section{ padding-top:4mm; }
-    .ep-page-4 .ep-h2{ margin-bottom:3mm; }
-    .ep-know{ grid-template-columns:1fr 1fr; gap:2mm; }
-    .ep-know li{ padding:2.5mm 4mm; }
-    /* sponsors fill the bottom third of the last A4 (Max, 14 Oct 2026) */
-    .ep-page-4{ display:flex; flex-direction:column; min-height:276mm; }
-    .ep-page-4 > .ep-section:has(.ep-sponsors){ margin-top:auto; }
-    .ep-sponsors{ box-shadow:none; padding:5mm 6mm; break-inside:avoid; min-height:88mm; display:flex; flex-direction:column; justify-content:center; }
-    .ep-sponsors .ep-h2{ font-size:20pt; margin-bottom:4mm; }
-    .ep-sponsor-logos{ gap:3mm; }
-    .ep-sponsor-logos img:first-child{ width:86%; }
-    .ep-sponsor-logos img:last-child{ width:59.2%; }
-    .ep-sponsors p{ margin-top:4mm; }
-    .ep-print-url{ margin-top:4mm; }
-    .ep-ent-card{ box-shadow:none; break-inside:avoid; }
-    .ep-card, .ep-times li, .ep-know li, .ep-facts li{ box-shadow:none; break-inside:avoid; }
-    .ep-mt a{ text-decoration:none; }
-
-    .ep-print-only{ display:block; }
-    .ep-print-url{
-        margin:8mm 0 0;
-        text-align:center;
-        font-family:var(--sg-font-accent);
-        font-weight:bold;
-        letter-spacing:.1em;
-    }
-}
 
 /* the band card's photo runs edge to edge, on screen and on paper */
 .ep-ent-card.ep-ent-band{ padding:0; }
@@ -708,7 +623,176 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 }
 
 @media print{
-    .ep-times-poster{ grid-template-columns:1fr 50mm; gap:6mm; }
-    .ep-poster{ box-shadow:3px 3px 0 var(--ep-ink); border-width:2px; }
-    .ep-poster-link{ display:none; }
+    /* ======================================================================
+       THE A4 MINI MAGAZINE (Max, 14 Oct 2026 - for the local paper)
+       Four full sheets, orange to the edge, 12mm inside margin.
+       Page 1 cover | 2 food | 3 entertainment + times | 4 market, good to
+       know, sponsors (bottom third). Every page is exactly one A4 tall, so
+       nothing can spill onto a fifth.
+       ====================================================================== */
+    @page{ size:A4; margin:0; }
+
+    html, body.event-page{
+        -webkit-print-color-adjust:exact;
+        print-color-adjust:exact;
+        background:#f39243 !important;
+        font-size:12pt;
+        margin:0;
+    }
+
+    #navbar, #footer, .navbar, .footer,
+    .ep-actions, .ep-share-note, .ep-fv-go, .ep-ent-link, .ep-poster-link{ display:none !important; }
+
+    /* one sheet each */
+    .ep-page{
+        box-sizing:border-box;
+        height:297mm;
+        padding:12mm 13mm;
+        overflow:hidden;
+        display:flex;
+        flex-direction:column;
+        break-after:page;
+        max-width:none;
+        margin:0;
+    }
+    .ep-page-4{ break-after:auto; }
+    .ep-page > .ep-section{ max-width:none; padding:0; margin:0; }
+    .ep-page.ep-section{ max-width:none; margin:0; padding:12mm 13mm; }   /* the food page is its own section */
+
+    /* no web shadows or hover lifts on paper */
+    .ep-fv, .ep-mt, .ep-card, .ep-ent-card, .ep-times li, .ep-know li,
+    .ep-facts li, .ep-sponsors{ box-shadow:none !important; transform:none; }
+
+    .ep-h2{ font-size:30pt; margin:0 0 6mm; }
+    .ep-head{ margin:0 0 6mm; }
+    .ep-head .ep-h2{ margin:0; }
+    .ep-strap{ font-size:8.5pt; }
+
+    /* ---------------- PAGE 1: THE COVER ---------------- */
+    .ep-hero{ padding:12mm 13mm; }
+    .ep-hero-inner{
+        display:grid;
+        grid-template-columns:1fr 1.05fr;
+        grid-template-rows:auto auto auto 1fr;
+        column-gap:8mm;
+        padding:0;
+        height:100%;
+        max-width:none;
+    }
+    .ep-hero-body{ display:contents; }
+    .ep-hero-body .ep-kicker{ grid-column:1 / -1; font-size:10pt; margin:0 0 4mm; }
+    .ep-title{ grid-column:1 / -1; font-size:92pt; line-height:.86; -webkit-text-stroke:4px var(--ep-ink); text-shadow:7px 7px 0 var(--ep-ink); }
+    .ep-subline{ grid-column:1 / -1; font-size:20pt; margin:6mm 0 4mm; }
+    .ep-intro{ grid-column:1; grid-row:4; font-size:13pt; line-height:1.5; max-width:none; margin:4mm 0 0; align-self:start; }
+    .ep-facts{
+        grid-column:1; grid-row:4;
+        align-self:end;
+        grid-template-columns:1fr;
+        gap:3mm;
+        max-width:none;
+        margin-bottom:6mm;
+    }
+    .ep-facts li{ font-size:14pt; padding:3.5mm 5mm; }
+    .ep-facts b{ font-size:8pt; }
+    .ep-hero-art{ grid-column:2; grid-row:4; align-self:end; min-height:0; margin:0 -13mm -12mm 0; width:auto; }
+    .ep-skeleton{ width:100%; max-width:none; filter:none; }
+    .ep-palm-1{ right:2mm; width:42mm; height:66mm; }
+    .ep-palm-2{ left:-6mm; width:30mm; height:48mm; }
+    .ep-badge-round{ width:38mm; height:38mm; font-size:15pt; top:0; left:-6mm; box-shadow:3px 3px 0 var(--ep-ink); }
+    .ep-badge-free{ bottom:22mm; left:-14mm; font-size:17pt; box-shadow:3px 3px 0 var(--ep-ink); }
+    .ep-bat-1{ width:16mm; } .ep-bat-2{ width:12mm; } .ep-bat-3{ width:10mm; }
+
+    /* ---------------- PAGE 2: FOOD ---------------- */
+    .ep-food{
+        flex:1;
+        grid-template-columns:1fr 1fr;
+        grid-auto-rows:1fr;
+        gap:4mm;
+    }
+    .ep-fv{ min-height:0; border:none; }
+    .ep-fv-pic{ width:44%; max-width:none; }
+    .ep-fv-text{ padding:4mm 5mm; gap:1.5mm; }
+    .ep-fv-text small{ font-size:8pt; }
+    .ep-fv-text b{ font-size:16pt; }
+    .ep-fv-text span{ font-size:10pt; line-height:1.4; }
+
+    /* ---------------- PAGE 3: ENTERTAINMENT + TIMES ---------------- */
+    .ep-page-3 > .ep-section:first-child{ flex:1; display:flex; flex-direction:column; }
+    .ep-ent{
+        flex:1;
+        grid-template-columns:1.35fr 1fr;
+        grid-template-rows:1fr 1fr 1fr;
+        gap:4mm;
+    }
+    .ep-ent-band{ grid-row:1 / span 3; }
+    .ep-ent-photo{ aspect-ratio:auto; flex:1; min-height:0; height:auto; }
+    .ep-ent-band-text{ padding:5mm 6mm 6mm; }
+    .ep-ent-band h3{ font-size:26pt; }
+    .ep-ent-band-text p:not(.ep-kicker){ font-size:10pt; line-height:1.45; margin:0; }
+    .ep-ent-card:not(.ep-ent-band){ padding:5mm 6mm; display:flex; flex-direction:column; justify-content:center; }
+    .ep-ent-card h3{ font-size:21pt; margin:0 0 2mm; }
+    .ep-ent-card p:last-child{ font-size:10.5pt; }
+    .ep-ent-card .ep-kicker{ font-size:8pt; margin-bottom:2mm; }
+    .ep-ent-badge{ position:absolute; top:4mm; right:4mm; font-size:11pt; padding:2mm 3.5mm; }
+
+    .ep-times-poster{
+        display:grid;
+        grid-template-columns:1fr 58mm;
+        gap:8mm;
+        align-items:end;
+        margin-top:7mm !important;
+    }
+    .ep-times-poster .ep-h2{ margin-bottom:4mm; }
+    .ep-times{ gap:3mm; }
+    .ep-times li{ font-size:13pt; padding:4mm 5mm; }
+    .ep-times b{ min-width:26mm; }
+    .ep-times-poster .ep-sub{ font-size:10pt; }
+    .ep-poster{ width:58mm; transform:rotate(2deg); border-width:2px; box-shadow:3px 3px 0 var(--ep-ink) !important; }
+
+    /* ---------------- PAGE 4: MARKET, GOOD TO KNOW, SPONSORS ---------------- */
+    /* title across the top (strap beside it), tiles full width under it */
+    .ep-market-panel{ grid-template-columns:1fr; gap:6mm; }
+    .ep-market-title{ display:grid; grid-template-columns:auto 1fr; column-gap:10mm; align-items:end; }
+    .ep-market-title .ep-kicker{ grid-column:1 / -1; }
+    .ep-big{ font-size:30pt; margin-bottom:0; }
+    .ep-market-strap{ font-size:9pt; margin-bottom:2mm; }
+    .ep-market{ grid-template-columns:repeat(3, 1fr); gap:3.5mm; }
+    .ep-big::after{ bottom:-12px; }
+    .ep-mt{ padding:3.5mm 4mm; }
+    .ep-mt svg{ width:9mm; height:9mm; }
+    .ep-mt b{ font-size:9pt; }
+    .ep-mt li{ font-size:8pt; }
+    .ep-mt a{ text-decoration:none; }
+
+    .ep-page-4 > .ep-section + .ep-section{ margin-top:7mm; }
+    .ep-page-4 .ep-h2{ font-size:24pt; margin-bottom:4mm; }
+    .ep-know{ grid-template-columns:1fr 1fr; gap:2.5mm; }
+    .ep-know li{ font-size:11pt; padding:2.6mm 4.5mm; }
+    .ep-page-4 > .ep-section + .ep-section:not(:has(.ep-sponsors)){ margin-top:6mm; }
+
+    /* sponsors: the bottom third of the sheet */
+    .ep-page-4 > .ep-section:has(.ep-sponsors){ margin-top:auto !important; padding-top:6mm; }
+    .ep-sponsors{
+        height:88mm;
+        box-sizing:border-box;
+        padding:6mm 8mm;
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+    }
+    .ep-sponsors .ep-h2{ font-size:22pt; margin-bottom:5mm; color:#fff; }
+    .ep-sponsor-logos{ gap:4mm; }
+    .ep-sponsor-logos img:first-child{ width:84%; }
+    .ep-sponsor-logos img:last-child{ width:57.8%; }
+    .ep-sponsors p{ margin:5mm 0 0; font-size:10pt; }
+
+    .ep-print-only{ display:block; }
+    .ep-print-url{
+        margin:4mm 0 0;
+        text-align:center;
+        font-family:var(--sg-font-accent);
+        font-weight:bold;
+        font-size:9pt;
+        letter-spacing:.1em;
+    }
 }

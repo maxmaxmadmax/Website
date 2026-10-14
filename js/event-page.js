@@ -60,11 +60,14 @@
         line  = one tidy line, written from what the vendor told us
         cat   = a better category, where theirs didn't fit
         label = the market tile name for that better category
+        name  = how to show their name, if it differs from how they typed it
+        photo = the vendor's OWN photo (images/vendors/<file>), used instead
+                of the generic picture for their kind of food
         Keyed by the business name exactly as they typed it. A NEW vendor
         doesn't need a line here - they get the first sentence of their
         own description automatically.                                */
     var WORDS = {
-        'Airlie Waffle':        { tag: 'Waffles',       line: 'Bubble waffles and bubble iced tea.' },
+        'Airlie Waffle':        { tag: 'Waffles',       line: 'Bubble waffles and bubble iced tea.', name: 'Airlie Waffles' },
         'Amazing wieners':      { tag: 'Hot dogs',      line: 'German bratwurst, cheesy kransky and kids’ hot dogs.' },
         'Ammos Shak':           { tag: 'Indian',        line: 'Indian food and curries.' },
         'Cheeky Chicky':        { tag: 'Fried chicken', line: 'Pork belly bites, crispy wings, loaded fries and chicken burgers.', cat: 'chicken-wings' },
@@ -108,13 +111,15 @@
         var tag = w.tag || (r.category && !/^other/i.test(r.category) ? r.category.split(' / ')[0] : 'Food');
         var line = w.line || r.blurb || '';
         var link = linkOf(r);
-        var pic = PHOTOS.indexOf(cat) >= 0
-            ? '<span class="ep-fv-pic" style="background-image:url(\'images/vendor-cats/' + cat + '.webp\')"></span>'
+        // the vendor's own photo first, else the generic one for their kind of food
+        var img = w.photo || (PHOTOS.indexOf(cat) >= 0 ? 'images/vendor-cats/' + cat + '.webp' : '');
+        var pic = img
+            ? '<span class="ep-fv-pic" style="background-image:url(\'' + img + '\')"></span>'
             : '<span class="ep-fv-pic ep-fv-pic-none" aria-hidden="true"></span>';
         var inner = pic +
             '<span class="ep-fv-text">' +
               '<small>' + esc(tag) + '</small>' +
-              '<b>' + esc(r.name) + '</b>' +
+              '<b>' + esc(w.name || r.name) + '</b>' +
               (line ? '<span>' + esc(line) + '</span>' : '') +
             '</span>' +
             (link ? '<i class="ep-fv-go" aria-hidden="true">&rarr;</i>' : '');
