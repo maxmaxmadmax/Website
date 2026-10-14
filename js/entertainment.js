@@ -71,7 +71,7 @@ function start(ROSTER) {
         every view - fourteen failed requests to end up showing the gradient
         we would have shown anyway. */
 
-    var PER_PAGE = 8;
+    var PER_PAGE = 12;   // 12 a page, three rows of four (Max, 14 Oct 2026)
 
     /*  The little glyph on a card with no photo, and in the artist panel.
         Drawn rather than loaded - six icons are not worth six requests. */
