@@ -49,6 +49,8 @@
           photo:'images/talent/dj-powerboi.jpg' },
         { slug:'dougie',             name:'Dougie',             act:'dj',   genres:['R&B'], events:[],   // R&B per Max, 14 Oct 2026
           photo:'images/talent/dougie.jpg' },
+        { slug:'mosh-mechanix',      name:'Mosh Mechanix',      act:'dj',   genres:['Drum & Bass', 'Commercial'], events:[],   // per Max, 14 Oct 2026
+          photo:'images/talent/mosh-mechanix.jpg' },
 
         /*  THE SOLO ARTISTS AND BANDS ARE PARKED, NOT GONE
 
