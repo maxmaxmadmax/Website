@@ -322,7 +322,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 
 .ep-market{
     display:grid;
-    grid-template-columns:repeat(4, minmax(0, 1fr));
+    grid-template-columns:repeat(3, minmax(0, 1fr));   /* 3 across so names fit on one line */
     gap:12px;
 }
 
@@ -348,13 +348,25 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 .ep-mt b{
     font-family:var(--ep-poster-font);
     font-weight:400;
-    font-size:.92rem;
-    line-height:1.05;
+    font-size:.8rem;
+    line-height:1.1;
     text-transform:uppercase;
+    min-width:0;
 }
 
 .ep-mt ul{ list-style:none; padding:0; margin:0; display:grid; gap:4px; }
-.ep-mt li{ font-size:.92rem; color:#3a1e08; }
+/* one business per line, bold capitals (Max, 14 Oct 2026). A name too long
+   for the tile ends in ... rather than wrapping onto a second line. */
+.ep-mt li{
+    font-size:.78rem;
+    font-weight:bold;
+    letter-spacing:.02em;
+    text-transform:uppercase;
+    color:#3a1e08;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
 
 .ep-mt a{
     color:inherit;
@@ -456,7 +468,10 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 }
 
 .ep-sponsors .ep-h2{ color:#fff; font-size:clamp(1.4rem, 3vw, 2rem); margin-bottom:12px; }
-.ep-sponsors img{ display:block; width:100%; height:auto; }
+.ep-sponsor-logos{ display:grid; justify-items:center; gap:10px; }
+.ep-sponsor-logos img{ display:block; height:auto; }
+.ep-sponsor-logos img:first-child{ width:100%; }
+.ep-sponsor-logos img:last-child{ width:68.8%; }   /* same logo height as row 1 */
 .ep-sponsors p{ margin:12px 0 0; }
 .ep-sponsors a{ color:var(--ep-lime); font-weight:bold; }
 
@@ -549,10 +564,12 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-food{ grid-template-columns:1fr 1fr; gap:3mm; }
     .ep-fv{ min-height:30mm; box-shadow:none; border:1px solid #e9c9a6; break-inside:avoid; }
     .ep-fv-go{ display:none; }
-    .ep-market-panel{ grid-template-columns:52mm 1fr; gap:6mm; }
+    /* on paper: title across the top, then 4 tiles a row using the full width */
+    .ep-market-panel{ grid-template-columns:1fr; gap:5mm; }
     .ep-big{ font-size:24pt; }
-    .ep-market{ grid-template-columns:repeat(3, 1fr); gap:3mm; }
+    .ep-market{ grid-template-columns:repeat(4, 1fr); gap:3mm; }
     .ep-mt{ box-shadow:none; padding:3mm 4mm; break-inside:avoid; }
+    .ep-mt li{ font-size:7pt; }
     .ep-grid{ grid-template-columns:repeat(4, 1fr); }
     /* side by side on paper too (A4 is narrow enough to trip the tablet rule) */
     .ep-ent{ grid-template-columns:1.4fr 1fr; }
@@ -564,7 +581,15 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-page-4 .ep-h2{ margin-bottom:3mm; }
     .ep-know{ grid-template-columns:1fr 1fr; gap:2mm; }
     .ep-know li{ padding:2.5mm 4mm; }
-    .ep-sponsors{ box-shadow:none; padding:4mm; break-inside:avoid; }
+    /* sponsors fill the bottom third of the last A4 (Max, 14 Oct 2026) */
+    .ep-page-4{ display:flex; flex-direction:column; min-height:276mm; }
+    .ep-page-4 > .ep-section:has(.ep-sponsors){ margin-top:auto; }
+    .ep-sponsors{ box-shadow:none; padding:5mm 6mm; break-inside:avoid; min-height:88mm; display:flex; flex-direction:column; justify-content:center; }
+    .ep-sponsors .ep-h2{ font-size:20pt; margin-bottom:4mm; }
+    .ep-sponsor-logos{ gap:3mm; }
+    .ep-sponsor-logos img:first-child{ width:86%; }
+    .ep-sponsor-logos img:last-child{ width:59.2%; }
+    .ep-sponsors p{ margin-top:4mm; }
     .ep-print-url{ margin-top:4mm; }
     .ep-ent-card{ box-shadow:none; break-inside:avoid; }
     .ep-card, .ep-times li, .ep-know li, .ep-facts li{ box-shadow:none; break-inside:avoid; }
