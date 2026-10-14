@@ -104,7 +104,16 @@
         }, {});
     }
 
+    /*  A to Z by name (Max, 14 Oct 2026). A leading "DJ " is skipped, so
+        DJ Karma files under K, not in a pile of DJs under D.          */
+    function sortKey(t) {
+        return String(t.name || '').replace(/^dj\s+/i, '').toLowerCase();
+    }
+
     function publish(list) {
+        list = list.slice().sort(function (a, b) {
+            return sortKey(a).localeCompare(sortKey(b));
+        });
         global.SG_ROSTER = list;
         global.SG_ROSTER_BY_SLUG = index(list);
         return list;
