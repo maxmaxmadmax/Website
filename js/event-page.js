@@ -69,7 +69,7 @@
     var WORDS = {
         'Airlie Waffle':        { tag: 'Waffles',       line: 'Bubble waffles and bubble iced tea.', name: 'Airlie Waffles' },
         'Amazing wieners':      { tag: 'Hot dogs',      line: 'German bratwurst, cheesy kransky and kids’ hot dogs.' },
-        'Ammos Shak':           { tag: 'Indian',        line: 'Indian food and curries.' },
+        'Ammos Shak':           { tag: 'Indian',        line: 'Indian food and curries.', name: 'Ammo’s Shak' },
         'Cheeky Chicky':        { tag: 'Fried chicken', line: 'Pork belly bites, crispy wings, loaded fries and chicken burgers.', cat: 'chicken-wings' },
         'Grumpy Mas':           { tag: 'Burgers',       line: 'Hearty burgers and loaded fries.' },
         'Loopy Scoops':         { tag: 'Ice cream',     line: 'Soft serve, premium scooped ice cream and snow cones.' },
