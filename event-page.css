@@ -397,7 +397,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 .ep-ent{
     display:grid;
     grid-template-columns:1.4fr 1fr;
-    grid-template-rows:auto auto;
+    grid-template-rows:auto auto auto;
     gap:14px;
 }
 
@@ -422,7 +422,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 
 /* the band - the headline act, dark like the poster's title box */
 .ep-ent-band{
-    grid-row:span 2;
+    grid-row:span 3;
     display:flex;
     flex-direction:column;
     justify-content:flex-end;
@@ -440,6 +440,8 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 
 .ep-ent-bingo{ background:var(--ep-lime); color:var(--ep-ink); }
 .ep-ent-dress{ background:var(--ep-cream); color:var(--ep-ink); }
+.ep-ent-treat{ background:#2a1204; color:#fffaf2; }   /* trick or treat - dark, spooky */
+.ep-ent-treat h3{ color:var(--ep-orange); }
 
 /* the 'cash prize' stamp */
 .ep-ent-badge{
@@ -573,7 +575,9 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-grid{ grid-template-columns:repeat(4, 1fr); }
     /* side by side on paper too (A4 is narrow enough to trip the tablet rule) */
     .ep-ent{ grid-template-columns:1.4fr 1fr; }
-    .ep-ent-band{ grid-row:span 2; min-height:120mm; background:#2a1204; }
+    .ep-ent-band{ grid-row:span 3; min-height:120mm; background:#2a1204; }
+    .ep-ent-card h3{ font-size:20pt; margin-bottom:2mm; }
+    .ep-ent-card{ padding:5mm 7mm; }
     .ep-ent-card{ padding:7mm; }
     .ep-ent-badge{ position:static; display:inline-block; margin-bottom:3mm; }
     /* page 4 holds market + good to know + sponsors, so keep it tight */
