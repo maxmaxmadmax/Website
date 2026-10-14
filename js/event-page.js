@@ -65,6 +65,7 @@
         name  = how to show their name, if it differs from how they typed it
         photo = the vendor's OWN photo (images/vendors/<file>), used instead
                 of the generic picture for their kind of food
+        logo  = true when that photo is a logo: shown whole on white, not cropped
         Keyed by the business name exactly as they typed it. A NEW vendor
         doesn't need a line here - they get the first sentence of their
         own description automatically.                                */
@@ -76,7 +77,7 @@
         'Grumpy Mas':           { tag: 'Burgers',       line: 'Hearty Kiwi fry bread burgers.', photo: 'images/vendors/grumpy-mas.webp' },   // photo from Max, 14 Oct 2026
         'Loopy Scoops':         { tag: 'Ice cream',     line: 'Soft serve, premium scooped ice cream and snow cones.' },
         'Sweet Wheels':         { tag: 'Sweet treats',  line: 'Sweet treats from the red food van.', cat: 'lollies-fairy-floss' },
-        'Tropical Blendz':      { tag: 'Drinks',        line: 'Fresh drinks and smoothies.', cat: 'drinks-juice-smoothies' },
+        'Tropical Blendz':      { tag: 'Drinks',        line: 'Fresh drinks and smoothies.', cat: 'drinks-juice-smoothies', photo: 'images/vendors/tropical-blendz.webp', logo: true },   // their logo - Max, 14 Oct 2026
         'Tropical Pizza':       { tag: 'Pizza',         line: 'Pizza, wings and soft drinks.', photo: 'images/vendors/tropical-pizza.webp' },   // from their truck - Max, 14 Oct 2026
         'Vandito Viesta':       { tag: 'Mexican',       line: 'A vibrant Mexican food van serving flavour-packed food.' },
 
@@ -120,7 +121,7 @@
         // the vendor's own photo first, else the generic one for their kind of food
         var img = w.photo || (PHOTOS.indexOf(cat) >= 0 ? 'images/vendor-cats/' + cat + '.webp' : '');
         var pic = img
-            ? '<span class="ep-fv-pic" style="background-image:url(\'' + img + '\')"></span>'
+            ? '<span class="ep-fv-pic' + (w.logo ? ' ep-fv-pic-logo' : '') + '" style="background-image:url(\'' + img + '\')"></span>'
             : '<span class="ep-fv-pic ep-fv-pic-none" aria-hidden="true"></span>';
         var inner = pic +
             '<span class="ep-fv-text">' +

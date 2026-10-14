@@ -673,7 +673,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-hero-inner{
         display:grid;
         grid-template-columns:1fr 1.05fr;
-        grid-template-rows:auto auto auto 1fr;
+        grid-template-rows:auto auto auto auto 1fr;   /* logo, kicker, title, subline, then the rest */
         column-gap:8mm;
         padding:0;
         height:100%;
@@ -683,9 +683,9 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-hero-body .ep-kicker{ grid-column:1 / -1; font-size:10pt; margin:0 0 4mm; }
     .ep-title{ grid-column:1 / -1; font-size:92pt; line-height:.86; -webkit-text-stroke:4px var(--ep-ink); text-shadow:7px 7px 0 var(--ep-ink); }
     .ep-subline{ grid-column:1 / -1; font-size:20pt; margin:6mm 0 4mm; }
-    .ep-intro{ grid-column:1; grid-row:4; font-size:13pt; line-height:1.5; max-width:none; margin:4mm 0 0; align-self:start; }
+    .ep-intro{ grid-column:1; grid-row:5; font-size:13pt; line-height:1.5; max-width:none; margin:4mm 0 0; align-self:start; }
     .ep-facts{
-        grid-column:1; grid-row:4;
+        grid-column:1; grid-row:5;
         align-self:end;
         grid-template-columns:1fr;
         gap:3mm;
@@ -694,7 +694,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     }
     .ep-facts li{ font-size:14pt; padding:3.5mm 5mm; }
     .ep-facts b{ font-size:8pt; }
-    .ep-hero-art{ grid-column:2; grid-row:4; align-self:end; min-height:0; margin:0 -13mm -12mm 0; width:auto; }
+    .ep-hero-art{ grid-column:2; grid-row:5; align-self:end; min-height:0; margin:0 -13mm -12mm 0; width:auto; }
     .ep-skeleton{ width:100%; max-width:none; filter:none; }
     .ep-palm-1{ right:2mm; width:42mm; height:66mm; }
     .ep-palm-2{ left:-6mm; width:30mm; height:48mm; }
@@ -864,4 +864,27 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-page-4[data-size="m"] .ep-h2,
     .ep-page-4[data-size="l"] .ep-h2{ font-size:20pt; margin-bottom:2.5mm; }
     .ep-page-4[data-size="l"] .ep-sponsors{ height:82mm; }
+}
+
+/* the Eatz & Beatz logo at the top of the cover */
+.ep-logo{
+    display:block;
+    width:min(240px, 60%);
+    height:auto;
+    margin:0 0 18px;
+    transform:rotate(-3deg);
+    filter:drop-shadow(4px 4px 0 rgba(29,13,2,.35));
+}
+
+/* a vendor photo that's really a logo: show it whole, on white */
+.ep-fv-pic-logo{ background-size:contain !important; background-repeat:no-repeat; background-color:#fff; }
+
+@media print{
+    .ep-logo{ grid-column:1 / -1; width:52mm; margin:0 0 5mm; filter:none; }
+    .ep-title{ font-size:78pt; }
+    .ep-subline{ font-size:18pt; margin:5mm 0 2mm; }
+    .ep-facts{ grid-template-columns:1fr 1fr !important; }
+    .ep-facts li{ font-size:12pt !important; padding:3mm 4mm !important; }
+    .ep-intro{ font-size:12.5pt !important; }
+    .ep-badge-round{ top:6mm !important; }
 }
