@@ -3045,7 +3045,7 @@ exports.tellOutbox = onDocumentCreated({ document: 'tellOutbox/{id}', secrets: [
 /* =========================================================================
    eventLineup - who's coming, for the punters' About page
 
-   GET ?event=<eventId>  ->  { food: [{ name, category }], market: [...] }
+   GET ?event=<eventId>  ->  { food: [{ name, category, categoryId, link }], market: [...] }
 
    Bookings are private (they hold contact details and money), so the page
    cannot read them itself. This hands out the business name and its
@@ -3094,7 +3094,7 @@ exports.eventLineup = onRequest({ cors: true }, async (req, res) => {
       if (!name || seen.has(name.toLowerCase())) return;   // one line per business
       seen.add(name.toLowerCase());
       const list = b.vendorType === 'food' ? out.food : out.market;
-      list.push({ name, category: String(catName[b.categoryId] || '').slice(0, 40), link: lineupLink(b.business && b.business.socials) });
+      list.push({ name, category: String(catName[b.categoryId] || '').slice(0, 40), categoryId: String(b.categoryId || '').slice(0, 40), link: lineupLink(b.business && b.business.socials) });
     });
     out.food.sort((a, b) => a.name.localeCompare(b.name));
     out.market.sort((a, b) => a.name.localeCompare(b.name));

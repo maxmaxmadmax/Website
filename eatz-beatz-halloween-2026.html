@@ -20,10 +20,10 @@
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="style.css?v=259">
-  <link rel="stylesheet" href="event-page.css?v=259">
-  <script src="js/main.js?v=259" defer></script>
-  <script src="js/event-page.js?v=259" defer></script>
+  <link rel="stylesheet" href="style.css?v=260">
+  <link rel="stylesheet" href="event-page.css?v=260">
+  <script src="js/main.js?v=260" defer></script>
+  <script src="js/event-page.js?v=260" defer></script>
 </head>
 
 <body class="event-page">
@@ -128,19 +128,20 @@
 <!-- WHO'S COMING - filled in by js/event-page.js. Stays hidden until at
      least one confirmed, paid vendor exists. -->
 <section class="ep-section" id="ep-lineup" data-event="eatz-beatz-halloween-2026" hidden>
-  <h2 class="ep-h2">Who&rsquo;s coming</h2>
-  <p class="ep-sub">More stalls are being added - check back closer to the night.</p>
+  <h2 class="ep-h2">Who&rsquo;s <em>coming</em></h2>
+  <p class="ep-sub ep-sub-top">Great food, local markets and local businesses.</p>
 
-  <div class="ep-lineup">
-    <div class="ep-list" id="ep-food" hidden>
-      <h3>Food</h3>
-      <ul></ul>
-    </div>
-    <div class="ep-list" id="ep-market" hidden>
-      <h3>Market stalls</h3>
-      <ul></ul>
-    </div>
+  <div class="ep-block" id="ep-food" hidden>
+    <h3 class="ep-h3">Food</h3>
+    <div class="ep-food"></div>
   </div>
+
+  <div class="ep-block" id="ep-market" hidden>
+    <h3 class="ep-h3">Market stalls</h3>
+    <div class="ep-market"></div>
+  </div>
+
+  <p class="ep-sub">More stalls are being added - check back closer to the night.</p>
 </section>
 
 

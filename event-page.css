@@ -135,24 +135,6 @@
 .ep-card h3{ margin:0 0 6px; font-size:1.15rem; }
 .ep-card p{ margin:0; color:var(--sg-muted); line-height:1.5; }
 
-/* who's coming */
-.ep-lineup{
-    display:grid;
-    grid-template-columns:repeat(2, minmax(0, 1fr));
-    gap:16px;
-}
-
-.ep-list{
-    background:var(--sg-panel);
-    border:1px solid var(--sg-border);
-    border-radius:14px;
-    padding:22px;
-}
-
-.ep-list h3{ margin:0 0 12px; color:var(--sg-orange); }
-.ep-list ul{ list-style:none; padding:0; margin:0; display:grid; gap:8px; }
-.ep-list span{ color:var(--sg-dim); font-size:.9rem; }
-
 /* times + good to know */
 .ep-times,
 .ep-know{
@@ -190,20 +172,103 @@
 @media (max-width:600px){
     .ep-hero-inner{ padding:calc(var(--sg-nav-height, 78px) + 26px) 16px 44px; }
     .ep-section{ padding:44px 16px 0; }
-    .ep-grid,
-    .ep-lineup{ grid-template-columns:1fr; }
+    .ep-grid{ grid-template-columns:1fr; }
     .ep-actions .btn{ width:100%; text-align:center; }
 }
 
-/* a vendor's name links to their page when they gave us one */
-.ep-list a{
-    color:var(--sg-text);
-    text-decoration:underline;
-    text-decoration-color:var(--sg-orange);
-    text-underline-offset:3px;
+/* ==========================================================================
+   WHO'S COMING (Max's mock-up, 14 Oct 2026)
+   Food: two columns of rows, picture on the left.
+   Market: one row of picture cards that scrolls sideways.
+   ========================================================================== */
+.ep-h2 em{ font-style:normal; color:var(--sg-orange); }
+
+.ep-sub-top{ margin:-10px 0 26px; color:var(--sg-muted); font-size:1.05rem; }
+
+.ep-block{ margin-bottom:30px; }
+
+.ep-h3{
+    font-family:var(--sg-font-display);
+    font-size:1.5rem;
+    text-transform:uppercase;
+    margin:0 0 14px;
+    display:inline-block;
+    border-bottom:4px solid var(--sg-orange);
+    padding-bottom:4px;
 }
 
-.ep-list a:hover,
-.ep-list a:focus-visible{ color:var(--sg-orange); }
+/* one vendor */
+.ep-v{
+    display:flex;
+    align-items:center;
+    background:var(--sg-panel);
+    border:1px solid var(--sg-border);
+    border-radius:12px;
+    overflow:hidden;
+    color:var(--sg-text);
+    text-decoration:none;
+    transition:border-color .2s ease, transform .2s ease;
+}
 
-.ep-list a i{ font-style:normal; font-size:.8em; color:var(--sg-orange); }
+a.ep-v:hover,
+a.ep-v:focus-visible{ border-color:var(--sg-orange); transform:translateY(-2px); }
+
+/* the picture - a photo, or the icon on a warm background */
+.ep-art{
+    flex:none;
+    background-size:cover;
+    background-position:center;
+}
+
+.ep-art-icon{
+    display:grid;
+    place-items:center;
+    background:
+        radial-gradient(circle at 30% 25%, rgba(255,183,0,.45), transparent 60%),
+        linear-gradient(135deg, #ff8c00 0%, #c43d00 60%, #3a1200 100%);
+    line-height:1;
+}
+
+.ep-v-text{ flex:1; min-width:0; display:grid; gap:4px; padding:0 14px; }
+.ep-v-text b{ font-size:1.05rem; }
+.ep-v-text small{ color:var(--sg-dim); font-size:.88rem; }
+.ep-v-go{ font-style:normal; color:var(--sg-orange); font-size:1.8rem; padding-right:16px; }
+
+/* food: two columns of rows */
+.ep-food{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:12px;
+}
+
+.ep-v-food{ min-height:84px; }
+.ep-v-food .ep-art{ width:42%; max-width:200px; align-self:stretch; font-size:2.6rem; }
+
+/* market: picture cards in a row that scrolls sideways */
+.ep-market{
+    display:grid;
+    grid-auto-flow:column;
+    grid-auto-columns:160px;
+    gap:12px;
+    overflow-x:auto;
+    padding-bottom:10px;
+    scroll-snap-type:x mandatory;
+}
+
+.ep-v-market{
+    flex-direction:column;
+    align-items:stretch;
+    scroll-snap-align:start;
+}
+
+.ep-v-market .ep-art{ height:110px; font-size:2.6rem; }
+.ep-v-market .ep-v-text{ padding:10px 12px 12px; }
+.ep-v-market .ep-v-text b{ font-size:.9rem; }
+.ep-v-market .ep-v-text small{ font-size:.78rem; }
+.ep-v-market .ep-v-go{ display:none; }
+
+@media (max-width:700px){
+    .ep-food{ grid-template-columns:1fr; }
+    .ep-v-food{ min-height:74px; }
+    .ep-v-food .ep-art{ width:96px; font-size:2.2rem; }
+}
