@@ -6,6 +6,9 @@
      2. "Who's coming" - asks the eventLineup function for the confirmed,
         paid vendors (business name and category only) and lists them.
         No vendors yet, or the call fails -> the section stays hidden.
+        Fetched fresh on every visit, so new paid vendors appear on their
+        own (the function caches for 5 minutes). "Other ..." categories
+        are left off - they say nothing to a punter.
    ========================================================================== */
 (function () {
     'use strict';
@@ -42,7 +45,7 @@
         if (!el || !rows || !rows.length) return false;
         el.querySelector('ul').innerHTML = rows.map(function (r) {
             return '<li><b>' + esc(r.name) + '</b>' +
-                   (r.category ? ' <span>' + esc(r.category) + '</span>' : '') + '</li>';
+                   (r.category && !/^other/i.test(r.category) ? ' <span>' + esc(r.category) + '</span>' : '') + '</li>';
         }).join('');
         el.hidden = false;
         return true;
