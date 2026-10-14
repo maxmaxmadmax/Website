@@ -681,3 +681,34 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 
 /* the band card's photo runs edge to edge, on screen and on paper */
 .ep-ent-card.ep-ent-band{ padding:0; }
+
+/* ---- times with the poster beside them (Max, 14 Oct 2026) ---- */
+.ep-times-poster{
+    display:grid;
+    grid-template-columns:minmax(0, 1fr) minmax(0, 320px);
+    gap:30px;
+    align-items:start;
+}
+
+.ep-poster{
+    display:block;
+    border-radius:12px;
+    overflow:hidden;
+    border:3px solid var(--ep-ink);
+    box-shadow:6px 6px 0 var(--ep-ink);
+    transform:rotate(2deg);
+}
+
+.ep-poster img{ display:block; width:100%; height:auto; }
+.ep-poster-link{ color:var(--ep-ink); font-weight:bold; }
+
+@media (max-width:700px){
+    .ep-times-poster{ grid-template-columns:1fr; }
+    .ep-poster{ max-width:320px; justify-self:center; }
+}
+
+@media print{
+    .ep-times-poster{ grid-template-columns:1fr 50mm; gap:6mm; }
+    .ep-poster{ box-shadow:3px 3px 0 var(--ep-ink); border-width:2px; }
+    .ep-poster-link{ display:none; }
+}
