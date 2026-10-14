@@ -888,3 +888,29 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-intro{ font-size:12.5pt !important; }
     .ep-badge-round{ top:6mm !important; }
 }
+
+/* the run sheet: time | what's on (+ a small line under it) */
+.ep-times li{ display:flex; align-items:baseline; gap:12px; }
+.ep-times b{ flex:none; min-width:130px; }
+.ep-times span{ font-weight:bold; }
+.ep-times small{ display:block; font-weight:normal; font-size:.85em; color:#6b4524; margin-top:2px; }
+
+@media print{
+    .ep-times b{ min-width:30mm; }
+    .ep-times li{ font-size:11.5pt !important; padding:3mm 4.5mm !important; }
+    .ep-times small{ font-size:8.5pt; }
+    .ep-times{ gap:2.2mm !important; }
+}
+
+@media print{
+    /* page 3 now holds the full run sheet, so the entertainment block gives up a little height */
+    .ep-page-3 > .ep-section:first-child{ flex:1; min-height:0; }
+    .ep-ent{ min-height:0; }
+    .ep-ent-photo{ flex:none !important; height:88mm !important; }
+    .ep-ent-band-text p:not(.ep-kicker){ font-size:9.5pt; }
+    .ep-ent-card:not(.ep-ent-band) p:last-child{ font-size:9.5pt; }
+    .ep-times-poster{ margin-top:5mm !important; }
+    .ep-times-poster .ep-h2{ font-size:24pt; margin-bottom:3mm; }
+    .ep-poster{ width:52mm !important; }
+    .ep-times-poster{ grid-template-columns:1fr 52mm !important; }
+}
