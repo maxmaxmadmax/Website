@@ -914,3 +914,60 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-poster{ width:52mm !important; }
     .ep-times-poster{ grid-template-columns:1fr 52mm !important; }
 }
+
+/* "COME" / "HUNGRY." - one word per line, and the full stop never drops
+   onto a line of its own (it showed as a little box). Sized to the column. */
+.ep-title span{ display:block; white-space:nowrap; }
+.ep-title{ font-size:clamp(3rem, 7.2vw, 6.4rem); }
+
+/* website: the Eatz & Beatz logo sits top right of the cover, above the
+   skeleton (Max, 14 Oct 2026). Phones and the printout keep it at the top left. */
+@media screen and (min-width:901px){
+    .ep-hero-inner{ position:relative; }
+    .ep-logo{
+        position:absolute;
+        top:calc(var(--sg-nav-height, 88px) + 24px);
+        right:6%;
+        z-index:4;
+        width:230px;
+        margin:0;
+        transform:rotate(4deg);
+    }
+}
+
+@media screen and (min-width:901px){
+    /* the skeleton sits under the logo, not behind it */
+    .ep-hero-art{ padding-top:215px; }
+    .ep-skeleton{ width:min(100%, 420px); }
+    .ep-badge-round{ top:250px; }
+}
+
+/* PRINT: every A4 sheet gets the orange sunset gradient (Max, 14 Oct 2026) - also
+   keeps the cover title big (the screen size rule above would shrink it) */
+@media print{
+    .ep-page{
+        -webkit-print-color-adjust:exact;
+        print-color-adjust:exact;
+        /* a ready-made gradient picture, not a CSS gradient - prints the same on every printer */
+        background:#f39243 url('images/events/print-bg-orange.jpg') center / 100% 100% no-repeat;
+    }
+    .ep-title{ font-size:90pt; }
+}
+
+/* "SOUNDZGOOD PRESENTS" centred across the top, like the poster (Max, 14 Oct 2026) */
+.ep-presents{ text-align:center; font-size:.85rem; letter-spacing:.4em; }
+
+@media screen and (min-width:901px){
+    .ep-presents{
+        position:absolute;
+        top:calc(var(--sg-nav-height, 88px) + 4px);
+        left:0;
+        right:0;
+        margin:0;
+    }
+}
+
+@media print{
+    .ep-hero-body .ep-presents{ grid-column:1 / -1; grid-row:1; text-align:center; font-size:11pt; margin:0 0 3mm; }
+    .ep-logo{ grid-row:2; }
+}
