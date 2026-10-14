@@ -241,7 +241,7 @@ a.ep-v:focus-visible{ border-color:var(--sg-orange); transform:translateY(-2px);
     gap:12px;
 }
 
-.ep-v-food{ min-height:84px; }
+.ep-v-food{ min-height:112px; }
 .ep-v-food .ep-art{ width:42%; max-width:200px; align-self:stretch; font-size:2.6rem; }
 
 /* market: picture cards in a row that scrolls sideways */

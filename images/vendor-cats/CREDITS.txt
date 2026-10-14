@@ -1,0 +1,20 @@
+Generic category pictures for the event page "Who's coming" cards.
+All from Unsplash (free licence, commercial use OK, no attribution required).
+Swap any of them for a vendor's own photo by replacing the file (same name).
+
+cakes-baked-sweets      unsplash photo-1568051243851-f9b136146e97
+hot-dogs-sausages       unsplash photo-1638368593249-7cadb261e8b3
+indian-curry            unsplash photo-1585937421612-70a008356fbe
+chicken-wings           unsplash photo-1562967916-eb82221dfb92
+burgers-fries-american  unsplash photo-1561758033-d89a9ad46330
+ice-cream-gelato        unsplash photo-1567206563064-6f60f40a2b57
+lollies-fairy-floss     unsplash photo-1551024601-bec78aea704b
+drinks-juice-smoothies  unsplash photo-1662130187270-a4d52c700eb6
+pizza-italian           unsplash photo-1513104890138-7c749659a591
+mexican-tacos           unsplash photo-1599974579688-8dbdd335c77f
+clothing-fashion        unsplash photo-1532453288672-3a27e9be9efd
+gifts-novelty           unsplash photo-1598305762558-328f599df683
+handmade-crafts         unsplash photo-1751725154557-b10ab73f1564
+jewellery               unsplash photo-1601121141418-c1caa10a2a0b
+plants-garden           unsplash photo-1601985705806-5b9a71f6004f
+toys-kids-products      unsplash photo-1558060370-d644479cb6f7

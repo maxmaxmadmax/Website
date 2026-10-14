@@ -62,7 +62,13 @@
         'spiritual-crystals': '🔮', 'services-promotional': '📣',
         'community-charity-club': '🤝', 'other-market': '🛍️'
     };
-    var PHOTOS = [];   // e.g. ['pizza-italian'] once images/vendor-cats/pizza-italian.webp exists
+    var PHOTOS = [   // have a photo in images/vendor-cats/ (free Unsplash - see CREDITS.txt there)
+        'burgers-fries-american', 'cakes-baked-sweets', 'chicken-wings', 'drinks-juice-smoothies',
+        'hot-dogs-sausages', 'ice-cream-gelato', 'indian-curry', 'lollies-fairy-floss',
+        'mexican-tacos', 'pizza-italian',
+        'clothing-fashion', 'gifts-novelty', 'handmade-crafts', 'jewellery',
+        'plants-garden', 'toys-kids-products'
+    ];
 
     /*  A better label (and picture) for a vendor whose category doesn't
         say much - mostly the "Other" ones. Keyed by the business name
