@@ -388,6 +388,21 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     box-shadow:3px 3px 0 var(--ep-ink);
 }
 
+/* ---- sponsors: the poster's logo strip on black ---- */
+.ep-sponsors{
+    background:#000;
+    color:#fff;
+    border-radius:16px;
+    padding:22px 24px;
+    text-align:center;
+    box-shadow:0 6px 0 rgba(29,13,2,.3);
+}
+
+.ep-sponsors .ep-h2{ color:#fff; font-size:clamp(1.4rem, 3vw, 2rem); margin-bottom:12px; }
+.ep-sponsors img{ display:block; width:100%; height:auto; }
+.ep-sponsors p{ margin:12px 0 0; }
+.ep-sponsors a{ color:var(--ep-lime); font-weight:bold; }
+
 /* ---- times + good to know ---- */
 .ep-two{
     display:grid;
@@ -484,6 +499,13 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-ent-band{ grid-row:span 2; min-height:120mm; background:#2a1204; }
     .ep-ent-card{ padding:7mm; }
     .ep-ent-badge{ position:static; display:inline-block; margin-bottom:3mm; }
+    /* page 4 holds market + good to know + sponsors, so keep it tight */
+    .ep-page-4 .ep-section{ padding-top:4mm; }
+    .ep-page-4 .ep-h2{ margin-bottom:3mm; }
+    .ep-know{ grid-template-columns:1fr 1fr; gap:2mm; }
+    .ep-know li{ padding:2.5mm 4mm; }
+    .ep-sponsors{ box-shadow:none; padding:4mm; break-inside:avoid; }
+    .ep-print-url{ margin-top:4mm; }
     .ep-ent-card{ box-shadow:none; break-inside:avoid; }
     .ep-card, .ep-times li, .ep-know li, .ep-facts li{ box-shadow:none; break-inside:avoid; }
     .ep-mt a{ text-decoration:none; }
