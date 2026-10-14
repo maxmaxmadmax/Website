@@ -3058,6 +3058,16 @@ exports.tellOutbox = onDocumentCreated({ document: 'tellOutbox/{id}', secrets: [
     be Instagram or Facebook, and a wrong guess sends people nowhere.    */
 const LINK_ENDINGS = ['com', 'au', 'net', 'org', 'nz', 'co', 'io', 'me', 'info', 'biz', 'shop', 'store', 'online', 'site', 'page', 'link', 'app'];
 
+/*  One short line about the vendor, in their own words: the first sentence
+    of the description they wrote when they booked, cut to fit a card.  */
+function lineupBlurb(text) {
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!t) return '';
+  let first = (t.match(/^.*?[.!?](\s|$)/) || [t])[0].trim();
+  if (first.length > 80) first = first.slice(0, 77).replace(/\s+\S*$/, '') + '...';
+  return first;
+}
+
 function lineupLink(text) {
   // word by word, so an email address (bob@gmail.com) is never taken for a website
   for (const word of String(text || '').split(/[\s,;|]+/)) {
@@ -3094,7 +3104,7 @@ exports.eventLineup = onRequest({ cors: true }, async (req, res) => {
       if (!name || seen.has(name.toLowerCase())) return;   // one line per business
       seen.add(name.toLowerCase());
       const list = b.vendorType === 'food' ? out.food : out.market;
-      list.push({ name, category: String(catName[b.categoryId] || '').slice(0, 40), categoryId: String(b.categoryId || '').slice(0, 40), link: lineupLink(b.business && b.business.socials) });
+      list.push({ name, category: String(catName[b.categoryId] || '').slice(0, 40), categoryId: String(b.categoryId || '').slice(0, 40), blurb: lineupBlurb(b.business && b.business.description), link: lineupLink(b.business && b.business.socials) });
     });
     out.food.sort((a, b) => a.name.localeCompare(b.name));
     out.market.sort((a, b) => a.name.localeCompare(b.name));

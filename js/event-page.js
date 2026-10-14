@@ -1,14 +1,15 @@
 /* ==========================================================================
    EVENT PAGE (for punters) - /eatz-beatz-halloween-2026
 
-   Two small jobs:
+   Three small jobs:
      1. The Share button - the phone's share sheet, or copy the link.
-     2. "Who's coming" - asks the eventLineup function for the confirmed,
-        paid vendors (business name and category only) and lists them.
-        No vendors yet, or the call fails -> the section stays hidden.
-        Fetched fresh on every visit, so new paid vendors appear on their
-        own (the function caches for 5 minutes). "Other ..." categories
-        are left off - they say nothing to a punter.
+     2. The Print A4 button - the browser's print, which uses the
+        @media print styles in event-page.css (a mini magazine).
+     3. Food vendors + market stalls - asks the eventLineup function for the
+        confirmed, PAID vendors (name, category, first line of their
+        description, their link) and draws them. Fetched fresh on every
+        visit, so new paid vendors appear on their own (the function caches
+        for 5 minutes). No vendors, or the call fails -> sections stay hidden.
    ========================================================================== */
 (function () {
     'use strict';
@@ -29,122 +30,139 @@
         });
     }
 
-    /* ---- 2. Who's coming ---- */
-    var box = document.getElementById('ep-lineup');
-    if (!box) return;
+    /* ---- 2. Print ---- */
+    var print = document.getElementById('ep-print');
+    if (print) print.addEventListener('click', function () { window.print(); });
+
+    /* ---- 3. Vendors ---- */
+    var food = document.getElementById('ep-food');
+    var market = document.getElementById('ep-market');
+    if (!food) return;
 
     var URL = 'https://australia-southeast1-soundzgood-8c86f.cloudfunctions.net/eventLineup?event=' +
-              encodeURIComponent(box.getAttribute('data-event'));
+              encodeURIComponent(food.getAttribute('data-event'));
 
     function esc(s) {
         return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
-    /*  THE PICTURE ON EACH CARD
-
-        Vendors haven't sent photos yet (next event they will - Max,
-        14 Oct 2026), so each card gets a generic picture for its kind of
-        food or stall: an icon on a warm background.
-
-        To use a real photo for a category, drop it in images/vendor-cats/
-        named <category id>.webp and add the id to PHOTOS below.        */
-    var ICONS = {
-        'burgers-fries-american': '🍔', 'pizza-italian': '🍕', 'mexican-tacos': '🌮',
-        'asian-noodles': '🍜', 'indian-curry': '🍛', 'bbq-smoked-meats': '🍖',
-        'seafood': '🦐', 'chicken-wings': '🍗', 'hot-dogs-sausages': '🌭',
-        'donuts-churros': '🍩', 'ice-cream-gelato': '🍦', 'cakes-baked-sweets': '🧁',
-        'lollies-fairy-floss': '🍭', 'coffee': '☕', 'drinks-juice-smoothies': '🥤',
-        'healthy-salads-acai': '🥗', 'vegetarian-vegan': '🥑', 'other-food': '🍽️',
-        'clothing-fashion': '👕', 'jewellery': '💍', 'candles-home-fragrance': '🕯️',
-        'arts-prints-photography': '🎨', 'handmade-crafts': '🧶', 'homewares-decor': '🏺',
-        'beauty-skincare': '🧴', 'plants-garden': '🪴', 'toys-kids-products': '🧸',
-        'pet-products': '🐾', 'local-produce-packaged': '🍯', 'gifts-novelty': '🎁',
-        'spiritual-crystals': '🔮', 'services-promotional': '📣',
-        'community-charity-club': '🤝', 'other-market': '🛍️'
-    };
-    var PHOTOS = [   // have a photo in images/vendor-cats/ (free Unsplash - see CREDITS.txt there)
+    /*  FOOD PHOTOS - one per kind of food, free Unsplash pictures in
+        images/vendor-cats/ (see CREDITS.txt there). A vendor's own photo
+        can replace one later: same file name.                         */
+    var PHOTOS = [
         'burgers-fries-american', 'cakes-baked-sweets', 'chicken-wings', 'drinks-juice-smoothies',
         'hot-dogs-sausages', 'ice-cream-gelato', 'indian-curry', 'lollies-fairy-floss',
-        'mexican-tacos', 'pizza-italian',
-        'clothing-fashion', 'gifts-novelty', 'handmade-crafts', 'jewellery',
-        'plants-garden', 'toys-kids-products'
+        'mexican-tacos', 'pizza-italian'
     ];
 
-    /*  A better label (and picture) for a vendor whose category doesn't
-        say much - mostly the "Other" ones. Keyed by the business name
-        exactly as they typed it.                                      */
-    var BETTER = {
-        'Cheeky Chicky':   { label: 'Fried Chicken',            cat: 'chicken-wings' },
-        'Sweet Wheels':    { label: 'Sweet Treats',             cat: 'lollies-fairy-floss' },
-        'Tropical Blendz': { label: 'Fresh Drinks / Smoothies', cat: 'drinks-juice-smoothies' },
-        'Pretty Girl Ave': { label: 'Hair Accessories / Gifts', cat: 'gifts-novelty' }
+    /*  THE WORDS ON EACH CARD
+        tag   = the small orange label (kind of food)
+        line  = one tidy line, written from what the vendor told us
+        cat   = a better category, where theirs didn't fit
+        label = the market tile name for that better category
+        Keyed by the business name exactly as they typed it. A NEW vendor
+        doesn't need a line here - they get the first sentence of their
+        own description automatically.                                */
+    var WORDS = {
+        'Airlie Waffle':        { tag: 'Waffles',       line: 'Bubble waffles and bubble iced tea.' },
+        'Amazing wieners':      { tag: 'Hot dogs',      line: 'German bratwurst, cheesy kransky and kids’ hot dogs.' },
+        'Ammos Shak':           { tag: 'Indian',        line: 'Indian food and curries.' },
+        'Cheeky Chicky':        { tag: 'Fried chicken', line: 'Pork belly bites, crispy wings, loaded fries and chicken burgers.', cat: 'chicken-wings' },
+        'Grumpy Mas':           { tag: 'Burgers',       line: 'Hearty burgers and loaded fries.' },
+        'Loopy Scoops':         { tag: 'Ice cream',     line: 'Soft serve, premium scooped ice cream and snow cones.' },
+        'Sweet Wheels':         { tag: 'Sweet treats',  line: 'Sweet treats from the red food van.', cat: 'lollies-fairy-floss' },
+        'Tropical Blendz':      { tag: 'Drinks',        line: 'Fresh drinks and smoothies.', cat: 'drinks-juice-smoothies' },
+        'Tropical Pizza':       { tag: 'Pizza',         line: 'Pizza, wings and soft drinks.' },
+        'Vandito Viesta':       { tag: 'Mexican',       line: 'A vibrant Mexican food van serving flavour-packed food.' },
+
+        'Pretty Girl Ave':      { cat: 'gifts-novelty' },   // booked as Other
+
+        // booked under Plants / Garden, but they sell sweets
+        'Sian\'s Sugar Shack':  { cat: 'local-produce-packaged', label: 'Sweets & Treats' }
     };
 
-    function art(cat) {
-        if (PHOTOS.indexOf(cat) >= 0) {
-            return '<span class="ep-art" style="background-image:url(\'images/vendor-cats/' + cat + '.webp\')"></span>';
-        }
-        return '<span class="ep-art ep-art-icon" aria-hidden="true">' + (ICONS[cat] || '⭐') + '</span>';
+    /*  MARKET TILE ICONS - simple line drawings, one per kind of stall. */
+    var P = 'fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"';
+    var ICON = {
+        'clothing-fashion':        '<path ' + P + ' d="M8 3l-5 3 2 5 3-1v11h8V10l3 1 2-5-5-3a4 4 0 01-8 0z"/>',
+        'jewellery':               '<path ' + P + ' d="M6 3h12l3 6-9 12L3 9zM3 9h18M9 3l3 6 3-6M12 9v12"/>',
+        'plants-garden':           '<path ' + P + ' d="M12 21V11M12 11C12 6 8 3 4 3c0 5 3 8 8 8zM12 14c0-4 3-7 8-7 0 4-3 7-8 7z"/>',
+        'gifts-novelty':           '<path ' + P + ' d="M3 9h18v4H3zM5 13v8h14v-8M12 9v12M12 9c-2-4-7-4-5-1 1 1 5 1 5 1zM12 9c2-4 7-4 5-1-1 1-5 1-5 1z"/>',
+        'handmade-crafts':         '<path ' + P + ' d="M12 21s-8-5-8-11a4.5 4.5 0 018-3 4.5 4.5 0 018 3c0 6-8 11-8 11z"/>',
+        'toys-kids-products':      '<path ' + P + ' d="M12 21a7 7 0 100-14 7 7 0 000 14zM6 9a2.5 2.5 0 112-4M18 9a2.5 2.5 0 10-2-4M10 13h.01M14 13h.01M10 16c1 1 3 1 4 0"/>',
+        'candles-home-fragrance':  '<path ' + P + ' d="M8 10h8v11H8zM12 10V7M12 7c-2-2 0-4 0-4s2 2 0 4z"/>',
+        'arts-prints-photography': '<path ' + P + ' d="M3 5h18v14H3zM3 16l5-5 4 4 3-3 6 6M15 9h.01"/>',
+        'homewares-decor':         '<path ' + P + ' d="M3 11l9-8 9 8M5 9v12h14V9"/>',
+        'beauty-skincare':         '<path ' + P + ' d="M9 3h6v4H9zM8 7h8v14H8zM8 12h8"/>',
+        'local-produce-packaged':  '<path ' + P + ' d="M6 9a6 6 0 0112 0v1H6zM5 10h14l-2 11H7zM12 3v3"/>'
+    };
+    var BAG = '<path ' + P + ' d="M5 8h14l-1 13H6zM9 8V6a3 3 0 016 0v2"/>';
+
+    function linkOf(r) {
+        return r.link && /^https?:\/\//i.test(r.link) ? r.link : '';
     }
 
-    function card(r, kind) {
-        var fix = BETTER[r.name] || {};
-        var cat = fix.cat || r.categoryId || '';
-        var label = fix.label || (r.category && !/^other/i.test(r.category) ? r.category : '');
-        var link = r.link && /^https?:\/\//i.test(r.link) ? r.link : '';
-        var inner = art(cat) +
-            '<span class="ep-v-text"><b>' + esc(r.name) + '</b>' +
-            (label ? '<small>' + esc(label) + '</small>' : '') + '</span>' +
-            (link ? '<i class="ep-v-go" aria-hidden="true">&#8250;</i>' : '');
+    function foodCard(r) {
+        var w = WORDS[r.name] || {};
+        var cat = w.cat || r.categoryId || '';
+        var tag = w.tag || (r.category && !/^other/i.test(r.category) ? r.category.split(' / ')[0] : 'Food');
+        var line = w.line || r.blurb || '';
+        var link = linkOf(r);
+        var pic = PHOTOS.indexOf(cat) >= 0
+            ? '<span class="ep-fv-pic" style="background-image:url(\'images/vendor-cats/' + cat + '.webp\')"></span>'
+            : '<span class="ep-fv-pic ep-fv-pic-none" aria-hidden="true"></span>';
+        var inner = pic +
+            '<span class="ep-fv-text">' +
+              '<small>' + esc(tag) + '</small>' +
+              '<b>' + esc(r.name) + '</b>' +
+              (line ? '<span>' + esc(line) + '</span>' : '') +
+            '</span>' +
+            (link ? '<i class="ep-fv-go" aria-hidden="true">&rarr;</i>' : '');
         /*  The vendor's own link (checked server side: http/https only).
             Opens in a new tab; nofollow because we don't vouch for it. */
         return link
-            ? '<a class="ep-v ep-v-' + kind + '" href="' + esc(link).replace(/"/g, '&quot;') +
+            ? '<a class="ep-fv" href="' + esc(link).replace(/"/g, '&quot;') +
               '" target="_blank" rel="noopener nofollow ugc">' + inner + '</a>'
-            : '<div class="ep-v ep-v-' + kind + '">' + inner + '</div>';
+            : '<div class="ep-fv">' + inner + '</div>';
     }
 
-    /*  MARKET STALLS: ONE CARD PER KIND OF STALL (Max, 14 Oct 2026)
-        Every vendor of that kind is listed on the card, each name linking
-        to their page when they gave us one.                            */
-    function marketCards(rows) {
+    /*  MARKET STALLS: ONE TILE PER KIND OF STALL (Max, 14 Oct 2026),
+        with every vendor of that kind listed on it.                  */
+    function marketTiles(rows) {
         var groups = [], byCat = {};
         rows.forEach(function (r) {
-            var fix = BETTER[r.name] || {};
-            var cat = fix.cat || r.categoryId || 'other-market';
-            var label = fix.label || (r.category && !/^other/i.test(r.category) ? r.category : 'Other stalls');
+            var w = WORDS[r.name] || {};
+            var cat = w.cat || r.categoryId || 'other-market';
+            var label = w.label || (r.category && !/^other/i.test(r.category) ? r.category : 'Other stalls');
             if (!byCat[cat]) { byCat[cat] = { cat: cat, label: label, names: [] }; groups.push(byCat[cat]); }
-            var link = r.link && /^https?:\/\//i.test(r.link) ? r.link : '';
+            var link = linkOf(r);
             byCat[cat].names.push(link
                 ? '<a href="' + esc(link).replace(/"/g, '&quot;') + '" target="_blank" rel="noopener nofollow ugc">' +
-                  esc(r.name) + ' <i aria-hidden="true">&#8599;</i></a>'
+                  esc(r.name) + '</a>'
                 : esc(r.name));
         });
         groups.sort(function (a, b) { return a.label.localeCompare(b.label); });
         return groups.map(function (g) {
-            return '<div class="ep-v ep-v-market">' + art(g.cat) +
-                '<span class="ep-v-text"><b>' + esc(g.label) + '</b>' +
-                '<small>' + g.names.join('<br>') + '</small></span></div>';
+            return '<div class="ep-mt">' +
+                '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICON[g.cat] || BAG) + '</svg>' +
+                '<b>' + esc(g.label.replace(/ \/ /g, ' & ')) + '</b>' +
+                '<small>' + g.names.join('<br>') + '</small>' +
+                '</div>';
         }).join('');
-    }
-
-    function fill(id, rows, kind) {
-        var el = document.getElementById(id);
-        if (!el || !rows || !rows.length) return false;
-        el.querySelector('.ep-' + kind).innerHTML = kind === 'market'
-            ? marketCards(rows)
-            : rows.map(function (r) { return card(r, kind); }).join('');
-        el.hidden = false;
-        return true;
     }
 
     fetch(URL)
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (d) {
             if (!d) return;
-            var any = fill('ep-food', d.food, 'food');
-            any = fill('ep-market', d.market, 'market') || any;
-            if (any) box.hidden = false;
+            if (d.food && d.food.length) {
+                food.querySelector('.ep-food').innerHTML = d.food.map(foodCard).join('');
+                food.hidden = false;
+            }
+            if (market && d.market && d.market.length) {
+                market.querySelector('.ep-market').innerHTML = marketTiles(d.market);
+                market.hidden = false;
+            }
         })
         .catch(function () { /* stays hidden */ });
 }());

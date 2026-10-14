@@ -1,283 +1,499 @@
 /* ==========================================================================
    EVENT PAGE (for punters) - e.g. /eatz-beatz-halloween-2026
-   Uses the site tokens from style.css. Halloween orange on black.
+
+   Styled like the Eatz & Beatz poster (Max's mock-up, 14 Oct 2026):
+   orange sunset, cream cards, chunky poster lettering, a lime sticker.
+   At the bottom: the PRINT styles - the page prints as an A4 mini magazine.
    ========================================================================== */
 
 .event-page{
-    background:#0b0b0b;
-}
+    --ep-ink:#1d0d02;           /* near-black brown, the poster's text   */
+    --ep-cream:#fff4e6;         /* the cards                              */
+    --ep-orange:#f25a0c;        /* labels, arrows                         */
+    --ep-lime:#d6f53b;          /* the sticker                            */
+    --ep-poster-font:'Bowlby One', 'Arial Black', Impact, sans-serif;
+    --ep-hand-font:'Permanent Marker', 'Segoe Print', cursive;
 
-/* ---- Hero: words left, poster right ---- */
-.ep-hero{
+    color:var(--ep-ink);
     background:
-        radial-gradient(ellipse at 85% 10%, rgba(120,60,200,.28), transparent 55%),
-        linear-gradient(150deg, #1b0d02 0%, #0b0b0b 62%);
+        radial-gradient(circle at 78% 6%, rgba(255,226,140,.75), transparent 28%),
+        linear-gradient(180deg, #f9b45a 0%, #f39243 30%, #ee7a35 60%, #e8662c 100%);
+    background-attachment:fixed;
 }
 
+/* ---- the cover ---- */
 .ep-hero-inner{
     max-width:var(--sg-max-width);
     margin:0 auto;
-    padding:calc(var(--sg-nav-height, 88px) + 40px) 6% 60px;
+    padding:calc(var(--sg-nav-height, 88px) + 34px) 6% 40px;
     display:grid;
     grid-template-columns:minmax(0, 1.1fr) minmax(0, .9fr);
     gap:40px;
     align-items:center;
 }
 
-.ep-tags{
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    margin:0 0 18px;
-}
-
-.ep-tag{
+.ep-kicker{
     font-family:var(--sg-font-accent);
-    font-size:.72rem;
     font-weight:bold;
-    letter-spacing:.14em;
+    font-size:.78rem;
+    letter-spacing:.24em;
     text-transform:uppercase;
-    color:#000;
-    background:var(--sg-orange);
-    padding:6px 14px;
-    border-radius:999px;
+    margin:0 0 12px;
 }
 
 .ep-title{
-    font-family:var(--sg-font-display);
-    font-size:clamp(2.2rem, 6vw, 4.4rem);
-    line-height:.98;
-    letter-spacing:-1.5px;
+    font-family:var(--ep-poster-font);
+    font-weight:400;
+    font-size:clamp(3.4rem, 9vw, 6.6rem);
+    line-height:.88;
     text-transform:uppercase;
-    margin:0 0 22px;
+    color:#fffaf2;
+    -webkit-text-stroke:3px var(--ep-ink);
+    paint-order:stroke fill;
+    text-shadow:6px 6px 0 var(--ep-ink);
+    margin:0;
 }
 
-.ep-title span{
-    display:block;
-    color:var(--sg-orange);
-    font-size:.5em;
-    margin-top:10px;
+.ep-sticker{
+    display:inline-block;
+    font-family:var(--ep-hand-font);
+    font-size:1.5rem;
+    line-height:1;
+    text-transform:uppercase;
+    background:var(--ep-lime);
+    padding:12px 18px;
+    border-radius:8px;
+    transform:rotate(-6deg);
+    margin:-6px 0 18px 10px;
+    box-shadow:3px 3px 0 var(--ep-ink);
+}
+
+.ep-intro{
+    font-size:1.12rem;
+    line-height:1.55;
+    max-width:520px;
+    margin:0 0 18px;
 }
 
 .ep-facts{
     list-style:none;
     padding:0;
-    margin:0 0 18px;
+    margin:0;
     display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
     gap:8px;
-    font-size:1.1rem;
+    max-width:520px;
+}
+
+.ep-facts li{
+    background:var(--ep-cream);
+    border-radius:10px;
+    padding:10px 14px;
+    font-weight:bold;
+    box-shadow:0 4px 0 rgba(29,13,2,.25);
 }
 
 .ep-facts b{
-    display:inline-block;
-    min-width:70px;
+    display:block;
     font-family:var(--sg-font-accent);
-    font-size:.75rem;
-    letter-spacing:.18em;
+    font-size:.7rem;
+    letter-spacing:.2em;
     text-transform:uppercase;
-    color:var(--sg-gold);
+    color:var(--ep-orange);
 }
 
-.ep-intro{
-    color:var(--sg-muted);
-    font-size:1.05rem;
-    line-height:1.6;
-    max-width:560px;
-    margin:0;
+.ep-actions{ display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; }
+
+.ep-btn{
+    font:bold .95rem var(--sg-font);
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    color:#fff;
+    background:var(--ep-ink);
+    border:2px solid var(--ep-ink);
+    border-radius:999px;
+    padding:14px 24px;
+    cursor:pointer;
 }
 
-.ep-actions{ margin-top:28px; }
-.ep-share-note{ color:var(--sg-dim); margin:10px 0 0; font-size:.9rem; }
+.ep-btn:hover,
+.ep-btn:focus-visible{ background:#3a1a05; }
+
+.ep-btn-ghost{ background:transparent; color:var(--ep-ink); }
+.ep-btn-ghost:hover,
+.ep-btn-ghost:focus-visible{ background:rgba(29,13,2,.1); }
+
+.ep-share-note{ margin:10px 0 0; font-size:.9rem; }
 
 .ep-poster{
     justify-self:center;
     display:block;
-    width:min(100%, 440px);
+    width:min(100%, 420px);
     border-radius:14px;
     overflow:hidden;
-    box-shadow:0 18px 50px rgba(0,0,0,.55), 0 0 60px rgba(255,107,0,.25);
+    border:4px solid var(--ep-ink);
+    box-shadow:10px 10px 0 var(--ep-ink);
+    transform:rotate(2deg);
 }
 
 .ep-poster img{ display:block; width:100%; height:auto; }
 
-/* ---- Sections ---- */
+/* ---- sections ---- */
 .ep-section{
     max-width:var(--sg-max-width);
     margin:0 auto;
-    padding:56px 6% 0;
+    padding:44px 6% 0;
 }
 
-.ep-section:last-of-type{ padding-bottom:72px; }
+.ep-page:last-of-type .ep-section:last-of-type{ padding-bottom:30px; }
+
+.ep-head{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:8px 24px;
+    margin-bottom:18px;
+}
 
 .ep-h2{
-    font-family:var(--sg-font-display);
-    font-size:clamp(1.6rem, 3.5vw, 2.3rem);
+    font-family:var(--ep-poster-font);
+    font-weight:400;
+    font-size:clamp(1.9rem, 4.2vw, 3rem);
+    line-height:.95;
     text-transform:uppercase;
-    margin:0 0 22px;
+    margin:0 0 18px;
 }
 
-.ep-sub{ color:var(--sg-dim); margin:16px 0 0; }
+.ep-head .ep-h2{ margin:0; }
 
-.ep-grid{
-    display:grid;
-    grid-template-columns:repeat(3, minmax(0, 1fr));
-    gap:16px;
-}
-
-.ep-card{
-    background:var(--sg-panel);
-    border:1px solid var(--sg-border);
-    border-radius:14px;
-    padding:22px;
-}
-
-.ep-icon{ font-size:1.8rem; display:block; margin-bottom:10px; }
-.ep-card h3{ margin:0 0 6px; font-size:1.15rem; }
-.ep-card p{ margin:0; color:var(--sg-muted); line-height:1.5; }
-
-/* times + good to know */
-.ep-times,
-.ep-know{
-    list-style:none;
-    padding:0;
-    margin:0;
-    display:grid;
-    gap:10px;
-    font-size:1.05rem;
-}
-
-.ep-times b{
-    display:inline-block;
-    min-width:90px;
-    color:var(--sg-gold);
-}
-
-.ep-know li{
-    background:var(--sg-panel);
-    border:1px solid var(--sg-border);
-    border-radius:12px;
-    padding:14px 18px;
-    color:var(--sg-muted);
-}
-
-.ep-know b{ color:var(--sg-text); }
-
-/* ---- Tablet / phone ---- */
-@media (max-width:900px){
-    .ep-hero-inner{ grid-template-columns:1fr; gap:30px; }
-    .ep-poster{ width:min(100%, 360px); }
-    .ep-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
-}
-
-@media (max-width:600px){
-    .ep-hero-inner{ padding:calc(var(--sg-nav-height, 78px) + 26px) 16px 44px; }
-    .ep-section{ padding:44px 16px 0; }
-    .ep-grid{ grid-template-columns:1fr; }
-    .ep-actions .btn{ width:100%; text-align:center; }
-}
-
-/* ==========================================================================
-   WHO'S COMING (Max's mock-up, 14 Oct 2026)
-   Food: two columns of rows, picture on the left.
-   Market: one row of picture cards that scrolls sideways.
-   ========================================================================== */
-.ep-h2 em{ font-style:normal; color:var(--sg-orange); }
-
-.ep-sub-top{ margin:-10px 0 26px; color:var(--sg-muted); font-size:1.05rem; }
-
-.ep-block{ margin-bottom:30px; }
-
-.ep-h3{
-    font-family:var(--sg-font-display);
-    font-size:1.5rem;
+.ep-strap{
+    font-family:var(--sg-font-accent);
+    font-weight:bold;
+    font-size:.78rem;
+    letter-spacing:.2em;
     text-transform:uppercase;
-    margin:0 0 14px;
-    display:inline-block;
-    border-bottom:4px solid var(--sg-orange);
-    padding-bottom:4px;
+    margin:0 0 6px;
 }
 
-/* one vendor */
-.ep-v{
-    display:flex;
-    align-items:center;
-    background:var(--sg-panel);
-    border:1px solid var(--sg-border);
-    border-radius:12px;
-    overflow:hidden;
-    color:var(--sg-text);
-    text-decoration:none;
-    transition:border-color .2s ease, transform .2s ease;
-}
+.ep-strap i{ font-style:normal; color:#fff; margin:0 6px; }
 
-a.ep-v:hover,
-a.ep-v:focus-visible{ border-color:var(--sg-orange); transform:translateY(-2px); }
+.ep-sub{ margin:14px 0 0; font-size:.95rem; }
 
-/* the picture - a photo, or the icon on a warm background */
-.ep-art{
-    flex:none;
-    background-size:cover;
-    background-position:center;
-}
-
-.ep-art-icon{
-    display:grid;
-    place-items:center;
-    background:
-        radial-gradient(circle at 30% 25%, rgba(255,183,0,.45), transparent 60%),
-        linear-gradient(135deg, #ff8c00 0%, #c43d00 60%, #3a1200 100%);
-    line-height:1;
-}
-
-.ep-v-text{ flex:1; min-width:0; display:grid; gap:4px; padding:0 14px; }
-.ep-v-text b{ font-size:1.05rem; }
-.ep-v-text small{ color:var(--sg-dim); font-size:.88rem; }
-.ep-v-go{ font-style:normal; color:var(--sg-orange); font-size:1.8rem; padding-right:16px; }
-
-/* food: two columns of rows */
+/* ---- food vendor cards ---- */
 .ep-food{
     display:grid;
     grid-template-columns:repeat(2, minmax(0, 1fr));
     gap:12px;
 }
 
-.ep-v-food{ min-height:112px; }
-.ep-v-food .ep-art{ width:42%; max-width:200px; align-self:stretch; font-size:2.6rem; }
+.ep-fv{
+    position:relative;
+    display:flex;
+    min-height:118px;
+    background:var(--ep-cream);
+    border-radius:12px;
+    overflow:hidden;
+    color:var(--ep-ink);
+    text-decoration:none;
+    box-shadow:0 5px 0 rgba(29,13,2,.25);
+    transition:transform .2s ease, box-shadow .2s ease;
+}
 
-/* market: picture cards in a row that scrolls sideways */
+a.ep-fv:hover,
+a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13,2,.3); }
+
+.ep-fv-pic{
+    flex:none;
+    width:42%;
+    max-width:210px;
+    background-size:cover;
+    background-position:center;
+}
+
+.ep-fv-pic-none{ background:linear-gradient(135deg, #ffb36b, #e8662c); }
+
+.ep-fv-text{
+    flex:1;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:3px;
+    padding:12px 44px 12px 16px;
+}
+
+.ep-fv-text small{
+    font-family:var(--sg-font-accent);
+    font-weight:bold;
+    font-size:.72rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--ep-orange);
+}
+
+.ep-fv-text b{
+    font-family:var(--ep-poster-font);
+    font-weight:400;
+    font-size:1.2rem;
+    line-height:1.05;
+    text-transform:uppercase;
+}
+
+.ep-fv-text span{ font-size:.88rem; line-height:1.35; color:#4a2a12; }
+
+.ep-fv-go{
+    position:absolute;
+    right:12px;
+    bottom:12px;
+    width:28px;
+    height:28px;
+    display:grid;
+    place-items:center;
+    border-radius:50%;
+    background:var(--ep-orange);
+    color:#fff;
+    font-style:normal;
+    font-weight:bold;
+}
+
+/* ---- market panel ---- */
+.ep-market-panel{
+    display:grid;
+    grid-template-columns:auto minmax(0, 1fr);
+    gap:24px;
+    align-items:center;
+    background:var(--ep-cream);
+    border-radius:16px;
+    padding:24px;
+    box-shadow:0 6px 0 rgba(29,13,2,.25);
+}
+
+.ep-market-title .ep-h2{ margin:0; font-size:clamp(1.6rem, 3.4vw, 2.4rem); }
+
 .ep-market{
     display:grid;
-    grid-auto-flow:column;
-    grid-auto-columns:200px;   /* bigger cards (Max, 14 Oct 2026) */
-    gap:12px;
-    overflow-x:auto;
-    padding-bottom:10px;
-    scroll-snap-type:x mandatory;
-    scrollbar-color:var(--sg-orange) #1a1a1a;   /* dark track, orange thumb */
+    grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));
+    gap:10px;
 }
 
-.ep-v-market{
+.ep-mt{
+    display:flex;
     flex-direction:column;
-    align-items:stretch;
-    scroll-snap-align:start;
+    align-items:center;
+    text-align:center;
+    gap:6px;
+    background:#fff;
+    border:1px solid #f1d9bf;
+    border-radius:12px;
+    padding:14px 10px;
 }
 
-.ep-v-market .ep-art{ height:160px; font-size:3.6rem; }
-.ep-v-market .ep-v-text{ padding:10px 12px 12px; }
-.ep-v-market .ep-v-text b{ font-size:.9rem; }
-.ep-v-market .ep-v-text small{ font-size:.78rem; }
-.ep-v-market .ep-v-go{ display:none; }
+.ep-mt svg{ width:34px; height:34px; color:var(--ep-ink); }
+
+.ep-mt b{
+    font-size:.78rem;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+}
+
+.ep-mt small{ font-size:.8rem; line-height:1.45; color:#6b4524; }
+
+.ep-mt a{
+    color:inherit;
+    text-decoration:underline;
+    text-decoration-color:var(--ep-orange);
+    text-underline-offset:2px;
+}
+
+/* ---- what's on ---- */
+.ep-grid{
+    display:grid;
+    grid-template-columns:repeat(4, minmax(0, 1fr));
+    gap:12px;
+}
+
+.ep-card{
+    background:var(--ep-cream);
+    border-radius:12px;
+    padding:18px;
+    box-shadow:0 5px 0 rgba(29,13,2,.25);
+}
+
+.ep-icon{ font-size:1.8rem; display:block; margin-bottom:8px; }
+.ep-card h3{ margin:0 0 4px; font-size:1.05rem; text-transform:uppercase; }
+.ep-card p{ margin:0; line-height:1.45; color:#4a2a12; }
+
+/* ---- entertainment ---- */
+.ep-ent{
+    display:grid;
+    grid-template-columns:1.4fr 1fr;
+    grid-template-rows:auto auto;
+    gap:14px;
+}
+
+.ep-ent-card{
+    position:relative;
+    border-radius:16px;
+    padding:26px;
+    box-shadow:0 6px 0 rgba(29,13,2,.3);
+    overflow:hidden;
+}
+
+.ep-ent-card h3{
+    font-family:var(--ep-poster-font);
+    font-weight:400;
+    text-transform:uppercase;
+    line-height:.95;
+    margin:0 0 12px;
+    font-size:clamp(1.8rem, 3.6vw, 2.6rem);
+}
+
+.ep-ent-card p:last-child{ margin:0; font-size:1rem; line-height:1.45; }
+
+/* the band - the headline act, dark like the poster's title box */
+.ep-ent-band{
+    grid-row:span 2;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    min-height:320px;
+    color:#fffaf2;
+    background:
+        linear-gradient(180deg, rgba(29,13,2,.1) 0%, rgba(29,13,2,.85) 70%),
+        var(--ep-art, radial-gradient(circle at 70% 20%, #ff9a3c 0%, #c43d00 45%, #1d0d02 100%));
+    background-size:cover;
+    background-position:center;
+}
+
+.ep-ent-band h3{ font-size:clamp(2.4rem, 5.4vw, 4rem); }
+.ep-ent-band h3 span{ display:block; font-size:.55em; color:var(--ep-lime); margin-top:6px; }
+
+.ep-ent-bingo{ background:var(--ep-lime); color:var(--ep-ink); }
+.ep-ent-dress{ background:var(--ep-cream); color:var(--ep-ink); }
+
+/* the 'cash prize' stamp */
+.ep-ent-badge{
+    position:absolute;
+    top:18px;
+    right:18px;
+    font-family:var(--ep-hand-font);
+    font-size:1.1rem;
+    text-transform:uppercase;
+    color:#fff;
+    background:var(--ep-orange);
+    padding:8px 14px;
+    border-radius:8px;
+    transform:rotate(6deg);
+    box-shadow:3px 3px 0 var(--ep-ink);
+}
+
+/* ---- times + good to know ---- */
+.ep-two{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:30px;
+}
+
+.ep-times,
+.ep-know{
+    list-style:none;
+    padding:0;
+    margin:0;
+    display:grid;
+    gap:8px;
+}
+
+.ep-times li,
+.ep-know li{
+    background:var(--ep-cream);
+    border-radius:10px;
+    padding:12px 16px;
+    box-shadow:0 4px 0 rgba(29,13,2,.2);
+}
+
+.ep-times b{ display:inline-block; min-width:80px; color:var(--ep-orange); }
+
+.ep-print-only{ display:none; }
+
+/* ---- tablet / phone ---- */
+@media (max-width:900px){
+    .ep-hero-inner{ grid-template-columns:1fr; gap:34px; }
+    .ep-poster{ width:min(100%, 360px); }
+    .ep-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
+    .ep-market-panel{ grid-template-columns:1fr; }
+    .ep-ent{ grid-template-columns:1fr; }
+    .ep-ent-band{ grid-row:auto; min-height:260px; }
+}
 
 @media (max-width:700px){
-    .ep-food{ grid-template-columns:1fr; }
-    .ep-v-food{ min-height:74px; }
-    .ep-v-food .ep-art{ width:96px; font-size:2.2rem; }
+    .ep-food,
+    .ep-two{ grid-template-columns:1fr; }
 }
 
-/* market card: the kind of stall on top, its vendors listed underneath */
-.ep-v-market .ep-v-text b{ font-size:1rem; }
-.ep-v-market .ep-v-text small{ font-size:.85rem; line-height:1.6; color:var(--sg-muted); }
-.ep-v-market a{ color:var(--sg-muted); text-decoration:underline; text-decoration-color:var(--sg-orange); text-underline-offset:3px; }
-.ep-v-market a:hover,
-.ep-v-market a:focus-visible{ color:var(--sg-orange); }
-.ep-v-market a i{ font-style:normal; color:var(--sg-orange); }
+@media (max-width:600px){
+    .ep-hero-inner{ padding:calc(var(--sg-nav-height, 78px) + 22px) 16px 30px; }
+    .ep-section{ padding:36px 16px 0; }
+    .ep-title{ -webkit-text-stroke:2px var(--ep-ink); text-shadow:4px 4px 0 var(--ep-ink); }
+    .ep-fv{ min-height:104px; }
+    .ep-fv-pic{ width:110px; }
+    .ep-facts{ grid-template-columns:1fr 1fr; }
+    .ep-btn{ flex:1; }
+    .ep-ent-badge{ position:static; display:inline-block; margin-bottom:10px; }
+}
+
+/* ==========================================================================
+   PRINT - an A4 mini magazine (Max, 14 Oct 2026)
+   Page 1 cover (title + poster), page 2 food, page 3 market + what's on +
+   good to know. Website menus, buttons and the footer are left off.
+   In the print box: tick "Background graphics" if the orange is missing.
+   ========================================================================== */
+@media print{
+    @page{ size:A4; margin:10mm; }
+
+    html, body.event-page{
+        -webkit-print-color-adjust:exact;
+        print-color-adjust:exact;
+        background:linear-gradient(180deg, #f9b45a 0%, #ee7a35 100%) !important;
+        font-size:11pt;
+    }
+
+    #navbar, #footer, .navbar, .footer, .ep-actions, .ep-share-note{ display:none !important; }
+
+    /* page 2 (food) and page 3 (market etc.) each start a new sheet */
+    #ep-food, .ep-page-3, .ep-page-4{ break-before:page; }
+
+    /* the cover fills the sheet: the words on top, the poster big below */
+    .ep-hero-inner{ display:block; padding:2mm 0 0; }
+    .ep-hero-body{ position:relative; }
+    .ep-title{ font-size:60pt; }
+    .ep-sticker{ position:absolute; top:12mm; right:8mm; margin:0; font-size:20pt; }
+    .ep-intro{ max-width:none; margin:5mm 0 4mm; }
+    .ep-facts{ max-width:none; grid-template-columns:repeat(4, 1fr); }
+    .ep-poster{ width:112mm; margin:7mm auto 0; transform:none; box-shadow:5px 5px 0 var(--ep-ink); }
+
+    .ep-section{ padding:6mm 0 0; max-width:none; }
+    .ep-food{ grid-template-columns:1fr 1fr; gap:3mm; }
+    .ep-fv{ min-height:30mm; box-shadow:none; border:1px solid #e9c9a6; break-inside:avoid; }
+    .ep-fv-go{ display:none; }
+    .ep-market-panel{ grid-template-columns:1fr; box-shadow:none; }
+    .ep-market{ grid-template-columns:repeat(4, 1fr); }
+    .ep-grid{ grid-template-columns:repeat(4, 1fr); }
+    /* side by side on paper too (A4 is narrow enough to trip the tablet rule) */
+    .ep-ent{ grid-template-columns:1.4fr 1fr; }
+    .ep-ent-band{ grid-row:span 2; min-height:120mm; background:#2a1204; }
+    .ep-ent-card{ padding:7mm; }
+    .ep-ent-badge{ position:static; display:inline-block; margin-bottom:3mm; }
+    .ep-ent-card{ box-shadow:none; break-inside:avoid; }
+    .ep-card, .ep-times li, .ep-know li, .ep-facts li{ box-shadow:none; break-inside:avoid; }
+    .ep-mt a{ text-decoration:none; }
+
+    .ep-print-only{ display:block; }
+    .ep-print-url{
+        margin:8mm 0 0;
+        text-align:center;
+        font-family:var(--sg-font-accent);
+        font-weight:bold;
+        letter-spacing:.1em;
+    }
+}

@@ -20,10 +20,14 @@
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="style.css?v=265">
-  <link rel="stylesheet" href="event-page.css?v=265">
-  <script src="js/main.js?v=265" defer></script>
-  <script src="js/event-page.js?v=265" defer></script>
+  <!-- the chunky poster font, and the hand-written one for the sticker -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Permanent+Marker&display=swap">
+  <link rel="stylesheet" href="style.css?v=271">
+  <link rel="stylesheet" href="event-page.css?v=271">
+  <script src="js/main.js?v=271" defer></script>
+  <script src="js/event-page.js?v=271" defer></script>
 </head>
 
 <body class="event-page">
@@ -34,40 +38,39 @@
      EATZ & BEATZ HALLOWEEN EDITION - THE PAGE FOR PEOPLE COMING ALONG
 
      Plain words, for punters. Vendors have their own page (/vendor-signup).
+     Styled like the poster (Max's mock-up, 14 Oct 2026), and it PRINTS as an
+     A4 mini magazine: cover, food, market, good to know.
 
      TO CHANGE SOMETHING: edit the words below. Nothing else to touch.
-     The "Who's coming" lists fill themselves in from the vendor bookings -
+     The food and market lists fill themselves in from the vendor bookings -
      only vendors who are CONFIRMED and PAID show (Max, 14 Oct 2026).
      ========================================================================== -->
 
-<section class="ep-hero">
+<!-- PAGE 1: THE COVER -->
+<section class="ep-hero ep-page">
   <div class="ep-hero-inner">
 
     <div class="ep-hero-body">
-      <p class="ep-tags">
-        <span class="ep-tag">Free entry</span>
-        <span class="ep-tag">Family event</span>
-      </p>
+      <p class="ep-kicker">SoundzGood presents &middot; Halloween Edition</p>
 
-      <h1 class="ep-title">
-        Eatz &amp; Beatz
-        <span>Halloween Edition</span>
-      </h1>
-
-      <ul class="ep-facts">
-        <li><b>When</b> Saturday 31 October 2026</li>
-        <li><b>Time</b> 4:30pm &ndash; 9:30pm</li>
-        <li><b>Where</b> Bowen Sports Complex</li>
-      </ul>
+      <h1 class="ep-title">Come<br>Hungry.</h1>
+      <p class="ep-sticker">Good food<br>good vibes</p>
 
       <p class="ep-intro">
-        A free community night market for the whole family. Grab dinner from
-        the food stalls, browse the market, enjoy live music, and dress up
-        for a shot at the best dressed prizes.
+        A free community night market for the whole family. Amazing food
+        vendors, local makers, live music and a night full of good vibes.
       </p>
 
+      <ul class="ep-facts">
+        <li><b>When</b> Sat 31 Oct 2026</li>
+        <li><b>Time</b> 4:30pm &ndash; 9:30pm</li>
+        <li><b>Where</b> Bowen Sports Complex</li>
+        <li><b>Entry</b> Free &middot; Family event</li>
+      </ul>
+
       <div class="ep-actions">
-        <button type="button" class="btn btn-ticket" id="ep-share">Share with friends</button>
+        <button type="button" class="ep-btn" id="ep-share">Share with friends &rarr;</button>
+        <button type="button" class="ep-btn ep-btn-ghost" id="ep-print">Print A4</button>
       </div>
       <p class="ep-share-note" id="ep-share-note" hidden>Link copied - paste it anywhere.</p>
     </div>
@@ -81,92 +84,91 @@
 </section>
 
 
-<!-- WHAT'S ON -->
-<section class="ep-section">
-  <h2 class="ep-h2">What&rsquo;s on</h2>
-
-  <div class="ep-grid">
-    <article class="ep-card">
-      <span class="ep-icon" aria-hidden="true">&#127928;</span>
-      <h3>Live music</h3>
-      <p>Zed Charles &amp; The Bo River Band</p>
-    </article>
-
-    <article class="ep-card">
-      <span class="ep-icon" aria-hidden="true">&#127875;</span>
-      <h3>Best dressed prizes</h3>
-      <p>Dress up in your Halloween best.</p>
-    </article>
-
-    <article class="ep-card">
-      <span class="ep-icon" aria-hidden="true">&#127922;</span>
-      <h3>Bottoms Bingo</h3>
-      <p>Join in on the night.</p>
-    </article>
-
-    <article class="ep-card">
-      <span class="ep-icon" aria-hidden="true">&#127828;</span>
-      <h3>Food stalls</h3>
-      <p>Grab dinner and treats on the night.</p>
-    </article>
-
-    <article class="ep-card">
-      <span class="ep-icon" aria-hidden="true">&#128717;</span>
-      <h3>Market stalls</h3>
-      <p>Browse the market on the night.</p>
-    </article>
-
-    <article class="ep-card">
-      <span class="ep-icon" aria-hidden="true">&#127867;</span>
-      <h3>Licensed bar</h3>
-      <p>Drinks available for the adults.</p>
-    </article>
+<!-- PAGE 2: FOOD - filled in by js/event-page.js. Hidden until at least one
+     confirmed, paid food vendor exists. -->
+<section class="ep-section ep-page" id="ep-food" data-event="eatz-beatz-halloween-2026" hidden>
+  <div class="ep-head">
+    <h2 class="ep-h2">Food vendors</h2>
+    <p class="ep-strap">Local flavours <i>/</i> Great food <i>/</i> Good vibes</p>
   </div>
+  <div class="ep-food"></div>
 </section>
 
 
-<!-- WHO'S COMING - filled in by js/event-page.js. Stays hidden until at
-     least one confirmed, paid vendor exists. -->
-<section class="ep-section" id="ep-lineup" data-event="eatz-beatz-halloween-2026" hidden>
-  <h2 class="ep-h2">Who&rsquo;s <em>coming</em></h2>
-  <p class="ep-sub ep-sub-top">Great food, local markets and local businesses.</p>
+<!-- PAGE 3: ENTERTAINMENT + TIMES (Max, 14 Oct 2026)
+     Add a band photo later: put it in images/events/ and add
+     style="--ep-art:url('images/events/<file>')" to the .ep-ent-band card. -->
+<div class="ep-page ep-page-3">
 
-  <div class="ep-block" id="ep-food" hidden>
-    <h3 class="ep-h3">Food</h3>
-    <div class="ep-food"></div>
-  </div>
+  <section class="ep-section">
+    <div class="ep-head">
+      <h2 class="ep-h2">Entertainment</h2>
+      <p class="ep-strap">Live music <i>/</i> Bingo <i>/</i> Prizes</p>
+    </div>
 
-  <div class="ep-block" id="ep-market" hidden>
-    <h3 class="ep-h3">Market stalls</h3>
-    <div class="ep-market"></div>
-  </div>
+    <div class="ep-ent">
+      <article class="ep-ent-card ep-ent-band">
+        <p class="ep-kicker">Live on stage</p>
+        <h3>Zed Charles<br><span>&amp; The Bo River Band</span></h3>
+        <p>Live music through the night while you eat, shop and settle in.</p>
+      </article>
 
-  <p class="ep-sub">More stalls are being added - check back closer to the night.</p>
-</section>
+      <article class="ep-ent-card ep-ent-bingo">
+        <span class="ep-ent-badge">Cash prize</span>
+        <p class="ep-kicker">Play on the night</p>
+        <h3>Bottoms<br>Bingo</h3>
+        <p>Grab a spot and play for the cash prize.</p>
+      </article>
+
+      <article class="ep-ent-card ep-ent-dress">
+        <p class="ep-kicker">Halloween</p>
+        <h3>Best dressed<br>prizes</h3>
+        <p>Dress up in your Halloween best.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- TIMES - add the run sheet here once it's locked in -->
+  <section class="ep-section">
+    <h2 class="ep-h2">Times</h2>
+    <ul class="ep-times">
+      <li><b>4:30pm</b> Gates open</li>
+      <li><b>9:30pm</b> Close</li>
+    </ul>
+    <p class="ep-sub">Full times for the music, bingo and best dressed coming soon.</p>
+  </section>
+
+</div>
 
 
-<!-- TIMES - add the run sheet here once it is locked in -->
-<section class="ep-section">
-  <h2 class="ep-h2">Times</h2>
-  <ul class="ep-times">
-    <li><b>4:30pm</b> Gates open</li>
-    <li><b>9:30pm</b> Close</li>
-  </ul>
-  <p class="ep-sub">Full times for the music, bingo and best dressed coming soon.</p>
-</section>
+<!-- PAGE 4: MARKET + GOOD TO KNOW -->
+<div class="ep-page ep-page-4">
 
+  <section class="ep-section" id="ep-market" hidden>
+    <div class="ep-market-panel">
+      <div class="ep-market-title">
+        <p class="ep-kicker">Market stalls</p>
+        <h2 class="ep-h2">Local makers<br>&amp; creators</h2>
+      </div>
+      <div class="ep-market"></div>
+    </div>
+  </section>
 
-<!-- GOOD TO KNOW -->
-<section class="ep-section">
-  <h2 class="ep-h2">Good to know</h2>
-  <ul class="ep-know">
-    <li><b>Free entry</b> - no tickets needed, just turn up.</li>
-    <li><b>Family friendly</b> - bring the kids.</li>
-    <li><b>Bring a chair &amp; picnic rug</b> and settle in for the night.</li>
-    <li><b>Dress up</b> - it&rsquo;s Halloween.</li>
-    <li><b>Licensed bar</b> on site.</li>
-  </ul>
-</section>
+  <section class="ep-section">
+    <h2 class="ep-h2">Good to know</h2>
+    <ul class="ep-know">
+      <li><b>Free entry</b> - no tickets, just turn up.</li>
+      <li><b>Family friendly</b> - bring the kids.</li>
+      <li><b>Bring a chair &amp; picnic rug</b> and settle in for the night.</li>
+      <li><b>Dress up</b> - it&rsquo;s Halloween.</li>
+      <li><b>Licensed bar</b> - drinks for the adults.</li>
+    </ul>
+  </section>
+
+  <!-- only on paper: where to find this page -->
+  <p class="ep-print-only ep-print-url">soundzgood.com.au/eatz-beatz-halloween-2026</p>
+
+</div>
 
 <div id="footer"></div>
 
