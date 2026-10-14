@@ -410,8 +410,7 @@
     margin-top:34px;
 }
 
-/*  The pumpkin sits in the corner rather than as a background image, so
-    there is no extra file to load.                                       */
+/*  The event poster sits on the right. Tapping it opens it full size.  */
 .ev-feature-art{
     position:relative;
     z-index:1;
@@ -419,10 +418,25 @@
     place-items:center;
 }
 
-.ev-pumpkin{
-    width:min(80%, 300px);
+.ev-poster{
+    display:block;
+    width:min(100%, 380px);
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 18px 50px rgba(0,0,0,.55), 0 0 60px rgba(255,107,0,.25);
+    transform:rotate(1.5deg);
+    transition:transform .25s ease;
+}
+
+.ev-poster:hover,
+.ev-poster:focus-visible{
+    transform:rotate(0) scale(1.02);
+}
+
+.ev-poster img{
+    display:block;
+    width:100%;
     height:auto;
-    filter:drop-shadow(0 0 60px rgba(255,107,0,.32));
 }
 
 /* ==========================================================================
@@ -991,13 +1005,10 @@
         padding-bottom:56px;
     }
 
-    /* artwork above the words, so the words are not pushed off the bottom */
-    .ev-feature-art{
-        order:-1;
-    }
-
-    .ev-pumpkin{
-        width:140px;
+    /* the poster goes under the words, so the countdown is seen first */
+    .ev-poster{
+        width:min(100%, 360px);
+        transform:none;
     }
 }
 
@@ -1023,10 +1034,6 @@
     .ev-countdown-units li{
         flex:1 1 calc(50% - 5px);
         min-width:0;
-    }
-
-    .ev-pumpkin{
-        width:110px;
     }
 
     .ev-feature-inner{
