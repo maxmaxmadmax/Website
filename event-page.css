@@ -796,3 +796,72 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
         letter-spacing:.1em;
     }
 }
+
+/* ==========================================================================
+   MORE VENDORS, SAME 4 PAGES (Max, 14 Oct 2026 - 50 sites for sale)
+   js/event-page.js tags the food section and the page-4 wrapper with
+   data-size (s / m / l / xl / xxl) from how many paid vendors there are.
+   On paper the cards get more columns and smaller type as the list grows,
+   so nothing is ever cut off the bottom of a sheet.
+   ========================================================================== */
+
+/* on screen: long tile lists stay tidy */
+.ep-mt ul{ max-height:none; }
+
+@media print{
+    /* ---- FOOD (page 2) ---- */
+    #ep-food[data-size="m"] .ep-food{ grid-template-columns:repeat(3, 1fr); gap:3.5mm; }
+    #ep-food[data-size="m"] .ep-fv-pic{ width:40%; }
+    #ep-food[data-size="m"] .ep-fv-text{ padding:3mm 3.5mm; }
+    #ep-food[data-size="m"] .ep-fv-text b{ font-size:12.5pt; }
+    #ep-food[data-size="m"] .ep-fv-text span{ font-size:8.5pt; }
+
+    #ep-food[data-size="l"] .ep-food{ grid-template-columns:repeat(3, 1fr); gap:3mm; }
+    #ep-food[data-size="l"] .ep-fv-pic{ width:36%; }
+    #ep-food[data-size="l"] .ep-fv-text{ padding:2mm 3mm; gap:1mm; }
+    #ep-food[data-size="l"] .ep-fv-text small{ font-size:6.5pt; }
+    #ep-food[data-size="l"] .ep-fv-text b{ font-size:11pt; }
+    #ep-food[data-size="l"] .ep-fv-text span{ font-size:7.5pt; line-height:1.3; }
+
+    #ep-food[data-size="xl"] .ep-food,
+    #ep-food[data-size="xxl"] .ep-food{ grid-template-columns:repeat(4, 1fr); gap:2.5mm; }
+    #ep-food[data-size="xl"] .ep-fv-pic{ width:34%; }
+    #ep-food[data-size="xxl"] .ep-fv-pic{ display:none; }
+    #ep-food[data-size="xl"] .ep-fv-text,
+    #ep-food[data-size="xxl"] .ep-fv-text{ padding:2mm 2.5mm; gap:.8mm; }
+    #ep-food[data-size="xl"] .ep-fv-text small,
+    #ep-food[data-size="xxl"] .ep-fv-text small{ font-size:6pt; }
+    #ep-food[data-size="xl"] .ep-fv-text b,
+    #ep-food[data-size="xxl"] .ep-fv-text b{ font-size:9.5pt; }
+    #ep-food[data-size="xl"] .ep-fv-text span,
+    #ep-food[data-size="xxl"] .ep-fv-text span{ display:none; }
+
+    /* ---- MARKET + GOOD TO KNOW (page 4) ---- */
+    .ep-page-4[data-size="m"] .ep-market,
+    .ep-page-4[data-size="l"] .ep-market{ grid-template-columns:repeat(4, 1fr); gap:2.5mm; }
+    .ep-page-4[data-size="m"] .ep-mt,
+    .ep-page-4[data-size="l"] .ep-mt{ padding:2.5mm 3mm; }
+    .ep-page-4[data-size="m"] .ep-mt-head,
+    .ep-page-4[data-size="l"] .ep-mt-head{ padding-bottom:1.5mm; margin-bottom:1.5mm; gap:2mm; }
+    .ep-page-4[data-size="m"] .ep-mt svg,
+    .ep-page-4[data-size="l"] .ep-mt svg{ width:6mm; height:6mm; }
+    .ep-page-4[data-size="m"] .ep-mt b{ font-size:7.5pt; }
+    .ep-page-4[data-size="l"] .ep-mt b{ font-size:7pt; }
+    .ep-page-4[data-size="m"] .ep-mt ul{ gap:.6mm; }
+    .ep-page-4[data-size="l"] .ep-mt ul{ gap:.3mm; }
+    .ep-page-4[data-size="m"] .ep-mt li{ font-size:6.8pt; }
+    .ep-page-4[data-size="l"] .ep-mt li{ font-size:6.2pt; }
+    .ep-page-4[data-size="m"] .ep-big,
+    .ep-page-4[data-size="l"] .ep-big{ font-size:24pt; }
+    .ep-page-4[data-size="m"] .ep-market-panel,
+    .ep-page-4[data-size="l"] .ep-market-panel{ gap:4mm; }
+
+    /* good to know folds into three short columns to make room */
+    .ep-page-4[data-size="m"] .ep-know,
+    .ep-page-4[data-size="l"] .ep-know{ grid-template-columns:repeat(3, 1fr); gap:2mm; }
+    .ep-page-4[data-size="m"] .ep-know li,
+    .ep-page-4[data-size="l"] .ep-know li{ font-size:8.5pt; padding:2mm 3mm; }
+    .ep-page-4[data-size="m"] .ep-h2,
+    .ep-page-4[data-size="l"] .ep-h2{ font-size:20pt; margin-bottom:2.5mm; }
+    .ep-page-4[data-size="l"] .ep-sponsors{ height:82mm; }
+}

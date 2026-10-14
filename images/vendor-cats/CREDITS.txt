@@ -18,3 +18,11 @@ handmade-crafts         unsplash photo-1751725154557-b10ab73f1564
 jewellery               unsplash photo-1601121141418-c1caa10a2a0b
 plants-garden           unsplash photo-1601985705806-5b9a71f6004f
 toys-kids-products      unsplash photo-1558060370-d644479cb6f7
+asian-noodles           unsplash photo-1585032226651-759b368d7246
+bbq-smoked-meats        unsplash photo-1761712826031-6456b87bd811
+seafood                 unsplash photo-1758972572427-fc3d4193bbd2
+coffee                  unsplash photo-1461023058943-07fcbe16d735
+donuts-churros          unsplash photo-1769799330111-1dafb2668361
+healthy-salads-acai     unsplash photo-1627308594190-a057cd4bfac8
+vegetarian-vegan        unsplash photo-1512621776951-a57141f2eefd
+other-food              unsplash photo-1565524622405-171b921788ca

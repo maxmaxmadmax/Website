@@ -52,8 +52,10 @@
     var PHOTOS = [
         'burgers-fries-american', 'cakes-baked-sweets', 'chicken-wings', 'drinks-juice-smoothies',
         'hot-dogs-sausages', 'ice-cream-gelato', 'indian-curry', 'lollies-fairy-floss',
-        'mexican-tacos', 'pizza-italian'
-    ];
+        'mexican-tacos', 'pizza-italian',
+        'asian-noodles', 'bbq-smoked-meats', 'seafood', 'coffee', 'donuts-churros',
+        'healthy-salads-acai', 'vegetarian-vegan', 'other-food'
+    ];   // every food category now has a picture
 
     /*  THE WORDS ON EACH CARD
         tag   = the small orange label (kind of food)
@@ -97,6 +99,10 @@
         'arts-prints-photography': '<path ' + P + ' d="M3 5h18v14H3zM3 16l5-5 4 4 3-3 6 6M15 9h.01"/>',
         'homewares-decor':         '<path ' + P + ' d="M3 11l9-8 9 8M5 9v12h14V9"/>',
         'beauty-skincare':         '<path ' + P + ' d="M9 3h6v4H9zM8 7h8v14H8zM8 12h8"/>',
+        'pet-products':            '<path ' + P + ' d="M12 20c-3 0-6-1.5-6-4 0-3 3-5 6-5s6 2 6 5c0 2.5-3 4-6 4zM6 11a2 2 0 110-4 2 2 0 010 4zM18 11a2 2 0 110-4 2 2 0 010 4zM9.5 7a2 2 0 110-4 2 2 0 010 4zM14.5 7a2 2 0 110-4 2 2 0 010 4z"/>',
+        'spiritual-crystals':      '<path ' + P + ' d="M12 2l5 6-5 14-5-14zM7 8h10M12 2v20"/>',
+        'services-promotional':    '<path ' + P + ' d="M3 10v4h3l7 5V5L6 10zM16 9a4 4 0 010 6M19 6a8 8 0 010 12"/>',
+        'community-charity-club':  '<path ' + P + ' d="M8 11a3 3 0 100-6 3 3 0 000 6zM16 11a3 3 0 100-6 3 3 0 000 6zM2 20c0-3 3-6 6-6s6 3 6 6M12 20c0-3 2-6 4-6 3 0 6 3 6 6"/>',
         'local-produce-packaged':  '<path ' + P + ' d="M6 9a6 6 0 0112 0v1H6zM5 10h14l-2 11H7zM12 3v3"/>'
     };
     var BAG = '<path ' + P + ' d="M5 8h14l-1 13H6zM9 8V6a3 3 0 016 0v2"/>';
@@ -158,16 +164,68 @@
         }).join('');
     }
 
-    fetch(URL)
-        .then(function (r) { return r.ok ? r.json() : null; })
+    /*  HOW CROWDED IS IT? (Max, 14 Oct 2026 - 50 sites for sale)
+        The A4 print has to stay 4 pages however many vendors pay, so the
+        food and market sections are tagged with a size and the print
+        styles add columns / shrink text to match:
+          food:   s <=10  m <=15  l <=24  xl <=32  xxl more
+          market: s (<=15 names, <=6 kinds)  m (<=30 names)  l (more)  */
+    function foodSize(n) {
+        return n <= 10 ? 's' : n <= 15 ? 'm' : n <= 24 ? 'l' : n <= 32 ? 'xl' : 'xxl';
+    }
+
+    function marketSize(rows) {
+        var kinds = {};
+        rows.forEach(function (r) {
+            var w = WORDS[r.name] || {};
+            kinds[w.cat || r.categoryId || 'other-market'] = 1;
+        });
+        var k = Object.keys(kinds).length, n = rows.length;
+        return n <= 15 && k <= 6 ? 's' : n <= 30 ? 'm' : 'l';
+    }
+
+    /*  TEST MODE - only on the local preview (localhost), never live:
+        add ?demo=10,50 (food, market) or ?demo=50 to fill the page with pretend
+        vendors and check the layout and the A4 print still hold up.   */
+    function demo(n, nMarket) {
+        var foodCats = ['burgers-fries-american', 'pizza-italian', 'mexican-tacos', 'asian-noodles', 'indian-curry',
+                        'bbq-smoked-meats', 'seafood', 'chicken-wings', 'hot-dogs-sausages', 'donuts-churros',
+                        'ice-cream-gelato', 'cakes-baked-sweets', 'coffee', 'drinks-juice-smoothies'];
+        var marketCats = ['clothing-fashion', 'jewellery', 'candles-home-fragrance', 'arts-prints-photography',
+                          'handmade-crafts', 'homewares-decor', 'beauty-skincare', 'plants-garden', 'toys-kids-products',
+                          'pet-products', 'local-produce-packaged', 'gifts-novelty', 'spiritual-crystals',
+                          'community-charity-club'];
+        var d = { food: [], market: [] };
+        var total = nMarket != null ? n + nMarket : n;
+        for (var i = 0; i < total; i++) {
+            var isFood = nMarket != null ? i < n : i % 5 < 2;   // ?demo=10,50 = 10 food + 50 market
+            var list = isFood ? foodCats : marketCats;
+            var cat = list[i % list.length];
+            (isFood ? d.food : d.market).push({
+                name: (isFood ? 'Test Food Van ' : 'Test Market Stall ') + (i + 1),
+                categoryId: cat,
+                category: cat.replace(/-/g, ' '),
+                blurb: 'A pretend vendor for checking the layout.'
+            });
+        }
+        return d;
+    }
+
+    var demoN = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) &&
+                (location.search.match(/[?&]demo=([\d,]+)/) || [])[1];
+
+    (demoN ? Promise.resolve(demo(+demoN.split(',')[0], demoN.split(',')[1] != null ? +demoN.split(',')[1] : null)) : fetch(URL).then(function (r) { return r.ok ? r.json() : null; }))
         .then(function (d) {
             if (!d) return;
             if (d.food && d.food.length) {
                 food.querySelector('.ep-food').innerHTML = d.food.map(foodCard).join('');
+                food.setAttribute('data-size', foodSize(d.food.length));
                 food.hidden = false;
             }
             if (market && d.market && d.market.length) {
                 market.querySelector('.ep-market').innerHTML = marketTiles(d.market);
+                // on the page-4 wrapper, so "good to know" can tighten up too
+                market.parentNode.setAttribute('data-size', marketSize(d.market));
                 market.hidden = false;
             }
         })
