@@ -98,10 +98,36 @@
             : '<div class="ep-v ep-v-' + kind + '">' + inner + '</div>';
     }
 
+    /*  MARKET STALLS: ONE CARD PER KIND OF STALL (Max, 14 Oct 2026)
+        Every vendor of that kind is listed on the card, each name linking
+        to their page when they gave us one.                            */
+    function marketCards(rows) {
+        var groups = [], byCat = {};
+        rows.forEach(function (r) {
+            var fix = BETTER[r.name] || {};
+            var cat = fix.cat || r.categoryId || 'other-market';
+            var label = fix.label || (r.category && !/^other/i.test(r.category) ? r.category : 'Other stalls');
+            if (!byCat[cat]) { byCat[cat] = { cat: cat, label: label, names: [] }; groups.push(byCat[cat]); }
+            var link = r.link && /^https?:\/\//i.test(r.link) ? r.link : '';
+            byCat[cat].names.push(link
+                ? '<a href="' + esc(link).replace(/"/g, '&quot;') + '" target="_blank" rel="noopener nofollow ugc">' +
+                  esc(r.name) + ' <i aria-hidden="true">&#8599;</i></a>'
+                : esc(r.name));
+        });
+        groups.sort(function (a, b) { return a.label.localeCompare(b.label); });
+        return groups.map(function (g) {
+            return '<div class="ep-v ep-v-market">' + art(g.cat) +
+                '<span class="ep-v-text"><b>' + esc(g.label) + '</b>' +
+                '<small>' + g.names.join('<br>') + '</small></span></div>';
+        }).join('');
+    }
+
     function fill(id, rows, kind) {
         var el = document.getElementById(id);
         if (!el || !rows || !rows.length) return false;
-        el.querySelector('.ep-' + kind).innerHTML = rows.map(function (r) { return card(r, kind); }).join('');
+        el.querySelector('.ep-' + kind).innerHTML = kind === 'market'
+            ? marketCards(rows)
+            : rows.map(function (r) { return card(r, kind); }).join('');
         el.hidden = false;
         return true;
     }

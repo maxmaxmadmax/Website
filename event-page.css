@@ -273,3 +273,11 @@ a.ep-v:focus-visible{ border-color:var(--sg-orange); transform:translateY(-2px);
     .ep-v-food{ min-height:74px; }
     .ep-v-food .ep-art{ width:96px; font-size:2.2rem; }
 }
+
+/* market card: the kind of stall on top, its vendors listed underneath */
+.ep-v-market .ep-v-text b{ font-size:1rem; }
+.ep-v-market .ep-v-text small{ font-size:.85rem; line-height:1.6; color:var(--sg-muted); }
+.ep-v-market a{ color:var(--sg-muted); text-decoration:underline; text-decoration-color:var(--sg-orange); text-underline-offset:3px; }
+.ep-v-market a:hover,
+.ep-v-market a:focus-visible{ color:var(--sg-orange); }
+.ep-v-market a i{ font-style:normal; color:var(--sg-orange); }
