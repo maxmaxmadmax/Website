@@ -144,9 +144,11 @@
         groups.sort(function (a, b) { return a.label.localeCompare(b.label); });
         return groups.map(function (g) {
             return '<div class="ep-mt">' +
-                '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICON[g.cat] || BAG) + '</svg>' +
-                '<b>' + esc(g.label.replace(/ \/ /g, ' & ')) + '</b>' +
-                '<small>' + g.names.join('<br>') + '</small>' +
+                '<div class="ep-mt-head">' +
+                  '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICON[g.cat] || BAG) + '</svg>' +
+                  '<b>' + esc(g.label.replace(/ \/ /g, ' & ')) + '</b>' +
+                '</div>' +
+                '<ul><li>' + g.names.join('</li><li>') + '</li></ul>' +
                 '</div>';
         }).join('');
     }

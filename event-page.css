@@ -260,44 +260,101 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 /* ---- market panel ---- */
 .ep-market-panel{
     display:grid;
-    grid-template-columns:auto minmax(0, 1fr);
-    gap:24px;
+    grid-template-columns:minmax(270px, 1fr) minmax(0, 3fr);
+    gap:28px;
     align-items:center;
-    background:var(--ep-cream);
-    border-radius:16px;
-    padding:24px;
-    box-shadow:0 6px 0 rgba(29,13,2,.25);
 }
 
-.ep-market-title .ep-h2{ margin:0; font-size:clamp(1.6rem, 3.4vw, 2.4rem); }
+/* "MARKET STALLS" with a short rule in front */
+.ep-kicker-line::before{
+    content:"";
+    display:inline-block;
+    width:34px;
+    height:2px;
+    background:var(--ep-ink);
+    vertical-align:middle;
+    margin-right:10px;
+}
+
+/* the big two-tone title with the lime swipe under it */
+.ep-big{
+    position:relative;
+    font-family:var(--ep-poster-font);
+    font-weight:400;
+    font-size:clamp(1.8rem, 2.7vw, 2.3rem);
+    line-height:.92;
+    overflow-wrap:normal;   /* never split a word */
+    word-break:normal;
+    text-transform:uppercase;
+    margin:0 0 26px;
+}
+
+.ep-big span{
+    display:block;
+    font-size:1.3em;
+    color:#fffaf2;
+    -webkit-text-stroke:2px var(--ep-ink);
+    paint-order:stroke fill;
+    text-shadow:4px 4px 0 var(--ep-ink);
+}
+
+.ep-big::after{
+    content:"";
+    position:absolute;
+    left:0;
+    bottom:-16px;
+    width:70%;
+    height:10px;
+    background:var(--ep-lime);
+    border-radius:10px 4px 12px 3px;
+    transform:rotate(-3deg);
+}
+
+.ep-market-strap{
+    font-family:var(--sg-font-accent);
+    font-weight:bold;
+    font-size:.85rem;
+    line-height:1.5;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    margin:0;
+}
 
 .ep-market{
     display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));
-    gap:10px;
+    grid-template-columns:repeat(4, minmax(0, 1fr));
+    gap:12px;
 }
 
+/* one tile: icon + heading in a row, then the vendors listed */
 .ep-mt{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    text-align:center;
-    gap:6px;
-    background:#fff;
-    border:1px solid #f1d9bf;
+    background:var(--ep-cream);
     border-radius:12px;
-    padding:14px 10px;
+    padding:14px 16px 16px;
+    box-shadow:0 5px 0 rgba(29,13,2,.25);
 }
 
-.ep-mt svg{ width:34px; height:34px; color:var(--ep-ink); }
+.ep-mt-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding-bottom:10px;
+    margin-bottom:10px;
+    border-bottom:1px solid #e9c9a6;
+}
+
+.ep-mt svg{ flex:none; width:34px; height:34px; color:var(--ep-ink); }
 
 .ep-mt b{
-    font-size:.78rem;
-    letter-spacing:.06em;
+    font-family:var(--ep-poster-font);
+    font-weight:400;
+    font-size:.92rem;
+    line-height:1.05;
     text-transform:uppercase;
 }
 
-.ep-mt small{ font-size:.8rem; line-height:1.45; color:#6b4524; }
+.ep-mt ul{ list-style:none; padding:0; margin:0; display:grid; gap:4px; }
+.ep-mt li{ font-size:.92rem; color:#3a1e08; }
 
 .ep-mt a{
     color:inherit;
@@ -437,6 +494,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-poster{ width:min(100%, 360px); }
     .ep-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
     .ep-market-panel{ grid-template-columns:1fr; }
+    .ep-market{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
     .ep-ent{ grid-template-columns:1fr; }
     .ep-ent-band{ grid-row:auto; min-height:260px; }
 }
@@ -469,7 +527,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     html, body.event-page{
         -webkit-print-color-adjust:exact;
         print-color-adjust:exact;
-        background:linear-gradient(180deg, #f9b45a 0%, #ee7a35 100%) !important;
+        background:#f39243 !important;   /* one solid orange, so no pale strip at the end */
         font-size:11pt;
     }
 
@@ -491,8 +549,10 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-food{ grid-template-columns:1fr 1fr; gap:3mm; }
     .ep-fv{ min-height:30mm; box-shadow:none; border:1px solid #e9c9a6; break-inside:avoid; }
     .ep-fv-go{ display:none; }
-    .ep-market-panel{ grid-template-columns:1fr; box-shadow:none; }
-    .ep-market{ grid-template-columns:repeat(4, 1fr); }
+    .ep-market-panel{ grid-template-columns:52mm 1fr; gap:6mm; }
+    .ep-big{ font-size:24pt; }
+    .ep-market{ grid-template-columns:repeat(3, 1fr); gap:3mm; }
+    .ep-mt{ box-shadow:none; padding:3mm 4mm; break-inside:avoid; }
     .ep-grid{ grid-template-columns:repeat(4, 1fr); }
     /* side by side on paper too (A4 is narrow enough to trip the tablet rule) */
     .ep-ent{ grid-template-columns:1.4fr 1fr; }
