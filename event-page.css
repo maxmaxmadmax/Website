@@ -1,0 +1,196 @@
+/* ==========================================================================
+   EVENT PAGE (for punters) - e.g. /eatz-beatz-halloween-2026
+   Uses the site tokens from style.css. Halloween orange on black.
+   ========================================================================== */
+
+.event-page{
+    background:#0b0b0b;
+}
+
+/* ---- Hero: words left, poster right ---- */
+.ep-hero{
+    background:
+        radial-gradient(ellipse at 85% 10%, rgba(120,60,200,.28), transparent 55%),
+        linear-gradient(150deg, #1b0d02 0%, #0b0b0b 62%);
+}
+
+.ep-hero-inner{
+    max-width:var(--sg-max-width);
+    margin:0 auto;
+    padding:calc(var(--sg-nav-height, 88px) + 40px) 6% 60px;
+    display:grid;
+    grid-template-columns:minmax(0, 1.1fr) minmax(0, .9fr);
+    gap:40px;
+    align-items:center;
+}
+
+.ep-tags{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin:0 0 18px;
+}
+
+.ep-tag{
+    font-family:var(--sg-font-accent);
+    font-size:.72rem;
+    font-weight:bold;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:#000;
+    background:var(--sg-orange);
+    padding:6px 14px;
+    border-radius:999px;
+}
+
+.ep-title{
+    font-family:var(--sg-font-display);
+    font-size:clamp(2.2rem, 6vw, 4.4rem);
+    line-height:.98;
+    letter-spacing:-1.5px;
+    text-transform:uppercase;
+    margin:0 0 22px;
+}
+
+.ep-title span{
+    display:block;
+    color:var(--sg-orange);
+    font-size:.5em;
+    margin-top:10px;
+}
+
+.ep-facts{
+    list-style:none;
+    padding:0;
+    margin:0 0 18px;
+    display:grid;
+    gap:8px;
+    font-size:1.1rem;
+}
+
+.ep-facts b{
+    display:inline-block;
+    min-width:70px;
+    font-family:var(--sg-font-accent);
+    font-size:.75rem;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--sg-gold);
+}
+
+.ep-intro{
+    color:var(--sg-muted);
+    font-size:1.05rem;
+    line-height:1.6;
+    max-width:560px;
+    margin:0;
+}
+
+.ep-actions{ margin-top:28px; }
+.ep-share-note{ color:var(--sg-dim); margin:10px 0 0; font-size:.9rem; }
+
+.ep-poster{
+    justify-self:center;
+    display:block;
+    width:min(100%, 440px);
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 18px 50px rgba(0,0,0,.55), 0 0 60px rgba(255,107,0,.25);
+}
+
+.ep-poster img{ display:block; width:100%; height:auto; }
+
+/* ---- Sections ---- */
+.ep-section{
+    max-width:var(--sg-max-width);
+    margin:0 auto;
+    padding:56px 6% 0;
+}
+
+.ep-section:last-of-type{ padding-bottom:72px; }
+
+.ep-h2{
+    font-family:var(--sg-font-display);
+    font-size:clamp(1.6rem, 3.5vw, 2.3rem);
+    text-transform:uppercase;
+    margin:0 0 22px;
+}
+
+.ep-sub{ color:var(--sg-dim); margin:16px 0 0; }
+
+.ep-grid{
+    display:grid;
+    grid-template-columns:repeat(3, minmax(0, 1fr));
+    gap:16px;
+}
+
+.ep-card{
+    background:var(--sg-panel);
+    border:1px solid var(--sg-border);
+    border-radius:14px;
+    padding:22px;
+}
+
+.ep-icon{ font-size:1.8rem; display:block; margin-bottom:10px; }
+.ep-card h3{ margin:0 0 6px; font-size:1.15rem; }
+.ep-card p{ margin:0; color:var(--sg-muted); line-height:1.5; }
+
+/* who's coming */
+.ep-lineup{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:16px;
+}
+
+.ep-list{
+    background:var(--sg-panel);
+    border:1px solid var(--sg-border);
+    border-radius:14px;
+    padding:22px;
+}
+
+.ep-list h3{ margin:0 0 12px; color:var(--sg-orange); }
+.ep-list ul{ list-style:none; padding:0; margin:0; display:grid; gap:8px; }
+.ep-list span{ color:var(--sg-dim); font-size:.9rem; }
+
+/* times + good to know */
+.ep-times,
+.ep-know{
+    list-style:none;
+    padding:0;
+    margin:0;
+    display:grid;
+    gap:10px;
+    font-size:1.05rem;
+}
+
+.ep-times b{
+    display:inline-block;
+    min-width:90px;
+    color:var(--sg-gold);
+}
+
+.ep-know li{
+    background:var(--sg-panel);
+    border:1px solid var(--sg-border);
+    border-radius:12px;
+    padding:14px 18px;
+    color:var(--sg-muted);
+}
+
+.ep-know b{ color:var(--sg-text); }
+
+/* ---- Tablet / phone ---- */
+@media (max-width:900px){
+    .ep-hero-inner{ grid-template-columns:1fr; gap:30px; }
+    .ep-poster{ width:min(100%, 360px); }
+    .ep-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width:600px){
+    .ep-hero-inner{ padding:calc(var(--sg-nav-height, 78px) + 26px) 16px 44px; }
+    .ep-section{ padding:44px 16px 0; }
+    .ep-grid,
+    .ep-lineup{ grid-template-columns:1fr; }
+    .ep-actions .btn{ width:100%; text-align:center; }
+}

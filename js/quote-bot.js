@@ -21,7 +21,7 @@
 
 import {
   firebaseConfig, functionsRegion, isFirebaseConfigured,
-} from './firebase-config.js?v=256';
+} from './firebase-config.js?v=257';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 

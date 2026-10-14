@@ -3041,3 +3041,44 @@ exports.tellBot = onRequest({ secrets: [TELEGRAM_TOKEN], cors: false }, async (r
 exports.tellOutbox = onDocumentCreated({ document: 'tellOutbox/{id}', secrets: [TELEGRAM_TOKEN] }, async (event) => {
   if (event.data) await tell.sendOutbox(TELEGRAM_TOKEN.value(), event.data);
 });
+
+/* =========================================================================
+   eventLineup - who's coming, for the punters' About page
+
+   GET ?event=<eventId>  ->  { food: [{ name, category }], market: [...] }
+
+   Bookings are private (they hold contact details and money), so the page
+   cannot read them itself. This hands out the business name and its
+   category ONLY, and only for vendors who are confirmed AND paid (or
+   marked free) - Max, 14 Oct 2026. Nothing else ever leaves here.
+   ========================================================================= */
+exports.eventLineup = onRequest({ cors: true }, async (req, res) => {
+  const eventId = String(req.query.event || '');
+  if (!/^[a-z0-9-]{3,80}$/.test(eventId)) { res.status(400).json({ error: 'bad event' }); return; }
+  try {
+    const [snap, cats] = await Promise.all([
+      db.collection('bookings').where('eventId', '==', eventId).where('status', '==', 'confirmed').get(),
+      db.collection('events').doc(eventId).collection('categories').get(),
+    ]);
+    const catName = {};
+    cats.forEach((d) => { catName[d.id] = d.data().name || ''; });
+    const out = { food: [], market: [] };
+    const seen = new Set();
+    snap.forEach((d) => {
+      const b = d.data();
+      if (!['paid', 'free'].includes(b.paymentStatus)) return;
+      const name = String((b.business && b.business.name) || '').trim().slice(0, 60);
+      if (!name || seen.has(name.toLowerCase())) return;   // one line per business
+      seen.add(name.toLowerCase());
+      const list = b.vendorType === 'food' ? out.food : out.market;
+      list.push({ name, category: String(catName[b.categoryId] || '').slice(0, 40) });
+    });
+    out.food.sort((a, b) => a.name.localeCompare(b.name));
+    out.market.sort((a, b) => a.name.localeCompare(b.name));
+    res.set('Cache-Control', 'public, max-age=300');   // 5 minutes
+    res.json(out);
+  } catch (e) {
+    logger.error('eventLineup', e);
+    res.status(500).json({ error: 'failed' });
+  }
+});

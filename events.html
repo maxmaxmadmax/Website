@@ -20,17 +20,17 @@
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="style.css?v=256">
+  <link rel="stylesheet" href="style.css?v=257">
   <!--  The event card is shared with /gig-guide, so its styles live in
         their own file rather than in either page's.                  -->
-  <link rel="stylesheet" href="gig-card.css?v=256">
-  <link rel="stylesheet" href="events.css?v=256">
-  <script src="js/main.js?v=256" defer></script>
+  <link rel="stylesheet" href="gig-card.css?v=257">
+  <link rel="stylesheet" href="events.css?v=257">
+  <script src="js/main.js?v=257" defer></script>
   <!--  roster.js names the DJs on the Friday Nights cards; it is the same
         list the entertainment page and the admin dropdown read.     -->
-  <script src="js/roster.js?v=256" defer></script>
-  <script src="js/weekend.js?v=256" defer></script>
-  <script src="js/events.js?v=256" defer></script>
+  <script src="js/roster.js?v=257" defer></script>
+  <script src="js/weekend.js?v=257" defer></script>
+  <script src="js/events.js?v=257" defer></script>
 </head>
 
 <!-- the class is what events.css hangs the footer tweak off -->
@@ -119,14 +119,10 @@
       </div>
 
       <div class="ev-actions">
-        <!--  A View Event button belongs here, but there is no Eatz & Beatz
-              event page to send it to yet, and a button that goes nowhere
-              is worse than no button. Put this line back once the page
-              exists, changing the address to match:
-
-              <a href="/eatz-beatz-halloween-2026" class="btn btn-ticket">View Event</a>
-        -->
-        <a href="/vendor-signup" class="btn btn-ticket">Vendor Applications</a>
+        <!--  About This Event = the page for punters (what to expect).
+              Vendor Applications = the page for stallholders.        -->
+        <a href="/eatz-beatz-halloween-2026" class="btn btn-ticket">About This Event</a>
+        <a href="/vendor-signup" class="btn btn-outline">Vendor Applications</a>
       </div>
     </div>
 
