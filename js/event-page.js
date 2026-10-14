@@ -71,7 +71,7 @@
         'Amazing wieners':      { tag: 'Hot dogs',      line: 'German bratwurst, cheesy kransky and kids’ hot dogs.' },
         'Ammos Shak':           { tag: 'Indian',        line: 'Indian food and curries.', name: 'Ammo’s Shak' },
         'Cheeky Chicky':        { tag: 'Fried chicken', line: 'Pork belly bites, crispy wings, loaded fries and chicken burgers.', cat: 'chicken-wings' },
-        'Grumpy Mas':           { tag: 'Burgers',       line: 'Hearty burgers and loaded fries.' },
+        'Grumpy Mas':           { tag: 'Burgers',       line: 'Hearty Kiwi fry bread burgers.', photo: 'images/vendors/grumpy-mas.webp' },   // photo from Max, 14 Oct 2026
         'Loopy Scoops':         { tag: 'Ice cream',     line: 'Soft serve, premium scooped ice cream and snow cones.' },
         'Sweet Wheels':         { tag: 'Sweet treats',  line: 'Sweet treats from the red food van.', cat: 'lollies-fairy-floss' },
         'Tropical Blendz':      { tag: 'Drinks',        line: 'Fresh drinks and smoothies.', cat: 'drinks-juice-smoothies' },
