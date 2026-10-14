@@ -127,7 +127,9 @@
        ---------------------------------------------------------------------- */
     global.SG_FRIDAY_SEED = {
         '2026-09-18': 'kriss-kross',
-        '2026-09-25': 'dj-charly-templar'
+        '2026-09-25': 'dj-charly-templar',
+        '2026-10-16': 'dougie',            // per Max, 14 Oct 2026
+        '2026-10-23': 'lucas'
     };
 
     global.SG_ROSTER_BUILT_IN = TALENT;
