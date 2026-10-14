@@ -24,10 +24,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Permanent+Marker&display=swap">
-  <link rel="stylesheet" href="style.css?v=281">
-  <link rel="stylesheet" href="event-page.css?v=281">
-  <script src="js/main.js?v=281" defer></script>
-  <script src="js/event-page.js?v=281" defer></script>
+  <link rel="stylesheet" href="style.css?v=285">
+  <link rel="stylesheet" href="event-page.css?v=285">
+  <script src="js/main.js?v=285" defer></script>
+  <script src="js/event-page.js?v=285" defer></script>
 </head>
 
 <body class="event-page">
@@ -54,7 +54,7 @@
       <p class="ep-kicker">SoundzGood presents &middot; Halloween Edition</p>
 
       <h1 class="ep-title">Come<br>Hungry.</h1>
-      <p class="ep-sticker">Good food<br>good vibes</p>
+      <p class="ep-subline">Good food <i>&bull;</i> Live music <i>&bull;</i> Local markets</p>
 
       <p class="ep-intro">
         A free community night market for the whole family. Amazing food
@@ -75,10 +75,21 @@
       <p class="ep-share-note" id="ep-share-note" hidden>Link copied - paste it anywhere.</p>
     </div>
 
-    <a class="ep-poster" href="/images/events/eatz-beatz-halloween-2026.webp" target="_blank" rel="noopener">
-      <img src="/images/events/eatz-beatz-halloween-2026.webp" width="900" height="1336"
-           alt="Eatz &amp; Beatz Halloween Edition poster">
-    </a>
+    <!-- THE HALLOWEEN ART (Max loved this from his mock-up, 14 Oct 2026):
+         the burger-eating skeleton, palm trees, bats and two lime stickers.
+         All drawn in code except the skeleton picture.              -->
+    <div class="ep-hero-art" aria-hidden="true">
+      <svg class="ep-palm ep-palm-1" viewBox="0 0 100 160"><path d="M52 160c-2-40 0-80 6-110"/><path d="M58 50c-14-16-34-18-50-10 14 0 28 4 36 14-16-6-32-2-42 10 16-6 32-6 44 2-10 4-18 14-20 28 10-12 20-18 32-22 M58 50c12-18 32-22 48-14-14 0-28 4-36 12 16-4 32 0 40 12-16-6-30-4-42 4 10 6 16 16 16 30-8-12-16-20-26-24"/></svg>
+      <svg class="ep-palm ep-palm-2" viewBox="0 0 100 160"><path d="M52 160c-2-40 0-80 6-110"/><path d="M58 50c-14-16-34-18-50-10 14 0 28 4 36 14-16-6-32-2-42 10 16-6 32-6 44 2-10 4-18 14-20 28 10-12 20-18 32-22 M58 50c12-18 32-22 48-14-14 0-28 4-36 12 16-4 32 0 40 12-16-6-30-4-42 4 10 6 16 16 16 30-8-12-16-20-26-24"/></svg>
+      <svg class="ep-bat ep-bat-1" viewBox="0 0 64 28"><path d="M32 10c-2-4-1-7 0-8 1 1 2 4 0 8 6-6 14-9 22-8-4 2-6 6-5 10-4-3-8-2-10 2-2-3-5-4-7-4-2 0-5 1-7 4-2-4-6-5-10-2 1-4-1-8-5-10 8-1 16 2 22 8z"/></svg>
+      <svg class="ep-bat ep-bat-2" viewBox="0 0 64 28"><path d="M32 10c-2-4-1-7 0-8 1 1 2 4 0 8 6-6 14-9 22-8-4 2-6 6-5 10-4-3-8-2-10 2-2-3-5-4-7-4-2 0-5 1-7 4-2-4-6-5-10-2 1-4-1-8-5-10 8-1 16 2 22 8z"/></svg>
+      <svg class="ep-bat ep-bat-3" viewBox="0 0 64 28"><path d="M32 10c-2-4-1-7 0-8 1 1 2 4 0 8 6-6 14-9 22-8-4 2-6 6-5 10-4-3-8-2-10 2-2-3-5-4-7-4-2 0-5 1-7 4-2-4-6-5-10-2 1-4-1-8-5-10 8-1 16 2 22 8z"/></svg>
+
+      <img class="ep-skeleton" src="/images/events/eatz-beatz-skeleton.webp" width="900" height="1125" alt="">
+
+      <span class="ep-badge-round">Halloween<br>Edition<br><b>&#127875;</b></span>
+      <span class="ep-badge-free">Free entry</span>
+    </div>
 
   </div>
 </section>
@@ -107,10 +118,19 @@
     </div>
 
     <div class="ep-ent">
+      <!-- Zed's photo is his 'Hear My Word' album cover; bio from Max, 14 Oct 2026 -->
       <article class="ep-ent-card ep-ent-band">
-        <p class="ep-kicker">Live on stage</p>
-        <h3>Zed Charles<br><span>&amp; The Bo River Band</span></h3>
-        <p>Live music through the night while you eat, shop and settle in.</p>
+        <img class="ep-ent-photo" src="/images/events/zed-charles.webp" width="640" height="640"
+             alt="Zed Charles playing guitar on stage">
+        <div class="ep-ent-band-text">
+          <p class="ep-kicker">Live on stage</p>
+          <h3>Zed Charles<br><span>&amp; The Bo River Band</span></h3>
+          <p>Australia&rsquo;s wild man of blues - finger-picking, slide-guitar, fuzz-box
+             lightning and strong, soulful vocals. His debut album <i>Hear My Word</i> hit
+             #2 on the Blues and Roots Airplay Chart in 2025, and his song
+             <i>Nobody Has to Know</i> won The American Songwriter&rsquo;s Blues category.</p>
+          <a class="ep-ent-link" href="https://zedcharles.com/bio/" target="_blank" rel="noopener">More about Zed &rarr;</a>
+        </div>
       </article>
 
       <article class="ep-ent-card ep-ent-bingo">

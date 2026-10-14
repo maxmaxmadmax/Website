@@ -54,19 +54,15 @@
     margin:0;
 }
 
-.ep-sticker{
-    display:inline-block;
+/* "GOOD FOOD - LIVE MUSIC - LOCAL MARKETS" under the title */
+.ep-subline{
     font-family:var(--ep-hand-font);
-    font-size:1.5rem;
-    line-height:1;
+    font-size:1.35rem;
     text-transform:uppercase;
-    background:var(--ep-lime);
-    padding:12px 18px;
-    border-radius:8px;
-    transform:rotate(-6deg);
-    margin:-6px 0 18px 10px;
-    box-shadow:3px 3px 0 var(--ep-ink);
+    margin:14px 0 14px;
 }
+
+.ep-subline i{ font-style:normal; color:#fffaf2; margin:0 4px; }
 
 .ep-intro{
     font-size:1.12rem;
@@ -125,18 +121,82 @@
 
 .ep-share-note{ margin:10px 0 0; font-size:.9rem; }
 
-.ep-poster{
-    justify-self:center;
-    display:block;
-    width:min(100%, 420px);
-    border-radius:14px;
-    overflow:hidden;
-    border:4px solid var(--ep-ink);
-    box-shadow:10px 10px 0 var(--ep-ink);
-    transform:rotate(2deg);
+/* ---- the Halloween art on the right of the cover ---- */
+.ep-hero-art{
+    position:relative;
+    align-self:end;
+    margin-bottom:-40px;            /* sits on the bottom edge of the cover */
+    min-height:520px;
 }
 
-.ep-poster img{ display:block; width:100%; height:auto; }
+.ep-skeleton{
+    position:relative;
+    z-index:2;
+    display:block;
+    width:min(100%, 460px);
+    height:auto;
+    margin:0 0 0 auto;
+    filter:drop-shadow(0 12px 24px rgba(29,13,2,.35));
+}
+
+.ep-palm{
+    position:absolute;
+    bottom:0;
+    z-index:1;
+    fill:none;
+    stroke:var(--ep-ink);
+    stroke-width:5;
+    stroke-linecap:round;
+    opacity:.85;
+}
+
+.ep-palm-1{ right:-30px; width:170px; height:270px; }
+.ep-palm-2{ left:0; width:120px; height:190px; transform:scaleX(-1); opacity:.6; }
+
+.ep-bat{ position:absolute; z-index:3; fill:var(--ep-ink); }
+.ep-bat-1{ top:8%;  left:6%;  width:58px; transform:rotate(-10deg); }
+.ep-bat-2{ top:20%; right:2%; width:42px; transform:rotate(12deg); }
+.ep-bat-3{ top:46%; left:2%;  width:34px; transform:rotate(-4deg); }
+
+/* the round lime "HALLOWEEN EDITION" sticker */
+.ep-badge-round{
+    position:absolute;
+    z-index:3;
+    top:4%;
+    left:10%;
+    width:150px;
+    height:150px;
+    display:grid;
+    place-content:center;
+    text-align:center;
+    font-family:var(--ep-hand-font);
+    font-size:1.25rem;
+    line-height:1.05;
+    text-transform:uppercase;
+    color:var(--ep-ink);
+    background:var(--ep-lime);
+    border-radius:50%;
+    transform:rotate(-12deg);
+    box-shadow:4px 4px 0 var(--ep-ink);
+}
+
+.ep-badge-round b{ font-size:1.6rem; font-weight:400; }
+
+/* the "FREE ENTRY" tag */
+.ep-badge-free{
+    position:absolute;
+    z-index:3;
+    bottom:70px;
+    left:0;
+    font-family:var(--ep-poster-font);
+    font-size:1.3rem;
+    text-transform:uppercase;
+    color:var(--ep-ink);
+    background:var(--ep-lime);
+    padding:10px 18px;
+    transform:rotate(-5deg);
+    box-shadow:4px 4px 0 var(--ep-ink);
+}
 
 /* ---- sections ---- */
 .ep-section{
@@ -420,23 +480,22 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 
 .ep-ent-card p:last-child{ margin:0; font-size:1rem; line-height:1.45; }
 
-/* the band - the headline act, dark like the poster's title box */
+/* the band - the headline act: his photo on top, the bio underneath */
 .ep-ent-band{
     grid-row:span 3;
     display:flex;
     flex-direction:column;
-    justify-content:flex-end;
-    min-height:320px;
+    padding:0;
     color:#fffaf2;
-    background:
-        linear-gradient(180deg, rgba(29,13,2,.1) 0%, rgba(29,13,2,.85) 70%),
-        var(--ep-art, radial-gradient(circle at 70% 20%, #ff9a3c 0%, #c43d00 45%, #1d0d02 100%));
-    background-size:cover;
-    background-position:center;
+    background:#120a04;
 }
 
-.ep-ent-band h3{ font-size:clamp(2.4rem, 5.4vw, 4rem); }
+.ep-ent-photo{ display:block; width:100%; aspect-ratio:16/10; object-fit:cover; object-position:center 30%; }
+.ep-ent-band-text{ padding:22px 26px 26px; }
+.ep-ent-band h3{ font-size:clamp(2rem, 4.4vw, 3.2rem); }
 .ep-ent-band h3 span{ display:block; font-size:.55em; color:var(--ep-lime); margin-top:6px; }
+.ep-ent-band-text p:not(.ep-kicker){ margin:0 0 12px; line-height:1.5; color:#f3e3d0; }
+.ep-ent-link{ color:var(--ep-lime); font-weight:bold; }
 
 .ep-ent-bingo{ background:var(--ep-lime); color:var(--ep-ink); }
 .ep-ent-dress{ background:var(--ep-cream); color:var(--ep-ink); }
@@ -508,12 +567,13 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 /* ---- tablet / phone ---- */
 @media (max-width:900px){
     .ep-hero-inner{ grid-template-columns:1fr; gap:34px; }
-    .ep-poster{ width:min(100%, 360px); }
+    .ep-hero-art{ min-height:0; max-width:460px; width:100%; justify-self:center; }
+    .ep-badge-round{ width:120px; height:120px; font-size:1rem; }
     .ep-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
     .ep-market-panel{ grid-template-columns:1fr; }
     .ep-market{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
     .ep-ent{ grid-template-columns:1fr; }
-    .ep-ent-band{ grid-row:auto; min-height:260px; }
+    .ep-ent-band{ grid-row:auto; }
 }
 
 @media (max-width:700px){
@@ -557,10 +617,14 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-hero-inner{ display:block; padding:2mm 0 0; }
     .ep-hero-body{ position:relative; }
     .ep-title{ font-size:60pt; }
-    .ep-sticker{ position:absolute; top:12mm; right:8mm; margin:0; font-size:20pt; }
     .ep-intro{ max-width:none; margin:5mm 0 4mm; }
     .ep-facts{ max-width:none; grid-template-columns:repeat(4, 1fr); }
-    .ep-poster{ width:112mm; margin:7mm auto 0; transform:none; box-shadow:5px 5px 0 var(--ep-ink); }
+    .ep-hero-art{ min-height:0; margin:4mm auto 0; width:125mm; }
+    .ep-skeleton{ width:100%; filter:none; }
+    .ep-palm-1{ right:-18mm; width:40mm; height:64mm; }
+    .ep-palm-2{ left:-8mm; width:30mm; height:48mm; }
+    .ep-badge-round{ width:34mm; height:34mm; font-size:13pt; left:-4mm; box-shadow:2px 2px 0 var(--ep-ink); }
+    .ep-badge-free{ bottom:18mm; left:-10mm; font-size:14pt; box-shadow:2px 2px 0 var(--ep-ink); }
 
     .ep-section{ padding:6mm 0 0; max-width:none; }
     .ep-food{ grid-template-columns:1fr 1fr; gap:3mm; }
@@ -575,7 +639,13 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-grid{ grid-template-columns:repeat(4, 1fr); }
     /* side by side on paper too (A4 is narrow enough to trip the tablet rule) */
     .ep-ent{ grid-template-columns:1.4fr 1fr; }
-    .ep-ent-band{ grid-row:span 3; min-height:120mm; background:#2a1204; }
+    .ep-ent-band{ grid-row:span 3; }
+    .ep-ent-photo{ aspect-ratio:auto; height:62mm; }
+    .ep-ent{ grid-template-rows:auto auto auto; align-items:start; }
+    .ep-page-3 .ep-times li{ padding:2.5mm 4mm; }
+    .ep-ent-band-text{ padding:4mm 6mm 5mm; }
+    .ep-ent-band-text p:not(.ep-kicker){ font-size:9pt; margin-bottom:0; }
+    .ep-ent-link{ display:none; }
     .ep-ent-card h3{ font-size:20pt; margin-bottom:2mm; }
     .ep-ent-card{ padding:5mm 7mm; }
     .ep-ent-card{ padding:7mm; }
@@ -608,3 +678,6 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
         letter-spacing:.1em;
     }
 }
+
+/* the band card's photo runs edge to edge, on screen and on paper */
+.ep-ent-card.ep-ent-band{ padding:0; }
