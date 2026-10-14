@@ -248,11 +248,12 @@ a.ep-v:focus-visible{ border-color:var(--sg-orange); transform:translateY(-2px);
 .ep-market{
     display:grid;
     grid-auto-flow:column;
-    grid-auto-columns:160px;
+    grid-auto-columns:200px;   /* bigger cards (Max, 14 Oct 2026) */
     gap:12px;
     overflow-x:auto;
     padding-bottom:10px;
     scroll-snap-type:x mandatory;
+    scrollbar-color:var(--sg-orange) #1a1a1a;   /* dark track, orange thumb */
 }
 
 .ep-v-market{
@@ -261,7 +262,7 @@ a.ep-v:focus-visible{ border-color:var(--sg-orange); transform:translateY(-2px);
     scroll-snap-align:start;
 }
 
-.ep-v-market .ep-art{ height:110px; font-size:2.6rem; }
+.ep-v-market .ep-art{ height:160px; font-size:3.6rem; }
 .ep-v-market .ep-v-text{ padding:10px 12px 12px; }
 .ep-v-market .ep-v-text b{ font-size:.9rem; }
 .ep-v-market .ep-v-text small{ font-size:.78rem; }
