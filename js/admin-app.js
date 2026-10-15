@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=376';
+} from './firebase-config.js?v=377';
 
-import { expandKit } from './kit.js?v=376';
+import { expandKit } from './kit.js?v=377';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -4473,8 +4473,7 @@ function invFiltered() {
     if (f.location !== 'all' && it.location !== f.location) return false;
     if (f.status !== 'all' && it.status !== f.status) return false;
     if (!needle) return true;
-    return [it.name, it.subtitle, it.category, it.location]
-      .filter(Boolean).join(' ').toLowerCase().includes(needle);
+    return searchMatch(needle, it.name, it.subtitle, it.category, it.location);
   });
 }
 
@@ -5963,16 +5962,58 @@ function invSearchList() {
   return (typeof invItems === 'function' ? invItems() : []).filter((it) => it.id && it.name);
 }
 
+/* -------------------------------------------------------------------------
+   ONE SEARCH ENGINE for every search box in the admin (Max, 15 Oct 2026 -
+   "Stage Deck" was hidden behind the first three A-Z matches).
+   - Every word you type must appear somewhere, in any order:
+     "deck stage" finds "Stage Deck".
+   - Best matches first: the name starts with what you typed, then a word in
+     the name starts with it, then the name contains it, then it's only in
+     the other details (category, notes, email...).
+   ------------------------------------------------------------------------- */
+function searchWords(term) {
+  return String(term || '').toLowerCase().split(/\s+/).filter(Boolean);
+}
+
+/*  Does this item match? name + any other text parts. */
+function searchMatch(term, name, ...more) {
+  const words = searchWords(term);
+  if (!words.length) return true;
+  const hay = [name, ...more].filter(Boolean).join(' ').toLowerCase();
+  return words.every((w) => hay.includes(w));
+}
+
+/*  Lower = better. Used to put the best matches at the top. */
+function searchScore(term, name) {
+  const t = String(term || '').trim().toLowerCase();
+  const n = String(name || '').toLowerCase();
+  if (!t) return 9;
+  if (n.startsWith(t)) return 0;
+  if (n.split(/[^a-z0-9]+/).some((w) => w.startsWith(searchWords(t)[0] || t))) return 1;
+  if (n.includes(t)) return 2;
+  return 3;
+}
+
+/*  Filter + rank a list. nameOf(item) gives the main name, moreOf(item) the
+    other searchable text. limit = 0 for no limit.                         */
+function searchList(list, term, nameOf, moreOf, limit) {
+  const out = list
+    .filter((it) => searchMatch(term, nameOf(it), ...(moreOf ? moreOf(it) : [])))
+    .map((it) => ({ it, sc: searchScore(term, nameOf(it)) }))
+    .sort((a, b) => a.sc - b.sc
+      || String(nameOf(a.it) || '').length - String(nameOf(b.it) || '').length   // equal match: shorter name first
+      || String(nameOf(a.it) || '').localeCompare(String(nameOf(b.it) || ''), undefined, { numeric: true, sensitivity: 'base' }))
+    .map((x) => x.it);
+  return limit ? out.slice(0, limit) : out;
+}
+
 let invSearchActive = -1;   // keyboard-highlighted result
 
 /*  Matches for the quote add-search: inventory + active crew/vehicles. */
 function quoteSearchMatches(term) {
   const t = String(term || '').trim().toLowerCase();
   if (!t) return [];
-  return quoteAddSearchList()
-    .filter((it) => it.name.toLowerCase().includes(t))
-    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
-    .slice(0, 3);
+  return searchList(quoteAddSearchList(), t, (it) => it.name, (it) => [it.sub], 8);
 }
 
 function renderInvResults(term) {
@@ -7103,8 +7144,7 @@ function resFiltered() {
   return rows.filter((r) => {
     if (f !== 'all' && (r.type || 'staff') !== f) return false;
     if (!needle) return true;
-    return [r.name, r.role, r.rego, r.capacity, RES_TYPES[r.type]]
-      .filter(Boolean).join(' ').toLowerCase().includes(needle);
+    return searchMatch(needle, r.name, r.role, r.rego, r.capacity, RES_TYPES[r.type]);
   });
 }
 
@@ -7498,7 +7538,7 @@ function custFiltered() {
     if (f !== 'all' && (r.type || 'private') !== f) return false;
     if (!needle) return true;
     if (digits.length >= 3 && custPhoneKey(r.phone).includes(digits)) return true;
-    return [r.name, r.business, r.email, r.address, r.notes].filter(Boolean).join(' ').toLowerCase().includes(needle);
+    return searchMatch(needle, r.name, r.business, r.email, r.ccEmail, r.address, r.notes);
   });
 }
 
@@ -7806,9 +7846,9 @@ function wireQuoteCustSearch() {
     const q = input.value.trim().toLowerCase();
     const digits = q.replace(/\D/g, '');
     if (q.length < 2) { box.hidden = true; return; }
-    const hits = (state.customers || []).filter((r) =>
-      (digits.length >= 3 && custPhoneKey(r.phone).includes(digits)) ||
-      [r.name, r.business, r.email].filter(Boolean).join(' ').toLowerCase().includes(q)).slice(0, 8);
+    const byPhone = digits.length >= 3 ? (state.customers || []).filter((r) => custPhoneKey(r.phone).includes(digits)) : [];
+    const byText = searchList(state.customers || [], q, (r) => r.name || r.business, (r) => [r.business, r.email, r.ccEmail]);
+    const hits = [...new Set([...byPhone, ...byText])].slice(0, 8);
     box.innerHTML = hits.length
       ? hits.map((r) => `<button type="button" data-pick-cust="${attr(r.id)}"><b>${esc(r.name || r.business)}</b>
           <span>${esc([r.business && r.name ? r.business : '', r.phone, r.email].filter(Boolean).join(' · '))}</span></button>`).join('')
