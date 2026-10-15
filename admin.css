@@ -4075,3 +4075,26 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-auto{ font-size:.8rem; color:#8a8a94; margin-right:6px; white-space:nowrap; }
 .qb-auto.is-ok{ color:#2e9d5b; }
 .qb-auto.is-bad{ color:#d33; font-weight:600; }
+
+/* ==========================================================================
+   QUOTE LINES, CONDENSED (Max, 15 Oct 2026)
+   ========================================================================== */
+.qb-row{ padding:5px 12px; }
+.qb-name{ padding:3px 6px; }
+.qb-num{ padding:4px 7px; }
+/* the $ sits beside the rate box, not above it */
+.qb-c-rate{ display:flex; align-items:center; justify-content:flex-end; gap:2px; }
+.qb-c-rate .qb-num{ margin-left:0; }
+/* included / required: one slim line each, arrow beside the name */
+.qb-subhead{ padding:4px 12px 0; font-size:.62rem; }
+.qb-row-sub{ padding-top:1px; padding-bottom:1px; font-size:.8rem; }
+.qb-row-sub .qb-c-desc{ flex-direction:row; align-items:center; padding-left:6px; }
+.qb-row-sub .qb-del{ font-size:.95rem; padding:0 4px; }
+.qb-row-sub + .qb-row:not(.qb-row-sub){ border-top:1px solid var(--ad-line); }
+/* one straight line per column: qty + days centred, rate + total right */
+.qb-thead .qb-c-qty, .qb-thead .qb-c-days,
+.qb-c-qty, .qb-c-days{ text-align:center; }
+.qb-c-qty .qb-num, .qb-c-days .qb-num{ margin:0 auto; text-align:center; }
+.qb-row-sub .qb-c-rate{ padding-right:8px; }       /* "Included" ends where the rate figures end */
+.qb-row-sub .qb-c-total{ padding-right:0; }
+.qb-thead .qb-c-rate{ padding-right:8px; }
