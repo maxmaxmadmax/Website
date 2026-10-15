@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=381';
+} from './firebase-config.js?v=386';
 
-import { expandKit } from './kit.js?v=381';
+import { expandKit } from './kit.js?v=386';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5408,6 +5408,7 @@ function blankQuote() {
     lines: [],
     discountCents: 0,
     labourExcluded: false,     // setup & pack-down labour is on by default (delivered jobs)
+    labourPH: { setup: false, pack: false },   // "public holiday" ticks for setup / pack-down day
     deliveryTown: '',          // '' = pickup / no delivery
     deliveryKm: 0,             // one-way road km from Bowen
     notes: '',
@@ -5457,12 +5458,102 @@ function quoteDeliveryCents(d) {
   return km * 2 * DELIVERY_RATE_PER_KM_CENTS;   // return trip
 }
 
-/*  Labour: setup time is a man-minute figure on each inventory item. Total
-    setup across the (already kit-expanded) cart, plus pack-down at 75%, is
-    billed at $60/hr, rounded UP to a whole hour, minimum one hour. Setup
-    times default to 0, so until they're entered this simply comes to $0.   */
-const LABOUR_RATE_CENTS = 6000;   // $60 / hour
+/* =========================================================================
+   LABOUR RATES (Max, 15 Oct 2026) - KEEP IN STEP with functions/lib/labour.js
+   $85/hr. Saturday x1.25, Sunday x1.5, public holiday x1.5. Setup is charged
+   on the first hire day, pack-down (75% of setup) on the last, each at its
+   own day's rate; each part minimum 1 hr, then up to the half hour.
+   Setup time is the man-minute figure on each inventory item.
+   ========================================================================= */
+const LABOUR_RATE_CENTS = 8500;   // $85 / hour
 const PACKDOWN_PCT = 0.75;
+const LOADING = { saturday: 1.25, sunday: 1.5, holiday: 1.5 };
+
+const QLD_PUBLIC_HOLIDAYS = {
+  '2026-01-01': "New Year's Day", '2026-01-26': 'Australia Day',
+  '2026-04-03': 'Good Friday', '2026-04-04': 'Easter Saturday', '2026-04-05': 'Easter Sunday', '2026-04-06': 'Easter Monday',
+  '2026-04-25': 'Anzac Day', '2026-05-04': 'Labour Day', '2026-10-05': "King's Birthday",
+  '2026-12-25': 'Christmas Day', '2026-12-26': 'Boxing Day', '2026-12-28': 'Boxing Day (additional)',
+  '2027-01-01': "New Year's Day", '2027-01-26': 'Australia Day',
+  '2027-03-26': 'Good Friday', '2027-03-27': 'Easter Saturday', '2027-03-28': 'Easter Sunday', '2027-03-29': 'Easter Monday',
+  '2027-04-26': 'Anzac Day', '2027-05-03': 'Labour Day', '2027-10-04': "King's Birthday",
+  '2027-12-25': 'Christmas Day', '2027-12-27': 'Christmas Day (additional)',
+  '2027-12-26': 'Boxing Day', '2027-12-28': 'Boxing Day (additional)',
+  '2028-01-01': "New Year's Day", '2028-01-03': "New Year's Day (additional)", '2028-01-26': 'Australia Day',
+  '2028-04-14': 'Good Friday', '2028-04-15': 'Easter Saturday', '2028-04-16': 'Easter Sunday', '2028-04-17': 'Easter Monday',
+  '2028-04-25': 'Anzac Day', '2028-05-01': 'Labour Day', '2028-10-02': "King's Birthday",
+  '2028-12-25': 'Christmas Day', '2028-12-26': 'Boxing Day',
+};
+
+/*  Local show holidays - only in their own district. home: true = also
+    applies to pickup / no-delivery jobs (we're in Bowen).               */
+const SHOW_HOLIDAYS = [
+  { date: '2026-06-19', name: 'Whitsunday Show holiday', towns: ['proserpine', 'airlie', 'cannonvale'] },
+  { date: '2026-06-23', name: 'Bowen Show holiday', towns: ['bowen', 'guthalungra', 'gumlu', 'bogie'], home: true },
+  { date: '2026-11-03', name: 'Collinsville Show holiday', towns: ['collinsville'] },
+];
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function isoOk(iso) { return /^\d{4}-\d{2}-\d{2}$/.test(String(iso || '')); }
+
+/*  { mult, label } for one day. forceHoliday = the "public holiday" tick. */
+function labourDayRate(iso, town, forceHoliday) {
+  if (forceHoliday) return { mult: LOADING.holiday, label: 'public holiday surcharge' };
+  if (!isoOk(iso)) return { mult: 1, label: '' };
+  if (QLD_PUBLIC_HOLIDAYS[iso]) return { mult: LOADING.holiday, label: 'public holiday surcharge (' + QLD_PUBLIC_HOLIDAYS[iso] + ')' };
+  const t = String(town || '').toLowerCase();
+  const show = SHOW_HOLIDAYS.find((s) => s.date === iso && (t ? s.towns.some((w) => t.includes(w)) : s.home));
+  if (show) return { mult: LOADING.holiday, label: 'public holiday surcharge (' + show.name + ')' };
+  const [y, m, d] = iso.split('-').map(Number);
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  if (dow === 0) return { mult: LOADING.sunday, label: 'Sunday weekend surcharge' };
+  if (dow === 6) return { mult: LOADING.saturday, label: 'Saturday weekend surcharge' };
+  return { mult: 1, label: '' };
+}
+
+/*  Minimum 1 hour, then up to the next half hour. */
+function labourHours(mins) {
+  if (!mins || mins <= 0) return 0;
+  if (mins <= 60) return 1;
+  return Math.ceil(mins / 30) / 2;
+}
+
+function shortDate(iso) {
+  if (!isoOk(iso)) return '';
+  const [y, m, d] = iso.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  const mon = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m - 1];
+  return DAY_NAMES[dt.getUTCDay()].slice(0, 3) + ' ' + d + ' ' + mon;
+}
+
+/*  The two parts for a job. setupMins = total setup man-minutes.
+    opts: { startDate, endDate, town, holidaySetup, holidayPack }       */
+function labourParts(setupMins, opts) {
+  const o = opts || {};
+  const setup = Math.max(0, Math.round(setupMins || 0));
+  if (!setup) return [];
+  const pack = Math.round(setup * PACKDOWN_PCT);
+  const start = o.startDate || '';
+  const end = o.endDate || o.startDate || '';
+  return [
+    { key: 'setup', name: 'Setup', date: start, mins: setup, force: !!o.holidaySetup },
+    { key: 'pack', name: 'Pack-down', date: end, mins: pack, force: !!o.holidayPack },
+  ].filter((p) => p.mins > 0).map((p) => {
+    const hours = labourHours(p.mins);
+    const rate = labourDayRate(p.date, o.town, p.force);
+    const cents = Math.round(hours * LABOUR_RATE_CENTS * rate.mult);
+    const hrs = hours + ' hr' + (hours === 1 ? '' : 's');
+    const loading = rate.mult === 1 ? '' : ' + ' + Math.round((rate.mult - 1) * 100) + '% ' + rate.label;
+    return {
+      ...p, hours, mult: rate.mult, rateLabel: rate.label, cents,
+      // what the client reads, e.g. "Setup - Sat 31 Oct" / "3 hrs @ $85/hr x 1.25 (Saturday rate)"
+      lineName: p.name + (shortDate(p.date) ? ' – ' + shortDate(p.date) : ''),
+      lineDesc: `${hrs} @ $${LABOUR_RATE_CENTS / 100}/hr${loading}`,
+    };
+  });
+}
+
 
 function quoteSetupMins(d) {
   const byId = (typeof invByIdMap === 'function') ? invByIdMap() : {};
@@ -5476,12 +5567,19 @@ function quoteSetupMins(d) {
   return mins;
 }
 
+/*  { parts: [setup, pack-down], hours, cents } for the quote being edited. */
 function quoteLabour(d) {
-  const setup = quoteSetupMins(d);
-  if (!setup) return { setupMins: 0, totalMins: 0, hours: 0, cents: 0 };
-  const total = setup + Math.round(setup * PACKDOWN_PCT);
-  const hours = Math.max(1, Math.ceil(total / 60));
-  return { setupMins: setup, totalMins: total, hours, cents: hours * LABOUR_RATE_CENTS };
+  const ph = d.labourPH || {};
+  const parts = labourParts(quoteSetupMins(d), {
+    startDate: d.hire && d.hire.startDate, endDate: d.hire && d.hire.endDate,
+    town: d.deliveryTown && d.deliveryTown !== 'Other' ? d.deliveryTown : '',
+    holidaySetup: ph.setup, holidayPack: ph.pack,
+  });
+  return {
+    parts,
+    hours: parts.reduce((t, p) => t + p.hours, 0),
+    cents: parts.reduce((t, p) => t + p.cents, 0),
+  };
 }
 
 let quoteDraft = blankQuote();
@@ -5608,6 +5706,7 @@ function wireQuoteList() {
     const id = r.getAttribute('data-open-q');
     const doc = (state.quoteDocs || []).find((x) => x.id === id);
     quoteDraft = doc ? quoteFromDoc(doc) : blankQuote();
+    rebuildAllKits();
     const cm = doc ? findCustomerMatch(doc.customer || {}) : null;
     quoteCustomerId = cm ? cm.id : '';
     state.openQuoteId = id;
@@ -5624,6 +5723,7 @@ function quoteFromDoc(doc) {
     lines: (doc.lines || []).filter((l) => l.type !== 'labour' && l.type !== 'delivery').map((l) => ({ ...l })),
     discountCents: Math.max(0, Math.round(doc.discountCents || 0)),
     labourExcluded: doc.labourExcluded === true,
+    labourPH: { setup: !!(doc.labourPH && doc.labourPH.setup), pack: !!(doc.labourPH && doc.labourPH.pack) },
     deliveryTown: (doc.delivery && doc.delivery.town) || '',
     deliveryKm: Math.max(0, Math.round((doc.delivery && doc.delivery.km) || 0)),
     notes: doc.notes || '',
@@ -5823,6 +5923,15 @@ function quoteBuilderHtml() {
     </div>`;
 }
 
+/*  "2026-10-20" -> "Tue 20 Oct 2026" for the Event date box. */
+let quoteEventDateAuto = '';
+function prettyEventDate(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+  if (!m) return '';
+  const d = new Date(+m[1], +m[2] - 1, +m[3]);
+  return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).replace(/,/g, '');
+}
+
 /*  INCLUDED / REQUIRED ROWS, GROUPED (Max, 15 Oct 2026)
     Under each item, its included gear is shown by inventory category as
     small sub-headings - Cable, then Stands... - each A-Z, and sitting
@@ -5929,12 +6038,18 @@ function renderQuoteTotals() {
   const m = quoteDraftMoney(quoteDraft);
   const lab = quoteLabour(quoteDraft);
   const discVal = quoteDraft.discountCents ? quoteDraft.discountCents / 100 : '';
+  const ph = quoteDraft.labourPH || {};
   const labourRow = lab.cents ? `
     <div class="qb-sumrow qb-sumlabour">
-      <span><label class="qb-labtoggle"><input type="checkbox" data-qlabour${quoteDraft.labourExcluded ? '' : ' checked'}> Setup &amp; pack-down</label>
-        <em class="qb-labnote">${lab.hours} hr${lab.hours === 1 ? '' : 's'} @ $60</em></span>
+      <span><label class="qb-labtoggle"><input type="checkbox" data-qlabour${quoteDraft.labourExcluded ? '' : ' checked'}> Setup &amp; pack-down</label></span>
       <span class="${quoteDraft.labourExcluded ? 'qb-laboff' : ''}">${quoteDraft.labourExcluded ? 'excluded' : esc(money(lab.cents))}</span>
-    </div>` : '';
+    </div>
+    ${quoteDraft.labourExcluded ? '' : lab.parts.map((p) => `
+    <div class="qb-labpart">
+      <span><b>${esc(p.lineName)}</b><em>${esc(p.lineDesc)}</em>
+        <label class="qb-labph"><input type="checkbox" data-qlabph="${p.key}"${ph[p.key] ? ' checked' : ''}> Public holiday</label></span>
+      <span>${esc(money(p.cents))}</span>
+    </div>`).join('')}` : '';
   const delCents = quoteDeliveryCents(quoteDraft);
   const deliveryRow = delCents ? `
     <div class="qb-sumrow">
@@ -5998,6 +6113,15 @@ function kitLinesFor(itemId, qty, byId, days) {
 /*  An item's quantity changed: re-work its included / required lines so
     3 Stage Decks bring 12 legs, not the 4 worked out when it was added
     (Max, 15 Oct 2026). Replaces the kit rows directly under that item.  */
+/*  Opening a quote re-works every item's included gear from its current qty,
+    so quotes made before the qty fix (e.g. 3 decks / 4 legs) correct
+    themselves (Max, 15 Oct 2026).                                     */
+function rebuildAllKits() {
+  for (let i = 0; i < quoteDraft.lines.length; i++) {
+    if (quoteDraft.lines[i].type === 'item') rebuildKitForLine(i);
+  }
+}
+
 function rebuildKitForLine(i) {
   const line = quoteDraft.lines[i];
   if (!line || line.type !== 'item' || !line.itemId) return false;
@@ -6240,6 +6364,11 @@ function wireQuoteBuilder() {
       updateQuoteTotalsValues();
       return;
     }
+    if (t.hasAttribute('data-qlabph')) {
+      quoteDraft.labourPH = { ...(quoteDraft.labourPH || {}), [t.getAttribute('data-qlabph')]: t.checked };
+      renderQuoteTotals();
+      return;
+    }
     if (t.hasAttribute('data-qlabour')) {
       quoteDraft.labourExcluded = !t.checked;
       renderQuoteTotals();   // rebuild so the labour row & total reflect it
@@ -6265,7 +6394,17 @@ function wireQuoteBuilder() {
     if (t.dataset.qh) {
       if (t.dataset.qh === 'days') quoteDraft.hire.days = Math.max(1, Math.round(Number(t.value) || 1));
       else {
+        const oldStart = quoteDraft.hire.startDate;
         quoteDraft.hire[t.dataset.qh] = t.value;
+        // Event date follows the first hire day until you type your own (Max, 15 Oct 2026)
+        if (t.dataset.qh === 'startDate') {
+          const cur = String(quoteDraft.customer.eventDate || '').trim();
+          if (!cur || cur === quoteEventDateAuto || cur === prettyEventDate(oldStart)) {
+            quoteEventDateAuto = prettyEventDate(t.value);
+            quoteDraft.customer.eventDate = quoteEventDateAuto;
+            const ed = wrap.querySelector('[data-qc="eventDate"]'); if (ed) ed.value = quoteEventDateAuto;
+          }
+        }
         const d = daysBetween(quoteDraft.hire.startDate, quoteDraft.hire.endDate);
         if (d) { quoteDraft.hire.days = d; const di = wrap.querySelector('[data-qh="days"]'); if (di) di.value = d; }
       }
@@ -6378,11 +6517,10 @@ function quoteDraftForSave() {
   const km = Math.max(0, Math.round(quoteDraft.deliveryKm || 0));
   const lines = quoteDraft.lines.filter((l) => l.type !== 'labour' && l.type !== 'delivery').map((l) => ({ ...l }));
   if (quoteDraft.labourExcluded !== true && lab.cents > 0) {
-    lines.push({
-      type: 'labour', name: 'Setup & pack-down',
-      description: `${lab.hours} hr${lab.hours === 1 ? '' : 's'} @ $60/hr`,
-      qty: 1, unitCents: lab.cents, days: 1, hours: lab.hours,
-    });
+    lab.parts.forEach((p) => lines.push({
+      type: 'labour', name: p.lineName, description: p.lineDesc,
+      qty: 1, unitCents: p.cents, days: 1, hours: p.hours,
+    }));
   }
   if (del > 0) {
     lines.push({
@@ -7776,6 +7914,7 @@ function wireCustomerDetail() {
     const d = (state.quoteDocs || []).find((x) => x.id === b.getAttribute('data-cust-quote'));
     if (!d) return;
     quoteDraft = quoteFromDoc(d);
+    rebuildAllKits();
     quoteCustomerId = state.openCustomerId;
     state.openCustomerId = null;
     state.openQuoteId = d.id;

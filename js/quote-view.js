@@ -7,7 +7,7 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=381';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=386';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -59,6 +59,18 @@ function lineAmount(l, days) {
   return qty * unit * d;   // quantity x day rate x number of days
 }
 
+/*  "2026-10-20" -> "Tue 20 Oct 2026"; one day shows once, a range "a – b". */
+function niceDay(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+  if (!m) return String(iso || '');
+  return new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).replace(/,/g, '');
+}
+function hireRange(h) {
+  if (!h || !(h.startDate || h.endDate)) return '';
+  const a = niceDay(h.startDate || h.endDate), b = niceDay(h.endDate || h.startDate);
+  return a === b ? a : a + ' \u2013 ' + b;
+}
+
 function fmtDate(secs) {
   if (!secs) return '';
   return new Date(secs * 1000).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -72,8 +84,38 @@ function render(q) {
   const days = Math.max(1, Math.round((q.hire && q.hire.days) || 1));
   const multiDay = days > 1;
 
-  const rows = (q.lines || []).map((l) => {
+  /*  Included / required items sit inside their item, under small category
+      headings (Cable, Stands...), A-Z - the same as the quote builder
+      (Max, 15 Oct 2026).                                                  */
+  const catOf = (l) => { const c = String(l.category || '').trim(); return c ? c.charAt(0).toUpperCase() + c.slice(1) : 'Other'; };
+  const L = (q.lines || []).slice();
+  for (let i = 0; i < L.length; i++) {
+    if (L[i].type !== 'kit') continue;
+    let end = i;
+    while (end < L.length && L[end].type === 'kit') end++;
+    const g = L.slice(i, end).sort((a, b) => catOf(a).localeCompare(catOf(b)) || String(a.name || '').localeCompare(String(b.name || ''), undefined, { numeric: true }));
+    L.splice(i, end - i, ...g);
+    i = end - 1;
+  }
+
+  const rows = L.map((l, i) => {
     const amt = lineAmount(l, days);
+    if (l.type === 'kit') {
+      const prev = L[i - 1];
+      const head = prev && prev.type === 'kit' && catOf(prev) === catOf(l) ? ''
+        : `<tr class="qv-kithead"><td colspan="5">${esc(catOf(l))}</td></tr>`;
+      const charged = !(l.charge === 'free' || !l.unitCents);
+      const next = L[i + 1];
+      const last = !next || next.type !== 'kit';
+      return `${head}
+      <tr class="qv-kit${last ? ' qv-kit-last' : ''}">
+        <td class="qv-desc"><span class="qv-arrow">&#8627;</span>${esc(l.name || '')}</td>
+        <td class="qv-num">${esc(l.qty)}</td>
+        <td class="qv-num">${charged ? money(l.unitCents) : '<span class="qv-incl">Included</span>'}</td>
+        <td class="qv-num">${charged ? esc(Math.max(1, Math.round(l.days || days))) : ''}</td>
+        <td class="qv-num">${charged ? money(amt) : ''}</td>
+      </tr>`;
+    }
     const isDisc = l.type === 'discount';
     const lineDays = Math.max(1, Math.round(l.days || days));
     const free = l.type === 'kit' && (l.charge === 'free' || !l.unitCents);
@@ -130,7 +172,7 @@ function render(q) {
         </div>
         <div>
           <h3>Job</h3>
-          <p>${c.eventName ? '<strong>' + esc(c.eventName) + '</strong><br>' : ''}${c.eventDate ? esc(c.eventDate) + '<br>' : ''}${(q.hire && (q.hire.startDate || q.hire.endDate)) ? esc([q.hire.startDate, q.hire.endDate].filter(Boolean).join(' &ndash; ')) + '<br>' : ''}${days > 1 ? days + ' days charged' : ''}</p>
+          <p>${c.eventName ? '<strong>' + esc(c.eventName) + '</strong><br>' : ''}${c.eventDate ? esc(c.eventDate) + '<br>' : ''}${hireRange(q.hire) ? esc(hireRange(q.hire)) + '<br>' : ''}${days > 1 ? days + ' days charged' : ''}</p>
         </div>
       </div>
 

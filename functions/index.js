@@ -2576,6 +2576,7 @@ function sanitizeQuote(q) {
     customer, hire, lines, kind,
     discountCents: Math.max(0, Math.round(Number(q.discountCents) || 0)),
     labourExcluded: q.labourExcluded === true,
+    labourPH: { setup: !!(q.labourPH && q.labourPH.setup), pack: !!(q.labourPH && q.labourPH.pack) },
     delivery: {
       town: text(q.delivery && q.delivery.town, 80),
       km: Math.max(0, Math.round(Number(q.delivery && q.delivery.km) || 0)),
@@ -2688,6 +2689,20 @@ exports.getQuote = onCall(async (request) => {
   if (q.status === 'cancelled') throw new HttpsError('failed-precondition', 'This quote is no longer available.');
 
   const secs = (t) => (t && t.seconds != null ? t.seconds : null);
+
+  // included / required items are grouped by category on the customer's copy,
+  // the same as in the quote builder (Max, 15 Oct 2026)
+  const lines = (q.lines || []).map((l) => ({ ...l }));
+  const kitIds = [...new Set(lines.filter((l) => l.type === 'kit' && l.itemId).map((l) => l.itemId))];
+  if (kitIds.length) {
+    try {
+      const docs = await db.getAll(...kitIds.map((id) => db.collection('inventory').doc(id)));
+      const cat = {};
+      docs.forEach((d) => { if (d.exists) cat[d.id] = String(d.data().category || ''); });
+      lines.forEach((l) => { if (l.type === 'kit') l.category = cat[l.itemId] || ''; });
+    } catch (e) { logger.warn('getQuote categories', e); }
+  }
+
   return {
     number: q.number,
     invoiceNumber: q.invoiceNumber || '',
@@ -2695,7 +2710,7 @@ exports.getQuote = onCall(async (request) => {
     status: q.status,
     customer: q.customer || {},
     hire: q.hire || {},
-    lines: q.lines || [],
+    lines,
     notes: q.notes || '',
     terms: q.terms || '',
     subtotalCents: q.subtotalCents || 0,
@@ -2781,7 +2796,8 @@ exports.sendLeadEmail = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (reque
 const { expandKit: botExpandKit } = require('./lib/kit');
 
 const BOT_KM_RATE_CENTS = 80;        // $0.80/km travelled
-const BOT_LABOUR_RATE_CENTS = 6000;  // $60/hr
+const { labourParts } = require('./lib/labour');   // $85/hr + loadings (Max, 15 Oct 2026)
+const BOT_LABOUR_RATE_CENTS = 8500;  // $85/hr
 const BOT_PACKDOWN_PCT = 0.75;
 const BOT_ZONES = [
   ['Bowen (local)', 0], ['Merinda', 12], ['Guthalungra', 38], ['Proserpine', 64],
@@ -2917,10 +2933,14 @@ exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
     const accessMins = access === 'tricky' ? 120 : (access === 'stairs' ? 60 : 0);
     const setupTotal = mins + accessMins;
     if (setupTotal > 0) {
-      const totalMins = setupTotal + Math.round(setupTotal * BOT_PACKDOWN_PCT);
-      const hrs = Math.max(1, Math.ceil(totalMins / 60));
+      // same rates as the admin quote builder (lib/labour.js): $85/hr + weekend / public holiday loadings
+      const iso = /^\d{4}-\d{2}-\d{2}$/.test(String(a.eventDateISO || '')) ? a.eventDateISO : '';
       const note = accessMins ? ` (incl. ${access} access)` : '';
-      lines.push({ type: 'labour', name: 'Setup & pack-down', description: `${hrs} hr${hrs === 1 ? '' : 's'} @ $60/hr${note}`, qty: 1, unitCents: hrs * BOT_LABOUR_RATE_CENTS, days: 1 });
+      labourParts(setupTotal, { startDate: iso, endDate: iso, town }).forEach((p) => lines.push({
+        type: 'labour', name: p.lineName,
+        description: p.lineDesc + note + (iso ? '' : ' – weekend & public holiday surcharges may apply'),
+        qty: 1, unitCents: p.cents, days: 1,
+      }));
     }
     const del = km * 2 * BOT_KM_RATE_CENTS;
     if (del > 0) lines.push({ type: 'delivery', name: 'Delivery & pickup' + (town ? ' — ' + town : ''), description: `${km}km each way`, qty: 1, unitCents: del, days: 1 });

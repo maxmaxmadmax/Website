@@ -21,7 +21,7 @@
 
 import {
   firebaseConfig, functionsRegion, isFirebaseConfigured,
-} from './firebase-config.js?v=381';
+} from './firebase-config.js?v=386';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -405,7 +405,7 @@ async function askContact() {
         <input type="tel" name="phone" autocomplete="tel">
       </label>
       <label class="sgq-field">
-        <span>Event date <em>(optional)</em></span>
+        <span>Event date <em>(optional – lets us include any weekend or public holiday surcharge)</em></span>
         <input type="date" name="eventDate">
       </label>
       <label class="sgq-field">
@@ -449,6 +449,7 @@ async function submit(form) {
   answers.email = email;
   answers.phone = val('phone');
   answers.eventDate = formatEventDate(val('eventDate'));
+  answers.eventDateISO = val('eventDate');   // lets the quote price weekend / holiday labour
   answers.message = val('message');
 
   btn.disabled = true;
