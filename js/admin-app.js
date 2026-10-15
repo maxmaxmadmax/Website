@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=370';
+} from './firebase-config.js?v=376';
 
-import { expandKit } from './kit.js?v=370';
+import { expandKit } from './kit.js?v=376';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5404,7 +5404,7 @@ function wireInvReqs() {
 function blankQuote() {
   return {
     kind: 'quote',
-    customer: { name: '', business: '', email: '', phone: '', address: '', eventName: '', eventDate: '' },
+    customer: { name: '', business: '', email: '', ccEmail: '', phone: '', address: '', eventName: '', eventDate: '' },
     hire: { startDate: '', endDate: '', days: 1 },
     lines: [],
     discountCents: 0,
@@ -5700,6 +5700,7 @@ function quoteBuilderHtml() {
         <div class="qb-bar-title"><h1>${esc(docWord)} #${esc(num)}</h1>${doc ? qdocPill(status) : '<span class="ad-pill ad-pill-grey">New</span>'}</div>
         <div class="qb-bar-spacer"></div>
         ${link ? `<a class="ad-btn ad-btn-ghost" href="${attr(link)}" target="_blank" rel="noopener">Preview</a>` : ''}
+        <span class="qb-auto" id="q-auto"></span>
         <button type="button" class="ad-btn${doc ? '' : ' ad-btn-primary'}" id="q-save">Save</button>
         ${doc ? `<button type="button" class="ad-btn ad-btn-primary" id="q-send">${status === 'draft' ? '&#9993; Send Quote' : '&#9993; Resend'}</button>` : ''}
       </div>
@@ -5742,6 +5743,7 @@ function quoteBuilderHtml() {
             <input class="qb-cin" data-qc="address" value="${attr(c.address)}" placeholder="Address">
             <input class="qb-cin" data-qc="phone" value="${attr(c.phone)}" placeholder="Phone">
             <input class="qb-cin" type="email" data-qc="email" value="${attr(c.email)}" placeholder="Email">
+            <input class="qb-cin qb-cin-cc" type="email" data-qc="ccEmail" value="${attr(c.ccEmail || '')}" placeholder="CC email (optional - gets a copy)">
           </div>
           <div class="qb-hire">
             <p class="qb-block-h">Hire period</p>
@@ -5825,6 +5827,7 @@ function quoteBuilderHtml() {
 function renderQuoteLines() {
   const host = document.getElementById('q-lines');
   if (!host) return;
+  scheduleQuoteAutosave();   // a line was added, removed or moved (ignored while drawing)
   const days = Math.max(1, Math.round(quoteDraft.hire.days || 1));
 
   if (!quoteDraft.lines.length) {
@@ -6120,6 +6123,7 @@ function wireQuoteDrag(lines) {
 }
 
 function wireQuoteBuilder() {
+  qAutoReady = false;   // drawing the quote is not a change
   renderQuoteLines();
   wireQuoteCustSearch();
 
@@ -6127,7 +6131,7 @@ function wireQuoteBuilder() {
   if (!wrap) return;
 
   const back = document.getElementById('q-back');
-  if (back) back.addEventListener('click', () => { state.openQuoteId = null; render(); });
+  if (back) back.addEventListener('click', async () => { await flushQuoteAutosave(); state.openQuoteId = null; render(); });
 
   // customer / hire / meta fields
   wrap.addEventListener('input', (e) => {
@@ -6211,7 +6215,12 @@ function wireQuoteBuilder() {
   wireQuoteDrag(lines);
 
   const save = document.getElementById('q-save');
-  if (save) save.addEventListener('click', () => saveQuoteDoc(save));
+  if (save) save.addEventListener('click', () => { clearTimeout(qAutoTimer); qAutoTimer = null; saveQuoteDoc(save); });
+
+  // auto-save: any typing in the quote (not the two search boxes) or any line change
+  wrap.addEventListener('input', (e) => { if (!e.target.closest('#q-inv-search, #qb-cust-input')) scheduleQuoteAutosave(); });
+  wrap.addEventListener('change', (e) => { if (!e.target.closest('#q-inv-search, #qb-cust-input')) scheduleQuoteAutosave(); });
+  qAutoReady = true;
 
   wireQuoteActions();
 }
@@ -6284,6 +6293,75 @@ function quoteDraftForSave() {
     labourExcluded: quoteDraft.labourExcluded === true,
     delivery: { town: quoteDraft.deliveryTown || '', km },
   };
+}
+
+/* -------------------------------------------------------------------------
+   AUTO-SAVE (Max, 15 Oct 2026)
+   Quotes and invoices save themselves 1.5 seconds after you stop typing or
+   change a line. A brand-new quote waits until it has a customer name or a
+   line item, so opening "New quote" and walking away doesn't use a number.
+   Leaving the quote ("All quotes") saves anything still waiting.
+   ------------------------------------------------------------------------- */
+let qAutoTimer = null, qAutoBusy = false, qAutoAgain = false, qAutoReady = false;
+
+function quoteAutoMsg(text, cls) {
+  const m = document.getElementById('q-auto');
+  if (m) { m.textContent = text; m.className = 'qb-auto' + (cls ? ' ' + cls : ''); }
+}
+
+function scheduleQuoteAutosave() {
+  if (!qAutoReady) return;
+  clearTimeout(qAutoTimer);
+  quoteAutoMsg('Unsaved changes…');
+  qAutoTimer = setTimeout(runQuoteAutosave, 1500);
+}
+
+async function runQuoteAutosave() {
+  clearTimeout(qAutoTimer); qAutoTimer = null;
+  if (!state.openQuoteId || !quoteDraft) return;   // still saves if you clicked to another tab
+  const isNew = state.openQuoteId === '__new__';
+  const c = quoteDraft.customer || {};
+  if (isNew && !String(c.name || '').trim() && !(quoteDraft.lines || []).length) { quoteAutoMsg(''); return; }
+  if (qAutoBusy) { qAutoAgain = true; return; }
+  qAutoBusy = true;
+  quoteAutoMsg('Saving…');
+  try {
+    await saveQuoteDoc(null, true);
+    const t = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    if (isNew && state.view === 'quoteDocs') refreshQuoteKeepFocus();   // first save: show its number + Send button
+    quoteAutoMsg('Auto-saved ' + t, 'is-ok');
+  } catch (err) {
+    quoteAutoMsg('Auto-save failed - press Save', 'is-bad');
+  } finally {
+    qAutoBusy = false;
+    if (qAutoAgain) { qAutoAgain = false; scheduleQuoteAutosave(); }
+  }
+}
+
+/*  Save now if anything is waiting (used when leaving the quote). */
+async function flushQuoteAutosave() {
+  if (qAutoTimer || qAutoAgain) { qAutoAgain = false; await runQuoteAutosave(); }
+}
+
+/*  Re-draw the quote without losing your place in the box you're typing in. */
+function refreshQuoteKeepFocus() {
+  const a = document.activeElement;
+  let sel = null, start = null, end = null;
+  if (a && a.closest && a.closest('.q-build')) {
+    const ql = a.closest('[data-ql]');
+    for (const k of ['qc', 'qh', 'qmeta', 'lf']) {
+      if (a.dataset && a.dataset[k] != null) {
+        sel = (ql ? '[data-ql="' + ql.getAttribute('data-ql') + '"] ' : '') + '[data-' + k + '="' + a.dataset[k] + '"]';
+        break;
+      }
+    }
+    if (!sel && a.id) sel = '#' + a.id;
+    try { start = a.selectionStart; end = a.selectionEnd; } catch (e) { /* not a text box */ }
+  }
+  render();
+  if (!sel) return;
+  const b = document.querySelector('.q-build ' + sel);
+  if (b) { b.focus(); try { if (start != null) b.setSelectionRange(start, end); } catch (e) { /* ok */ } }
 }
 
 async function saveQuoteDoc(btn, quiet) {
@@ -7329,8 +7407,8 @@ async function deleteResource(btn) {
      Saving the quote adds a new customer, or updates the picked one with any
      changed details (Max's choice: update automatically).
    ========================================================================= */
-const CUST_TYPES = { private: 'Private', business: 'Business', council: 'Council', school: 'School', club: 'Club' };
-const CUST_TYPE_PILL = { private: 'inv-st-slate', business: 'inv-st-blue', council: 'inv-st-green', school: 'inv-st-amber', club: 'inv-st-amber' };
+const CUST_TYPES = { private: 'Private', business: 'Business', nfp: 'Not-for-profit', council: 'Council', school: 'School', club: 'Club' };
+const CUST_TYPE_PILL = { private: 'inv-st-slate', business: 'inv-st-blue', nfp: 'inv-st-green', council: 'inv-st-green', school: 'inv-st-amber', club: 'inv-st-amber' };
 
 let customerDraft = null;
 let quoteCustomerId = '';   // the customer picked on the quote being edited
@@ -7380,13 +7458,13 @@ function subscribeToCustomers() {
 }
 
 function blankCustomer() {
-  return { name: '', business: '', type: 'private', address: '', phone: '', email: '', notes: '' };
+  return { name: '', business: '', type: 'private', address: '', phone: '', email: '', ccEmail: '', notes: '' };
 }
 function customerFromDoc(d) {
   return {
     name: d.name || '', business: d.business || '',
     type: CUST_TYPES[d.type] ? d.type : 'private',
-    address: d.address || '', phone: d.phone || '', email: d.email || '', notes: d.notes || '',
+    address: d.address || '', phone: d.phone || '', email: d.email || '', ccEmail: d.ccEmail || '', notes: d.notes || '',
   };
 }
 function cleanCustomer(c) {
@@ -7394,7 +7472,7 @@ function cleanCustomer(c) {
   return {
     name: t(c.name, 120), business: t(c.business, 120),
     type: CUST_TYPES[c.type] ? c.type : 'private',
-    address: t(c.address, 300), phone: t(c.phone, 40), email: t(c.email, 200), notes: t(c.notes, 2000),
+    address: t(c.address, 300), phone: t(c.phone, 40), email: t(c.email, 200), ccEmail: t(c.ccEmail, 200), notes: t(c.notes, 2000),
     updatedAt: Date.now(),
   };
 }
@@ -7450,7 +7528,7 @@ function customerMainHtml() {
           ${invTile('&#128101;', 'inv-t-slate', rows.length, 'Customers', '')}
           ${invTile('&#127968;', 'inv-t-green', count('private'), 'Private', '')}
           ${invTile('&#127970;', 'inv-t-blue', count('business'), 'Business', '')}
-          ${invTile('&#127963;', 'inv-t-amber', count('council') + count('school') + count('club'), 'Council, schools &amp; clubs', '')}
+          ${invTile('&#127963;', 'inv-t-amber', count('nfp') + count('council') + count('school') + count('club'), 'Not-for-profits, councils, schools &amp; clubs', '')}
         </div>
 
         <div class="inv-toolbar">
@@ -7551,10 +7629,12 @@ function customerDetailHtml() {
             <input class="ad-input" data-cf="business" value="${attr(c.business)}"></label>
           <label class="ad-field"><span>Type</span>
             <select class="ad-select" data-cf="type">${Object.keys(CUST_TYPES).map(typeOpt).join('')}</select></label>
-          <label class="ad-field"><span>Phone</span>
+          <label class="ad-field inv-span2"><span>Phone</span>
             <input class="ad-input" data-cf="phone" value="${attr(c.phone)}"></label>
-          <label class="ad-field"><span>Email</span>
+          <label class="ad-field inv-span2"><span>Email</span>
             <input class="ad-input" type="email" data-cf="email" value="${attr(c.email)}"></label>
+          <label class="ad-field inv-span2"><span>CC email (optional)</span>
+            <input class="ad-input" type="email" data-cf="ccEmail" value="${attr(c.ccEmail)}" placeholder="e.g. accounts@ - also gets a copy"></label>
           <label class="ad-field inv-span2"><span>Address</span>
             <input class="ad-input" data-cf="address" value="${attr(c.address)}"></label>
           <label class="ad-field inv-span2"><span>Notes</span>
@@ -7751,8 +7831,9 @@ function pickQuoteCustomer(id) {
   const r = (state.customers || []).find((x) => x.id === id);
   if (!r) return;
   quoteCustomerId = id;
-  quoteDraft.customer = { ...quoteDraft.customer, name: r.name || '', business: r.business || '', address: r.address || '', phone: r.phone || '', email: r.email || '' };
+  quoteDraft.customer = { ...quoteDraft.customer, name: r.name || '', business: r.business || '', address: r.address || '', phone: r.phone || '', email: r.email || '', ccEmail: r.ccEmail || '' };
   render();
+  scheduleQuoteAutosave();
 }
 
 /*  After a quote saves: update the picked customer's details, or add a new
@@ -7767,7 +7848,7 @@ async function syncCustomerFromQuote() {
     const target = picked || findCustomerMatch(c);
     if (target) {
       const changes = {};
-      ['name', 'business', 'address', 'phone', 'email'].forEach((k) => {
+      ['name', 'business', 'address', 'phone', 'email', 'ccEmail'].forEach((k) => {
         const v = String(c[k] || '').trim();
         if (v && v !== (target[k] || '')) changes[k] = v.slice(0, k === 'address' ? 300 : 200);
       });
@@ -7793,7 +7874,7 @@ function startQuoteForCustomer(id) {
   const r = (state.customers || []).find((x) => x.id === id);
   if (!r) return;
   quoteDraft = blankQuote();
-  quoteDraft.customer = { ...quoteDraft.customer, name: r.name || '', business: r.business || '', address: r.address || '', phone: r.phone || '', email: r.email || '' };
+  quoteDraft.customer = { ...quoteDraft.customer, name: r.name || '', business: r.business || '', address: r.address || '', phone: r.phone || '', email: r.email || '', ccEmail: r.ccEmail || '' };
   quoteCustomerId = id;
   state.openCustomerId = null;
   state.openQuoteId = '__new__';

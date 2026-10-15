@@ -4070,3 +4070,8 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 
 /* a printed / PDF quote never shows the search box */
 @media print{ .qb-cust-find{ display:none !important; } }
+
+/* quote auto-save status, next to Save (Max, 15 Oct 2026) */
+.qb-auto{ font-size:.8rem; color:#8a8a94; margin-right:6px; white-space:nowrap; }
+.qb-auto.is-ok{ color:#2e9d5b; }
+.qb-auto.is-bad{ color:#d33; font-weight:600; }

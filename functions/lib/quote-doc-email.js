@@ -100,6 +100,8 @@ async function sendQuoteLinkEmail(q, link) {
     await tx.sendMail({
       from: `${SELLER.name} <${SELLER.email}>`,
       to,
+      // the customer's CC address (e.g. their accounts team) gets a copy - Max, 15 Oct 2026
+      ...(q.customer && q.customer.ccEmail && q.customer.ccEmail.toLowerCase() !== String(to).toLowerCase() ? { cc: q.customer.ccEmail } : {}),
       replyTo: OFFICE,
       subject: `Your ${docLabel(q)} ${q.kind === 'invoice' ? (q.invoiceNumber || q.number) : q.number} from SoundzGood`,
       text: text(q, link),

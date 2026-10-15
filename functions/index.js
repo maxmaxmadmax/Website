@@ -2542,6 +2542,8 @@ function sanitizeQuote(q) {
     name: text(q.customer && q.customer.name, 120),
     business: text(q.customer && q.customer.business, 120),
     email: text(q.customer && q.customer.email, 200),
+    // a second address that gets a copy of the quote / invoice email (accounts etc.)
+    ccEmail: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text(q.customer && q.customer.ccEmail, 200)) ? text(q.customer && q.customer.ccEmail, 200) : '',
     phone: text(q.customer && q.customer.phone, 40),
     address: text(q.customer && q.customer.address, 300),
     eventName: text(q.customer && q.customer.eventName, 160),
