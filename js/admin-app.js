@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=379';
+} from './firebase-config.js?v=381';
 
-import { expandKit } from './kit.js?v=379';
+import { expandKit } from './kit.js?v=381';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5823,6 +5823,34 @@ function quoteBuilderHtml() {
     </div>`;
 }
 
+/*  INCLUDED / REQUIRED ROWS, GROUPED (Max, 15 Oct 2026)
+    Under each item, its included gear is shown by inventory category as
+    small sub-headings - Cable, then Stands... - each A-Z, and sitting
+    inside the item (no dividing line).                                  */
+function kitCategoryOf() {
+  const cats = {};
+  (typeof invItems === 'function' ? invItems() : []).forEach((it) => { cats[it.id] = it.category || ''; });
+  return (l) => {
+    const c = String(cats[l.itemId] || '').trim();
+    return c ? c.charAt(0).toUpperCase() + c.slice(1) : 'Other';
+  };
+}
+
+function sortKitGroups() {
+  const cat = kitCategoryOf();
+  const L = quoteDraft.lines;
+  for (let i = 0; i < L.length; i++) {
+    if (L[i].type !== 'kit') continue;
+    let end = i;
+    while (end < L.length && L[end].type === 'kit') end++;
+    const group = L.slice(i, end).sort((a, b) =>
+      cat(a).localeCompare(cat(b), undefined, { sensitivity: 'base' })
+      || String(a.name || '').localeCompare(String(b.name || ''), undefined, { numeric: true, sensitivity: 'base' }));
+    L.splice(i, end - i, ...group);
+    i = end - 1;
+  }
+}
+
 function renderQuoteLines() {
   const host = document.getElementById('q-lines');
   if (!host) return;
@@ -5834,6 +5862,9 @@ function renderQuoteLines() {
     renderQuoteTotals();
     return;
   }
+
+  sortKitGroups();
+  const kitCat = kitCategoryOf();
 
   host.innerHTML = quoteDraft.lines.map((l, i) => {
     if (l.type === 'discount') {
@@ -5855,8 +5886,11 @@ function renderQuoteLines() {
 
     // Kit / required lines render as a read-only sub-row grouped under the item above.
     if (l.type === 'kit') {
-      const prevWasKit = i > 0 && quoteDraft.lines[i - 1].type === 'kit';
-      const header = prevWasKit ? '' : '<div class="qb-subhead">Included / required items</div>';
+      // a sub-heading each time the category changes (Cable, then Stands...)
+      const prev = quoteDraft.lines[i - 1];
+      const cat = kitCat(l);
+      const header = prev && prev.type === 'kit' && kitCat(prev) === cat ? ''
+        : '<div class="qb-subhead' + (prev && prev.type === 'kit' ? ' qb-subhead-next' : '') + '">' + esc(cat) + '</div>';
       const free = l.charge === 'free' || !l.unitCents;
       return `${header}
         <div class="qb-row qb-row-sub" data-ql="${i}" data-sub>
@@ -5942,17 +5976,39 @@ function addInvLineToQuote(itemId) {
   });
 
   // Auto-add the required kit for one of these.
-  const kit = expandKit({ [it.id]: 1 }, byId);
-  kit.required.forEach((r) => {
+  quoteDraft.lines.push(...kitLinesFor(it.id, 1, byId, days));
+
+  renderQuoteLines();
+}
+
+/*  The included / required lines for qty of one item (via js/kit.js). */
+function kitLinesFor(itemId, qty, byId, days) {
+  if (!qty) return [];
+  const kit = expandKit({ [itemId]: qty }, byId);
+  return kit.required.map((r) => {
     const charged = r.charge === 'normal';
-    quoteDraft.lines.push({
+    return {
       type: 'kit', itemId: r.itemId, name: r.name + (r.charge === 'free' ? ' (included)' : ''),
       qty: r.qty, unitCents: charged ? r.unitCents : 0, charge: r.charge,
       days: charged ? days : 1,
-    });
+    };
   });
+}
 
-  renderQuoteLines();
+/*  An item's quantity changed: re-work its included / required lines so
+    3 Stage Decks bring 12 legs, not the 4 worked out when it was added
+    (Max, 15 Oct 2026). Replaces the kit rows directly under that item.  */
+function rebuildKitForLine(i) {
+  const line = quoteDraft.lines[i];
+  if (!line || line.type !== 'item' || !line.itemId) return false;
+  const byId = {};
+  (typeof invItems === 'function' ? invItems() : []).forEach((it) => { byId[it.id] = it; });
+  if (!byId[line.itemId]) return false;
+  let end = i + 1;
+  while (end < quoteDraft.lines.length && quoteDraft.lines[end].type === 'kit') end++;
+  const days = Math.max(1, Math.round(quoteDraft.hire.days || 1));
+  quoteDraft.lines.splice(i + 1, end - (i + 1), ...kitLinesFor(line.itemId, Math.max(0, Math.round(line.qty || 0)), byId, days));
+  return true;
 }
 
 /* -------------------------------------------------------------------------
@@ -6260,7 +6316,14 @@ function wireQuoteBuilder() {
 
   // auto-save: any typing in the quote (not the two search boxes) or any line change
   wrap.addEventListener('input', (e) => { if (!e.target.closest('#q-inv-search, #qb-cust-input')) scheduleQuoteAutosave(); });
-  wrap.addEventListener('change', (e) => { if (!e.target.closest('#q-inv-search, #qb-cust-input')) scheduleQuoteAutosave(); });
+  wrap.addEventListener('change', (e) => {
+    const t = e.target;
+    if (t.dataset && t.dataset.lf === 'qty') {
+      const row = t.closest('[data-ql]');
+      if (row && rebuildKitForLine(Number(row.getAttribute('data-ql')))) renderQuoteLines();
+    }
+    if (!t.closest('#q-inv-search, #qb-cust-input')) scheduleQuoteAutosave();
+  });
   qAutoReady = true;
 
   wireQuoteActions();

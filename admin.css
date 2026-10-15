@@ -4098,3 +4098,11 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-row-sub .qb-c-rate{ padding-right:8px; }       /* "Included" ends where the rate figures end */
 .qb-row-sub .qb-c-total{ padding-right:0; }
 .qb-thead .qb-c-rate{ padding-right:8px; }
+
+/* included gear sits INSIDE its item: no line above, category sub-headings
+   (Cable, Stands...) indented under the item name (Max, 15 Oct 2026) */
+.qb-row[data-top] + .qb-subhead{ border-top:none; }
+.qb-subhead{ padding:2px 12px 0 46px; font-size:.6rem; color:var(--ad-faint); }
+.qb-subhead-next{ border-top:none; padding-top:3px; }
+.qb-row-sub .qb-c-desc{ padding-left:22px; }
+.qb-row[data-top]:has(+ .qb-subhead){ padding-bottom:2px; }
