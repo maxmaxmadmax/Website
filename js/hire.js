@@ -10,7 +10,7 @@
    page shows a friendly empty state rather than throwing.
    ========================================================================== */
 
-import { firebaseConfig, isFirebaseConfigured } from './firebase-config.js?v=368';
+import { firebaseConfig, isFirebaseConfigured } from './firebase-config.js?v=369';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 

@@ -16,11 +16,11 @@
       and the two would fight each other. Keeping them apart also means
       nothing done in here can reach the public site, and nothing done
       there can reach this.                                             -->
-<link rel="stylesheet" href="admin.css?v=368">
+<link rel="stylesheet" href="admin.css?v=369">
 <!--  The DJ list for the Friday Nights panel. Same roster the
         entertainment page shows.                                  -->
-  <script src="js/roster.js?v=368" defer></script>
-  <script type="module" src="js/admin-app.js?v=368"></script>
+  <script src="js/roster.js?v=369" defer></script>
+  <script type="module" src="js/admin-app.js?v=369"></script>
   <!-- ADMIN AUTO-UPDATE: phones may keep this page for up to 10 min after a
        change is published. On open (and when the tab comes back into view) we
        ask for the live page, bypassing any cache; if its version is newer than
@@ -172,6 +172,16 @@
       <button type="button" class="ad-nav-item" data-view="settings">
         <span class="ad-ico" aria-hidden="true">⚙</span> Settings
       </button>
+      <!-- the version this page is running, read off the admin-app.js?v= number
+           (bumped on every update) - compare with what Claude says went live -->
+      <p class="ad-version" id="ad-version">Version &hellip;</p>
+      <script>
+        (function () {
+          var s = document.querySelector('script[src*="admin-app.js"]');
+          var m = s && s.getAttribute('src').match(/v=(\d+)/);
+          document.getElementById('ad-version').textContent = 'Version ' + (m ? m[1] : '?');
+        }());
+      </script>
     </nav>
 
     <!--  The panel at the foot of Max's drawing. A photograph would mean
