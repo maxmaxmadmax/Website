@@ -1139,3 +1139,37 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-subline{ margin:3mm 0 1mm !important; }
     .ep-intro{ margin-top:2mm !important; font-size:11.5pt !important; }
 }
+
+/* ---- free jumping castle card (Max, 15 Oct 2026) ---- */
+.ep-ent{ grid-template-rows:auto auto auto auto; }
+.ep-ent-band{ grid-row:span 4; }
+.ep-ent-castle{
+    background:#fff;
+    color:var(--ep-ink);
+    display:flex;
+    align-items:center;
+    gap:16px;
+}
+.ep-castle-pic{ flex:none; width:38%; max-width:170px; height:auto; }
+.ep-castle-by{ display:flex; align-items:center; gap:10px; margin:6px 0 0; font-weight:bold; font-size:.9rem; }
+.ep-castle-by img{ height:44px; width:auto; border-radius:4px; }
+
+@media (max-width:900px){ .ep-ent-band{ grid-row:auto; } }
+
+@media print{
+    .ep-ent{ grid-template-rows:1fr 1fr 1fr 1fr !important; }
+    .ep-ent-band{ grid-row:1 / span 4 !important; }
+    .ep-castle-pic{ width:26mm; }
+    .ep-castle-by{ font-size:8.5pt; }
+    .ep-castle-by img{ height:9mm; }
+    .ep-ent-card:not(.ep-ent-band){ padding:3.5mm 5mm !important; }
+    .ep-ent-card:not(.ep-ent-band) h3{ font-size:17pt !important; margin-bottom:1mm !important; }
+    .ep-ent-card .ep-kicker{ margin-bottom:1mm !important; }
+}
+@media print{
+    .ep-ent-card.ep-ent-castle{ flex-direction:row !important; align-items:center !important; justify-content:flex-start !important; gap:4mm; overflow:hidden; }
+    .ep-castle-pic{ width:24mm !important; }
+}
+.ep-castle-time{ margin:2px 0 0; font-weight:bold; color:var(--ep-orange); font-size:.9rem; }
+@media print{ .ep-castle-time{ font-size:8.5pt; } }
+@media print{ .ep-ent-castle .ep-kicker{ display:none; } .ep-castle-by{ margin-top:1mm; } }
