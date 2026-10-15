@@ -4118,3 +4118,5 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-labph{ display:inline-flex; align-items:center; gap:5px; margin-top:2px;
            font-size:.72rem; color:var(--ad-muted); cursor:pointer; }
 .qb-labph input{ margin:0; }
+/* "Included" in light grey, not green (Max, 15 Oct 2026) */
+.qb-incl{ color:#aaa; }

@@ -7,7 +7,7 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=390';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=393';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -128,7 +128,7 @@ function render(q) {
       const last = !next || next.type !== 'kit';
       return `${head}
       <tr class="qv-kit${last ? ' qv-kit-last' : ''}">
-        <td class="qv-desc"><span class="qv-arrow">&#8627;</span>${esc(l.name || '')}</td>
+        <td class="qv-desc"><span class="qv-arrow">&#9492;</span>${esc(l.name || '')}</td>
         <td class="qv-num">${esc(l.qty)}</td>
         <td class="qv-num">${charged ? money(l.unitCents) : '<span class="qv-incl">Included</span>'}</td>
         <td class="qv-num">${charged ? esc(Math.max(1, Math.round(l.days || days))) : ''}</td>
@@ -170,7 +170,7 @@ function render(q) {
       ${banner}
       <div class="qv-top">
         <div class="qv-brand">
-          <img src="/images/logowhite.png" alt="SoundzGood" class="qv-logo">
+          <img src="/images/logo-quote.png" alt="SoundzGood Whitsundays" class="qv-logo">
           <p class="qv-legal">${esc(SELLER.legal)}<br>ABN ${esc(SELLER.abn)}</p>
         </div>
         <div class="qv-meta">
@@ -191,7 +191,7 @@ function render(q) {
         </div>
         <div>
           <h3>Job</h3>
-          <p>${c.eventName ? '<strong>' + esc(c.eventName) + '</strong><br>' : ''}${c.eventDate ? esc(c.eventDate) + '<br>' : ''}${hireRange(q.hire) ? esc(hireRange(q.hire)) + '<br>' : ''}${days > 1 ? days + ' days charged' : ''}</p>
+          <p>${c.eventName ? '<strong>' + esc(c.eventName) + '</strong><br>' : ''}${c.eventDate ? esc(c.eventDate) + '<br>' : ''}${hireRange(q.hire) && hireRange(q.hire) !== String(c.eventDate || '').trim() ? esc(hireRange(q.hire)) + '<br>' : ''}${days > 1 ? days + ' days charged' : ''}</p>
         </div>
       </div>
 

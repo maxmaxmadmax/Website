@@ -122,3 +122,44 @@
 /* "Setup & pack-down · 4.5 hrs total" heading over the two labour lines */
 .qv-labhead td { padding: 12px 10px 0; border-bottom: none; font-size: 11px; font-weight: 700;
                  letter-spacing: .05em; text-transform: uppercase; color: #999; }
+/* "Included" in light grey, not green (Max, 15 Oct 2026) */
+.qv-incl { color: #aaa; }
+
+/* ==========================================================================
+   CUSTOMER QUOTE - Max's mock-up, black & white (15 Oct 2026)
+   ========================================================================== */
+.qv-logo { height: 54px; background: none; padding: 0; border-radius: 0; }
+.qv-meta h1 { color: #111; font-size: 40px; font-weight: 900; letter-spacing: 0; }
+.qv-top { border-bottom: 1px solid #ddd; }
+
+/* three columns with thin dividers */
+.qv-parties { gap: 0; }
+.qv-parties > div { padding: 0 20px; border-left: 1px solid #e5e5e5; }
+.qv-parties > div:first-child { padding-left: 0; border-left: none; }
+
+/* table: grey heading band, items as blocks */
+.qv-table { border: 1px solid #ececec; border-radius: 8px; border-collapse: separate; border-spacing: 0; overflow: hidden; }
+.qv-table thead th { background: #f2f2f3; border-bottom: none; color: #555; padding: 11px 14px; }
+.qv-table td { padding: 12px 14px; }
+.qv-table td:first-child, .qv-table th:first-child { padding-left: 16px; }
+.qv-table tbody tr:last-child td { border-bottom: none; }
+
+/* included gear: a light grey panel inside its item */
+.qv-kithead td, .qv-kit td { background: #f7f7f8; }
+.qv-kithead td { padding: 8px 14px 2px 22px; color: #999; }
+.qv-kit td { padding: 3px 14px; }
+.qv-kit .qv-desc { padding-left: 22px; }
+.qv-kit-last td { padding-bottom: 10px; border-bottom: 1px solid #ececec; }
+.qv-arrow { color: #bbb; margin-right: 8px; font-size: 11px; }
+
+/* setup & pack-down: grey heading band */
+.qv-labhead td { background: #f2f2f3; padding: 10px 16px; color: #555; border-bottom: 1px solid #ececec; }
+
+/* summary: total in bold black */
+.qv-grand { border-top: 2px solid #111; }
+.qv-grand span:last-child { font-size: 20px; color: #111; }
+
+@media (max-width: 640px) {
+  .qv-parties > div { border-left: none; padding: 0; }
+}
+.qv-logo { height: 64px; }
