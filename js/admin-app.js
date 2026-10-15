@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=367';
+} from './firebase-config.js?v=368';
 
-import { expandKit } from './kit.js?v=367';
+import { expandKit } from './kit.js?v=368';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -531,7 +531,7 @@ function subscribeToInventory() {
           would wipe whatever the user is part-way through typing. Refresh
           only the table; the open panel is left exactly as it is.        */
       if (state.view === 'inventory') {
-        if (state.openInvId) renderInvRows();
+        if (state.openInvId) { renderInvRows(); refreshInvReqOptions(); }
         else render();
       }
     },
@@ -5258,6 +5258,19 @@ function reqRowHtml(r, i, options) {
         ${discField}
       </div>
     </div>`;
+}
+
+/*  Items added or renamed while a panel is open (e.g. new stage legs) show
+    up in the "Required item" dropdowns straight away. Only the option list
+    is swapped - each dropdown keeps its choice, and nothing typed in the
+    panel is touched. (Max, 15 Oct 2026: legs were missing until reopened.) */
+function refreshInvReqOptions() {
+  const options = invReqOptions(state.openInvId);
+  document.querySelectorAll('#inv-reqs-list select[data-rf="itemId"]').forEach((sel) => {
+    const keep = sel.value;
+    sel.innerHTML = '<option value="">Choose item&hellip;</option>' + options.map((o) =>
+      `<option value="${attr(o.id)}"${keep === o.id ? ' selected' : ''}>${esc(o.name)}</option>`).join('');
+  });
 }
 
 function renderInvReqs() {
