@@ -1173,3 +1173,113 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 .ep-castle-time{ margin:2px 0 0; font-weight:bold; color:var(--ep-orange); font-size:.9rem; }
 @media print{ .ep-castle-time{ font-size:8.5pt; } }
 @media print{ .ep-ent-castle .ep-kicker{ display:none; } .ep-castle-by{ margin-top:1mm; } }
+
+/* ==========================================================================
+   PRINT COVER, per Max's mock-up (15 Oct 2026): big logo, big title, no
+   gaps - words stacked down the left, skeleton tucked bottom right.
+   ========================================================================== */
+@media print{
+    .ep-hero-inner{ display:block !important; position:relative; height:100%; }
+    .ep-hero-body{ display:block !important; position:relative; z-index:2; }
+    .ep-hero-body .ep-presents{ margin:0 0 4mm !important; font-size:10pt; }
+    .ep-logo{ display:block; width:92mm !important; margin:0 0 5mm !important; transform:rotate(-3deg); }
+    .ep-title{ font-size:98pt !important; line-height:.86; color:#fff3d6; margin:0; }
+    .ep-subline{ font-size:21pt !important; margin:5mm 0 6mm !important; }
+    .ep-intro{ width:112mm; font-size:12.5pt !important; margin:0 0 7mm !important; }
+    .ep-facts{ width:112mm; grid-template-columns:1fr 1fr !important; gap:3.5mm !important; margin:0 !important; }
+    .ep-facts li{ font-size:13pt !important; padding:4mm 5mm !important; }
+    .ep-hero-art{
+        position:absolute !important;
+        right:-13mm; bottom:-12mm;
+        width:92mm !important;
+        margin:0 !important;
+        z-index:1;
+    }
+    .ep-badge-round{ top:-4mm !important; left:-10mm !important; width:36mm !important; height:36mm !important; }
+    .ep-badge-free{ bottom:16mm !important; left:-16mm !important; }
+}
+@media print{
+    .ep-hero-body{ display:flex !important; flex-direction:column; align-items:flex-start; }
+    .ep-hero-body .ep-presents{ order:-1; align-self:stretch; text-align:center; }
+    .ep-intro{ width:auto !important; max-width:108mm !important; }
+    .ep-hero-art{ width:88mm !important; }
+    .ep-badge-round{ top:-14mm !important; left:auto !important; right:52mm; }
+}
+@media print{
+    /* sponsors = a full third of the A4 (Max, 15 Oct 2026) */
+    .ep-sponsors{ height:99mm !important; padding:5mm 6mm !important; }
+    .ep-sponsors .ep-h2{ font-size:24pt !important; margin-bottom:4mm !important; }
+    .ep-sponsor-grid{ gap:3.5mm !important; }
+    .ep-sponsor-grid li{ height:29mm !important; padding:2mm !important; }
+    .ep-sponsor-grid img{ max-height:25mm !important; }
+    .ep-sponsors p{ margin-top:4mm !important; }
+    .ep-print-url{ display:none !important; }
+    .ep-page-4 > .ep-section:has(.ep-sponsors){ padding-top:3mm !important; }
+    /* give the room back from market + FAQ */
+    .ep-page-4 .ep-big{ font-size:20pt !important; }
+    .ep-faq-head .ep-h2{ font-size:19pt !important; }
+    .ep-faq-item{ padding:1.3mm 2.4mm !important; }
+    .ep-faq-item p{ font-size:6.8pt !important; line-height:1.25 !important; }
+    .ep-faq-item b{ font-size:7.5pt !important; }
+}
+@media print{
+    /* cover: facts sit left under the intro; sticker clear of the words */
+    .ep-facts{ align-self:flex-start !important; }
+    .ep-intro{ max-width:100mm !important; }
+    .ep-badge-round{ top:-20mm !important; right:auto !important; left:30mm !important; }
+
+    /* page 4: the bottom third is one solid black band, edge to edge (Max, 15 Oct 2026) */
+    .ep-page-4{ padding-bottom:0 !important; }
+    .ep-page-4 > .ep-section:has(.ep-sponsors){
+        margin:auto -13mm 0 !important;
+        padding:0 !important;
+    }
+    .ep-sponsors{
+        height:99mm !important;
+        border-radius:0 !important;
+        padding:7mm 13mm 6mm !important;
+        display:flex !important;
+        flex-direction:column;
+        justify-content:space-between !important;
+        overflow:hidden;
+    }
+    .ep-sponsors .ep-h2{ margin:0 !important; font-size:26pt !important; }
+    .ep-sponsor-grid{ gap:3mm !important; flex:1; align-content:center; margin:4mm 0 !important; }
+    .ep-sponsor-grid li{ width:calc((100% - 12mm) / 5) !important; height:28mm !important; }
+    .ep-sponsor-grid img{ max-height:24mm !important; }
+    .ep-sponsors p{ margin:0 !important; font-size:10.5pt !important; }
+}
+@media print{ .ep-badge-round{ top:14mm !important; left:auto !important; right:14mm !important; width:32mm !important; height:32mm !important; font-size:12pt !important; } }
+@media print{
+    /* page 3: four even cards - same height, same padding, words centred */
+    .ep-ent{ grid-template-rows:repeat(4, 1fr) !important; gap:4mm !important; }
+    .ep-ent-card:not(.ep-ent-band){
+        display:flex !important;
+        flex-direction:column !important;
+        justify-content:center !important;
+        align-items:flex-start !important;
+        padding:4mm 6mm !important;
+        min-height:0;
+        overflow:hidden;
+    }
+    .ep-ent-card:not(.ep-ent-band) .ep-kicker{ margin:0 0 1.5mm !important; font-size:7pt !important; }
+    .ep-ent-card:not(.ep-ent-band) h3{ font-size:17pt !important; line-height:.95; margin:0 0 1.5mm !important; }
+    .ep-ent-card:not(.ep-ent-band) p:last-child{ font-size:9pt !important; line-height:1.35; margin:0; }
+    /* bingo: the stamp sits in the corner, clear of the words */
+    .ep-ent-bingo .ep-kicker{ padding-right:30mm; }
+    .ep-ent-badge{ position:absolute !important; top:3mm !important; right:3mm !important; font-size:9.5pt !important; padding:1.5mm 3mm !important; }
+    /* castle: picture left, words right, everything centred */
+    .ep-ent-card.ep-ent-castle{ flex-direction:row !important; align-items:center !important; gap:5mm !important; }
+    .ep-castle-pic{ width:24mm !important; }
+    .ep-ent-castle h3{ font-size:15pt !important; }
+    .ep-castle-time{ margin:0 0 1mm !important; }
+    .ep-castle-by{ white-space:nowrap; margin:0 !important; gap:2mm; }
+    .ep-castle-by img{ height:8mm !important; }
+    /* cover sticker: over the shirt, off the face */
+    .ep-badge-round{ top:46mm !important; right:4mm !important; }
+}
+@media print{
+    .ep-ent-bingo .ep-kicker{ padding-right:24mm !important; white-space:nowrap; }
+    .ep-ent-badge{ font-size:8.5pt !important; }
+    .ep-times-poster{ margin-top:7mm !important; }
+}
