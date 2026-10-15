@@ -214,3 +214,49 @@
 .qv-sumpart { padding-top: 2px !important; margin-top: 2px; }
 .qv-sumtotal { padding-top: 3px !important; }
 .qv-grand { padding-top: 5px !important; }
+
+/* ==========================================================================
+   PHONE (Max, 15 Oct 2026 - "not looking good on iPhone")
+   The paper fits the screen: tighter margins, smaller heading, the DAYS
+   column dropped (it's almost always 1), and every price kept on screen.
+   ========================================================================== */
+@media screen and (max-width: 640px) {
+  .qv-wrap { padding: 16px 8px 40px; }
+  .qv-doc { padding: 20px 14px; border-radius: 10px; overflow: hidden; }
+  .qv-top { gap: 10px; }
+  .qv-logo { height: 44px; }
+  .qv-meta h1 { font-size: 26px; }
+  .qv-ref { font-size: 13px; }
+  .qv-date { font-size: 11px; }
+  .qv-parties { grid-template-columns: 1fr; gap: 12px; margin: 14px 0; }
+  .qv-parties > div { padding: 0; border-left: none; }
+
+  .qv-table { table-layout: fixed; width: 100%; }
+  .qv-table th, .qv-table td { padding: 6px 6px; font-size: 12.5px; word-break: break-word; }
+  .qv-table th:first-child, .qv-table td:first-child { padding-left: 10px; width: auto; }
+  /* drop the DAYS column (4th) */
+  .qv-table th:nth-child(4), .qv-table td:nth-child(4) { display: none; }
+  .qv-table th:nth-child(2), .qv-table td:nth-child(2) { width: 34px; }
+  .qv-table th:nth-child(3), .qv-table td:nth-child(3) { width: 70px; }
+  .qv-table th:nth-child(5), .qv-table td:nth-child(5) { width: 72px; }
+  .qv-table thead th { font-size: 10px; letter-spacing: .03em; }
+  .qv-sub { font-size: 11px; }
+  .qv-kithead td { padding-left: 14px; }
+  .qv-kit .qv-desc { padding-left: 14px; }
+  .qv-kit td { font-size: 12px; }
+  .qv-kithead td, .qv-labhead td { font-size: 9.5px; }
+
+  .qv-sumwrap { width: 100%; }
+  .qv-grand span:last-child { font-size: 18px; }
+
+  .qv-actions { flex-direction: column; gap: 10px; }
+  .qv-actions .qv-btn { width: 100%; }
+}
+@media screen and (max-width: 640px) {
+  /* let the table fill the page; numbers stay narrow, names get the rest */
+  .qv-table { table-layout: auto; }
+  .qv-table th:nth-child(2), .qv-table td:nth-child(2),
+  .qv-table th:nth-child(3), .qv-table td:nth-child(3),
+  .qv-table th:nth-child(5), .qv-table td:nth-child(5) { width: 1%; white-space: nowrap; }
+  .qv-table td:first-child { word-break: normal; overflow-wrap: anywhere; }
+}
