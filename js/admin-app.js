@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=386';
+} from './firebase-config.js?v=390';
 
-import { expandKit } from './kit.js?v=386';
+import { expandKit } from './kit.js?v=390';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6041,7 +6041,8 @@ function renderQuoteTotals() {
   const ph = quoteDraft.labourPH || {};
   const labourRow = lab.cents ? `
     <div class="qb-sumrow qb-sumlabour">
-      <span><label class="qb-labtoggle"><input type="checkbox" data-qlabour${quoteDraft.labourExcluded ? '' : ' checked'}> Setup &amp; pack-down</label></span>
+      <span><label class="qb-labtoggle"><input type="checkbox" data-qlabour${quoteDraft.labourExcluded ? '' : ' checked'}> Setup &amp; pack-down</label>
+        <em class="qb-labnote">${lab.hours} hr${lab.hours === 1 ? '' : 's'} total</em></span>
       <span class="${quoteDraft.labourExcluded ? 'qb-laboff' : ''}">${quoteDraft.labourExcluded ? 'excluded' : esc(money(lab.cents))}</span>
     </div>
     ${quoteDraft.labourExcluded ? '' : lab.parts.map((p) => `

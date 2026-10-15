@@ -7,7 +7,7 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=386';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=390';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -76,6 +76,13 @@ function fmtDate(secs) {
   return new Date(secs * 1000).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+function labourRow(l, amt) {
+  return '<tr class="qv-lab"><td class="qv-desc">' + esc(l.name || '')
+    + (l.description ? '<span class="qv-sub">' + esc(l.description) + '</span>' : '')
+    + '</td><td class="qv-num">' + esc(l.qty) + '</td><td class="qv-num">' + money(l.unitCents)
+    + '</td><td class="qv-num">1</td><td class="qv-num">' + money(amt) + '</td></tr>';
+}
+
 function render(q) {
   const isInvoice = q.kind === 'invoice';
   const docTitle = isInvoice ? 'Tax Invoice' : 'Quote';
@@ -98,8 +105,20 @@ function render(q) {
     i = end - 1;
   }
 
+  // total labour hours, read from each line ("2.5 hrs @ $85/hr ...")
+  const labHrs = L.filter((l) => l.type === 'labour')
+    .reduce((t, l) => t + (parseFloat((/^([\d.]+) hrs?\b/.exec(l.description || '') || [])[1]) || 0), 0);
+
   const rows = L.map((l, i) => {
     const amt = lineAmount(l, days);
+    if (l.type === 'labour') {
+      // a heading over setup + pack-down with the total hours (Max, 15 Oct 2026)
+      const first = i === 0 || L[i - 1].type !== 'labour';
+      const head = first && labHrs
+        ? '<tr class="qv-labhead"><td colspan="5">Setup &amp; pack-down &middot; ' + labHrs + ' hr' + (labHrs === 1 ? '' : 's') + ' total</td></tr>'
+        : '';
+      return head + labourRow(l, amt);
+    }
     if (l.type === 'kit') {
       const prev = L[i - 1];
       const head = prev && prev.type === 'kit' && catOf(prev) === catOf(l) ? ''
