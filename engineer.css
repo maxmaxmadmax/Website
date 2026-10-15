@@ -362,3 +362,14 @@
     /* act lists: max two lines each on paper (the website shows them in full) */
     .eng-acts{ display:-webkit-box !important; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 }
+@media print{
+    /* full act lists again now the credits are trimmed (Max, 15 Oct 2026) */
+    .eng-acts{ display:block !important; -webkit-line-clamp:unset; overflow:visible; font-size:6.8pt !important; line-height:1.25 !important; }
+    .eng-credits td{ padding:.6mm 2mm .6mm 0 !important; }
+}
+@media print{
+    .eng-acts{ font-size:6.4pt !important; line-height:1.2 !important; }
+    .eng-credits td{ padding:.3mm 2mm .3mm 0 !important; }
+    .eng-intro{ margin-bottom:0 !important; }
+    .eng-a-credits{ margin-top:3mm !important; }
+}
