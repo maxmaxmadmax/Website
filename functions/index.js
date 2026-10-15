@@ -2693,13 +2693,13 @@ exports.getQuote = onCall(async (request) => {
   // included / required items are grouped by category on the customer's copy,
   // the same as in the quote builder (Max, 15 Oct 2026)
   const lines = (q.lines || []).map((l) => ({ ...l }));
-  const kitIds = [...new Set(lines.filter((l) => l.type === 'kit' && l.itemId).map((l) => l.itemId))];
+  const kitIds = [...new Set(lines.filter((l) => l.itemId).map((l) => l.itemId))];   // all gear lines: used for the Audio / Lighting / Staging breakdown too
   if (kitIds.length) {
     try {
       const docs = await db.getAll(...kitIds.map((id) => db.collection('inventory').doc(id)));
       const cat = {};
       docs.forEach((d) => { if (d.exists) cat[d.id] = String(d.data().category || ''); });
-      lines.forEach((l) => { if (l.type === 'kit') l.category = cat[l.itemId] || ''; });
+      lines.forEach((l) => { if (l.itemId) l.category = cat[l.itemId] || ''; });
     } catch (e) { logger.warn('getQuote categories', e); }
   }
 

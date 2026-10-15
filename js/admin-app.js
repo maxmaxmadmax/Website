@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=396';
+} from './firebase-config.js?v=403';
 
-import { expandKit } from './kit.js?v=396';
+import { expandKit } from './kit.js?v=403';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6032,6 +6032,34 @@ function renderQuoteLines() {
   renderQuoteTotals();
 }
 
+
+/*  COST BREAKDOWN GROUPS (Max, 15 Oct 2026) - KEEP IN STEP between
+    js/quote-view.js and js/admin-app.js. Inventory category -> group shown
+    in the totals ("Audio $180, Staging $180, Lighting $60").            */
+const COST_GROUP = {
+  audio: 'Audio', mixer: 'Audio', amp: 'Audio', microphone: 'Audio', iem: 'Audio', di: 'Audio',
+  'studio monitor': 'Audio', cable: 'Audio', stands: 'Audio',
+  lighting: 'Lighting', truss: 'Lighting',
+  stage: 'Staging', furniture: 'Staging',
+  backline: 'Backline', 'dj mixer': 'DJ equipment', vision: 'Vision', power: 'Power',
+};
+const COST_GROUP_ORDER = ['Audio', 'Lighting', 'Staging', 'Backline', 'DJ equipment', 'Vision', 'Power', 'Other'];
+function costGroupOf(category) {
+  return COST_GROUP[String(category || '').trim().toLowerCase()] || 'Other';
+}
+/*  [{ name, cents }] in the order above, only groups with a cost. */
+function costBreakdown(lines, centsOf, categoryOf) {
+  const sums = {};
+  (lines || []).forEach((l) => {
+    if (l.type === 'labour' || l.type === 'delivery' || l.type === 'discount') return;
+    const c = centsOf(l);
+    if (!c) return;
+    const g = l.itemId ? costGroupOf(categoryOf(l)) : 'Other';
+    sums[g] = (sums[g] || 0) + c;
+  });
+  return COST_GROUP_ORDER.filter((g) => sums[g]).map((g) => ({ name: g, cents: sums[g] }));
+}
+
 function renderQuoteTotals() {
   const host = document.getElementById('q-totals');
   if (!host) return;
@@ -6052,14 +6080,27 @@ function renderQuoteTotals() {
       <span>${esc(money(p.cents))}</span>
     </div>`).join('')}` : '';
   const delCents = quoteDeliveryCents(quoteDraft);
-  const deliveryRow = delCents ? `
+  // "Bowen (local)" is free, and says so (Max, 15 Oct 2026)
+  const isLocal = /local/i.test(quoteDraft.deliveryTown || '');
+  const deliveryRow = isLocal ? `
+    <div class="qb-sumrow">
+      <span>Local delivery &amp; pickup — Bowen
+        <em class="qb-labnote" style="margin-left:0">Free within Bowen</em></span>
+      <span class="qb-free">FREE</span>
+    </div>` : delCents ? `
     <div class="qb-sumrow">
       <span>Delivery &amp; pickup${quoteDraft.deliveryTown ? ' — ' + esc(quoteDraft.deliveryTown) : ''}
         <em class="qb-labnote" style="margin-left:0">${quoteDraft.deliveryKm}km each way · $0.80/km return</em></span>
       <span>${esc(money(delCents))}</span>
     </div>` : '';
   host.innerHTML = `
-    <div class="qb-sumrow"><span>Subtotal (ex GST)</span><span id="qsum-sub">${esc(money(m.subtotalCents))}</span></div>
+    ${(() => {
+      const cats = {}; (typeof invItems === 'function' ? invItems() : []).forEach((it) => { cats[it.id] = it.category; });
+      const days = Math.max(1, Math.round(quoteDraft.hire.days || 1));
+      const groups = costBreakdown(quoteDraft.lines, (l) => quoteLineCents(l, days), (l) => cats[l.itemId]);
+      return groups.length ? '<div class="qb-sumhead">Equipment hire</div>' + groups.map((g) => '<div class="qb-sumrow qb-sumsub"><span>' + esc(g.name) + '</span><span>' + esc(money(g.cents)) + '</span></div>').join('') : '';
+    })()}
+    <div class="qb-sumrow"><span>Hire subtotal (ex GST)</span><span id="qsum-sub">${esc(money(m.subtotalCents))}</span></div>
     ${labourRow}
     ${deliveryRow}
     <div class="qb-sumrow qb-sumdisc"><span>Discount</span>
@@ -6523,7 +6564,12 @@ function quoteDraftForSave() {
       qty: 1, unitCents: p.cents, days: 1, hours: p.hours,
     }));
   }
-  if (del > 0) {
+  if (/local/i.test(quoteDraft.deliveryTown || '')) {
+    lines.push({
+      type: 'delivery', name: 'Local delivery & pickup — Bowen',
+      description: 'Free within Bowen', qty: 1, unitCents: 0, days: 1,
+    });
+  } else if (del > 0) {
     lines.push({
       type: 'delivery',
       name: 'Delivery & pickup' + (quoteDraft.deliveryTown ? ' — ' + quoteDraft.deliveryTown : ''),

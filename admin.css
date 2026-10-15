@@ -4120,3 +4120,8 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-labph input{ margin:0; }
 /* "Included" in light grey, not green (Max, 15 Oct 2026) */
 .qb-incl{ color:#aaa; }
+.qb-free{ font-weight:700; color:var(--ad-text); letter-spacing:.04em; }
+/* totals breakdown in the quote builder (Max, 15 Oct 2026) */
+.qb-sumhead{ font-size:.66rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ad-faint); padding:2px 0; }
+.qb-sumsub{ padding:2px 0 2px 12px; font-size:.84rem; }
+.qb-sumsub span:first-child{ color:var(--ad-muted); }

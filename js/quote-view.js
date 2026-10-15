@@ -7,7 +7,7 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=396';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=403';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -77,11 +77,64 @@ function fmtDate(secs) {
   return new Date(secs * 1000).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+
+/*  COST BREAKDOWN GROUPS (Max, 15 Oct 2026) - KEEP IN STEP between
+    js/quote-view.js and js/admin-app.js. Inventory category -> group shown
+    in the totals ("Audio $180, Staging $180, Lighting $60").            */
+const COST_GROUP = {
+  audio: 'Audio', mixer: 'Audio', amp: 'Audio', microphone: 'Audio', iem: 'Audio', di: 'Audio',
+  'studio monitor': 'Audio', cable: 'Audio', stands: 'Audio',
+  lighting: 'Lighting', truss: 'Lighting',
+  stage: 'Staging', furniture: 'Staging',
+  backline: 'Backline', 'dj mixer': 'DJ equipment', vision: 'Vision', power: 'Power',
+};
+const COST_GROUP_ORDER = ['Audio', 'Lighting', 'Staging', 'Backline', 'DJ equipment', 'Vision', 'Power', 'Other'];
+function costGroupOf(category) {
+  return COST_GROUP[String(category || '').trim().toLowerCase()] || 'Other';
+}
+/*  [{ name, cents }] in the order above, only groups with a cost. */
+function costBreakdown(lines, centsOf, categoryOf) {
+  const sums = {};
+  (lines || []).forEach((l) => {
+    if (l.type === 'labour' || l.type === 'delivery' || l.type === 'discount') return;
+    const c = centsOf(l);
+    if (!c) return;
+    const g = l.itemId ? costGroupOf(categoryOf(l)) : 'Other';
+    sums[g] = (sums[g] || 0) + c;
+  });
+  return COST_GROUP_ORDER.filter((g) => sums[g]).map((g) => ({ name: g, cents: sums[g] }));
+}
+
 function labourRow(l, amt) {
   return '<tr class="qv-lab"><td class="qv-desc">' + esc(l.name || '')
     + (l.description ? '<span class="qv-sub">' + esc(l.description) + '</span>' : '')
     + '</td><td class="qv-num">' + esc(l.qty) + '</td><td class="qv-num">' + money(l.unitCents)
     + '</td><td class="qv-num">1</td><td class="qv-num">' + money(amt) + '</td></tr>';
+}
+
+/*  Equipment hire by group + hire subtotal, labour, delivery. */
+function sumBreakdown(q, days) {
+  const lines = q.lines || [];
+  const groups = costBreakdown(lines, (l) => lineAmount(l, days), (l) => l.category);
+  const hire = groups.reduce((t, g) => t + g.cents, 0);
+  const lab = lines.filter((l) => l.type === 'labour');
+  const labCents = lab.reduce((t, l) => t + lineAmount(l, days), 0);
+  const labHrs = lab.reduce((t, l) => t + (parseFloat((/^([\d.]+) hrs?\b/.exec(l.description || '') || [])[1]) || 0), 0);
+  const del = lines.filter((l) => l.type === 'delivery');
+  const delCents = del.reduce((t, l) => t + lineAmount(l, days), 0);
+  let h = '';
+  if (groups.length) {
+    h += '<div class="qv-sumhead">Equipment hire</div>';
+    h += groups.map((g) => '<div class="qv-sumrow qv-sumsub"><span>' + esc(g.name) + '</span><span>' + money(g.cents) + '</span></div>').join('');
+    h += '<div class="qv-sumrow qv-sumpart"><span>Hire subtotal</span><span>' + money(hire) + '</span></div>';
+  }
+  if (lab.length) {
+    h += '<div class="qv-sumrow qv-sumpart"><span>Labour &ndash; setup &amp; pack-down' + (labHrs ? ' (' + labHrs + ' hr' + (labHrs === 1 ? '' : 's') + ')' : '') + '</span><span>' + money(labCents) + '</span></div>';
+  }
+  if (del.length) {
+    h += '<div class="qv-sumrow qv-sumpart"><span>Delivery &amp; pickup</span><span>' + (delCents ? money(delCents) : 'Free') + '</span></div>';
+  }
+  return h;
 }
 
 function render(q) {
@@ -112,6 +165,11 @@ function render(q) {
 
   const rows = L.map((l, i) => {
     const amt = lineAmount(l, days);
+    if (l.type === 'delivery' && !l.unitCents) {
+      return '<tr class="qv-lab"><td class="qv-desc">' + esc(l.name || '')
+        + (l.description ? '<span class="qv-sub">' + esc(l.description) + '</span>' : '')
+        + '</td><td class="qv-num"></td><td class="qv-num"></td><td class="qv-num"></td><td class="qv-num"><strong>Free</strong></td></tr>';
+    }
     if (l.type === 'labour') {
       // a heading over setup + pack-down with the total hours (Max, 15 Oct 2026)
       const first = i === 0 || L[i - 1].type !== 'labour';
@@ -201,11 +259,14 @@ function render(q) {
         <tbody>${rows || '<tr><td colspan="5" class="qv-sub">No items.</td></tr>'}</tbody>
       </table>
 
+      <div class="qv-sumwrap">
+      <div class="qv-breakdown">${sumBreakdown(q, days)}</div>
       <div class="qv-summary">
-        <div class="qv-sumrow"><span>Subtotal (ex GST)</span><span>${money(q.subtotalCents)}</span></div>
+        <div class="qv-sumrow qv-sumtotal"><span>Subtotal (ex GST)</span><span>${money(q.subtotalCents)}</span></div>
         ${q.discountCents ? `<div class="qv-sumrow"><span>Discount</span><span>&minus;${money(q.discountCents)}</span></div>` : ''}
         <div class="qv-sumrow"><span>GST (10%)</span><span>${money(q.gstCents)}</span></div>
         <div class="qv-sumrow qv-grand"><span>Total (incl GST)</span><span>${money(q.totalCents)}</span></div>
+      </div>
       </div>
 
       ${accountBox}

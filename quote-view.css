@@ -163,3 +163,54 @@
   .qv-parties > div { border-left: none; padding: 0; }
 }
 .qv-logo { height: 64px; }
+
+/* totals breakdown: equipment hire by group, then labour, delivery (Max, 15 Oct 2026) */
+.qv-sumhead { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #999; padding: 4px 0 2px; }
+.qv-sumsub { padding: 3px 0 3px 12px; font-size: 13px; }
+.qv-sumsub span:first-child { color: #777; }
+.qv-sumpart { border-top: 1px solid #eee; font-weight: 600; }
+.qv-sumpart span:first-child { color: #333; }
+.qv-sumtotal { border-top: 1px solid #ccc; margin-top: 4px; }
+
+/* ==========================================================================
+   CONDENSED (Max, 15 Oct 2026): breakdown LEFT, totals RIGHT, tighter rows
+   ========================================================================== */
+.qv-sumwrap { display: grid; grid-template-columns: 1fr 300px; gap: 36px; align-items: start; margin-top: 14px; }
+.qv-breakdown { font-size: 13px; }
+.qv-breakdown .qv-sumrow { padding: 3px 0; }
+.qv-summary { margin: 0; width: auto; }
+.qv-summary .qv-sumrow { padding: 4px 0; }
+.qv-sumtotal { border-top: none; margin-top: 0; }
+.qv-grand { margin-top: 4px; padding-top: 8px; }
+
+.qv-table td { padding: 8px 14px; }
+.qv-table thead th { padding: 9px 14px; }
+.qv-sub { margin-top: 1px; }
+.qv-kithead td { padding: 5px 14px 1px 22px; }
+.qv-kit td { padding: 2px 14px; }
+.qv-kit-last td { padding-bottom: 7px; }
+.qv-labhead td { padding: 7px 16px; }
+.qv-parties { margin: 18px 0; }
+.qv-top { padding-bottom: 14px; }
+
+@media (max-width: 640px) {
+  .qv-sumwrap { grid-template-columns: 1fr; gap: 14px; }
+}
+.qv-breakdown .qv-sumsub { padding-left: 12px; }
+
+/* all totals in ONE column on the right, lines close together (Max, 15 Oct 2026) */
+.qv-sumwrap { display: block; width: 340px; max-width: 100%; margin: 12px 0 0 auto; }
+.qv-breakdown { font-size: 13px; margin-bottom: 2px; }
+.qv-breakdown .qv-sumrow, .qv-summary .qv-sumrow { padding: 2px 0; }
+.qv-sumhead { padding: 0 0 1px; }
+.qv-sumpart { padding-top: 3px !important; }
+.qv-sumtotal { border-top: 1px solid #ccc; padding-top: 4px !important; margin-top: 2px; }
+.qv-grand { margin-top: 4px; padding-top: 6px !important; }
+@media (max-width: 640px) { .qv-sumwrap { width: 100%; } }
+.qv-breakdown .qv-sumrow.qv-sumsub { padding-left: 12px; }
+/* even tighter (Max, 15 Oct 2026) */
+.qv-breakdown .qv-sumrow, .qv-summary .qv-sumrow { padding: 0; line-height: 1.35; }
+.qv-breakdown .qv-sumrow.qv-sumsub { padding: 0 0 0 12px; }
+.qv-sumpart { padding-top: 2px !important; margin-top: 2px; }
+.qv-sumtotal { padding-top: 3px !important; }
+.qv-grand { padding-top: 5px !important; }
