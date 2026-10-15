@@ -7,7 +7,7 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=393';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=396';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -17,6 +17,7 @@ const SELLER = {
   abn: '49 700 595 348',
   email: 'info@soundzgood.com.au',
   phone: '0422 393 022',
+  address: '34a Williams St, Bowen QLD 4805',
   site: 'www.soundzgood.com.au',
   bankName: 'SoundzGood Whitsundays',
   bankBsb: '014504',
@@ -128,7 +129,7 @@ function render(q) {
       const last = !next || next.type !== 'kit';
       return `${head}
       <tr class="qv-kit${last ? ' qv-kit-last' : ''}">
-        <td class="qv-desc"><span class="qv-arrow">&#9492;</span>${esc(l.name || '')}</td>
+        <td class="qv-desc"><span class="qv-arrow">&#9492;</span>${esc(String(l.name || '').replace(/ \(included\)$/i, ''))}</td>
         <td class="qv-num">${esc(l.qty)}</td>
         <td class="qv-num">${charged ? money(l.unitCents) : '<span class="qv-incl">Included</span>'}</td>
         <td class="qv-num">${charged ? esc(Math.max(1, Math.round(l.days || days))) : ''}</td>
@@ -183,7 +184,7 @@ function render(q) {
       <div class="qv-parties">
         <div>
           <h3>From</h3>
-          <p><strong>${esc(SELLER.name)}</strong><br>${esc(SELLER.phone)}<br>${esc(SELLER.email)}<br>${esc(SELLER.site)}</p>
+          <p><strong>${esc(SELLER.name)}</strong><br>${esc(SELLER.address)}<br>${esc(SELLER.phone)}<br>${esc(SELLER.email)}<br>${esc(SELLER.site)}</p>
         </div>
         <div>
           <h3>${isInvoice ? 'Bill to' : 'Prepared for'}</h3>

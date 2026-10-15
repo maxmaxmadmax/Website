@@ -4,7 +4,8 @@
    KEEP IN STEP with the copy in js/admin-app.js (search "LABOUR RATES").
 
    - $85/hr base.  Saturday x1.25.  Sunday x1.5.  Public holiday x1.5.
-   - Setup is charged on the FIRST hire day, pack-down on the LAST hire day,
+   - Pack-down = 50% of setup time. Setup is charged on the FIRST hire day,
+     pack-down on the LAST hire day,
      each at that day's rate.
    - Each part: minimum 1 hour, then rounded UP to the half hour.
    - Public holidays: Queensland list below (from qld.gov.au, checked
@@ -13,7 +14,7 @@
      year's dates when the Government publishes them.
    ========================================================================= */
 const LABOUR_RATE_CENTS = 8500;
-const PACKDOWN_PCT = 0.75;
+const PACKDOWN_PCT = 0.5;   // pack-down = 50% of setup time (Max, 15 Oct 2026)
 const LOADING = { saturday: 1.25, sunday: 1.5, holiday: 1.5 };
 
 const QLD_PUBLIC_HOLIDAYS = {

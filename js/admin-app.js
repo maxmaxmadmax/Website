@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=393';
+} from './firebase-config.js?v=396';
 
-import { expandKit } from './kit.js?v=393';
+import { expandKit } from './kit.js?v=396';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5461,12 +5461,12 @@ function quoteDeliveryCents(d) {
 /* =========================================================================
    LABOUR RATES (Max, 15 Oct 2026) - KEEP IN STEP with functions/lib/labour.js
    $85/hr. Saturday x1.25, Sunday x1.5, public holiday x1.5. Setup is charged
-   on the first hire day, pack-down (75% of setup) on the last, each at its
+   on the first hire day, pack-down (50% of setup) on the last, each at its
    own day's rate; each part minimum 1 hr, then up to the half hour.
    Setup time is the man-minute figure on each inventory item.
    ========================================================================= */
 const LABOUR_RATE_CENTS = 8500;   // $85 / hour
-const PACKDOWN_PCT = 0.75;
+const PACKDOWN_PCT = 0.5;   // pack-down = 50% of setup time (Max, 15 Oct 2026)
 const LOADING = { saturday: 1.25, sunday: 1.5, holiday: 1.5 };
 
 const QLD_PUBLIC_HOLIDAYS = {
@@ -5814,7 +5814,7 @@ function quoteBuilderHtml() {
             <img src="/images/logo.png" alt="SoundzGood" class="qb-logo">
             <div class="qb-seller">
               ABN 49 700 595 348<br>
-              Bowen, QLD 4805<br>
+              34a Williams St, Bowen QLD 4805<br>
               info@soundzgood.com.au<br>
               www.soundzgood.com.au
             </div>
@@ -6004,7 +6004,7 @@ function renderQuoteLines() {
       return `${header}
         <div class="qb-row qb-row-sub" data-ql="${i}" data-sub>
           <div class="qb-cell qb-c-grip"></div>
-          <div class="qb-cell qb-c-desc"><span class="qb-arrow">&#8627;</span><span class="qb-subname">${esc(l.name)}</span></div>
+          <div class="qb-cell qb-c-desc"><span class="qb-arrow">&#8627;</span><span class="qb-subname">${esc(String(l.name || '').replace(/ \(included\)$/i, ''))}</span></div>
           <div class="qb-cell qb-c-qty">${esc(l.qty)}</div>
           <div class="qb-cell qb-c-rate">${free ? '<span class="qb-incl">Included</span>' : money(l.unitCents)}</div>
           <div class="qb-cell qb-c-days">${free ? '&mdash;' : esc(Math.max(1, Math.round(l.days || days)))}</div>
@@ -6104,7 +6104,7 @@ function kitLinesFor(itemId, qty, byId, days) {
   return kit.required.map((r) => {
     const charged = r.charge === 'normal';
     return {
-      type: 'kit', itemId: r.itemId, name: r.name + (r.charge === 'free' ? ' (included)' : ''),
+      type: 'kit', itemId: r.itemId, name: r.name,   // no "(included)" - the Included column says it (Max, 15 Oct 2026)
       qty: r.qty, unitCents: charged ? r.unitCents : 0, charge: r.charge,
       days: charged ? days : 1,
     };

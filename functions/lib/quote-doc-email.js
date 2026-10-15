@@ -69,6 +69,7 @@ function html(q, link) {
     <div style="padding:18px 24px;background:#fafafa;border-top:1px solid #eee;">
       <p style="margin:0;font-size:12px;color:#777;">
         ${esc(SELLER.name)}${SELLER.legal ? ' &middot; ' + esc(SELLER.legal) : ''}${SELLER.abn ? ' &middot; ABN ' + esc(SELLER.abn) : ''}<br>
+        34a Williams St, Bowen QLD 4805<br>
         ${esc(SELLER.email)} &middot; ${esc(SELLER.site)}
       </p>
     </div>

@@ -2899,7 +2899,7 @@ exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
     });
     kit.required.forEach((r) => {
       const charged = r.charge === 'normal';
-      lines.push({ type: 'kit', itemId: r.itemId, name: r.name + (r.charge === 'free' ? ' (included)' : ''), qty: r.qty, unitCents: charged ? r.unitCents : 0, charge: r.charge, days: charged ? days : 1 });
+      lines.push({ type: 'kit', itemId: r.itemId, name: r.name /* no "(included)" - the Included column says it */, qty: r.qty, unitCents: charged ? r.unitCents : 0, charge: r.charge, days: charged ? days : 1 });
     });
     const gearValue = kit.base.reduce((s, b) => s + b.lineCents, 0) + kit.addCents;
     const afterDisc = Math.max(0, gearValue - Math.max(0, Math.round(pkg.discountCents || 0)));
