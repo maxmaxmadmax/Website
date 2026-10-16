@@ -334,3 +334,32 @@
   .qp-book-grid { grid-template-columns: 1fr; }
 }
 @media print { .qp-book, .qp-jump { display: none !important; } }
+
+/* PAGE ONE as one dark block (Max's mock-up, 16 Oct 2026): the photo fades
+   to black, the intro + Audio / Lighting / Staging / Crew sit underneath */
+.qp-hero { background: #0b0b0b; color: #fff; }
+.qp-hero::before { display: none; }
+.qp-hero-photo { position: relative; min-height: 330px; display: flex; align-items: flex-end;
+  background: #111 var(--qp-photo) center 35% / cover no-repeat; }
+.qp-hero-photo::before { content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,.35) 45%, #0b0b0b 100%); }
+.qp-hero-in { position: relative; padding: 40px 40px 6px; max-width: 680px; }
+.qp-hero h1 { font-size: clamp(32px, 5.5vw, 50px); margin: 6px 0 16px; }
+.qp-when { font-size: 16px; line-height: 2; margin: 0; }
+.qp-when svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; vertical-align: -3px; margin-right: 10px; }
+.qp-hero-body { padding: 18px 40px 30px; }
+.qp-intro { margin: 0 0 26px; line-height: 1.6; color: #ddd; font-size: 15px; max-width: 760px; }
+.qp-hero .qp-tiles { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 18px; }
+.qp-hero .qp-tile { border: none; padding: 0; align-items: center; text-align: center; }
+.qp-hero .qp-tile svg { width: 40px; height: 40px; stroke-width: 1.6; }
+.qp-hero .qp-tile b { color: #fff; font-size: 14px; }
+.qp-hero .qp-tile span { color: #aaa; font-size: 12.5px; }
+.qp-hero .qp-ref { margin: 26px 0 0; color: #888; font-size: 12px; }
+@media screen and (max-width: 640px) {
+  .qp-hero-photo { min-height: 260px; }
+  .qp-hero-in { padding: 24px 20px 4px; }
+  .qp-hero-body { padding: 14px 20px 24px; }
+  .qp-hero .qp-tiles { grid-template-columns: 1fr 1fr; }
+}
+/* square corners on the quote page sections (Max, 16 Oct 2026) */
+.qp-hero, .qp-sec, .qv-doc { border-radius: 0; }

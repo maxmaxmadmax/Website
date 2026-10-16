@@ -7,7 +7,7 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=407';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=411';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -339,6 +339,8 @@ const ICON = {
   Staging: '<path d="M3 15h18v3H3zM5 18v3M19 18v3M7 15V9h10v6"/>',
   Crew: '<path d="M9 11a3 3 0 100-6 3 3 0 000 6zM3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M17 11a2.5 2.5 0 100-5M21 20c0-2.8-1.6-5-4-5.6"/>',
   Other: '<path d="M4 7h16v12H4zM9 7V5h6v2"/>',
+  Date: '<path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4"/>',
+  Pin: '<path d="M12 21s-7-6.5-7-12a7 7 0 0114 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/>',
 };
 const BLURB = {
   Audio: 'Clear sound for every crowd', Lighting: 'Atmosphere and impact', Staging: 'Safe and reliable stage setup',
@@ -378,21 +380,21 @@ function proposalTop(q, days) {
   const disc = q.discountCents ? '<tr class="qp-disc"><td>Discount</td><td>&minus;' + money(q.discountCents) + '</td><td></td><td>&minus;' + money(Math.round(q.discountCents * 1.1)) + '</td></tr>' : '';
 
   return `
-    <section class="qp-hero" style="--qp-photo:url('/images/services/${HERO_PHOTO[type]}')">
-      <div class="qp-hero-in">
-        <img class="qp-hero-logo" src="/images/logowhite.png" alt="SoundzGood Whitsundays">
-        <p class="qp-eyebrow">Event production proposal</p>
-        <h1>${esc(event)}</h1>
-        <p class="qp-when">${when ? '&#128197; ' + esc(when) : ''}${town ? '<br>&#128205; ' + esc(town) : ''}</p>
+    <section class="qp-hero">
+      <div class="qp-hero-photo" style="--qp-photo:url('/images/services/${HERO_PHOTO[type]}')">
+        <div class="qp-hero-in">
+          <p class="qp-eyebrow">Event production proposal</p>
+          <h1>${esc(event)}</h1>
+          <p class="qp-when">${when ? svgIcon('Date') + esc(when) : ''}${town ? '<br>' + svgIcon('Pin') + esc(town) : ''}</p>
+        </div>
+      </div>
+      <div class="qp-hero-body">
+        <p class="qp-intro">Thanks for the opportunity to provide event production for ${esc(event)}.
+          We&rsquo;ve put together the following production plan based on what we&rsquo;ve discussed.
+          Everything below covers the equipment, preparation and crew required to deliver a successful event.</p>
+        ${tiles ? '<div class="qp-tiles">' + tiles + '</div>' : ''}
         <p class="qp-ref">Quote ${esc(q.number || '')}${c.name ? ' &middot; Prepared for ' + esc(c.name) : ''}</p>
       </div>
-    </section>
-
-    <section class="qp-sec qp-intro">
-      <p>Thanks for the opportunity to provide event production for <strong>${esc(event)}</strong>.
-        We&rsquo;ve put together the following production plan based on what we&rsquo;ve discussed.
-        Everything below covers the equipment, preparation and crew required to deliver a successful event.</p>
-      ${tiles ? '<div class="qp-tiles">' + tiles + '</div>' : ''}
     </section>
 
     <section class="qp-sec">

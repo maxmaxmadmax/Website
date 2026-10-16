@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=407';
+} from './firebase-config.js?v=411';
 
-import { expandKit } from './kit.js?v=407';
+import { expandKit } from './kit.js?v=411';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
