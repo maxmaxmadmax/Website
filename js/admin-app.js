@@ -33,10 +33,10 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=452';
+} from './firebase-config.js?v=453';
 
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=452';
-import { expandKit } from './kit.js?v=452';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=453';
+import { expandKit } from './kit.js?v=453';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5726,6 +5726,12 @@ function wireQuoteList() {
     async archive(id) {
       if (!window.confirm('Archive ' + label(findDoc(id)) + '? It moves to the Archived tab and the customer link stops working. You can restore it later.')) return;
       try { await call('adminArchiveQuote', { id, archive: true }); } catch (e) { window.alert(e.message || 'Could not archive.'); }
+    },
+    // money came in another way (bank transfer / cash): paid in full, becomes a tax invoice
+    async paid(id) {
+      const d = findDoc(id);
+      if (!window.confirm('Mark ' + label(d) + ' as PAID IN FULL (' + money((d && d.totalCents) || 0) + ')?\n\nUse this when the money came in by bank transfer or cash. It becomes a tax invoice.')) return;
+      try { await call('adminSetQuoteStatus', { id, status: 'paid' }); } catch (e) { window.alert(e.message || 'Could not mark paid.'); }
     },
     async restore(id) {
       try { await call('adminArchiveQuote', { id, archive: false }); } catch (e) { window.alert(e.message || 'Could not restore.'); }

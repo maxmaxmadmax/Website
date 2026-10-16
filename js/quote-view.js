@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=452';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=452';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=453';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=453';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -291,6 +291,8 @@ function render(q) {
 
   const print = document.getElementById('qv-print');
   if (print) print.addEventListener('click', () => window.print());
+  // "Download PDF" from the Sales Pipeline opens this page with &print=1
+  if (/[?&]print=1/.test(location.search)) setTimeout(() => window.print(), 600);
 
 }
 

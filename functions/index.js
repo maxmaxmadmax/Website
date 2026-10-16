@@ -2719,6 +2719,17 @@ exports.adminSetQuoteStatus = onCall(async (request) => {
     if (!snap.data().invoiceNumber) update.invoiceNumber = invoiceNo((await nextInvoiceNumber()).n);
   }
 
+  // MARK PAID (Max, 16 Oct 2026) - money came in another way (bank transfer, cash).
+  // A paid job is always a tax invoice, and paid in full.
+  if (update.status === 'paid') {
+    const q = snap.data();
+    update.kind = 'invoice';
+    if (!q.invoiceNumber) { update.invoiceNumber = invoiceNo((await nextInvoiceNumber()).n); update.invoicedAt = FieldValue.serverTimestamp(); }
+    update.paymentStatus = 'paid';
+    update.paymentMethod = q.paymentMethod || 'bank';
+    update.amountPaidCents = Math.max(q.amountPaidCents || 0, q.totalCents || 0);
+  }
+
   await ref.update(update);
   return { ok: true, invoiceNumber: update.invoiceNumber || snap.data().invoiceNumber || '' };
 });

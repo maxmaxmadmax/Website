@@ -228,6 +228,8 @@ export function rowsHtml(rows, f, h) {
             <div class="sp-menu">
               ${q.token ? `<a href="/quote?t=${h.attr(q.token)}" target="_blank" rel="noopener">Open customer page</a>
               <button type="button" data-sp-copy="${h.attr('https://www.soundzgood.com.au/quote?t=' + q.token)}">Copy customer link</button>` : '<span>Save it first to get a link</span>'}
+              ${q.token ? `<a href="/quote?t=${h.attr(q.token)}&print=1" target="_blank" rel="noopener">Download PDF</a>` : ''}
+              ${['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) ? `<button type="button" data-sp-act="paid" data-id="${h.attr(q.id)}">Mark paid</button>` : ''}
               <button type="button" data-sp-act="duplicate" data-id="${h.attr(q.id)}">Duplicate</button>
               ${st.tab === 'archived'
                 ? `<button type="button" data-sp-act="restore" data-id="${h.attr(q.id)}">Restore</button>`
@@ -243,7 +245,7 @@ export function rowsHtml(rows, f, h) {
 /* the clicks: tabs, stat cards, sort headers, search, dates, copy link,
    and opening a job. f is the view's filter state (kept by the caller so it
    survives re-renders). act = { open(id), newQuote(), duplicate(id),
-   archive(id), restore(id), del(id) } - the admin page does the real work. */
+   archive(id), restore(id), del(id), paid(id) } - the admin page does the real work. */
 export function wirePipeline(getJobs, f, h, act) {
   const body = document.getElementById('q-rows');
   const paint = () => { if (body) body.innerHTML = rowsHtml(filterJobs(getJobs(), f), f, h); };
@@ -280,7 +282,7 @@ export function wirePipeline(getJobs, f, h, act) {
     }
     const a = e.target.closest('[data-sp-act]');
     if (a) {
-      const fn = { duplicate: act.duplicate, archive: act.archive, restore: act.restore, delete: act.del }[a.getAttribute('data-sp-act')];
+      const fn = { duplicate: act.duplicate, archive: act.archive, restore: act.restore, delete: act.del, paid: act.paid }[a.getAttribute('data-sp-act')];
       if (fn) fn(a.getAttribute('data-id'));
       return;
     }
