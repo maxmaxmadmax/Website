@@ -4325,3 +4325,9 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .sys-actions{ display:flex; align-items:center; gap:10px; margin-top:16px; }
 .inv-sys-badge{ display:inline-block; margin-left:6px; padding:1px 7px; border-radius:6px; background:#111; color:#fff; font-size:10.5px; font-weight:700; letter-spacing:.03em; vertical-align:middle; }
 .sys-covered{ display:block; font-style:normal; color:var(--ad-amber); font-size:11.5px; margin-top:2px; }
+/* system builder: drag grip on each part */
+.sys-part{ grid-template-columns:18px 1fr auto auto !important; }
+.sys-grip{ cursor:grab; color:var(--ad-faint); user-select:none; }
+.sys-part.qb-dragging{ opacity:.4; }
+.sys-part.qb-drop-before{ box-shadow:inset 0 2px 0 var(--ad-orange); }
+.sys-part.qb-drop-after{ box-shadow:inset 0 -2px 0 var(--ad-orange); }

@@ -11,7 +11,7 @@
 
    Pure HTML + wiring; admin-app.js hands in the items and does the saving.
    ========================================================================== */
-import { expandKit, resolveTotals } from './kit.js?v=459';
+import { expandKit, resolveTotals } from './kit.js?v=460';
 
 /* the working copy of the system being built */
 export function sysDraftFrom(item) {
@@ -122,7 +122,8 @@ function partsHtml(d, byId, h, covered) {
   if (!d.parts.length) return '<p class="sys-empty">No parts yet.</p>';
   return d.parts.map((p, i) => {
     const it = byId[p.itemId] || { name: '(missing item)' };
-    return `<div class="sys-part">
+    return `<div class="sys-part" data-sys-i="${i}">
+        <span class="qb-grip sys-grip" title="Drag to reorder">&#10303;</span>
         <span class="sys-pname">${h.esc(it.name)}<small>${h.esc(it.category || '')}</small>${covered && covered[p.itemId] ? '<em class="sys-covered">' + covered[p.itemId] + ' already comes with another part - only counted once</em>' : ''}</span>
         <span class="sys-qty"><button type="button" data-sys-minus="${i}" aria-label="Less">&minus;</button><b>${p.qty}</b><button type="button" data-sys-plus="${i}" aria-label="More">+</button></span>
         <span class="sys-own">${h.esc(it.quantityTotal != null ? it.quantityTotal : '?')} owned</span>
@@ -157,6 +158,49 @@ export function wireSystemPanel(d, getItems, h, cats, act) {
     if (keep) { const el = document.getElementById(keep); if (el) { el.focus(); if (el.setSelectionRange && el.value != null && el.type !== 'number') el.setSelectionRange(el.value.length, el.value.length); } }
   };
   const val = (id) => (document.getElementById(id) || {}).value || '';
+
+  // DRAG TO REORDER the parts (grab the grip) - same feel as quote lines
+  const list = document.getElementById('sys-parts');
+  if (list) {
+    let from = null;
+    const marks = () => list.querySelectorAll('.qb-drop-before, .qb-drop-after').forEach((el) => el.classList.remove('qb-drop-before', 'qb-drop-after'));
+    const where = (e) => {
+      const row = e.target.closest('[data-sys-i]');
+      if (!row) return null;
+      const r = row.getBoundingClientRect();
+      return { row, i: +row.getAttribute('data-sys-i'), after: (e.clientY - r.top) > r.height / 2 };
+    };
+    list.addEventListener('mousedown', (e) => { const g = e.target.closest('.sys-grip'); if (g) g.closest('[data-sys-i]').setAttribute('draggable', 'true'); });
+    list.addEventListener('mouseup', () => list.querySelectorAll('[draggable]').forEach((el) => el.removeAttribute('draggable')));
+    list.addEventListener('dragstart', (e) => {
+      const row = e.target.closest('[data-sys-i]');
+      if (!row || row.getAttribute('draggable') !== 'true') { e.preventDefault(); return; }
+      from = +row.getAttribute('data-sys-i');
+      row.classList.add('qb-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', String(from)); } catch (_) { /* old browsers */ }
+    });
+    list.addEventListener('dragover', (e) => {
+      if (from == null) return;
+      e.preventDefault();
+      marks();
+      const w = where(e);
+      if (w) w.row.classList.add(w.after ? 'qb-drop-after' : 'qb-drop-before');
+    });
+    list.addEventListener('drop', (e) => {
+      if (from == null) return;
+      e.preventDefault();
+      const w = where(e);
+      const a = from; from = null; marks();
+      if (!w) return;
+      let to = w.i + (w.after ? 1 : 0);
+      const [moved] = d.parts.splice(a, 1);
+      if (a < to) to--;
+      d.parts.splice(to, 0, moved);
+      redraw();
+    });
+    list.addEventListener('dragend', () => { from = null; marks(); list.querySelectorAll('[draggable]').forEach((el) => el.removeAttribute('draggable')); });
+  }
 
   panel.addEventListener('input', (e) => {
     const id = e.target.id;
