@@ -67,7 +67,7 @@
         { slug:'pluto-tango',        name:'Pluto Tango',        act:'solo', genres:[], events:[] },
         { slug:'jacob-biermann',     name:'Jacob Biermann',     act:'solo', genres:[], events:[] },
 
-        { slug:'zed-charles-bo-river-band', name:'Zed Charles & The Bo River Band', act:'band', genres:[], events:[] },
+        { slug:'zed-charles-bo-river-band', name:'Zed Charles’ Bo’ River Band', act:'band', genres:[], events:[] },
         { slug:'headrush',           name:'Headrush',           act:'band', genres:[], events:[] },
         { slug:'cat-5',              name:'Cat 5',              act:'band', genres:[], events:[] }
         */
