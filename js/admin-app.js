@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=448';
+} from './firebase-config.js?v=449';
 
-import { expandKit } from './kit.js?v=448';
+import { expandKit } from './kit.js?v=449';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5314,11 +5314,6 @@ function renderInvReqPreview() {
         .join('; ')}</p>`
     : '';
 
-  const feeRow = `
-    <div class="qb-sumrow">
-      <span><label class="qb-labtoggle"><input type="checkbox" data-qfee${quoteDraft.feeExcluded ? '' : ' checked'}> Booking &amp; admin fee (${BOOKING_FEE_PCT}%)</label></span>
-      <span class="${quoteDraft.feeExcluded ? 'qb-laboff' : ''}">${quoteDraft.feeExcluded ? 'off' : esc(money(m.feeCents))}</span>
-    </div>`;
   host.innerHTML = `
     <div class="inv-reqs-pv">
       <p class="inv-reqs-pv-head">If you hire
@@ -6140,6 +6135,12 @@ function renderQuoteTotals() {
         <em class="qb-labnote" style="margin-left:0">${quoteDraft.deliveryKm}km each way · $0.80/km return</em></span>
       <span>${esc(money(delCents))}</span>
     </div>` : '';
+  // 2% booking & admin fee row, with an on/off tick (Max, 16 Oct 2026)
+  const feeRow = `
+    <div class="qb-sumrow">
+      <span><label class="qb-labtoggle"><input type="checkbox" data-qfee${quoteDraft.feeExcluded ? '' : ' checked'}> Booking &amp; admin fee (${BOOKING_FEE_PCT}%)</label></span>
+      <span class="${quoteDraft.feeExcluded ? 'qb-laboff' : ''}">${quoteDraft.feeExcluded ? 'off' : esc(money(m.feeCents))}</span>
+    </div>`;
   host.innerHTML = `
     ${(() => {
       const cats = {}; (typeof invItems === 'function' ? invItems() : []).forEach((it) => { cats[it.id] = it.category; });
