@@ -2552,7 +2552,9 @@ exports.adminResendQuoteEmail = onCall(
 
 const crypto = require('crypto');
 
-const QUOTE_DOC_STATES = ['draft', 'sent', 'accepted', 'declined', 'invoiced', 'paid', 'cancelled'];
+// draft = Estimate, approved = Quote (Max approved it), sent = Quote emailed,
+// invoiced = accepted -> Invoice, paid = Paid (Max, 16 Oct 2026)
+const QUOTE_DOC_STATES = ['draft', 'approved', 'sent', 'accepted', 'declined', 'invoiced', 'paid', 'cancelled'];
 
 /*  Totals from the stored lines. Prices are ex-GST; discounts come off the
     net; GST is 10% of the net; total is net + GST.                        */
@@ -2706,7 +2708,7 @@ exports.adminSetQuoteStatus = onCall(async (request) => {
     update.acceptedAt = FieldValue.serverTimestamp();
   }
   const stamp = {
-    sent: 'sentAt', accepted: 'acceptedAt', declined: 'declinedAt',
+    approved: 'approvedAt', sent: 'sentAt', accepted: 'acceptedAt', declined: 'declinedAt',
     invoiced: 'invoicedAt', paid: 'paidAt', cancelled: 'cancelledAt',
   };
   if (stamp[status]) update[stamp[status]] = FieldValue.serverTimestamp();
@@ -2732,11 +2734,12 @@ exports.adminSendQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
     throw new HttpsError('failed-precondition', 'Add a customer email first.');
   }
 
+  if (q.status === 'draft') throw new HttpsError('failed-precondition', 'Approve the estimate as a quote first.');
   const link = SITE_URL + '/quote?t=' + q.token;
   const mail = await sendQuoteLinkEmail(q, link);
 
   const update = { updatedAt: FieldValue.serverTimestamp() };
-  if (mail.sent && q.status === 'draft') {
+  if (mail.sent && q.status === 'approved') {
     update.status = 'sent';
     update.sentAt = FieldValue.serverTimestamp();
   }
@@ -2817,7 +2820,7 @@ exports.acceptQuote = onCall(async (request) => {
   const q = doc.data();
 
   if (q.status === 'accepted' || q.kind === 'invoice') return { ok: true, already: true };
-  if (!['draft', 'sent'].includes(q.status)) {
+  if (!['approved', 'sent'].includes(q.status)) {
     throw new HttpsError('failed-precondition', 'This quote can no longer be accepted.');
   }
 
@@ -2857,7 +2860,7 @@ exports.quoteCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request)
   if (snap.empty) throw new HttpsError('not-found', 'That link is not valid.');
   const doc = snap.docs[0];
   const q = doc.data();
-  if (!['draft', 'sent', 'accepted', 'invoiced'].includes(q.status) || q.paymentStatus === 'paid') {
+  if (!['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) || q.paymentStatus === 'paid') {
     throw new HttpsError('failed-precondition', 'This quote can no longer be paid online.');
   }
 

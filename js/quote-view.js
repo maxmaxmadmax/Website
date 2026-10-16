@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=430';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=430';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=432';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=432';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -144,7 +144,7 @@ function sumBreakdown(q, days) {
 
 function render(q) {
   const isInvoice = q.kind === 'invoice';
-  const docTitle = isInvoice ? 'Tax Invoice' : 'Quote';
+  const docTitle = isInvoice ? 'Tax Invoice' : (q.status === 'draft' ? 'Estimate' : 'Quote');
   const ref = isInvoice ? (q.invoiceNumber || q.number) : q.number;
   const c = q.customer || {};
   const days = Math.max(1, Math.round((q.hire && q.hire.days) || 1));
@@ -213,7 +213,7 @@ function render(q) {
   }).join('');
 
   const accepted = q.status === 'accepted' || q.status === 'invoiced' || q.status === 'paid';
-  const canAccept = !isInvoice && (q.status === 'draft' || q.status === 'sent');
+  const canAccept = !isInvoice && (q.status === 'approved' || q.status === 'sent');
 
   const banner = q.status === 'paid'
     ? '<div class="qv-banner qv-ok">Paid &mdash; thank you!</div>'
@@ -460,7 +460,10 @@ function proposalBottom(q, opts = {}) {
     + '</div></details>';
 
   let book;
-  if (q.paymentStatus === 'paid') {
+  if (q.status === 'draft') {
+    // an ESTIMATE (not yet approved by SoundzGood): nothing to accept or pay yet
+    book = '<div class="qp-done">This is an estimate. Once we&rsquo;ve checked the details we&rsquo;ll send your formal quote to accept.</div>';
+  } else if (q.paymentStatus === 'paid') {
     book = '<div class="qp-done">&#10003; Paid in full &mdash; thank you! Your booking is locked in.</div>';
   } else if (q.paymentStatus === 'deposit') {
     book = '<div class="qp-done">&#10003; Deposit of ' + money(paid) + ' received &mdash; your date is secured.</div>'
@@ -506,7 +509,7 @@ function proposalBottom(q, opts = {}) {
   return termsSec + `
     <section class="qp-sec qp-book" id="qp-book">
       <p class="qp-eyebrow">${isInv ? 'Payment' : 'Secure your booking'}</p>
-      <h2 class="qp-h2">${q.paymentStatus ? 'Your booking' : 'Choose a payment option'}</h2>
+      <h2 class="qp-h2">${q.status === 'draft' ? 'Estimate only' : (q.paymentStatus ? 'Your booking' : 'Choose a payment option')}</h2>
       ${book}
       <p class="qv-msg" id="qp-msg" hidden></p>
     </section>`;

@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=430';
+} from './firebase-config.js?v=432';
 
-import { expandKit } from './kit.js?v=430';
+import { expandKit } from './kit.js?v=432';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5609,11 +5609,13 @@ function quoteLabour(d) {
 let quoteDraft = blankQuote();
 
 const QDOC_STATUS = {
-  draft:     ['ad-pill-grey',  'Draft'],
-  sent:      ['ad-pill-blue',  'Sent'],
+  // SALES PIPELINE: Estimate -> Quote -> Invoice -> Paid (Max, 16 Oct 2026)
+  draft:     ['ad-pill-grey',  'Estimate'],
+  approved:  ['ad-pill-blue',  'Quote - not sent'],
+  sent:      ['ad-pill-blue',  'Quote sent'],
   accepted:  ['ad-pill-green', 'Accepted'],
   declined:  ['ad-pill-red',   'Declined'],
-  invoiced:  ['ad-pill-amber', 'Invoiced'],
+  invoiced:  ['ad-pill-amber', 'Invoice - unpaid'],
   paid:      ['ad-pill-green', 'Paid'],
   cancelled: ['ad-pill-grey',  'Cancelled'],
 };
@@ -5679,8 +5681,8 @@ function quoteListHtml() {
       <header class="ad-panel-head">
         <div><h2>All quotes</h2><p class="ad-panel-sub">Newest first.</p></div>
         <select id="q-filter" class="ad-select" aria-label="Filter by status">
-          ${opt('all', 'All statuses')}${opt('draft', 'Draft')}${opt('sent', 'Sent')}
-          ${opt('accepted', 'Accepted')}${opt('invoiced', 'Invoiced')}${opt('paid', 'Paid')}
+          ${opt('all', 'All')}${opt('draft', 'Estimates')}${opt('approved', 'Quotes - not sent')}${opt('sent', 'Quotes sent')}
+          ${opt('invoiced', 'Invoices - unpaid')}${opt('paid', 'Paid')}${opt('accepted', 'Accepted (old)')}
         </select>
       </header>
       <div class="ad-table-wrap">
@@ -5783,7 +5785,7 @@ function quoteBuilderHtml() {
   const doc = currentQuoteDoc();
   const status = doc ? doc.status : 'draft';
   const isInvoice = doc && doc.kind === 'invoice';
-  const docWord = isInvoice ? 'Tax Invoice' : 'Quote';
+  const docWord = isInvoice ? 'Tax Invoice' : (status === 'draft' ? 'Estimate' : 'Quote');
   const num = doc ? (isInvoice && doc.invoiceNumber ? doc.invoiceNumber : doc.number) : 'New';
   const created = doc && doc.createdAt ? dateShort(doc.createdAt) : dateShort(Math.floor(Date.now() / 1000));
   const c = quoteDraft.customer;
@@ -5841,7 +5843,8 @@ function quoteBuilderHtml() {
         ${link ? `<a class="ad-btn ad-btn-ghost" href="${attr(link)}" target="_blank" rel="noopener">Preview</a>` : ''}
         <span class="qb-auto" id="q-auto"></span>
         <button type="button" class="ad-btn${doc ? '' : ' ad-btn-primary'}" id="q-save">Save</button>
-        ${doc ? `<button type="button" class="ad-btn ad-btn-primary" id="q-send">${status === 'draft' ? '&#9993; Send Quote' : '&#9993; Resend'}</button>` : ''}
+        ${doc && status === 'draft' ? '<button type="button" class="ad-btn ad-btn-primary" id="q-approve">&#10003; Approve as quote</button>' : ''}
+        ${doc && status !== 'draft' ? `<button type="button" class="ad-btn ad-btn-primary" id="q-send">${status === 'approved' ? '&#9993; Send Quote' : '&#9993; Resend'}</button>` : ''}
       </div>
 
       ${botCard}
@@ -5951,9 +5954,9 @@ function quoteBuilderHtml() {
       ${doc ? `
       <section class="qb-lifecycle">
         <div class="qb-life-row">
-          ${status === 'draft' || status === 'sent' ? '<button type="button" class="ad-btn" id="q-accept">Mark accepted</button>' : ''}
+          ${status === 'approved' || status === 'sent' ? '<button type="button" class="ad-btn" id="q-accept">Mark accepted</button>' : ''}
           ${(status === 'accepted' || (status === 'invoiced' && doc.acceptedAt)) && !(doc.amountPaidCents > 0) ? '<button type="button" class="ad-btn" id="q-unaccept">Undo accept</button>' : ''}
-          ${doc.kind !== 'invoice' ? '<button type="button" class="ad-btn" id="q-invoice">Convert to invoice</button>' : ''}
+          ${doc.kind !== 'invoice' && status !== 'draft' ? '<button type="button" class="ad-btn" id="q-invoice">Convert to invoice</button>' : ''}
           ${doc.kind === 'invoice' && status !== 'paid' ? '<button type="button" class="ad-btn" id="q-paid">Mark paid</button>' : ''}
           <button type="button" class="ad-btn" id="q-dup">Duplicate</button>
           <button type="button" class="ad-btn inv-del" id="q-cancel">Cancel</button>
@@ -6431,6 +6434,16 @@ function wireQuoteDrag(lines) {
 }
 
 function wireQuoteBuilder() {
+  // BACK TO ALL QUOTES - wired first so nothing below can stop it working, and
+  // it never waits more than 3s on the auto-save (Max couldn't get back, 16 Oct 2026)
+  const back = document.getElementById('q-back');
+  if (back) back.addEventListener('click', async () => {
+    back.disabled = true;
+    try { await Promise.race([flushQuoteAutosave(), new Promise((r) => setTimeout(r, 3000))]); } catch (e) { /* still leave */ }
+    state.openQuoteId = null;
+    render();
+  });
+
   qAutoReady = false;   // drawing the quote is not a change
   renderQuoteLines();
   wireQuoteCustSearch();
@@ -6438,8 +6451,6 @@ function wireQuoteBuilder() {
   const wrap = document.querySelector('.q-build');
   if (!wrap) return;
 
-  const back = document.getElementById('q-back');
-  if (back) back.addEventListener('click', async () => { await flushQuoteAutosave(); state.openQuoteId = null; render(); });
 
   // customer / hire / meta fields
   wrap.addEventListener('input', (e) => {
@@ -6567,6 +6578,14 @@ function wireQuoteActions() {
     try { const res = await call(name, data); if (m) { m.textContent = ok || 'Done.'; m.className = 'ad-quote-msg is-ok'; } return res; }
     catch (err) { if (m) { m.textContent = err.message || 'Failed.'; m.className = 'ad-quote-msg is-bad'; } throw err; }
   };
+
+  // APPROVE: the estimate becomes a quote, ready to send to the customer
+  const approve = document.getElementById('q-approve');
+  if (approve) approve.addEventListener('click', async () => {
+    await saveQuoteDoc(approve, true);
+    if (state.openQuoteId === '__new__') return;
+    try { await run('adminSetQuoteStatus', { id: state.openQuoteId, status: 'approved' }, 'Approved - now a quote. Hit Send when ready.'); render(); } catch (e) { /* message shown */ }
+  });
 
   const send = document.getElementById('q-send');
   if (send) send.addEventListener('click', async () => {
