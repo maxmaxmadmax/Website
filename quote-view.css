@@ -431,3 +431,23 @@
   .qp-terms-link { display: none; }
 }
 @media print { .qp-term[open] summary::after, .qp-term summary::after { content: none; } }
+
+/* ---- DESKTOP PROPOSAL (screen only - print rules above are untouched) ----
+   Starts below the fixed site menu, a bit wider, taller photo with a
+   left-hand shade so the title reads cleanly over busy crowd shots.      */
+@media screen and (min-width: 641px) {
+  .quote-page .qv-wrap { max-width: 1040px; padding-top: 112px; }
+  .qp-hero-photo { min-height: 460px; background-position: center 30%; }
+  .qp-hero-photo::before {
+    background:
+      linear-gradient(90deg, rgba(0,0,0,.78) 0%, rgba(0,0,0,.45) 45%, rgba(0,0,0,0) 75%),
+      linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(11,11,11,.7) 80%, #0b0b0b 100%);
+  }
+  .qp-hero-in { padding: 56px 56px 18px; max-width: 760px; }
+  .qp-hero h1 { font-size: 56px; text-shadow: 0 2px 18px rgba(0,0,0,.45); }
+  .qp-hero-body { padding: 26px 56px 36px; }
+  .qp-intro { font-size: 16px; max-width: 820px; }
+  .qp-hero .qp-tiles { border-top: 1px solid #222; padding-top: 28px; gap: 24px; }
+  .qp-hero .qp-ref { border-top: 1px solid #1c1c1c; padding-top: 16px; }
+  .qp-sec, .qv-doc { padding-left: 48px; padding-right: 48px; }
+}
