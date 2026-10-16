@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=463';
+} from './firebase-config.js?v=464';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel } from './system-builder.js?v=463';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=463';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=463';
-import { expandKit } from './kit.js?v=463';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=464';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=464';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=464';
+import { expandKit } from './kit.js?v=464';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -104,7 +104,7 @@ const state = {
   openInvId: null,                                  // which item's detail is open
   invFilter: { search: '', category: 'all', location: 'all', status: 'all' },
   invPage: 1,
-  openSysId: null,  // the System builder: null | '__new__' | an inventory id
+  openSysId: null,  // the Kit / Package builder: null | '__new__' | an inventory id
   invDates: null,   // { from, to } 'yyyy-mm-dd' for the On hire / Left columns (null = today)
   invSort: { key: '', dir: 'asc' },                 // '' = default (category, then name)
 
@@ -4393,7 +4393,11 @@ function invItem(raw) {
     repairDue: r.repairDue || '',
     requirements: (Array.isArray(r.requirements) ? r.requirements : []).map(normalizeReq),
     order: invNum(r.order, 0),
-    isSystem: r.isSystem === true,   // made of other gear (System builder)
+    isSystem: r.isSystem === true,   // a KIT or PACKAGE - made of other gear (Kit / Package builder)
+    bundleType: r.isSystem === true ? (r.bundleType === 'package' ? 'package' : 'kit') : '',
+    botOffer: r.botOffer === true,   // packages: offered on the website bot
+    eventType: r.eventType || '',
+    maxGuests: invNum(r.maxGuests, 0),
     systemParts: Array.isArray(r.systemParts) ? r.systemParts : [],
   };
 }
@@ -4554,7 +4558,8 @@ VIEWS.inventory = {
             </div>
             <div class="inv-head-actions">
               ${starter ? '<span class="inv-pill inv-st-blue">Starter list</span>' : ''}
-              <button type="button" class="ad-btn" id="inv-add-sys" title="A rig made of other gear, e.g. FOH System">+ New system</button>
+              <button type="button" class="ad-btn" id="inv-add-pkg" title="Kits and single items together, e.g. 4-Piece Band Backline">+ New package</button>
+              <button type="button" class="ad-btn" id="inv-add-sys" title="A rig made of other gear, e.g. FOH Kit">+ New kit</button>
               <button type="button" class="ad-btn ad-btn-primary" id="inv-add">+ Add Item</button>
             </div>
           </div>
@@ -4566,6 +4571,10 @@ VIEWS.inventory = {
             ${invTile('&#128295;', 'inv-t-amber', s.inRepair, 'In Repair', pct(s.inRepair) + '%')}
           </div>
 
+          ${oldBotPackages().length ? `<div class="inv-migrate">
+            <span>You have <b>${oldBotPackages().length}</b> website-bot package${oldBotPackages().length === 1 ? '' : 's'} in the old Packages section. Move them here so you can edit them with kits.</span>
+            <button type="button" class="ad-btn ad-btn-small" id="inv-migrate-pkgs">Move into Inventory</button>
+          </div>` : ''}
           <div class="inv-toolbar">
             <input type="search" id="inv-search" class="ad-search" placeholder="Search items..."
                    value="${attr(f.search)}" aria-label="Search inventory">
@@ -4639,9 +4648,12 @@ const INV_NUM_KEYS = ['quantityTotal', 'quantityAvailable', 'priceCents', 'extra
     (category, then name) the list already comes in.                        */
 function invSorted(list) {
   // SYSTEMS FIRST, A-Z (Max, 17 Oct 2026), then the rest as chosen below
-  const sys = list.filter((it) => it.isSystem).sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true, sensitivity: 'base' }));
+  // PACKAGES first, then KITS, each A-Z, then single items (Max, 17 Oct 2026)
+  const az = (a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true, sensitivity: 'base' });
+  const pkgs = list.filter((it) => it.isSystem && it.bundleType === 'package').sort(az);
+  const kits = list.filter((it) => it.isSystem && it.bundleType !== 'package').sort(az);
   const rest = invSortedRest(list.filter((it) => !it.isSystem));
-  return sys.concat(rest);
+  return pkgs.concat(kits, rest);
 }
 function invSortedRest(list) {
   const { key, dir } = state.invSort;
@@ -4686,13 +4698,62 @@ function invTile(icon, cls, value, label, pct) {
     </div>`;
 }
 
-/*  SYSTEM BUILDER state (js/system-builder.js) */
+/*  The event types the website bot offers - from packages already set up,
+    plus the usual ones, for the Package builder's Event type box.         */
+function botEventTypes() {
+  const set = new Set(['Live Music', 'Wedding', 'Corporate', 'DJ / Party']);
+  (state.packages || []).forEach((p) => { if (p.eventType) set.add(p.eventType); });
+  invItems().forEach((it) => { if (it.bundleType === 'package' && it.eventType) set.add(it.eventType); });
+  return [...set].sort((a, b) => a.localeCompare(b));
+}
+
+/*  The old "Packages" section (website bot) - moved into Inventory as real
+    packages, one click (Max, 17 Oct 2026). The old record is kept, marked
+    moved and switched off, so the bot uses the new one.                   */
+function oldBotPackages() {
+  return (state.packages || []).filter((p) => !p.migratedTo && Array.isArray(p.items) && p.items.length);
+}
+async function migrateOldPackages(btn) {
+  const old = oldBotPackages();
+  if (!old.length) return;
+  if (!window.confirm('Move ' + old.length + ' website-bot package' + (old.length === 1 ? '' : 's') + ' into Inventory as packages? They keep their gear, price, event type and guest size, and the bot keeps offering them.')) return;
+  btn.disabled = true;
+  const { collection, doc, setDoc, addDoc } = fb.f;
+  const items = invItems();
+  let done = 0;
+  for (const p of old) {
+    const d = sysDraftFrom(null, 'package');
+    d.parts = (p.items || []).filter((i) => i && i.itemId).map((i) => ({ itemId: i.itemId, qty: Math.max(1, Math.round(i.qty || 1)) }));
+    const s = sysSummary(d, items);
+    const price = p.overrideCents > 0 ? p.overrideCents
+      : Math.max(Math.max(0, Math.round(p.minCents || 0)), s.partsCents - Math.max(0, Math.round(p.discountCents || 0)));
+    const data = {
+      name: p.name || 'Package', category: 'Package', subtitle: p.description || '',
+      isSystem: true, bundleType: 'package',
+      botOffer: p.active !== false, eventType: p.eventType || '', maxGuests: Math.max(0, Math.round(Number(p.maxGuests) || 0)),
+      priceCents: price, extraDayCents: 0, pricingType: 'per-day', status: 'available', inBot: true,
+      quantityTotal: s.build === Infinity ? 0 : s.build, quantityAvailable: s.build === Infinity ? 0 : s.build, quantityRepair: 0,
+      systemParts: d.parts,
+      requirements: Object.keys(s.eff).map((id) => ({ itemId: id, rule: 'per-item', qty: s.eff[id], coversN: 1, charge: 'free', discountCents: 0 })),
+      order: (state.inventory || []).length + done,
+    };
+    try {
+      const ref = await addDoc(collection(fb.db, 'inventory'), data);
+      await setDoc(doc(fb.db, 'packages', p.id), { migratedTo: ref.id, active: false }, { merge: true });
+      done++;
+    } catch (e) { window.alert('Could not move "' + (p.name || p.id) + '": ' + (e.message || e)); }
+  }
+  btn.textContent = done + ' moved';
+}
+
+/*  KIT / PACKAGE BUILDER state (js/system-builder.js) */
 let sysDraft = sysDraftFrom(null);
 const sysHelpers = { esc, attr, money };
-function openSystem(id) {
+function openSystem(id, type) {
   const it = id && id !== '__new__' ? invItems().find((x) => x.id === id) : null;
   clearPendingPhoto();
-  sysDraft = sysDraftFrom(it);
+  sysDraft = sysDraftFrom(it, type);
+  sysDraft.eventTypes = botEventTypes();
   state.openInvId = null;
   state.openSysId = it ? it.id : '__new__';
   render();
@@ -4760,11 +4821,11 @@ function invRowsHtml() {
   const pageRows = rows.slice(start, start + INV_PER_PAGE);
 
   const body = pageRows.length ? pageRows.map((it) => `
-    <tr class="inv-row${it.isSystem ? ' inv-row-sys' : ''}${state.openInvId === it.id || state.openSysId === it.id ? ' is-open' : ''}" data-inv="${attr(it.id)}">
+    <tr class="inv-row${it.isSystem ? ' inv-row-sys' + (it.bundleType === 'package' ? ' inv-row-pkg' : '') : ''}${state.openInvId === it.id || state.openSysId === it.id ? ' is-open' : ''}" data-inv="${attr(it.id)}">
       <td class="inv-item-cell">
         ${invThumb(it)}
         <span class="inv-item-text">
-          <span class="inv-item-name">${esc(it.name || 'Untitled')}${it.isSystem ? '<span class="inv-sys-badge">System &middot; ' + ((it.systemParts && it.systemParts.length) || (it.requirements || []).length) + ' parts</span>' : ''}</span>
+          <span class="inv-item-name">${esc(it.name || 'Untitled')}${it.isSystem ? '<span class="inv-sys-badge' + (it.bundleType === 'package' ? ' is-pkg' : '') + '">' + (it.bundleType === 'package' ? 'Package' : 'Kit') + ' &middot; ' + ((it.systemParts && it.systemParts.length) || (it.requirements || []).length) + (it.bundleType === 'package' ? ' items' : ' parts') + (it.botOffer ? ' &middot; on bot' : '') + '</span>' : ''}</span>
           ${it.subtitle ? `<span class="inv-item-sub">${esc(it.subtitle)}</span>` : ''}
         </span>
       </td>
@@ -4963,9 +5024,13 @@ function invDetail() {
 function wireInventory() {
   renderInvRows();
 
-  // SYSTEM BUILDER: + New system, and the panel when it's open
+  // KIT / PACKAGE BUILDER: + New kit, + New package, and the panel when it's open
   const addSys = document.getElementById('inv-add-sys');
-  if (addSys) addSys.addEventListener('click', () => openSystem('__new__'));
+  if (addSys) addSys.addEventListener('click', () => openSystem('__new__', 'kit'));
+  const addPkg = document.getElementById('inv-add-pkg');
+  if (addPkg) addPkg.addEventListener('click', () => openSystem('__new__', 'package'));
+  const mig = document.getElementById('inv-migrate-pkgs');
+  if (mig) mig.addEventListener('click', () => migrateOldPackages(mig));
   if (state.openSysId != null) {
     wireSystemPanel(sysDraft, invItems, sysHelpers, invDistinct('category'), {
       save: saveSystem,
@@ -5042,7 +5107,7 @@ function wireInventory() {
     const openBtn = e.target.closest('[data-inv-open]');
     const id = openBtn ? openBtn.getAttribute('data-inv-open')
       : (row ? row.getAttribute('data-inv') : null);
-    // a system opens in the System builder, not the item editor
+    // a kit / package opens in its builder, not the item editor
     if (id && (invItems().find((x) => x.id === id) || {}).isSystem) { openSystem(id); return; }
     if (id) { state.openSysId = null; }
     if (id) {
@@ -6233,7 +6298,7 @@ function renderQuoteLines() {
         <div class="qb-cell qb-c-grip"><span class="qb-grip" title="Drag to reorder">&#10303;</span></div>
         <div class="qb-cell qb-c-desc">
           <input class="qb-name" data-lf="name" value="${attr(l.name)}" placeholder="Item name">
-          ${isSystemId(l.itemId) ? '<span class="qb-sys-tag qb-sys-line">System</span>' : ''}
+          ${isSystemId(l.itemId) ? (() => { const b = (invItems().find((x) => x.id === l.itemId) || {}).bundleType; return '<span class="qb-sys-tag qb-sys-line' + (b === 'package' ? ' is-pkg' : '') + '">' + (b === 'package' ? 'Package' : 'Kit') + '</span>'; })() : ''}
           ${l.description ? `<span class="qb-sub">${esc(l.description)}</span>` : ''}${stockWarn(l)}
         </div>
         <div class="qb-cell qb-c-qty"><input class="qb-num" type="number" min="0" step="1" data-lf="qty" value="${attr(l.qty)}"></div>
@@ -6367,10 +6432,18 @@ function kitLinesFor(itemId, qty, byId, days) {
   // anything they bring along (leads, stands) follows, A-Z. (Max, 17 Oct 2026)
   const parent = byId[itemId];
   const order = {};
-  if (parent && parent.isSystem) {
-    ((parent.systemParts && parent.systemParts.length) ? parent.systemParts : (parent.requirements || []))
-      .forEach((p, i) => { if (p && p.itemId && order[p.itemId] == null) order[p.itemId] = i; });
-  }
+  let n = 0;
+  const partsOf = (x) => ((x.systemParts && x.systemParts.length) ? x.systemParts : (x.requirements || []));
+  // walk in Max's order; a kit inside a package is followed straight away by its own parts
+  const walk = (x, depth) => {
+    partsOf(x).forEach((p) => {
+      if (!p || !p.itemId || order[p.itemId] != null) return;
+      order[p.itemId] = n++;
+      const child = byId[p.itemId];
+      if (child && child.isSystem && depth < 3) walk(child, depth + 1);
+    });
+  };
+  if (parent && parent.isSystem) walk(parent, 0);
   return kit.required.map((r) => {
     const charged = r.charge === 'normal';
     const line = {
@@ -6467,7 +6540,7 @@ function quoteSearchMatches(term) {
   const t = String(term || '').trim().toLowerCase();
   if (!t) return [];
   const hits = searchList(quoteAddSearchList(), t, (it) => it.name, (it) => [it.sub], 8);
-  return hits.filter((x) => x.system).concat(hits.filter((x) => !x.system));   // systems first (Max, 17 Oct 2026)
+  return hits.filter((x) => x.bundle === 'package').concat(hits.filter((x) => x.system && x.bundle !== 'package'), hits.filter((x) => !x.system));   // systems first (Max, 17 Oct 2026)
 }
 
 function renderInvResults(term) {
@@ -6485,7 +6558,7 @@ function renderInvResults(term) {
   box.hidden = false;
   box.innerHTML = matches.map((it, i) => `
     <div class="qb-res${i === invSearchActive ? ' is-active' : ''}" data-add="${attr(it.id)}" data-kind="${attr(it.kind)}">
-      <span class="qb-res-name">${it.system ? '<span class="qb-sys-tag">System</span>' : ''}${esc(it.name)}${it.kind === 'resource' ? ` <span class="qb-res-tag">${esc(it.sub)}</span>` : ''}</span>
+      <span class="qb-res-name">${it.system ? '<span class="qb-sys-tag' + (it.bundle === 'package' ? ' is-pkg' : '') + '">' + (it.bundle === 'package' ? 'Package' : 'Kit') + '</span>' : ''}${esc(it.name)}${it.kind === 'resource' ? ` <span class="qb-res-tag">${esc(it.sub)}</span>` : ''}</span>
       <span class="qb-res-price">${esc(money(it.priceCents))}/day</span>
     </div>`).join('');
   return matches;
@@ -8453,7 +8526,7 @@ function startQuoteForCustomer(id) {
 /*  The quote builder's add-search draws on inventory PLUS active crew and
     vehicles, so any of them can be dropped onto a quote as a billable line. */
 function quoteAddSearchList() {
-  const inv = invSearchList().map((it) => ({ id: it.id, name: it.name, priceCents: it.priceCents, kind: 'item', sub: it.category || 'Gear', system: it.isSystem === true }));
+  const inv = invSearchList().map((it) => ({ id: it.id, name: it.name, priceCents: it.priceCents, kind: 'item', sub: it.category || 'Gear', system: it.isSystem === true, bundle: it.bundleType }));
   const res = (state.resources || [])
     .filter((r) => r.active !== false && r.name)
     .map((r) => ({ id: r.id, name: r.name, priceCents: r.dayRateCents || 0, kind: 'resource', sub: RES_TYPES[r.type] || 'Crew' }));

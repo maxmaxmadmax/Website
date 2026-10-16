@@ -4339,3 +4339,11 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-sys-tag{ display:inline-block; margin-right:6px; padding:1px 6px; border-radius:5px; background:var(--ad-orange); color:#fff; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; vertical-align:1px; }
 .qb-sys-line{ margin:3px 0 0; }
 .sys-panel .inv-photo-ph{ background:var(--ad-orange-soft); color:var(--ad-orange); }
+
+/* KITS (orange) and PACKAGES (black) - Max, 17 Oct 2026 */
+.inv-sys-badge.is-pkg, .qb-sys-tag.is-pkg{ background:#111 !important; }
+.inv-row-pkg td:first-child{ box-shadow:inset 4px 0 0 #111 !important; }
+.inv-row-pkg{ background:#f6f6f6 !important; }
+.sys-check{ display:flex; gap:8px; align-items:center; font-size:13.5px; margin-bottom:10px; cursor:pointer; }
+.sys-row2.is-off{ opacity:.45; }
+.inv-migrate{ display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--ad-amber-bg); color:#5c3a00; border-radius:10px; padding:10px 14px; margin:0 0 12px; font-size:13px; }

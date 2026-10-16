@@ -2885,7 +2885,7 @@ exports.getPickList = onCall(async (request) => {
   // categories from inventory, so the gear can be grouped
   const inv = await loadQuoteInventory();
   const cat = {};
-  inv.forEach((it) => { cat[it.id] = it.isSystem ? 'Systems' : (it.category || ''); });   // a system (FOH System...) gets its own group
+  inv.forEach((it) => { cat[it.id] = it.isSystem ? (it.bundleType === 'package' ? 'Packages' : 'Kits') : (it.category || ''); });   // kits & packages get their own groups
   const c = q.customer || {};
   const items = pickItems(q.lines).map((p) => ({ key: pickKey(p), name: p.name, qty: p.qty, category: cat[p.itemId] || p.category || 'Other' }));
   const crew = (q.lines || []).filter((l) => l.type === 'labour').map((l) => ({ name: l.name || '', note: String(l.description || '').replace(/@.*$/, '').trim() }));
@@ -3222,9 +3222,16 @@ exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
   const byId = {};
   inv.forEach((it) => { byId[it.id] = it; });
 
+  // PACKAGES (Max, 17 Oct 2026): packages built in Inventory (kits + items)
+  // that are ticked for the bot, plus any old-style ones not yet moved over.
   const pkgSnap = await db.collection('packages').get();
   const packages = [];
-  pkgSnap.forEach((x) => packages.push({ id: x.id, ...x.data() }));
+  pkgSnap.forEach((x) => { const p = x.data() || {}; if (!p.migratedTo) packages.push({ id: x.id, ...p }); });
+  inv.filter((it) => it.isSystem && it.bundleType === 'package' && it.botOffer === true).forEach((it) => packages.push({
+    id: it.id, name: it.name || 'Package', eventType: it.eventType || '', maxGuests: it.maxGuests || 0, active: true,
+    items: [{ itemId: it.id, qty: 1 }],   // the package itself - its kits and gear come along free
+    overrideCents: it.priceCents || 0,
+  }));
 
   const isOther = /^other/i.test(eventType);
   const pkg = isOther ? null : botPickPackage(packages, eventType, guests);

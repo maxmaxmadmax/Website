@@ -1,8 +1,13 @@
 /* ==========================================================================
-   SYSTEM BUILDER  -  Inventory > "+ New system"   (Max, 16 Oct 2026)
+   KIT & PACKAGE BUILDER  -  Inventory > "+ New kit" / "+ New package"
+   (Max, 16-17 Oct 2026; kits were first called "systems")
 
-   A SYSTEM is an inventory item made of other gear, e.g.
-     FOH System = 2 x tops + 4 x subs + 1 x 4-ch amp  (+ their cables)
+   A KIT is an inventory item made of other gear, e.g.
+     FOH Kit = 2 x tops + 4 x subs + 1 x 4-ch amp  (+ their cables)
+   A PACKAGE is made of kits and single items, e.g.
+     4-Piece Band Backline = Mic kit + Drum kit + bass rig + 2 guitar amps
+   and can be offered on the website estimate bot (event type + guest size).
+   Both are saved with isSystem: true; bundleType says which ('kit' / 'package').
    It is saved as a normal inventory item with isSystem: true and its parts
    as INCLUDED required gear, so quotes show one line at one price with the
    parts listed under it, the pick list shows every part, and stock is
@@ -11,15 +16,20 @@
 
    Pure HTML + wiring; admin-app.js hands in the items and does the saving.
    ========================================================================== */
-import { expandKit, resolveTotals } from './kit.js?v=463';
+import { expandKit, resolveTotals } from './kit.js?v=464';
 
 /* the working copy of the system being built */
-export function sysDraftFrom(item) {
+export function sysDraftFrom(item, type) {
   const it = item || {};
+  const bundleType = (it.bundleType || type) === 'package' ? 'package' : 'kit';
   return {
     id: it.id || '',
+    bundleType,
+    botOffer: it.botOffer === true,            // packages: offered on the website bot
+    eventType: it.eventType || '',
+    maxGuests: it.maxGuests || '',
     name: it.name || '',
-    category: it.category || 'Audio',
+    category: it.category || (bundleType === 'package' ? 'Package' : 'Audio'),
     subtitle: it.subtitle || '',
     priceCents: it.priceCents || 0,
     photoUrl: it.photoUrl || '',
@@ -30,6 +40,13 @@ export function sysDraftFrom(item) {
     search: '',
   };
 }
+
+/* the words used for each type */
+const W = (d) => (d.bundleType === 'package'
+  ? { one: 'package', One: 'Package', parts: 'Contents', sub: 'Kits and single items together - one line on a quote',
+      ph: 'e.g. 4-Piece Band Backline', hint: 'Search above to add kits and single items.', make: 'make' }
+  : { one: 'kit', One: 'Kit', parts: 'Parts', sub: 'A rig made of other gear - one line on a quote',
+      ph: 'e.g. FOH Kit', hint: 'Add the main gear above - cables and stands come along on their own.', make: 'build' });
 
 const byIdOf = (items) => { const m = {}; items.forEach((i) => { m[i.id] = i; }); return m; };
 
@@ -68,22 +85,23 @@ export function sysSummary(d, items) {
 /* the side panel */
 export function systemPanelHtml(d, items, h, cats) {
   const byId = byIdOf(items);
+  const w = W(d);
   const s = sysSummary(d, items);
   const price = d.priceTouched ? d.priceCents : s.partsCents;
   const save = s.partsCents && price < s.partsCents ? Math.round(100 * (1 - price / s.partsCents)) : 0;
   return `
-    <aside class="inv-detail sys-panel" aria-label="System builder">
+    <aside class="inv-detail sys-panel" aria-label="${w.One} builder">
       <header class="inv-detail-head">
         <div>
-          <h2>${d.id ? 'Edit system' : 'New system'}</h2>
-          <p class="inv-detail-sub">A rig made of other gear - one line on a quote</p>
+          <h2>${d.id ? 'Edit ' + w.one : 'New ' + w.one}</h2>
+          <p class="inv-detail-sub">${w.sub}</p>
         </div>
         <button type="button" class="inv-detail-close" id="sys-close" aria-label="Close">&times;</button>
       </header>
       <div class="inv-detail-body">
         <div class="inv-photo">
           <div class="inv-photo-preview" id="inv-photo-drop" title="Drag, paste or click to add a photo">
-            ${d.photoUrl ? `<img src="${h.attr(d.photoUrl)}" alt="">` : '<span class="inv-photo-ph">S</span>'}
+            ${d.photoUrl ? `<img src="${h.attr(d.photoUrl)}" alt="">` : '<span class="inv-photo-ph">' + (d.bundleType === 'package' ? 'P' : 'K') + '</span>'}
           </div>
           <div class="inv-photo-actions">
             <label class="ad-btn ad-btn-small inv-photo-btn">${d.photoUrl ? 'Replace photo' : 'Upload photo'}
@@ -94,37 +112,48 @@ export function systemPanelHtml(d, items, h, cats) {
           </div>
         </div>
         <label class="sys-field">Name
-          <input class="ad-input" id="sys-name" value="${h.attr(d.name)}" placeholder="e.g. FOH System"></label>
+          <input class="ad-input" id="sys-name" value="${h.attr(d.name)}" placeholder="${h.attr(w.ph)}"></label>
         <div class="sys-row2">
           <label class="sys-field">Category
             <input class="ad-input" id="sys-cat" list="sys-cats" value="${h.attr(d.category)}">
             <datalist id="sys-cats">${(cats || []).map((c) => `<option value="${h.attr(c)}">`).join('')}</datalist></label>
           <label class="sys-field">Short description
-            <input class="ad-input" id="sys-sub" value="${h.attr(d.subtitle)}" placeholder="e.g. Tops, subs & amp"></label>
+            <input class="ad-input" id="sys-sub" value="${h.attr(d.subtitle)}" placeholder="${d.bundleType === 'package' ? 'e.g. Drums, mics, bass & guitar amps' : 'e.g. Tops, subs & amp'}"></label>
         </div>
 
-        <p class="sys-h">Parts</p>
+        <p class="sys-h">${w.parts}</p>
         <div class="sys-search">
-          <input class="ad-input" id="sys-search" placeholder="&#128269; Search gear to add..." value="${h.attr(d.search)}" autocomplete="off">
+          <input class="ad-input" id="sys-search" placeholder="&#128269; Search ${d.bundleType === 'package' ? 'kits & gear' : 'gear'} to add..." value="${h.attr(d.search)}" autocomplete="off">
           <div class="sys-results" id="sys-results"></div>
         </div>
         <div id="sys-parts">${partsHtml(d, byId, h, s.covered)}</div>
-        ${s.tagAlong.length ? `<p class="sys-tag"><b>Comes with automatically:</b> ${s.tagAlong.map((r) => h.esc(r.qty + ' × ' + r.name)).join(', ')}</p>` : ''}
+        ${s.tagAlong.length ? `<p class="sys-tag"><b>${d.bundleType === 'package' ? 'Also included (inside the kits):' : 'Comes with automatically:'}</b> ${s.tagAlong.map((r) => h.esc(r.qty + ' × ' + r.name)).join(', ')}</p>` : ''}
 
         <p class="sys-h">Price</p>
         <div class="sys-price">
           <div><span>Parts add up to</span><b>${h.esc(h.money(s.partsCents))} / day</b></div>
-          <label><span>System price</span>
+          <label><span>${w.One} price</span>
             <span class="sys-dollar">$<input class="ad-input" type="number" min="0" step="1" id="sys-price" value="${h.attr(Math.round(price / 100))}"> / day</span></label>
           ${save > 0 ? `<em>Saves the customer ${save}%</em>` : ''}
         </div>
 
         <p class="sys-build${s.build ? '' : ' is-none'}">${d.parts.length
-          ? (s.build ? '&#10003; You can build <b>' + s.build + '</b> of these with what you own' : '&#9888; You don’t own enough parts to build one')
-          : 'Add the main gear above - cables and stands come along on their own.'}</p>
+          ? (s.build ? '&#10003; You can ' + w.make + ' <b>' + s.build + '</b> of these with what you own' : '&#9888; You don’t own enough gear to ' + w.make + ' one')
+          : w.hint}</p>
+
+        ${d.bundleType === 'package' ? `
+        <p class="sys-h">Website bot</p>
+        <label class="sys-check"><input type="checkbox" id="sys-bot"${d.botOffer ? ' checked' : ''}> Offer this package on the instant estimate</label>
+        <div class="sys-row2${d.botOffer ? '' : ' is-off'}">
+          <label class="sys-field">Event type
+            <input class="ad-input" id="sys-event" list="sys-events" value="${h.attr(d.eventType)}" placeholder="e.g. Live Music">
+            <datalist id="sys-events">${(d.eventTypes || []).map((c) => `<option value="${h.attr(c)}">`).join('')}</datalist></label>
+          <label class="sys-field">Up to how many guests
+            <input class="ad-input" type="number" min="0" step="10" id="sys-guests" value="${h.attr(d.maxGuests)}" placeholder="Any size"></label>
+        </div>` : ''}
 
         <div class="sys-actions">
-          <button type="button" class="ad-btn ad-btn-primary" id="sys-save">Save system</button>
+          <button type="button" class="ad-btn ad-btn-primary" id="sys-save">Save ${w.one}</button>
           <span class="ad-quote-msg" id="sys-msg"></span>
         </div>
       </div>
@@ -137,22 +166,25 @@ function partsHtml(d, byId, h, covered) {
     const it = byId[p.itemId] || { name: '(missing item)' };
     return `<div class="sys-part" data-sys-i="${i}">
         <span class="qb-grip sys-grip" title="Drag to reorder">&#10303;</span>
-        <span class="sys-pname">${h.esc(it.name)}<small>${h.esc(it.category || '')}</small>${covered && covered[p.itemId] ? '<em class="sys-covered">' + covered[p.itemId] + ' already comes with another part - only counted once</em>' : ''}</span>
+        <span class="sys-pname">${it.isSystem ? '<span class="qb-sys-tag">Kit</span>' : ''}${h.esc(it.name)}<small>${h.esc(it.category || '')}</small>${covered && covered[p.itemId] ? '<em class="sys-covered">' + covered[p.itemId] + ' already comes with another part - only counted once</em>' : ''}</span>
         <span class="sys-qty"><button type="button" data-sys-minus="${i}" aria-label="Less">&minus;</button><b>${p.qty}</b><button type="button" data-sys-plus="${i}" aria-label="More">+</button></span>
         <span class="sys-own">${h.esc(it.quantityTotal != null ? it.quantityTotal : '?')} owned</span>
       </div>`;
   }).join('');
 }
 
-/* search results: real gear only (not other systems, not this one) */
+/* search results: a kit takes single gear; a package takes single gear AND
+   kits (never another package, never itself). Kits come first.           */
 function resultsHtml(d, items, h) {
   const q = d.search.trim().toLowerCase();
   if (!q) return '';
   const words = q.split(/\s+/);
-  const hits = items.filter((it) => !it.isSystem && it.id !== d.id &&
-    words.every((w) => [it.name, it.subtitle, it.category].join(' ').toLowerCase().includes(w))).slice(0, 6);
+  const allowed = (it) => it.id !== d.id && (!it.isSystem || (d.bundleType === 'package' && it.bundleType !== 'package'));
+  const found = items.filter((it) => allowed(it) &&
+    words.every((w) => [it.name, it.subtitle, it.category].join(' ').toLowerCase().includes(w)));
+  const hits = found.filter((it) => it.isSystem).concat(found.filter((it) => !it.isSystem)).slice(0, 8);
   if (!hits.length) return '<p class="sys-none">No gear matches.</p>';
-  return hits.map((it) => `<button type="button" data-sys-add="${h.attr(it.id)}">${h.esc(it.name)}<small>${h.esc(it.category || '')} &middot; ${h.esc(h.money(it.priceCents || 0))}/day</small></button>`).join('');
+  return hits.map((it) => `<button type="button" data-sys-add="${h.attr(it.id)}">${it.isSystem ? '<span class="qb-sys-tag">Kit</span>' : ''}${h.esc(it.name)}<small>${h.esc(it.category || '')} &middot; ${h.esc(h.money(it.priceCents || 0))}/day</small></button>`).join('');
 }
 
 /* clicks and typing. act = { save(data), close() }. Re-draws the panel in
@@ -221,6 +253,9 @@ export function wireSystemPanel(d, getItems, h, cats, act) {
     if (id === 'sys-name') d.name = e.target.value;
     else if (id === 'sys-cat') d.category = e.target.value;
     else if (id === 'sys-sub') d.subtitle = e.target.value;
+    else if (id === 'sys-event') d.eventType = e.target.value;
+    else if (id === 'sys-guests') d.maxGuests = e.target.value;
+    else if (id === 'sys-bot') { d.botOffer = e.target.checked; redraw(); }
     else if (id === 'sys-price') { d.priceCents = Math.max(0, Math.round(Number(e.target.value || 0) * 100)); d.priceTouched = true; }
     else if (id === 'sys-search') { d.search = e.target.value; document.getElementById('sys-results').innerHTML = resultsHtml(d, getItems(), h); }
   });
@@ -249,14 +284,20 @@ export function wireSystemPanel(d, getItems, h, cats, act) {
       const msg = document.getElementById('sys-msg');
       const say = (t, bad) => { if (msg) { msg.textContent = t; msg.className = 'ad-quote-msg ' + (bad ? 'is-bad' : 'is-ok'); } };
       d.name = val('sys-name').trim();
-      if (!d.name) return say('Give the system a name first.', true);
-      if (!d.parts.length) return say('Add at least one part.', true);
+      const w = W(d);
+      if (!d.name) return say('Give the ' + w.one + ' a name first.', true);
+      if (!d.parts.length) return say('Add at least one ' + (d.bundleType === 'package' ? 'kit or item.' : 'part.'), true);
+      if (d.bundleType === 'package' && d.botOffer && !String(d.eventType || '').trim()) return say('Pick an event type for the bot (e.g. Live Music).', true);
       const s = sysSummary(d, getItems());
       const price = d.priceTouched ? d.priceCents : s.partsCents;
       say('Saving…');
       act.save({
         name: d.name,
-        category: (d.category || '').trim() || 'Audio',
+        category: (d.category || '').trim() || (d.bundleType === 'package' ? 'Package' : 'Audio'),
+        bundleType: d.bundleType,
+        botOffer: d.bundleType === 'package' && d.botOffer === true,
+        eventType: d.bundleType === 'package' ? String(d.eventType || '').trim() : '',
+        maxGuests: d.bundleType === 'package' ? Math.max(0, Math.round(Number(d.maxGuests) || 0)) : 0,
         subtitle: (d.subtitle || '').trim(),
         isSystem: true,
         priceCents: price,

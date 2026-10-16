@@ -21,7 +21,7 @@
 
 import {
   firebaseConfig, functionsRegion, isFirebaseConfigured,
-} from './firebase-config.js?v=463';
+} from './firebase-config.js?v=464';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -116,8 +116,16 @@ async function initFirebase() {
       const rows = [];
       snap.forEach((d) => {
         const x = d.data() || {};
-        if (x.active !== false) rows.push({ name: x.name || '', eventType: x.eventType || '', maxGuests: x.maxGuests || 0 });
+        if (x.active !== false && !x.migratedTo) rows.push({ name: x.name || '', eventType: x.eventType || '', maxGuests: x.maxGuests || 0 });
       });
+      // packages built in Inventory and ticked "offer on the instant estimate" (Max, 17 Oct 2026)
+      try {
+        const inv = await firestore.getDocs(firestore.query(firestore.collection(db, 'inventory'), firestore.where('botOffer', '==', true)));
+        inv.forEach((d) => {
+          const x = d.data() || {};
+          if (x.isSystem && x.bundleType === 'package') rows.push({ name: x.name || '', eventType: x.eventType || '', maxGuests: x.maxGuests || 0 });
+        });
+      } catch (e) { /* old packages still work */ }
       if (rows.length) packages = rows;
     } catch (err) {
       /* keep the fallback event-type list */
