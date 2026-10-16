@@ -2664,6 +2664,19 @@ exports.adminSetQuoteStatus = onCall(async (request) => {
   if (!snap.exists) throw new HttpsError('not-found', 'No such quote.');
 
   const update = { status, updatedAt: FieldValue.serverTimestamp() };
+
+  // UNDO ACCEPT (Max, 16 Oct 2026): back to "sent" and clear who accepted and
+  // how they chose to pay. Never when card money has been taken.
+  if (request.data.undoAccept === true) {
+    if (status !== 'sent') throw new HttpsError('invalid-argument', 'Undo accept goes back to sent.');
+    if ((snap.data().amountPaidCents || 0) > 0) {
+      throw new HttpsError('failed-precondition', 'A payment has been taken on this quote - refund it in Stripe first.');
+    }
+    Object.assign(update, {
+      acceptedName: FieldValue.delete(), acceptedAt: FieldValue.delete(),
+      paymentStatus: FieldValue.delete(), paymentMethod: FieldValue.delete(),
+    });
+  }
   const stamp = {
     sent: 'sentAt', accepted: 'acceptedAt', declined: 'declinedAt',
     invoiced: 'invoicedAt', paid: 'paidAt', cancelled: 'cancelledAt',
