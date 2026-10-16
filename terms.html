@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Terms &amp; Conditions | SoundzGood Whitsundays</title>
+    <meta name="description" content="Terms & Conditions for equipment hire, event production and technical services supplied by SoundzGood Whitsundays.">
+
+    <link rel="icon" href="images/logo.png">
+    <link rel="stylesheet" href="style.css?v=418">
+    <script src="js/main.js?v=418" defer></script>
+
+    <!-- Terms page only. The words themselves live in js/terms-data.js,
+         the same file the quote / proposal page uses, so they never drift. -->
+    <style>
+        .tc-wrap { max-width: 820px; margin: 0 auto; line-height: 1.65; }
+        .tc-updated { color: var(--sg-muted); font-size: .95rem; margin-bottom: 24px; }
+        .tc-wrap > p { margin-bottom: 14px; }
+        .tc-clause { margin-top: 34px; }
+        .tc-clause h2 { text-align: left; font-size: 1.15rem; letter-spacing: 1px; margin-bottom: 10px; }
+        .tc-clause p { margin-bottom: 10px; color: #ddd; }
+        .tc-clause .tc-sub { font-weight: 700; color: #fff; margin: 14px 0 4px; }
+        .tc-clause ul { margin: 0 0 12px 22px; color: #ddd; }
+        .tc-clause li { margin-bottom: 3px; }
+        .tc-print { margin-top: 40px; }
+
+        /* printing: plain black on white, no menus */
+        @media print {
+            #navbar, #footer, .page-header, .tc-print { display: none !important; }
+            body { background: #fff !important; color: #000 !important; }
+            .section { padding: 0 !important; }
+            .tc-clause h2, .tc-clause p, .tc-clause ul, .tc-clause .tc-sub, .tc-updated { color: #000 !important; }
+            @page { size: A4; margin: 14mm; }
+            .tc-wrap { max-width: none; font-size: 10pt; line-height: 1.4; }
+            .tc-clause { margin-top: 10px; }
+            .tc-clause h2 { font-size: 11pt; margin-bottom: 4px; break-after: avoid; }
+            .tc-clause p, .tc-wrap > p { margin-bottom: 4px; }
+            .tc-clause .tc-sub { margin: 6px 0 2px; }
+            .tc-clause ul { margin-bottom: 6px; }
+            .tc-printhead { display: block !important; }
+        }
+        .tc-printhead { display: none; font-size: 1.6rem; font-weight: 800; margin-bottom: 6px; }
+    </style>
+</head>
+
+<body>
+
+<div id="navbar"></div>
+
+<header class="page-header">
+    <div class="header-overlay"></div>
+    <div class="header-content">
+        <h1>Terms &amp; Conditions</h1>
+        <p>Equipment hire, event production and technical services.</p>
+    </div>
+</header>
+
+<section class="section">
+    <div class="tc-wrap" id="tc-wrap">
+        <p class="tc-printhead">SoundzGood &mdash; Terms &amp; Conditions</p>
+        <p>Loading&hellip;</p>
+    </div>
+</section>
+
+<div id="footer"></div>
+
+<script type="module">
+    import { TERMS, TERMS_INTRO, TERMS_UPDATED, termBodyHtml } from './js/terms-data.js?v=418';
+
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+    document.getElementById('tc-wrap').innerHTML =
+        '<p class="tc-printhead">SoundzGood &mdash; Terms &amp; Conditions</p>'
+        + '<p class="tc-updated">Last updated: ' + esc(TERMS_UPDATED) + '</p>'
+        + TERMS_INTRO.map((t) => '<p>' + esc(t) + '</p>').join('')
+        + TERMS.map(([h, lines], i) =>
+            '<div class="tc-clause"><h2>' + (i + 1) + '. ' + esc(h) + '</h2>' + termBodyHtml(lines, esc) + '</div>').join('')
+        + '<p class="tc-print"><button type="button" class="btn" onclick="window.print()">Print these terms</button></p>';
+</script>
+
+</body>
+</html>

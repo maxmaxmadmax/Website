@@ -7,7 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=411';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=418';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=418';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -397,7 +398,7 @@ function proposalTop(q, days) {
       </div>
     </section>
 
-    <section class="qp-sec">
+    <section class="qp-sec qp-invest">
       <p class="qp-eyebrow">Investment summary</p>
       <h2 class="qp-h2">Your production investment</h2>
       <p class="qp-sub">Total inclusive of GST for ${esc(event)}${when ? ' on ' + esc(when) : ''}, itemised by category below.</p>
@@ -410,12 +411,7 @@ function proposalTop(q, days) {
     </section>`;
 }
 
-const TERMS = [
-  ['Booking & payment', 'A 50% deposit secures your date. The balance is due 7 days before your event. Your booking is confirmed once the deposit is received. All prices are in AUD and include GST where shown.'],
-  ['Changes & cancellations', 'Changes to equipment, times or the venue can be made up to 7 days before your event - we\'ll send an updated quote. If you cancel more than 30 days before the event, your deposit is refunded less any costs already incurred. Within 30 days the deposit is non-refundable, and within 7 days the full amount is payable.'],
-  ['Production & delivery', 'Delivery, setup and pack-down are included as listed. We need safe vehicle access, a suitable power supply (or a generator as quoted) and a clear setup area at the agreed times. Delays outside our control may add labour at the quoted hourly rate.'],
-  ['Equipment & safety', 'All equipment remains the property of SoundzGood Whitsundays. You\'re responsible for loss or damage caused by guests or misuse during the hire. Outdoor equipment may be paused or packed down in unsafe weather to protect people and gear.'],
-];
+// booking terms live in js/terms-data.js (also used by the /terms page)
 
 function proposalBottom(q) {
   const total = Math.round(q.totalCents || 0);
@@ -433,7 +429,9 @@ function proposalBottom(q) {
   const bank = '<p class="qp-bank"><strong>Bank transfer</strong><br>' + esc(SELLER.bankName) + '<br>BSB <strong>' + esc(SELLER.bankBsb) + '</strong> &nbsp; Account <strong>' + esc(SELLER.bankAcc) + '</strong><br>Reference: <strong>' + esc(ref) + '</strong></p>';
   const justPaid = /[?&]paid=1/.test(location.search);
 
-  const terms = TERMS.map(([h, t], i) => '<details class="qp-term"' + (i === 0 ? ' open' : '') + '><summary>' + esc(h) + '</summary><p>' + esc(t) + '</p></details>').join('');
+  // all clauses start closed on screen (tap to open); printing opens them all
+  const terms = TERMS.map(([h, lines], i) => '<details class="qp-term"><summary>' + (i + 1) + '. ' + esc(h) + '</summary><div class="qp-term-body">' + termBodyHtml(lines, esc) + '</div></details>').join('');
+  const intro = TERMS_INTRO.map((t) => '<p class="qp-terms-intro">' + esc(t) + '</p>').join('');
 
   let book;
   if (q.paymentStatus === 'paid') {
@@ -457,7 +455,7 @@ function proposalBottom(q) {
         + opt('full', 'Pay in full', money(total), 'Pay the total now and you&rsquo;re all done.', false) : '')
       + opt('bank', 'Bank transfer', money(deposit) + ' deposit', 'Accept now, pay the deposit by bank transfer. No fees.', !q.cardOn)
       + '<label class="qp-name">Your name<input type="text" id="qp-name" autocomplete="name" value="' + esc((q.customer && q.customer.name) || '') + '"></label>'
-      + '<label class="qp-agree"><input type="checkbox" id="qp-agree"> I accept this quote and the booking terms above.</label>'
+      + '<label class="qp-agree"><input type="checkbox" id="qp-agree"> I accept this quote and the Terms &amp; Conditions above.</label>'
       + '<button type="button" class="qv-btn qv-btn-primary qp-go" id="qp-go">Accept &amp; continue</button>'
       + '<p class="qp-secure">&#128274; Card payments are processed securely by Stripe.</p>'
       + '</div><aside class="qp-side"><p class="qp-eyebrow">Quote summary</p>'
@@ -470,10 +468,12 @@ function proposalBottom(q) {
   }
 
   return `
-    <section class="qp-sec">
+    <section class="qp-sec qp-terms">
       <p class="qp-eyebrow">Terms &amp; conditions</p>
-      <h2 class="qp-h2">Booking terms</h2>
+      <h2 class="qp-h2">Terms &amp; Conditions</h2>
+      ${intro}
       ${terms}
+      <p class="qp-terms-link">Also at <a href="/terms" target="_blank" rel="noopener">soundzgood.com.au/terms</a></p>
     </section>
     <section class="qp-sec qp-book" id="qp-book">
       <p class="qp-eyebrow">Secure your booking</p>
@@ -484,6 +484,8 @@ function proposalBottom(q) {
 }
 
 function wireProposal(q) {
+  // printing / PDF: show every booking term, not just the open one
+  window.addEventListener('beforeprint', () => document.querySelectorAll('.qp-term').forEach((d) => { d.open = true; }));
   const msg = document.getElementById('qp-msg');
   const say = (t, bad) => { if (msg) { msg.hidden = false; msg.textContent = t; msg.className = 'qv-msg' + (bad ? ' qv-bad' : ''); } };
 
