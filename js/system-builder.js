@@ -11,7 +11,7 @@
 
    Pure HTML + wiring; admin-app.js hands in the items and does the saving.
    ========================================================================== */
-import { expandKit, resolveTotals } from './kit.js?v=460';
+import { expandKit, resolveTotals } from './kit.js?v=463';
 
 /* the working copy of the system being built */
 export function sysDraftFrom(item) {
@@ -22,6 +22,7 @@ export function sysDraftFrom(item) {
     category: it.category || 'Audio',
     subtitle: it.subtitle || '',
     priceCents: it.priceCents || 0,
+    photoUrl: it.photoUrl || '',
     priceTouched: !!it.id,   // an existing system keeps its price; a new one follows the parts
     // what Max picked (systemParts); older saves only have the de-duplicated requirements
     parts: (Array.isArray(it.systemParts) && it.systemParts.length ? it.systemParts : (it.requirements || []))
@@ -80,6 +81,18 @@ export function systemPanelHtml(d, items, h, cats) {
         <button type="button" class="inv-detail-close" id="sys-close" aria-label="Close">&times;</button>
       </header>
       <div class="inv-detail-body">
+        <div class="inv-photo">
+          <div class="inv-photo-preview" id="inv-photo-drop" title="Drag, paste or click to add a photo">
+            ${d.photoUrl ? `<img src="${h.attr(d.photoUrl)}" alt="">` : '<span class="inv-photo-ph">S</span>'}
+          </div>
+          <div class="inv-photo-actions">
+            <label class="ad-btn ad-btn-small inv-photo-btn">${d.photoUrl ? 'Replace photo' : 'Upload photo'}
+              <input type="file" accept="image/*" id="inv-photo-input" hidden></label>
+            ${d.photoUrl ? '<button type="button" class="ad-btn ad-btn-small" id="inv-photo-remove">Remove</button>' : ''}
+            <p class="inv-photo-hint">Drag an image in, or paste a screenshot (Ctrl / Cmd + V)</p>
+            <span class="ad-quote-msg" id="inv-photo-msg"></span>
+          </div>
+        </div>
         <label class="sys-field">Name
           <input class="ad-input" id="sys-name" value="${h.attr(d.name)}" placeholder="e.g. FOH System"></label>
         <div class="sys-row2">
@@ -147,6 +160,7 @@ function resultsHtml(d, items, h) {
 export function wireSystemPanel(d, getItems, h, cats, act) {
   const panel = document.querySelector('.sys-panel');
   if (!panel) return;
+  if (act.afterDraw) act.afterDraw();   // e.g. the photo box (admin-app.js)
   const redraw = () => {
     const keep = document.activeElement && document.activeElement.id;
     const fresh = document.createElement('div');

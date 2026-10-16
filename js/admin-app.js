@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=460';
+} from './firebase-config.js?v=463';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel } from './system-builder.js?v=460';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=460';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=460';
-import { expandKit } from './kit.js?v=460';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel } from './system-builder.js?v=463';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=463';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=463';
+import { expandKit } from './kit.js?v=463';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -4638,6 +4638,12 @@ const INV_NUM_KEYS = ['quantityTotal', 'quantityAvailable', 'priceCents', 'extra
 /*  Apply the chosen column sort. No sort chosen -> leave the default order
     (category, then name) the list already comes in.                        */
 function invSorted(list) {
+  // SYSTEMS FIRST, A-Z (Max, 17 Oct 2026), then the rest as chosen below
+  const sys = list.filter((it) => it.isSystem).sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true, sensitivity: 'base' }));
+  const rest = invSortedRest(list.filter((it) => !it.isSystem));
+  return sys.concat(rest);
+}
+function invSortedRest(list) {
   const { key, dir } = state.invSort;
   if (!key) return list;
   const mul = dir === 'desc' ? -1 : 1;
@@ -4685,6 +4691,7 @@ let sysDraft = sysDraftFrom(null);
 const sysHelpers = { esc, attr, money };
 function openSystem(id) {
   const it = id && id !== '__new__' ? invItems().find((x) => x.id === id) : null;
+  clearPendingPhoto();
   sysDraft = sysDraftFrom(it);
   state.openInvId = null;
   state.openSysId = it ? it.id : '__new__';
@@ -4698,6 +4705,10 @@ async function saveSystem(data) {
     const ref = await addDoc(collection(fb.db, 'inventory'), { ...data, order: (state.inventory || []).length });
     state.openSysId = ref.id;
     sysDraft.id = ref.id;
+    if (pendingPhoto) {   // a photo added before the first save
+      try { const up = await doUploadPhoto(ref.id, pendingPhoto); sysDraft.photoUrl = up.url; } catch (e) { /* system saved; photo can be re-added */ }
+      clearPendingPhoto();
+    }
   }
 }
 
@@ -4749,11 +4760,11 @@ function invRowsHtml() {
   const pageRows = rows.slice(start, start + INV_PER_PAGE);
 
   const body = pageRows.length ? pageRows.map((it) => `
-    <tr class="inv-row${state.openInvId === it.id ? ' is-open' : ''}" data-inv="${attr(it.id)}">
+    <tr class="inv-row${it.isSystem ? ' inv-row-sys' : ''}${state.openInvId === it.id || state.openSysId === it.id ? ' is-open' : ''}" data-inv="${attr(it.id)}">
       <td class="inv-item-cell">
         ${invThumb(it)}
         <span class="inv-item-text">
-          <span class="inv-item-name">${esc(it.name || 'Untitled')}${it.isSystem ? '<span class="inv-sys-badge">System &middot; ' + (it.requirements || []).length + ' parts</span>' : ''}</span>
+          <span class="inv-item-name">${esc(it.name || 'Untitled')}${it.isSystem ? '<span class="inv-sys-badge">System &middot; ' + ((it.systemParts && it.systemParts.length) || (it.requirements || []).length) + ' parts</span>' : ''}</span>
           ${it.subtitle ? `<span class="inv-item-sub">${esc(it.subtitle)}</span>` : ''}
         </span>
       </td>
@@ -4958,7 +4969,8 @@ function wireInventory() {
   if (state.openSysId != null) {
     wireSystemPanel(sysDraft, invItems, sysHelpers, invDistinct('category'), {
       save: saveSystem,
-      close() { state.openSysId = null; render(); },
+      close() { clearPendingPhoto(); state.openSysId = null; render(); },
+      afterDraw: wireInvPhoto,
     });
   }
 
@@ -5048,6 +5060,9 @@ function wireInventory() {
     yet - it is uploaded the moment the item is created, so you can add the
     picture and the details together.                                      */
 let pendingPhoto = null;
+/* the item the photo box belongs to: the open item, or the open system */
+const photoTargetId = () => (state.openSysId != null ? state.openSysId : state.openInvId);
+const isSystemId = (id) => !!id && invItems().some((x) => x.id === id && x.isSystem);
 let pendingPhotoUrl = '';
 
 function clearPendingPhoto() {
@@ -5089,6 +5104,12 @@ function wireInvDetail() {
     });
   }
 
+  wireInvPhoto();
+}
+
+/*  The photo box (pick / drag / paste) - used by the item panel AND the
+    System builder, so both work the same way (Max, 17 Oct 2026).        */
+function wireInvPhoto() {
   const photoInput = document.getElementById('inv-photo-input');
   if (photoInput) {
     photoInput.addEventListener('change', () => {
@@ -5120,7 +5141,7 @@ function wireInvDetail() {
   if (!window.__invPasteWired) {
     window.__invPasteWired = true;
     document.addEventListener('paste', (e) => {
-      if (state.view !== 'inventory' || state.openInvId == null) return;
+      if (state.view !== 'inventory' || photoTargetId() == null) return;
       const items = (e.clipboardData && e.clipboardData.items) || [];
       for (const it of items) {
         if (it.type && it.type.startsWith('image/')) {
@@ -5142,15 +5163,16 @@ function handlePhotoFile(file) {
   if (!file || !/^image\//.test(file.type)) return bad('That’s not an image.');
   if (file.size > 8 * 1024 * 1024) return bad('Image is over 8 MB — try a smaller one.');
 
-  if (state.openInvId === '__new__') {
+  if (photoTargetId() === '__new__') {
     clearPendingPhoto();
     pendingPhoto = file;
     pendingPhotoUrl = URL.createObjectURL(file);
+    if (state.openSysId != null) sysDraft.photoUrl = pendingPhotoUrl;   // survives the panel redrawing
     setInvPhotoPreview(pendingPhotoUrl);
     if (msg) { msg.textContent = 'Photo ready — it’ll save with the item.'; msg.className = 'ad-quote-msg is-ok'; }
     return;
   }
-  uploadInvPhoto(state.openInvId, file);
+  uploadInvPhoto(photoTargetId(), file);
 }
 
 /*  Remove clears a pending (unsaved) photo locally, or deletes a saved one. */
@@ -5162,7 +5184,7 @@ function onRemovePhoto() {
     if (msg) { msg.textContent = ''; msg.className = 'ad-quote-msg'; }
     return;
   }
-  removeInvPhoto(state.openInvId);
+  removeInvPhoto(photoTargetId());
 }
 
 /*  Push one image to Storage under inventory/<id> and record its URL on the
@@ -5190,6 +5212,7 @@ async function uploadInvPhoto(id, file) {
 
   try {
     const { url } = await doUploadPhoto(id, file);
+    if (state.openSysId === id) sysDraft.photoUrl = url;
     setInvPhotoPreview(url);
     if (msg) { msg.textContent = 'Photo saved.'; msg.className = 'ad-quote-msg is-ok'; }
   } catch (err) {
@@ -5209,6 +5232,7 @@ async function removeInvPhoto(id) {
     }
     await setDoc(doc(fb.db, 'inventory', id), { photoUrl: '', photoPath: '' }, { merge: true });
     item.photoUrl = ''; item.photoPath = '';
+    if (state.openSysId === id) sysDraft.photoUrl = '';
     setInvPhotoPreview('');                           // in place, keep the form
     if (msg) { msg.textContent = 'Photo removed.'; msg.className = 'ad-quote-msg is-ok'; }
   } catch (err) {
@@ -6117,7 +6141,9 @@ function sortKitGroups() {
     let end = i;
     while (end < L.length && L[end].type === 'kit') end++;
     const group = L.slice(i, end).sort((a, b) =>
-      cat(a).localeCompare(cat(b), undefined, { sensitivity: 'base' })
+      // system parts first, in Max's order; everything else A-Z by category then name
+      ((a.sysOrder != null ? a.sysOrder : 1e9) - (b.sysOrder != null ? b.sysOrder : 1e9))
+      || cat(a).localeCompare(cat(b), undefined, { sensitivity: 'base' })
       || String(a.name || '').localeCompare(String(b.name || ''), undefined, { numeric: true, sensitivity: 'base' }));
     L.splice(i, end - i, ...group);
     i = end - 1;
@@ -6207,6 +6233,7 @@ function renderQuoteLines() {
         <div class="qb-cell qb-c-grip"><span class="qb-grip" title="Drag to reorder">&#10303;</span></div>
         <div class="qb-cell qb-c-desc">
           <input class="qb-name" data-lf="name" value="${attr(l.name)}" placeholder="Item name">
+          ${isSystemId(l.itemId) ? '<span class="qb-sys-tag qb-sys-line">System</span>' : ''}
           ${l.description ? `<span class="qb-sub">${esc(l.description)}</span>` : ''}${stockWarn(l)}
         </div>
         <div class="qb-cell qb-c-qty"><input class="qb-num" type="number" min="0" step="1" data-lf="qty" value="${attr(l.qty)}"></div>
@@ -6336,13 +6363,23 @@ function addInvLineToQuote(itemId) {
 function kitLinesFor(itemId, qty, byId, days) {
   if (!qty) return [];
   const kit = expandKit({ [itemId]: qty }, byId);
+  // A SYSTEM keeps the parts in the order Max set in the System builder;
+  // anything they bring along (leads, stands) follows, A-Z. (Max, 17 Oct 2026)
+  const parent = byId[itemId];
+  const order = {};
+  if (parent && parent.isSystem) {
+    ((parent.systemParts && parent.systemParts.length) ? parent.systemParts : (parent.requirements || []))
+      .forEach((p, i) => { if (p && p.itemId && order[p.itemId] == null) order[p.itemId] = i; });
+  }
   return kit.required.map((r) => {
     const charged = r.charge === 'normal';
-    return {
+    const line = {
       type: 'kit', itemId: r.itemId, name: r.name,   // no "(included)" - the Included column says it (Max, 15 Oct 2026)
       qty: r.qty, unitCents: charged ? r.unitCents : 0, charge: r.charge,
       days: charged ? days : 1,
     };
+    if (order[r.itemId] != null) line.sysOrder = order[r.itemId];
+    return line;
   });
 }
 
@@ -6429,7 +6466,8 @@ let invSearchActive = -1;   // keyboard-highlighted result
 function quoteSearchMatches(term) {
   const t = String(term || '').trim().toLowerCase();
   if (!t) return [];
-  return searchList(quoteAddSearchList(), t, (it) => it.name, (it) => [it.sub], 8);
+  const hits = searchList(quoteAddSearchList(), t, (it) => it.name, (it) => [it.sub], 8);
+  return hits.filter((x) => x.system).concat(hits.filter((x) => !x.system));   // systems first (Max, 17 Oct 2026)
 }
 
 function renderInvResults(term) {
@@ -6447,7 +6485,7 @@ function renderInvResults(term) {
   box.hidden = false;
   box.innerHTML = matches.map((it, i) => `
     <div class="qb-res${i === invSearchActive ? ' is-active' : ''}" data-add="${attr(it.id)}" data-kind="${attr(it.kind)}">
-      <span class="qb-res-name">${esc(it.name)}${it.kind === 'resource' ? ` <span class="qb-res-tag">${esc(it.sub)}</span>` : ''}</span>
+      <span class="qb-res-name">${it.system ? '<span class="qb-sys-tag">System</span>' : ''}${esc(it.name)}${it.kind === 'resource' ? ` <span class="qb-res-tag">${esc(it.sub)}</span>` : ''}</span>
       <span class="qb-res-price">${esc(money(it.priceCents))}/day</span>
     </div>`).join('');
   return matches;
@@ -8415,7 +8453,7 @@ function startQuoteForCustomer(id) {
 /*  The quote builder's add-search draws on inventory PLUS active crew and
     vehicles, so any of them can be dropped onto a quote as a billable line. */
 function quoteAddSearchList() {
-  const inv = invSearchList().map((it) => ({ id: it.id, name: it.name, priceCents: it.priceCents, kind: 'item', sub: it.category || 'Gear' }));
+  const inv = invSearchList().map((it) => ({ id: it.id, name: it.name, priceCents: it.priceCents, kind: 'item', sub: it.category || 'Gear', system: it.isSystem === true }));
   const res = (state.resources || [])
     .filter((r) => r.active !== false && r.name)
     .map((r) => ({ id: r.id, name: r.name, priceCents: r.dayRateCents || 0, kind: 'resource', sub: RES_TYPES[r.type] || 'Crew' }));

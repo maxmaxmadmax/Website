@@ -2610,6 +2610,8 @@ function sanitizeQuote(q) {
       amountCents: type === 'discount' ? Math.max(0, Math.round(Number(l.amountCents) || 0)) : 0,
     };
     if (['normal', 'discounted', 'free'].includes(l.charge)) line.charge = l.charge;
+    // a system part's place in Max's own order (System builder) - kept on quotes
+    if (l.sysOrder != null && Number.isFinite(Number(l.sysOrder))) line.sysOrder = Math.max(0, Math.round(Number(l.sysOrder)));
     return line;
   }).filter((l) => l.name || l.itemId);
 

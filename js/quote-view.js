@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=460';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=460';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=463';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=463';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -159,7 +159,7 @@ function render(q) {
     if (L[i].type !== 'kit') continue;
     let end = i;
     while (end < L.length && L[end].type === 'kit') end++;
-    const g = L.slice(i, end).sort((a, b) => catOf(a).localeCompare(catOf(b)) || String(a.name || '').localeCompare(String(b.name || ''), undefined, { numeric: true }));
+    const g = L.slice(i, end).sort((a, b) => ((a.sysOrder != null ? a.sysOrder : 1e9) - (b.sysOrder != null ? b.sysOrder : 1e9)) || catOf(a).localeCompare(catOf(b)) || String(a.name || '').localeCompare(String(b.name || ''), undefined, { numeric: true }));
     L.splice(i, end - i, ...g);
     i = end - 1;
   }
