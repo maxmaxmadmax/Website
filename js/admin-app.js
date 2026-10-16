@@ -33,10 +33,10 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=451';
+} from './firebase-config.js?v=452';
 
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=451';
-import { expandKit } from './kit.js?v=451';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=452';
+import { expandKit } from './kit.js?v=452';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -395,9 +395,46 @@ const BUILT = ['events', 'vendors', 'applications', 'map', 'entertainment',
 const HOME = 'vendors';
 
 function routeFromHash() {
-  const want = (location.hash.replace('#/', '') || HOME).split('?')[0];
+  const [want0, qs] = (location.hash.replace('#/', '') || HOME).split('?');
+  const want = want0 || HOME;
   state.view = want;
   state.openBookingId = null;
+
+  /*  SALES PIPELINE: an open quote lives at #/quoteDocs?q=<id> (or ?q=new),
+      so the phone / browser Back button goes back to the list instead of
+      jumping to whatever section was open before (Max, 16 Oct 2026).     */
+  if (want === 'quoteDocs') {
+    const q = new URLSearchParams(qs || '').get('q');
+    if (!q && state.openQuoteId) {
+      // leaving a quote: finish any auto-save first, then show the list
+      Promise.race([flushQuoteAutosave(), new Promise((r) => setTimeout(r, 3000))]).catch(() => {}).then(() => {
+        if (new URLSearchParams((location.hash.split('?')[1]) || '').get('q')) return;   // moved on again
+        state.openQuoteId = null;
+        state.quoteLoadedId = null;
+        if (state.view === 'quoteDocs') render();
+      });
+      return;
+    }
+    if (q === 'new') {
+      if (state.openQuoteId !== '__new__') {   // a plain "+ New quote"
+        quoteDraft = blankQuote(); quoteCustomerId = ''; state.quoteFromLeadId = '';
+        state.openQuoteId = '__new__';
+      }
+    } else if (q && state.quoteLoadedId !== q) {
+      const doc = (state.quoteDocs || []).find((x) => x.id === q);
+      if (doc) {
+        quoteDraft = quoteFromDoc(doc);
+        rebuildAllKits();
+        const cm = findCustomerMatch(doc.customer || {});
+        quoteCustomerId = cm ? cm.id : '';
+        state.openQuoteId = q;
+        state.quoteLoadedId = q;
+      } else {
+        state.pendingQuoteId = q;   // quotes not loaded yet - opened when they arrive
+        state.openQuoteId = null;
+      }
+    }
+  }
 
   document.querySelectorAll('[data-view]').forEach((b) =>
     b.classList.toggle('is-active', b.getAttribute('data-view') === want));
@@ -570,6 +607,7 @@ function subscribeToQuoteDocs() {
       state.quoteDocs = [];
       snap.forEach((d) => state.quoteDocs.push({ id: d.id, ...d.data() }));
       updateBotBadge();
+      if (state.pendingQuoteId && state.view === 'quoteDocs') { state.pendingQuoteId = null; routeFromHash(); render(); return; }
       if (state.view === 'quoteDocs' && !state.openQuoteId) render();
     },
     (err) => console.error('quotes', err)
@@ -5667,19 +5705,37 @@ function quoteListHtml() {
 }
 
 function wireQuoteList() {
-  wirePipeline(() => state.quoteDocs || [], state.spFilter, spHelpers,
-    (id) => {   // open a job
-      const doc = (state.quoteDocs || []).find((x) => x.id === id);
-      quoteDraft = doc ? quoteFromDoc(doc) : blankQuote();
+  const findDoc = (id) => (state.quoteDocs || []).find((x) => x.id === id);
+  const label = (d) => (d && (d.customer && (d.customer.name || d.customer.business))) || (d && d.number) || 'this job';
+  wirePipeline(() => state.quoteDocs || [], state.spFilter, spHelpers, {
+    open(id) { location.hash = '#/quoteDocs?q=' + id; },
+    newQuote() { state.openQuoteId = null; location.hash = '#/quoteDocs?q=new'; },
+    // a new estimate with the same customer, items and settings - opens it
+    async duplicate(id) {
+      const doc = findDoc(id);
+      if (!doc) return;
+      quoteDraft = { ...quoteFromDoc(doc), kind: 'quote' };
       rebuildAllKits();
-      const cm = doc ? findCustomerMatch(doc.customer || {}) : null;
+      const cm = findCustomerMatch(doc.customer || {});
       quoteCustomerId = cm ? cm.id : '';
-      state.openQuoteId = id;
-      render();
+      state.quoteFromLeadId = '';
+      state.openQuoteId = '__new__';
+      location.hash = '#/quoteDocs?q=new';   // the router keeps this pre-filled copy
+      try { await saveQuoteDoc(null); const m = document.getElementById('q-msg'); if (m) m.textContent = 'Copy made - this is the new estimate.'; } catch (e) { /* message shown */ }
     },
-    () => {     // + New quote
-      quoteDraft = blankQuote(); quoteCustomerId = ''; state.quoteFromLeadId = ''; state.openQuoteId = '__new__'; render();
-    });
+    async archive(id) {
+      if (!window.confirm('Archive ' + label(findDoc(id)) + '? It moves to the Archived tab and the customer link stops working. You can restore it later.')) return;
+      try { await call('adminArchiveQuote', { id, archive: true }); } catch (e) { window.alert(e.message || 'Could not archive.'); }
+    },
+    async restore(id) {
+      try { await call('adminArchiveQuote', { id, archive: false }); } catch (e) { window.alert(e.message || 'Could not restore.'); }
+    },
+    async del(id) {
+      const d = findDoc(id);
+      if (!window.confirm('DELETE ' + label(d) + ' (' + ((d && d.number) || '') + ') FOREVER?\n\nThis cannot be undone. Archive keeps it instead.')) return;
+      try { await call('adminDeleteQuote', { id }); } catch (e) { window.alert(e.message || 'Could not delete.'); }
+    },
+  });
 }
 
 function quoteFromDoc(doc) {
@@ -6380,11 +6436,9 @@ function wireQuoteBuilder() {
   // BACK TO ALL QUOTES - wired first so nothing below can stop it working, and
   // it never waits more than 3s on the auto-save (Max couldn't get back, 16 Oct 2026)
   const back = document.getElementById('q-back');
-  if (back) back.addEventListener('click', async () => {
+  if (back) back.addEventListener('click', () => {
     back.disabled = true;
-    try { await Promise.race([flushQuoteAutosave(), new Promise((r) => setTimeout(r, 3000))]); } catch (e) { /* still leave */ }
-    state.openQuoteId = null;
-    render();
+    location.hash = '#/quoteDocs';   // the router saves anything pending, then shows the list
   });
 
   qAutoReady = false;   // drawing the quote is not a change
@@ -6562,7 +6616,7 @@ function wireQuoteActions() {
     quoteDraft = { ...quoteFromDoc(doc), kind: 'quote' };
     rebuildAllKits();
     state.openQuoteId = '__new__';
-    render();
+    location.hash = '#/quoteDocs?q=new';
     try { await saveQuoteDoc(null); } catch (e) { return; }   // repaints with the new number + link
     const m = document.getElementById('q-msg');
     if (m) m.textContent = 'Copy made - this is the new quote.';
@@ -6577,7 +6631,7 @@ function wireQuoteActions() {
   const cancel = document.getElementById('q-cancel');
   if (cancel) cancel.addEventListener('click', async () => {
     if (!window.confirm('Cancel this quote? The customer link will stop working.')) return;
-    try { await run('adminSetQuoteStatus', { id: state.openQuoteId, status: 'cancelled' }, 'Cancelled.'); state.openQuoteId = null; render(); } catch (e) {}
+    try { await run('adminSetQuoteStatus', { id: state.openQuoteId, status: 'cancelled' }, 'Cancelled.'); location.hash = '#/quoteDocs'; } catch (e) {}
   });
 
   const copy = document.getElementById('q-copy');
@@ -6701,7 +6755,11 @@ async function saveQuoteDoc(btn, quiet) {
   try {
     const id = state.openQuoteId === '__new__' ? null : state.openQuoteId;
     const res = await call('adminSaveQuote', { id, quote: quoteDraftForSave() });
-    if (res && res.id) state.openQuoteId = res.id;
+    if (res && res.id) {
+      state.openQuoteId = res.id;
+      state.quoteLoadedId = res.id;
+      if (/[?&]q=new\b/.test(location.hash)) history.replaceState(null, '', '#/quoteDocs?q=' + res.id);
+    }
     await syncCustomerFromQuote();   // add / update this customer in Customers
     if (res && res.id && state.quoteFromLeadId) {
       linkQuoteToLead(state.quoteFromLeadId, res.id, res.number);
@@ -8002,14 +8060,8 @@ function wireCustomerDetail() {
   panel.querySelectorAll('[data-cust-quote]').forEach((b) => b.addEventListener('click', () => {
     const d = (state.quoteDocs || []).find((x) => x.id === b.getAttribute('data-cust-quote'));
     if (!d) return;
-    quoteDraft = quoteFromDoc(d);
-    rebuildAllKits();
-    quoteCustomerId = state.openCustomerId;
     state.openCustomerId = null;
-    state.openQuoteId = d.id;
-    state.view = 'quoteDocs';
-    location.hash = '#/quoteDocs';
-    render();
+    location.hash = '#/quoteDocs?q=' + d.id;
   }));
   const nq = document.getElementById('cust-new-quote');
   if (nq) nq.addEventListener('click', () => startQuoteForCustomer(state.openCustomerId));
@@ -8209,9 +8261,7 @@ function startQuoteForCustomer(id) {
   quoteCustomerId = id;
   state.openCustomerId = null;
   state.openQuoteId = '__new__';
-  state.view = 'quoteDocs';
-  location.hash = '#/quoteDocs';
-  render();
+  location.hash = '#/quoteDocs?q=new';
 }
 
 
@@ -9264,7 +9314,7 @@ function createQuoteFromLead() {
   quoteCustomerId = '';
   state.openLeadId = null;
   state.openQuoteId = '__new__';
-  location.hash = '#/quoteDocs';
+  location.hash = '#/quoteDocs?q=new';
 }
 
 /*  Called once the quote made from a lead is first saved: link it, and move
@@ -9936,8 +9986,7 @@ function wireLeadList() {
       if (k === 'quote') {
         if (leadDraft.linkedQuoteId) {
           state.openLeadId = null;
-          state.openQuoteId = leadDraft.linkedQuoteId;
-          location.hash = '#/quoteDocs';
+          location.hash = '#/quoteDocs?q=' + leadDraft.linkedQuoteId;
         } else {
           createQuoteFromLead();
         }
@@ -10500,8 +10549,7 @@ function wireLeadDetail() {
     } else if (what === 'quote') {
       if (leadDraft.linkedQuoteId) {
         state.openLeadId = null;
-        state.openQuoteId = leadDraft.linkedQuoteId;
-        location.hash = '#/quoteDocs';
+        location.hash = '#/quoteDocs?q=' + leadDraft.linkedQuoteId;
       } else {
         createQuoteFromLead();
       }

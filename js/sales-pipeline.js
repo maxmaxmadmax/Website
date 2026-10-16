@@ -30,6 +30,13 @@ const STAGES = {
                next: ['doc', 'grey', 'Archived', 'Cancelled'] },
 };
 
+/* Delete forever is only for estimates / quotes with no money and no invoice
+   number - tax invoices must be kept (ATO: 5 years), so those get Archive. */
+export function canDelete(q) {
+  return ['draft', 'approved', 'sent', 'declined', 'cancelled'].includes(q.status)
+    && !q.invoiceNumber && !(q.amountPaidCents > 0) && q.kind !== 'invoice';
+}
+
 export function stageOf(q) {
   const s = STAGES[q.status] || STAGES.draft;
   // payment detail for jobs waiting on money
@@ -175,11 +182,10 @@ export function pipelineHtml(jobs, f, h) {
         <table class="sp-table">
           <thead><tr>
             ${head('customer', 'Customer / event')}
-            <th>Progress</th>
-            ${head('total', 'Total')}
             ${head('date', 'Event date')}
+            <th>Progress</th>
             <th>Next step</th>
-            ${head('status', 'Status')}
+            ${head('total', 'Total')}
             <th></th>
           </tr></thead>
           <tbody id="q-rows"></tbody>
@@ -192,7 +198,7 @@ export function pipelineHtml(jobs, f, h) {
 export function rowsHtml(rows, f, h) {
   if (!rows.length) {
     const msg = f.search ? 'Nothing matches that search.' : 'Nothing here yet. Hit &ldquo;New quote&rdquo; to start one.';
-    return `<tr><td colspan="7" class="sp-empty">${msg}</td></tr>`;
+    return `<tr><td colspan="6" class="sp-empty">${msg}</td></tr>`;
   }
   const steps = ['Estimate', 'Quote', 'Payment', 'Job'];
   return rows.map((q) => {
@@ -211,11 +217,10 @@ export function rowsHtml(rows, f, h) {
           <strong>${h.esc(c.name || c.business || 'No name yet')}${q.source === 'bot' ? '<span class="ad-bot-tag">Bot</span>' : ''}</strong>
           <span>${h.esc(c.eventName || c.eventType || '')}${num ? ' <i>' + h.esc(num) + '</i>' : ''}</span>
         </td>
-        <td><div class="sp-progress">${progress}</div></td>
-        <td class="sp-total">${h.esc(h.money(q.totalCents || 0))}</td>
         <td class="sp-date">${h.esc(eventDateText(q) || '—')}</td>
+        <td><div class="sp-progress">${progress}</div></td>
         <td><span class="sp-next sp-${tone}">${svg(ico)}<span><b>${h.esc(nTitle)}</b><em>${h.esc(nSub)}</em></span></span></td>
-        <td><span class="sp-status sp-${st.status[1]}">${h.esc(st.status[0])}</span></td>
+        <td class="sp-total">${h.esc(h.money(q.totalCents || 0))}</td>
         <td class="sp-act">
           <button type="button" class="sp-view">View</button>
           <details class="sp-more" data-no-open>
@@ -223,6 +228,11 @@ export function rowsHtml(rows, f, h) {
             <div class="sp-menu">
               ${q.token ? `<a href="/quote?t=${h.attr(q.token)}" target="_blank" rel="noopener">Open customer page</a>
               <button type="button" data-sp-copy="${h.attr('https://www.soundzgood.com.au/quote?t=' + q.token)}">Copy customer link</button>` : '<span>Save it first to get a link</span>'}
+              <button type="button" data-sp-act="duplicate" data-id="${h.attr(q.id)}">Duplicate</button>
+              ${st.tab === 'archived'
+                ? `<button type="button" data-sp-act="restore" data-id="${h.attr(q.id)}">Restore</button>`
+                : `<button type="button" data-sp-act="archive" data-id="${h.attr(q.id)}">Archive</button>`}
+              ${canDelete(q) ? `<button type="button" class="sp-danger" data-sp-act="delete" data-id="${h.attr(q.id)}">Delete forever</button>` : ''}
             </div>
           </details>
         </td>
@@ -232,8 +242,9 @@ export function rowsHtml(rows, f, h) {
 
 /* the clicks: tabs, stat cards, sort headers, search, dates, copy link,
    and opening a job. f is the view's filter state (kept by the caller so it
-   survives re-renders); onOpen(id) opens a job, onNew() starts a new quote. */
-export function wirePipeline(getJobs, f, h, onOpen, onNew) {
+   survives re-renders). act = { open(id), newQuote(), duplicate(id),
+   archive(id), restore(id), del(id) } - the admin page does the real work. */
+export function wirePipeline(getJobs, f, h, act) {
   const body = document.getElementById('q-rows');
   const paint = () => { if (body) body.innerHTML = rowsHtml(filterJobs(getJobs(), f), f, h); };
   const repaintAll = () => {
@@ -242,7 +253,7 @@ export function wirePipeline(getJobs, f, h, onOpen, onNew) {
     const fresh = document.createElement('div');
     fresh.innerHTML = pipelineHtml(getJobs(), f, h);
     root.replaceWith(fresh.firstElementChild);
-    wirePipeline(getJobs, f, h, onOpen, onNew);
+    wirePipeline(getJobs, f, h, act);
   };
   paint();
 
@@ -267,10 +278,16 @@ export function wirePipeline(getJobs, f, h, onOpen, onNew) {
         .catch(() => { window.prompt('Copy the customer link:', link); });
       return;
     }
+    const a = e.target.closest('[data-sp-act]');
+    if (a) {
+      const fn = { duplicate: act.duplicate, archive: act.archive, restore: act.restore, delete: act.del }[a.getAttribute('data-sp-act')];
+      if (fn) fn(a.getAttribute('data-id'));
+      return;
+    }
     if (e.target.closest('[data-no-open]')) return;   // the ⌄ menu
-    if (e.target.closest('#q-new')) { onNew(); return; }
+    if (e.target.closest('#q-new')) { act.newQuote(); return; }
     const row = e.target.closest('[data-open-q]');
-    if (row) onOpen(row.getAttribute('data-open-q'));
+    if (row) act.open(row.getAttribute('data-open-q'));
   });
   const search = document.getElementById('sp-search');
   if (search) search.addEventListener('input', () => { f.search = search.value; paint(); });

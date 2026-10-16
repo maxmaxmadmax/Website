@@ -4256,3 +4256,16 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
   .sp-view{ flex:1; }
   .sp-table .sp-empty{ grid-column:1 / -1; }
 }
+
+/* pipeline v2 columns: 1 customer, 2 date, 3 progress, 4 next step, 5 total, 6 actions */
+.sp-menu .sp-danger{ color:var(--ad-red); }
+.sp-menu .sp-danger:hover{ background:var(--ad-red-bg); }
+@media (max-width:600px){
+  .sp-table td:nth-child(1){ grid-column:1; grid-row:1; }
+  .sp-table td:nth-child(5){ grid-column:2; grid-row:1; text-align:right; }
+  .sp-table td:nth-child(2){ grid-column:1 / -1; grid-row:auto; text-align:left; }
+  .sp-table td:nth-child(3){ grid-column:1 / -1; grid-row:auto; text-align:left; }
+  .sp-table td:nth-child(4){ grid-column:1 / -1; }
+  .sp-table td:nth-child(4) .sp-next{ display:flex; }
+  .sp-table td:nth-child(6){ grid-column:1 / -1; display:flex; gap:6px; text-align:left; }
+}

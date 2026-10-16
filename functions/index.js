@@ -2723,6 +2723,42 @@ exports.adminSetQuoteStatus = onCall(async (request) => {
   return { ok: true, invoiceNumber: update.invoiceNumber || snap.data().invoiceNumber || '' };
 });
 
+/*  ARCHIVE / RESTORE / DELETE a job from the Sales Pipeline (Max, 16 Oct 2026).
+    Archive = status cancelled (link stops working), remembering where it was.
+    Restore puts it back. Delete forever only for estimates / quotes with no
+    money and no invoice number - tax invoices are kept (ATO: 5 years).      */
+exports.adminArchiveQuote = onCall(async (request) => {
+  requireAdmin(request);
+  const { id, archive } = request.data || {};
+  const ref = db.collection('quotes').doc(String(id || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'No such quote.');
+  const q = snap.data();
+  if (archive === true) {
+    if (q.status === 'cancelled') return { ok: true };
+    await ref.update({ status: 'cancelled', archivedFrom: q.status || 'draft', cancelledAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+  } else {
+    const back = QUOTE_DOC_STATES.includes(q.archivedFrom) && q.archivedFrom !== 'cancelled' ? q.archivedFrom : 'draft';
+    await ref.update({ status: back, archivedFrom: FieldValue.delete(), updatedAt: FieldValue.serverTimestamp() });
+  }
+  return { ok: true };
+});
+
+exports.adminDeleteQuote = onCall(async (request) => {
+  requireAdmin(request);
+  const { id } = request.data || {};
+  const ref = db.collection('quotes').doc(String(id || ''));
+  const snap = await ref.get();
+  if (!snap.exists) return { ok: true };
+  const q = snap.data();
+  const ok = ['draft', 'approved', 'sent', 'declined', 'cancelled'].includes(q.status)
+    && !q.invoiceNumber && !((q.amountPaidCents || 0) > 0) && q.kind !== 'invoice';
+  if (!ok) throw new HttpsError('failed-precondition', 'Invoices and paid jobs can\'t be deleted - archive it instead.');
+  await ref.delete();
+  logger.info('Quote deleted by admin', { id, number: q.number || '', by: (request.auth.token && request.auth.token.email) || request.auth.uid });
+  return { ok: true };
+});
+
 exports.adminSendQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
   requireAdmin(request);
   const { id } = request.data || {};
