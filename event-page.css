@@ -1313,3 +1313,107 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-sponsor-grid li{ height:26mm !important; }
     .ep-sponsor-grid img{ max-height:22mm !important; }
 }
+
+/* ---- HOSTS STRIP: the MCs, under the Entertainment heading (Max, 16 Oct 2026) ---- */
+.ep-hosts{
+    display:flex; align-items:center; justify-content:space-between; gap:10px 24px; flex-wrap:wrap;
+    background:var(--ep-ink); color:var(--ep-cream);
+    border-radius:16px; padding:16px 26px; margin:0 0 14px;
+    box-shadow:0 6px 0 rgba(29,13,2,.3);
+}
+.ep-hosts .ep-kicker{ color:var(--ep-lime); margin:0; }
+.ep-hosts-names{
+    font-family:var(--ep-poster-font); text-transform:uppercase; line-height:1;
+    font-size:clamp(1.3rem, 3vw, 2rem); margin:0;
+}
+@media print{
+    .ep-hosts{ padding:3mm 6mm; margin:0 0 4mm; border-radius:3mm; box-shadow:none; }
+    .ep-hosts .ep-kicker{ font-size:8pt; }
+    .ep-hosts-names{ font-size:16pt; }
+}
+
+/* page 3 with the hosts strip: win back the room it takes (Max, 16 Oct 2026) */
+@media print{
+    .ep-hosts{ padding:2.2mm 5mm !important; margin:0 0 3mm !important; }
+    .ep-hosts-names{ font-size:14pt !important; }
+    .ep-ent-photo{ height:84mm !important; }
+    .ep-ent-band-text{ padding:4mm 5mm 5mm !important; }
+    .ep-times li{ padding:2.3mm 4.5mm !important; }
+    .ep-times{ gap:1.8mm !important; }
+    .ep-times-poster{ margin-top:4mm !important; }
+}
+
+/* hosts strip with their photo on the left (Max, 16 Oct 2026) */
+.ep-hosts{ display:grid; grid-template-columns:260px 1fr; align-items:center; gap:22px; padding:0 26px 0 0; overflow:hidden; }
+.ep-hosts-pic{ width:100%; height:180px; object-fit:cover; object-position:center 20%; display:block; }
+.ep-hosts .ep-kicker{ margin:0 0 6px; }
+.ep-hosts-names{ font-size:clamp(1.5rem, 3.4vw, 2.4rem); }
+@media (max-width:600px){
+    .ep-hosts{ grid-template-columns:1fr; padding:0 0 18px; gap:14px; }
+    .ep-hosts-pic{ height:200px; }
+    .ep-hosts > div{ padding:0 20px; }
+}
+@media print{
+    .ep-hosts{ grid-template-columns:34mm 1fr !important; gap:6mm !important; padding:0 6mm 0 0 !important; }
+    .ep-hosts-pic{ height:22mm; }
+    .ep-hosts .ep-kicker{ margin-bottom:1.5mm; }
+    .ep-hosts-names{ font-size:17pt !important; }
+    .ep-ent-photo{ height:72mm !important; }
+}
+@media print{
+    .ep-ent-photo{ height:64mm !important; }
+    .ep-ent-card:not(.ep-ent-band){ padding:3.5mm 5mm !important; }
+    .ep-ent-card:not(.ep-ent-band) h3{ font-size:18pt !important; }
+    .ep-ent{ gap:3mm !important; }
+}
+@media print{
+    .ep-hosts-pic{ height:19mm !important; }
+    .ep-times li{ padding:1.8mm 4.5mm !important; }
+    .ep-times-poster{ margin-top:5mm !important; }
+}
+
+
+
+/* ---- ENTERTAINMENT LAYOUT v3 (Max, 16 Oct 2026) ----
+   top row: trick or treat | best dressed
+   grid:    Zed big on the left | hosts, Bottoms Bingo, jumping castle on the right */
+.ep-top2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:0 0 14px; }
+.ep-ent{ grid-template-rows:auto auto auto; }
+.ep-ent-band  { grid-column:1; grid-row:1 / span 3; }
+.ep-ent-hosts { grid-column:2; grid-row:1; }
+.ep-ent-bingo { grid-column:2; grid-row:2; }
+.ep-ent-castle{ grid-column:2; grid-row:3; }
+/* hosts card: photo on the left, names on the right (like the jumping castle card) */
+.ep-ent-hosts{ background:var(--ep-ink); color:var(--ep-cream); display:grid; grid-template-columns:45% 1fr; align-items:center; gap:18px; padding:0 22px 0 0 !important; }
+.ep-ent-hosts-pic{ width:100%; height:100%; min-height:150px; object-fit:cover; object-position:center 25%; display:block; }
+.ep-ent-hosts .ep-kicker{ color:var(--ep-lime); }
+.ep-ent-hosts h3{ margin:0; }
+@media screen and (max-width:860px){
+    .ep-top2{ grid-template-columns:1fr; }
+    .ep-ent-band, .ep-ent-hosts, .ep-ent-bingo, .ep-ent-castle{ grid-column:auto; grid-row:auto; }
+}
+@media print{
+    .ep-top2{ gap:3mm; margin:0 0 3mm; }
+    .ep-top2 .ep-ent-card{ padding:3.5mm 5mm !important; }
+    .ep-ent{ grid-template-rows:1fr 1fr 1fr !important; }
+    .ep-ent-hosts{ padding:0 4mm 0 0 !important; gap:4mm; display:grid !important; }
+    .ep-ent-hosts-pic{ min-height:0; }
+    .ep-ent-photo{ height:72mm !important; }
+}
+.ep-ent-hosts h3{ font-size:clamp(1.3rem, 2.4vw, 1.9rem); }
+@media print{ .ep-ent-hosts h3{ font-size:16pt !important; } }
+@media print{
+    .ep-top2{ grid-template-columns:1fr 1fr !important; }
+    .ep-ent-hosts{ align-items:stretch !important; grid-template-columns:42% 1fr !important; }
+    .ep-ent-hosts > div{ align-self:center; }
+    .ep-ent-hosts-pic{ height:100% !important; min-height:22mm !important; }
+    .ep-ent-photo{ height:62mm !important; }
+}
+@media print{
+    .ep-ent .ep-ent-card.ep-ent-hosts{ display:grid !important; grid-template-columns:40% 1fr !important; grid-template-rows:1fr !important; align-items:stretch !important; padding:0 4mm 0 0 !important; }
+    .ep-ent .ep-ent-hosts-pic{ grid-column:1; grid-row:1; height:100% !important; min-height:0 !important; }
+    .ep-ent .ep-ent-hosts > div{ grid-column:2; grid-row:1; align-self:center; }
+}
+
+/* phones: the hero palm and long stall links poked past the screen edge (16 Oct 2026) */
+@media screen{ .ep-hero, .ep-hero-art{ overflow-x:clip; } .ep-mt a{ overflow-wrap:anywhere; word-break:break-word; } }
