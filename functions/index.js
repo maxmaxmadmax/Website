@@ -2740,6 +2740,12 @@ exports.adminSendQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
     update.status = 'sent';
     update.sentAt = FieldValue.serverTimestamp();
   }
+  // EMAIL RECORD (Max, 16 Oct 2026): when it last went out, to whom, how many times
+  if (mail.sent) {
+    update.lastEmailedAt = FieldValue.serverTimestamp();
+    update.lastEmailedTo = String(q.customer.email || '') + (q.customer.ccEmail ? ' (cc ' + q.customer.ccEmail + ')' : '');
+    update.emailCount = FieldValue.increment(1);
+  }
   await ref.update(update);
   return mail;
 });

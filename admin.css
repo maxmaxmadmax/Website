@@ -4125,3 +4125,8 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-sumhead{ font-size:.66rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ad-faint); padding:2px 0; }
 .qb-sumsub{ padding:2px 0 2px 12px; font-size:.84rem; }
 .qb-sumsub span:first-child{ color:var(--ad-muted); }
+
+
+/* quote "emailed" record (Max, 16 Oct 2026) */
+.q-emailed { margin: 10px 0 0; font-size: 13px; color: #555; }
+.q-mailed { display: block; margin-top: 4px; font-size: 11px; color: #2e7d32; white-space: nowrap; }

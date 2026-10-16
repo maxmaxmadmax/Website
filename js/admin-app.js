@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=429';
+} from './firebase-config.js?v=430';
 
-import { expandKit } from './kit.js?v=429';
+import { expandKit } from './kit.js?v=430';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5715,7 +5715,7 @@ function renderQuoteDocRows() {
         <td>${esc(c.name || c.business || '')}</td>
         <td>${esc(c.eventName || '—')}</td>
         <td class="inv-num">${esc(money(q.totalCents))}</td>
-        <td>${qdocPill(q.status)}</td>
+        <td>${qdocPill(q.status)}${secs(q.lastEmailedAt) ? '<span class="q-mailed" title="Emailed to customer">&#9993; ' + esc(dateShort(q.lastEmailedAt)) + '</span>' : ''}</td>
         <td class="ad-cell-muted">${esc(dateShort(q.createdAt))}</td>
         <td class="ad-cell-right"><span class="ad-quote-caret">&#8250;</span></td>
       </tr>`;
@@ -5766,6 +5766,16 @@ function quoteFromDoc(doc) {
    ------------------------------------------------------------------------- */
 function currentQuoteDoc() {
   return (state.quoteDocs || []).find((x) => x.id === state.openQuoteId) || null;
+}
+
+/*  "Emailed 16 Oct 2026, 3:12 pm to gm@... (2 times)" - or "Not emailed yet".
+    Written by adminSendQuote on every successful send (Max, 16 Oct 2026).   */
+function quoteEmailedLine(doc) {
+  const s = secs(doc && doc.lastEmailedAt);
+  if (!s) return '&#9993; Not emailed to the customer yet.';
+  const when = new Date(s * 1000).toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const n = doc.emailCount || 1;
+  return '&#9993; Emailed ' + esc(when) + (doc.lastEmailedTo ? ' to ' + esc(doc.lastEmailedTo) : '') + (n > 1 ? ' &middot; ' + n + ' times' : '');
 }
 
 function quoteBuilderHtml() {
@@ -5945,9 +5955,11 @@ function quoteBuilderHtml() {
           ${(status === 'accepted' || (status === 'invoiced' && doc.acceptedAt)) && !(doc.amountPaidCents > 0) ? '<button type="button" class="ad-btn" id="q-unaccept">Undo accept</button>' : ''}
           ${doc.kind !== 'invoice' ? '<button type="button" class="ad-btn" id="q-invoice">Convert to invoice</button>' : ''}
           ${doc.kind === 'invoice' && status !== 'paid' ? '<button type="button" class="ad-btn" id="q-paid">Mark paid</button>' : ''}
+          <button type="button" class="ad-btn" id="q-dup">Duplicate</button>
           <button type="button" class="ad-btn inv-del" id="q-cancel">Cancel</button>
           <span class="ad-quote-msg" id="q-msg"></span>
         </div>
+        <p class="q-emailed">${quoteEmailedLine(doc)}</p>
         ${link ? `<div class="q-link"><span>Customer link</span>
           <input class="ad-input" id="q-link" readonly value="${attr(link)}">
           <button type="button" class="ad-btn ad-btn-small" id="q-copy">Copy</button></div>` : ''}
@@ -6576,6 +6588,22 @@ function wireQuoteActions() {
   if (unaccept) unaccept.addEventListener('click', async () => {
     if (!window.confirm('Undo the acceptance? The invoice goes back to a Sent quote and the customer can accept it again.')) return;
     try { await run('adminSetQuoteStatus', { id: state.openQuoteId, status: 'sent', undoAccept: true }, 'Acceptance undone.'); render(); } catch (e) {}
+  });
+
+  // DUPLICATE: a new draft quote with the same customer, items and settings.
+  // New number + link; no acceptance, payment or email history carried over.
+  const dup = document.getElementById('q-dup');
+  if (dup) dup.addEventListener('click', async () => {
+    await flushQuoteAutosave();
+    const doc = currentQuoteDoc();
+    if (!doc) return;
+    quoteDraft = { ...quoteFromDoc(doc), kind: 'quote' };
+    rebuildAllKits();
+    state.openQuoteId = '__new__';
+    render();
+    try { await saveQuoteDoc(null); } catch (e) { return; }   // repaints with the new number + link
+    const m = document.getElementById('q-msg');
+    if (m) m.textContent = 'Copy made - this is the new quote.';
   });
 
   const invoice = document.getElementById('q-invoice');
