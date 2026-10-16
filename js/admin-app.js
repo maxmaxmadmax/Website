@@ -33,9 +33,10 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=449';
+} from './firebase-config.js?v=451';
 
-import { expandKit } from './kit.js?v=449';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=451';
+import { expandKit } from './kit.js?v=451';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -107,7 +108,7 @@ const state = {
       the list, an id (or '__new__') when the builder is open.            */
   quoteDocs: [],
   openQuoteId: null,
-  quoteDocFilter: 'all',
+  spFilter: { tab: 'all', search: '', dates: 'all', sort: 'created', sortDir: 'desc' },   // Sales Pipeline list
 
   /*  Packages - reusable bundles the bot will draw on. null until first
       load; openPackageId is null on the list, an id (or '__new__') in the
@@ -5657,87 +5658,28 @@ VIEWS.quoteDocs = {
 /* -------------------------------------------------------------------------
    List
    ------------------------------------------------------------------------- */
+/*  SALES PIPELINE - the list of every job (Max's mock-up, 16 Oct 2026).
+    The look and the filtering live in js/sales-pipeline.js; this just hands
+    it the live quotes and opens a job when a row is clicked.               */
+const spHelpers = { esc, attr, money };
 function quoteListHtml() {
-  const f = state.quoteDocFilter;
-  const opt = (v, l) => `<option value="${v}"${f === v ? ' selected' : ''}>${l}</option>`;
-  return `
-    <div class="ad-mail-head-row">
-      <span class="ad-mail-icon" aria-hidden="true">&#128196;</span>
-      <div class="ad-mail-title">
-        <h1>Quotes &amp; Invoices</h1>
-        <p>Build a quote, send it for the customer to accept, then turn it into an invoice.</p>
-      </div>
-      <div class="ad-mail-status">
-        <button type="button" class="ad-btn ad-btn-primary" id="q-new">+ New quote</button>
-      </div>
-    </div>
-
-    <section class="ad-card ad-panel">
-      <header class="ad-panel-head">
-        <div><h2>All quotes</h2><p class="ad-panel-sub">Newest first.</p></div>
-        <select id="q-filter" class="ad-select" aria-label="Filter by status">
-          ${opt('all', 'All')}${opt('draft', 'Estimates')}${opt('approved', 'Quotes - not sent')}${opt('sent', 'Quotes sent')}
-          ${opt('invoiced', 'Invoices - unpaid')}${opt('paid', 'Paid')}${opt('accepted', 'Accepted (old)')}
-        </select>
-      </header>
-      <div class="ad-table-wrap">
-        <table class="ad-table">
-          <thead><tr><th>Number</th><th>Customer</th><th>Event</th>
-            <th class="inv-num">Total</th><th>Status</th><th>Date</th><th></th></tr></thead>
-          <tbody id="q-rows"></tbody>
-        </table>
-      </div>
-    </section>`;
-}
-
-function quoteDocsFiltered() {
-  const f = state.quoteDocFilter;
-  return (state.quoteDocs || []).filter((q) => f === 'all' || q.status === f);
-}
-
-function renderQuoteDocRows() {
-  const host = document.getElementById('q-rows');
-  if (!host) return;
-  const rows = quoteDocsFiltered();
-  if (!rows.length) {
-    host.innerHTML = '<tr><td colspan="7" class="ad-cell-muted">No quotes yet. Hit &ldquo;New quote&rdquo; to start one.</td></tr>';
-    return;
-  }
-  host.innerHTML = rows.map((q) => {
-    const num = q.kind === 'invoice' && q.invoiceNumber ? q.invoiceNumber : q.number;
-    const c = q.customer || {};
-    return `
-      <tr class="ad-quote-row" data-open-q="${attr(q.id)}">
-        <td class="ad-cell-strong">${esc(num || '')}${q.source === 'bot' ? '<span class="ad-bot-tag">Bot</span>' : ''}</td>
-        <td>${esc(c.name || c.business || '')}</td>
-        <td>${esc(c.eventName || '—')}</td>
-        <td class="inv-num">${esc(money(q.totalCents))}</td>
-        <td>${qdocPill(q.status)}${secs(q.lastEmailedAt) ? '<span class="q-mailed" title="Emailed to customer">&#9993; ' + esc(dateShort(q.lastEmailedAt)) + '</span>' : ''}</td>
-        <td class="ad-cell-muted">${esc(dateShort(q.createdAt))}</td>
-        <td class="ad-cell-right"><span class="ad-quote-caret">&#8250;</span></td>
-      </tr>`;
-  }).join('');
+  return pipelineHtml(state.quoteDocs || [], state.spFilter, spHelpers);
 }
 
 function wireQuoteList() {
-  renderQuoteDocRows();
-  const nw = document.getElementById('q-new');
-  if (nw) nw.addEventListener('click', () => { quoteDraft = blankQuote(); quoteCustomerId = ''; state.quoteFromLeadId = ''; state.openQuoteId = '__new__'; render(); });
-  const filter = document.getElementById('q-filter');
-  if (filter) filter.addEventListener('change', () => { state.quoteDocFilter = filter.value; renderQuoteDocRows(); });
-  const rows = document.getElementById('q-rows');
-  if (rows) rows.addEventListener('click', (e) => {
-    const r = e.target.closest('[data-open-q]');
-    if (!r) return;
-    const id = r.getAttribute('data-open-q');
-    const doc = (state.quoteDocs || []).find((x) => x.id === id);
-    quoteDraft = doc ? quoteFromDoc(doc) : blankQuote();
-    rebuildAllKits();
-    const cm = doc ? findCustomerMatch(doc.customer || {}) : null;
-    quoteCustomerId = cm ? cm.id : '';
-    state.openQuoteId = id;
-    render();
-  });
+  wirePipeline(() => state.quoteDocs || [], state.spFilter, spHelpers,
+    (id) => {   // open a job
+      const doc = (state.quoteDocs || []).find((x) => x.id === id);
+      quoteDraft = doc ? quoteFromDoc(doc) : blankQuote();
+      rebuildAllKits();
+      const cm = doc ? findCustomerMatch(doc.customer || {}) : null;
+      quoteCustomerId = cm ? cm.id : '';
+      state.openQuoteId = id;
+      render();
+    },
+    () => {     // + New quote
+      quoteDraft = blankQuote(); quoteCustomerId = ''; state.quoteFromLeadId = ''; state.openQuoteId = '__new__'; render();
+    });
 }
 
 function quoteFromDoc(doc) {
@@ -5832,7 +5774,7 @@ function quoteBuilderHtml() {
 
       <!-- toolbar (not part of the printed paper) -->
       <div class="qb-bar">
-        <button type="button" class="qb-back" id="q-back">&larr; All quotes</button>
+        <button type="button" class="qb-back" id="q-back">&larr; Sales Pipeline</button>
         <div class="qb-bar-title"><h1>${esc(docWord)} #${esc(num)}</h1>${doc ? qdocPill(status) : '<span class="ad-pill ad-pill-grey">New</span>'}</div>
         <div class="qb-bar-spacer"></div>
         ${link ? `<a class="ad-btn ad-btn-ghost" href="${attr(link)}" target="_blank" rel="noopener">Preview</a>` : ''}
