@@ -11,7 +11,7 @@
 
    Pure HTML + wiring; admin-app.js hands in the items and does the saving.
    ========================================================================== */
-import { expandKit } from './kit.js?v=458';
+import { expandKit, resolveTotals } from './kit.js?v=459';
 
 /* the working copy of the system being built */
 export function sysDraftFrom(item) {
@@ -23,29 +23,45 @@ export function sysDraftFrom(item) {
     subtitle: it.subtitle || '',
     priceCents: it.priceCents || 0,
     priceTouched: !!it.id,   // an existing system keeps its price; a new one follows the parts
-    parts: (it.requirements || []).filter((r) => r && r.itemId).map((r) => ({ itemId: r.itemId, qty: Math.max(1, r.qty || 1) })),
+    // what Max picked (systemParts); older saves only have the de-duplicated requirements
+    parts: (Array.isArray(it.systemParts) && it.systemParts.length ? it.systemParts : (it.requirements || []))
+      .filter((r) => r && r.itemId).map((r) => ({ itemId: r.itemId, qty: Math.max(1, r.qty || 1) })),
     search: '',
   };
 }
 
 const byIdOf = (items) => { const m = {}; items.forEach((i) => { m[i.id] = i; }); return m; };
 
-/* the numbers the panel shows: parts value, tag-along gear, how many you can build */
+/* the numbers the panel shows. A part that another part ALREADY brings along
+   (e.g. the amp a Stinger needs) is only counted once - its extra quantity
+   is 'covered' and left out of the price, the stock check and the save.   */
 export function sysSummary(d, items) {
   const byId = byIdOf(items);
   const cart = {};
   d.parts.forEach((p) => { if (byId[p.itemId]) cart[p.itemId] = (cart[p.itemId] || 0) + p.qty; });
-  const kit = Object.keys(cart).length ? expandKit(cart, byId) : { base: [], required: [], addCents: 0 };
-  const partsCents = kit.base.reduce((n, b) => n + b.lineCents, 0) + (kit.addCents || 0);
-  const tagAlong = kit.required.filter((r) => !cart[r.itemId]);
-  let build = Infinity;
-  d.parts.forEach((p) => {
-    const it = byId[p.itemId];
-    if (!it) return;
-    const usable = Math.max(0, (it.quantityTotal || 0) - Math.min(it.quantityRepair || 0, it.quantityTotal || 0));
-    build = Math.min(build, Math.floor(usable / Math.max(1, p.qty)));
+  // how much of each part the OTHER parts already pull in
+  const covered = {};
+  Object.keys(cart).forEach((id) => {
+    const others = { ...cart }; delete others[id];
+    const t = Object.keys(others).length ? resolveTotals(others, byId) : {};
+    const pulled = Math.max(0, (t[id] || 0));
+    if (pulled) covered[id] = Math.min(cart[id], pulled);
   });
-  return { partsCents, tagAlong, build: d.parts.length ? build : 0 };
+  const eff = {};
+  Object.keys(cart).forEach((id) => { const q = cart[id] - (covered[id] || 0); if (q > 0) eff[id] = q; });
+  const kit = Object.keys(eff).length ? expandKit(eff, byId) : { base: [], required: [], addCents: 0, totals: {} };
+  // what it would cost hired piece by piece (parts + any charged gear they bring)
+  const partsCents = kit.base.reduce((n, x) => n + x.lineCents, 0) + (kit.addCents || 0);
+  const tagAlong = kit.required.filter((r) => !eff[r.itemId]);
+  // how many full kits (every lead and amp included) you own enough for
+  let build = Infinity;
+  Object.keys(kit.totals || {}).forEach((id) => {
+    const it = byId[id]; const need = kit.totals[id];
+    if (!it || !need) return;
+    const usable = Math.max(0, (it.quantityTotal || 0) - Math.min(it.quantityRepair || 0, it.quantityTotal || 0));
+    build = Math.min(build, Math.floor(usable / need));
+  });
+  return { partsCents, tagAlong, covered, eff, build: Object.keys(eff).length ? build : 0 };
 }
 
 /* the side panel */
@@ -79,7 +95,7 @@ export function systemPanelHtml(d, items, h, cats) {
           <input class="ad-input" id="sys-search" placeholder="&#128269; Search gear to add..." value="${h.attr(d.search)}" autocomplete="off">
           <div class="sys-results" id="sys-results"></div>
         </div>
-        <div id="sys-parts">${partsHtml(d, byId, h)}</div>
+        <div id="sys-parts">${partsHtml(d, byId, h, s.covered)}</div>
         ${s.tagAlong.length ? `<p class="sys-tag"><b>Comes with automatically:</b> ${s.tagAlong.map((r) => h.esc(r.qty + ' × ' + r.name)).join(', ')}</p>` : ''}
 
         <p class="sys-h">Price</p>
@@ -102,12 +118,12 @@ export function systemPanelHtml(d, items, h, cats) {
     </aside>`;
 }
 
-function partsHtml(d, byId, h) {
+function partsHtml(d, byId, h, covered) {
   if (!d.parts.length) return '<p class="sys-empty">No parts yet.</p>';
   return d.parts.map((p, i) => {
     const it = byId[p.itemId] || { name: '(missing item)' };
     return `<div class="sys-part">
-        <span class="sys-pname">${h.esc(it.name)}<small>${h.esc(it.category || '')}</small></span>
+        <span class="sys-pname">${h.esc(it.name)}<small>${h.esc(it.category || '')}</small>${covered && covered[p.itemId] ? '<em class="sys-covered">' + covered[p.itemId] + ' already comes with another part - only counted once</em>' : ''}</span>
         <span class="sys-qty"><button type="button" data-sys-minus="${i}" aria-label="Less">&minus;</button><b>${p.qty}</b><button type="button" data-sys-plus="${i}" aria-label="More">+</button></span>
         <span class="sys-own">${h.esc(it.quantityTotal != null ? it.quantityTotal : '?')} owned</span>
       </div>`;
@@ -194,7 +210,8 @@ export function wireSystemPanel(d, getItems, h, cats, act) {
         quantityAvailable: s.build === Infinity ? 0 : s.build,
         quantityRepair: 0,
         // the parts, as INCLUDED required gear (no extra charge - the system price covers them)
-        requirements: d.parts.map((p) => ({ itemId: p.itemId, rule: 'per-item', qty: p.qty, coversN: 1, charge: 'free', discountCents: 0 })),
+        systemParts: d.parts.map((p) => ({ itemId: p.itemId, qty: p.qty })),   // as picked, for editing
+        requirements: Object.keys(s.eff).map((id) => ({ itemId: id, rule: 'per-item', qty: s.eff[id], coversN: 1, charge: 'free', discountCents: 0 })),
       }).then(() => say('Saved.'), (err) => say((err && err.message) || 'Could not save.', true));
     }
   });

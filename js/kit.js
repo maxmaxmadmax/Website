@@ -102,6 +102,17 @@ function expandKit(cart, itemsById) {
 
   const totals = resolveTotals(base, itemsById);
 
+  // SYSTEMS (Max, 16 Oct 2026): everything inside a system - its parts and the
+  // gear they bring along - is covered by the system's own price, so it is free.
+  const inSys = new Set();
+  const walk = (id) => {
+    reqsOf(itemsById[id]).forEach((r) => {
+      if (r && r.itemId && itemsById[r.itemId] && !inSys.has(r.itemId)) { inSys.add(r.itemId); walk(r.itemId); }
+    });
+  };
+  Object.keys(base).forEach((id) => { if (itemsById[id] && itemsById[id].isSystem) walk(id); });
+  const sysFree = (x) => inSys.has(x) || !!(itemsById[x] && itemsById[x].isSystem);
+
   // Attribute the required quantities to their charge, from the settled kit.
   const agg = {};   // key -> { itemId, charge, discountCents, qty }
   const add = (itemId, charge, discountCents, qty) => {
@@ -116,7 +127,7 @@ function expandKit(cart, itemsById) {
     const qx = totals[x];
     reqsOf(itemsById[x]).forEach((r) => {
       if (!r || !r.itemId || !itemsById[r.itemId] || r.rule === 'shared') return;
-      add(r.itemId, r.charge || 'normal', r.discountCents, qx * Math.max(0, Math.round(r.qty || 0)));
+      add(r.itemId, sysFree(x) ? 'free' : (r.charge || 'normal'), r.discountCents, qx * Math.max(0, Math.round(r.qty || 0)));
     });
   });
 
@@ -131,6 +142,7 @@ function expandKit(cart, itemsById) {
         charge: r.charge || 'normal', discountCents: r.discountCents || 0,
       });
       p.load += totals[x];
+      if (sysFree(x)) p.charge = 'free';
       p.coversN = Math.min(p.coversN, coversN);
     });
   });

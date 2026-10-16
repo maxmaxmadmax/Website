@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=458';
+} from './firebase-config.js?v=459';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel } from './system-builder.js?v=458';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=458';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=458';
-import { expandKit } from './kit.js?v=458';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel } from './system-builder.js?v=459';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=459';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=459';
+import { expandKit } from './kit.js?v=459';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -4394,6 +4394,7 @@ function invItem(raw) {
     requirements: (Array.isArray(r.requirements) ? r.requirements : []).map(normalizeReq),
     order: invNum(r.order, 0),
     isSystem: r.isSystem === true,   // made of other gear (System builder)
+    systemParts: Array.isArray(r.systemParts) ? r.systemParts : [],
   };
 }
 
