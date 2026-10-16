@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=405';
+} from './firebase-config.js?v=407';
 
-import { expandKit } from './kit.js?v=405';
+import { expandKit } from './kit.js?v=407';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5314,6 +5314,11 @@ function renderInvReqPreview() {
         .join('; ')}</p>`
     : '';
 
+  const feeRow = `
+    <div class="qb-sumrow">
+      <span><label class="qb-labtoggle"><input type="checkbox" data-qfee${quoteDraft.feeExcluded ? '' : ' checked'}> Booking &amp; admin fee (${BOOKING_FEE_PCT}%)</label></span>
+      <span class="${quoteDraft.feeExcluded ? 'qb-laboff' : ''}">${quoteDraft.feeExcluded ? 'off' : esc(money(m.feeCents))}</span>
+    </div>`;
   host.innerHTML = `
     <div class="inv-reqs-pv">
       <p class="inv-reqs-pv-head">If you hire
@@ -5400,15 +5405,34 @@ function wireInvReqs() {
    save, email the link, accept, invoice and mark paid.
    ========================================================================= */
 
+/*  EVENT TYPE (Max, 16 Oct 2026) - picks the photo at the top of the
+    customer's quote page (the Services page photos). Guessed from the
+    event name until it's set by hand.                                    */
+const EVENT_TYPES = {
+  community: 'Community event', corporate: 'Corporate function', festival: 'Festival / concert',
+  wedding: 'Wedding', private: 'Private party', sporting: 'Sporting event', touring: 'Touring band / gig',
+};
+function guessEventType(name) {
+  const n = String(name || '').toLowerCase();
+  if (/wedding|bride|ceremony|reception/.test(n)) return 'wedding';
+  if (/corporate|conference|awards|gala|dinner|launch|expo|ball/.test(n)) return 'corporate';
+  if (/festival|concert|music|fest\b/.test(n)) return 'festival';
+  if (/race|rodeo|cup|footy|football|rugby|cricket|fishing|sport|triathlon|carnival/.test(n)) return 'sporting';
+  if (/birthday|party|engagement|anniversary|wake/.test(n)) return 'private';
+  if (/tour|band|gig/.test(n)) return 'touring';
+  return 'community';
+}
+
 function blankQuote() {
   return {
     kind: 'quote',
-    customer: { name: '', business: '', email: '', ccEmail: '', phone: '', address: '', eventName: '', eventDate: '' },
+    customer: { name: '', business: '', email: '', ccEmail: '', phone: '', address: '', eventName: '', eventDate: '', eventType: '' },
     hire: { startDate: '', endDate: '', days: 1 },
     lines: [],
     discountCents: 0,
     labourExcluded: false,     // setup & pack-down labour is on by default (delivered jobs)
     labourPH: { setup: false, pack: false },   // "public holiday" ticks for setup / pack-down day
+    feeExcluded: false,        // 2% booking & admin fee is on by default (Max, 16 Oct 2026)
     deliveryTown: '',          // '' = pickup / no delivery
     deliveryKm: 0,             // one-way road km from Bowen
     notes: '',
@@ -5549,7 +5573,7 @@ function labourParts(setupMins, opts) {
       ...p, hours, mult: rate.mult, rateLabel: rate.label, cents,
       // what the client reads, e.g. "Setup - Sat 31 Oct" / "3 hrs @ $85/hr x 1.25 (Saturday rate)"
       lineName: p.name + (shortDate(p.date) ? ' – ' + shortDate(p.date) : ''),
-      lineDesc: `${hrs} @ $${LABOUR_RATE_CENTS / 100}/hr${loading}`,
+      lineDesc: `${hrs} @ ${LABOUR_RATE_CENTS / 100}/hr${loading}`,
     };
   });
 }
@@ -5597,6 +5621,8 @@ function qdocPill(s) { const [c, l] = QDOC_STATUS[s] || QDOC_STATUS.draft; retur
 
 /*  Totals - mirror of quoteMoney() in functions/index.js. Prices ex-GST,
     discounts off the net, GST 10% on top.                                 */
+const BOOKING_FEE_PCT = 2;
+
 function quoteDraftMoney(d) {
   const docDays = Math.max(1, Math.round((d.hire && d.hire.days) || 1));
   let subtotal = 0;
@@ -5607,9 +5633,12 @@ function quoteDraftMoney(d) {
   });
   const labourCents = d.labourExcluded === true ? 0 : quoteLabour(d).cents;
   const deliveryCents = quoteDeliveryCents(d);
-  const net = Math.max(0, subtotal + labourCents + deliveryCents - discount);
+  const beforeFee = Math.max(0, subtotal + labourCents + deliveryCents - discount);
+  // BOOKING & ADMIN FEE: 2% of everything before GST, on every quote (Max, 16 Oct 2026)
+  const feeCents = d.feeExcluded === true ? 0 : Math.round(beforeFee * BOOKING_FEE_PCT / 100);
+  const net = beforeFee + feeCents;
   const gst = Math.round(net * 0.10);
-  return { subtotalCents: subtotal, labourCents, deliveryCents, discountCents: discount, netCents: net, gstCents: gst, totalCents: net + gst };
+  return { subtotalCents: subtotal, labourCents, deliveryCents, feeCents, discountCents: discount, netCents: net, gstCents: gst, totalCents: net + gst };
 }
 
 /*  A line's own total: quantity x day rate x number of days.
@@ -5720,7 +5749,8 @@ function quoteFromDoc(doc) {
     customer: { ...blankQuote().customer, ...(doc.customer || {}) },
     hire: { ...blankQuote().hire, ...(doc.hire || {}) },
     // Labour and delivery lines are recomputed live, so drop stored ones here.
-    lines: (doc.lines || []).filter((l) => l.type !== 'labour' && l.type !== 'delivery').map((l) => ({ ...l })),
+    lines: (doc.lines || []).filter((l) => l.type !== 'labour' && l.type !== 'delivery' && l.type !== 'fee').map((l) => ({ ...l })),
+    feeExcluded: doc.feeExcluded === true,
     discountCents: Math.max(0, Math.round(doc.discountCents || 0)),
     labourExcluded: doc.labourExcluded === true,
     labourPH: { setup: !!(doc.labourPH && doc.labourPH.setup), pack: !!(doc.labourPH && doc.labourPH.pack) },
@@ -5826,6 +5856,7 @@ function quoteBuilderHtml() {
               ${metaRow('Status', doc ? qdocPill(status) : '<span class="ad-pill ad-pill-grey">Draft</span>')}
               ${metaRow('Created', esc(created))}
               ${metaRow('Event / Job', `<input class="qb-min" data-qc="eventName" value="${attr(c.eventName)}" placeholder="Event name">`)}
+              ${metaRow('Event type', `<select class="qb-min" data-qc="eventType">${Object.keys(EVENT_TYPES).map((k) => `<option value="${k}"${(c.eventType || guessEventType(c.eventName)) === k ? ' selected' : ''}>${EVENT_TYPES[k]}</option>`).join('')}</select>`)}
               ${metaRow('Event date', `<input class="qb-min" data-qc="eventDate" value="${attr(c.eventDate)}" placeholder="e.g. Sat 14 Mar">`)}
               ${metaRow('Hire period', `<span class="qb-hp">${hirePeriod}</span>`)}
               ${metaRow('Days charged', `<input class="qb-min qb-min-num" type="number" min="1" step="1" data-qh="days" value="${attr(h.days)}">`)}
@@ -6051,7 +6082,7 @@ function costGroupOf(category) {
 function costBreakdown(lines, centsOf, categoryOf) {
   const sums = {};
   (lines || []).forEach((l) => {
-    if (l.type === 'labour' || l.type === 'delivery' || l.type === 'discount') return;
+    if (l.type === 'labour' || l.type === 'delivery' || l.type === 'discount' || l.type === 'fee') return;
     const c = centsOf(l);
     if (!c) return;
     const g = l.itemId ? costGroupOf(categoryOf(l)) : 'Other';
@@ -6103,6 +6134,7 @@ function renderQuoteTotals() {
     <div class="qb-sumrow"><span>Hire subtotal (ex GST)</span><span id="qsum-sub">${esc(money(m.subtotalCents))}</span></div>
     ${labourRow}
     ${deliveryRow}
+    ${feeRow}
     <div class="qb-sumrow qb-sumdisc"><span>Discount</span>
       <span class="qb-discinput">&minus;<span class="qb-inline-dollar">$</span><input class="qb-num qb-num-total" type="number" min="0" step="1" data-qdisc value="${attr(discVal)}" placeholder="0"></span></div>
     <div class="qb-sumrow"><span>GST (10%)</span><span id="qsum-gst">${esc(money(m.gstCents))}</span></div>
@@ -6406,6 +6438,11 @@ function wireQuoteBuilder() {
       updateQuoteTotalsValues();
       return;
     }
+    if (t.hasAttribute('data-qfee')) {
+      quoteDraft.feeExcluded = !t.checked;
+      renderQuoteTotals();
+      return;
+    }
     if (t.hasAttribute('data-qlabph')) {
       quoteDraft.labourPH = { ...(quoteDraft.labourPH || {}), [t.getAttribute('data-qlabph')]: t.checked };
       renderQuoteTotals();
@@ -6554,6 +6591,7 @@ function wireQuoteActions() {
 /*  Materialise the live labour figure as a real line so the server total and
     the customer's copy include it. Stripped again on load (quoteFromDoc).   */
 function quoteDraftForSave() {
+  if (!quoteDraft.customer.eventType) quoteDraft.customer.eventType = guessEventType(quoteDraft.customer.eventName);
   const lab = quoteLabour(quoteDraft);
   const del = quoteDeliveryCents(quoteDraft);
   const km = Math.max(0, Math.round(quoteDraft.deliveryKm || 0));
@@ -6577,8 +6615,13 @@ function quoteDraftForSave() {
       qty: 1, unitCents: del, days: 1,
     });
   }
+  const feeCents = quoteDraftMoney(quoteDraft).feeCents;
+  if (feeCents > 0) {
+    lines.push({ type: 'fee', name: 'Booking & admin fee (' + BOOKING_FEE_PCT + '%)', qty: 1, unitCents: feeCents, days: 1 });
+  }
   return {
     ...quoteDraft, lines,
+    feeExcluded: quoteDraft.feeExcluded === true,
     labourExcluded: quoteDraft.labourExcluded === true,
     delivery: { town: quoteDraft.deliveryTown || '', km },
   };

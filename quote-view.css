@@ -260,3 +260,77 @@
   .qv-table th:nth-child(5), .qv-table td:nth-child(5) { width: 1%; white-space: nowrap; }
   .qv-table td:first-child { word-break: normal; overflow-wrap: anywhere; }
 }
+
+/* ==========================================================================
+   THE PROPOSAL PAGE (Max's mock-up, 16 Oct 2026) - quotes only
+   Hero photo -> intro + tiles -> investment summary -> itemised quote
+   (the paper) -> booking terms -> secure your booking.
+   ========================================================================== */
+.qp-hero {
+  position: relative; border-radius: 14px; overflow: hidden; margin-bottom: 18px; color: #fff;
+  background: #111 var(--qp-photo) center / cover no-repeat;
+}
+.qp-hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,.85) 0%, rgba(0,0,0,.55) 60%, rgba(0,0,0,.25) 100%); }
+.qp-hero-in { position: relative; padding: 34px 40px 36px; max-width: 620px; }
+.qp-hero-logo { height: 54px; width: auto; margin-bottom: 26px; }
+.qp-hero h1 { font-size: clamp(30px, 5vw, 46px); line-height: 1.05; margin: 6px 0 14px; }
+.qp-when { font-size: 16px; line-height: 1.7; margin: 0 0 14px; }
+.qp-ref { font-size: 13px; color: #ccc; margin: 0; }
+.qp-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #ff6b00; margin: 0 0 4px; }
+
+.qp-sec { background: #fff; color: #1a1a1a; border-radius: 12px; padding: 26px 30px; margin-bottom: 18px; font-family: Arial, Helvetica, sans-serif; }
+.qp-h2 { font-size: 24px; margin: 0 0 8px; color: #111; }
+.qp-h2-doc { color: #fff; margin: 26px 4px 10px; }
+.qp-sub { color: #666; margin: 0 0 14px; font-size: 14px; }
+.qp-intro p { margin: 0 0 18px; line-height: 1.6; color: #333; }
+
+.qp-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.qp-tile { border: 1px solid #ececec; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 4px; }
+.qp-tile svg { width: 30px; height: 30px; fill: none; stroke: #ff6b00; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; margin-bottom: 4px; }
+.qp-tile b { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+.qp-tile span { font-size: 12.5px; color: #666; }
+
+.qp-inv { width: 100%; border-collapse: collapse; font-size: 14px; }
+.qp-inv th { text-align: right; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #777; background: #f2f2f3; padding: 9px 12px; }
+.qp-inv th:first-child, .qp-inv td:first-child { text-align: left; }
+.qp-inv td { text-align: right; padding: 8px 12px; border-bottom: 1px solid #eee; white-space: nowrap; }
+.qp-inv td:first-child { white-space: normal; font-weight: 600; }
+.qp-inv tfoot td { font-weight: 800; font-size: 18px; border-bottom: none; border-top: 2px solid #111; padding-top: 12px; }
+.qp-disc td { color: #0f7a43; }
+.qp-jump { display: inline-block; margin-top: 16px; color: #ff6b00; font-weight: 700; text-decoration: none; }
+
+.qp-term { border: 1px solid #ececec; border-radius: 10px; padding: 0 16px; margin-top: 8px; }
+.qp-term summary { cursor: pointer; font-weight: 700; padding: 12px 0; list-style: none; }
+.qp-term summary::after { content: "+"; float: right; color: #ff6b00; font-weight: 800; }
+.qp-term[open] summary::after { content: "\2212"; }
+.qp-term p { margin: 0 0 14px; color: #444; line-height: 1.55; font-size: 14px; }
+
+.qp-book-grid { display: grid; grid-template-columns: 1fr 300px; gap: 26px; align-items: start; }
+.qp-opt { display: flex; gap: 12px; align-items: flex-start; border: 2px solid #ececec; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; cursor: pointer; }
+.qp-opt:has(input:checked) { border-color: #ff6b00; background: #fff7ef; }
+.qp-opt input { margin-top: 4px; accent-color: #ff6b00; }
+.qp-opt span { display: grid; gap: 2px; }
+.qp-opt strong { font-size: 22px; }
+.qp-opt em { font-style: normal; font-size: 13px; color: #666; }
+.qp-name { display: grid; gap: 4px; font-size: 13px; font-weight: 600; margin: 14px 0 10px; }
+.qp-name input { font: inherit; font-size: 15px; padding: 10px 12px; border: 1px solid #ccc; border-radius: 8px; }
+.qp-agree { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; margin-bottom: 14px; }
+.qp-agree input { margin-top: 3px; accent-color: #ff6b00; }
+.qp-go { width: 100%; }
+.qp-secure { font-size: 12px; color: #888; text-align: center; margin: 8px 0 0; }
+.qp-side { background: #f6f6f7; border-radius: 10px; padding: 16px 18px; }
+.qp-side .qv-sumrow { padding: 4px 0; font-size: 14px; }
+.qp-done { background: #e7f6ee; color: #0f7a43; border: 1px solid #b9e6cd; border-radius: 10px; padding: 14px 16px; font-weight: 600; margin-bottom: 12px; }
+.qp-bank { background: #f6f6f7; border-radius: 10px; padding: 14px 16px; line-height: 1.6; font-size: 14px; }
+.qp-book .qv-btn { margin-top: 10px; }
+
+@media screen and (max-width: 640px) {
+  .qp-hero-in { padding: 24px 20px 26px; }
+  .qp-hero-logo { height: 44px; margin-bottom: 18px; }
+  .qp-sec { padding: 20px 16px; }
+  .qp-tiles { grid-template-columns: 1fr 1fr; }
+  .qp-inv th:nth-child(3), .qp-inv td:nth-child(3) { display: none; }
+  .qp-inv td, .qp-inv th { padding: 7px 6px; font-size: 13px; }
+  .qp-book-grid { grid-template-columns: 1fr; }
+}
+@media print { .qp-book, .qp-jump { display: none !important; } }

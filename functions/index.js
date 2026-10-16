@@ -1129,6 +1129,32 @@ function stripeFields(extra) {
    only a convenience - a vendor could close the tab, or hit the success URL
    by hand, so nothing is confirmed on the strength of it.
    ------------------------------------------------------------------------- */
+/*  A quote paid by card: accept it and add the payment. Idempotent per
+    Stripe session, so a webhook retry can't count the money twice.   */
+async function recordQuotePayment(session) {
+  const ref = db.collection('quotes').doc(String(session.metadata.quoteId));
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) return;
+    const q = snap.data();
+    const seen = Array.isArray(q.stripeSessions) ? q.stripeSessions : [];
+    if (seen.includes(session.id)) return;
+    const paidNow = (q.amountPaidCents || 0) + (session.amount_total || 0);
+    tx.update(ref, {
+      status: 'accepted',
+      acceptedName: q.acceptedName || session.metadata.acceptedName || '',
+      acceptedAt: q.acceptedAt || FieldValue.serverTimestamp(),
+      paymentMethod: 'card',
+      paymentStatus: paidNow >= (q.totalCents || 0) ? 'paid' : 'deposit',
+      amountPaidCents: paidNow,
+      stripeSessions: [...seen, session.id],
+      lastPaidAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  });
+  logger.info('Quote payment recorded', { quoteId: session.metadata.quoteId, cents: session.amount_total });
+}
+
 exports.stripeWebhook = onRequest(
   { secrets: [STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, SMTP_USER, SMTP_PASS], cors: false },
   async (req, res) => {
@@ -1168,6 +1194,12 @@ exports.stripeWebhook = onRequest(
         case 'checkout.session.completed':
         case 'checkout.session.async_payment_succeeded': {
           const session = event.data.object;
+
+          // A quote payment (quoteCheckout), not a vendor booking.
+          if (session.metadata && session.metadata.quoteId) {
+            if (session.payment_status === 'paid') await recordQuotePayment(session);
+            break;
+          }
           const bookingId = bookingOf(session);
 
           if (!bookingId) {
@@ -2547,6 +2579,7 @@ function sanitizeQuote(q) {
     phone: text(q.customer && q.customer.phone, 40),
     address: text(q.customer && q.customer.address, 300),
     eventName: text(q.customer && q.customer.eventName, 160),
+    eventType: text(q.customer && q.customer.eventType, 40),
     eventDate: text(q.customer && q.customer.eventDate, 60),
   };
   const hire = {
@@ -2555,7 +2588,7 @@ function sanitizeQuote(q) {
     days,
   };
   const lines = (Array.isArray(q.lines) ? q.lines : []).slice(0, 200).map((l) => {
-    const type = ['item', 'kit', 'custom', 'discount', 'labour', 'delivery'].includes(l.type) ? l.type : 'custom';
+    const type = ['item', 'kit', 'custom', 'discount', 'labour', 'delivery', 'fee'].includes(l.type) ? l.type : 'custom';
     const line = {
       type,
       itemId: text(l.itemId, 60),
@@ -2576,6 +2609,7 @@ function sanitizeQuote(q) {
     customer, hire, lines, kind,
     discountCents: Math.max(0, Math.round(Number(q.discountCents) || 0)),
     labourExcluded: q.labourExcluded === true,
+    feeExcluded: q.feeExcluded === true,
     labourPH: { setup: !!(q.labourPH && q.labourPH.setup), pack: !!(q.labourPH && q.labourPH.pack) },
     delivery: {
       town: text(q.delivery && q.delivery.town, 80),
@@ -2679,7 +2713,9 @@ exports.adminSendQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
 
 /*  PUBLIC - fetch a quote by its token. Returns a customer-safe subset; the
     doc itself stays closed to browsers.                                    */
-exports.getQuote = onCall(async (request) => {
+const QUOTE_DEPOSIT_PCT = 50;   // deposit to secure a booking (Max, 16 Oct 2026)
+
+exports.getQuote = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
   const token = String((request.data || {}).token || '').trim();
   if (!/^[a-f0-9]{20,40}$/.test(token)) throw new HttpsError('invalid-argument', 'That link is not valid.');
 
@@ -2710,6 +2746,7 @@ exports.getQuote = onCall(async (request) => {
     status: q.status,
     customer: q.customer || {},
     hire: q.hire || {},
+    delivery: q.delivery || {},
     lines,
     notes: q.notes || '',
     terms: q.terms || '',
@@ -2720,6 +2757,11 @@ exports.getQuote = onCall(async (request) => {
     acceptedName: q.acceptedName || '',
     acceptedAt: secs(q.acceptedAt),
     createdAt: secs(q.createdAt),
+    paymentStatus: q.paymentStatus || '',      // '' | bank | deposit | paid
+    paymentMethod: q.paymentMethod || '',
+    amountPaidCents: q.amountPaidCents || 0,
+    depositPct: QUOTE_DEPOSIT_PCT,
+    cardOn: !!STRIPE_SECRET_KEY.value(),
   };
 });
 
@@ -2740,13 +2782,70 @@ exports.acceptQuote = onCall(async (request) => {
     throw new HttpsError('failed-precondition', 'This quote can no longer be accepted.');
   }
 
+  const bank = data.method === 'bank';
   await doc.ref.update({
     status: 'accepted',
     acceptedName: name,
     acceptedAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
+    ...(bank ? { paymentMethod: 'bank', paymentStatus: 'bank' } : {}),
   });
   return { ok: true };
+});
+
+/* -------------------------------------------------------------------------
+   quoteCheckout  PUBLIC (Max, 16 Oct 2026)
+   The customer accepts their quote and pays by card through Stripe -
+   either the 50% deposit or the full amount (or the balance, once the
+   deposit is in). The quote is only marked accepted / paid when Stripe's
+   webhook confirms the money, never on the strength of this call.
+   ------------------------------------------------------------------------- */
+exports.quoteCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
+  const data = request.data || {};
+  const token = String(data.token || '').trim();
+  const name = String(data.name || '').trim().slice(0, 120);
+  const option = data.option === 'full' ? 'full' : 'deposit';
+  if (!/^[a-f0-9]{20,40}$/.test(token)) throw new HttpsError('invalid-argument', 'That link is not valid.');
+  if (!name) throw new HttpsError('invalid-argument', 'Please type your name to accept.');
+  if (data.agreed !== true) throw new HttpsError('invalid-argument', 'Please tick to accept the booking terms.');
+
+  const snap = await db.collection('quotes').where('token', '==', token).limit(1).get();
+  if (snap.empty) throw new HttpsError('not-found', 'That link is not valid.');
+  const doc = snap.docs[0];
+  const q = doc.data();
+  if (!['draft', 'sent', 'accepted'].includes(q.status) || q.paymentStatus === 'paid') {
+    throw new HttpsError('failed-precondition', 'This quote can no longer be paid online.');
+  }
+
+  const total = Math.max(0, Math.round(q.totalCents || 0));
+  const paid = Math.max(0, Math.round(q.amountPaidCents || 0));
+  const owing = total - paid;
+  let amount = option === 'full' || paid > 0 ? owing : Math.round(total * QUOTE_DEPOSIT_PCT / 100);
+  if (amount < 50) throw new HttpsError('failed-precondition', 'Nothing left to pay on this quote.');
+  const label = paid > 0 ? 'balance' : (option === 'full' ? 'payment in full' : QUOTE_DEPOSIT_PCT + '% deposit');
+
+  const stripe = getStripe();
+  const back = SITE_URL + '/quote?t=' + token;
+  const session = await stripe.checkout.sessions.create({
+    mode: 'payment',
+    customer_email: (q.customer && q.customer.email) || undefined,
+    client_reference_id: 'quote:' + doc.id,
+    metadata: { quoteId: doc.id, payOption: label, acceptedName: name },
+    line_items: [{
+      quantity: 1,
+      price_data: {
+        currency: 'aud',
+        unit_amount: amount,
+        product_data: {
+          name: 'Quote ' + (q.number || '') + ' - ' + label,
+          description: ((q.customer && q.customer.eventName) || 'SoundzGood Whitsundays booking') + ' (incl GST)',
+        },
+      },
+    }],
+    success_url: back + '&paid=1',
+    cancel_url: back,
+  });
+  return { url: session.url };
 });
 
 /*  sendLeadEmail  admin - outreach to a prospect from the lead generator.
