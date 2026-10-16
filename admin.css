@@ -4269,3 +4269,21 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
   .sp-table td:nth-child(4) .sp-next{ display:flex; }
   .sp-table td:nth-child(6){ grid-column:1 / -1; display:flex; gap:6px; text-align:left; }
 }
+
+/* ---- STOCK: on hire / left for chosen dates + quote warnings (16 Oct 2026) ---- */
+.inv-dates{ display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--ad-muted); }
+.inv-dates .ad-input{ width:auto; padding:6px 8px; }
+.inv-hire{ display:inline-block; position:relative; text-align:left; }
+.inv-hire summary{ list-style:none; cursor:pointer; font-weight:700; color:var(--ad-blue); white-space:nowrap; }
+.inv-hire summary::-webkit-details-marker{ display:none; }
+.inv-hire small{ font-weight:400; color:var(--ad-muted); }
+.inv-jobs{ position:absolute; right:0; top:22px; z-index:15; background:#fff; border:1px solid var(--ad-line); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.12); padding:8px 10px; min-width:220px; }
+.inv-jobs span{ display:block; padding:3px 0; font-size:12.5px; color:var(--ad-text); white-space:nowrap; }
+.inv-jobs em{ color:var(--ad-muted); font-style:normal; }
+.inv-left{ font-weight:700; }
+.inv-left.is-out{ color:var(--ad-red); }
+.inv-left.is-tight{ color:var(--ad-amber); }
+.qb-stock{ display:block; font-size:11.5px; font-weight:600; margin-top:2px; }
+.qb-stock.is-out{ color:var(--ad-red); }
+.qb-stock.is-tight{ color:var(--ad-amber); }
+.qb-row-sub .qb-stock{ display:inline; margin-left:8px; }

@@ -2770,6 +2770,131 @@ exports.adminDeleteQuote = onCall(async (request) => {
   return { ok: true };
 });
 
+/* =========================================================================
+   PICK LIST (Max, 16 Oct 2026)
+   Once the deposit is in, a job gets a private CREW link (crewToken) to a
+   pick list: the gear with NO prices, plus Packed / Returned ticks that are
+   saved here so Max can see progress. Separate from the customer token.
+   ========================================================================= */
+
+/* deposit in, or paid - the booking is confirmed (same rule as js/stock.js) */
+function pickReady(q) {
+  if (!q || q.status === 'cancelled' || q.status === 'declined') return false;
+  return q.status === 'paid' || q.paymentStatus === 'deposit' || q.paymentStatus === 'paid';
+}
+
+/* the gear on a job, one entry per item (items + included kit added up).
+   KEEP IN STEP with pickItems() in js/stock.js.                          */
+function pickItems(lines) {
+  const out = [];
+  const byKey = {};
+  (lines || []).forEach((l) => {
+    if (!l || !['item', 'kit', 'custom'].includes(l.type)) return;
+    const qty = Math.max(0, Math.round(Number(l.qty) || 0));
+    if (!qty) return;
+    const name = String(l.name || '').replace(/ \(included\)$/i, '').trim();
+    const key = l.itemId ? 'i:' + l.itemId : 'n:' + name.toLowerCase();
+    if (!byKey[key]) { byKey[key] = { itemId: l.itemId || '', name, qty: 0, category: l.category || '' }; out.push(byKey[key]); }
+    byKey[key].qty += qty;
+  });
+  return out;
+}
+
+/* a tick key that is safe as a Firestore field name */
+const pickKey = (p) => (p.itemId ? 'i_' + p.itemId : 'n_' + p.name.toLowerCase()).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 120);
+
+async function quoteByCrewToken(token) {
+  if (!/^[a-f0-9]{20,40}$/.test(String(token || ''))) throw new HttpsError('invalid-argument', 'That link is not valid.');
+  const snap = await db.collection('quotes').where('crewToken', '==', String(token)).limit(1).get();
+  if (snap.empty) throw new HttpsError('not-found', 'That pick list link is not valid.');
+  return snap.docs[0];
+}
+
+/* ADMIN - a bank-transfer deposit has arrived: books the job (it becomes an
+   invoice if it isn't one yet) and unlocks the pick list.                 */
+exports.adminDepositReceived = onCall(async (request) => {
+  requireAdmin(request);
+  const { id } = request.data || {};
+  const ref = db.collection('quotes').doc(String(id || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'No such quote.');
+  const q = snap.data();
+  if (!['approved', 'sent', 'accepted', 'invoiced'].includes(q.status)) {
+    throw new HttpsError('failed-precondition', 'Only quotes and unpaid invoices can take a deposit.');
+  }
+  const deposit = Math.round((q.totalCents || 0) * QUOTE_DEPOSIT_PCT / 100);
+  const update = {
+    status: 'invoiced', kind: 'invoice',
+    paymentStatus: 'deposit', paymentMethod: q.paymentMethod || 'bank',
+    amountPaidCents: Math.max(q.amountPaidCents || 0, deposit),
+    acceptedAt: q.acceptedAt || FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  };
+  if (!q.invoiceNumber) { update.invoiceNumber = invoiceNo((await nextInvoiceNumber()).n); update.invoicedAt = FieldValue.serverTimestamp(); }
+  if (!q.crewToken) update.crewToken = crypto.randomBytes(16).toString('hex');
+  await ref.update(update);
+  return { ok: true };
+});
+
+/* ADMIN - the crew link for a booked job (makes one the first time) */
+exports.adminPickListLink = onCall(async (request) => {
+  requireAdmin(request);
+  const { id } = request.data || {};
+  const ref = db.collection('quotes').doc(String(id || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'No such quote.');
+  const q = snap.data();
+  if (!pickReady(q)) throw new HttpsError('failed-precondition', 'The pick list unlocks once the deposit is in.');
+  let token = q.crewToken;
+  if (!token) { token = crypto.randomBytes(16).toString('hex'); await ref.update({ crewToken: token }); }
+  return { url: SITE_URL + '/picklist?t=' + token };
+});
+
+/* PUBLIC (crew link) - the pick list: job details and gear, NO prices */
+exports.getPickList = onCall(async (request) => {
+  const doc = await quoteByCrewToken((request.data || {}).token);
+  const q = doc.data();
+  if (!pickReady(q)) throw new HttpsError('failed-precondition', 'This pick list is not available.');
+  // categories from inventory, so the gear can be grouped
+  const inv = await loadQuoteInventory();
+  const cat = {};
+  inv.forEach((it) => { cat[it.id] = it.category || ''; });
+  const c = q.customer || {};
+  const items = pickItems(q.lines).map((p) => ({ key: pickKey(p), name: p.name, qty: p.qty, category: cat[p.itemId] || p.category || 'Other' }));
+  const crew = (q.lines || []).filter((l) => l.type === 'labour').map((l) => ({ name: l.name || '', note: String(l.description || '').replace(/@.*$/, '').trim() }));
+  const del = (q.lines || []).find((l) => l.type === 'delivery');
+  return {
+    number: q.invoiceNumber || q.number || '',
+    eventName: c.eventName || '',
+    eventDate: c.eventDate || '',
+    hire: { startDate: (q.hire && q.hire.startDate) || '', endDate: (q.hire && q.hire.endDate) || '', days: (q.hire && q.hire.days) || 1 },
+    town: (q.delivery && q.delivery.town) || '',
+    delivery: del ? (del.name || 'Delivery & pickup') : 'Customer pickup',
+    contact: { name: c.name || '', business: c.business || '', phone: c.phone || '', address: c.address || '' },
+    times: { start: q.botStart || '', finish: q.botFinish || '' },
+    crew,
+    notes: q.crewNotes || '',
+    items,
+    ticks: q.pickTicks || {},
+    paidInFull: q.paymentStatus === 'paid' || q.status === 'paid',
+  };
+});
+
+/* PUBLIC (crew link) - tick / untick Packed or Returned on one item */
+exports.setPickTick = onCall(async (request) => {
+  const d = request.data || {};
+  const field = d.field === 'returned' ? 'returned' : (d.field === 'packed' ? 'packed' : '');
+  const key = String(d.key || '');
+  if (!field || !/^[a-zA-Z0-9_-]{1,120}$/.test(key)) throw new HttpsError('invalid-argument', 'Bad tick.');
+  const doc = await quoteByCrewToken(d.token);
+  if (!pickReady(doc.data())) throw new HttpsError('failed-precondition', 'This pick list is not available.');
+  await doc.ref.update({
+    ['pickTicks.' + key + '.' + field]: d.value === true,
+    pickUpdatedAt: FieldValue.serverTimestamp(),
+  });
+  return { ok: true };
+});
+
 exports.adminSendQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
   requireAdmin(request);
   const { id } = request.data || {};

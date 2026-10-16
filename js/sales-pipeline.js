@@ -10,6 +10,8 @@
    (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
+import { isBooked, pickProgress } from './stock.js?v=455';
+
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
   draft:     { step: 1, tab: 'estimates', status: ['Estimate', 'grey'],
@@ -40,9 +42,12 @@ export function canDelete(q) {
 export function stageOf(q) {
   const s = STAGES[q.status] || STAGES.draft;
   // payment detail for jobs waiting on money
+  const pp = isBooked(q) && q.crewToken ? pickProgress(q) : null;
+  const packing = pp && pp.lines ? (pp.returned === pp.lines ? 'All gear back in' : pp.packed ? pp.packed + ' of ' + pp.lines + ' packed' : 'Pick list ready') : '';
+  if (s.step === 4) return packing ? { ...s, next: [s.next[0], s.next[1], s.next[2], packing] } : s;
   if (s.step === 3) {
     let sub = 'Deposit outstanding';
-    if (q.paymentStatus === 'deposit') sub = 'Final payment due';
+    if (q.paymentStatus === 'deposit') sub = 'Final payment due' + (packing ? ' · ' + packing : '');
     else if (q.paymentStatus === 'bank') sub = 'Bank transfer expected';
     return { ...s, next: [s.next[0], s.next[1], s.next[2], sub] };
   }
@@ -229,6 +234,12 @@ export function rowsHtml(rows, f, h) {
               ${q.token ? `<a href="/quote?t=${h.attr(q.token)}" target="_blank" rel="noopener">Open customer page</a>
               <button type="button" data-sp-copy="${h.attr('https://www.soundzgood.com.au/quote?t=' + q.token)}">Copy customer link</button>` : '<span>Save it first to get a link</span>'}
               ${q.token ? `<a href="/quote?t=${h.attr(q.token)}&print=1" target="_blank" rel="noopener">Download PDF</a>` : ''}
+              ${isBooked(q)
+                ? (q.crewToken
+                  ? `<a href="/picklist?t=${h.attr(q.crewToken)}" target="_blank" rel="noopener">Open pick list</a>
+              <button type="button" data-sp-copy="${h.attr('https://www.soundzgood.com.au/picklist?t=' + q.crewToken)}">Copy crew link</button>`
+                  : `<button type="button" data-sp-act="picklist" data-id="${h.attr(q.id)}">Make pick list</button>`)
+                : (['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) ? `<button type="button" data-sp-act="deposit" data-id="${h.attr(q.id)}">Deposit received</button>` : '')}
               ${['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) ? `<button type="button" data-sp-act="paid" data-id="${h.attr(q.id)}">Mark paid</button>` : ''}
               <button type="button" data-sp-act="duplicate" data-id="${h.attr(q.id)}">Duplicate</button>
               ${st.tab === 'archived'
@@ -282,7 +293,7 @@ export function wirePipeline(getJobs, f, h, act) {
     }
     const a = e.target.closest('[data-sp-act]');
     if (a) {
-      const fn = { duplicate: act.duplicate, archive: act.archive, restore: act.restore, delete: act.del, paid: act.paid }[a.getAttribute('data-sp-act')];
+      const fn = { duplicate: act.duplicate, archive: act.archive, restore: act.restore, delete: act.del, paid: act.paid, deposit: act.deposit, picklist: act.picklist }[a.getAttribute('data-sp-act')];
       if (fn) fn(a.getAttribute('data-id'));
       return;
     }

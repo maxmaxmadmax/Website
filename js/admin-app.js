@@ -33,10 +33,11 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=453';
+} from './firebase-config.js?v=455';
 
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=453';
-import { expandKit } from './kit.js?v=453';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=455';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=455';
+import { expandKit } from './kit.js?v=455';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -102,6 +103,7 @@ const state = {
   openInvId: null,                                  // which item's detail is open
   invFilter: { search: '', category: 'all', location: 'all', status: 'all' },
   invPage: 1,
+  invDates: null,   // { from, to } 'yyyy-mm-dd' for the On hire / Left columns (null = today)
   invSort: { key: '', dir: 'asc' },                 // '' = default (category, then name)
 
   /*  Quotes / invoices. quoteDocs streams in live; openQuoteId is null on
@@ -4570,6 +4572,12 @@ VIEWS.inventory = {
               ${opt('all', 'All locations', f.location)}
               ${locs.map((c) => opt(c, c, f.location)).join('')}
             </select>
+            <span class="inv-dates" title="Show what's on hire and left for these dates">
+              <span>Stock for</span>
+              <input type="date" id="inv-d-from" class="ad-input" value="${attr(invDates().from)}" aria-label="From">
+              <span>to</span>
+              <input type="date" id="inv-d-to" class="ad-input" value="${attr(invDates().to)}" aria-label="To">
+            </span>
             <select id="inv-f-status" class="ad-select" aria-label="Filter by status">
               ${opt('all', 'All status', f.status)}
               ${opt('available', 'Available', f.status)}
@@ -4585,7 +4593,8 @@ VIEWS.inventory = {
                   ${invTh('name', 'Item')}
                   ${invTh('category', 'Category')}
                   ${invTh('quantityTotal', 'Total', true)}
-                  ${invTh('quantityAvailable', 'Avail.', true)}
+                  <th class="inv-num" title="Booked jobs (deposit in) on the dates above">On hire</th>
+                  <th class="inv-num" title="Total, less in repair, less on hire">Left</th>
                   ${invTh('location', 'Location')}
                   ${invTh('priceCents', 'Hire / day', true)}
                   ${invTh('extraDayCents', 'Extra day', true)}
@@ -4666,7 +4675,33 @@ function invTile(icon, cls, value, label, pct) {
     </div>`;
 }
 
+/*  STOCK FOR CHOSEN DATES (Max, 16 Oct 2026): booked jobs (deposit in) count
+    against stock; quoted / accepted-but-unpaid jobs show as "pencilled".   */
+function todayIso() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function invDates() {
+  const t = todayIso();
+  const d = state.invDates || { from: t, to: t };
+  return { from: d.from || t, to: d.to && d.to >= (d.from || t) ? d.to : (d.from || t) };
+}
+function invStockCells(it, use) {
+  const u = use[it.id] || { booked: 0, pencilled: 0, jobs: [] };
+  const repair = Math.min(it.quantityRepair || 0, it.quantityTotal);
+  const left = Math.max(0, it.quantityTotal - repair - u.booked);
+  const tone = left <= 0 && (u.booked || u.pencilled) ? ' is-out' : (u.pencilled > left ? ' is-tight' : '');
+  const jobs = u.jobs.length ? '<div class="inv-jobs">' + u.jobs.map((j) =>
+    '<span>' + esc(j.qty) + '&times; ' + esc(j.label) + (j.booked ? '' : ' <em>(pencilled)</em>') + '</span>').join('') + '</div>' : '';
+  const hire = u.booked || u.pencilled
+    ? '<details class="inv-hire" data-no-row><summary>' + (u.booked || '0') + (u.pencilled ? ' <small>+' + u.pencilled + ' pencilled</small>' : '') + '</summary>' + jobs + '</details>'
+    : '<span class="ad-cell-muted">&mdash;</span>';
+  return '<td class="inv-num">' + hire + '</td><td class="inv-num"><b class="inv-left' + tone + '">' + left + '</b></td>';
+}
+
 function invRowsHtml() {
+  const dates = invDates();
+  const use = stockUsage(state.quoteDocs || [], dates.from, dates.to);
   const rows = invSorted(invFiltered());
   const pages = Math.max(1, Math.ceil(rows.length / INV_PER_PAGE));
   if (state.invPage > pages) state.invPage = pages;
@@ -4684,14 +4719,14 @@ function invRowsHtml() {
       </td>
       <td>${it.category ? `<span class="inv-pill ${invCatClass(it.category)}">${esc(it.category)}</span>` : '<span class="ad-cell-muted">—</span>'}</td>
       <td class="inv-num">${esc(it.quantityTotal)}</td>
-      <td class="inv-num">${esc(it.quantityAvailable)}</td>
+      ${invStockCells(it, use)}
       <td>${it.location ? esc(it.location) : '<span class="ad-cell-muted">—</span>'}</td>
       <td class="inv-num">${esc(money(it.priceCents))}</td>
       <td class="inv-num">${it.extraDayCents ? esc(money(it.extraDayCents)) : '<span class="ad-cell-muted">—</span>'}</td>
       <td>${invStatusPill(it.status)}</td>
       <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-inv-open="${attr(it.id)}" aria-label="Edit">&#8250;</button></td>
     </tr>`).join('')
-    : `<tr><td colspan="9" class="ad-cell-muted">No items match. Try clearing the filters, or add one.</td></tr>`;
+    : `<tr><td colspan="10" class="ad-cell-muted">No items match. Try clearing the filters, or add one.</td></tr>`;
 
   return { body, total: rows.length, pages, start, shown: pageRows.length };
 }
@@ -4877,6 +4912,19 @@ function invDetail() {
 function wireInventory() {
   renderInvRows();
 
+  // stock dates: From / To (To follows From if it would be earlier)
+  ['inv-d-from', 'inv-d-to'].forEach((idd) => {
+    const el = document.getElementById(idd);
+    if (el) el.addEventListener('change', () => {
+      const d = invDates();
+      const from = (document.getElementById('inv-d-from') || {}).value || d.from;
+      let to = (document.getElementById('inv-d-to') || {}).value || from;
+      if (to < from) { to = from; const t = document.getElementById('inv-d-to'); if (t) t.value = to; }
+      state.invDates = { from, to };
+      renderInvRows();
+    });
+  });
+
   /*  Delegate on the wrapper, which render() recreates each time, rather
       than on the persistent #ad-desk - a listener on the desk would stack
       up a duplicate on every re-render.                                  */
@@ -4927,6 +4975,7 @@ function wireInventory() {
       renderInvRows();
       return;
     }
+    if (e.target.closest('[data-no-row]')) return;   // the "on hire" job list, not the item
     const row = e.target.closest('[data-inv]');
     const openBtn = e.target.closest('[data-inv-open]');
     const id = openBtn ? openBtn.getAttribute('data-inv-open')
@@ -5733,6 +5782,16 @@ function wireQuoteList() {
       if (!window.confirm('Mark ' + label(d) + ' as PAID IN FULL (' + money((d && d.totalCents) || 0) + ')?\n\nUse this when the money came in by bank transfer or cash. It becomes a tax invoice.')) return;
       try { await call('adminSetQuoteStatus', { id, status: 'paid' }); } catch (e) { window.alert(e.message || 'Could not mark paid.'); }
     },
+    // a bank-transfer deposit arrived: books the job (becomes an invoice) and unlocks the pick list
+    async deposit(id) {
+      const d = findDoc(id);
+      if (!window.confirm('Deposit received for ' + label(d) + '?\n\nThis books the job, makes it a tax invoice and unlocks the pick list.')) return;
+      try { await call('adminDepositReceived', { id }); } catch (e) { window.alert(e.message || 'Could not record the deposit.'); }
+    },
+    // makes the private crew link (no prices) - the menu then shows Open / Copy
+    async picklist(id) {
+      try { await call('adminPickListLink', { id }); } catch (e) { window.alert(e.message || 'Could not make the pick list.'); }
+    },
     async restore(id) {
       try { await call('adminArchiveQuote', { id, archive: false }); } catch (e) { window.alert(e.message || 'Could not restore.'); }
     },
@@ -6021,6 +6080,29 @@ function renderQuoteLines() {
   sortKitGroups();
   const kitCat = kitCategoryOf();
 
+  /*  SHORT ON STOCK? (Max, 16 Oct 2026) For this quote's hire dates: what
+      other BOOKED jobs (deposit in) already have out, against what this
+      quote needs. Pencilled jobs are mentioned but don't count.          */
+  const stockWarn = (() => {
+    const r = jobRange(quoteDraft);
+    if (!r) return () => '';
+    const use = stockUsage(state.quoteDocs || [], r[0], r[1], state.openQuoteId);
+    const need = {};
+    pickItems(quoteDraft.lines).forEach((p) => { if (p.itemId) need[p.itemId] = p.qty; });
+    const inv = {};
+    invItems().forEach((it) => { inv[it.id] = it; });
+    const dayTxt = r[0] === r[1] ? prettyEventDate(r[0]) : prettyEventDate(r[0]) + ' – ' + prettyEventDate(r[1]);
+    return (l) => {
+      const it = l.itemId && inv[l.itemId];
+      if (!it || !need[l.itemId]) return '';
+      const u = use[l.itemId] || { booked: 0, pencilled: 0 };
+      const left = Math.max(0, it.quantityTotal - Math.min(it.quantityRepair || 0, it.quantityTotal) - u.booked);
+      if (need[l.itemId] <= left) return u.pencilled && need[l.itemId] > left - u.pencilled
+        ? '<span class="qb-stock is-tight" title="Other quotes not yet paid want some of these too">' + u.pencilled + ' also pencilled in elsewhere</span>' : '';
+      return '<span class="qb-stock is-out">&#9888; Only ' + left + ' left ' + esc(dayTxt) + ' (need ' + need[l.itemId] + ')</span>';
+    };
+  })();
+
   host.innerHTML = quoteDraft.lines.map((l, i) => {
     if (l.type === 'discount') {
       const val = l.amountCents ? l.amountCents / 100 : '';
@@ -6050,7 +6132,7 @@ function renderQuoteLines() {
       return `${header}
         <div class="qb-row qb-row-sub" data-ql="${i}" data-sub>
           <div class="qb-cell qb-c-grip"></div>
-          <div class="qb-cell qb-c-desc"><span class="qb-arrow">&#8627;</span><span class="qb-subname">${esc(String(l.name || '').replace(/ \(included\)$/i, ''))}</span></div>
+          <div class="qb-cell qb-c-desc"><span class="qb-arrow">&#8627;</span><span class="qb-subname">${esc(String(l.name || '').replace(/ \(included\)$/i, ''))}</span>${stockWarn(l)}</div>
           <div class="qb-cell qb-c-qty">${esc(l.qty)}</div>
           <div class="qb-cell qb-c-rate">${free ? '<span class="qb-incl">Included</span>' : money(l.unitCents)}</div>
           <div class="qb-cell qb-c-days">${free ? '&mdash;' : esc(Math.max(1, Math.round(l.days || days)))}</div>
@@ -6066,7 +6148,7 @@ function renderQuoteLines() {
         <div class="qb-cell qb-c-grip"><span class="qb-grip" title="Drag to reorder">&#10303;</span></div>
         <div class="qb-cell qb-c-desc">
           <input class="qb-name" data-lf="name" value="${attr(l.name)}" placeholder="Item name">
-          ${l.description ? `<span class="qb-sub">${esc(l.description)}</span>` : ''}
+          ${l.description ? `<span class="qb-sub">${esc(l.description)}</span>` : ''}${stockWarn(l)}
         </div>
         <div class="qb-cell qb-c-qty"><input class="qb-num" type="number" min="0" step="1" data-lf="qty" value="${attr(l.qty)}"></div>
         <div class="qb-cell qb-c-rate"><span class="qb-inline-dollar">$</span><input class="qb-num" type="number" min="0" step="1" data-lf="unitCents" value="${attr(rate)}"></div>
@@ -6565,7 +6647,7 @@ function wireQuoteBuilder() {
     const t = e.target;
     if (t.dataset && t.dataset.lf === 'qty') {
       const row = t.closest('[data-ql]');
-      if (row && rebuildKitForLine(Number(row.getAttribute('data-ql')))) renderQuoteLines();
+      if (row) { rebuildKitForLine(Number(row.getAttribute('data-ql'))); renderQuoteLines(); }   // also re-checks stock
     }
     if (!t.closest('#q-inv-search, #qb-cust-input')) scheduleQuoteAutosave();
   });
