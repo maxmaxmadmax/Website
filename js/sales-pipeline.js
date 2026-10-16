@@ -10,7 +10,7 @@
    (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { isBooked, pickProgress } from './stock.js?v=455';
+import { isBooked, pickProgress } from './stock.js?v=458';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -241,6 +241,7 @@ export function rowsHtml(rows, f, h) {
                   : `<button type="button" data-sp-act="picklist" data-id="${h.attr(q.id)}">Make pick list</button>`)
                 : (['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) ? `<button type="button" data-sp-act="deposit" data-id="${h.attr(q.id)}">Deposit received</button>` : '')}
               ${['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) ? `<button type="button" data-sp-act="paid" data-id="${h.attr(q.id)}">Mark paid</button>` : ''}
+              ${(isBooked(q) || q.paymentStatus) && q.paymentMethod !== 'card' && !(q.stripeSessions && q.stripeSessions.length) ? `<button type="button" data-sp-act="undopay" data-id="${h.attr(q.id)}">Undo deposit / payment</button>` : ''}
               <button type="button" data-sp-act="duplicate" data-id="${h.attr(q.id)}">Duplicate</button>
               ${st.tab === 'archived'
                 ? `<button type="button" data-sp-act="restore" data-id="${h.attr(q.id)}">Restore</button>`
@@ -293,7 +294,7 @@ export function wirePipeline(getJobs, f, h, act) {
     }
     const a = e.target.closest('[data-sp-act]');
     if (a) {
-      const fn = { duplicate: act.duplicate, archive: act.archive, restore: act.restore, delete: act.del, paid: act.paid, deposit: act.deposit, picklist: act.picklist }[a.getAttribute('data-sp-act')];
+      const fn = { duplicate: act.duplicate, archive: act.archive, restore: act.restore, delete: act.del, paid: act.paid, deposit: act.deposit, picklist: act.picklist, undopay: act.undopay }[a.getAttribute('data-sp-act')];
       if (fn) fn(a.getAttribute('data-id'));
       return;
     }

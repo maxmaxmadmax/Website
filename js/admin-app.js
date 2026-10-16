@@ -33,11 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=455';
+} from './firebase-config.js?v=458';
 
-import { stockUsage, pickItems, jobRange } from './stock.js?v=455';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=455';
-import { expandKit } from './kit.js?v=455';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel } from './system-builder.js?v=458';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=458';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=458';
+import { expandKit } from './kit.js?v=458';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -103,6 +104,7 @@ const state = {
   openInvId: null,                                  // which item's detail is open
   invFilter: { search: '', category: 'all', location: 'all', status: 'all' },
   invPage: 1,
+  openSysId: null,  // the System builder: null | '__new__' | an inventory id
   invDates: null,   // { from, to } 'yyyy-mm-dd' for the On hire / Left columns (null = today)
   invSort: { key: '', dir: 'asc' },                 // '' = default (category, then name)
 
@@ -4391,6 +4393,7 @@ function invItem(raw) {
     repairDue: r.repairDue || '',
     requirements: (Array.isArray(r.requirements) ? r.requirements : []).map(normalizeReq),
     order: invNum(r.order, 0),
+    isSystem: r.isSystem === true,   // made of other gear (System builder)
   };
 }
 
@@ -4535,7 +4538,7 @@ VIEWS.inventory = {
     const opt = (val, label, cur) =>
       `<option value="${attr(val)}"${cur === val ? ' selected' : ''}>${esc(label)}</option>`;
 
-    const open = state.openInvId != null;
+    const open = state.openInvId != null || state.openSysId != null;
 
     return `
       <div class="inv-wrap${open ? ' has-detail' : ''}">
@@ -4550,6 +4553,7 @@ VIEWS.inventory = {
             </div>
             <div class="inv-head-actions">
               ${starter ? '<span class="inv-pill inv-st-blue">Starter list</span>' : ''}
+              <button type="button" class="ad-btn" id="inv-add-sys" title="A rig made of other gear, e.g. FOH System">+ New system</button>
               <button type="button" class="ad-btn ad-btn-primary" id="inv-add">+ Add Item</button>
             </div>
           </div>
@@ -4609,7 +4613,7 @@ VIEWS.inventory = {
           <div class="inv-foot" id="inv-foot"></div>
         </div>
 
-        ${open ? invDetail() : ''}
+        ${state.openSysId != null ? systemPanelHtml(sysDraft, invItems(), sysHelpers, invDistinct('category')) : (open ? invDetail() : '')}
       </div>
     `;
   },
@@ -4675,6 +4679,27 @@ function invTile(icon, cls, value, label, pct) {
     </div>`;
 }
 
+/*  SYSTEM BUILDER state (js/system-builder.js) */
+let sysDraft = sysDraftFrom(null);
+const sysHelpers = { esc, attr, money };
+function openSystem(id) {
+  const it = id && id !== '__new__' ? invItems().find((x) => x.id === id) : null;
+  sysDraft = sysDraftFrom(it);
+  state.openInvId = null;
+  state.openSysId = it ? it.id : '__new__';
+  render();
+}
+async function saveSystem(data) {
+  const { collection, doc, setDoc, addDoc } = fb.f;
+  if (state.openSysId && state.openSysId !== '__new__') {
+    await setDoc(doc(fb.db, 'inventory', state.openSysId), data, { merge: true });
+  } else {
+    const ref = await addDoc(collection(fb.db, 'inventory'), { ...data, order: (state.inventory || []).length });
+    state.openSysId = ref.id;
+    sysDraft.id = ref.id;
+  }
+}
+
 /*  STOCK FOR CHOSEN DATES (Max, 16 Oct 2026): booked jobs (deposit in) count
     against stock; quoted / accepted-but-unpaid jobs show as "pencilled".   */
 function todayIso() {
@@ -4687,6 +4712,20 @@ function invDates() {
   return { from: d.from || t, to: d.to && d.to >= (d.from || t) ? d.to : (d.from || t) };
 }
 function invStockCells(it, use) {
+  if (it.isSystem) {
+    const byId = {}; invItems().forEach((x) => { byId[x.id] = x; });
+    let build = Infinity;
+    (it.requirements || []).forEach((r) => {
+      const p = byId[r.itemId]; if (!p) return;
+      const pu = use[p.id] || { booked: 0 };
+      const leftP = Math.max(0, p.quantityTotal - Math.min(p.quantityRepair || 0, p.quantityTotal) - pu.booked);
+      build = Math.min(build, Math.floor(leftP / Math.max(1, r.qty || 1)));
+    });
+    if (build === Infinity) build = 0;
+    const us = use[it.id] || { booked: 0, pencilled: 0 };
+    return '<td class="inv-num">' + (us.booked || us.pencilled ? '<span title="Systems booked on these dates">' + us.booked + (us.pencilled ? ' <small>+' + us.pencilled + '</small>' : '') + '</span>' : '<span class="ad-cell-muted">&mdash;</span>')
+      + '</td><td class="inv-num"><b class="inv-left' + (build ? '' : ' is-out') + '" title="How many you can still build from the parts left">' + build + '</b></td>';
+  }
   const u = use[it.id] || { booked: 0, pencilled: 0, jobs: [] };
   const repair = Math.min(it.quantityRepair || 0, it.quantityTotal);
   const left = Math.max(0, it.quantityTotal - repair - u.booked);
@@ -4713,7 +4752,7 @@ function invRowsHtml() {
       <td class="inv-item-cell">
         ${invThumb(it)}
         <span class="inv-item-text">
-          <span class="inv-item-name">${esc(it.name || 'Untitled')}</span>
+          <span class="inv-item-name">${esc(it.name || 'Untitled')}${it.isSystem ? '<span class="inv-sys-badge">System &middot; ' + (it.requirements || []).length + ' parts</span>' : ''}</span>
           ${it.subtitle ? `<span class="inv-item-sub">${esc(it.subtitle)}</span>` : ''}
         </span>
       </td>
@@ -4912,6 +4951,16 @@ function invDetail() {
 function wireInventory() {
   renderInvRows();
 
+  // SYSTEM BUILDER: + New system, and the panel when it's open
+  const addSys = document.getElementById('inv-add-sys');
+  if (addSys) addSys.addEventListener('click', () => openSystem('__new__'));
+  if (state.openSysId != null) {
+    wireSystemPanel(sysDraft, invItems, sysHelpers, invDistinct('category'), {
+      save: saveSystem,
+      close() { state.openSysId = null; render(); },
+    });
+  }
+
   // stock dates: From / To (To follows From if it would be earlier)
   ['inv-d-from', 'inv-d-to'].forEach((idd) => {
     const el = document.getElementById(idd);
@@ -4933,7 +4982,7 @@ function wireInventory() {
 
   const add = document.getElementById('inv-add');
   if (add) add.addEventListener('click', () => {
-    clearPendingPhoto(); initInvReqDraft(null); state.openInvId = '__new__'; render();
+    clearPendingPhoto(); initInvReqDraft(null); state.openSysId = null; state.openInvId = '__new__'; render();
   });
 
   const search = document.getElementById('inv-search');
@@ -4980,6 +5029,9 @@ function wireInventory() {
     const openBtn = e.target.closest('[data-inv-open]');
     const id = openBtn ? openBtn.getAttribute('data-inv-open')
       : (row ? row.getAttribute('data-inv') : null);
+    // a system opens in the System builder, not the item editor
+    if (id && (invItems().find((x) => x.id === id) || {}).isSystem) { openSystem(id); return; }
+    if (id) { state.openSysId = null; }
     if (id) {
       clearPendingPhoto();
       initInvReqDraft((state.inventory || []).find((x) => x.id === id));
@@ -5792,6 +5844,12 @@ function wireQuoteList() {
     async picklist(id) {
       try { await call('adminPickListLink', { id }); } catch (e) { window.alert(e.message || 'Could not make the pick list.'); }
     },
+    // back to a sent quote, as if nothing was paid (hand-marked payments only)
+    async undopay(id) {
+      const d = findDoc(id);
+      if (!window.confirm('Undo the deposit / payment on ' + label(d) + '? It goes back to a sent quote - invoice number, pick list and ticks are cleared.')) return;
+      try { await call('adminUndoPayment', { id }); } catch (e) { window.alert(e.message || 'Could not undo.'); }
+    },
     async restore(id) {
       try { await call('adminArchiveQuote', { id, archive: false }); } catch (e) { window.alert(e.message || 'Could not restore.'); }
     },
@@ -6094,7 +6152,7 @@ function renderQuoteLines() {
     const dayTxt = r[0] === r[1] ? prettyEventDate(r[0]) : prettyEventDate(r[0]) + ' – ' + prettyEventDate(r[1]);
     return (l) => {
       const it = l.itemId && inv[l.itemId];
-      if (!it || !need[l.itemId]) return '';
+      if (!it || it.isSystem || !need[l.itemId]) return '';
       const u = use[l.itemId] || { booked: 0, pencilled: 0 };
       const left = Math.max(0, it.quantityTotal - Math.min(it.quantityRepair || 0, it.quantityTotal) - u.booked);
       if (need[l.itemId] <= left) return u.pencilled && need[l.itemId] > left - u.pencilled

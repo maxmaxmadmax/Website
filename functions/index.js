@@ -2836,6 +2836,31 @@ exports.adminDepositReceived = onCall(async (request) => {
   return { ok: true };
 });
 
+/* ADMIN - UNDO A DEPOSIT / PAYMENT that was marked by hand (Max, 16 Oct 2026):
+   the job goes back to a sent quote, as if nothing was paid. Refused if any
+   CARD money came through Stripe - refund that in Stripe instead.          */
+exports.adminUndoPayment = onCall(async (request) => {
+  requireAdmin(request);
+  const { id } = request.data || {};
+  const ref = db.collection('quotes').doc(String(id || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'No such quote.');
+  const q = snap.data();
+  if ((Array.isArray(q.stripeSessions) && q.stripeSessions.length) || q.paymentMethod === 'card') {
+    throw new HttpsError('failed-precondition', 'A card payment came through Stripe on this job - refund it in Stripe first.');
+  }
+  await ref.update({
+    status: 'sent', kind: 'quote',
+    paymentStatus: FieldValue.delete(), paymentMethod: FieldValue.delete(), amountPaidCents: 0,
+    acceptedName: FieldValue.delete(), acceptedAt: FieldValue.delete(),
+    invoiceNumber: FieldValue.delete(), invoicedAt: FieldValue.delete(), paidAt: FieldValue.delete(),
+    crewToken: FieldValue.delete(), pickTicks: FieldValue.delete(),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+  logger.info('Payment undone by admin', { id, number: q.number || '' });
+  return { ok: true };
+});
+
 /* ADMIN - the crew link for a booked job (makes one the first time) */
 exports.adminPickListLink = onCall(async (request) => {
   requireAdmin(request);
@@ -2858,7 +2883,7 @@ exports.getPickList = onCall(async (request) => {
   // categories from inventory, so the gear can be grouped
   const inv = await loadQuoteInventory();
   const cat = {};
-  inv.forEach((it) => { cat[it.id] = it.category || ''; });
+  inv.forEach((it) => { cat[it.id] = it.isSystem ? 'Systems' : (it.category || ''); });   // a system (FOH System...) gets its own group
   const c = q.customer || {};
   const items = pickItems(q.lines).map((p) => ({ key: pickKey(p), name: p.name, qty: p.qty, category: cat[p.itemId] || p.category || 'Other' }));
   const crew = (q.lines || []).filter((l) => l.type === 'labour').map((l) => ({ name: l.name || '', note: String(l.description || '').replace(/@.*$/, '').trim() }));
