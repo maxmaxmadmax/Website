@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=425';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=425';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=427';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=427';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -374,13 +374,13 @@ function proposalTop(q, days) {
 
   // investment summary: each group ex GST / GST / inc GST
   const rows = groups.map((g) => [g.name + (g.name === 'Other' ? '' : ' production'), g.cents])
-    .concat(lab.length ? [['Setup & pack-down', labCents]] : [])
+    .concat(lab.length ? [['Labour', labCents]] : [])
     .concat(del.length ? [['Delivery & pickup', delCents]] : [])
     .concat(lines.filter((l) => l.type === 'fee').map((l) => [l.name || 'Booking & admin fee', lineAmount(l, days)]));
   const r = (label, ex) => '<tr><td>' + esc(label) + '</td><td>' + (ex ? money(ex) : 'Free') + '</td><td>' + (ex ? money(Math.round(ex * 0.1)) : '') + '</td><td>' + (ex ? money(Math.round(ex * 1.1)) : 'Free') + '</td></tr>';
   // QUOTE DETAILS + WHAT'S INCLUDED under the table (Max, 16 Oct 2026).
-  // Valid for 14 days from the quote date; the list is built from what's on the quote.
-  const VALID_DAYS = 14;
+  // Valid for 30 days from the quote date; the list is built from what's on the quote.
+  const VALID_DAYS = 30;
   const validUntil = q.createdAt ? fmtDate(q.createdAt + VALID_DAYS * 86400) : '';
   // total crew hours, read off each labour line ("2.5 hrs @ $85/hr ...")
   const labHrs = lab.reduce((t, l) => t + (parseFloat((/^([\d.]+) hrs?\b/.exec(l.description || '') || [])[1]) || 0), 0);
@@ -427,7 +427,7 @@ function proposalTop(q, days) {
       <table class="qp-inv">
         <thead><tr><th>Description</th><th>Ex GST</th><th>GST (10%)</th><th>Inc GST</th></tr></thead>
         <tbody>${rows.map(([l, c2]) => r(l, c2)).join('')}${disc}</tbody>
-        <tfoot><tr><td colspan="3">Total inc. GST</td><td>${money(q.totalCents)}</td></tr></tfoot>
+        <tfoot><tr><td>Total inc. GST</td><td></td><td></td><td>${money(q.totalCents)}</td></tr></tfoot>
       </table>
       ${details}
       <a class="qp-jump" href="#qp-book">Accept &amp; secure your booking &darr;</a>

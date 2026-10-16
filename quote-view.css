@@ -581,3 +581,17 @@
   .qv-wrap:has(.qp-hero) .qv-doc { min-height: 100vh; display: flex; flex-direction: column; border-top: 1px solid #e6e6e6; padding-top: 110px; }
   .qv-wrap:has(.qp-hero) .qv-sumwrap { margin: auto 0 0 auto; padding-top: 40px; }
 }
+
+/* ---- PHONE: investment table = item + price inc GST only (Max, 16 Oct 2026) ---- */
+@media screen and (max-width: 640px) {
+  .qp-inv th:nth-child(2), .qp-inv td:nth-child(2),
+  .qp-inv th:nth-child(3), .qp-inv td:nth-child(3) { display: none; }
+  .qp-inv { table-layout: auto; }
+  .qp-inv th, .qp-inv td { padding: 12px 12px; font-size: 15px; }
+  .qp-inv th { font-size: 11px; }
+  .qp-inv td:first-child { font-weight: 600; }
+  .qp-inv tfoot td { font-size: 19px; padding-top: 14px; }
+}
+
+/* ---- ALL-CAPS HEADINGS (Max, 16 Oct 2026) ---- */
+.qp-hero h1, .qp-h2 { text-transform: uppercase; letter-spacing: .02em; }
