@@ -595,3 +595,8 @@
 
 /* ---- ALL-CAPS HEADINGS (Max, 16 Oct 2026) ---- */
 .qp-hero h1, .qp-h2 { text-transform: uppercase; letter-spacing: .02em; }
+
+/* outline button on the white payment card (was white-on-white) */
+.qp-book .qv-btn-ghost { background: #fff; color: #111; border: 2px solid #111; }
+.qp-book .qv-btn-ghost:hover { background: #111; color: #fff; }
+.qp-book .qp-go + .qp-bank, .qp-book .qp-bank + .qp-go { margin-top: 12px; }

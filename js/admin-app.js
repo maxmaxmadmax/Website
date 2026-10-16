@@ -33,9 +33,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=428';
+} from './firebase-config.js?v=429';
 
-import { expandKit } from './kit.js?v=428';
+import { expandKit } from './kit.js?v=429';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5941,8 +5941,8 @@ function quoteBuilderHtml() {
       ${doc ? `
       <section class="qb-lifecycle">
         <div class="qb-life-row">
-          ${status !== 'accepted' && status !== 'paid' ? '<button type="button" class="ad-btn" id="q-accept">Mark accepted</button>' : ''}
-          ${status === 'accepted' && !(doc.amountPaidCents > 0) ? '<button type="button" class="ad-btn" id="q-unaccept">Undo accept</button>' : ''}
+          ${status === 'draft' || status === 'sent' ? '<button type="button" class="ad-btn" id="q-accept">Mark accepted</button>' : ''}
+          ${(status === 'accepted' || (status === 'invoiced' && doc.acceptedAt)) && !(doc.amountPaidCents > 0) ? '<button type="button" class="ad-btn" id="q-unaccept">Undo accept</button>' : ''}
           ${doc.kind !== 'invoice' ? '<button type="button" class="ad-btn" id="q-invoice">Convert to invoice</button>' : ''}
           ${doc.kind === 'invoice' && status !== 'paid' ? '<button type="button" class="ad-btn" id="q-paid">Mark paid</button>' : ''}
           <button type="button" class="ad-btn inv-del" id="q-cancel">Cancel</button>
@@ -6568,13 +6568,13 @@ function wireQuoteActions() {
   });
 
   const accept = document.getElementById('q-accept');
-  if (accept) accept.addEventListener('click', async () => { try { await run('adminSetQuoteStatus', { id: state.openQuoteId, status: 'accepted' }, 'Marked accepted.'); render(); } catch (e) {} });
+  if (accept) accept.addEventListener('click', async () => { try { await run('adminSetQuoteStatus', { id: state.openQuoteId, status: 'accepted' }, 'Accepted - now an invoice.'); render(); } catch (e) {} });
 
   // UNDO ACCEPT: puts the quote back to "sent" so the customer can accept again
   // (e.g. a test click). Refused on the server if any card money was taken.
   const unaccept = document.getElementById('q-unaccept');
   if (unaccept) unaccept.addEventListener('click', async () => {
-    if (!window.confirm('Undo the acceptance? The quote goes back to Sent and the customer can accept it again.')) return;
+    if (!window.confirm('Undo the acceptance? The invoice goes back to a Sent quote and the customer can accept it again.')) return;
     try { await run('adminSetQuoteStatus', { id: state.openQuoteId, status: 'sent', undoAccept: true }, 'Acceptance undone.'); render(); } catch (e) {}
   });
 

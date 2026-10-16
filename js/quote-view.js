@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=428';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=428';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=429';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=429';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -286,8 +286,8 @@ function render(q) {
     <div class="qv-actions" id="qv-actions">
       <button type="button" class="qv-btn qv-btn-ghost" id="qv-print">Download / Print PDF</button>
       <p class="qv-msg" id="qv-msg" hidden></p>
-    </div>` + (proposal ? proposalBottom(q) : '');
-  if (proposal) wireProposal(q);
+    </div>` + (proposal ? proposalBottom(q) : proposalBottom(q, { terms: false }));
+  wireProposal(q);
 
   const print = document.getElementById('qv-print');
   if (print) print.addEventListener('click', () => window.print());
@@ -436,7 +436,8 @@ function proposalTop(q, days) {
 
 // booking terms live in js/terms-data.js (also used by the /terms page)
 
-function proposalBottom(q) {
+function proposalBottom(q, opts = {}) {
+  const isInv = q.kind === 'invoice';
   const total = Math.round(q.totalCents || 0);
   const pct = q.depositPct || 50;
   const deposit = Math.round(total * pct / 100);
@@ -448,7 +449,7 @@ function proposalBottom(q) {
     const d = new Date(+m[1], +m[2] - 1, +m[3] - 7);
     return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).replace(/,/g, '');
   })();
-  const ref = q.number || '';
+  const ref = (isInv && q.invoiceNumber) || q.number || '';
   const bank = '<p class="qp-bank"><strong>Bank transfer</strong><br>' + esc(SELLER.bankName) + '<br>BSB <strong>' + esc(SELLER.bankBsb) + '</strong> &nbsp; Account <strong>' + esc(SELLER.bankAcc) + '</strong><br>Reference: <strong>' + esc(ref) + '</strong></p>';
   const justPaid = /[?&]paid=1/.test(location.search);
 
@@ -471,6 +472,11 @@ function proposalBottom(q) {
       + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-ghost qp-go" data-pay="deposit">Or pay the deposit by card</button>' : '');
   } else if (justPaid) {
     book = '<div class="qp-done">&#10003; Payment received &mdash; thank you! Confirming your booking&hellip;</div>';
+  } else if (isInv) {
+    // an invoice made in admin (not accepted online): pay it in full
+    book = '<div class="qp-done">Invoice ' + esc(ref) + ' &mdash; ' + money(owing) + ' to pay.</div>'
+      + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-primary qp-go" data-pay="full">Pay by card</button>' : '')
+      + bank;
   } else if (q.status === 'accepted') {
     book = '<div class="qp-done">&#10003; Quote accepted. We&rsquo;ll be in touch about payment.</div>';
   } else {
@@ -492,13 +498,14 @@ function proposalBottom(q) {
       + '</aside></div>';
   }
 
-  return `
+  const termsSec = opts.terms === false ? '' : `
     <section class="qp-sec qp-terms">
       ${terms}
       <p class="qp-terms-link">Also at <a href="/terms" target="_blank" rel="noopener">soundzgood.com.au/terms</a></p>
-    </section>
+    </section>`;
+  return termsSec + `
     <section class="qp-sec qp-book" id="qp-book">
-      <p class="qp-eyebrow">Secure your booking</p>
+      <p class="qp-eyebrow">${isInv ? 'Payment' : 'Secure your booking'}</p>
       <h2 class="qp-h2">${q.paymentStatus ? 'Your booking' : 'Choose a payment option'}</h2>
       ${book}
       <p class="qv-msg" id="qp-msg" hidden></p>

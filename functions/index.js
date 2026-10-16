@@ -1140,12 +1140,19 @@ async function recordQuotePayment(session) {
     const seen = Array.isArray(q.stripeSessions) ? q.stripeSessions : [];
     if (seen.includes(session.id)) return;
     const paidNow = (q.amountPaidCents || 0) + (session.amount_total || 0);
+    const fullyPaid = paidNow >= (q.totalCents || 0);
+    // accept = invoice: take an invoice number the first time money comes in
+    const num = q.invoiceNumber ? null : await nextInvoiceNumber(tx);
+    if (num) num.write();
     tx.update(ref, {
-      status: 'accepted',
+      status: fullyPaid ? 'paid' : 'invoiced',
+      kind: 'invoice',
+      ...(num ? { invoiceNumber: invoiceNo(num.n), invoicedAt: FieldValue.serverTimestamp() } : {}),
+      ...(fullyPaid ? { paidAt: FieldValue.serverTimestamp() } : {}),
       acceptedName: q.acceptedName || session.metadata.acceptedName || '',
       acceptedAt: q.acceptedAt || FieldValue.serverTimestamp(),
       paymentMethod: 'card',
-      paymentStatus: paidNow >= (q.totalCents || 0) ? 'paid' : 'deposit',
+      paymentStatus: fullyPaid ? 'paid' : 'deposit',
       amountPaidCents: paidNow,
       stripeSessions: [...seen, session.id],
       lastPaidAt: FieldValue.serverTimestamp(),
@@ -2654,6 +2661,20 @@ exports.adminSaveQuote = onCall(async (request) => {
   return { id: ref.id, number, token, ...money };
 });
 
+/*  NEXT INVOICE NUMBER - SG-I-0001, 0002 ... from config/counters.invoiceSeq.
+    Pass a transaction to take the number inside it (reads before writes).  */
+async function nextInvoiceNumber(tx) {
+  const counterRef = db.collection('config').doc('counters');
+  const take = async (t) => {
+    const c = await t.get(counterRef);
+    const n = ((c.exists && c.data().invoiceSeq) || 0) + 1;
+    return { n, write: () => t.set(counterRef, { invoiceSeq: n }, { merge: true }) };
+  };
+  if (tx) return take(tx);
+  return db.runTransaction(async (t) => { const r = await take(t); r.write(); return r; });
+}
+const invoiceNo = (n) => 'SG-I-' + String(n).padStart(4, '0');
+
 exports.adminSetQuoteStatus = onCall(async (request) => {
   requireAdmin(request);
   const { id, status } = request.data || {};
@@ -2675,7 +2696,14 @@ exports.adminSetQuoteStatus = onCall(async (request) => {
     Object.assign(update, {
       acceptedName: FieldValue.delete(), acceptedAt: FieldValue.delete(),
       paymentStatus: FieldValue.delete(), paymentMethod: FieldValue.delete(),
+      kind: 'quote', invoiceNumber: FieldValue.delete(), invoicedAt: FieldValue.delete(),
     });
+  }
+
+  // "Mark accepted" in admin = accepted AND turned into an invoice
+  if (status === 'accepted') {
+    update.status = 'invoiced';
+    update.acceptedAt = FieldValue.serverTimestamp();
   }
   const stamp = {
     sent: 'sentAt', accepted: 'acceptedAt', declined: 'declinedAt',
@@ -2683,18 +2711,10 @@ exports.adminSetQuoteStatus = onCall(async (request) => {
   };
   if (stamp[status]) update[stamp[status]] = FieldValue.serverTimestamp();
 
-  if (status === 'invoiced') {
+  if (update.status === 'invoiced') {
     update.kind = 'invoice';
-    if (!snap.data().invoiceNumber) {
-      const counterRef = db.collection('config').doc('counters');
-      const n = await db.runTransaction(async (tx) => {
-        const c = await tx.get(counterRef);
-        const s = ((c.exists && c.data().invoiceSeq) || 0) + 1;
-        tx.set(counterRef, { invoiceSeq: s }, { merge: true });
-        return s;
-      });
-      update.invoiceNumber = 'SG-I-' + String(n).padStart(4, '0');
-    }
+    update.invoicedAt = FieldValue.serverTimestamp();
+    if (!snap.data().invoiceNumber) update.invoiceNumber = invoiceNo((await nextInvoiceNumber()).n);
   }
 
   await ref.update(update);
@@ -2790,14 +2810,19 @@ exports.acceptQuote = onCall(async (request) => {
   const doc = snap.docs[0];
   const q = doc.data();
 
-  if (q.status === 'accepted') return { ok: true, already: true };
+  if (q.status === 'accepted' || q.kind === 'invoice') return { ok: true, already: true };
   if (!['draft', 'sent'].includes(q.status)) {
     throw new HttpsError('failed-precondition', 'This quote can no longer be accepted.');
   }
 
   const bank = data.method === 'bank';
+  // ACCEPT = INVOICE (Max, 16 Oct 2026): the quote becomes a tax invoice straight away
+  const inv = q.invoiceNumber || invoiceNo((await nextInvoiceNumber()).n);
   await doc.ref.update({
-    status: 'accepted',
+    status: 'invoiced',
+    kind: 'invoice',
+    invoiceNumber: inv,
+    invoicedAt: FieldValue.serverTimestamp(),
     acceptedName: name,
     acceptedAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
@@ -2826,7 +2851,7 @@ exports.quoteCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request)
   if (snap.empty) throw new HttpsError('not-found', 'That link is not valid.');
   const doc = snap.docs[0];
   const q = doc.data();
-  if (!['draft', 'sent', 'accepted'].includes(q.status) || q.paymentStatus === 'paid') {
+  if (!['draft', 'sent', 'accepted', 'invoiced'].includes(q.status) || q.paymentStatus === 'paid') {
     throw new HttpsError('failed-precondition', 'This quote can no longer be paid online.');
   }
 
