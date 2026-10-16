@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=419';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=419';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=421';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=421';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -429,9 +429,11 @@ function proposalBottom(q) {
   const bank = '<p class="qp-bank"><strong>Bank transfer</strong><br>' + esc(SELLER.bankName) + '<br>BSB <strong>' + esc(SELLER.bankBsb) + '</strong> &nbsp; Account <strong>' + esc(SELLER.bankAcc) + '</strong><br>Reference: <strong>' + esc(ref) + '</strong></p>';
   const justPaid = /[?&]paid=1/.test(location.search);
 
-  // all clauses start closed on screen (tap to open); printing opens them all
-  const terms = TERMS.map(([h, lines], i) => '<details class="qp-term"><summary>' + (i + 1) + '. ' + esc(h) + '</summary><div class="qp-term-body">' + termBodyHtml(lines, esc) + '</div></details>').join('');
-  const intro = TERMS_INTRO.map((t) => '<p class="qp-terms-intro">' + esc(t) + '</p>').join('');
+  // ONE dropdown with every clause inside - deliberately looks like serious small print (Max, 16 Oct 2026)
+  const terms = '<details class="qp-term qp-legal"><summary><span class="qp-legal-warn">&#9888;</span><span><b>Terms &amp; Conditions &mdash; read before booking</b><em>' + TERMS.length + ' clauses &middot; binding once you accept or pay &middot; tap to read</em></span></summary>'
+    + '<div class="qp-legal-body">' + TERMS_INTRO.map((t) => '<p>' + esc(t) + '</p>').join('')
+    + TERMS.map(([h, lines], i) => '<div class="qp-legal-clause"><h4>' + (i + 1) + '. ' + esc(h) + '</h4>' + termBodyHtml(lines, esc) + '</div>').join('')
+    + '</div></details>';
 
   let book;
   if (q.paymentStatus === 'paid') {
@@ -455,8 +457,8 @@ function proposalBottom(q) {
         + opt('full', 'Pay in full', money(total), 'Pay the total now and you&rsquo;re all done.', false) : '')
       + opt('bank', 'Bank transfer', money(deposit) + ' deposit', 'Accept now, pay the deposit by bank transfer. No fees.', !q.cardOn)
       + '<label class="qp-name">Your name<input type="text" id="qp-name" autocomplete="name" value="' + esc((q.customer && q.customer.name) || '') + '"></label>'
-      + '<label class="qp-agree"><input type="checkbox" id="qp-agree"> I accept this quote and the Terms &amp; Conditions above.</label>'
-      + '<button type="button" class="qv-btn qv-btn-primary qp-go" id="qp-go">Accept &amp; continue</button>'
+      + '<label class="qp-agree"><input type="checkbox" id="qp-agree"> <span>I have read and accept the <b>Terms &amp; Conditions</b> and this quote.</span></label>'
+      + '<button type="button" class="qv-btn qv-btn-primary qp-go" id="qp-go" disabled>Accept &amp; continue</button>'
       + '<p class="qp-secure">&#128274; Card payments are processed securely by Stripe.</p>'
       + '</div><aside class="qp-side"><p class="qp-eyebrow">Quote summary</p>'
       + '<div class="qv-sumrow"><span>Production subtotal (ex GST)</span><span>' + money(q.subtotalCents) + '</span></div>'
@@ -469,9 +471,6 @@ function proposalBottom(q) {
 
   return `
     <section class="qp-sec qp-terms">
-      <p class="qp-eyebrow">Terms &amp; conditions</p>
-      <h2 class="qp-h2">Terms &amp; Conditions</h2>
-      ${intro}
       ${terms}
       <p class="qp-terms-link">Also at <a href="/terms" target="_blank" rel="noopener">soundzgood.com.au/terms</a></p>
     </section>
@@ -510,12 +509,15 @@ function wireProposal(q) {
 
   const go = document.getElementById('qp-go');
   if (!go) return;
+  // no paying or confirming until the terms box is ticked
+  const agreeBox = document.getElementById('qp-agree');
+  if (agreeBox) agreeBox.addEventListener('change', () => { go.disabled = !agreeBox.checked; });
   go.addEventListener('click', async () => {
     const pick = (document.querySelector('input[name="qp-opt"]:checked') || {}).value || 'bank';
     const name = String((document.getElementById('qp-name') || {}).value || '').trim();
     const agreed = !!(document.getElementById('qp-agree') || {}).checked;
     if (!name) return say('Please type your name.', true);
-    if (!agreed) return say('Please tick to accept the quote and booking terms.', true);
+    if (!agreed) return say('Please tick the box to accept the Terms & Conditions.', true);
     go.disabled = true;
     try {
       if (pick === 'bank') {

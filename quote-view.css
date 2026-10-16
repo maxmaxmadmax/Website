@@ -451,3 +451,53 @@
   .qp-hero .qp-ref { border-top: 1px solid #1c1c1c; padding-top: 16px; }
   .qp-sec, .qv-doc { padding-left: 48px; padding-right: 48px; }
 }
+
+/* ---- TERMS: ONE SERIOUS-LOOKING DROPDOWN + LOCKED PAY BUTTON ---- */
+.qp-legal { border: 2px solid #111; border-radius: 0; padding: 0; margin: 0; background: #fff; }
+.qp-legal summary { display: flex; gap: 14px; align-items: center; padding: 16px 18px; background: #111; color: #fff; }
+.qp-legal summary::after { color: #ff6b00; margin-left: auto; font-size: 22px; }
+.qp-legal-warn { font-size: 26px; color: #ff6b00; line-height: 1; }
+.qp-legal summary b { display: block; text-transform: uppercase; letter-spacing: 1px; font-size: 14px; }
+.qp-legal summary em { display: block; font-style: normal; font-weight: 400; color: #aaa; font-size: 12px; margin-top: 3px; }
+.qp-legal-body { max-height: 420px; overflow-y: auto; padding: 16px 20px; background: #f6f6f6;
+  font-family: Georgia, "Times New Roman", serif; font-size: 12.5px; line-height: 1.5; color: #222; }
+.qp-legal-body p { margin: 0 0 6px; font-size: 12.5px; color: #222; }
+.qp-legal-body ul { margin: 0 0 8px 18px; padding: 0; }
+.qp-legal-body .tc-sub { font-weight: 700; margin: 8px 0 2px; }
+.qp-legal-clause h4 { margin: 14px 0 4px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .5px; }
+.qp-agree { border: 2px solid #111; padding: 12px 14px; font-size: 15px; cursor: pointer; }
+.qp-agree input { width: 22px; height: 22px; flex: none; margin-top: 0; }
+.qp-go:disabled { opacity: .4; cursor: not-allowed; filter: grayscale(1); }
+@media print {
+  .qp-legal { border: 0; }
+  .qp-legal summary { background: none; color: #000; padding: 0 0 6px; }
+  .qp-legal summary em, .qp-legal-warn { display: none; }
+  .qp-legal-body { max-height: none; overflow: visible; background: none; padding: 0; font-size: 9.5px; }
+  .qp-legal-body p, .qp-legal-clause h4 { font-size: 9.5px; }
+  .qp-legal-clause h4 { margin: 6px 0 2px; }
+}
+
+/* ---- DESKTOP PROPOSAL: FULL-WIDTH BANDS (Max, 16 Oct 2026) ----
+   Black and white backgrounds run edge to edge; the words stay in the
+   same centred 1040px column. --qp-side = side padding that keeps the
+   column centred. Proposal only (:has hero) - invoices stay as a page.  */
+@media screen and (min-width: 641px) {
+  .quote-page .qv-wrap:has(.qp-hero) { max-width: none; padding: 0; --qp-side: max(56px, calc((100% - 1040px) / 2 + 56px)); }
+  .qv-wrap:has(.qp-hero) .qp-hero,
+  .qv-wrap:has(.qp-hero) .qp-sec,
+  .qv-wrap:has(.qp-hero) .qv-doc { margin: 0; box-shadow: none; padding-left: var(--qp-side); padding-right: var(--qp-side); }
+  .qv-wrap:has(.qp-hero) .qp-hero { padding: 0; }
+  .qv-wrap:has(.qp-hero) .qp-hero-photo { min-height: 600px; }
+  .qv-wrap:has(.qp-hero) .qp-hero-in { padding: 150px var(--qp-side) 18px; max-width: none; }
+  .qv-wrap:has(.qp-hero) .qp-hero-in > * { max-width: 760px; }
+  .qv-wrap:has(.qp-hero) .qp-hero-body { padding: 26px var(--qp-side) 48px; }
+  .qv-wrap:has(.qp-hero) .qp-hero-photo::before {
+    background:
+      linear-gradient(90deg, rgba(0,0,0,.7) 0%, rgba(0,0,0,.35) 45%, rgba(0,0,0,0) 75%),
+      linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,0) 22%, rgba(0,0,0,0) 45%, rgba(11,11,11,.75) 82%, #0b0b0b 100%);
+  }
+  .qv-wrap:has(.qp-hero) .qp-sec,
+  .qv-wrap:has(.qp-hero) .qv-doc { padding-top: 56px; padding-bottom: 56px; }
+  .qv-wrap:has(.qp-hero) .qp-sec + .qp-sec { border-top: 1px solid #e6e6e6; }
+  .qv-wrap:has(.qp-hero) .qp-h2-doc { margin: 0; padding: 34px var(--qp-side) 30px; background: #0b0b0b; }
+}
