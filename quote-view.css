@@ -501,3 +501,83 @@
   .qv-wrap:has(.qp-hero) .qp-sec + .qp-sec { border-top: 1px solid #e6e6e6; }
   .qv-wrap:has(.qp-hero) .qp-h2-doc { margin: 0; padding: 34px var(--qp-side) 30px; background: #0b0b0b; }
 }
+
+/* ---- PRINT PAGE 1: FULL-BLEED COVER (Max, 16 Oct 2026) ----
+   Page 1 has no white border (its own zero-margin page); the photo fills
+   the top, title over it, and the Audio / Lighting / Staging / Crew icons
+   sit in the lower third. Every other page keeps the normal 12mm margin. */
+@media print {
+  @page cover { size: A4; margin: 0; }
+  .qp-hero { page: cover; height: 297mm; min-height: 0; overflow: hidden;
+    display: flex; flex-direction: column; background: #0b0b0b !important; }
+  .qp-hero-photo { flex: 0 0 172mm; min-height: 0; background-position: center 30%; }
+  .qp-hero-in { padding: 0 18mm 6mm !important; max-width: none; }
+  .qp-hero h1 { font-size: 34pt; }
+  .qp-hero-body { flex: 1; display: flex; flex-direction: column; padding: 6mm 18mm 14mm !important; }
+  .qp-hero .qp-intro { font-size: 11pt; max-width: none; margin-bottom: 0; }
+  .qp-hero .qp-tiles { margin-top: auto; border-top: 1px solid #2a2a2a; padding-top: 9mm; }
+  .qp-hero .qp-tile svg { width: 34px; height: 34px; }
+  .qp-hero .qp-ref { margin-top: 9mm; }
+}
+
+/* ---- PAGE 2: INVESTMENT SUMMARY POLISH + INCLUDED / QUOTE DETAILS ---- */
+.qp-inv thead th { background: #111; color: #fff; }
+.qp-inv tbody tr:nth-child(even) td { background: #fafafa; }
+.qp-inv tfoot td { font-size: 20px; }
+.qp-inv tfoot td:last-child { color: #111; }
+.qp-inv-extra { display: grid; grid-template-columns: 1.4fr 1fr; gap: 22px; margin-top: 26px; }
+.qp-mini { font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #ff6b00; margin: 0 0 10px; }
+.qp-incl ul { list-style: none; margin: 0; padding: 0; }
+.qp-incl li { position: relative; padding: 0 0 7px 24px; font-size: 14px; color: #333; line-height: 1.4; }
+.qp-incl li::before { content: "\2713"; position: absolute; left: 0; top: 0; font-weight: 800; color: #111; }
+.qp-qd { background: #f4f4f4; border-left: 4px solid #111; padding: 16px 18px; }
+.qp-qd dl { margin: 0; }
+.qp-qd dl div { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px solid #e3e3e3; font-size: 13.5px; }
+.qp-qd dl div:last-child { border-bottom: 0; }
+.qp-qd dt { color: #666; }
+.qp-qd dd { margin: 0; font-weight: 700; text-align: right; }
+@media screen and (max-width: 640px) { .qp-inv-extra { grid-template-columns: 1fr; } }
+@media print {
+  /* fill the printable page and sit the whole block in the middle */
+  .qp-invest { min-height: 270mm; display: flex; flex-direction: column; justify-content: center; padding: 0 6mm !important; }
+  .qp-invest .qp-h2 { font-size: 24pt; }
+  .qp-inv { font-size: 11pt; }
+  .qp-inv th { padding: 3mm 3mm; font-size: 8.5pt; }
+  .qp-inv td { padding: 3mm 3mm; }
+  .qp-inv tfoot td { font-size: 15pt; padding-top: 4mm; }
+  .qp-inv-extra { margin-top: 10mm; gap: 8mm; }
+  .qp-incl li { font-size: 10.5pt; }
+  .qp-qd dl div { font-size: 10pt; }
+}
+
+/* ---- PRINT SPACING (Max, 16 Oct 2026) ----
+   Page 2: heading at the top, table in the middle, included / details at the bottom.
+   Page 3: the totals block sits in the bottom-right corner of the page.          */
+@media print {
+  .qp-invest { justify-content: flex-start; padding-top: 4mm !important; }
+  .qp-invest .qp-inv { margin: auto 0; }
+  .qp-invest .qp-inv-extra { margin-top: 0; }
+  .qv-wrap:has(.qp-hero) .qv-doc { min-height: 270mm; display: flex; flex-direction: column; }
+  .qv-wrap:has(.qp-hero) .qv-sumwrap { margin: auto 0 0 auto; padding-top: 8mm; }
+}
+
+/* ---- DESKTOP: EACH "PAGE" = ONE SCREEN (Max, 16 Oct 2026) ----
+   Same layout as the printout, one screen high each:
+   1 cover (photo, title, icons at the bottom)
+   2 investment (heading top, table middle, included / details bottom)
+   3 itemised quote (totals bottom-right)
+   then the terms + payment. Phones keep a normal scroll.               */
+@media screen and (min-width: 900px) {
+  .qv-wrap:has(.qp-hero) .qp-hero { min-height: 100vh; display: flex; flex-direction: column; }
+  .qv-wrap:has(.qp-hero) .qp-hero-photo { flex: 1 1 auto; min-height: 58vh; }
+  .qv-wrap:has(.qp-hero) .qp-hero-body { display: flex; flex-direction: column; }
+  .qv-wrap:has(.qp-hero) .qp-hero .qp-tiles { margin-top: auto; }
+
+  .qv-wrap:has(.qp-hero) .qp-invest { min-height: 100vh; display: flex; flex-direction: column; padding-top: 110px; }
+  .qv-wrap:has(.qp-hero) .qp-invest .qp-inv { margin: 40px 0; }
+  .qv-wrap:has(.qp-hero) .qp-invest .qp-inv-extra { margin-top: auto; }
+
+  .qv-wrap:has(.qp-hero) .qp-h2-doc { display: none; }
+  .qv-wrap:has(.qp-hero) .qv-doc { min-height: 100vh; display: flex; flex-direction: column; border-top: 1px solid #e6e6e6; padding-top: 110px; }
+  .qv-wrap:has(.qp-hero) .qv-sumwrap { margin: auto 0 0 auto; padding-top: 40px; }
+}

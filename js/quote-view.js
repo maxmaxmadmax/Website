@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=421';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=421';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=425';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=425';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -378,6 +378,28 @@ function proposalTop(q, days) {
     .concat(del.length ? [['Delivery & pickup', delCents]] : [])
     .concat(lines.filter((l) => l.type === 'fee').map((l) => [l.name || 'Booking & admin fee', lineAmount(l, days)]));
   const r = (label, ex) => '<tr><td>' + esc(label) + '</td><td>' + (ex ? money(ex) : 'Free') + '</td><td>' + (ex ? money(Math.round(ex * 0.1)) : '') + '</td><td>' + (ex ? money(Math.round(ex * 1.1)) : 'Free') + '</td></tr>';
+  // QUOTE DETAILS + WHAT'S INCLUDED under the table (Max, 16 Oct 2026).
+  // Valid for 14 days from the quote date; the list is built from what's on the quote.
+  const VALID_DAYS = 14;
+  const validUntil = q.createdAt ? fmtDate(q.createdAt + VALID_DAYS * 86400) : '';
+  // total crew hours, read off each labour line ("2.5 hrs @ $85/hr ...")
+  const labHrs = lab.reduce((t, l) => t + (parseFloat((/^([\d.]+) hrs?\b/.exec(l.description || '') || [])[1]) || 0), 0);
+  const incl = groups.filter((g) => g.name !== 'Other').map((g) => g.name.toLowerCase());
+  const included = []
+    .concat(incl.length ? [(incl.length > 1 ? incl.slice(0, -1).join(', ') + ' & ' + incl[incl.length - 1] : incl[0]).replace(/^./, (x) => x.toUpperCase()) + ' equipment as itemised'] : [])
+    .concat(['All cables, stands & accessories needed to run it'])
+    .concat(del.length ? ['Delivery & pickup' + (town ? ' &mdash; ' + esc(town) : '')] : [])
+    .concat(lab.length ? ['Setup & pack-down by our crew' + (labHrs ? ' (' + labHrs + ' hrs)' : '')] : [])
+    .concat(['GST included in the total']);
+  const pct = q.depositPct || 50;
+  const details = '<div class="qp-inv-extra">'
+    + '<div class="qp-incl"><p class="qp-mini">What&rsquo;s included</p><ul>' + included.map((t) => '<li>' + t + '</li>').join('') + '</ul></div>'
+    + '<div class="qp-qd"><p class="qp-mini">Quote details</p><dl>'
+    + '<div><dt>Quote</dt><dd>' + esc(q.number || '') + '</dd></div>'
+    + (q.createdAt ? '<div><dt>Issued</dt><dd>' + esc(fmtDate(q.createdAt)) + '</dd></div>' : '')
+    + (validUntil ? '<div><dt>Valid until</dt><dd>' + esc(validUntil) + '</dd></div>' : '')
+    + '<div><dt>To secure</dt><dd>' + pct + '% deposit &middot; ' + money(Math.round((q.totalCents || 0) * pct / 100)) + '</dd></div>'
+    + '</dl></div></div>';
   const disc = q.discountCents ? '<tr class="qp-disc"><td>Discount</td><td>&minus;' + money(q.discountCents) + '</td><td></td><td>&minus;' + money(Math.round(q.discountCents * 1.1)) + '</td></tr>' : '';
 
   return `
@@ -407,6 +429,7 @@ function proposalTop(q, days) {
         <tbody>${rows.map(([l, c2]) => r(l, c2)).join('')}${disc}</tbody>
         <tfoot><tr><td colspan="3">Total inc. GST</td><td>${money(q.totalCents)}</td></tr></tfoot>
       </table>
+      ${details}
       <a class="qp-jump" href="#qp-book">Accept &amp; secure your booking &darr;</a>
     </section>`;
 }
