@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=518';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=518';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=520';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=520';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -24,6 +24,13 @@ const SELLER = {
   bankBsb: '014504',
   bankAcc: '815818305',
 };
+
+/*  ON / OFF SWITCH (Max, 17 Oct 2026): the customer's itemised quote grouped
+    into sections - AUDIO, LIGHTING, STAGING, BACKLINE ... then LABOUR, TRAVEL
+    & TRANSPORT, BOOKING & ADMIN, DISCOUNT. To go back to the plain list in the
+    order the lines were added: change true to false below, run
+    node tools/bump-assets.js, then push.                                    */
+const ITEMISE_BY_SECTION = true;
 
 const money = (c) => '$' + (Math.round(c || 0) / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -170,11 +177,39 @@ function render(q) {
     i = end - 1;
   }
 
+  /*  SECTIONS. A unit is a top line plus the included parts under it; each
+      unit goes into one section, in this order.                          */
+  const SECTION_ORDER = COST_GROUP_ORDER.concat(['Labour', 'Travel & transport', 'Booking & admin', 'Discount']);
+  const sectionOf = (l) => {
+    if (l.type === 'labour' || l.resType === 'staff') return 'Labour';
+    if (l.type === 'delivery' || l.resType === 'vehicle' || l.resType === 'trailer') return 'Travel & transport';
+    if (l.type === 'fee') return 'Booking & admin';
+    if (l.type === 'discount') return 'Discount';
+    return l.itemId ? costGroupOf(l.category) : 'Other';
+  };
+  const units = [];
+  L.forEach((l) => { if (l.type === 'kit' && units.length) units[units.length - 1].push(l); else units.push([l]); });
+  const bySec = {};
+  units.forEach((u) => { const k = ITEMISE_BY_SECTION ? sectionOf(u[0]) : 'all'; (bySec[k] = bySec[k] || []).push(u); });
+  // labour: setup & pack-down first, then operators
+  if (ITEMISE_BY_SECTION && bySec.Labour) bySec.Labour.sort((a, b) => (a[0].type === 'labour' ? 0 : 1) - (b[0].type === 'labour' ? 0 : 1));
+  L.length = 0;
+  const secStart = {};
+  (ITEMISE_BY_SECTION ? SECTION_ORDER : ['all']).forEach((k) => {
+    if (!bySec[k]) return;
+    secStart[L.length] = k;
+    bySec[k].forEach((u) => L.push(...u));
+  });
+
   // total labour hours, read from each line ("2.5 hrs @ $85/hr ...")
   const labHrs = L.filter((l) => l.type === 'labour')
     .reduce((t, l) => t + (parseFloat((/^([\d.]+) hrs?\b/.exec(l.description || '') || [])[1]) || 0), 0);
 
-  const rows = L.map((l, i) => {
+  const rows = L.map((l, i) => secHead(i) + rowFor(l, i)).join('');
+  function secHead(i) {
+    return ITEMISE_BY_SECTION && secStart[i] ? '<tr class="qv-sechead"><td colspan="5">' + esc(secStart[i]) + '</td></tr>' : '';
+  }
+  function rowFor(l, i) {
     const amt = lineAmount(l, days);
     if (l.type === 'delivery' && !l.unitCents) {
       return '<tr class="qv-lab"><td class="qv-desc">' + esc(l.name || '')
@@ -210,13 +245,13 @@ function render(q) {
     const free = l.type === 'kit' && (l.charge === 'free' || !l.unitCents);
     return `
       <tr${isDisc ? ' class="qv-row-disc"' : ''}>
-        <td class="qv-desc">${esc(l.name || '')}${l.description ? `<span class="qv-sub">${esc(l.description)}</span>` : ''}</td>
+        <td class="qv-desc">${esc(l.type === 'fee' ? 'Booking & admin' : (l.name || ''))}${l.description ? `<span class="qv-sub">${esc(l.description)}</span>` : ''}</td>
         <td class="qv-num">${isDisc ? '' : esc(l.qty)}</td>
         <td class="qv-num">${isDisc ? '' : (free ? '<span class="qv-incl">Included</span>' : money(l.unitCents))}</td>
         <td class="qv-num">${isDisc || free ? '' : esc(lineDays)}</td>
         <td class="qv-num">${free ? '' : money(amt)}</td>
       </tr>`;
-  }).join('');
+  }
 
   const accepted = q.status === 'accepted' || q.status === 'invoiced' || q.status === 'paid';
   const canAccept = !isInvoice && (q.status === 'approved' || q.status === 'sent');

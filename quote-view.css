@@ -603,3 +603,8 @@
 
 /* investment table row names in capitals (Max, 17 Oct 2026) */
 .qp-inv tbody td:first-child{ text-transform:uppercase; letter-spacing:.04em; }
+
+/* itemised quote section headings - AUDIO, LIGHTING ... LABOUR, TRAVEL (Max, 17 Oct 2026) */
+.qv-sechead td{ padding:16px 10px 6px !important; font-weight:800; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:#111; border-bottom:2px solid #111 !important; background:#fff !important; }
+.qv-table tbody tr.qv-sechead:first-child td{ padding-top:8px !important; }
+@media print{ .qv-sechead td{ padding:3mm 2mm 1mm !important; font-size:8.5pt; break-after:avoid; } }
