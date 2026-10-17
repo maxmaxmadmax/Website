@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=513';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=513';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=515';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=515';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -89,11 +89,12 @@ const COST_GROUP = {
   speaker: 'Audio', speakers: 'Audio', 'mic kit': 'Backline', drum: 'Backline', drums: 'Backline',   // Max's Inventory names (17 Oct 2026)
   lighting: 'Lighting', truss: 'Lighting',
   stage: 'Staging', furniture: 'Staging',
-  backline: 'Backline', 'dj mixer': 'DJ equipment', vision: 'Vision', power: 'Power',
+  backline: 'Backline', 'dj mixer': 'DJ equipment', vision: 'Vision', power: 'Audio',   // power & cables count as Audio (Max, 17 Oct 2026)
 };
-const COST_GROUP_ORDER = ['Audio', 'Lighting', 'Staging', 'Backline', 'DJ equipment', 'Vision', 'Power', 'Other'];
+const COST_GROUP_ORDER = ['Audio', 'Lighting', 'Staging', 'Backline', 'DJ equipment', 'Vision', 'Other'];
 function costGroupOf(category) {
-  return COST_GROUP[String(category || '').trim().toLowerCase()] || 'Other';
+  // gear in a category we don't know yet counts as Audio, not "Other" (Max, 17 Oct 2026)
+  return COST_GROUP[String(category || '').trim().toLowerCase()] || 'Audio';
 }
 /*  [{ name, cents }] in the order above, only groups with a cost. */
 function costBreakdown(lines, centsOf, categoryOf) {
@@ -123,7 +124,6 @@ function sumBreakdown(q, days) {
   const hire = groups.reduce((t, g) => t + g.cents, 0);
   const lab = lines.filter((l) => l.type === 'labour');
   const labCents = lab.reduce((t, l) => t + lineAmount(l, days), 0);
-  const labHrs = lab.reduce((t, l) => t + (parseFloat((/^([\d.]+) hrs?\b/.exec(l.description || '') || [])[1]) || 0), 0);
   const del = lines.filter((l) => l.type === 'delivery');
   const delCents = del.reduce((t, l) => t + lineAmount(l, days), 0);
   let h = '';
@@ -132,12 +132,12 @@ function sumBreakdown(q, days) {
     h += groups.map((g) => '<div class="qv-sumrow qv-sumsub"><span>' + esc(g.name) + '</span><span>' + money(g.cents) + '</span></div>').join('');
     h += '<div class="qv-sumrow qv-sumpart"><span>Hire subtotal</span><span>' + money(hire) + '</span></div>';
   }
-  if (lab.length) {
-    h += '<div class="qv-sumrow qv-sumpart"><span>Labour &ndash; setup &amp; pack-down' + (labHrs ? ' (' + labHrs + ' hr' + (labHrs === 1 ? '' : 's') + ')' : '') + '</span><span>' + money(labCents) + '</span></div>';
-  }
+  // ONE labour total for the customer: setup, pack-down and operators together (Max, 17 Oct 2026)
   const crewC = lines.filter((l) => l.resType === 'staff').reduce((t, l) => t + lineAmount(l, days), 0);
   const vehC = lines.filter((l) => l.resType === 'vehicle' || l.resType === 'trailer').reduce((t, l) => t + lineAmount(l, days), 0);
-  if (crewC) h += '<div class="qv-sumrow qv-sumpart"><span>Crew &amp; operators</span><span>' + money(crewC) + '</span></div>';
+  if (lab.length || crewC) {
+    h += '<div class="qv-sumrow qv-sumpart"><span>Labour</span><span>' + money(labCents + crewC) + '</span></div>';
+  }
   if (vehC) h += '<div class="qv-sumrow qv-sumpart"><span>Vehicles</span><span>' + money(vehC) + '</span></div>';
   if (del.length) {
     h += '<div class="qv-sumrow qv-sumpart"><span>Delivery &amp; pickup</span><span>' + (delCents ? money(delCents) : 'Free') + '</span></div>';
@@ -384,8 +384,7 @@ function proposalTop(q, days) {
 
   // investment summary: each group ex GST / GST / inc GST
   const rows = groups.map((g) => [g.name + (g.name === 'Other' ? '' : ' production'), g.cents])
-    .concat(lab.length ? [['Labour', labCents]] : [])
-    .concat(crewC ? [['Crew & operators', crewC]] : [])
+    .concat(lab.length || crewC ? [['Labour', labCents + crewC]] : [])   // setup, pack-down & operators as one
     .concat(vehC ? [['Vehicles', vehC]] : [])
     .concat(del.length ? [['Delivery & pickup', delCents]] : [])
     .concat(lines.filter((l) => l.type === 'fee').map((l) => [l.name || 'Booking & admin fee', lineAmount(l, days)]));

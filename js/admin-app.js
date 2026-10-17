@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=513';
+} from './firebase-config.js?v=515';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=513';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=513';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=513';
-import { expandKit } from './kit.js?v=513';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=515';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=515';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=515';
+import { expandKit } from './kit.js?v=515';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6147,11 +6147,12 @@ const COST_GROUP = {
   speaker: 'Audio', speakers: 'Audio', 'mic kit': 'Backline', drum: 'Backline', drums: 'Backline',   // Max's Inventory names (17 Oct 2026)
   lighting: 'Lighting', truss: 'Lighting',
   stage: 'Staging', furniture: 'Staging',
-  backline: 'Backline', 'dj mixer': 'DJ equipment', vision: 'Vision', power: 'Power',
+  backline: 'Backline', 'dj mixer': 'DJ equipment', vision: 'Vision', power: 'Audio',   // power & cables count as Audio (Max, 17 Oct 2026)
 };
-const COST_GROUP_ORDER = ['Audio', 'Lighting', 'Staging', 'Backline', 'DJ equipment', 'Vision', 'Power', 'Other'];
+const COST_GROUP_ORDER = ['Audio', 'Lighting', 'Staging', 'Backline', 'DJ equipment', 'Vision', 'Other'];
 function costGroupOf(category) {
-  return COST_GROUP[String(category || '').trim().toLowerCase()] || 'Other';
+  // gear in a category we don't know yet counts as Audio, not "Other" (Max, 17 Oct 2026)
+  return COST_GROUP[String(category || '').trim().toLowerCase()] || 'Audio';
 }
 /*  [{ name, cents }] in the order above, only groups with a cost. */
 function costBreakdown(lines, centsOf, categoryOf) {
