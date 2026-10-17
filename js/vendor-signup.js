@@ -23,9 +23,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=483';
+} from './firebase-config.js?v=488';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=483';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=488';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -367,10 +367,17 @@ function renderEvents() {
     Its own if it has one, and a marker for the CSS to dress if it does
     not. A data attribute rather than a class so it cannot collide with
     the state classes these same elements carry.                    */
+/*  EVENT POSTERS (Max, 17 Oct 2026): an event with no card image set in
+    admin shows its poster instead, full height, when we have one here.  */
+const EVENT_POSTERS = [
+  { match: (ev) => /eatz/i.test(ev.name || '') && String(ev.dateISO || '').startsWith('2026-10-31'),
+    url: '/images/events/eatz-beatz-halloween-2026-v3.webp' },
+];
 function eventArt(ev) {
-  return ev && ev.image
-    ? ' style="--vs-ev-art:url(\'' + escapeHtml(ev.image) + '\')"'
-    : ' data-noart';
+  if (ev && ev.image) return ' style="--vs-ev-art:url(\'' + escapeHtml(ev.image) + '\')"';
+  const p = ev && EVENT_POSTERS.find((x) => x.match(ev));
+  if (p) return ' data-poster style="--vs-ev-art:url(\'' + escapeHtml(p.url) + '\')"';
+  return ' data-noart';
 }
 
 function eventCard(ev) {

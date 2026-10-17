@@ -2773,3 +2773,6 @@
         72px in the summary - and cover on the gradient underneath.  */
     background-size:36% auto, cover;
 }
+
+/* an event POSTER (portrait) shows whole - the card grows taller (Max, 17 Oct 2026) */
+.vs-event[data-poster] .vs-event-art{ aspect-ratio:900 / 1335; background-size:cover; background-position:center top; background-color:#f39243; }
