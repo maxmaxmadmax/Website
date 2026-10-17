@@ -600,3 +600,6 @@
 .qp-book .qv-btn-ghost { background: #fff; color: #111; border: 2px solid #111; }
 .qp-book .qv-btn-ghost:hover { background: #111; color: #fff; }
 .qp-book .qp-go + .qp-bank, .qp-book .qp-bank + .qp-go { margin-top: 12px; }
+
+/* investment table row names in capitals (Max, 17 Oct 2026) */
+.qp-inv tbody td:first-child{ text-transform:uppercase; letter-spacing:.04em; }

@@ -3273,8 +3273,9 @@ exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
   }
 
   // BOOKING & ADMIN FEE: 2% of everything before GST - same as the admin quote builder (Max, 16 Oct 2026)
-  const feeCents = Math.round(quoteMoney({ hire: { days }, lines, discountCents }).netCents * 2 / 100);
-  if (feeCents > 0) lines.push({ type: 'fee', name: 'Booking & admin fee (2%)', qty: 1, unitCents: feeCents, days: 1 });
+  // rounded to the nearest $10 so it reads cleanly (Max, 17 Oct 2026)
+  const feeCents = Math.round(quoteMoney({ hire: { days }, lines, discountCents }).netCents * 2 / 100 / 1000) * 1000;
+  if (feeCents > 0) lines.push({ type: 'fee', name: 'Booking & admin', qty: 1, unitCents: feeCents, days: 1 });
 
   const quote = {
     kind: 'quote',

@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=515';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=515';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=516';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=516';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -143,7 +143,7 @@ function sumBreakdown(q, days) {
     h += '<div class="qv-sumrow qv-sumpart"><span>Delivery &amp; pickup</span><span>' + (delCents ? money(delCents) : 'Free') + '</span></div>';
   }
   lines.filter((l) => l.type === 'fee').forEach((l) => {
-    h += '<div class="qv-sumrow qv-sumpart"><span>' + esc(l.name || 'Booking & admin fee') + '</span><span>' + money(lineAmount(l, days)) + '</span></div>';
+    h += '<div class="qv-sumrow qv-sumpart"><span>' + esc('Booking & admin') + '</span><span>' + money(lineAmount(l, days)) + '</span></div>';
   });
   return h;
 }
@@ -383,11 +383,11 @@ function proposalTop(q, days) {
     .map((k) => '<div class="qp-tile">' + svgIcon(k) + '<b>' + esc(k) + '</b><span>' + esc(BLURB[k] || '') + '</span></div>').join('');
 
   // investment summary: each group ex GST / GST / inc GST
-  const rows = groups.map((g) => [g.name + (g.name === 'Other' ? '' : ' production'), g.cents])
+  const rows = groups.map((g) => [g.name, g.cents])   // AUDIO, LIGHTING, STAGING... (shown in capitals)
     .concat(lab.length || crewC ? [['Labour', labCents + crewC]] : [])   // setup, pack-down & operators as one
     .concat(vehC ? [['Vehicles', vehC]] : [])
     .concat(del.length ? [['Delivery & pickup', delCents]] : [])
-    .concat(lines.filter((l) => l.type === 'fee').map((l) => [l.name || 'Booking & admin fee', lineAmount(l, days)]));
+    .concat(lines.filter((l) => l.type === 'fee').map((l) => ['Booking & admin', lineAmount(l, days)]));
   const r = (label, ex) => '<tr><td>' + esc(label) + '</td><td>' + (ex ? money(ex) : 'Free') + '</td><td>' + (ex ? money(Math.round(ex * 0.1)) : '') + '</td><td>' + (ex ? money(Math.round(ex * 1.1)) : 'Free') + '</td></tr>';
   // QUOTE DETAILS + WHAT'S INCLUDED under the table (Max, 16 Oct 2026).
   // Valid for 30 days from the quote date; the list is built from what's on the quote.

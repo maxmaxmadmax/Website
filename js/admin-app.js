@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=515';
+} from './firebase-config.js?v=516';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=515';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=515';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=515';
-import { expandKit } from './kit.js?v=515';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=516';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=516';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=516';
+import { expandKit } from './kit.js?v=516';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5589,7 +5589,8 @@ function quoteDraftMoney(d) {
   const deliveryCents = quoteDeliveryCents(d);
   const beforeFee = Math.max(0, subtotal + labourCents + deliveryCents - discount);
   // BOOKING & ADMIN FEE: 2% of everything before GST, on every quote (Max, 16 Oct 2026)
-  const feeCents = d.feeExcluded === true ? 0 : Math.round(beforeFee * BOOKING_FEE_PCT / 100);
+  // rounded to the nearest $10 so it reads cleanly (Max, 17 Oct 2026)
+  const feeCents = d.feeExcluded === true ? 0 : Math.round(beforeFee * BOOKING_FEE_PCT / 100 / 1000) * 1000;
   const net = beforeFee + feeCents;
   const gst = Math.round(net * 0.10);
   return { subtotalCents: subtotal, labourCents, deliveryCents, feeCents, discountCents: discount, netCents: net, gstCents: gst, totalCents: net + gst };
@@ -6902,7 +6903,7 @@ function quoteDraftForSave() {
   }
   const feeCents = quoteDraftMoney(quoteDraft).feeCents;
   if (feeCents > 0) {
-    lines.push({ type: 'fee', name: 'Booking & admin fee (' + BOOKING_FEE_PCT + '%)', qty: 1, unitCents: feeCents, days: 1 });
+    lines.push({ type: 'fee', name: 'Booking & admin', qty: 1, unitCents: feeCents, days: 1 });
   }
   return {
     ...quoteDraft, lines,
