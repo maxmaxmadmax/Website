@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=517';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=517';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=518';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=518';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -504,7 +504,8 @@ function proposalBottom(q, opts = {}) {
       + '<button type="button" class="qv-btn qv-btn-primary qp-go" id="qp-go" disabled>Accept &amp; continue</button>'
       + '<p class="qp-secure">&#128274; Card payments are processed securely by Stripe.</p>'
       + '</div><aside class="qp-side"><p class="qp-eyebrow">Quote summary</p>'
-      + '<div class="qv-sumrow"><span>Production subtotal (ex GST)</span><span>' + money(q.subtotalCents) + '</span></div>'
+      // after any discount, so subtotal + GST = total (Max, 17 Oct 2026)
+      + '<div class="qv-sumrow"><span>Subtotal (ex GST)</span><span>' + money(Math.round(q.totalCents || 0) - Math.round(q.gstCents || 0)) + '</span></div>'
       + '<div class="qv-sumrow"><span>GST (10%)</span><span>' + money(q.gstCents) + '</span></div>'
       + '<div class="qv-sumrow qv-grand"><span>Total inc. GST</span><span>' + money(total) + '</span></div>'
       + '<div class="qv-sumrow"><span>Deposit (' + pct + '%)</span><span>' + money(deposit) + '</span></div>'
