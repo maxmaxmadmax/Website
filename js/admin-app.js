@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=506';
+} from './firebase-config.js?v=511';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=506';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=506';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=506';
-import { expandKit } from './kit.js?v=506';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=511';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=511';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=511';
+import { expandKit } from './kit.js?v=511';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5952,6 +5952,36 @@ function sortKitGroups() {
   }
 }
 
+/*  PACKAGES STAY TOGETHER (Max, 17 Oct 2026). A "unit" is a top line plus the
+    included parts under it. Every unit of a package is pulled together where
+    the package first appears, with its discount line last - so dragging
+    something out of a package, or adding gear in between, can't split it. */
+function quoteUnits(L) {
+  const units = [];
+  L.forEach((l) => {
+    if (l.type === 'kit' && units.length) units[units.length - 1].push(l);
+    else units.push([l]);
+  });
+  return units;
+}
+function normalizePackages() {
+  const L = quoteDraft.lines;
+  if (!L.some((l) => l.pkgId)) return;
+  const units = quoteUnits(L);
+  const out = [];
+  const done = new Set();
+  units.forEach((u) => {
+    const id = u[0].pkgId;
+    if (!id) { out.push(...u); return; }
+    if (done.has(id)) return;
+    done.add(id);
+    const mine = units.filter((x) => x[0].pkgId === id);
+    mine.filter((x) => x[0].type !== 'discount').forEach((x) => out.push(...x));
+    mine.filter((x) => x[0].type === 'discount').forEach((x) => out.push(...x));
+  });
+  quoteDraft.lines = out;
+}
+
 function renderQuoteLines() {
   const host = document.getElementById('q-lines');
   if (!host) return;
@@ -5965,6 +5995,9 @@ function renderQuoteLines() {
   }
 
   sortKitGroups();
+  normalizePackages();
+  syncCrewRates();
+  syncPackageDiscounts();
   const kitCat = kitCategoryOf();
 
   /*  SHORT ON STOCK? (Max, 16 Oct 2026) For this quote's hire dates: what
@@ -5990,7 +6023,7 @@ function renderQuoteLines() {
     };
   })();
 
-  host.innerHTML = quoteDraft.lines.map((l, i) => {
+  const rowsHtml = quoteDraft.lines.map((l, i) => {
     if (l.type === 'discount' && l.pkgId) {
       return `
         <div class="qb-row qb-row-disc" data-ql="${i}" data-top>
@@ -6046,7 +6079,7 @@ function renderQuoteLines() {
     }
 
     // Editable item / custom line.
-    const rate = l.unitCents ? l.unitCents / 100 : '';
+    const rate = l.resType === 'staff' ? (l.baseCents != null ? l.baseCents / 100 : (l.unitCents ? l.unitCents / 100 : '')) : (l.unitCents ? l.unitCents / 100 : '');
     return `
       <div class="qb-row" data-ql="${i}" data-top>
         <div class="qb-cell qb-c-grip"><span class="qb-grip" title="Drag to reorder">&#10303;</span></div>
@@ -6061,7 +6094,40 @@ function renderQuoteLines() {
         <div class="qb-cell qb-c-total qb-total"><span class="q-line-total">${esc(money(quoteLineCents(l, days)))}</span></div>
         <div class="qb-cell qb-c-x"><button type="button" class="qb-del" data-ql-del title="Remove">&times;</button></div>
       </div>`;
-  }).join('');
+  });
+
+  // which package (if any) each line sits in - parts follow the line above them
+  const L = quoteDraft.lines;
+  const pkgOf = [];
+  L.forEach((l, i) => { pkgOf[i] = l.type === 'kit' ? (i ? pkgOf[i - 1] : null) : (l.pkgId || null); });
+  const inv = {};
+  invItems().forEach((it) => { inv[it.id] = it; });
+  let html = '';
+  for (let i = 0; i < L.length; i++) {
+    const id = pkgOf[i];
+    if (id && pkgOf[i - 1] !== id) {
+      // the package line: name, tag, the package total (gear less its discount), remove-all
+      let total = 0;
+      let j = i;
+      for (; j < L.length && pkgOf[j] === id; j++) {
+        const x = L[j];
+        if (x.type === 'discount') total -= Math.max(0, Math.round(x.amountCents || 0));
+        else total += quoteLineCents(x, days);
+      }
+      const name = (inv[id] && inv[id].name) || String((L.find((x) => x.pkgId === id && x.type === 'discount') || {}).name || 'Package').replace(/ - package discount$/, '');
+      html += `<div class="qb-pkg">
+        <div class="qb-pkg-head">
+          <span class="qb-sys-tag is-pkg">Package</span>
+          <b>${esc(name)}</b>
+          <span class="qb-pkg-total">${esc(money(total))}</span>
+          <button type="button" class="qb-del" data-pkg-del="${attr(id)}" title="Remove the whole package">&times;</button>
+        </div>
+        <div class="qb-pkg-body">`;
+    }
+    html += rowsHtml[i];
+    if (id && pkgOf[i + 1] !== id) html += '</div></div>';
+  }
+  host.innerHTML = html;
   renderQuoteTotals();
 }
 
@@ -6098,6 +6164,7 @@ function costBreakdown(lines, centsOf, categoryOf) {
 function renderQuoteTotals() {
   const host = document.getElementById('q-totals');
   if (!host) return;
+  syncCrewRates();
   syncPackageDiscounts();
   const m = quoteDraftMoney(quoteDraft);
   const lab = quoteLabour(quoteDraft);
@@ -6217,6 +6284,37 @@ function addPackageToQuote(pkg, byId, days) {
   syncPackageDiscounts();
 }
 
+/*  Each staff crew line priced day by day from the hire start: its own rate
+    (baseCents) x that day's loading. Description says what was added.     */
+function crewRateFor(base, days, startIso, town) {
+  let total = 0;
+  const notes = {};
+  for (let d = 0; d < days; d++) {
+    let iso = '';
+    if (isoOk(startIso)) {
+      const [y, m, dd] = startIso.split('-').map(Number);
+      iso = new Date(Date.UTC(y, m - 1, dd + d)).toISOString().slice(0, 10);
+    }
+    const r = labourDayRate(iso, town, false);
+    total += Math.round(base * r.mult);
+    if (r.mult !== 1) notes[Math.round((r.mult - 1) * 100) + '% ' + r.label] = (notes[Math.round((r.mult - 1) * 100) + '% ' + r.label] || 0) + 1;
+  }
+  const note = Object.keys(notes).map((k) => '+' + k + (days > 1 ? ' (' + notes[k] + ' day' + (notes[k] === 1 ? '' : 's') + ')' : '')).join(', ');
+  return { total, note };
+}
+function syncCrewRates() {
+  const days0 = Math.max(1, Math.round(quoteDraft.hire.days || 1));
+  const town = quoteDraft.deliveryTown && quoteDraft.deliveryTown !== 'Other' ? quoteDraft.deliveryTown : '';
+  (quoteDraft.lines || []).forEach((l) => {
+    if (l.resType !== 'staff') return;
+    if (l.baseCents == null) l.baseCents = Math.max(0, Math.round(l.unitCents || 0));
+    const days = Math.max(1, Math.round(l.days || days0));
+    const r = crewRateFor(l.baseCents, days, quoteDraft.hire.startDate, town);
+    l.unitCents = Math.round(r.total / days);
+    l.description = r.note ? '$' + (l.baseCents / 100) + '/day ' + r.note : '';
+  });
+}
+
 /*  Work each package discount out again: everything in that package at full
     price, less the package price (per day x hire days).                    */
 function syncPackageDiscounts() {
@@ -6294,7 +6392,8 @@ function rebuildKitForLine(i) {
   let end = i + 1;
   while (end < quoteDraft.lines.length && quoteDraft.lines[end].type === 'kit') end++;
   const days = Math.max(1, Math.round(quoteDraft.hire.days || 1));
-  quoteDraft.lines.splice(i + 1, end - (i + 1), ...kitLinesFor(line.itemId, Math.max(0, Math.round(line.qty || 0)), byId, days));
+  const gone = new Set(line.removedParts || []);   // parts Max took off this line
+  quoteDraft.lines.splice(i + 1, end - (i + 1), ...kitLinesFor(line.itemId, Math.max(0, Math.round(line.qty || 0)), byId, days).filter((k) => !gone.has(k.itemId)));
   return true;
 }
 
@@ -6602,7 +6701,8 @@ function wireQuoteBuilder() {
       const i = Number(line.getAttribute('data-ql'));
       const l = quoteDraft.lines[i]; if (!l) return;
       const f = t.dataset.lf;
-      if (f === 'amountCents' || f === 'unitCents' || f === 'extraDayCents') l[f] = Math.max(0, Math.round(Number(t.value || 0) * 100));
+      if (f === 'unitCents' && l.resType === 'staff') { l.baseCents = Math.max(0, Math.round(Number(t.value || 0) * 100)); syncCrewRates(); }   // crew: their own rate, surcharges added on top
+      else if (f === 'amountCents' || f === 'unitCents' || f === 'extraDayCents') l[f] = Math.max(0, Math.round(Number(t.value || 0) * 100));
       else if (f === 'qty') l.qty = Math.max(0, Math.round(Number(t.value || 0)));
       else if (f === 'days') l.days = Math.max(1, Math.round(Number(t.value || 1)));
       else l[f] = t.value;
@@ -6624,10 +6724,38 @@ function wireQuoteBuilder() {
   // remove line
   const lines = document.getElementById('q-lines');
   if (lines) lines.addEventListener('click', (e) => {
+    const pdel = e.target.closest('[data-pkg-del]');
+    if (pdel) {
+      const id = pdel.getAttribute('data-pkg-del');
+      quoteDraft.lines = quoteUnits(quoteDraft.lines).filter((u) => u[0].pkgId !== id).flat();
+      renderQuoteLines();
+      return;
+    }
     const del = e.target.closest('[data-ql-del]');
     if (!del) return;
     const i = Number(del.closest('[data-ql]').getAttribute('data-ql'));
-    quoteDraft.lines.splice(i, 1);
+    const L = quoteDraft.lines;
+    const line = L[i];
+    if (!line) return;
+    if (line.type === 'kit') {
+      // one part: remember it on the line it belongs to, so it stays removed
+      let p = i - 1;
+      while (p >= 0 && L[p].type === 'kit') p--;
+      if (p >= 0 && L[p].itemId && line.itemId) {
+        L[p].removedParts = [...new Set([...(L[p].removedParts || []), line.itemId])];
+      }
+      L.splice(i, 1);
+    } else {
+      // the kit / item itself: take its included parts with it
+      let end = i + 1;
+      while (end < L.length && L[end].type === 'kit') end++;
+      L.splice(i, end - i);
+      // last thing from a package gone? its package discount line goes too
+      if (line.pkgId && !L.some((x) => x.pkgId === line.pkgId && x.type !== 'discount')) {
+        const d = L.findIndex((x) => x.type === 'discount' && x.pkgId === line.pkgId);
+        if (d >= 0) L.splice(d, 1);
+      }
+    }
     renderQuoteLines();
   });
 
@@ -6649,6 +6777,7 @@ function wireQuoteBuilder() {
     if (!t.closest('#q-inv-search, #qb-cust-input')) scheduleQuoteAutosave();
   });
   qAutoReady = true;
+  quoteHistoryBaseline();
 
   wireQuoteActions();
 }
@@ -6729,6 +6858,7 @@ function wireQuoteActions() {
 /*  Materialise the live labour figure as a real line so the server total and
     the customer's copy include it. Stripped again on load (quoteFromDoc).   */
 function quoteDraftForSave() {
+  syncCrewRates();
   syncPackageDiscounts();
   if (!quoteDraft.customer.eventType) quoteDraft.customer.eventType = guessEventType(quoteDraft.customer.eventName);
   const lab = quoteLabour(quoteDraft);
@@ -6782,8 +6912,66 @@ function quoteAutoMsg(text, cls) {
   if (m) { m.textContent = text; m.className = 'qb-auto' + (cls ? ' ' + cls : ''); }
 }
 
+/*  UNDO / REDO ON A QUOTE (Max, 17 Oct 2026). Ctrl+Z steps back, Ctrl+Y (or
+    Ctrl+Shift+Z) steps forward. Every change to the quote goes through
+    scheduleQuoteAutosave, so that is where a snapshot is taken; a burst of
+    typing within 0.8s counts as one step. While you're typing in a box the
+    browser's own undo works on that box as normal. History starts fresh
+    each time a different quote is opened.                                 */
+const qUndo = { id: null, past: [], future: [], last: null, lastPush: 0 };
+const QUNDO_MAX = 60;
+const quoteSnap = () => JSON.stringify(quoteDraft);
+function quoteHistoryBaseline() {
+  if (qUndo.id !== state.openQuoteId) {
+    qUndo.id = state.openQuoteId;
+    qUndo.past = []; qUndo.future = [];
+    qUndo.last = quoteSnap();
+  } else if (qUndo.last == null) qUndo.last = quoteSnap();
+}
+function trackQuoteHistory() {
+  const now = quoteSnap();
+  if (now === qUndo.last) return;
+  const t = Date.now();
+  if (t - qUndo.lastPush > 800) {
+    qUndo.past.push(qUndo.last);
+    if (qUndo.past.length > QUNDO_MAX) qUndo.past.shift();
+    qUndo.lastPush = t;
+  }
+  qUndo.last = now;
+  qUndo.future = [];
+}
+function quoteUndoStep(back) {
+  const from = back ? qUndo.past : qUndo.future;
+  const to = back ? qUndo.future : qUndo.past;
+  if (!from.length) { quoteAutoMsg(back ? 'Nothing to undo' : 'Nothing to redo'); return; }
+  to.push(quoteSnap());
+  quoteDraft = JSON.parse(from.pop());
+  qUndo.last = quoteSnap();
+  qUndo.lastPush = 0;
+  render();
+  qAutoReady = true;
+  scheduleQuoteAutosave();
+  quoteAutoMsg(back ? 'Undone - Ctrl+Y to redo' : 'Redone');
+}
+if (!window.__quoteUndoWired) {
+  window.__quoteUndoWired = true;
+  document.addEventListener('keydown', (e) => {
+    if (!(e.ctrlKey || e.metaKey) || state.view !== 'quoteDocs' || !state.openQuoteId) return;
+    const k = String(e.key || '').toLowerCase();
+    const undo = k === 'z' && !e.shiftKey;
+    const redo = k === 'y' || (k === 'z' && e.shiftKey);
+    if (!undo && !redo) return;
+    const a = document.activeElement;
+    if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)
+        && a.type !== 'checkbox' && a.type !== 'radio') return;   // typing: the box's own undo
+    e.preventDefault();
+    quoteUndoStep(undo);
+  });
+}
+
 function scheduleQuoteAutosave() {
   if (!qAutoReady) return;
+  trackQuoteHistory();
   clearTimeout(qAutoTimer);
   quoteAutoMsg('Unsaved changes…');
   qAutoTimer = setTimeout(runQuoteAutosave, 1500);

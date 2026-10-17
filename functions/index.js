@@ -2526,8 +2526,14 @@ function sanitizeQuote(q) {
     // a system part's place in Max's own order (System builder) - kept on quotes
     if (l.sysOrder != null && Number.isFinite(Number(l.sysOrder))) line.sysOrder = Math.max(0, Math.round(Number(l.sysOrder)));
     if (l.pkgId) line.pkgId = text(l.pkgId, 60);   // belongs to a package (itemised + package discount)
+    // parts Max removed from this kit on the quote - they stay off when it is rebuilt
+    if (Array.isArray(l.removedParts) && l.removedParts.length) line.removedParts = l.removedParts.slice(0, 100).map((x) => text(x, 60)).filter(Boolean);
     // CREW & VEHICLES (from Crew & Vehicles): their own subtotal, never gear
-    if (['staff', 'vehicle', 'trailer'].includes(l.resType)) { line.resType = l.resType; if (l.resourceId) line.resourceId = text(l.resourceId, 60); }
+    if (['staff', 'vehicle', 'trailer'].includes(l.resType)) {
+      line.resType = l.resType;
+      if (l.resourceId) line.resourceId = text(l.resourceId, 60);
+      if (l.baseCents != null) line.baseCents = Math.max(0, Math.round(Number(l.baseCents) || 0));   // their own day rate (surcharges on top)
+    }
     return line;
   }).filter((l) => l.name || l.itemId);
 
@@ -3063,7 +3069,7 @@ exports.sendLeadEmail = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (reque
 const { expandKit: botExpandKit } = require('./lib/kit');
 
 const BOT_KM_RATE_CENTS = 80;        // $0.80/km travelled
-const { labourParts } = require('./lib/labour');   // $85/hr + loadings (Max, 15 Oct 2026)
+const { labourParts, labourDayRate } = require('./lib/labour');   // $85/hr + loadings (Max, 15 Oct 2026)
 const BOT_LABOUR_RATE_CENTS = 8500;  // $85/hr
 const BOT_PACKDOWN_PCT = 0.75;
 const BOT_ZONES = [
@@ -3255,7 +3261,15 @@ exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
       const rs = await db.collection('resources').where('type', '==', 'staff').limit(10).get();
       rs.forEach((x) => { const r = x.data(); if (r.active !== false && r.dayRateCents) techRate = Math.max(techRate, r.dayRateCents); });
     } catch (e) { /* default */ }
-    lines.push({ type: 'custom', name: 'On-site AV technician', qty: 1, unitCents: techRate, days, resType: 'staff' });
+    // same day loadings as labour (Sat +25%, Sun +50%, public holiday +50%), day by day
+    const iso = /^\d{4}-\d{2}-\d{2}$/.test(String(a.eventDateISO || '')) ? a.eventDateISO : '';
+    let techTotal = 0;
+    for (let d = 0; d < days; d++) {
+      let day = '';
+      if (iso) { const [y, m, dd] = iso.split('-').map(Number); day = new Date(Date.UTC(y, m - 1, dd + d)).toISOString().slice(0, 10); }
+      techTotal += Math.round(techRate * labourDayRate(day, town, false).mult);
+    }
+    lines.push({ type: 'custom', name: 'On-site AV technician', qty: 1, unitCents: Math.round(techTotal / days), baseCents: techRate, days, resType: 'staff' });
   }
 
   // BOOKING & ADMIN FEE: 2% of everything before GST - same as the admin quote builder (Max, 16 Oct 2026)

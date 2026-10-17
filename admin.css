@@ -4386,3 +4386,16 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 
 /* the top bar only holds the phone menu button now (signup link removed, Max 17 Oct 2026) - hidden on computers */
 @media (min-width:901px){ .ad-top{ display:none; } }
+
+.qb-sys-line{ display:inline-block !important; width:auto !important; align-self:flex-start; }
+
+/* a PACKAGE on a quote: package line on top, its kits & items boxed underneath */
+.qb-pkg{ border:2px solid #111; border-radius:10px; margin:8px 0; overflow:hidden; background:#fff; }
+.qb-pkg-head{ display:flex; align-items:center; gap:10px; padding:10px 14px; background:#111; color:#fff; }
+.qb-pkg-head b{ flex:1; font-size:15px; }
+.qb-pkg-head .qb-sys-tag{ background:#fff !important; color:#111 !important; }
+.qb-pkg-total{ font-weight:800; font-size:15px; white-space:nowrap; }
+.qb-pkg-head .qb-del{ color:#bbb; }
+.qb-pkg-head .qb-del:hover{ color:#fff; }
+.qb-pkg-body{ padding:0 0 0 10px; border-left:4px solid #111; margin-left:0; background:#fafafa; }
+.qb-pkg-body .qb-row{ background:transparent; }
