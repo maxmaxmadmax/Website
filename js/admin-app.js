@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=524';
+} from './firebase-config.js?v=525';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=524';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=524';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=524';
-import { expandKit } from './kit.js?v=524';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=525';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=525';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=525';
+import { expandKit } from './kit.js?v=525';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5495,12 +5495,12 @@ function quoteDeliveryCents(d) {
 
 /* =========================================================================
    LABOUR RATES (Max, 15 Oct 2026) - KEEP IN STEP with functions/lib/labour.js
-   $85/hr. Saturday x1.25, Sunday x1.5, public holiday x1.5. Setup is charged
+   $75/hr. Saturday x1.25, Sunday x1.5, public holiday x1.5. Setup is charged
    on the first hire day, pack-down (50% of setup) on the last, each at its
    own day's rate; each part minimum 1 hr, then up to the half hour.
    Setup time is the man-minute figure on each inventory item.
    ========================================================================= */
-const LABOUR_RATE_CENTS = 8500;   // $85 / hour
+const LABOUR_RATE_CENTS = 7500;   // $75 / hour (Max, 17 Oct 2026 - was $85)
 const PACKDOWN_PCT = 0.5;   // pack-down = 50% of setup time (Max, 15 Oct 2026)
 const LOADING = { saturday: 1.25, sunday: 1.5, holiday: 1.5 };
 
@@ -5582,9 +5582,9 @@ function labourParts(setupMins, opts) {
     const loading = rate.mult === 1 ? '' : ' + ' + Math.round((rate.mult - 1) * 100) + '% ' + rate.label;
     return {
       ...p, hours, mult: rate.mult, rateLabel: rate.label, cents,
-      // what the client reads, e.g. "Setup - Sat 31 Oct" / "3 hrs @ $85/hr x 1.25 (Saturday rate)"
+      // what the client reads, e.g. "Setup - Sat 31 Oct" / "3 hrs @ $75/hr + 25% Saturday weekend surcharge"
       lineName: p.name + (shortDate(p.date) ? ' – ' + shortDate(p.date) : ''),
-      lineDesc: `${hrs} @ $${LABOUR_RATE_CENTS / 100}/hr${loading}`,   // $85/hr - same as functions/lib/labour.js
+      lineDesc: `${hrs} @ $${LABOUR_RATE_CENTS / 100}/hr${loading}`,   // same as functions/lib/labour.js
     };
   });
 }

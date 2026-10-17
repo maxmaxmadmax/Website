@@ -3069,8 +3069,7 @@ exports.sendLeadEmail = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (reque
 const { expandKit: botExpandKit } = require('./lib/kit');
 
 const BOT_KM_RATE_CENTS = 80;        // $0.80/km travelled
-const { labourParts, labourDayRate } = require('./lib/labour');   // $85/hr + loadings (Max, 15 Oct 2026)
-const BOT_LABOUR_RATE_CENTS = 8500;  // $85/hr
+const { labourParts, labourDayRate } = require('./lib/labour');   // crew rate + weekend / holiday loadings
 const BOT_PACKDOWN_PCT = 0.75;
 const BOT_ZONES = [
   ['Bowen (local)', 0], ['Merinda', 12], ['Guthalungra', 38], ['Proserpine', 64],
@@ -3242,7 +3241,7 @@ exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
     const accessMins = access === 'tricky' ? 120 : (access === 'stairs' ? 60 : 0);
     const setupTotal = mins + accessMins;
     if (setupTotal > 0) {
-      // same rates as the admin quote builder (lib/labour.js): $85/hr + weekend / public holiday loadings
+      // same rates as the admin quote builder (lib/labour.js): crew rate + weekend / public holiday loadings
       const iso = /^\d{4}-\d{2}-\d{2}$/.test(String(a.eventDateISO || '')) ? a.eventDateISO : '';
       const note = accessMins ? ` (incl. ${access} access)` : '';
       labourParts(setupTotal, { startDate: iso, endDate: iso, town }).forEach((p) => lines.push({

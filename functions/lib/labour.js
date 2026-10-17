@@ -3,7 +3,7 @@
 
    KEEP IN STEP with the copy in js/admin-app.js (search "LABOUR RATES").
 
-   - $85/hr base.  Saturday x1.25.  Sunday x1.5.  Public holiday x1.5.
+   - $75/hr base.  Saturday x1.25.  Sunday x1.5.  Public holiday x1.5.
    - Pack-down = 50% of setup time. Setup is charged on the FIRST hire day,
      pack-down on the LAST hire day,
      each at that day's rate.
@@ -13,7 +13,7 @@
      district (matched on the delivery town; pickup = Bowen). Add each new
      year's dates when the Government publishes them.
    ========================================================================= */
-const LABOUR_RATE_CENTS = 8500;
+const LABOUR_RATE_CENTS = 7500;   // $75/hr (Max, 17 Oct 2026 - was $85) - KEEP IN STEP with js/admin-app.js
 const PACKDOWN_PCT = 0.5;   // pack-down = 50% of setup time (Max, 15 Oct 2026)
 const LOADING = { saturday: 1.25, sunday: 1.5, holiday: 1.5 };
 
@@ -95,7 +95,7 @@ function labourParts(setupMins, opts) {
     const loading = rate.mult === 1 ? '' : ' + ' + Math.round((rate.mult - 1) * 100) + '% ' + rate.label;
     return {
       ...p, hours, mult: rate.mult, rateLabel: rate.label, cents,
-      // what the client reads, e.g. "Setup - Sat 31 Oct" / "3 hrs @ $85/hr x 1.25 (Saturday rate)"
+      // what the client reads, e.g. "Setup - Sat 31 Oct" / "3 hrs @ $75/hr + 25% Saturday weekend surcharge"
       lineName: p.name + (shortDate(p.date) ? ' – ' + shortDate(p.date) : ''),
       lineDesc: `${hrs} @ $${LABOUR_RATE_CENTS / 100}/hr${loading}`,
     };
