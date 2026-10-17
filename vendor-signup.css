@@ -2776,3 +2776,19 @@
 
 /* an event POSTER (portrait) shows whole - the card grows taller (Max, 17 Oct 2026) */
 .vs-event[data-poster] .vs-event-art{ aspect-ratio:900 / 1335; background-size:cover; background-position:center top; background-color:#f39243; }
+
+/* "Food vans sold out" sticker slapped over the poster (Max, 17 Oct 2026) */
+.vs-event-sticker{
+    position:absolute; top:38%; left:50%; transform:translate(-50%, -50%) rotate(-8deg);
+    background:#e3141b; color:#fff; border:3px solid #fff;
+    padding:10px 18px; border-radius:10px;
+    font-family:'Arial Black', Impact, sans-serif; font-weight:900;
+    font-size:1.35rem; line-height:1.05; text-align:center; text-transform:uppercase; letter-spacing:.02em;
+    box-shadow:0 6px 18px rgba(0,0,0,.45); white-space:nowrap; pointer-events:none;
+}
+.vs-event-share{ display:block; width:100%; margin-top:10px; background:#fff; color:var(--sg-ink, #111); border:2px solid #111; }
+.vs-event-share:hover{ background:#111; color:#fff; }
+.vs-event-share{ font-size:.72rem !important; padding:12px 16px !important; letter-spacing:.12em; }
+/* poster cards: lift the "Accepting vendors" badge above the sponsor strip */
+.vs-event[data-poster] .vs-event-status{ top:calc(100% + 14px); bottom:auto; left:16px; z-index:2; }
+.vs-event[data-poster] .vs-event-body{ padding-top:52px; }

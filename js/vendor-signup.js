@@ -23,9 +23,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=488';
+} from './firebase-config.js?v=494';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=488';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=494';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -357,6 +357,18 @@ function renderEvents() {
 
   host.innerHTML = state.events.map(eventCard).join('');
 
+  host.querySelectorAll('[data-share-event]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const url = 'https://www.soundzgood.com.au/vendor-signup';
+      const text = 'Market stalls are open for Eatz & Beatz Halloween Edition - Sat 31 Oct, Bowen Sports Complex. Food vans have sold out!';
+      try {
+        if (navigator.share) { await navigator.share({ title: 'Eatz & Beatz - market stalls', text, url }); return; }
+        await navigator.clipboard.writeText(url);
+        btn.textContent = 'Link copied!';
+        setTimeout(() => { btn.textContent = 'Share with other vendors'; }, 2500);
+      } catch (e) { if (e && e.name !== 'AbortError') window.prompt('Copy this link to share:', url); }
+    });
+  });
   host.querySelectorAll('[data-choose-event]').forEach((btn) => {
     btn.addEventListener('click', () => chooseEvent(btn.getAttribute('data-choose-event')));
   });
@@ -371,8 +383,13 @@ function renderEvents() {
     admin shows its poster instead, full height, when we have one here.  */
 const EVENT_POSTERS = [
   { match: (ev) => /eatz/i.test(ev.name || '') && String(ev.dateISO || '').startsWith('2026-10-31'),
-    url: '/images/events/eatz-beatz-halloween-2026-v3.webp' },
+    url: '/images/events/eatz-beatz-halloween-2026-v3.webp',
+    sticker: 'Food vans<br>sold out' },   // Max, 17 Oct 2026 - market stalls still open
 ];
+function eventSticker(ev) {
+  const p = ev && EVENT_POSTERS.find((x) => x.match(ev));
+  return p && p.sticker ? '<span class="vs-event-sticker">' + p.sticker + '</span>' : '';
+}
 function eventArt(ev) {
   if (ev && ev.image) return ' style="--vs-ev-art:url(\'' + escapeHtml(ev.image) + '\')"';
   const p = ev && EVENT_POSTERS.find((x) => x.match(ev));
@@ -403,6 +420,7 @@ function eventCard(ev) {
       (st.canApply ? '' : ' is-shut') + '"' + art + '>' +
       '<div class="vs-event-art" aria-hidden="true">' +
         '<span class="vs-event-status ' + st.tone + '">' + escapeHtml(st.label) + '</span>' +
+        eventSticker(ev) +
       '</div>' +
       '<div class="vs-event-body">' +
         '<h3>' + escapeHtml(ev.name || ev.id) + '</h3>' +
@@ -413,6 +431,8 @@ function eventCard(ev) {
           ? '<p class="vs-event-blurb">' + escapeHtml(ev.subtitle) + '</p>'
           : '') +
         action +
+        // SHARE (Max, 17 Oct 2026) - phone share sheet, or copy the link on a computer
+        (st.canApply ? '<button type="button" class="btn vs-event-share" data-share-event="' + escapeHtml(ev.id) + '">Share with other vendors</button>' : '') +
       '</div>' +
     '</article>';
 }
