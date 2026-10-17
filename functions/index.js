@@ -2612,6 +2612,7 @@ function sanitizeQuote(q) {
     if (['normal', 'discounted', 'free'].includes(l.charge)) line.charge = l.charge;
     // a system part's place in Max's own order (System builder) - kept on quotes
     if (l.sysOrder != null && Number.isFinite(Number(l.sysOrder))) line.sysOrder = Math.max(0, Math.round(Number(l.sysOrder)));
+    if (l.pkgId) line.pkgId = text(l.pkgId, 60);   // belongs to a package (itemised + package discount)
     return line;
   }).filter((l) => l.name || l.itemId);
 
@@ -3229,8 +3230,9 @@ exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
   pkgSnap.forEach((x) => { const p = x.data() || {}; if (!p.migratedTo) packages.push({ id: x.id, ...p }); });
   inv.filter((it) => it.isSystem && it.bundleType === 'package' && it.botOffer === true).forEach((it) => packages.push({
     id: it.id, name: it.name || 'Package', eventType: it.eventType || '', maxGuests: it.maxGuests || 0, active: true,
-    items: [{ itemId: it.id, qty: 1 }],   // the package itself - its kits and gear come along free
+    items: [{ itemId: it.id, qty: 1 }],
     overrideCents: it.priceCents || 0,
+    invPackage: it,   // built in Inventory: quoted ITEMISED (kit prices + package discount)
   }));
 
   const isOther = /^other/i.test(eventType);
@@ -3241,7 +3243,29 @@ exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
   // returns no instant range - staff build a custom quote from the intake.
   const lines = [];
   let discountCents = 0;
-  if (pkg) {
+  if (pkg && pkg.invPackage) {
+    // ITEMISED (Max, 17 Oct 2026): each kit / item priced, parts Included, then the package discount
+    const P = pkg.invPackage;
+    const eff = {};
+    (P.requirements || []).forEach((r) => { if (r && r.itemId) eff[r.itemId] = (eff[r.itemId] || 0) + Math.max(0, Math.round(r.qty || 0)); });
+    const order = [];
+    ((P.systemParts && P.systemParts.length) ? P.systemParts : (P.requirements || [])).forEach((p) => { if (p && eff[p.itemId] && !order.includes(p.itemId)) order.push(p.itemId); });
+    Object.keys(eff).forEach((id) => { if (!order.includes(id)) order.push(id); });
+    let full = 0;
+    order.forEach((id) => {
+      const it = byId[id];
+      if (!it) return;
+      lines.push({ type: 'item', itemId: id, name: it.name || id, description: it.subtitle || '', qty: eff[id], unitCents: it.priceCents || 0, days, pkgId: P.id });
+      full += (it.priceCents || 0) * eff[id] * days;
+      botExpandKit({ [id]: eff[id] }, byId).required.forEach((r) => {
+        const charged = r.charge === 'normal';
+        lines.push({ type: 'kit', itemId: r.itemId, name: r.name, qty: r.qty, unitCents: charged ? r.unitCents : 0, charge: r.charge, days: charged ? days : 1 });
+        if (charged) full += r.unitCents * r.qty * days;
+      });
+    });
+    const target = Math.max(0, Math.round(P.priceCents || 0)) * days;
+    if (target > 0 && full > target) lines.push({ type: 'discount', name: (P.name || 'Package') + ' - package discount', amountCents: full - target, pkgId: P.id });
+  } else if (pkg) {
     const cart = {};
     (pkg.items || []).forEach((i) => { if (i.itemId) cart[i.itemId] = (cart[i.itemId] || 0) + Math.max(0, Math.round(i.qty || 0)); });
     const kit = botExpandKit(cart, byId);

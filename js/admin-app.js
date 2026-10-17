@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=464';
+} from './firebase-config.js?v=465';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=464';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=464';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=464';
-import { expandKit } from './kit.js?v=464';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=465';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=465';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=465';
+import { expandKit } from './kit.js?v=465';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6254,6 +6254,22 @@ function renderQuoteLines() {
   })();
 
   host.innerHTML = quoteDraft.lines.map((l, i) => {
+    if (l.type === 'discount' && l.pkgId) {
+      return `
+        <div class="qb-row qb-row-disc" data-ql="${i}" data-top>
+          <div class="qb-cell qb-c-grip"><span class="qb-grip" title="Drag to reorder">&#10303;</span></div>
+          <div class="qb-cell qb-c-desc">
+            <span class="qb-disc-badge">Package discount</span>
+            <span class="qb-pkg-disc">${esc(l.name || 'Package discount')}</span>
+            ${l.pkgUnpriced ? '<span class="qb-stock is-tight">This package has no price yet - set one in Inventory</span>' : '<span class="qb-sub">Brings the package down to its package price</span>'}
+          </div>
+          <div class="qb-cell qb-c-qty">&mdash;</div>
+          <div class="qb-cell qb-c-rate">&mdash;</div>
+          <div class="qb-cell qb-c-days">&mdash;</div>
+          <div class="qb-cell qb-c-total qb-total">&minus;${esc(money(l.amountCents || 0))}</div>
+          <div class="qb-cell qb-c-x"><button type="button" class="qb-del" data-ql-del title="Remove">&times;</button></div>
+        </div>`;
+    }
     if (l.type === 'discount') {
       const val = l.amountCents ? l.amountCents / 100 : '';
       return `
@@ -6276,7 +6292,8 @@ function renderQuoteLines() {
       // a sub-heading each time the category changes (Cable, then Stands...)
       const prev = quoteDraft.lines[i - 1];
       const cat = kitCat(l);
-      const header = prev && prev.type === 'kit' && kitCat(prev) === cat ? ''
+      const header = l.sysOrder != null ? ''   // a kit's own parts: straight under it, in Max's order
+        : prev && prev.type === 'kit' && prev.sysOrder == null && kitCat(prev) === cat ? ''
         : '<div class="qb-subhead' + (prev && prev.type === 'kit' ? ' qb-subhead-next' : '') + '">' + esc(cat) + '</div>';
       const free = l.charge === 'free' || !l.unitCents;
       return `${header}
@@ -6342,6 +6359,7 @@ function costBreakdown(lines, centsOf, categoryOf) {
 function renderQuoteTotals() {
   const host = document.getElementById('q-totals');
   if (!host) return;
+  syncPackageDiscounts();
   const m = quoteDraftMoney(quoteDraft);
   const lab = quoteLabour(quoteDraft);
   const discVal = quoteDraft.discountCents ? quoteDraft.discountCents / 100 : '';
@@ -6412,6 +6430,7 @@ function addInvLineToQuote(itemId) {
   const it = byId[itemId];
   if (!it) return;
   const days = Math.max(1, Math.round(quoteDraft.hire.days || 1));
+  if (it.isSystem && it.bundleType === 'package') { addPackageToQuote(it, byId, days); renderQuoteLines(); return; }
 
   quoteDraft.lines.push({
     type: 'item', itemId: it.id, name: it.name, description: it.subtitle || '',
@@ -6422,6 +6441,52 @@ function addInvLineToQuote(itemId) {
   quoteDraft.lines.push(...kitLinesFor(it.id, 1, byId, days));
 
   renderQuoteLines();
+}
+
+/*  A PACKAGE on a quote is ITEMISED (Max, 17 Oct 2026): each kit and single
+    item gets its own priced line (kit parts underneath as Included), in
+    Max's order, then ONE "package discount" line takes the total down to the
+    package price. Every line carries pkgId so the discount can follow along
+    when quantities or hire days change (syncPackageDiscounts).            */
+function addPackageToQuote(pkg, byId, days) {
+  const eff = {};
+  (pkg.requirements || []).forEach((r) => { if (r && r.itemId) eff[r.itemId] = (eff[r.itemId] || 0) + Math.max(0, Math.round(r.qty || 0)); });
+  const order = [];
+  ((pkg.systemParts && pkg.systemParts.length) ? pkg.systemParts : (pkg.requirements || []))
+    .forEach((p) => { if (p && eff[p.itemId] && !order.includes(p.itemId)) order.push(p.itemId); });
+  Object.keys(eff).forEach((id) => { if (!order.includes(id)) order.push(id); });
+  order.forEach((id) => {
+    const it = byId[id];
+    if (!it || !eff[id]) return;
+    quoteDraft.lines.push({ type: 'item', itemId: id, name: it.name, description: it.subtitle || '', qty: eff[id], unitCents: it.priceCents || 0, days, pkgId: pkg.id });
+    quoteDraft.lines.push(...kitLinesFor(id, eff[id], byId, days));
+  });
+  quoteDraft.lines.push({ type: 'discount', name: (pkg.name || 'Package') + ' - package discount', amountCents: 0, pkgId: pkg.id });
+  syncPackageDiscounts();
+}
+
+/*  Work each package discount out again: everything in that package at full
+    price, less the package price (per day x hire days).                    */
+function syncPackageDiscounts() {
+  const L = quoteDraft.lines || [];
+  if (!L.some((l) => l.type === 'discount' && l.pkgId)) return;
+  const byId = {};
+  invItems().forEach((it) => { byId[it.id] = it; });
+  const days = Math.max(1, Math.round(quoteDraft.hire.days || 1));
+  const full = {};
+  let cur = null;   // the package the current item (and its kit lines) belongs to
+  L.forEach((l) => {
+    if (l.type === 'item' || l.type === 'custom') cur = l.pkgId || null;
+    else if (l.type !== 'kit') cur = null;
+    if (cur && (l.type === 'item' || l.type === 'kit')) full[cur] = (full[cur] || 0) + quoteLineCents(l, days);
+  });
+  L.forEach((l) => {
+    if (l.type !== 'discount' || !l.pkgId) return;
+    const pkg = byId[l.pkgId];
+    const target = Math.max(0, Math.round((pkg && pkg.priceCents) || 0)) * days;
+    l.amountCents = target > 0 ? Math.max(0, (full[l.pkgId] || 0) - target) : 0;
+    l.pkgUnpriced = !(target > 0);
+  });
 }
 
 /*  The included / required lines for qty of one item (via js/kit.js). */
@@ -6902,6 +6967,7 @@ function wireQuoteActions() {
 /*  Materialise the live labour figure as a real line so the server total and
     the customer's copy include it. Stripped again on load (quoteFromDoc).   */
 function quoteDraftForSave() {
+  syncPackageDiscounts();
   if (!quoteDraft.customer.eventType) quoteDraft.customer.eventType = guessEventType(quoteDraft.customer.eventName);
   const lab = quoteLabour(quoteDraft);
   const del = quoteDeliveryCents(quoteDraft);
