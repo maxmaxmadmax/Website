@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=498';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=498';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=500';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=500';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -86,6 +86,7 @@ function fmtDate(secs) {
 const COST_GROUP = {
   audio: 'Audio', mixer: 'Audio', amp: 'Audio', microphone: 'Audio', iem: 'Audio', di: 'Audio',
   'studio monitor': 'Audio', cable: 'Audio', stands: 'Audio',
+  speaker: 'Audio', speakers: 'Audio', 'mic kit': 'Backline', drum: 'Backline', drums: 'Backline',   // Max's Inventory names (17 Oct 2026)
   lighting: 'Lighting', truss: 'Lighting',
   stage: 'Staging', furniture: 'Staging',
   backline: 'Backline', 'dj mixer': 'DJ equipment', vision: 'Vision', power: 'Power',

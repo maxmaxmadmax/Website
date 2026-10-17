@@ -6,7 +6,7 @@
    admin and everyone on the crew link sees the same list. The list also
    refreshes itself every 20 seconds while it's open.
    ========================================================================== */
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=498';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=500';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -42,7 +42,7 @@ function niceDay(iso) {
 }
 
 /* the order categories appear in (anything else after, A-Z) */
-const CAT_ORDER = ['Packages', 'Kits', 'Audio', 'Mixer', 'Microphone', 'Amp', 'DI', 'IEM', 'Studio Monitor', 'Stands', 'Cable', 'Power',
+const CAT_ORDER = ['Packages', 'Kits', 'Audio', 'Speaker', 'Mixer', 'Microphone', 'Amp', 'DI', 'IEM', 'Studio Monitor', 'Stands', 'Cable', 'Power',
   'Lighting', 'Truss', 'Stage', 'Furniture', 'Backline', 'DJ Mixer', 'Vision', 'Other'];
 const catRank = (c) => { const i = CAT_ORDER.findIndex((x) => x.toLowerCase() === String(c).toLowerCase()); return i < 0 ? 50 : i; };
 

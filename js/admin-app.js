@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=498';
+} from './firebase-config.js?v=500';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=498';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=498';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=498';
-import { expandKit } from './kit.js?v=498';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=500';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=500';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=500';
+import { expandKit } from './kit.js?v=500';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6351,6 +6351,7 @@ function renderQuoteLines() {
 const COST_GROUP = {
   audio: 'Audio', mixer: 'Audio', amp: 'Audio', microphone: 'Audio', iem: 'Audio', di: 'Audio',
   'studio monitor': 'Audio', cable: 'Audio', stands: 'Audio',
+  speaker: 'Audio', speakers: 'Audio', 'mic kit': 'Backline', drum: 'Backline', drums: 'Backline',   // Max's Inventory names (17 Oct 2026)
   lighting: 'Lighting', truss: 'Lighting',
   stage: 'Staging', furniture: 'Staging',
   backline: 'Backline', 'dj mixer': 'DJ equipment', vision: 'Vision', power: 'Power',
