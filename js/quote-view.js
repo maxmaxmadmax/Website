@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=521';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=521';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=523';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=523';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -98,7 +98,7 @@ const COST_GROUP = {
   stage: 'Staging', furniture: 'Staging',
   backline: 'Backline', 'dj mixer': 'DJ equipment', vision: 'Vision', power: 'Audio',   // power & cables count as Audio (Max, 17 Oct 2026)
 };
-const COST_GROUP_ORDER = ['Audio', 'Lighting', 'Staging', 'Backline', 'DJ equipment', 'Vision', 'Other'];
+const COST_GROUP_ORDER = ['Audio', 'Backline', 'Lighting', 'Staging', 'DJ equipment', 'Vision', 'Other'];   // Max's order, 17 Oct 2026
 function costGroupOf(category) {
   // gear in a category we don't know yet counts as Audio, not "Other" (Max, 17 Oct 2026)
   return COST_GROUP[String(category || '').trim().toLowerCase()] || 'Audio';
@@ -117,9 +117,35 @@ function costBreakdown(lines, centsOf, categoryOf) {
   return COST_GROUP_ORDER.filter((g) => sums[g]).map((g) => ({ name: g, cents: sums[g] }));
 }
 
+/*  CUSTOMER WORDING FOR LABOUR (Max, 17 Oct 2026). Setup / pack-down are
+    "bump-in / bump-out" crew, counted in CREW HOURS (not a number of staff);
+    operators are "show crew". Only how it reads here - saved lines unchanged. */
+function crewName(l) {
+  const n = String(l.name || '');
+  if (l.type === 'labour') {
+    if (/^setup/i.test(n)) return n.replace(/^setup/i, 'Bump-in (setup)');
+    if (/^pack-?down/i.test(n)) return n.replace(/^pack-?down/i, 'Bump-out (pack-down)');
+  }
+  return n;
+}
+function crewDesc(l) {
+  const d = String(l.description || '');
+  if (l.type === 'labour') {
+    const what = /^pack-?down/i.test(String(l.name || '')) ? 'Pack-down, load-out & return' : 'Delivery, rigging & system setup';
+    return what + ' · ' + d.replace(/^([\d.]+) hrs?\b/, '$1 crew hours').replace('@ 85/hr', '@ $85/hr');
+  }
+  if (l.resType === 'staff') {
+    const n = String(l.name || '');
+    const what = /light/i.test(n) ? 'Runs lighting during your event'
+      : (/audio|sound|\bav\b|visual/i.test(n) ? 'Runs sound & AV during your event' : 'On site to run your event');
+    return what + (d ? ' · ' + d : '');
+  }
+  return d;
+}
+
 function labourRow(l, amt) {
-  return '<tr class="qv-lab"><td class="qv-desc">' + esc(l.name || '')
-    + (l.description ? '<span class="qv-sub">' + esc(l.description) + '</span>' : '')
+  return '<tr class="qv-lab"><td class="qv-desc">' + esc(crewName(l))
+    + (crewDesc(l) ? '<span class="qv-sub">' + esc(crewDesc(l)) + '</span>' : '')
     + '</td><td class="qv-num">' + esc(l.qty) + '</td><td class="qv-num">' + money(l.unitCents)
     + '</td><td class="qv-num">1</td><td class="qv-num">' + money(amt) + '</td></tr>';
 }
@@ -220,7 +246,7 @@ function render(q) {
       // a heading over setup + pack-down with the total hours (Max, 15 Oct 2026)
       const first = i === 0 || L[i - 1].type !== 'labour';
       const head = first && labHrs
-        ? '<tr class="qv-labhead"><td colspan="5">Setup &amp; pack-down &middot; ' + labHrs + ' hr' + (labHrs === 1 ? '' : 's') + ' total</td></tr>'
+        ? '<tr class="qv-labhead"><td colspan="5">Bump-in &amp; bump-out crew &middot; ' + labHrs + ' crew hour' + (labHrs === 1 ? '' : 's') + ' total</td></tr>'
         : '';
       return head + labourRow(l, amt);
     }
@@ -239,6 +265,15 @@ function render(q) {
         <td class="qv-num">${charged ? esc(Math.max(1, Math.round(l.days || days))) : ''}</td>
         <td class="qv-num">${charged ? money(amt) : ''}</td>
       </tr>`;
+    }
+    if (l.resType === 'staff') {
+      const first = i === 0 || L[i - 1].resType !== 'staff';
+      const head = first ? '<tr class="qv-labhead"><td colspan="5">Show crew (technical operators)</td></tr>' : '';
+      const lineDays = Math.max(1, Math.round(l.days || days));
+      return head + '<tr class="qv-lab"><td class="qv-desc">' + esc(crewName(l))
+        + '<span class="qv-sub">' + esc(crewDesc(l)) + '</span></td><td class="qv-num">' + esc(l.qty)
+        + '</td><td class="qv-num">' + money(l.unitCents) + '</td><td class="qv-num">' + esc(lineDays)
+        + '</td><td class="qv-num">' + money(amt) + '</td></tr>';
     }
     const isDisc = l.type === 'discount';
     const lineDays = Math.max(1, Math.round(l.days || days));
@@ -436,7 +471,7 @@ function proposalTop(q, days) {
     .concat(incl.length ? [(incl.length > 1 ? incl.slice(0, -1).join(', ') + ' & ' + incl[incl.length - 1] : incl[0]).replace(/^./, (x) => x.toUpperCase()) + ' equipment as itemised'] : [])
     .concat(['All cables, stands & accessories needed to run it'])
     .concat(del.length ? [delCents ? 'Travel &amp; transport' + (town ? ' &mdash; ' + esc(town) : '') : 'Local delivery &amp; pickup'] : [])
-    .concat(lab.length ? ['Setup & pack-down by our crew' + (labHrs ? ' (' + labHrs + ' hrs)' : '')] : [])
+    .concat(lab.length ? ['Bump-in &amp; bump-out crew' + (labHrs ? ' (' + labHrs + ' crew hours)' : '')] : [])
     .concat(['GST included in the total']);
   const pct = q.depositPct || 50;
   const details = '<div class="qp-inv-extra">'

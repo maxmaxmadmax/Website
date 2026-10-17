@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=521';
+} from './firebase-config.js?v=523';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=521';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=521';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=521';
-import { expandKit } from './kit.js?v=521';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=523';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=523';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=523';
+import { expandKit } from './kit.js?v=523';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5522,7 +5522,7 @@ function labourParts(setupMins, opts) {
       ...p, hours, mult: rate.mult, rateLabel: rate.label, cents,
       // what the client reads, e.g. "Setup - Sat 31 Oct" / "3 hrs @ $85/hr x 1.25 (Saturday rate)"
       lineName: p.name + (shortDate(p.date) ? ' – ' + shortDate(p.date) : ''),
-      lineDesc: `${hrs} @ ${LABOUR_RATE_CENTS / 100}/hr${loading}`,
+      lineDesc: `${hrs} @ $${LABOUR_RATE_CENTS / 100}/hr${loading}`,   // $85/hr - same as functions/lib/labour.js
     };
   });
 }
@@ -6150,7 +6150,7 @@ const COST_GROUP = {
   stage: 'Staging', furniture: 'Staging',
   backline: 'Backline', 'dj mixer': 'DJ equipment', vision: 'Vision', power: 'Audio',   // power & cables count as Audio (Max, 17 Oct 2026)
 };
-const COST_GROUP_ORDER = ['Audio', 'Lighting', 'Staging', 'Backline', 'DJ equipment', 'Vision', 'Other'];
+const COST_GROUP_ORDER = ['Audio', 'Backline', 'Lighting', 'Staging', 'DJ equipment', 'Vision', 'Other'];   // Max's order, 17 Oct 2026
 function costGroupOf(category) {
   // gear in a category we don't know yet counts as Audio, not "Other" (Max, 17 Oct 2026)
   return COST_GROUP[String(category || '').trim().toLowerCase()] || 'Audio';
