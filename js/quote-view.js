@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=516';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=516';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=517';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=517';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -140,7 +140,7 @@ function sumBreakdown(q, days) {
   }
   if (vehC) h += '<div class="qv-sumrow qv-sumpart"><span>Vehicles</span><span>' + money(vehC) + '</span></div>';
   if (del.length) {
-    h += '<div class="qv-sumrow qv-sumpart"><span>Delivery &amp; pickup</span><span>' + (delCents ? money(delCents) : 'Free') + '</span></div>';
+    h += '<div class="qv-sumrow qv-sumpart"><span>' + (delCents ? 'Travel &amp; transport' : 'Local delivery &amp; pickup') + '</span><span>' + (delCents ? money(delCents) : 'Free') + '</span></div>';
   }
   lines.filter((l) => l.type === 'fee').forEach((l) => {
     h += '<div class="qv-sumrow qv-sumpart"><span>' + esc('Booking & admin') + '</span><span>' + money(lineAmount(l, days)) + '</span></div>';
@@ -386,7 +386,7 @@ function proposalTop(q, days) {
   const rows = groups.map((g) => [g.name, g.cents])   // AUDIO, LIGHTING, STAGING... (shown in capitals)
     .concat(lab.length || crewC ? [['Labour', labCents + crewC]] : [])   // setup, pack-down & operators as one
     .concat(vehC ? [['Vehicles', vehC]] : [])
-    .concat(del.length ? [['Delivery & pickup', delCents]] : [])
+    .concat(del.length ? [[delCents ? 'Travel & transport' : 'Local delivery & pickup', delCents]] : [])
     .concat(lines.filter((l) => l.type === 'fee').map((l) => ['Booking & admin', lineAmount(l, days)]));
   const r = (label, ex) => '<tr><td>' + esc(label) + '</td><td>' + (ex ? money(ex) : 'Free') + '</td><td>' + (ex ? money(Math.round(ex * 0.1)) : '') + '</td><td>' + (ex ? money(Math.round(ex * 1.1)) : 'Free') + '</td></tr>';
   // QUOTE DETAILS + WHAT'S INCLUDED under the table (Max, 16 Oct 2026).
@@ -399,7 +399,7 @@ function proposalTop(q, days) {
   const included = []
     .concat(incl.length ? [(incl.length > 1 ? incl.slice(0, -1).join(', ') + ' & ' + incl[incl.length - 1] : incl[0]).replace(/^./, (x) => x.toUpperCase()) + ' equipment as itemised'] : [])
     .concat(['All cables, stands & accessories needed to run it'])
-    .concat(del.length ? ['Delivery & pickup' + (town ? ' &mdash; ' + esc(town) : '')] : [])
+    .concat(del.length ? [delCents ? 'Travel &amp; transport' + (town ? ' &mdash; ' + esc(town) : '') : 'Local delivery &amp; pickup'] : [])
     .concat(lab.length ? ['Setup & pack-down by our crew' + (labHrs ? ' (' + labHrs + ' hrs)' : '')] : [])
     .concat(['GST included in the total']);
   const pct = q.depositPct || 50;

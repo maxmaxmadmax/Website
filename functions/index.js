@@ -3252,7 +3252,7 @@ exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
       }));
     }
     const del = km * 2 * BOT_KM_RATE_CENTS;
-    if (del > 0) lines.push({ type: 'delivery', name: 'Delivery & pickup' + (town ? ' — ' + town : ''), description: `${km}km each way`, qty: 1, unitCents: del, days: 1 });
+    if (del > 0) lines.push({ type: 'delivery', name: 'Travel & transport' + (town ? ' — ' + town : ''), description: 'Fuel and vehicle running costs · ' + km + ' km each way (' + (km * 2) + ' km return) @ $0.80/km', qty: 1, unitCents: del, days: 1 });
   }
 
   if (support === 'full') {

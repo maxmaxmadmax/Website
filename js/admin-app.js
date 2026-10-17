@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=516';
+} from './firebase-config.js?v=517';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=516';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=516';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=516';
-import { expandKit } from './kit.js?v=516';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=517';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=517';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=517';
+import { expandKit } from './kit.js?v=517';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6200,13 +6200,12 @@ function renderQuoteTotals() {
   const isLocal = /local/i.test(quoteDraft.deliveryTown || '');
   const deliveryRow = isLocal ? `
     <div class="qb-sumrow">
-      <span>Local delivery &amp; pickup — Bowen
-        <em class="qb-labnote" style="margin-left:0">Free within Bowen</em></span>
+      <span>Local delivery &amp; pickup</span>
       <span class="qb-free">FREE</span>
     </div>` : delCents ? `
     <div class="qb-sumrow">
-      <span>Delivery &amp; pickup${quoteDraft.deliveryTown ? ' — ' + esc(quoteDraft.deliveryTown) : ''}
-        <em class="qb-labnote" style="margin-left:0">${quoteDraft.deliveryKm}km each way · $0.80/km return</em></span>
+      <span>Travel &amp; transport${quoteDraft.deliveryTown ? ' — ' + esc(quoteDraft.deliveryTown) : ''}
+        <em class="qb-labnote" style="margin-left:0">Fuel and vehicle running costs · ${quoteDraft.deliveryKm} km each way (${quoteDraft.deliveryKm * 2} km return) @ $0.80/km</em></span>
       <span>${esc(money(delCents))}</span>
     </div>` : '';
   // 2% booking & admin fee row, with an on/off tick (Max, 16 Oct 2026)
@@ -6890,14 +6889,14 @@ function quoteDraftForSave() {
   }
   if (/local/i.test(quoteDraft.deliveryTown || '')) {
     lines.push({
-      type: 'delivery', name: 'Local delivery & pickup — Bowen',
-      description: 'Free within Bowen', qty: 1, unitCents: 0, days: 1,
+      type: 'delivery', name: 'Local delivery & pickup — Free',
+      description: '', qty: 1, unitCents: 0, days: 1,
     });
   } else if (del > 0) {
     lines.push({
       type: 'delivery',
-      name: 'Delivery & pickup' + (quoteDraft.deliveryTown ? ' — ' + quoteDraft.deliveryTown : ''),
-      description: `${km}km each way`,
+      name: 'Travel & transport' + (quoteDraft.deliveryTown ? ' — ' + quoteDraft.deliveryTown : ''),
+      description: 'Fuel and vehicle running costs · ' + km + ' km each way (' + (km * 2) + ' km return) @ $0.80/km',
       qty: 1, unitCents: del, days: 1,
     });
   }
