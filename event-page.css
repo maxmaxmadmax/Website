@@ -1529,3 +1529,73 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-ent .ep-ent-card.ep-ent-cricket{ grid-template-columns:27mm 1fr !important; }
 }
 @media print{ .ep-ent-cricket .ep-vs{ justify-content:flex-start !important; overflow:visible; } .ep-ent .ep-ent-card.ep-ent-cricket{ padding-left:5.5mm !important; } }
+
+/* ==== A4: cricket as a full-width FIXTURE BANNER (Max, 17 Oct 2026) ====
+   Chargers big top-left, Dregernauts big bottom-right (breaking the edges
+   like a football fixture), VS + title + words in the middle. The right
+   column goes back to 3 roomy tiles: hosts, Bottoms Bingo, jumping castle. */
+@media print{
+    .ep-ent{ grid-template-rows:1fr 1fr 1fr auto !important; }
+    .ep-ent-band{ grid-row:1 / span 3 !important; }
+    .ep-ent-hosts{ grid-row:1 !important; }
+    .ep-ent-bingo{ grid-row:2 !important; }
+    .ep-ent-castle{ grid-row:3 !important; }
+    .ep-ent-photo{ height:52mm !important; }
+
+    .ep-ent .ep-ent-card.ep-ent-cricket{
+        grid-column:1 / -1 !important; grid-row:4 !important;
+        display:grid !important;
+        grid-template-columns:34mm 1fr 34mm !important;
+        grid-template-areas:"a k b" "a s b" "a h b" "a p b";
+        grid-template-rows:auto auto auto auto !important;
+        align-items:center; column-gap:4mm;
+        padding:3mm 6mm !important; overflow:visible; margin-top:3mm;
+    }
+    .ep-ent-cricket .ep-vs{ display:contents !important; }
+    .ep-ent-cricket .ep-vs img:first-child{ grid-area:a; align-self:start; height:27mm !important; width:auto; margin-top:-6mm; justify-self:start; }
+    .ep-ent-cricket .ep-vs img:last-child{ grid-area:b; align-self:end; height:25mm !important; width:auto; margin-bottom:-6mm; justify-self:end; }
+    .ep-ent-cricket .ep-vs span{ grid-area:s; justify-self:center; font-size:16pt !important; line-height:1; margin:.5mm 0; }
+    .ep-ent-cricket .ep-kicker{ grid-area:k; text-align:center !important; margin:0 !important; font-size:7.5pt !important; }
+    .ep-ent .ep-ent-card.ep-ent-cricket h3{ grid-area:h; text-align:center !important; font-size:15pt !important; margin:.5mm 0 1mm !important; white-space:nowrap; }
+    .ep-ent .ep-ent-card.ep-ent-cricket h3 br{ display:none; }
+    .ep-ent .ep-ent-card.ep-ent-cricket p:last-child{ grid-area:p; text-align:center; font-size:9pt !important; line-height:1.35; margin:0; }
+}
+/* A4: run sheet on one line per time (sub-line inline) to give the entertainment block room */
+@media print{
+    .ep-times small{ display:inline !important; margin-left:2.5mm; font-size:8.5pt !important; }
+    .ep-times li{ padding:1.6mm 4.5mm !important; }
+    .ep-times{ gap:1.4mm !important; }
+    .ep-times-poster{ margin-top:4mm !important; grid-template-columns:1fr 44mm !important; }
+    .ep-poster{ width:44mm !important; }
+    .ep-times-poster .ep-h2{ font-size:20pt !important; margin-bottom:2mm !important; }
+    .ep-ent-photo{ height:56mm !important; }
+}
+/* A4 banner per Max's final mock-up: both logos INSIDE, centred, big; slightly larger tile text */
+@media print{
+    .ep-ent-cricket .ep-vs img:first-child{ align-self:center !important; margin:0 !important; height:24mm !important; }
+    .ep-ent-cricket .ep-vs img:last-child{ align-self:center !important; margin:0 !important; height:24mm !important; }
+    .ep-ent .ep-ent-card.ep-ent-cricket{ overflow:hidden; padding:3.5mm 7mm !important; }
+    .ep-ent .ep-ent-card.ep-ent-cricket h3{ font-size:16pt !important; }
+    .ep-ent .ep-ent-card.ep-ent-cricket p:last-child{ font-size:9.5pt !important; }
+    .ep-ent-band-text p:not(.ep-kicker){ font-size:10pt !important; }
+    .ep-ent-card:not(.ep-ent-band):not(.ep-ent-cricket) p:last-child{ font-size:10pt !important; }
+}
+/* A4: keep a clear gap between the right-hand tiles (Bingo's words were touching the castle) */
+@media print{
+    .ep-ent{ row-gap:3.5mm !important; column-gap:3.5mm !important; }
+    .ep-ent .ep-ent-bingo p:last-child{ font-size:9.2pt !important; line-height:1.3; }
+    .ep-ent .ep-ent-bingo h3{ margin-bottom:1mm !important; }
+    .ep-ent .ep-ent-bingo{ padding-top:2.5mm !important; padding-bottom:2.5mm !important; }
+}
+/* A4 page 3: ONE spacing everywhere - 3.5mm between every tile, row and block (Max, 17 Oct 2026) */
+@media print{
+    .ep-page-3{ --g:3.5mm; }
+    .ep-page-3 .ep-top2{ gap:var(--g) !important; margin:0 0 var(--g) !important; }
+    .ep-page-3 .ep-ent{ gap:var(--g) !important; row-gap:var(--g) !important; column-gap:var(--g) !important; }
+    .ep-page-3 .ep-ent .ep-ent-card.ep-ent-cricket{ margin:0 !important; }
+    .ep-page-3 .ep-times-poster{ margin-top:var(--g) !important; column-gap:var(--g) !important; gap:var(--g) !important; align-items:stretch !important; }
+    .ep-page-3 .ep-times{ gap:var(--g) !important; }
+    .ep-page-3 .ep-times li{ padding:1.2mm 4.5mm !important; }
+    .ep-page-3 .ep-head{ margin-bottom:var(--g) !important; }
+    .ep-page-3 .ep-times-poster .ep-h2{ margin-bottom:var(--g) !important; }
+}
