@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=520';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=520';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=521';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=521';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -310,8 +310,9 @@ function render(q) {
       <div class="qv-sumwrap">
       <div class="qv-breakdown">${sumBreakdown(q, days)}</div>
       <div class="qv-summary">
-        <div class="qv-sumrow qv-sumtotal"><span>Subtotal (ex GST)</span><span>${money(q.subtotalCents)}</span></div>
-        ${q.discountCents ? `<div class="qv-sumrow"><span>Discount</span><span>&minus;${money(q.discountCents)}</span></div>` : ''}
+        <!-- adds straight down: discount first, then the subtotal after it (Max, 17 Oct 2026) -->
+        ${q.discountCents ? `<div class="qv-sumrow qv-sumpart"><span>Discount</span><span>&minus;${money(q.discountCents)}</span></div>` : ''}
+        <div class="qv-sumrow qv-sumtotal"><span>Subtotal (ex GST)</span><span>${money(Math.round(q.totalCents || 0) - Math.round(q.gstCents || 0))}</span></div>
         <div class="qv-sumrow"><span>GST (10%)</span><span>${money(q.gstCents)}</span></div>
         <div class="qv-sumrow qv-grand"><span>Total (incl GST)</span><span>${money(q.totalCents)}</span></div>
       </div>
