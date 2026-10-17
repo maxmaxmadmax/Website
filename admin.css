@@ -4399,3 +4399,10 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-pkg-head .qb-del:hover{ color:#fff; }
 .qb-pkg-body{ padding:0 0 0 10px; border-left:4px solid #111; margin-left:0; background:#fafafa; }
 .qb-pkg-body .qb-row{ background:transparent; }
+/* package box: grey (Max, 17 Oct 2026) */
+.qb-pkg{ border-color:#d3d7de !important; }
+.qb-pkg-head{ background:#eceef2 !important; color:var(--ad-text) !important; border-bottom:1px solid #d3d7de; }
+.qb-pkg-head .qb-sys-tag{ background:#111 !important; color:#fff !important; }
+.qb-pkg-head .qb-del{ color:var(--ad-faint) !important; }
+.qb-pkg-head .qb-del:hover{ color:var(--ad-red) !important; }
+.qb-pkg-body{ border-left-color:#d3d7de !important; background:#f7f8fa !important; }

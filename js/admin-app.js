@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=511';
+} from './firebase-config.js?v=513';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=511';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=511';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=511';
-import { expandKit } from './kit.js?v=511';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=513';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=513';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=513';
+import { expandKit } from './kit.js?v=513';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5977,7 +5977,12 @@ function normalizePackages() {
     done.add(id);
     const mine = units.filter((x) => x[0].pkgId === id);
     mine.filter((x) => x[0].type !== 'discount').forEach((x) => out.push(...x));
-    mine.filter((x) => x[0].type === 'discount').forEach((x) => out.push(...x));
+    const disc = mine.filter((x) => x[0].type === 'discount');
+    if (disc.length) disc.forEach((x) => out.push(...x));
+    else {
+      const p = invItems().find((x) => x.id === id);
+      out.push({ type: 'discount', name: ((p && p.name) || 'Package') + ' - package discount', amountCents: 0, pkgId: id });
+    }
   });
   quoteDraft.lines = out;
 }
@@ -6025,6 +6030,7 @@ function renderQuoteLines() {
 
   const rowsHtml = quoteDraft.lines.map((l, i) => {
     if (l.type === 'discount' && l.pkgId) {
+      if (!(l.amountCents > 0) && !l.pkgUnpriced) return '';   // nothing off - no line (Max, 17 Oct 2026)
       return `
         <div class="qb-row qb-row-disc" data-ql="${i}" data-top>
           <div class="qb-cell qb-c-grip"><span class="qb-grip" title="Drag to reorder">&#10303;</span></div>
@@ -6324,18 +6330,25 @@ function syncPackageDiscounts() {
   invItems().forEach((it) => { byId[it.id] = it; });
   const days = Math.max(1, Math.round(quoteDraft.hire.days || 1));
   const full = {};
+  const extra = {};   // weekend / public holiday surcharges on crew in the package
   let cur = null;   // the package the current item (and its kit lines) belongs to
   L.forEach((l) => {
     if (l.type === 'item' || l.type === 'custom') cur = l.pkgId || null;
     else if (l.type !== 'kit') cur = null;
     if (cur && (l.type === 'item' || l.type === 'kit' || l.type === 'custom')) full[cur] = (full[cur] || 0) + quoteLineCents(l, days);
+    if (cur && l.resType === 'staff' && l.baseCents != null) {
+      const ld = Math.max(1, Math.round(l.days || days));
+      extra[cur] = (extra[cur] || 0) + Math.max(0, quoteLineCents(l, days) - l.baseCents * Math.max(0, Math.round(l.qty || 0)) * ld);
+    }
   });
   L.forEach((l) => {
     if (l.type !== 'discount' || !l.pkgId) return;
     const pkg = byId[l.pkgId];
-    const target = Math.max(0, Math.round((pkg && pkg.priceCents) || 0)) * days;
+    const base = Math.max(0, Math.round((pkg && pkg.priceCents) || 0)) * days;
+    // operator surcharges go ON TOP of the package price, never swallowed by the discount (Max, 17 Oct 2026)
+    const target = base > 0 ? base + (extra[l.pkgId] || 0) : 0;
     l.amountCents = target > 0 ? Math.max(0, (full[l.pkgId] || 0) - target) : 0;
-    l.pkgUnpriced = !(target > 0);
+    l.pkgUnpriced = !(base > 0);
   });
 }
 
@@ -6864,7 +6877,9 @@ function quoteDraftForSave() {
   const lab = quoteLabour(quoteDraft);
   const del = quoteDeliveryCents(quoteDraft);
   const km = Math.max(0, Math.round(quoteDraft.deliveryKm || 0));
-  const lines = quoteDraft.lines.filter((l) => l.type !== 'labour' && l.type !== 'delivery').map((l) => ({ ...l }));
+  const lines = quoteDraft.lines.filter((l) => l.type !== 'labour' && l.type !== 'delivery')
+    .filter((l) => !(l.type === 'discount' && l.pkgId && !(l.amountCents > 0)))   // a $0 package discount isn't saved
+    .map((l) => ({ ...l }));
   if (quoteDraft.labourExcluded !== true && lab.cents > 0) {
     lab.parts.forEach((p) => lines.push({
       type: 'labour', name: p.lineName, description: p.lineDesc,
