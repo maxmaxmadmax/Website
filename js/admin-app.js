@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=502';
+} from './firebase-config.js?v=506';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=502';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=502';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=502';
-import { expandKit } from './kit.js?v=502';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=506';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=506';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=506';
+import { expandKit } from './kit.js?v=506';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -89,12 +89,8 @@ const state = {
   addingVendor: false,
   ready: false,
 
-  /*  The estimate bot. Leads stream in from the whole site (not one event),
-      and the price table is loaded once and edited in the Quote Pricing
-      view. quotePricing is null until loaded, so the editor shows the
-      built-in default until Max has saved his own.                        */
+  /*  Old estimate-bot leads (quoteLeads) - kept for their history.     */
   quoteLeads: [],
-  quotePricing: null,
   quoteFilter: { search: '', status: 'all' },
   openLeadId: null,
 
@@ -201,7 +197,6 @@ async function init() {
     subscribeToCustomers();
     subscribeToLeads();
     subscribeToScout();
-    loadQuotePricing();
     routeFromHash();
   });
 }
@@ -392,7 +387,7 @@ function wireChrome() {
    Routing
    ------------------------------------------------------------------------- */
 const BUILT = ['events', 'vendors', 'applications', 'map', 'entertainment',
-               'settings', 'vendorEmail', 'quotes', 'inventory', 'botSettings',
+               'settings', 'vendorEmail', 'quotes', 'inventory',
                'quoteDocs', 'packages', 'resources', 'leads', 'leadRate', 'customers'];
 
 /*  Vendors is where the work is, so it is what you land on. */
@@ -541,20 +536,6 @@ function subscribeToQuoteLeads() {
   ));
 }
 
-/*  The saved price table, loaded once for the editor. Null stays null on a
-    miss, and the editor falls back to the built-in default, so a fresh site
-    with no saved table still shows something to edit.                     */
-async function loadQuotePricing() {
-  try {
-    const { doc, getDoc } = fb.f;
-    const snap = await getDoc(doc(fb.db, 'config', 'quotePricing'));
-    if (snap.exists()) state.quotePricing = snap.data();
-  } catch (err) {
-    console.error('quotePricing', err);
-  }
-  if (state.view === 'botSettings') render();
-}
-
 /*  The equipment inventory, live. Feeds both the Equipment page and, once
     saved, the bot. Ordered by category then name so the page reads tidily. */
 function subscribeToInventory() {
@@ -661,6 +642,9 @@ function render() {
       list scrolls (see "LEADS: one-screen app layout" in admin.css).  */
   desk.classList.toggle('is-leads', state.view === 'leads');
   document.body.classList.toggle('ad-fit-leads', state.view === 'leads');
+  // Inventory too: one screen tall, only the item list scrolls (Max, 17 Oct 2026)
+  desk.classList.toggle('is-inv', state.view === 'inventory');
+  document.body.classList.toggle('ad-fit-inv', state.view === 'inventory');
   // Lead Rating runs full-screen on a phone, like an app
   document.body.classList.toggle('ad-rate-app', state.view === 'leadRate');
   // ...and only there, pinch / double-tap zoom is locked so it feels like an app
@@ -3786,58 +3770,11 @@ function wireVendorEmail() {
 /* =========================================================================
    ESTIMATE BOT  -  admin views
 
-   Two panels, both under the "Leads" group in the rail:
-
-     quotes         who asked, what they asked for, and the range they saw
-     quotePricing   the price table the bot runs on - Max's numbers
+   quotes   who asked, what they asked for, and the range they saw
 
    Leads are read-only here (a lead is a record of what happened) apart from
-   a status and a note; the price table is fully editable and saved through
-   the adminSaveQuotePricing function.
+   a status and a note.
    ========================================================================= */
-
-/*  DEFAULT PRICES - a mirror of functions/lib/quote-pricing.js, used by the
-    editor before Max has saved a table of his own. Keep the SHAPE in step
-    with the server file.                                                  */
-const DEFAULT_QUOTE_PRICING = {
-  spreadPct: 15,
-  roundToCents: 5000,
-  freeHours: 4,
-  hourlyCents: 0,
-  eventTypes: [
-    { key: 'wedding', label: 'Wedding', baseCents: 120000 },
-    { key: 'corporate', label: 'Corporate', baseCents: 150000 },
-    { key: 'private', label: 'Private Function', baseCents: 80000 },
-    { key: 'festival', label: 'Festival', baseCents: 250000 },
-  ],
-  services: [
-    { key: 'dj', label: 'DJ', addCents: 60000 },
-    { key: 'pa', label: 'Live Sound / PA', addCents: 45000 },
-    { key: 'lighting', label: 'Lighting', addCents: 40000 },
-    { key: 'mc', label: 'MC / Host', addCents: 35000 },
-    { key: 'staging', label: 'Staging', addCents: 50000 },
-    { key: 'dryhire', label: 'Dry Hire Gear', addCents: 25000 },
-    { key: 'setup', label: 'Setup & Pack-down', addCents: 30000 },
-  ],
-  sizes: [
-    { key: 's', label: 'Up to 50 guests', multiplier: 1 },
-    { key: 'm', label: '50 to 150 guests', multiplier: 1.25 },
-    { key: 'l', label: '150 to 400 guests', multiplier: 1.6 },
-    { key: 'xl', label: '400+ guests', multiplier: 2.2 },
-  ],
-  locations: [
-    { key: 'bowen', label: 'Bowen', travelCents: 0 },
-    { key: 'airlie', label: 'Airlie Beach', travelCents: 15000 },
-    { key: 'whitsundays', label: 'Whitsundays', travelCents: 20000 },
-    { key: 'other', label: 'Somewhere else', travelCents: 25000 },
-  ],
-  durations: [
-    { key: '3', label: 'A few hours', hours: 3 },
-    { key: '5', label: 'Half a day', hours: 5 },
-    { key: '7', label: 'A full evening', hours: 7 },
-    { key: '10', label: 'All day', hours: 10 },
-  ],
-};
 
 const QUOTE_STATUS = {
   new:       ['ad-pill-blue',  'New'],
@@ -4122,219 +4059,6 @@ function cssEsc(v) {
   return String(v == null ? '' : v).replace(/["\\]/g, '\\$&');
 }
 
-/* -------------------------------------------------------------------------
-   Quote Pricing  -  the editable price table
-   ------------------------------------------------------------------------- */
-function quotePricingModel() {
-  const p = state.quotePricing;
-  if (p && Array.isArray(p.eventTypes) && p.eventTypes.length) return p;
-  return DEFAULT_QUOTE_PRICING;
-}
-
-const centsToDollars = (c) => (Number(c || 0) / 100);
-
-/*  One editable row. `fields` is [{name, value, type, step}], rendered as
-    inputs carrying data-field so the saver can read them back.            */
-function priceRow(kind, fields) {
-  const cells = fields.map((f) => `
-    <input class="ad-input ad-price-input" data-field="${attr(f.name)}"
-           type="${f.type || 'text'}" ${f.step ? `step="${f.step}"` : ''}
-           ${f.min != null ? `min="${f.min}"` : ''}
-           value="${attr(f.value)}" placeholder="${attr(f.placeholder || '')}">`).join('');
-  return `<div class="ad-price-row" data-kind="${attr(kind)}">
-    ${cells}
-    <button type="button" class="ad-price-del" data-del-row title="Remove">\u2715</button>
-  </div>`;
-}
-
-function priceList(kind, title, hint, rows, cols) {
-  return `
-    <section class="ad-card ad-panel ad-price-card" data-list="${attr(kind)}">
-      <header class="ad-panel-head">
-        <div><h2>${esc(title)}</h2><p class="ad-panel-sub">${esc(hint)}</p></div>
-      </header>
-      <div class="ad-price-cols" aria-hidden="true">
-        ${cols.map((c) => `<span>${esc(c)}</span>`).join('')}<span></span>
-      </div>
-      <div class="ad-price-rows" data-rows="${attr(kind)}">${rows.join('')}</div>
-      <button type="button" class="ad-btn ad-btn-small ad-price-add" data-add-row="${attr(kind)}">
-        + Add
-      </button>
-    </section>`;
-}
-
-VIEWS.botSettings = {
-  html() {
-    const p = quotePricingModel();
-
-    const eventRows = (p.eventTypes || []).map((x) => priceRow('eventTypes', [
-      { name: 'label', value: x.label, placeholder: 'Wedding' },
-      { name: 'baseCents', value: centsToDollars(x.baseCents), type: 'number', step: '1', min: 0 },
-    ]));
-    const sizeRows = (p.sizes || []).map((x) => priceRow('sizes', [
-      { name: 'label', value: x.label, placeholder: 'Up to 50 guests' },
-      { name: 'multiplier', value: x.multiplier, type: 'number', step: '0.05', min: 0 },
-    ]));
-    const locationRows = (p.locations || []).map((x) => priceRow('locations', [
-      { name: 'label', value: x.label, placeholder: 'Bowen' },
-      { name: 'travelCents', value: centsToDollars(x.travelCents), type: 'number', step: '1', min: 0 },
-    ]));
-    const durationRows = (p.durations || []).map((x) => priceRow('durations', [
-      { name: 'label', value: x.label, placeholder: 'A few hours' },
-      { name: 'hours', value: x.hours, type: 'number', step: '1', min: 0 },
-    ]));
-
-    return `
-      <div class="ad-mail-head-row">
-        <span class="ad-mail-icon" aria-hidden="true">&#9881;</span>
-        <div class="ad-mail-title">
-          <h1>Bot Settings</h1>
-          <p>The bot-specific knobs the estimate runs on &mdash; the gear a visitor
-             picks lives in <strong>Equipment</strong>. Dollar amounts are GST-inclusive.</p>
-        </div>
-        <div class="ad-mail-status">
-          <span class="ad-pill ${state.quotePricing ? 'ad-pill-green' : 'ad-pill-blue'}">
-            ${state.quotePricing ? 'Your settings' : 'Starter settings'}
-          </span>
-        </div>
-      </div>
-
-      <div class="ad-price-grid">
-        ${priceList('eventTypes', 'Event types', 'The base price each kind of event starts at, before gear.',
-          eventRows, ['Label', 'Base price $'])}
-        ${priceList('sizes', 'Guest sizes', 'Scales the whole estimate. 1 = no change, 1.5 = half again.',
-          sizeRows, ['Label', 'Multiplier'])}
-        ${priceList('locations', 'Locations', 'A flat travel amount added for where it is.',
-          locationRows, ['Label', 'Travel $'])}
-        ${priceList('durations', 'Durations', 'How long they need us. Only bills beyond the free hours below.',
-          durationRows, ['Label', 'Hours'])}
-
-        <section class="ad-card ad-panel ad-price-card">
-          <header class="ad-panel-head">
-            <div><h2>Settings</h2><p class="ad-panel-sub">How the range is worked out.</p></div>
-          </header>
-          <div class="ad-price-settings">
-            <label class="ad-field">
-              <span>Range spread %</span>
-              <input class="ad-input" id="ad-price-spread" type="number" step="1" min="0" max="90"
-                     value="${attr(p.spreadPct != null ? p.spreadPct : 15)}">
-              <em>How wide the low\u2013high band is around the estimate.</em>
-            </label>
-            <label class="ad-field">
-              <span>Round to nearest $</span>
-              <input class="ad-input" id="ad-price-round" type="number" step="5" min="1"
-                     value="${attr(centsToDollars(p.roundToCents || 5000))}">
-              <em>Keeps the numbers tidy, e.g. $2,600 not $2,617.</em>
-            </label>
-            <label class="ad-field">
-              <span>Free hours</span>
-              <input class="ad-input" id="ad-price-freehours" type="number" step="1" min="0" max="48"
-                     value="${attr(p.freeHours != null ? p.freeHours : 4)}">
-              <em>Hours included before the hourly rate kicks in.</em>
-            </label>
-            <label class="ad-field">
-              <span>Hourly rate $ (over the free hours)</span>
-              <input class="ad-input" id="ad-price-hourly" type="number" step="1" min="0"
-                     value="${attr(centsToDollars(p.hourlyCents || 0))}">
-              <em>Leave at 0 to not charge by the hour.</em>
-            </label>
-          </div>
-        </section>
-      </div>
-
-      <div class="ad-actions-row ad-price-save-row">
-        <button type="button" class="ad-btn ad-btn-primary" id="ad-price-save">Save prices</button>
-        <p class="ad-action-msg" id="ad-price-msg" hidden></p>
-      </div>
-    `;
-  },
-
-  wire() { wireQuotePricing(); },
-};
-
-/*  A fresh blank row for the "+ Add" button, matching each list's columns. */
-function blankPriceRow(kind) {
-  const map = {
-    eventTypes: [{ name: 'label', placeholder: 'New event' },
-                 { name: 'baseCents', value: 0, type: 'number', step: '1', min: 0 }],
-    sizes:      [{ name: 'label', placeholder: 'New size' },
-                 { name: 'multiplier', value: 1, type: 'number', step: '0.05', min: 0 }],
-    locations:  [{ name: 'label', placeholder: 'New place' },
-                 { name: 'travelCents', value: 0, type: 'number', step: '1', min: 0 }],
-    durations:  [{ name: 'label', placeholder: 'New length' },
-                 { name: 'hours', value: 1, type: 'number', step: '1', min: 0 }],
-  };
-  return priceRow(kind, (map[kind] || []).map((f) => ({ value: '', ...f })));
-}
-
-function wireQuotePricing() {
-  const desk = document.getElementById('ad-desk');
-  if (!desk) return;
-
-  desk.querySelectorAll('[data-add-row]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const kind = btn.getAttribute('data-add-row');
-      const rows = desk.querySelector(`[data-rows="${cssEsc(kind)}"]`);
-      if (rows) rows.insertAdjacentHTML('beforeend', blankPriceRow(kind));
-    });
-  });
-
-  desk.addEventListener('click', (e) => {
-    const del = e.target.closest('[data-del-row]');
-    if (del) { const row = del.closest('.ad-price-row'); if (row) row.remove(); }
-  });
-
-  const save = document.getElementById('ad-price-save');
-  if (save) save.addEventListener('click', () => saveQuotePricing());
-}
-
-/*  Read the DOM back into the pricing shape and send it. Dollars in the
-    inputs become cents on the way out - the store is always cents.        */
-function saveQuotePricing() {
-  const desk = document.getElementById('ad-desk');
-  const msg = document.getElementById('ad-price-msg');
-  const dollarsToCents = (v) => Math.round(Number(v || 0) * 100);
-
-  const readList = (kind, map) => {
-    const rows = desk.querySelectorAll(`[data-rows="${cssEsc(kind)}"] .ad-price-row`);
-    return Array.from(rows).map((row) => {
-      const get = (n) => {
-        const el = row.querySelector(`[data-field="${cssEsc(n)}"]`);
-        return el ? el.value : '';
-      };
-      return map(get);
-    }).filter((x) => x.label);
-  };
-
-  const pricing = {
-    spreadPct: Number((document.getElementById('ad-price-spread') || {}).value || 0),
-    roundToCents: dollarsToCents((document.getElementById('ad-price-round') || {}).value || 50),
-    freeHours: Number((document.getElementById('ad-price-freehours') || {}).value || 0),
-    hourlyCents: dollarsToCents((document.getElementById('ad-price-hourly') || {}).value || 0),
-
-    eventTypes: readList('eventTypes', (g) => ({
-      label: g('label').trim(), baseCents: dollarsToCents(g('baseCents')) })),
-    sizes: readList('sizes', (g) => ({
-      label: g('label').trim(), multiplier: Number(g('multiplier') || 1) })),
-    locations: readList('locations', (g) => ({
-      label: g('label').trim(), travelCents: dollarsToCents(g('travelCents')) })),
-    durations: readList('durations', (g) => ({
-      label: g('label').trim(), hours: Number(g('hours') || 0) })),
-  };
-
-  if (msg) { msg.hidden = false; msg.className = 'ad-action-msg'; msg.textContent = 'Saving\u2026'; }
-
-  call('adminSaveQuotePricing', { pricing })
-    .then(() => {
-      state.quotePricing = pricing;
-      if (msg) { msg.className = 'ad-action-msg is-ok'; msg.textContent = 'Saved. The bot is using these now.'; }
-    })
-    .catch((err) => {
-      if (msg) { msg.className = 'ad-action-msg is-bad'; msg.textContent = err.message || 'Could not save.'; }
-    });
-}
-
-
 /* =========================================================================
    INVENTORY  -  the equipment manager
 
@@ -4351,23 +4075,9 @@ function saveQuotePricing() {
    document each, saved on their own when you press Save Changes.
    ========================================================================= */
 
-/*  DEFAULT INVENTORY - a mirror of functions/lib/quote-pricing.js, shown as
-    a starter list until real gear is saved. Only the fields the bot needs
-    (id, name, category, priceCents, inBot) have to match the server; the
-    rest are the richer admin fields, filled in here.                      */
-const DEFAULT_INVENTORY = [
-  { id: 'dj', name: 'DJ Package', subtitle: 'Decks, mixer & booth', category: 'DJ', priceCents: 60000, extraDayCents: 30000, quantityTotal: 2, quantityAvailable: 2, location: 'Bowen', status: 'available', inBot: true },
-  { id: 'mc', name: 'MC / Host', subtitle: 'Mic & host for the night', category: 'DJ', priceCents: 35000, extraDayCents: 0, quantityTotal: 1, quantityAvailable: 1, location: 'Bowen', status: 'available', inBot: true },
-  { id: 'pa', name: 'Live Sound / PA System', subtitle: 'Tops, subs & desk', category: 'Audio', priceCents: 45000, extraDayCents: 22000, quantityTotal: 3, quantityAvailable: 3, location: 'Bowen', status: 'available', inBot: true },
-  { id: 'lighting', name: 'Lighting Package', subtitle: 'Stage & dance-floor wash', category: 'Lighting', priceCents: 40000, extraDayCents: 20000, quantityTotal: 4, quantityAvailable: 4, location: 'Bowen', status: 'available', inBot: true },
-  { id: 'staging', name: 'Staging', subtitle: 'Modular deck, per section', category: 'Staging', priceCents: 50000, extraDayCents: 25000, quantityTotal: 1, quantityAvailable: 1, location: 'Bowen', status: 'available', inBot: true },
-  { id: 'dryhire', name: 'Dry Hire Gear', subtitle: 'Self-collect equipment', category: 'Dry Hire', priceCents: 25000, extraDayCents: 12000, quantityTotal: 10, quantityAvailable: 10, location: 'Bowen', status: 'available', inBot: true },
-  { id: 'setup', name: 'Setup & Pack-down', subtitle: 'Crew on the day', category: 'Crew', priceCents: 30000, extraDayCents: 0, quantityTotal: 1, quantityAvailable: 1, location: 'Bowen', status: 'available', inBot: true },
-];
-
+/*  The real gear, live from Firestore (empty until it arrives). */
 function invModelRaw() {
-  if (Array.isArray(state.inventory) && state.inventory.length) return state.inventory;
-  return DEFAULT_INVENTORY;
+  return Array.isArray(state.inventory) ? state.inventory : [];
 }
 
 const invNum = (v, d = 0) => { const n = Number(v); return Number.isFinite(n) ? n : d; };
@@ -4539,7 +4249,7 @@ function invFiltered() {
   });
 }
 
-const INV_PER_PAGE = 12;
+const INV_PER_PAGE = 50;   // the list scrolls inside the screen now, so more fit per page
 
 /* -------------------------------------------------------------------------
    The view
@@ -4547,7 +4257,6 @@ const INV_PER_PAGE = 12;
 VIEWS.inventory = {
   html() {
     const s = invStats();
-    const starter = !(state.inventory && state.inventory.length);
     const pct = (n) => (s.total ? Math.round((n / s.total) * 100) : 0);
     const cats = invDistinct('category');
     const locs = invDistinct('location');
@@ -4570,7 +4279,6 @@ VIEWS.inventory = {
               </div>
             </div>
             <div class="inv-head-actions">
-              ${starter ? '<span class="inv-pill inv-st-blue">Starter list</span>' : ''}
               <button type="button" class="ad-btn" id="inv-add-pkg" title="Kits and single items together, e.g. 4-Piece Band Backline">+ New package</button>
               <button type="button" class="ad-btn" id="inv-add-sys" title="A rig made of other gear, e.g. FOH Kit">+ New kit</button>
               <button type="button" class="ad-btn ad-btn-primary" id="inv-add">+ Add Item</button>

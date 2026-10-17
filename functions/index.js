@@ -26,9 +26,6 @@ const { sendBookingEmails } = require('./lib/email');
 const { sendQuoteEmail } = require('./lib/quote-email');
 const { sendQuoteLinkEmail } = require('./lib/quote-doc-email');
 const { sendLeadEmail } = require('./lib/lead-email');
-const {
-  DEFAULT_QUOTE_PRICING, DEFAULT_INVENTORY, estimate: estimateQuote,
-} = require('./lib/quote-pricing');
 
 /*  SEND, AND WRITE DOWN WHAT HAPPENED
 
@@ -2350,7 +2347,6 @@ exports.adminSendTestVendorEmail = onCall(
    a price guide, and creates a reviewable draft. These remain for the old
    `quoteLeads` records:
 
-     adminSaveQuotePricing  admin  - Max edits the price table
      adminUpdateQuoteLead   admin  - Max moves a lead along / adds a note
      adminResendQuoteEmail  admin  - Max re-sends a visitor their estimate
 
@@ -2360,28 +2356,9 @@ exports.adminSendTestVendorEmail = onCall(
    needs it to show a live range) but function/admin-write only.
    ========================================================================= */
 
-/*  The saved price table, or the built-in default if Max has not saved one
-    yet. The bot falls back to the same default, so the two agree even on
-    day one.                                                              */
-async function loadQuotePricing() {
-  try {
-    const snap = await db.collection('config').doc('quotePricing').get();
-    if (snap.exists) {
-      const data = snap.data() || {};
-      // A part-saved or empty doc should not strip the bot of its options.
-      if (Array.isArray(data.eventTypes) && data.eventTypes.length) return data;
-    }
-  } catch (err) {
-    logger.warn('could not read quote pricing, using default', {
-      message: err && err.message,
-    });
-  }
-  return DEFAULT_QUOTE_PRICING;
-}
-
 /*  The equipment inventory. The bot prices the extras a visitor picks from
     the hire prices here, so it is read back server-side rather than trusted
-    from the browser. Falls back to the starter list if nothing is saved. */
+    from the browser. An empty list if it cannot be read. */
 async function loadQuoteInventory() {
   try {
     const snap = await db.collection('inventory').get();
@@ -2395,7 +2372,7 @@ async function loadQuoteInventory() {
       message: err && err.message,
     });
   }
-  return DEFAULT_INVENTORY;
+  return [];
 }
 
 const QUOTE_STATES = ['new', 'contacted', 'quoted', 'won', 'lost'];
@@ -2406,70 +2383,6 @@ const QUOTE_STATES = ['new', 'contacted', 'quoted', 'won', 'lost'];
     it emails the same price guide AND creates a reviewable draft quote.
     The estimate-email system it used (lib/quote-email.js) is kept and now
     reused by submitBotQuote. Deleted from deploy via functions:delete.    */
-
-exports.adminSaveQuotePricing = onCall(async (request) => {
-  requireAdmin(request);
-  const p = (request.data && request.data.pricing) || {};
-
-  const text = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
-  const cents = (v, name, max = 10000000) => {
-    const n = Math.round(Number(v));
-    if (!Number.isFinite(n) || n < 0 || n > max) {
-      throw new HttpsError('invalid-argument', `${name} does not look right.`);
-    }
-    return n;
-  };
-  const num = (v, name, min, max) => {
-    const n = Number(v);
-    if (!Number.isFinite(n) || n < min || n > max) {
-      throw new HttpsError('invalid-argument', `${name} does not look right.`);
-    }
-    return n;
-  };
-  const key = (v, i) => {
-    const k = text(v, 40).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    return k || 'item-' + (i + 1);
-  };
-
-  const list = (arr, map) => {
-    if (!Array.isArray(arr)) return [];
-    return arr.slice(0, 40).map(map).filter((x) => x.label);
-  };
-
-  const clean = {
-    currency: 'AUD',
-    spreadPct: num(p.spreadPct != null ? p.spreadPct : 15, 'Spread', 0, 90),
-    roundToCents: cents(p.roundToCents != null ? p.roundToCents : 5000, 'Rounding', 100000),
-    freeHours: num(p.freeHours != null ? p.freeHours : 4, 'Free hours', 0, 48),
-    hourlyCents: cents(p.hourlyCents != null ? p.hourlyCents : 0, 'Hourly rate'),
-
-    eventTypes: list(p.eventTypes, (x, i) => ({
-      key: key(x.key || x.label, i), label: text(x.label, 60),
-      baseCents: cents(x.baseCents, 'Base price'),
-    })),
-    sizes: list(p.sizes, (x, i) => ({
-      key: key(x.key || x.label, i), label: text(x.label, 60),
-      multiplier: num(x.multiplier, 'Multiplier', 0, 20),
-    })),
-    locations: list(p.locations, (x, i) => ({
-      key: key(x.key || x.label, i), label: text(x.label, 60),
-      travelCents: cents(x.travelCents, 'Travel fee'),
-    })),
-    durations: list(p.durations, (x, i) => ({
-      key: key(x.key || x.hours || x.label, i), label: text(x.label, 60),
-      hours: num(x.hours, 'Hours', 0, 48),
-    })),
-
-    updatedAt: FieldValue.serverTimestamp(),
-  };
-
-  if (!clean.eventTypes.length) {
-    throw new HttpsError('invalid-argument', 'Add at least one event type.');
-  }
-
-  await db.collection('config').doc('quotePricing').set(clean, { merge: false });
-  return { ok: true };
-});
 
 exports.adminUpdateQuoteLead = onCall(async (request) => {
   requireAdmin(request);

@@ -8,10 +8,9 @@
    mix to come later.
 
    HOW THE PRICE STAYS HONEST
-   The bot shows a range from the price table at config/quotePricing (public
-   read). On submit the submitQuoteLead function recomputes the same range
-   from the same table server-side, so a fiddled page cannot email itself a
-   made-up figure. The number here is a preview; the server's is the record.
+   The browser never prices anything. submitBotQuote (server) matches a
+   package from Inventory, prices it from the real gear, labour and delivery,
+   and saves an estimate for Max to review.
 
    NO FIREBASE, NO PROBLEM
    If the config placeholders are unfilled or the SDK fails to load, the bot
@@ -21,7 +20,7 @@
 
 import {
   firebaseConfig, functionsRegion, isFirebaseConfigured,
-} from './firebase-config.js?v=502';
+} from './firebase-config.js?v=506';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
