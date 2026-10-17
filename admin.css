@@ -4406,3 +4406,12 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-pkg-head .qb-del{ color:var(--ad-faint) !important; }
 .qb-pkg-head .qb-del:hover{ color:var(--ad-red) !important; }
 .qb-pkg-body{ border-left-color:#d3d7de !important; background:#f7f8fa !important; }
+
+/* item requirements: type-to-search for the required item (Max, 17 Oct 2026) */
+.inv-req-pick{ position:relative; }
+.inv-req-pick .ad-input{ width:100%; }
+.inv-req-results{ position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:30; background:#fff; border:1px solid var(--ad-line); border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,.14); max-height:260px; overflow-y:auto; }
+.inv-req-results button{ display:block; width:100%; text-align:left; border:0; border-bottom:1px solid #f1f2f4; background:#fff; padding:9px 12px; font:inherit; font-size:13px; cursor:pointer; }
+.inv-req-results button:hover{ background:var(--ad-orange-soft); }
+.inv-req-none{ margin:0; padding:10px 12px; color:var(--ad-muted); font-size:13px; }
+.inv-req-item > span{ display:block; }

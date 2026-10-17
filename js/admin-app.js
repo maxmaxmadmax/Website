@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=523';
+} from './firebase-config.js?v=524';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=523';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=523';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=523';
-import { expandKit } from './kit.js?v=523';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=524';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=524';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=524';
+import { expandKit } from './kit.js?v=524';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5176,8 +5176,7 @@ const invMoney = (c) => {
 };
 
 function reqRowHtml(r, i, options) {
-  const itemOpts = options.map((o) =>
-    `<option value="${attr(o.id)}"${r.itemId === o.id ? ' selected' : ''}>${esc(o.name)}</option>`).join('');
+  const chosen = options.find((o) => o.id === r.itemId);
   const chargeOpts = [['normal', 'Normal price'], ['discounted', 'Discounted'], ['free', 'Included free']]
     .map((c) => `<option value="${c[0]}"${r.charge === c[0] ? ' selected' : ''}>${c[1]}</option>`).join('');
 
@@ -5198,10 +5197,12 @@ function reqRowHtml(r, i, options) {
     <div class="inv-req" data-i="${i}">
       <button type="button" class="inv-req-del" data-req-del title="Remove">&times;</button>
       <div class="inv-req-grid">
-        <label class="inv-req-f inv-req-item"><span>Required item</span>
-          <select class="ad-select" data-rf="itemId">
-            <option value="">Choose item&hellip;</option>${itemOpts}
-          </select></label>
+        <div class="inv-req-f inv-req-item"><span>Required item</span>
+          <div class="inv-req-pick">
+            <input class="ad-input" data-req-search autocomplete="off" placeholder="Type to search gear&hellip;"
+                   value="${attr(chosen ? chosen.name : '')}">
+            <div class="inv-req-results" hidden></div>
+          </div></div>
         <label class="inv-req-f"><span>How</span>
           <select class="ad-select" data-rf="rule">
             <option value="per-item"${r.rule === 'per-item' ? ' selected' : ''}>Per item</option>
@@ -5221,11 +5222,40 @@ function reqRowHtml(r, i, options) {
     panel is touched. (Max, 15 Oct 2026: legs were missing until reopened.) */
 function refreshInvReqOptions() {
   const options = invReqOptions(state.openInvId);
-  document.querySelectorAll('#inv-reqs-list select[data-rf="itemId"]').forEach((sel) => {
-    const keep = sel.value;
-    sel.innerHTML = '<option value="">Choose item&hellip;</option>' + options.map((o) =>
-      `<option value="${attr(o.id)}"${keep === o.id ? ' selected' : ''}>${esc(o.name)}</option>`).join('');
+  document.querySelectorAll('#inv-reqs-list .inv-req').forEach((row) => {
+    const r = invReqDraft[Number(row.getAttribute('data-i'))];
+    const box = row.querySelector('[data-req-search]');
+    const o = r && options.find((x) => x.id === r.itemId);
+    if (box && o && document.activeElement !== box) box.value = o.name;
   });
+}
+
+/*  The search box on a requirement row: up to 8 matches as you type, every
+    word must match. Click (or Enter for the first) to choose.          */
+function reqMatches(text) {
+  const words = String(text || '').toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  return invReqOptions(state.openInvId)
+    .filter((o) => words.every((w) => String(o.name || '').toLowerCase().includes(w)))
+    .slice(0, 8);
+}
+function showReqResults(box) {
+  const res = box.parentElement.querySelector('.inv-req-results');
+  const hits = reqMatches(box.value);
+  res.innerHTML = hits.length
+    ? hits.map((o) => `<button type="button" data-req-pick="${attr(o.id)}">${esc(o.name)}</button>`).join('')
+    : '<p class="inv-req-none">No gear matches.</p>';
+  res.hidden = !String(box.value || '').trim();
+}
+function pickReqItem(row, id) {
+  const r = invReqDraft[Number(row.getAttribute('data-i'))];
+  if (!r) return;
+  const o = invReqOptions(state.openInvId).find((x) => x.id === id);
+  r.itemId = id;
+  const box = row.querySelector('[data-req-search]');
+  if (box) box.value = o ? o.name : '';
+  row.querySelector('.inv-req-results').hidden = true;
+  renderInvReqPreview();
 }
 
 function renderInvReqs() {
@@ -5290,6 +5320,8 @@ function wireInvReqs() {
     addBtn.addEventListener('click', () => {
       invReqDraft.push(normalizeReq({ itemId: '', rule: 'per-item', qty: 1, coversN: 1, charge: 'normal' }));
       renderInvReqs();
+      const boxes = document.querySelectorAll('#inv-reqs-list [data-req-search]');
+      if (boxes.length) boxes[boxes.length - 1].focus();
     });
   }
 
@@ -5318,6 +5350,36 @@ function wireInvReqs() {
       if (!r) return;
       applyReqField(r, f, el.value);
       renderInvReqPreview();
+    });
+    // the "Required item" search box
+    list.addEventListener('input', (e) => {
+      if (e.target.matches('[data-req-search]')) showReqResults(e.target);
+    });
+    list.addEventListener('keydown', (e) => {
+      if (!e.target.matches('[data-req-search]')) return;
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const first = reqMatches(e.target.value)[0];
+        if (first) pickReqItem(e.target.closest('.inv-req'), first.id);
+      } else if (e.key === 'Escape') e.target.parentElement.querySelector('.inv-req-results').hidden = true;
+    });
+    list.addEventListener('mousedown', (e) => {   // mousedown so it beats the box losing focus
+      const pick = e.target.closest('[data-req-pick]');
+      if (!pick) return;
+      e.preventDefault();
+      pickReqItem(pick.closest('.inv-req'), pick.getAttribute('data-req-pick'));
+    });
+    list.addEventListener('focusout', (e) => {
+      if (!e.target.matches('[data-req-search]')) return;
+      const row = e.target.closest('.inv-req');
+      setTimeout(() => {
+        const res = row && row.querySelector('.inv-req-results');
+        if (res) res.hidden = true;
+        // typed text that isn't a choice goes back to the chosen item's name
+        const r = row && invReqDraft[Number(row.getAttribute('data-i'))];
+        const o = r && invReqOptions(state.openInvId).find((x) => x.id === r.itemId);
+        if (row) row.querySelector('[data-req-search]').value = o ? o.name : '';
+      }, 150);
     });
     list.addEventListener('click', (e) => {
       const del = e.target.closest('[data-req-del]');
