@@ -2625,6 +2625,8 @@ function sanitizeQuote(q) {
     labourExcluded: q.labourExcluded === true,
     feeExcluded: q.feeExcluded === true,
     labourPH: { setup: !!(q.labourPH && q.labourPH.setup), pack: !!(q.labourPH && q.labourPH.pack) },
+    labourOff: { setup: !!(q.labourOff && q.labourOff.setup), pack: !!(q.labourOff && q.labourOff.pack) },
+    labourPackDate: /^\d{4}-\d{2}-\d{2}$/.test(String(q.labourPackDate || '')) ? String(q.labourPackDate) : '',
     delivery: {
       town: text(q.delivery && q.delivery.town, 80),
       km: Math.max(0, Math.round(Number(q.delivery && q.delivery.km) || 0)),

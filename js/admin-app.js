@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=497';
+} from './firebase-config.js?v=498';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=497';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=497';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=497';
-import { expandKit } from './kit.js?v=497';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=498';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=498';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=498';
+import { expandKit } from './kit.js?v=498';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5658,6 +5658,8 @@ function blankQuote() {
     discountCents: 0,
     labourExcluded: false,     // setup & pack-down labour is on by default (delivered jobs)
     labourPH: { setup: false, pack: false },   // "public holiday" ticks for setup / pack-down day
+    labourOff: { setup: false, pack: false },  // untick setup or pack-down on its own (Max, 17 Oct 2026)
+    labourPackDate: '',                        // pack-down on a different day from the last hire day
     feeExcluded: false,        // 2% booking & admin fee is on by default (Max, 16 Oct 2026)
     deliveryTown: '',          // '' = pickup / no delivery
     deliveryKm: 0,             // one-way road km from Bowen
@@ -5820,13 +5822,16 @@ function quoteSetupMins(d) {
 /*  { parts: [setup, pack-down], hours, cents } for the quote being edited. */
 function quoteLabour(d) {
   const ph = d.labourPH || {};
-  const parts = labourParts(quoteSetupMins(d), {
-    startDate: d.hire && d.hire.startDate, endDate: d.hire && d.hire.endDate,
+  const off = d.labourOff || {};
+  const allParts = labourParts(quoteSetupMins(d), {
+    startDate: d.hire && d.hire.startDate,
+    endDate: /^\d{4}-\d{2}-\d{2}$/.test(d.labourPackDate || '') ? d.labourPackDate : (d.hire && d.hire.endDate),
     town: d.deliveryTown && d.deliveryTown !== 'Other' ? d.deliveryTown : '',
     holidaySetup: ph.setup, holidayPack: ph.pack,
   });
+  const parts = allParts.filter((p) => !off[p.key]);   // setup / pack-down each can be unticked
   return {
-    parts,
+    parts, allParts,
     hours: parts.reduce((t, p) => t + p.hours, 0),
     cents: parts.reduce((t, p) => t + p.cents, 0),
   };
@@ -5971,6 +5976,8 @@ function quoteFromDoc(doc) {
     discountCents: Math.max(0, Math.round(doc.discountCents || 0)),
     labourExcluded: doc.labourExcluded === true,
     labourPH: { setup: !!(doc.labourPH && doc.labourPH.setup), pack: !!(doc.labourPH && doc.labourPH.pack) },
+    labourOff: { setup: !!(doc.labourOff && doc.labourOff.setup), pack: !!(doc.labourOff && doc.labourOff.pack) },
+    labourPackDate: doc.labourPackDate || '',
     deliveryTown: (doc.delivery && doc.delivery.town) || '',
     deliveryKm: Math.max(0, Math.round((doc.delivery && doc.delivery.km) || 0)),
     notes: doc.notes || '',
@@ -6374,17 +6381,19 @@ function renderQuoteTotals() {
   const lab = quoteLabour(quoteDraft);
   const discVal = quoteDraft.discountCents ? quoteDraft.discountCents / 100 : '';
   const ph = quoteDraft.labourPH || {};
-  const labourRow = lab.cents ? `
+  const off = quoteDraft.labourOff || {};
+  const labourRow = lab.allParts.length ? `
     <div class="qb-sumrow qb-sumlabour">
       <span><label class="qb-labtoggle"><input type="checkbox" data-qlabour${quoteDraft.labourExcluded ? '' : ' checked'}> Setup &amp; pack-down</label>
         <em class="qb-labnote">${lab.hours} hr${lab.hours === 1 ? '' : 's'} total</em></span>
-      <span class="${quoteDraft.labourExcluded ? 'qb-laboff' : ''}">${quoteDraft.labourExcluded ? 'excluded' : esc(money(lab.cents))}</span>
+      <span class="${quoteDraft.labourExcluded || !lab.cents ? 'qb-laboff' : ''}">${quoteDraft.labourExcluded ? 'excluded' : (lab.cents ? esc(money(lab.cents)) : 'off')}</span>
     </div>
-    ${quoteDraft.labourExcluded ? '' : lab.parts.map((p) => `
-    <div class="qb-labpart">
-      <span><b>${esc(p.lineName)}</b><em>${esc(p.lineDesc)}</em>
-        <label class="qb-labph"><input type="checkbox" data-qlabph="${p.key}"${ph[p.key] ? ' checked' : ''}> Public holiday</label></span>
-      <span>${esc(money(p.cents))}</span>
+    ${quoteDraft.labourExcluded ? '' : lab.allParts.map((p) => `
+    <div class="qb-labpart${off[p.key] ? ' is-off' : ''}">
+      <span><label class="qb-labpick"><input type="checkbox" data-qlaboff="${p.key}"${off[p.key] ? '' : ' checked'}> <b>${esc(p.lineName)}</b></label><em>${esc(p.lineDesc)}</em>
+        ${p.key === 'pack' && !off.pack ? `<label class="qb-labday">Pack-down day <input type="date" data-qpackdate value="${attr(quoteDraft.labourPackDate || '')}"></label>` : ''}
+        ${off[p.key] ? '' : `<label class="qb-labph"><input type="checkbox" data-qlabph="${p.key}"${ph[p.key] ? ' checked' : ''}> Public holiday</label>`}</span>
+      <span>${off[p.key] ? 'off' : esc(money(p.cents))}</span>
     </div>`).join('')}` : '';
   // crew & vehicles from Crew & Vehicles, totted up on their own (Max, 17 Oct 2026)
   const crewDays = Math.max(1, Math.round(quoteDraft.hire.days || 1));
@@ -6808,6 +6817,16 @@ function wireQuoteBuilder() {
       renderQuoteTotals();
       return;
     }
+    if (t.hasAttribute('data-qlaboff')) {   // setup / pack-down on or off
+      quoteDraft.labourOff = { ...(quoteDraft.labourOff || {}), [t.getAttribute('data-qlaboff')]: !t.checked };
+      renderQuoteTotals();
+      return;
+    }
+    if (t.hasAttribute('data-qpackdate')) {   // pack-down on its own day
+      quoteDraft.labourPackDate = t.value || '';
+      renderQuoteTotals();
+      return;
+    }
     if (t.hasAttribute('data-qlabph')) {
       quoteDraft.labourPH = { ...(quoteDraft.labourPH || {}), [t.getAttribute('data-qlabph')]: t.checked };
       renderQuoteTotals();
@@ -7021,6 +7040,8 @@ function quoteDraftForSave() {
     ...quoteDraft, lines,
     feeExcluded: quoteDraft.feeExcluded === true,
     labourExcluded: quoteDraft.labourExcluded === true,
+    labourOff: { setup: !!(quoteDraft.labourOff || {}).setup, pack: !!(quoteDraft.labourOff || {}).pack },
+    labourPackDate: quoteDraft.labourPackDate || '',
     delivery: { town: quoteDraft.deliveryTown || '', km },
   };
 }
