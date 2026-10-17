@@ -1483,3 +1483,49 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 @media screen and (max-width:600px){
     .ep-vs img{ height:110px; }
 }
+
+/* ==== ENTERTAINMENT TIDY (Max, 17 Oct 2026) ====
+   website: the 4 small tiles on the right are all the same height; Zed is the
+   big one - his photo fills the top and his words sit at the bottom.
+   print: cricket keeps its description (sideways layout so it fits). */
+@media screen and (min-width:861px){
+    .ep-ent{ grid-template-rows:repeat(4, 1fr) !important; align-items:stretch; }
+    .ep-ent-card:not(.ep-ent-band){ display:flex; flex-direction:column; justify-content:center; }
+    .ep-ent-castle{ flex-direction:row !important; }
+    .ep-ent-hosts{ display:grid !important; }
+    .ep-ent-band .ep-ent-photo{ flex:1 1 auto; aspect-ratio:auto; min-height:260px; height:auto; }
+    .ep-ent-band .ep-ent-band-text{ margin-top:auto; }
+    .ep-vs img{ height:120px; }
+}
+/* never split a word (DREGERNAUT-S) - shrink instead */
+.ep-ent-cricket h3{ overflow-wrap:normal !important; word-break:keep-all !important; hyphens:none; }
+@media screen{ .ep-ent-cricket h3{ font-size:clamp(1.5rem, 2.7vw, 2.3rem) !important; } }
+
+@media print{
+    .ep-ent-cricket p:last-child{ display:block !important; }
+    .ep-ent .ep-ent-card.ep-ent-cricket{ display:grid !important; grid-template-columns:30mm 1fr; grid-template-rows:auto auto 1fr; column-gap:3.5mm; align-content:center; padding:3mm 4.5mm !important; }
+    .ep-ent-cricket .ep-vs{ grid-column:1; grid-row:1 / span 3; display:flex; gap:1.5mm; margin:0; justify-content:center; }
+    .ep-ent-cricket .ep-vs img{ height:11mm; width:auto; }
+    .ep-ent-cricket .ep-vs span{ font-size:10pt; }
+    .ep-ent-cricket .ep-kicker{ grid-column:2; text-align:left; margin:0 0 .8mm !important; font-size:7pt !important; }
+    .ep-ent .ep-ent-card.ep-ent-cricket h3{ grid-column:2; font-size:10.5pt !important; white-space:normal; text-align:left; margin:0 0 .8mm !important; }
+    .ep-ent .ep-ent-card.ep-ent-cricket p:last-child{ grid-column:2; font-size:7.8pt !important; line-height:1.3; margin:0; }
+}
+/* tidy, round 2: compact cricket tile so all four right tiles stay a sensible height */
+@media screen and (min-width:861px){
+    .ep-ent-cricket{ padding:20px 24px !important; }
+    .ep-vs{ margin:4px 0 10px !important; }
+    .ep-vs img{ height:84px !important; }
+    .ep-vs span{ font-size:2.2rem !important; }
+    .ep-ent-cricket h3{ font-size:clamp(1.35rem, 2.2vw, 1.9rem) !important; margin:0 0 8px !important; }
+    .ep-ent-cricket p:last-child{ font-size:.95rem !important; margin:0; }
+    .ep-ent-band .ep-ent-photo{ object-position:30% 25%; min-height:0; }
+}
+@media print{
+    .ep-ent-cricket .ep-kicker{ letter-spacing:.1em !important; white-space:nowrap; }
+    .ep-ent-cricket .ep-vs{ gap:1mm !important; }
+    .ep-ent-cricket .ep-vs img{ height:9.5mm !important; }
+    .ep-ent-cricket .ep-vs span{ font-size:9pt !important; }
+    .ep-ent .ep-ent-card.ep-ent-cricket{ grid-template-columns:27mm 1fr !important; }
+}
+@media print{ .ep-ent-cricket .ep-vs{ justify-content:flex-start !important; overflow:visible; } .ep-ent .ep-ent-card.ep-ent-cricket{ padding-left:5.5mm !important; } }
