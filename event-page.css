@@ -1417,3 +1417,69 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 
 /* phones: the hero palm and long stall links poked past the screen edge (16 Oct 2026) */
 @media screen{ .ep-hero, .ep-hero-art{ overflow-x:clip; } .ep-mt a{ overflow-wrap:anywhere; word-break:break-word; } }
+
+/* ---- CRICKET TILE: Chargers v Dregernauts, 6pm (Max, 17 Oct 2026) ----
+   right column is now: hosts, Bottoms Bingo, cricket, jumping castle      */
+.ep-ent-band  { grid-row:1 / span 4 !important; }
+.ep-ent-hosts { grid-row:1 !important; }
+.ep-ent-bingo { grid-row:2 !important; }
+.ep-ent-cricket{ grid-column:2; grid-row:3; background:#fff; color:var(--ep-ink); }
+.ep-ent-castle{ grid-row:4 !important; }
+.ep-vs{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px; margin:4px 0 12px; }
+.ep-vs img{ width:100%; height:92px; object-fit:contain; }
+.ep-vs span{ font-family:var(--ep-poster-font); font-size:1.6rem; color:var(--ep-orange); }
+.ep-ent-cricket h3{ font-size:clamp(1.4rem, 2.6vw, 1.9rem) !important; }
+@media screen and (max-width:860px){
+    .ep-ent-band, .ep-ent-hosts, .ep-ent-bingo, .ep-ent-cricket, .ep-ent-castle{ grid-column:auto; grid-row:auto !important; }
+}
+@media print{
+    .ep-ent{ grid-template-rows:1fr 1fr 1fr 1fr !important; }
+    .ep-vs{ margin:1mm 0 2mm; gap:3mm; }
+    .ep-vs img{ height:16mm; }
+    .ep-vs span{ font-size:14pt; }
+    .ep-ent-cricket h3{ font-size:15pt !important; }
+}
+/* print: cricket tile laid out sideways (logos left, words right) so 4 tiles fit beside Zed */
+@media print{
+    .ep-ent .ep-ent-card.ep-ent-cricket{ display:grid !important; grid-template-columns:30mm 1fr; grid-template-rows:auto auto 1fr; column-gap:4mm; padding:3mm 5mm !important; align-content:center; }
+    .ep-ent-cricket .ep-vs{ grid-column:1; grid-row:1 / span 3; margin:0; gap:1.5mm; }
+    .ep-ent-cricket .ep-vs img{ height:12mm; }
+    .ep-ent-cricket .ep-vs span{ font-size:10pt; }
+    .ep-ent-cricket .ep-kicker{ grid-column:2; margin:0 0 1mm !important; }
+    .ep-ent-cricket h3{ grid-column:2; font-size:13pt !important; margin:0 0 1mm !important; }
+    .ep-ent-cricket p:last-child{ grid-column:2; font-size:8.5pt !important; line-height:1.3; margin:0; }
+    .ep-ent-card:not(.ep-ent-band){ padding:3mm 5mm !important; }
+    .ep-ent-card:not(.ep-ent-band) h3{ font-size:16pt !important; }
+    .ep-ent-castle .ep-castle-pic{ max-height:18mm; width:auto; }
+}
+@media print{
+    .ep-ent-cricket p:last-child{ display:none !important; }   /* print: logos + title only, it's a tight page */
+    .ep-ent-cricket .ep-vs img{ height:14mm; }
+    .ep-ent .ep-ent-card.ep-ent-cricket{ grid-template-columns:34mm 1fr; grid-template-rows:auto auto; }
+    .ep-ent-cricket h3{ font-size:15pt !important; }
+}
+@media print{ .ep-ent-cricket h3{ font-size:12.5pt !important; } .ep-ent .ep-ent-card.ep-ent-cricket{ grid-template-columns:31mm 1fr; } }
+/* print, final: stacked - time, small logos with VS, title on one line */
+@media print{
+    .ep-ent .ep-ent-card.ep-ent-cricket{ display:flex !important; flex-direction:column; justify-content:center; padding:3mm 5mm !important; }
+    .ep-ent-cricket .ep-vs{ display:flex; justify-content:center; align-items:center; gap:4mm; margin:1mm 0 1.5mm; }
+    .ep-ent-cricket .ep-vs img{ height:11mm; width:auto; }
+    .ep-ent-cricket h3{ font-size:12pt !important; white-space:nowrap; text-align:center; margin:0 !important; }
+    .ep-ent-cricket h3 br{ display:none; }
+    .ep-ent-cricket .ep-kicker{ text-align:center; }
+}
+@media print{ .ep-ent .ep-ent-card.ep-ent-cricket h3{ font-size:11.5pt !important; white-space:nowrap; text-align:center; margin:0 !important; } }
+
+/* cricket tile, bigger - Max's mock-up (17 Oct 2026). Screen only; print keeps its compact version */
+@media screen{
+    .ep-ent-cricket{ padding:28px 30px !important; }
+    .ep-ent-cricket .ep-kicker{ text-align:left; }
+    .ep-vs{ grid-template-columns:1fr auto 1fr; gap:18px; margin:10px 0 16px; }
+    .ep-vs img{ height:150px; }
+    .ep-vs span{ font-size:clamp(2.2rem, 4.2vw, 3rem); line-height:1; }
+    .ep-ent-cricket h3{ font-size:clamp(1.9rem, 3.6vw, 2.7rem) !important; line-height:.95; margin:0 0 12px; }
+    .ep-ent-cricket p:last-child{ font-size:1.05rem; line-height:1.45; }
+}
+@media screen and (max-width:600px){
+    .ep-vs img{ height:110px; }
+}

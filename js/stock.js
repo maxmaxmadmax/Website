@@ -46,6 +46,7 @@ export function pickItems(lines) {
   const byKey = {};
   (lines || []).forEach((l) => {
     if (!l || !['item', 'kit', 'custom'].includes(l.type)) return;
+    if (l.resType) return;   // crew & vehicles are not gear
     const qty = Math.max(0, Math.round(Number(l.qty) || 0));
     if (!qty) return;
     const name = String(l.name || '').replace(/ \(included\)$/i, '').trim();

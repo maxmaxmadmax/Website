@@ -4350,3 +4350,5 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 
 /* package discount line (worked out, not typed) */
 .qb-pkg-disc{ font-weight:600; margin-left:6px; }
+
+.qb-sys-tag.is-crew{ background:var(--ad-blue) !important; }

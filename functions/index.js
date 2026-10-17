@@ -2613,6 +2613,8 @@ function sanitizeQuote(q) {
     // a system part's place in Max's own order (System builder) - kept on quotes
     if (l.sysOrder != null && Number.isFinite(Number(l.sysOrder))) line.sysOrder = Math.max(0, Math.round(Number(l.sysOrder)));
     if (l.pkgId) line.pkgId = text(l.pkgId, 60);   // belongs to a package (itemised + package discount)
+    // CREW & VEHICLES (from Crew & Vehicles): their own subtotal, never gear
+    if (['staff', 'vehicle', 'trailer'].includes(l.resType)) { line.resType = l.resType; if (l.resourceId) line.resourceId = text(l.resourceId, 60); }
     return line;
   }).filter((l) => l.name || l.itemId);
 
@@ -2793,6 +2795,7 @@ function pickItems(lines) {
   const byKey = {};
   (lines || []).forEach((l) => {
     if (!l || !['item', 'kit', 'custom'].includes(l.type)) return;
+    if (l.resType) return;   // crew & vehicles are not gear to pack
     const qty = Math.max(0, Math.round(Number(l.qty) || 0));
     if (!qty) return;
     const name = String(l.name || '').replace(/ \(included\)$/i, '').trim();
@@ -2889,7 +2892,9 @@ exports.getPickList = onCall(async (request) => {
   inv.forEach((it) => { cat[it.id] = it.isSystem ? (it.bundleType === 'package' ? 'Packages' : 'Kits') : (it.category || ''); });   // kits & packages get their own groups
   const c = q.customer || {};
   const items = pickItems(q.lines).map((p) => ({ key: pickKey(p), name: p.name, qty: p.qty, category: cat[p.itemId] || p.category || 'Other' }));
-  const crew = (q.lines || []).filter((l) => l.type === 'labour').map((l) => ({ name: l.name || '', note: String(l.description || '').replace(/@.*$/, '').trim() }));
+  const crew = (q.lines || []).filter((l) => l.type === 'labour').map((l) => ({ name: l.name || '', note: String(l.description || '').replace(/@.*$/, '').trim() }))
+    // operators and vehicles booked on the job
+    .concat((q.lines || []).filter((l) => l.resType).map((l) => ({ name: (l.qty > 1 ? l.qty + ' × ' : '') + (l.name || ''), note: l.resType === 'staff' ? ((l.days || 1) + ' day' + ((l.days || 1) === 1 ? '' : 's')) : 'vehicle' })));
   const del = (q.lines || []).find((l) => l.type === 'delivery');
   return {
     number: q.invoiceNumber || q.number || '',
@@ -3263,6 +3268,12 @@ exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
         if (charged) full += r.unitCents * r.qty * days;
       });
     });
+    // crew in the package (Audio Operator...)
+    (Array.isArray(P.crewParts) ? P.crewParts : []).forEach((c) => {
+      const q2 = Math.max(1, Math.round(c.qty || 1));
+      lines.push({ type: 'custom', name: c.name || 'Crew', qty: q2, unitCents: Math.max(0, Math.round(c.dayRateCents || 0)), days, resType: ['staff', 'vehicle', 'trailer'].includes(c.type) ? c.type : 'staff', pkgId: P.id });
+      full += Math.max(0, Math.round(c.dayRateCents || 0)) * q2 * days;
+    });
     const target = Math.max(0, Math.round(P.priceCents || 0)) * days;
     if (target > 0 && full > target) lines.push({ type: 'discount', name: (P.name || 'Package') + ' - package discount', amountCents: full - target, pkgId: P.id });
   } else if (pkg) {
@@ -3328,7 +3339,7 @@ exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
       const rs = await db.collection('resources').where('type', '==', 'staff').limit(10).get();
       rs.forEach((x) => { const r = x.data(); if (r.active !== false && r.dayRateCents) techRate = Math.max(techRate, r.dayRateCents); });
     } catch (e) { /* default */ }
-    lines.push({ type: 'custom', name: 'On-site AV technician', qty: 1, unitCents: techRate, days });
+    lines.push({ type: 'custom', name: 'On-site AV technician', qty: 1, unitCents: techRate, days, resType: 'staff' });
   }
 
   // BOOKING & ADMIN FEE: 2% of everything before GST - same as the admin quote builder (Max, 16 Oct 2026)

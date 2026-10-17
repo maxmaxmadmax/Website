@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=465';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=465';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=475';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=475';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -99,6 +99,7 @@ function costBreakdown(lines, centsOf, categoryOf) {
   const sums = {};
   (lines || []).forEach((l) => {
     if (l.type === 'labour' || l.type === 'delivery' || l.type === 'discount' || l.type === 'fee') return;
+    if (l.resType) return;   // crew & vehicles: their own subtotal
     const c = centsOf(l);
     if (!c) return;
     const g = l.itemId ? costGroupOf(categoryOf(l)) : 'Other';
@@ -133,6 +134,10 @@ function sumBreakdown(q, days) {
   if (lab.length) {
     h += '<div class="qv-sumrow qv-sumpart"><span>Labour &ndash; setup &amp; pack-down' + (labHrs ? ' (' + labHrs + ' hr' + (labHrs === 1 ? '' : 's') + ')' : '') + '</span><span>' + money(labCents) + '</span></div>';
   }
+  const crewC = lines.filter((l) => l.resType === 'staff').reduce((t, l) => t + lineAmount(l, days), 0);
+  const vehC = lines.filter((l) => l.resType === 'vehicle' || l.resType === 'trailer').reduce((t, l) => t + lineAmount(l, days), 0);
+  if (crewC) h += '<div class="qv-sumrow qv-sumpart"><span>Crew &amp; operators</span><span>' + money(crewC) + '</span></div>';
+  if (vehC) h += '<div class="qv-sumrow qv-sumpart"><span>Vehicles</span><span>' + money(vehC) + '</span></div>';
   if (del.length) {
     h += '<div class="qv-sumrow qv-sumpart"><span>Delivery &amp; pickup</span><span>' + (delCents ? money(delCents) : 'Free') + '</span></div>';
   }
@@ -371,12 +376,16 @@ function proposalTop(q, days) {
   const town = String((q.delivery && q.delivery.town) || '').replace(/\s*\(local\)/i, '');
   const event = c.eventName || 'your event';
 
-  const tiles = groups.map((g) => g.name).concat(lab.length ? ['Crew'] : [])
+  const crewC = lines.filter((l) => l.resType === 'staff').reduce((t, l) => t + lineAmount(l, days), 0);
+  const vehC = lines.filter((l) => l.resType === 'vehicle' || l.resType === 'trailer').reduce((t, l) => t + lineAmount(l, days), 0);
+  const tiles = groups.map((g) => g.name).concat(lab.length || crewC ? ['Crew'] : [])
     .map((k) => '<div class="qp-tile">' + svgIcon(k) + '<b>' + esc(k) + '</b><span>' + esc(BLURB[k] || '') + '</span></div>').join('');
 
   // investment summary: each group ex GST / GST / inc GST
   const rows = groups.map((g) => [g.name + (g.name === 'Other' ? '' : ' production'), g.cents])
     .concat(lab.length ? [['Labour', labCents]] : [])
+    .concat(crewC ? [['Crew & operators', crewC]] : [])
+    .concat(vehC ? [['Vehicles', vehC]] : [])
     .concat(del.length ? [['Delivery & pickup', delCents]] : [])
     .concat(lines.filter((l) => l.type === 'fee').map((l) => [l.name || 'Booking & admin fee', lineAmount(l, days)]));
   const r = (label, ex) => '<tr><td>' + esc(label) + '</td><td>' + (ex ? money(ex) : 'Free') + '</td><td>' + (ex ? money(Math.round(ex * 0.1)) : '') + '</td><td>' + (ex ? money(Math.round(ex * 1.1)) : 'Free') + '</td></tr>';

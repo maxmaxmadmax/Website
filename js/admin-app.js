@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=465';
+} from './firebase-config.js?v=475';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=465';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=465';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=465';
-import { expandKit } from './kit.js?v=465';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=475';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=475';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=475';
+import { expandKit } from './kit.js?v=475';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -4754,6 +4754,7 @@ function openSystem(id, type) {
   clearPendingPhoto();
   sysDraft = sysDraftFrom(it, type);
   sysDraft.eventTypes = botEventTypes();
+  sysDraft.crewList = (state.resources || []).filter((r) => r.active !== false && r.name).map((r) => ({ id: r.id, name: r.name, dayRateCents: r.dayRateCents || 0, type: r.type || 'staff' }));
   state.openInvId = null;
   state.openSysId = it ? it.id : '__new__';
   render();
@@ -5957,7 +5958,15 @@ function quoteFromDoc(doc) {
     customer: { ...blankQuote().customer, ...(doc.customer || {}) },
     hire: { ...blankQuote().hire, ...(doc.hire || {}) },
     // Labour and delivery lines are recomputed live, so drop stored ones here.
-    lines: (doc.lines || []).filter((l) => l.type !== 'labour' && l.type !== 'delivery' && l.type !== 'fee').map((l) => ({ ...l })),
+    lines: (doc.lines || []).filter((l) => l.type !== 'labour' && l.type !== 'delivery' && l.type !== 'fee').map((l) => {
+      const c = { ...l };
+      if (c.type === 'custom' && !c.resType) {
+        const r = (state.resources || []).find((x) => x.name && String(x.name).trim().toLowerCase() === String(c.name || '').trim().toLowerCase());
+        if (r) { c.resType = r.type || 'staff'; c.resourceId = r.id; }
+        else if (/on-site av technician|operator/i.test(c.name || '')) c.resType = 'staff';
+      }
+      return c;
+    }),
     feeExcluded: doc.feeExcluded === true,
     discountCents: Math.max(0, Math.round(doc.discountCents || 0)),
     labourExcluded: doc.labourExcluded === true,
@@ -6348,6 +6357,7 @@ function costBreakdown(lines, centsOf, categoryOf) {
   const sums = {};
   (lines || []).forEach((l) => {
     if (l.type === 'labour' || l.type === 'delivery' || l.type === 'discount' || l.type === 'fee') return;
+    if (l.resType) return;   // crew & vehicles have their own subtotal
     const c = centsOf(l);
     if (!c) return;
     const g = l.itemId ? costGroupOf(categoryOf(l)) : 'Other';
@@ -6376,6 +6386,9 @@ function renderQuoteTotals() {
         <label class="qb-labph"><input type="checkbox" data-qlabph="${p.key}"${ph[p.key] ? ' checked' : ''}> Public holiday</label></span>
       <span>${esc(money(p.cents))}</span>
     </div>`).join('')}` : '';
+  // crew & vehicles from Crew & Vehicles, totted up on their own (Max, 17 Oct 2026)
+  const crewDays = Math.max(1, Math.round(quoteDraft.hire.days || 1));
+  const crewSum = (t) => (quoteDraft.lines || []).filter((l) => l.resType === t).reduce((n, l) => n + quoteLineCents(l, crewDays), 0);
   const delCents = quoteDeliveryCents(quoteDraft);
   // "Bowen (local)" is free, and says so (Max, 15 Oct 2026)
   const isLocal = /local/i.test(quoteDraft.deliveryTown || '');
@@ -6403,8 +6416,10 @@ function renderQuoteTotals() {
       const groups = costBreakdown(quoteDraft.lines, (l) => quoteLineCents(l, days), (l) => cats[l.itemId]);
       return groups.length ? '<div class="qb-sumhead">Equipment hire</div>' + groups.map((g) => '<div class="qb-sumrow qb-sumsub"><span>' + esc(g.name) + '</span><span>' + esc(money(g.cents)) + '</span></div>').join('') : '';
     })()}
-    <div class="qb-sumrow"><span>Hire subtotal (ex GST)</span><span id="qsum-sub">${esc(money(m.subtotalCents))}</span></div>
+    <div class="qb-sumrow"><span>Hire subtotal (ex GST)</span><span id="qsum-sub">${esc(money(m.subtotalCents - crewSum('staff') - crewSum('vehicle') - crewSum('trailer')))}</span></div>
     ${labourRow}
+    ${crewSum('staff') ? '<div class="qb-sumrow"><span>Crew &amp; operators</span><span>' + esc(money(crewSum('staff'))) + '</span></div>' : ''}
+    ${crewSum('vehicle') + crewSum('trailer') ? '<div class="qb-sumrow"><span>Vehicles</span><span>' + esc(money(crewSum('vehicle') + crewSum('trailer'))) + '</span></div>' : ''}
     ${deliveryRow}
     ${feeRow}
     <div class="qb-sumrow qb-sumdisc"><span>Discount</span>
@@ -6461,6 +6476,12 @@ function addPackageToQuote(pkg, byId, days) {
     quoteDraft.lines.push({ type: 'item', itemId: id, name: it.name, description: it.subtitle || '', qty: eff[id], unitCents: it.priceCents || 0, days, pkgId: pkg.id });
     quoteDraft.lines.push(...kitLinesFor(id, eff[id], byId, days));
   });
+  // crew in the package (Audio Operator...) - their own lines, under Crew & operators
+  ((pkg.systemParts || []).filter((p) => p && p.resourceId)).forEach((p) => {
+    const r = (state.resources || []).find((x) => x.id === p.resourceId) || (pkg.crewParts || []).find((x) => x.resourceId === p.resourceId) || {};
+    const type = ['staff', 'vehicle', 'trailer'].includes(r.type) ? r.type : 'staff';
+    quoteDraft.lines.push({ type: 'custom', name: r.name || 'Crew', qty: Math.max(1, p.qty || 1), unitCents: r.dayRateCents || 0, days, resourceId: p.resourceId, resType: type, pkgId: pkg.id });
+  });
   quoteDraft.lines.push({ type: 'discount', name: (pkg.name || 'Package') + ' - package discount', amountCents: 0, pkgId: pkg.id });
   syncPackageDiscounts();
 }
@@ -6478,7 +6499,7 @@ function syncPackageDiscounts() {
   L.forEach((l) => {
     if (l.type === 'item' || l.type === 'custom') cur = l.pkgId || null;
     else if (l.type !== 'kit') cur = null;
-    if (cur && (l.type === 'item' || l.type === 'kit')) full[cur] = (full[cur] || 0) + quoteLineCents(l, days);
+    if (cur && (l.type === 'item' || l.type === 'kit' || l.type === 'custom')) full[cur] = (full[cur] || 0) + quoteLineCents(l, days);
   });
   L.forEach((l) => {
     if (l.type !== 'discount' || !l.pkgId) return;
@@ -8595,13 +8616,13 @@ function quoteAddSearchList() {
   const inv = invSearchList().map((it) => ({ id: it.id, name: it.name, priceCents: it.priceCents, kind: 'item', sub: it.category || 'Gear', system: it.isSystem === true, bundle: it.bundleType }));
   const res = (state.resources || [])
     .filter((r) => r.active !== false && r.name)
-    .map((r) => ({ id: r.id, name: r.name, priceCents: r.dayRateCents || 0, kind: 'resource', sub: RES_TYPES[r.type] || 'Crew' }));
+    .map((r) => ({ id: r.id, name: r.name, priceCents: r.dayRateCents || 0, kind: 'resource', sub: RES_TYPES[r.type] || 'Crew', type: r.type || 'staff' }));
   return inv.concat(res);
 }
 
 function addResourceLineToQuote(res) {
   const days = Math.max(1, Math.round(quoteDraft.hire.days || 1));
-  quoteDraft.lines.push({ type: 'custom', name: res.name, qty: 1, unitCents: res.priceCents || 0, days, resourceId: res.id });
+  quoteDraft.lines.push({ type: 'custom', name: res.name, qty: 1, unitCents: res.priceCents || 0, days, resourceId: res.id, resType: ['staff', 'vehicle', 'trailer'].includes(res.type) ? res.type : 'staff' });
   renderQuoteLines();
 }
 

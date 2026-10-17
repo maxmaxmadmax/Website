@@ -16,7 +16,7 @@
 
    Pure HTML + wiring; admin-app.js hands in the items and does the saving.
    ========================================================================== */
-import { expandKit, resolveTotals } from './kit.js?v=465';
+import { expandKit, resolveTotals } from './kit.js?v=475';
 
 /* the working copy of the system being built */
 export function sysDraftFrom(item, type) {
@@ -36,7 +36,9 @@ export function sysDraftFrom(item, type) {
     priceTouched: !!it.id,   // an existing system keeps its price; a new one follows the parts
     // what Max picked (systemParts); older saves only have the de-duplicated requirements
     parts: (Array.isArray(it.systemParts) && it.systemParts.length ? it.systemParts : (it.requirements || []))
-      .filter((r) => r && r.itemId).map((r) => ({ itemId: r.itemId, qty: Math.max(1, r.qty || 1) })),
+      .filter((r) => r && (r.itemId || r.resourceId)).map((r) => (r.resourceId
+        ? { resourceId: r.resourceId, qty: Math.max(1, r.qty || 1) }      // crew (packages only)
+        : { itemId: r.itemId, qty: Math.max(1, r.qty || 1) })),
     search: '',
   };
 }
@@ -48,6 +50,10 @@ const W = (d) => (d.bundleType === 'package'
   : { one: 'kit', One: 'Kit', parts: 'Parts', sub: 'A rig made of other gear - one line on a quote',
       ph: 'e.g. FOH Kit', hint: 'Add the main gear above - cables and stands come along on their own.', make: 'build' });
 
+/* crew (from Crew & Vehicles) handed in by admin as d.crewList */
+const crewOf = (d, id) => (d.crewList || []).find((r) => r.id === id) || null;
+const crewRate = (d, id) => { const r = crewOf(d, id); return r ? Math.max(0, Math.round(r.dayRateCents || 0)) : 0; };
+
 const byIdOf = (items) => { const m = {}; items.forEach((i) => { m[i.id] = i; }); return m; };
 
 /* the numbers the panel shows. A part that another part ALREADY brings along
@@ -56,7 +62,8 @@ const byIdOf = (items) => { const m = {}; items.forEach((i) => { m[i.id] = i; })
 export function sysSummary(d, items) {
   const byId = byIdOf(items);
   const cart = {};
-  d.parts.forEach((p) => { if (byId[p.itemId]) cart[p.itemId] = (cart[p.itemId] || 0) + p.qty; });
+  d.parts.forEach((p) => { if (p.itemId && byId[p.itemId]) cart[p.itemId] = (cart[p.itemId] || 0) + p.qty; });
+  const crewCents = d.parts.filter((p) => p.resourceId).reduce((n, p) => n + crewRate(d, p.resourceId) * p.qty, 0);
   // how much of each part the OTHER parts already pull in
   const covered = {};
   Object.keys(cart).forEach((id) => {
@@ -69,7 +76,7 @@ export function sysSummary(d, items) {
   Object.keys(cart).forEach((id) => { const q = cart[id] - (covered[id] || 0); if (q > 0) eff[id] = q; });
   const kit = Object.keys(eff).length ? expandKit(eff, byId) : { base: [], required: [], addCents: 0, totals: {} };
   // what it would cost hired piece by piece (parts + any charged gear they bring)
-  const partsCents = kit.base.reduce((n, x) => n + x.lineCents, 0) + (kit.addCents || 0);
+  const partsCents = kit.base.reduce((n, x) => n + x.lineCents, 0) + (kit.addCents || 0) + crewCents;
   const tagAlong = kit.required.filter((r) => !eff[r.itemId]);
   // how many full kits (every lead and amp included) you own enough for
   let build = Infinity;
@@ -123,7 +130,7 @@ export function systemPanelHtml(d, items, h, cats) {
 
         <p class="sys-h">${w.parts}</p>
         <div class="sys-search">
-          <input class="ad-input" id="sys-search" placeholder="&#128269; Search ${d.bundleType === 'package' ? 'kits & gear' : 'gear'} to add..." value="${h.attr(d.search)}" autocomplete="off">
+          <input class="ad-input" id="sys-search" placeholder="&#128269; Search ${d.bundleType === 'package' ? 'kits, gear or crew' : 'gear'} to add..." value="${h.attr(d.search)}" autocomplete="off">
           <div class="sys-results" id="sys-results"></div>
         </div>
         <div id="sys-parts">${partsHtml(d, byId, h, s.covered)}</div>
@@ -163,6 +170,15 @@ export function systemPanelHtml(d, items, h, cats) {
 function partsHtml(d, byId, h, covered) {
   if (!d.parts.length) return '<p class="sys-empty">No parts yet.</p>';
   return d.parts.map((p, i) => {
+    if (p.resourceId) {
+      const r = crewOf(d, p.resourceId) || { name: '(crew member removed)' };
+      return `<div class="sys-part" data-sys-i="${i}">
+        <span class="qb-grip sys-grip" title="Drag to reorder">&#10303;</span>
+        <span class="sys-pname"><span class="qb-sys-tag is-crew">Crew</span>${h.esc(r.name)}<small>${h.esc(h.money(r.dayRateCents || 0))}/day</small></span>
+        <span class="sys-qty"><button type="button" data-sys-minus="${i}" aria-label="Less">&minus;</button><b>${p.qty}</b><button type="button" data-sys-plus="${i}" aria-label="More">+</button></span>
+        <span class="sys-own"></span>
+      </div>`;
+    }
     const it = byId[p.itemId] || { name: '(missing item)' };
     return `<div class="sys-part" data-sys-i="${i}">
         <span class="qb-grip sys-grip" title="Drag to reorder">&#10303;</span>
@@ -183,7 +199,11 @@ function resultsHtml(d, items, h) {
   const found = items.filter((it) => allowed(it) &&
     words.every((w) => [it.name, it.subtitle, it.category].join(' ').toLowerCase().includes(w)));
   const hits = found.filter((it) => it.isSystem).concat(found.filter((it) => !it.isSystem)).slice(0, 8);
+  const crew = d.bundleType === 'package' ? (d.crewList || []).filter((r) => words.every((w) => [r.name, r.type].join(' ').toLowerCase().includes(w))).slice(0, 4) : [];
+  const crewHtml = crew.map((r) => `<button type="button" data-sys-add="res:${h.attr(r.id)}"><span class="qb-sys-tag is-crew">Crew</span>${h.esc(r.name)}<small>${h.esc(h.money(r.dayRateCents || 0))}/day</small></button>`).join('');
+  if (!hits.length && crew.length) return crewHtml;
   if (!hits.length) return '<p class="sys-none">No gear matches.</p>';
+  if (crewHtml) return crewHtml + hits.map((it) => `<button type="button" data-sys-add="${h.attr(it.id)}">${it.isSystem ? '<span class="qb-sys-tag">Kit</span>' : ''}${h.esc(it.name)}<small>${h.esc(it.category || '')} &middot; ${h.esc(h.money(it.priceCents || 0))}/day</small></button>`).join('');
   return hits.map((it) => `<button type="button" data-sys-add="${h.attr(it.id)}">${it.isSystem ? '<span class="qb-sys-tag">Kit</span>' : ''}${h.esc(it.name)}<small>${h.esc(it.category || '')} &middot; ${h.esc(h.money(it.priceCents || 0))}/day</small></button>`).join('');
 }
 
@@ -262,9 +282,16 @@ export function wireSystemPanel(d, getItems, h, cats, act) {
   panel.addEventListener('click', (e) => {
     const add = e.target.closest('[data-sys-add]');
     if (add) {
-      const itemId = add.getAttribute('data-sys-add');
-      const ex = d.parts.find((p) => p.itemId === itemId);
-      if (ex) ex.qty++; else d.parts.push({ itemId, qty: 1 });
+      const v = add.getAttribute('data-sys-add');
+      if (v.startsWith('res:')) {   // crew member
+        const resourceId = v.slice(4);
+        const ex = d.parts.find((p) => p.resourceId === resourceId);
+        if (ex) ex.qty++; else d.parts.push({ resourceId, qty: 1 });
+      } else {
+        const itemId = v;
+        const ex = d.parts.find((p) => p.itemId === itemId);
+        if (ex) ex.qty++; else d.parts.push({ itemId, qty: 1 });
+      }
       d.search = '';
       redraw();
       return;
@@ -309,7 +336,9 @@ export function wireSystemPanel(d, getItems, h, cats, act) {
         quantityAvailable: s.build === Infinity ? 0 : s.build,
         quantityRepair: 0,
         // the parts, as INCLUDED required gear (no extra charge - the system price covers them)
-        systemParts: d.parts.map((p) => ({ itemId: p.itemId, qty: p.qty })),   // as picked, for editing
+        systemParts: d.parts.map((p) => (p.resourceId ? { resourceId: p.resourceId, qty: p.qty } : { itemId: p.itemId, qty: p.qty })),   // as picked, for editing
+        // crew in a package, with name + rate as they were (the bot reads this)
+        crewParts: d.parts.filter((p) => p.resourceId).map((p) => { const r = crewOf(d, p.resourceId) || {}; return { resourceId: p.resourceId, qty: p.qty, name: r.name || '', dayRateCents: r.dayRateCents || 0, type: r.type || 'staff' }; }),
         requirements: Object.keys(s.eff).map((id) => ({ itemId: id, rule: 'per-item', qty: s.eff[id], coversN: 1, charge: 'free', discountCents: 0 })),
       }).then(() => say('Saved.'), (err) => say((err && err.message) || 'Could not save.', true));
     }
