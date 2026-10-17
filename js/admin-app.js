@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=500';
+} from './firebase-config.js?v=502';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=500';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=500';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=500';
-import { expandKit } from './kit.js?v=500';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=502';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=502';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=502';
+import { expandKit } from './kit.js?v=502';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -603,6 +603,18 @@ function updateBotBadge() {
 /*  Quotes / invoices, live. Only re-render the list when it is on screen;
     while the builder is open the draft is edited off to the side, so a
     snapshot must not repaint over it.                                     */
+/*  ONE-OFF TIDY (Max, 17 Oct 2026): quotes Max made himself are quotes, not
+    estimates - only the website bot makes estimates. Any still sitting as an
+    estimate (status draft, not from the bot) is turned into a quote. Runs
+    once per admin session; anything further along is left alone.        */
+let promotedMine = false;
+function promoteMyEstimates() {
+  if (promotedMine) return;
+  promotedMine = true;
+  const mine = (state.quoteDocs || []).filter((q) => q.status === 'draft' && q.source !== 'bot' && q.createdBy !== 'bot');
+  mine.forEach((q) => { call('adminSetQuoteStatus', { id: q.id, status: 'approved' }).catch((e) => console.warn('promote', q.number, e)); });
+}
+
 function subscribeToQuoteDocs() {
   const { collection, onSnapshot, query, orderBy } = fb.f;
   unsubscribes.push(onSnapshot(
@@ -611,6 +623,7 @@ function subscribeToQuoteDocs() {
       state.quoteDocs = [];
       snap.forEach((d) => state.quoteDocs.push({ id: d.id, ...d.data() }));
       updateBotBadge();
+      promoteMyEstimates();
       if (state.pendingQuoteId && state.view === 'quoteDocs') { state.pendingQuoteId = null; routeFromHash(); render(); return; }
       if (state.view === 'quoteDocs' && !state.openQuoteId) render();
     },
@@ -6005,7 +6018,7 @@ function quoteEmailedLine(doc) {
 function quoteBuilderHtml() {
   const isNew = state.openQuoteId === '__new__';
   const doc = currentQuoteDoc();
-  const status = doc ? doc.status : 'draft';
+  const status = doc ? doc.status : 'approved';   // a new one Max makes is a quote, not an estimate
   const isInvoice = doc && doc.kind === 'invoice';
   const docWord = isInvoice ? 'Tax Invoice' : (status === 'draft' ? 'Estimate' : 'Quote');
   const num = doc ? (isInvoice && doc.invoiceNumber ? doc.invoiceNumber : doc.number) : 'New';

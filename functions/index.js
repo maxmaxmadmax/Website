@@ -2662,7 +2662,8 @@ exports.adminSaveQuote = onCall(async (request) => {
   const token = crypto.randomBytes(16).toString('hex');
 
   const ref = await db.collection('quotes').add({
-    number, token, status: 'draft', ...clean, ...money,
+    // made by Max in admin = a QUOTE straight away; only the website bot makes estimates (Max, 17 Oct 2026)
+    number, token, status: 'approved', approvedAt: FieldValue.serverTimestamp(), ...clean, ...money,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
     createdBy: (request.auth.token && request.auth.token.email) || request.auth.uid,
