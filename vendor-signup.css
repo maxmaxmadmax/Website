@@ -2792,3 +2792,14 @@
 /* poster cards: lift the "Accepting vendors" badge above the sponsor strip */
 .vs-event[data-poster] .vs-event-status{ top:calc(100% + 14px); bottom:auto; left:16px; z-index:2; }
 .vs-event[data-poster] .vs-event-body{ padding-top:52px; }
+
+/* SOLD OUT vendor types (automatic, from the site map) */
+.vs-type{ position:relative; }
+.vs-type.is-soldout{ opacity:.55; cursor:not-allowed; filter:grayscale(.6); }
+.vs-type.is-soldout:hover{ transform:none; box-shadow:none; }
+.vs-type-soldout{ position:absolute; top:14px; right:14px; background:#e3141b; color:#fff; padding:4px 10px; border-radius:6px; font-family:'Arial Black', Impact, sans-serif; font-weight:900; font-size:.8rem; letter-spacing:.06em; text-transform:uppercase; transform:rotate(6deg); }
+.vs-soldout-word{ color:#e3141b; text-transform:uppercase; letter-spacing:.04em; }
+.vs-type.is-soldout{ opacity:1 !important; filter:none !important; }
+.vs-type.is-soldout > *:not(.vs-type-soldout){ opacity:.45; filter:grayscale(1); }
+.vs-type-soldout{ top:-10px !important; right:-6px !important; font-size:.85rem !important; padding:6px 12px !important; box-shadow:0 3px 8px rgba(0,0,0,.25); z-index:2; }
+.vs-type-soldout{ top:auto !important; bottom:16px !important; right:16px !important; }

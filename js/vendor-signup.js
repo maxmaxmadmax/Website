@@ -23,9 +23,9 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=494';
+} from './firebase-config.js?v=497';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=494';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=497';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -300,6 +300,15 @@ async function loadEvents() {
 
     state.eventsLoaded = true;
     renderEvents();
+
+    // which vendor types have sold out, per open event (for the poster sticker)
+    Promise.all(state.events.filter((ev) => ev.status === 'open').map(async (ev) => {
+      try {
+        const ss = await getDocs(collection(fb.db, 'events', ev.id, 'sites'));
+        const sites = []; ss.forEach((d) => sites.push(d.data()));
+        ev.soldOut = soldOutOf(sites);
+      } catch (e) { /* no sticker */ }
+    })).then(() => renderEvents());
   } catch (err) {
     console.error('events', err);
 
@@ -383,12 +392,37 @@ function renderEvents() {
     admin shows its poster instead, full height, when we have one here.  */
 const EVENT_POSTERS = [
   { match: (ev) => /eatz/i.test(ev.name || '') && String(ev.dateISO || '').startsWith('2026-10-31'),
-    url: '/images/events/eatz-beatz-halloween-2026-v3.webp',
-    sticker: 'Food vans<br>sold out' },   // Max, 17 Oct 2026 - market stalls still open
+    url: '/images/events/eatz-beatz-halloween-2026-v3.webp' },
 ];
+
+/*  SOLD OUT, AUTOMATICALLY (Max, 17 Oct 2026). A vendor type is sold out
+    when the event has sites of that type and none is free - every one is
+    booked or closed. A site on a hold that has run out counts as free
+    again. Holds still running don't make it "sold out" (they may let go). */
+function siteFree(site) {
+  const st = site.status || 'available';
+  if (st === 'available') return true;
+  if (st === 'held') {
+    const e = site.holdExpiresAt;
+    const ms = e && typeof e.toMillis === 'function' ? e.toMillis() : (typeof e === 'number' ? e : null);
+    return ms !== null && ms <= Date.now();
+  }
+  return false;
+}
+function soldOutOf(sites) {
+  const out = {};
+  ['food', 'market'].forEach((t) => {
+    const of = (sites || []).filter((x) => x.type === t);
+    out[t] = of.length > 0 && !of.some((x) => siteFree(x) || x.status === 'held');
+  });
+  return out;
+}
+const TYPE_WORD = { food: 'Food vans', market: 'Market stalls' };
 function eventSticker(ev) {
-  const p = ev && EVENT_POSTERS.find((x) => x.match(ev));
-  return p && p.sticker ? '<span class="vs-event-sticker">' + p.sticker + '</span>' : '';
+  const so = (ev && ev.soldOut) || {};
+  if (so.food && so.market) return '<span class="vs-event-sticker">Sold out</span>';
+  const t = so.food ? 'food' : (so.market ? 'market' : '');
+  return t ? '<span class="vs-event-sticker">' + TYPE_WORD[t] + '<br>sold out</span>' : '';
 }
 function eventArt(ev) {
   if (ev && ev.image) return ' style="--vs-ev-art:url(\'' + escapeHtml(ev.image) + '\')"';
@@ -610,6 +644,10 @@ function subscribeSites() {
       const sites = [];
       snap.forEach((d) => sites.push({ id: d.id, ...d.data() }));
       sites.sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
+      state.soldOut = soldOutOf(sites);
+      if (state.event) state.event.soldOut = state.soldOut;
+      renderSoldOut();
+      renderPicked();
       map.setLayout({ sites });
       renderMapMeta();
 
@@ -1643,13 +1681,13 @@ function renderPicked() {
 
     '<div class="vs-picked-fact">' +
       '<p class="vs-picked-label">Food vendor</p>' +
-      '<strong>' + money(PRICE.foodCents) + ' / bay</strong>' +
+      ((state.soldOut || {}).food ? '<strong class="vs-soldout-word">Sold out</strong>' : '<strong>' + money(PRICE.foodCents) + ' / bay</strong>') +
       '<span>6 m &times; 3 m per bay</span>' +
     '</div>' +
 
     '<div class="vs-picked-fact">' +
       '<p class="vs-picked-label">Market stall</p>' +
-      '<strong>' + money(PRICE.marketPerBayCents) + ' / bay</strong>' +
+      ((state.soldOut || {}).market ? '<strong class="vs-soldout-word">Sold out</strong>' : '<strong>' + money(PRICE.marketPerBayCents) + ' / bay</strong>') +
       '<span>3 m &times; 3 m per bay<br>(up to 8 adjoining bays)</span>' +
     '</div>' +
 
@@ -2134,10 +2172,35 @@ function renderReview() {
 /* -------------------------------------------------------------------------
    Static wiring
    ------------------------------------------------------------------------- */
+/*  The vendor-type cards: a sold-out type is stamped SOLD OUT and can't be
+    chosen. If it was already chosen (a returning vendor), it is cleared.  */
+function renderSoldOut() {
+  const so = state.soldOut || {};
+  document.querySelectorAll('[data-vendor-type]').forEach((btn) => {
+    const t = btn.getAttribute('data-vendor-type');
+    const out = !!so[t];
+    btn.classList.toggle('is-soldout', out);
+    btn.disabled = out;
+    btn.setAttribute('aria-disabled', out ? 'true' : 'false');
+    let stamp = btn.querySelector('.vs-type-soldout');
+    if (out && !stamp) {
+      stamp = document.createElement('span');
+      stamp.className = 'vs-type-soldout';
+      stamp.textContent = 'Sold out';
+      btn.appendChild(stamp);
+    } else if (!out && stamp) stamp.remove();
+  });
+  if (state.vendorType && so[state.vendorType] && !(state.siteIds && state.siteIds.length)) {
+    state.vendorType = null;
+    document.querySelectorAll('[data-vendor-type]').forEach((b) => b.classList.remove('is-selected'));
+  }
+}
+
 function wireStaticControls() {
   // vendor type
   document.querySelectorAll('[data-vendor-type]').forEach((btn) => {
     btn.addEventListener('click', () => {
+      if ((state.soldOut || {})[btn.getAttribute('data-vendor-type')]) return;   // sold out
       state.vendorType = btn.getAttribute('data-vendor-type');
 
         document.querySelectorAll('[data-vendor-type]').forEach((b) => {
