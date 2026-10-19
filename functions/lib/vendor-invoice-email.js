@@ -67,7 +67,7 @@ function html(d) {
         <p style="margin:0 0 6px;font-size:15px;font-weight:bold;color:#ff6b00;">Help us promote the event</p>
         <p style="margin:0;font-size:14px;color:#ddd;line-height:1.6;">
           A bigger crowd means more sales for every stall. Your guide includes the event poster, the A4 program
-          and share links &mdash; please post them on your socials, share them with your customers and pop the poster up at your stall.
+          and share links &mdash; please post them on your socials, share them with your customers and pop the poster up and help us advertise.
         </p>
       </div>
       <p style="margin:0;font-size:13px;color:#666;line-height:1.6;">
@@ -95,7 +95,7 @@ function text(d) {
     '',
     `Your tax invoice, event details and vendor instructions: ${d.link}`,
     '',
-    'HELP US PROMOTE THE EVENT - a bigger crowd means more sales for every stall. Your guide includes the event poster, the A4 program and share links. Please post them on your socials, share them with your customers and pop the poster up at your stall.',
+    'HELP US PROMOTE THE EVENT - a bigger crowd means more sales for every stall. Your guide includes the event poster, the A4 program and share links. Please post them on your socials, share them with your customers and pop the poster up and help us advertise.',
     '',
     `${SELLER.name} - ${SELLER.email} - ${SELLER.site}`,
   ].join('\n');
