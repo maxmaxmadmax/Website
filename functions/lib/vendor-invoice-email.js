@@ -63,6 +63,13 @@ function html(d) {
       <p style="text-align:center;margin:0 0 22px;">
         <a href="${esc(d.link)}" style="display:inline-block;background:#ff6b00;color:#fff;text-decoration:none;font-weight:bold;font-size:15px;padding:13px 26px;border-radius:10px;">View your invoice &amp; event guide &rarr;</a>
       </p>
+      <div style="background:#111;border-radius:10px;padding:16px 20px;margin:0 0 20px;">
+        <p style="margin:0 0 6px;font-size:15px;font-weight:bold;color:#ff6b00;">Help us promote the event</p>
+        <p style="margin:0;font-size:14px;color:#ddd;line-height:1.6;">
+          A bigger crowd means more sales for every stall. Your guide includes the event poster, the A4 program
+          and share links &mdash; please post them on your socials, share them with your customers and pop the poster up at your stall.
+        </p>
+      </div>
       <p style="margin:0;font-size:13px;color:#666;line-height:1.6;">
         You can print it or save it as a PDF from that page. Or paste this link into your browser:<br>
         <a href="${esc(d.link)}" style="color:#ff6b00;word-break:break-all;">${esc(d.link)}</a>
@@ -87,6 +94,8 @@ function text(d) {
     `Total paid (incl GST): ${money(d.totalCents)}   Invoice ${d.invoiceNumber}`,
     '',
     `Your tax invoice, event details and vendor instructions: ${d.link}`,
+    '',
+    'HELP US PROMOTE THE EVENT - a bigger crowd means more sales for every stall. Your guide includes the event poster, the A4 program and share links. Please post them on your socials, share them with your customers and pop the poster up at your stall.',
     '',
     `${SELLER.name} - ${SELLER.email} - ${SELLER.site}`,
   ].join('\n');
