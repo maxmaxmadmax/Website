@@ -1599,3 +1599,16 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-page-3 .ep-head{ margin-bottom:var(--g) !important; }
     .ep-page-3 .ep-times-poster .ep-h2{ margin-bottom:var(--g) !important; }
 }
+
+/* A4 page 3: the schedule now has 8 rows (cricket, Whitsunday Autos demo, event concludes),
+   so the rows are slimmer and Zed's photo a little shorter to keep everything on the page (Max, 19 Oct 2026) */
+@media print{
+    .ep-page-3 .ep-times{ gap:1.6mm !important; }
+    .ep-page-3 .ep-times li{ padding:.9mm 4mm !important; font-size:9.6pt !important; line-height:1.15; }
+    .ep-page-3 .ep-times b{ min-width:19mm !important; }
+    .ep-page-3 .ep-times small{ font-size:7.2pt !important; margin-left:2mm; }
+    .ep-page-3 .ep-times-poster{ margin-top:3mm !important; }
+    .ep-page-3 .ep-times-poster .ep-h2{ font-size:17pt !important; margin-bottom:1.5mm !important; }
+    .ep-page-3 .ep-ent-photo{ height:38mm !important; }
+}
+@media print{ .ep-page-3 .ep-ent-band .ep-ent-photo{ flex:1 1 auto !important; height:auto !important; min-height:38mm !important; } }
