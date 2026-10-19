@@ -42,12 +42,23 @@ body.vi-page .qp-legal, body.vi-page .qp-legal *{ font-family:Arial,Helvetica,sa
 @media (max-width:480px){ .vi-cards{ grid-template-columns:1fr; } }
 
 /* BRING YOUR CROWD: two equal cards, buttons lined up at the bottom */
-.vi-share-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px; }
+.vi-share-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:16px; }
+.vi-share-btns{ margin-top:auto; display:flex; flex-wrap:wrap; gap:8px; }
+.vi-share-btns .qv-btn{ text-decoration:none; text-align:center; }
+@media (max-width:900px){ .vi-share-grid{ grid-template-columns:1fr 1fr; } }
 .vi-share-card{ display:flex; flex-direction:column; border:1px solid #e6e6e9; border-radius:12px; padding:16px 18px; background:#fff; }
 .vi-share-note{ margin:0 0 8px; font-size:14px; line-height:1.5; color:#444; }
 .vi-share-link{ margin:0 0 14px; font-size:13px; font-weight:700; color:#ff6b00; word-break:break-all; }
 .vi-share-card .qv-btn{ margin-top:auto; align-self:flex-start; }
 @media (max-width:640px){ .vi-share-grid{ grid-template-columns:1fr; } }
+
+/* Instagram follow bar under the share cards */
+.vi-ig{ display:flex; align-items:center; gap:14px; margin-top:14px; padding:14px 18px; border-radius:12px; background:#111; color:#fff; }
+.vi-ig svg{ width:30px; height:30px; flex:none; fill:none; stroke:#ff6b00; stroke-width:1.8; }
+.vi-ig p{ margin:0; flex:1; font-size:14px; line-height:1.45; color:#ddd; }
+.vi-ig b{ color:#fff; }
+.vi-ig .qv-btn{ text-decoration:none; flex:none; }
+@media (max-width:640px){ .vi-ig{ flex-wrap:wrap; } }
 
 @media print{
   @page :first{ margin:0; }
@@ -78,13 +89,17 @@ body.vi-page .qp-legal, body.vi-page .qp-legal *{ font-family:Arial,Helvetica,sa
   body.vi-page .qp-share .qp-sub{ font-size:9pt !important; margin:0 0 2mm !important; }
   body.vi-page .qp-share .qp-inv-extra{ margin-top:3mm !important; gap:6mm !important; }
   body.vi-page .qv-wrap .qp-share .qv-btn{ display:none !important; }
-  body.vi-page .vi-share-grid{ grid-template-columns:1fr 1fr !important; }
+  body.vi-page .vi-share-grid{ grid-template-columns:repeat(3,1fr) !important; }
+  body.vi-page .vi-share-btns, body.vi-page .vi-ig .qv-btn{ display:none !important; }
+  body.vi-page .vi-ig{ margin-top:3mm !important; padding:3mm 4mm !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body.vi-page .vi-ig p{ font-size:9pt !important; }
   body.vi-page .qp-share > .qp-sub{ display:none !important; } body.vi-page .vi-share-grid{ margin-top:2mm !important; } body.vi-page .vi-share-link{ margin:0 !important; }
-  body.vi-page .vi-share-card{ padding:3mm 4mm; } body.vi-page .vi-share-note{ font-size:9pt; }
+  body.vi-page .vi-share-card{ padding:2.5mm 3.5mm; } body.vi-page .vi-share-note{ font-size:8.5pt; line-height:1.35; margin-bottom:1.5mm; }
   /* pages 4-5: terms in two columns */
-  body.vi-page .qv-wrap .qp-terms{ break-before:avoid !important; margin-top:6mm !important; }
+  body.vi-page .qv-wrap .qp-terms{ break-before:avoid !important; margin-top:3mm !important; }
+  body.vi-page .qp-legal summary{ padding:2mm 3mm !important; } body.vi-page .qp-legal-body{ padding:2mm 0 0 !important; }
   body.vi-page .qp-legal-body{ max-height:none !important; overflow:visible !important; column-count:2; column-gap:8mm; background:#fff !important; }
   body.vi-page .qp-term, body.vi-page .qp-legal{ break-inside:auto !important; }
   body.vi-page .qp-legal-clause{ break-inside:auto; }
-  body.vi-page .qp-legal-body p, body.vi-page .qp-legal-body li{ font-size:8pt !important; line-height:1.32 !important; }
+  body.vi-page .qp-legal-body p, body.vi-page .qp-legal-body li{ font-size:7.6pt !important; line-height:1.28 !important; }
 }

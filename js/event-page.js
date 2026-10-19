@@ -33,6 +33,8 @@
     /* ---- 2. Print ---- */
     var print = document.getElementById('ep-print');
     if (print) print.addEventListener('click', function () { window.print(); });
+    // ?print=1 opens the print / save-as-PDF box straight away (link from the vendor invoice page)
+    if (/[?&]print=1/.test(location.search)) window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 800); });
 
     /* ---- 3. Vendors ---- */
     var food = document.getElementById('ep-food');

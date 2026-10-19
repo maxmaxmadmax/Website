@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=556';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=556';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=556';
+import { termBodyHtml } from './terms-data.js?v=557';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=557';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=557';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -155,6 +155,12 @@ const SHARE_VENDORS = {
   url: 'https://www.soundzgood.com.au/vendor-signup',
   text: "We're trading at Eatz & Beatz Halloween Edition in Bowen on Sat 31 Oct - you should grab a stall too! Book your site here:",
 };
+/*  Printables for their stall: the poster and the A4 program. */
+const POSTER_URL = '/images/events/eatz-beatz-halloween-2026-v3.webp';
+const PROGRAM_URL = '/eatz-beatz-halloween-2026?print=1';
+
+const INSTAGRAM_URL = 'https://www.instagram.com/soundzgood_events/';
+
 const shortUrl = (u) => u.replace('https://', '').replace('www.', '');
 function shareText(s, d) {
   return s.text.replace('{biz}', (d && d.business.name) || 'us')
@@ -172,8 +178,17 @@ function shareHtml(d) {
     + '<div class="vi-share-grid">'
     + card('event', 'Tell your customers', 'Post it on your socials, add it to your stories or pop it in your next newsletter. We&rsquo;ll include your stall'
       + (d && d.siteLabel ? ' number (site ' + esc(d.siteLabel) + ')' : '') + ' so they can find you.', SHARE_EVENT.url, 'Share the event')
+    + '<div class="vi-share-card"><p class="qp-mini">Share the promo material</p>'
+      + '<p class="vi-share-note">Please post the poster and program on your socials and in your local groups. Print them too &mdash; pop the poster up at your stall, counter or shop window so customers know what&rsquo;s on.</p>'
+      + '<p class="vi-share-link">Poster &middot; A4 program</p>'
+      + '<div class="vi-share-btns"><a class="qv-btn qv-btn-primary" href="' + POSTER_URL + '" download="Eatz-and-Beatz-poster.webp" target="_blank" rel="noopener">Download poster</a>'
+      + '<a class="qv-btn qv-btn-ghost" style="color:#111;border-color:#111;background:#fff" href="' + PROGRAM_URL + '" target="_blank" rel="noopener">Print A4 program</a></div></div>'
     + card('vendors', 'Invite another vendor', 'Know a food van, maker or local business that would love a spot? Sites are limited &mdash; send them the vendor page to book.', SHARE_VENDORS.url, 'Share with a vendor')
-    + '</div><p class="qv-msg" id="vi-share-msg" hidden></p></section>';
+    + '</div>'
+    + '<div class="vi-ig"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>'
+      + '<p><b>Follow us on Instagram &mdash; @soundzgood_events</b><br>All the latest updates for this event, plus our upcoming events.</p>'
+      + '<a class="qv-btn qv-btn-primary" href="' + INSTAGRAM_URL + '" target="_blank" rel="noopener">Follow us</a></div>'
+    + '<p class="qv-msg" id="vi-share-msg" hidden></p></section>';
 }
 
 function wireShare(d) {
