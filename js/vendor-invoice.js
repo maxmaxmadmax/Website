@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=557';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=557';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=557';
+import { termBodyHtml } from './terms-data.js?v=558';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=558';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=558';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -218,8 +218,6 @@ function top(d) {
   const included = [
     esc(siteLabel) + (d.siteLabel ? ' &mdash; site ' + esc(d.siteLabel) : '') + (d.categoryName ? ' &middot; ' + esc(d.categoryName) : ''),
     esc(ev.venue || 'The event venue') + (ev.dateLabel ? ' &middot; ' + esc(ev.dateLabel) : ''),
-    'Booking &amp; admin',
-    'GST included in the total',
   ];
 
   return `
