@@ -222,7 +222,10 @@ function editorHtml(ctx, ev) {
       <div class="ms-title"><h1>${h.esc(m.name)}</h1><span class="ms-chip ms-${tone}">${h.esc(label)}</span></div>
       <div class="ms-sentence">Sends each vendor their <b>tax invoice &amp; event guide</b> the moment they pay. ${all.filter((b) => b.invoiceEmailedAt).length} of ${all.length} paid vendors have it.</div>
       <div class="ad-card ms-card ms-pad">
-        <p>This is the email you approved earlier &mdash; the wording lives in the invoice email itself, and the guide page holds the invoice, map and promo material.</p>
+        <p class="ms-prev-h" id="ms-sys-h">Loading the email&hellip;</p>
+        <p class="ms-sys-subj" id="ms-sys-subj"></p>
+        <iframe class="ms-sys-frame" id="ms-sys-frame" title="Email preview"></iframe>
+        <p class="ms-sys-link" id="ms-sys-link"></p>
         <div class="ms-actions">
           <button type="button" class="ad-btn" data-ms-act="test">Test to me</button>
           ${m.status === 'paused'
@@ -321,6 +324,21 @@ export function wireMessages(ctx) {
     call('adminMessagesSeed', { eventId: state.activeEventId })
       .catch((e) => window.alert(e.message || 'Could not add the starter messages.'))
       .finally(() => { state.msgSeeding = false; });
+  }
+
+  // the invoice email: fetch the real thing (as the first paid vendor got it)
+  const frame = document.getElementById('ms-sys-frame');
+  if (frame) {
+    call('adminMessagePreview', { id: state.msgOpen }).then((r) => {
+      const hEl = document.getElementById('ms-sys-h');
+      if (hEl) hEl.textContent = 'Exactly what ' + (r.vendor || 'a vendor') + ' received';
+      const sEl = document.getElementById('ms-sys-subj');
+      if (sEl) sEl.textContent = 'Subject: ' + r.subject;
+      frame.srcdoc = r.html;
+      frame.onload = () => { try { frame.style.height = frame.contentDocument.documentElement.scrollHeight + 'px'; } catch (e) { /* ignore */ } };
+      const l = document.getElementById('ms-sys-link');
+      if (l) { l.innerHTML = ''; const a = document.createElement('a'); a.href = r.link; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Open their invoice & event guide page →'; l.appendChild(a); }
+    }).catch((e) => { const hEl = document.getElementById('ms-sys-h'); if (hEl) hEl.textContent = e.message || 'Could not load the preview.'; });
   }
 
   const prev = document.getElementById('ms-prev');

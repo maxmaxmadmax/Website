@@ -124,4 +124,9 @@ async function sendVendorInvoiceEmail(d) {
   }
 }
 
-module.exports = { sendVendorInvoiceEmail };
+/*  For the admin Messages page preview: the exact subject + HTML a vendor gets. */
+function renderVendorInvoiceEmail(d) {
+  return { subject: `Your tax invoice & event guide - ${d.eventName || 'Eatz & Beatz'}`, html: html(d) };
+}
+
+module.exports = { sendVendorInvoiceEmail, renderVendorInvoiceEmail };

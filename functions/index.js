@@ -3499,7 +3499,7 @@ exports.eventLineup = onRequest({ cors: true }, async (req, res) => {
 
    NOTHING IS SENT AUTOMATICALLY. Max previews one, then says go.
    ------------------------------------------------------------------------- */
-const { sendVendorInvoiceEmail } = require('./lib/vendor-invoice-email');
+const { sendVendorInvoiceEmail, renderVendorInvoiceEmail } = require('./lib/vendor-invoice-email');
 
 function bookingIsPaid(b) {
   return b.status === 'confirmed' || b.paymentStatus === 'paid' || b.paymentStatus === 'free';
@@ -3980,4 +3980,29 @@ exports.vendorUnsubscribe = onRequest(async (req, res) => {
   if (snap.empty) return page('That link is not valid.');
   await snap.docs[0].ref.update({ promoOptOut: true, promoOptOutAt: FieldValue.serverTimestamp() });
   return page('You have been unsubscribed from event news.');
+});
+
+/*  Preview of the invoice-on-payment email, exactly as the first paid vendor
+    got it - shown on the Messages page (Max, 19 Oct 2026). Sends nothing.  */
+exports.adminMessagePreview = onCall(async (request) => {
+  requireAdmin(request);
+  const ref = db.collection('messages').doc(String((request.data || {}).id || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'No such message.');
+  const m = snap.data();
+  const list = await messageRecipients({ ...m, who: 'all', promo: false });
+  if (!list.length) throw new HttpsError('failed-precondition', 'No paid vendors yet to show it with.');
+  const b = list[0].data();
+  const inv = await ensureVendorInvoice(list[0].id);
+  const evSnap = await db.collection('events').doc(m.eventId).get();
+  const ev = evSnap.exists ? evSnap.data() : {};
+  const biz = b.business || {};
+  const link = SITE_URL + '/vendor-invoice?t=' + inv.token;
+  const out = renderVendorInvoiceEmail({
+    link, invoiceNumber: inv.invoiceNumber,
+    totalCents: b.totalCents != null ? b.totalCents : (b.amountCents || 0),
+    businessName: biz.name || '', contactName: biz.contactName || '',
+    eventName: ev.name || '', eventDate: ev.dateLabel || '',
+  });
+  return { ...out, vendor: biz.name || '', link };
 });
