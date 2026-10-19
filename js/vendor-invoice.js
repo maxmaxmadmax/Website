@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=548';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=548';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=548';
+import { termBodyHtml } from './terms-data.js?v=549';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=549';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=549';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -112,6 +112,41 @@ function documentsHtml(d) {
     + '</ul></div>';
 }
 
+/*  HELP US SPREAD THE WORD: the event page for their own followers and the
+    vendor page for other vendors. Change these for another event.        */
+const SHARE_EVENT = {
+  url: 'https://www.soundzgood.com.au/eatz-beatz-halloween-2026',
+  text: 'Come and see us at Eatz & Beatz Halloween Edition - Sat 31 Oct, 4:30-9:30pm, Bowen Sports Complex. Free entry, live music, food, markets and a licensed bar!',
+};
+const SHARE_VENDORS = {
+  url: 'https://www.soundzgood.com.au/vendor-signup',
+  text: 'Market stalls are open for Eatz & Beatz Halloween Edition - Sat 31 Oct, Bowen Sports Complex. Know another vendor? Book a stall here.',
+};
+
+function shareHtml() {
+  const card = (key, title, note, btn) => '<div class="qp-incl"><p class="qp-mini">' + title + '</p><p class="qp-sub" style="margin:0 0 10px">' + note + '</p>'
+    + '<button type="button" class="qv-btn qv-btn-primary" data-share="' + key + '">' + btn + '</button></div>';
+  return '<style>@media print{.qp-share .qv-btn{display:none}}</style><section class="qp-sec qp-share"><p class="qp-eyebrow">Help us spread the word</p>'
+    + '<h2 class="qp-h2">Promote your night</h2>'
+    + '<p class="qp-sub">A bigger crowd is good for every stall. Please share Eatz &amp; Beatz with your customers and followers &mdash; and with other vendors who might want a spot.</p>'
+    + '<div class="qp-inv-extra">'
+    + card('event', 'Share the event', 'Send your customers and followers the event page: ' + esc(SHARE_EVENT.url), 'Share the event')
+    + card('vendors', 'Invite other vendors', 'Know a food or market business that would love it? Send them the vendor page: ' + esc(SHARE_VENDORS.url), 'Share with other vendors')
+    + '</div><p class="qv-msg" id="vi-share-msg" hidden></p></section>';
+}
+
+function wireShare() {
+  document.querySelectorAll('[data-share]').forEach((btn) => btn.addEventListener('click', async () => {
+    const s = btn.getAttribute('data-share') === 'vendors' ? SHARE_VENDORS : SHARE_EVENT;
+    const msg = document.getElementById('vi-share-msg');
+    try {
+      if (navigator.share) { await navigator.share({ title: 'Eatz & Beatz', text: s.text, url: s.url }); return; }
+      await navigator.clipboard.writeText(s.text + ' ' + s.url);
+      if (msg) { msg.hidden = false; msg.textContent = 'Copied - paste it into a post or message.'; }
+    } catch (e) { if (e && e.name !== 'AbortError') window.prompt('Copy this to share:', s.text + ' ' + s.url); }
+  }));
+}
+
 function top(d) {
   const ev = d.event;
   const where = [ev.venue, ev.location].filter(Boolean).join(', ');
@@ -132,14 +167,14 @@ function top(d) {
 
   return `
     <section class="qp-hero">
-      <div class="qp-hero-photo" style="--qp-photo:none;background:#0b0b0b">
-        <div class="qp-hero-in" style="max-width:none;width:100%;display:flex;flex-wrap:wrap;gap:28px;align-items:center;justify-content:space-between">
-          <div style="flex:1 1 320px;max-width:680px">
-            <p class="qp-eyebrow">Vendor invoice &amp; event guide</p>
+      <div class="qp-hero-photo" style="--qp-photo:none;background:linear-gradient(160deg,#ff7a1a 0%,#ff6b00 30%,#8a3400 65%,#0b0b0b 100%)">
+        <div class="qp-hero-in" style="max-width:none;width:100%;display:flex;flex-wrap:wrap;gap:30px;align-items:center">
+          ${posterOf(ev) ? '<img src="' + esc(posterOf(ev)) + '" alt="' + esc(ev.name) + ' poster" style="flex:0 0 auto;width:min(100%,270px);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.5)">' : ''}
+          <div style="flex:1 1 300px;max-width:680px">
+            <p class="qp-eyebrow" style="color:#fff">Vendor invoice &amp; event guide</p>
             <h1>${esc(ev.name || 'Eatz & Beatz')}</h1>
             <p class="qp-when">${ev.dateLabel ? svgIcon('Date') + esc(ev.dateLabel) : ''}${where ? '<br>' + svgIcon('Pin') + esc(where) : ''}</p>
           </div>
-          ${posterOf(ev) ? '<img src="' + esc(posterOf(ev)) + '" alt="' + esc(ev.name) + ' poster" style="flex:0 0 auto;width:min(100%,270px);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.5)">' : ''}
         </div>
       </div>
       <div class="qp-hero-body">
@@ -244,6 +279,7 @@ function bottom(d) {
     + VENDOR_TERMS.map(([h, lines], i) => '<div class="qp-legal-clause"><h4>' + (i + 1) + '. ' + esc(h) + '</h4>' + termBodyHtml(lines, esc) + '</div>').join('')
     + '</div></details>';
   return `
+    ${shareHtml()}
     <section class="qp-sec qp-terms">${terms}</section>
     <section class="qp-sec qp-vend-done">
       <p class="qp-eyebrow">Your booking</p>
@@ -257,6 +293,7 @@ function render(d) {
   document.getElementById('quote-root').innerHTML = top(d) + paper(d) + bottom(d);
   // printing / PDF: show the whole terms, not just the open one
   window.addEventListener('beforeprint', () => document.querySelectorAll('.qp-term').forEach((x) => { x.open = true; }));
+  wireShare();
   const print = document.getElementById('qv-print');
   if (print) print.addEventListener('click', () => window.print());
 }
