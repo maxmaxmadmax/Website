@@ -23,13 +23,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=538';
+} from './firebase-config.js?v=539';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=538';
-import { termBodyHtml } from './terms-data.js?v=538';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=539';
+import { termBodyHtml } from './terms-data.js?v=539';
 import {
   VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION,
-} from './vendor-terms-data.js?v=538';
+} from './vendor-terms-data.js?v=539';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -1822,7 +1822,7 @@ function renderSide() {
             '<span>' + exact(b.siteCents) + '</span>' +
           '</div>' +
           '<div>' +
-            '<span>Booking & admin <em>4% + $0.99</em></span>' +
+            '<span>Booking fee <em>4% + $0.99</em></span>' +
             '<span>' + exact(b.bookingFeeCents) + '</span>' +
           '</div>' +
           '<div>' +
@@ -2105,9 +2105,9 @@ function renderReview() {
         <dl class="vs-sum">
           <div><dt>Site total</dt><dd>${exactOrDash(b.siteCents)}</dd></div>
           <div>
-            <dt>Booking & admin
+            <dt>Booking fee
               <button type="button" class="vs-info" data-info
-                      aria-expanded="false" aria-label="What is booking & admin?">i</button>
+                      aria-expanded="false" aria-label="What is the booking fee?">i</button>
             </dt>
             <dd>${exactOrDash(b.bookingFeeCents)}</dd>
           </div>
