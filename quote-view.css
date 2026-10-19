@@ -612,3 +612,5 @@
 /* event within 7 days: full payment only (Max, 20 Oct 2026) */
 .qp-full-note{ margin:0 0 12px; padding:10px 14px; border-radius:10px; background:#fff7ef; border:1px solid #ffd9b3; font-weight:600; color:#7a3c00; }
 .qp-opt.is-off{ opacity:.45; filter:grayscale(1); cursor:not-allowed; }
+.qp-overdue{ background:#fff1f0 !important; border-color:#f3b3ad !important; color:#a1261b !important; }
+.qp-overdue-row span{ color:#a1261b; font-weight:700; }

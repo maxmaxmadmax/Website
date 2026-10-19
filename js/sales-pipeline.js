@@ -10,7 +10,7 @@
    (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { isBooked, pickProgress } from './stock.js?v=580';
+import { isBooked, pickProgress } from './stock.js?v=581';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
