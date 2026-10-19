@@ -29,7 +29,7 @@ export const TERMS = [
     "SoundzGood may decline a booking before confirmation if the required equipment, crew or dates are no longer available.",
   ]],
   ["Overdue payments", [
-    "If an invoice remains unpaid for more than 7 days after its due date, SoundzGood may apply a late payment charge equal to 2% of the outstanding balance.",
+    "If an invoice remains unpaid for more than 14 days after its due date, SoundzGood may apply a late payment charge equal to 2% of the outstanding balance.",
     "A further 2% of the outstanding balance may be charged for each additional full month that the amount remains unpaid.",
     "SoundzGood may also recover reasonable costs incurred in recovering overdue amounts, to the extent permitted by law.",
     "SoundzGood may suspend services, equipment delivery, future bookings or further work while an account remains overdue.",

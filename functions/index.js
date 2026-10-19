@@ -1156,7 +1156,7 @@ async function recordQuotePayment(session) {
     const seen = Array.isArray(q.stripeSessions) ? q.stripeSessions : [];
     if (seen.includes(session.id)) return;
     const paidNow = (q.amountPaidCents || 0) + (session.amount_total || 0);
-    const fullyPaid = paidNow >= (q.totalCents || 0);
+    const fullyPaid = paidNow >= quoteGrandTotal(q);   // includes any late payment charges
     // accept = invoice: take an invoice number the first time money comes in
     const num = q.invoiceNumber ? null : await nextInvoiceNumber(tx);
     if (num) num.write();
@@ -2675,7 +2675,7 @@ exports.adminSetQuoteStatus = onCall(async (request) => {
     if (!q.invoiceNumber) { update.invoiceNumber = invoiceNo((await nextInvoiceNumber()).n); update.invoicedAt = FieldValue.serverTimestamp(); }
     update.paymentStatus = 'paid';
     update.paymentMethod = q.paymentMethod || 'bank';
-    update.amountPaidCents = Math.max(q.amountPaidCents || 0, q.totalCents || 0);
+    update.amountPaidCents = Math.max(q.amountPaidCents || 0, quoteGrandTotal(q));
   }
 
   await ref.update(update);
@@ -2948,6 +2948,8 @@ exports.getQuote = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
     discountCents: q.discountCents || 0,
     gstCents: q.gstCents || 0,
     totalCents: q.totalCents || 0,
+    lateFeeCents: q.lateFeeCents || 0,                 // late payment charges (on top of the total)
+    lateFees: Array.isArray(q.lateFees) ? q.lateFees.map((x) => ({ cents: x.cents || 0, date: x.date || '' })) : [],
     acceptedName: q.acceptedName || '',
     acceptedAt: secs(q.acceptedAt),
     createdAt: secs(q.createdAt),
@@ -3016,7 +3018,7 @@ exports.quoteCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request)
     throw new HttpsError('failed-precondition', 'This quote can no longer be paid online.');
   }
 
-  const total = Math.max(0, Math.round(q.totalCents || 0));
+  const total = Math.max(0, Math.round(quoteGrandTotal(q)));   // + any late payment charges
   const paid = Math.max(0, Math.round(q.amountPaidCents || 0));
   const owing = total - paid;
   // PAY IN FULL WITHIN 7 DAYS (Max, 20 Oct 2026): the balance is due 7 days
@@ -4017,3 +4019,64 @@ exports.vendorUnsubscribe = onRequest(async (req, res) => {
   return page('You have been unsubscribed from event news.');
 });
 
+
+/* =========================================================================
+   LATE PAYMENT CHARGES  (Max, 20 Oct 2026)
+   Terms "Overdue payments": an invoice still unpaid MORE THAN 14 DAYS after its
+   due date (due = 7 days before the event) may get 2% of the outstanding
+   balance, and another 2% for each further full month. NOTHING IS ADDED BY
+   ITSELF - the Sales Pipeline shows "Late fee due" and Max presses Add.
+   Kept separate from the hire lines: quotes/{id}.lateFees [{cents, date, by}]
+   and lateFeeCents, so the original invoice is unchanged. No GST on them.
+   KEEP IN STEP with lateFeeDue() in js/sales-pipeline.js.
+   ========================================================================= */
+function quoteGrandTotal(q) {
+  return Math.round(q.totalCents || 0) + Math.round(q.lateFeeCents || 0);
+}
+function lateFeeState(q) {
+  const owing = quoteGrandTotal(q) - Math.round(q.amountPaidCents || 0);
+  if (owing <= 0 || q.status === 'cancelled' || q.status === 'declined' || q.paymentStatus === 'paid') return { allowed: 0, owing };
+  if (!(q.kind === 'invoice' || ['accepted', 'invoiced'].includes(q.status))) return { allowed: 0, owing };
+  const due = addDaysISO(q.hire && q.hire.startDate, -7);
+  if (!due) return { allowed: 0, owing };
+  const first = addDaysISO(due, 15);   // more than 14 days after the due date
+  const today = brisbaneToday();
+  if (today < first) return { allowed: 0, owing, first };
+  const [fy, fm, fd] = first.split('-').map(Number);
+  const [ty, tm, td] = today.split('-').map(Number);
+  const months = Math.max(0, (ty - fy) * 12 + (tm - fm) - (td < fd ? 1 : 0));
+  return { allowed: 1 + months, owing, first };
+}
+
+exports.adminAddLateFee = onCall(async (request) => {
+  requireAdmin(request);
+  const ref = db.collection('quotes').doc(String((request.data || {}).id || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'No such invoice.');
+  const q = snap.data();
+  const st = lateFeeState(q);
+  const have = (q.lateFees || []).length;
+  if (st.allowed <= have) throw new HttpsError('failed-precondition', 'No late fee is due on this invoice yet.');
+  const cents = Math.round(st.owing * 0.02);
+  if (cents < 1) throw new HttpsError('failed-precondition', 'Nothing outstanding.');
+  const fee = { cents, date: brisbaneToday(), by: (request.auth.token && request.auth.token.email) || request.auth.uid };
+  await ref.update({
+    lateFees: FieldValue.arrayUnion(fee),
+    lateFeeCents: Math.round(q.lateFeeCents || 0) + cents,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+  return { ok: true, cents };
+});
+
+/*  Waive: take the last late fee off. */
+exports.adminRemoveLateFee = onCall(async (request) => {
+  requireAdmin(request);
+  const ref = db.collection('quotes').doc(String((request.data || {}).id || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'No such invoice.');
+  const fees = (snap.data().lateFees || []).slice();
+  if (!fees.length) return { ok: true };
+  fees.pop();
+  await ref.update({ lateFees: fees, lateFeeCents: fees.reduce((t, x) => t + (x.cents || 0), 0), updatedAt: FieldValue.serverTimestamp() });
+  return { ok: true };
+});

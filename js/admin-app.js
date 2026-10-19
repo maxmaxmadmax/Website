@@ -33,13 +33,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=583';
+} from './firebase-config.js?v=584';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=583';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=583';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=583';
-import { messagesHtml, wireMessages } from './messages.js?v=583';
-import { expandKit } from './kit.js?v=583';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=584';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=584';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=584';
+import { messagesHtml, wireMessages } from './messages.js?v=584';
+import { expandKit } from './kit.js?v=584';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5237,6 +5237,17 @@ function wireQuoteList() {
     // makes the private crew link (no prices) - the menu then shows Open / Copy
     async picklist(id) {
       try { await call('adminPickListLink', { id }); } catch (e) { window.alert(e.message || 'Could not make the pick list.'); }
+    },
+    // LATE PAYMENT CHARGE (Max, 20 Oct 2026): 2% of what is still owing - asks first
+    async latefee(id) {
+      const d = findDoc(id);
+      const owing = ((d.totalCents || 0) + (d.lateFeeCents || 0) - (d.amountPaidCents || 0));
+      if (!window.confirm('Add a 2% late payment charge to ' + label(d) + '?\n\n' + money(Math.round(owing * 0.02)) + ' (2% of the ' + money(owing) + ' still owing).\n\nIt shows on their invoice as a separate line. You can remove it later.')) return;
+      try { await call('adminAddLateFee', { id }); } catch (e) { window.alert(e.message || 'Could not add the late fee.'); }
+    },
+    async unlatefee(id) {
+      if (!window.confirm('Remove the last late fee from ' + label(findDoc(id)) + '?')) return;
+      try { await call('adminRemoveLateFee', { id }); } catch (e) { window.alert(e.message || 'Could not remove it.'); }
     },
     // back to a sent quote, as if nothing was paid (hand-marked payments only)
     async undopay(id) {

@@ -683,3 +683,10 @@
 .pg-invhead b{ font-size:26px; }
 .pg-invhead .pg-print{ background:#fff; color:#111; border-color:#fff; }
 @media print{ .pg-steps, .pg-invhead .pg-print, .pg-note{ display:none !important; } }
+
+/* late payment charges (Max, 20 Oct 2026) */
+.pg-late{ border:1px solid #f5c2c0; background:#fdecec; color:#8f1f17; border-radius:12px; padding:14px 18px; margin-bottom:14px; }
+.pg-late b{ display:block; font-size:16px; margin-bottom:6px; }
+.pg-late div{ display:flex; justify-content:space-between; font-size:14px; padding:3px 0; border-bottom:1px solid #f5d0ce; }
+.pg-late p{ margin:8px 0 0; font-size:13px; line-height:1.5; }
+.qv-late span{ color:#b3261e; }

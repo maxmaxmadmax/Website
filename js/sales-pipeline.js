@@ -10,7 +10,7 @@
    (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { isBooked, pickProgress } from './stock.js?v=583';
+import { isBooked, pickProgress } from './stock.js?v=584';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -39,6 +39,31 @@ export function canDelete(q) {
     && !q.invoiceNumber && !(q.amountPaidCents > 0) && q.kind !== 'invoice';
 }
 
+/*  LATE PAYMENT CHARGE DUE? (Max, 20 Oct 2026) - same rule as lateFeeState()
+    in functions/index.js: unpaid more than 14 days after the due date (7 days
+    before the event), then every further full month. Returns the next 2%
+    amount in cents, or 0.                                                  */
+function isoAdd(iso, n) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+  if (!m) return '';
+  return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3] + n)).toISOString().slice(0, 10);
+}
+export function lateFeeDue(q) {
+  const owing = Math.round(q.totalCents || 0) + Math.round(q.lateFeeCents || 0) - Math.round(q.amountPaidCents || 0);
+  if (owing <= 0 || q.vendor || q.status === 'cancelled' || q.status === 'declined' || q.paymentStatus === 'paid') return 0;
+  if (!(q.kind === 'invoice' || ['accepted', 'invoiced'].includes(q.status))) return 0;
+  const due = isoAdd(q.hire && q.hire.startDate, -7);
+  if (!due) return 0;
+  const first = isoAdd(due, 15);
+  const now = new Date();
+  const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+  if (today < first) return 0;
+  const [fy, fm, fd] = first.split('-').map(Number);
+  const [ty, tm, td] = today.split('-').map(Number);
+  const allowed = 1 + Math.max(0, (ty - fy) * 12 + (tm - fm) - (td < fd ? 1 : 0));
+  return allowed > (q.lateFees || []).length ? Math.round(owing * 0.02) : 0;
+}
+
 export function stageOf(q) {
   /*  A vendor's tax invoice (Max, 19 Oct 2026): always paid, and has its own
       Vendors tab so it never counts as a job for the crew.               */
@@ -55,6 +80,8 @@ export function stageOf(q) {
     let sub = 'Deposit outstanding';
     if (q.paymentStatus === 'deposit') sub = 'Final payment due' + (packing ? ' · ' + packing : '');
     else if (q.paymentStatus === 'bank') sub = 'Bank transfer expected';
+    const late = lateFeeDue(q);
+    if (late) return { ...s, next: ['dollar', 'red', 'Late fee due', 'Add 2% ($' + (late / 100).toFixed(2) + ') from the menu'] };
     return { ...s, next: [s.next[0], s.next[1], s.next[2], sub] };
   }
   return s;
@@ -266,12 +293,14 @@ export function rowsHtml(rows, f, h) {
         <td class="sp-date">${h.esc(eventDateText(q) || '—')}</td>
         <td><div class="sp-progress">${progress}</div></td>
         <td><span class="sp-next sp-${tone}">${svg(ico)}<span><b>${h.esc(nTitle)}</b><em>${h.esc(nSub)}</em></span></span></td>
-        <td class="sp-total">${h.esc(h.money(q.totalCents || 0))}</td>
+        <td class="sp-total">${h.esc(h.money((q.totalCents || 0) + (q.lateFeeCents || 0)))}${q.lateFeeCents ? '<span class="sp-late">incl. late fees</span>' : ''}</td>
         <td class="sp-act">
           <button type="button" class="sp-view">View</button>
           <details class="sp-more" data-no-open>
             <summary aria-label="More"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
             <div class="sp-menu">
+              ${lateFeeDue(q) ? `<button type="button" data-sp-act="latefee" data-id="${h.attr(q.id)}">Add 2% late fee ($${(lateFeeDue(q) / 100).toFixed(2)})</button>` : ''}
+              ${(q.lateFees || []).length ? `<button type="button" data-sp-act="unlatefee" data-id="${h.attr(q.id)}">Remove last late fee</button>` : ''}
               ${q.token ? `<a href="/quote?t=${h.attr(q.token)}" target="_blank" rel="noopener">Open customer page</a>
               <button type="button" data-sp-copy="${h.attr('https://www.soundzgood.com.au/quote?t=' + q.token)}">Copy customer link</button>` : '<span>Save it first to get a link</span>'}
               ${q.token ? `<a href="/quote?t=${h.attr(q.token)}&print=1" target="_blank" rel="noopener">Download PDF</a>` : ''}
@@ -339,7 +368,7 @@ export function wirePipeline(getJobs, f, h, act) {
     if (vb) { act.vendorInvoice(vb.getAttribute('data-id'), vb.getAttribute('data-sp-vendor'), vb); return; }
     const a = e.target.closest('[data-sp-act]');
     if (a) {
-      const fn = { duplicate: act.duplicate, archive: act.archive, restore: act.restore, delete: act.del, paid: act.paid, deposit: act.deposit, picklist: act.picklist, undopay: act.undopay }[a.getAttribute('data-sp-act')];
+      const fn = { duplicate: act.duplicate, archive: act.archive, restore: act.restore, delete: act.del, paid: act.paid, deposit: act.deposit, picklist: act.picklist, undopay: act.undopay, latefee: act.latefee, unlatefee: act.unlatefee }[a.getAttribute('data-sp-act')];
       if (fn) fn(a.getAttribute('data-id'));
       return;
     }

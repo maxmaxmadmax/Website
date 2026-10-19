@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=583';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=583';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=584';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=584';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -351,6 +351,8 @@ function render(q) {
         <div class="qv-sumrow qv-sumtotal"><span>Subtotal (ex GST)</span><span>${money(Math.round(q.totalCents || 0) - Math.round(q.gstCents || 0))}</span></div>
         <div class="qv-sumrow"><span>GST (10%)</span><span>${money(q.gstCents)}</span></div>
         <div class="qv-sumrow qv-grand"><span>Total (incl GST)</span><span>${money(q.totalCents)}</span></div>
+        ${(q.lateFees || []).map((x) => '<div class="qv-sumrow qv-late"><span>Late payment charge (2%)' + (x.date ? ' &middot; ' + esc(x.date.split('-').reverse().join('/')) : '') + '</span><span>' + money(x.cents) + '</span></div>').join('')}
+        ${q.lateFeeCents ? '<div class="qv-sumrow qv-grand"><span>Total now owing</span><span>' + money(Math.max(0, (q.totalCents || 0) + q.lateFeeCents - (q.amountPaidCents || 0))) + '</span></div>' : ''}
       </div>
       </div>
 
@@ -538,10 +540,17 @@ function fullOnly(q) {
 function proposalBottom(q, opts = {}) {
   const isInv = q.kind === 'invoice';
   const total = Math.round(q.totalCents || 0);
+  const lateCents = Math.round(q.lateFeeCents || 0);   // late payment charges, on top of the total
   const pct = q.depositPct || 50;
   const deposit = Math.round(total * pct / 100);
   const paid = Math.round(q.amountPaidCents || 0);
-  const owing = Math.max(0, total - paid);
+  const owing = Math.max(0, total + lateCents - paid);
+  /*  LATE PAYMENT CHARGES shown plainly (Max, 20 Oct 2026) */
+  const lateBox = (q.lateFees || []).length
+    ? '<div class="pg-late"><b>Late payment charges added</b>'
+      + q.lateFees.map((x) => '<div><span>2% late payment charge' + (x.date ? ' &middot; ' + esc(x.date.split('-').reverse().join('/')) : '') + '</span><span>' + money(x.cents) + '</span></div>').join('')
+      + '<p>Your invoice was unpaid more than 14 days after its due date, so a 2% charge applies (see Terms &amp; Conditions &ldquo;Overdue payments&rdquo;). Another 2% is added for each further month unpaid. Amount now owing: <strong>' + money(owing) + '</strong>.</p></div>'
+    : '';
   const balDue = (() => {
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String((q.hire && q.hire.startDate) || ''));
     if (!m) return '7 days before your event';
@@ -574,14 +583,14 @@ function proposalBottom(q, opts = {}) {
   } else if (q.paymentStatus === 'paid') {
     book = steps(4) + invHead() + '<div class="qp-done">&#10003; Paid in full &mdash; thank you! Your booking is locked in.</div>';
   } else if (q.paymentStatus === 'deposit') {
-    book = steps(3) + invHead() + '<div class="qp-done">&#10003; Deposit of ' + money(paid) + ' received &mdash; your date is secured.</div>'
+    book = steps(3) + invHead() + lateBox + '<div class="qp-done">&#10003; Deposit of ' + money(paid) + ' received &mdash; your date is secured.</div>'
       + (fullOnly(q)
         ? '<p class="qp-full-note qp-overdue"><b>Payment overdue.</b> The balance of <strong>' + money(owing) + '</strong> was due 7 days before your event. Please pay it today.</p>'
         : '<p class="qp-sub">Balance of <strong>' + money(owing) + '</strong> due ' + esc(balDue) + '.</p>')
       + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-primary qp-go" data-pay="balance">Pay the balance by card</button>' : '')
       + bank;
   } else if (q.paymentStatus === 'bank') {
-    book = steps(3) + invHead() + (fullOnly(q)
+    book = steps(3) + invHead() + lateBox + (fullOnly(q)
       ? '<div class="qp-done">&#10003; Quote accepted' + (q.acceptedName ? ' by ' + esc(q.acceptedName) : '') + '.</div><p class="qp-full-note qp-overdue"><b>Payment overdue.</b> Your event is less than 7 days away. Please transfer the full <strong>' + money(owing) + '</strong> today to keep your booking.</p>' + bank
         + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-ghost qp-go" data-pay="full">Or pay in full by card</button>' : '')
       : '<div class="qp-done">&#10003; Quote accepted' + (q.acceptedName ? ' by ' + esc(q.acceptedName) : '') + '.</div><p class="qp-full-note">Your date is not held until the deposit lands. Please transfer the ' + pct + '% deposit of <strong>' + money(deposit) + '</strong> today.</p>' + bank
@@ -590,7 +599,7 @@ function proposalBottom(q, opts = {}) {
     book = '<div class="qp-done">&#10003; Payment received &mdash; thank you! Confirming your booking&hellip;</div>';
   } else if (isInv) {
     // an invoice made in admin (not accepted online): pay it in full
-    book = steps(3) + invHead() + '<div class="qp-done">Invoice ' + esc(ref) + ' &mdash; ' + money(owing) + ' to pay' + (balanceDueDate(q) ? (fullOnly(q) ? ', <strong>due now</strong>' : ', due ' + esc(balDue)) : '') + '.</div>'
+    book = steps(3) + invHead() + lateBox + '<div class="qp-done">Invoice ' + esc(ref) + ' &mdash; ' + money(owing) + ' to pay' + (balanceDueDate(q) ? (fullOnly(q) ? ', <strong>due now</strong>' : ', due ' + esc(balDue)) : '') + '.</div>'
       + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-primary qp-go" data-pay="full">Pay by card</button>' : '')
       + bank;
   } else if (q.status === 'accepted') {
