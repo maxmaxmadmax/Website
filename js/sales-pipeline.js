@@ -10,7 +10,7 @@
    (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { isBooked, pickProgress } from './stock.js?v=545';
+import { isBooked, pickProgress } from './stock.js?v=546';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -231,7 +231,7 @@ export function rowsHtml(rows, f, h) {
           <span>${h.esc(c.eventName || '')}${q.invoiceNumber ? ' <i>' + h.esc(q.invoiceNumber) + '</i>' : ''}</span>
         </td>
         <td class="sp-date">${h.esc(eventDateText(q) || '—')}</td>
-        <td><div class="sp-progress">${progress}</div></td>
+        <td><div class="sp-progress sp-off" title="Not used for vendors">${progress}</div></td>
         <td><span class="sp-next sp-${tone}">${svg(ico)}<span><b>${h.esc(nTitle)}</b><em>${h.esc(nSub)}</em></span></span></td>
         <td class="sp-total">${h.esc(h.money(q.totalCents || 0))}</td>
         <td class="sp-act">

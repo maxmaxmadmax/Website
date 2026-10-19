@@ -4416,3 +4416,6 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .inv-req-none{ margin:0; padding:10px 12px; color:var(--ad-muted); font-size:13px; }
 .inv-req-item > span{ display:block; }
 
+
+/* vendor rows: the quote progress bar is greyed out, it does not apply (Max, 19 Oct 2026) */
+.sp-progress.sp-off{ filter:grayscale(1); opacity:.35; }

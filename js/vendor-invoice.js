@@ -1,20 +1,24 @@
 /* ==========================================================================
    VENDOR INVOICE & EVENT GUIDE  -  /vendor-invoice?t=<token>   (Max, 19 Oct 2026)
 
-   Fetches one vendor booking by its secret token (getVendorInvoice - the
-   bookings collection stays closed to browsers) and lays it out as A4 pages:
-     1  Tax invoice + thank-you
-     2  Event details, key times, your site, what to bring
-     3+ The full Vendor Terms & Conditions (js/vendor-terms-data.js)
-   Print / Save PDF uses the browser's print, set to A4 in vendor-invoice.css.
+   Flows exactly like the customer quote page (quote.html / quote-view.js) and
+   reuses its look (quote-view.css: qp-hero, qp-sec, qv-doc ...):
+     1  Hero      photo, event, thank-you, the key times as tiles
+     2  Summary   "Your booking investment" table + what's included + invoice details
+     3  Guide     what to bring / please remember
+     4  Paper     the tax invoice (GST shown on its own)
+     5  Terms     the full Vendor Terms & Conditions in one dropdown
+     6  Paid      "Paid in full - thank you"
+   Print / Save PDF uses the same A4 print rules as the quote.
 
-   The key times and checklist on page 2 are for Eatz & Beatz. If this is
-   used for another event, change KEY_TIMES / BRING below.
+   The key times and checklists are for Eatz & Beatz. For another event,
+   change KEY_TIMES / BRING / NOT_ALLOWED below.
+   Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=545';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=545';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=545';
+import { termBodyHtml } from './terms-data.js?v=546';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=546';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=546';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -24,18 +28,27 @@ const esc = (v) => String(v == null ? '' : v)
 const fmtDate = (secs) => secs
   ? new Date(secs * 1000).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
 
-/*  The night in four boxes. */
+const ICON = {
+  Clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  Setup: '<path d="M3 15h18v3H3zM5 18v3M19 18v3M7 15V9h10v6"/>',
+  Music: '<path d="M9 18V6l10-2v12M9 18a3 3 0 11-3-3 3 3 0 013 3zM19 16a3 3 0 11-3-3 3 3 0 013 3z"/>',
+  Car: '<path d="M4 16V12l2-5h12l2 5v4M4 16h16M4 16v3M20 16v3M7 13h.01M17 13h.01"/>',
+  Date: '<path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4"/>',
+  Pin: '<path d="M12 21s-7-6.5-7-12a7 7 0 0114 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/>',
+};
+const svgIcon = (k) => '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICON[k] || ICON.Clock) + '</svg>';
+
+/*  The night in four tiles: [icon, label, note]. */
 const KEY_TIMES = [
-  ['Set up by', '4:15 pm', 'Vehicles parked or removed'],
-  ['Doors open', '4:30 pm', 'Be trading and ready'],
-  ['Night wraps', '9:30 pm', 'Live music until close'],
-  ['Vehicles move', 'after 9:40 pm', 'Only when staff say the route is clear'],
+  ['Setup', 'Set up by 4:15 pm', 'Vehicles parked or removed'],
+  ['Clock', 'Doors open 4:30 pm', 'Be trading and ready'],
+  ['Music', 'Night wraps 9:30 pm', 'Live music until close'],
+  ['Car', 'Vehicles move after 9:40 pm', 'Only when staff say the route is clear'],
 ];
 
 const BRING = [
   'Marquee, tables, chairs and weights',
-  'Your own power - quiet or silenced generators only',
-  'Your own water',
+  'Your own power (quiet or silenced generators only) and water',
   'Test-and-tagged leads; secured gas bottles',
   'Fire safety equipment for what you do',
   'Certificate of Currency (public liability, $20 million)',
@@ -50,109 +63,162 @@ const NOT_ALLOWED = [
   'No own music or speakers',
   'No alcohol sales (licensed event bar only)',
   'No commercial waste in public bins or drains',
+  'Halloween dress-up is optional, but encouraged - best dressed stalls can win their vendor fee back!',
 ];
 
-function letterhead(d, title) {
-  const s = d.seller;
-  return `<header class="vi-head">
-    <div class="vi-brand"><b>${esc(s.name)}</b>
-      ${s.legal ? `<span>${esc(s.legal)}</span>` : ''}
-      <span>${s.abn ? 'ABN ' + esc(s.abn) + ' &middot; ' : ''}${esc(s.address)}</span>
-      <span>${esc(s.email)} &middot; ${esc(s.phone)} &middot; ${esc(s.site)}</span></div>
-    <div class="vi-title">${esc(title)}</div>
-  </header>`;
+function top(d) {
+  const ev = d.event;
+  const where = [ev.venue, ev.location].filter(Boolean).join(', ');
+  const b = d.business;
+  const tiles = KEY_TIMES.map(([ic, t, n]) =>
+    '<div class="qp-tile">' + svgIcon(ic) + '<b>' + esc(t) + '</b><span>' + esc(n) + '</span></div>').join('');
+
+  const sub = d.siteCents, fee = d.feeCents;
+  const r = (label, ex) => '<tr><td>' + esc(label) + '</td><td>' + money(ex) + '</td><td>' + money(Math.round(ex * 0.1)) + '</td><td>' + money(Math.round(ex * 1.1)) + '</td></tr>';
+  const siteLabel = d.vendorType === 'food' ? 'Food vendor site' : 'Market stall site' + (d.bayCount > 1 ? ' (' + d.bayCount + ' bays)' : '');
+
+  const included = [
+    esc(siteLabel) + (d.siteLabel ? ' &mdash; site ' + esc(d.siteLabel) : '') + (d.categoryName ? ' &middot; ' + esc(d.categoryName) : ''),
+    esc(ev.venue || 'The event venue') + (ev.dateLabel ? ' &middot; ' + esc(ev.dateLabel) : ''),
+    'Booking &amp; admin',
+    'GST included in the total',
+  ];
+
+  return `
+    <section class="qp-hero">
+      <div class="qp-hero-photo" style="--qp-photo:url('/images/services/community-events.webp')">
+        <div class="qp-hero-in">
+          <p class="qp-eyebrow">Vendor invoice &amp; event guide</p>
+          <h1>${esc(ev.name || 'Eatz & Beatz')}</h1>
+          <p class="qp-when">${ev.dateLabel ? svgIcon('Date') + esc(ev.dateLabel) : ''}${where ? '<br>' + svgIcon('Pin') + esc(where) : ''}</p>
+        </div>
+      </div>
+      <div class="qp-hero-body">
+        <p class="qp-intro">Thank you for being part of ${esc(ev.name || 'Eatz & Beatz')}. We&rsquo;re a small team passionate about
+          bringing great food, live entertainment and local businesses together &mdash; and we&rsquo;re really glad to have
+          ${esc(b.name)} on board. Everything below is your tax invoice and what you need to know for the night.</p>
+        <div class="qp-tiles">${tiles}</div>
+        <p class="qp-ref">Invoice ${esc(d.invoiceNumber)} &middot; Prepared for ${esc(b.name)}</p>
+      </div>
+    </section>
+
+    <section class="qp-sec qp-invest">
+      <p class="qp-eyebrow">Investment summary</p>
+      <h2 class="qp-h2">Your booking investment</h2>
+      <p class="qp-sub">Total inclusive of GST for ${esc(ev.name || 'the event')}${ev.dateLabel ? ' on ' + esc(ev.dateLabel) : ''}.</p>
+      <table class="qp-inv">
+        <thead><tr><th>Description</th><th>Ex GST</th><th>GST (10%)</th><th>Inc GST</th></tr></thead>
+        <tbody>${r(siteLabel, sub)}${r('Booking fee', fee)}</tbody>
+        <tfoot><tr><td>Total ${d.free ? '' : 'paid '}inc. GST</td><td></td><td></td><td>${money(d.totalCents)}</td></tr></tfoot>
+      </table>
+      <div class="qp-inv-extra">
+        <div class="qp-incl"><p class="qp-mini">What&rsquo;s included</p><ul>${included.map((t) => '<li>' + t + '</li>').join('')}</ul></div>
+        <div class="qp-qd"><p class="qp-mini">Invoice details</p><dl>
+          <div><dt>Invoice</dt><dd>${esc(d.invoiceNumber)}</dd></div>
+          ${d.issuedAt ? '<div><dt>Issued</dt><dd>' + esc(fmtDate(d.issuedAt)) + '</dd></div>' : ''}
+          <div><dt>Booking ref.</dt><dd>${esc(d.reference)}</dd></div>
+          <div><dt>Status</dt><dd>${d.free ? 'Confirmed' : 'Paid in full'}</dd></div>
+        </dl></div>
+      </div>
+    </section>
+
+    <section class="qp-sec qp-guide">
+      <p class="qp-eyebrow">Event guide</p>
+      <h2 class="qp-h2">What you need to know</h2>
+      <div class="qp-inv-extra">
+        <div class="qp-incl"><p class="qp-mini">What to bring</p><ul>${BRING.map((t) => '<li>' + esc(t) + '</li>').join('')}</ul></div>
+        <div class="qp-incl"><p class="qp-mini">Please remember</p><ul>${NOT_ALLOWED.map((t) => '<li>' + esc(t) + '</li>').join('')}</ul></div>
+      </div>
+      <p class="qp-sub">Follow directions from event staff for access, setup and departure. Questions? ${esc(d.seller.email)} &middot; ${esc(d.seller.phone)}</p>
+    </section>`;
 }
 
-function pageInvoice(d) {
+function paper(d) {
+  const s = d.seller;
   const b = d.business;
   const ev = d.event;
   const subtotal = d.siteCents + d.feeCents;
-  const siteLine = d.vendorType === 'market' && d.bayCount > 1
-    ? `Market stall site - ${d.bayCount} bays` : (d.vendorType === 'food' ? 'Food vendor site' : 'Market stall site');
-  return `<section class="vi-page">
-    ${letterhead(d, 'Tax invoice')}
-    <div class="vi-meta">
-      <div><h4>Billed to</h4><p><b>${esc(b.name)}</b><br>${b.contactName ? esc(b.contactName) + '<br>' : ''}${esc(b.email)}${b.phone ? '<br>' + esc(b.phone) : ''}</p></div>
-      <div><h4>Invoice</h4><dl>
-        <dt>Invoice no.</dt><dd>${esc(d.invoiceNumber)}</dd>
-        <dt>Date</dt><dd>${esc(fmtDate(d.issuedAt) || '')}</dd>
-        <dt>Booking ref.</dt><dd>${esc(d.reference)}</dd></dl></div>
+  const siteLine = d.vendorType === 'food' ? 'Food vendor site' : 'Market stall site' + (d.bayCount > 1 ? ' - ' + d.bayCount + ' bays' : '');
+  return `
+    <h2 class="qp-h2 qp-h2-doc">Tax invoice</h2>
+    <div class="qv-doc" id="qv-doc">
+      <div class="qv-banner qv-ok">${d.free ? 'Confirmed &mdash; thank you!' : 'Paid in full &mdash; thank you!'}</div>
+      <div class="qv-top">
+        <div class="qv-brand">
+          <img src="/images/logo-quote.png" alt="SoundzGood Whitsundays" class="qv-logo">
+          <p class="qv-legal">${esc(s.legal)}${s.legal ? '<br>' : ''}${s.abn ? 'ABN ' + esc(s.abn) : ''}</p>
+        </div>
+        <div class="qv-meta">
+          <h1>Tax invoice</h1>
+          <p class="qv-ref">${esc(d.invoiceNumber)}</p>
+          <p class="qv-date">${esc(fmtDate(d.issuedAt))}</p>
+        </div>
+      </div>
+
+      <div class="qv-parties">
+        <div><h3>From</h3><p><strong>${esc(s.name)}</strong><br>${esc(s.address)}<br>${esc(s.phone)}<br>${esc(s.email)}<br>${esc(s.site)}</p></div>
+        <div><h3>Bill to</h3><p><strong>${esc(b.name)}</strong><br>${b.contactName ? esc(b.contactName) + '<br>' : ''}${b.email ? esc(b.email) + '<br>' : ''}${b.phone ? esc(b.phone) : ''}</p></div>
+        <div><h3>Event</h3><p><strong>${esc(ev.name)}</strong><br>${esc(ev.dateLabel)}<br>${esc(ev.venue)}${d.siteLabel ? '<br>Site ' + esc(d.siteLabel) : ''}<br>Ref ${esc(d.reference)}</p></div>
+      </div>
+
+      <table class="qv-table">
+        <thead><tr><th>Description</th><th class="qv-num">Qty</th><th class="qv-num">Amount</th></tr></thead>
+        <tbody>
+          <tr><td class="qv-desc">${esc(siteLine)}<span class="qv-sub">${esc(ev.name)}${d.siteLabel ? ' &middot; site ' + esc(d.siteLabel) : ''}${d.categoryName ? ' &middot; ' + esc(d.categoryName) : ''}</span></td><td class="qv-num">1</td><td class="qv-num">${money(d.siteCents)}</td></tr>
+          <tr><td class="qv-desc">Booking fee<span class="qv-sub">4% + $0.99</span></td><td class="qv-num">1</td><td class="qv-num">${money(d.feeCents)}</td></tr>
+        </tbody>
+      </table>
+
+      <div class="qv-sumwrap">
+        <div class="qv-breakdown"></div>
+        <div class="qv-summary">
+          <div class="qv-sumrow qv-sumtotal"><span>Subtotal (ex GST)</span><span>${money(subtotal)}</span></div>
+          <div class="qv-sumrow"><span>GST (10%)</span><span>${money(d.gstCents)}</span></div>
+          <div class="qv-sumrow qv-grand"><span>Total ${d.free ? '' : 'paid '}(incl GST)</span><span>${money(d.totalCents)}</span></div>
+        </div>
+      </div>
+
+      <p class="qv-foot">${esc(s.name)}${s.legal ? ' &middot; ' + esc(s.legal) : ''}${s.abn ? ' &middot; ABN ' + esc(s.abn) : ''}</p>
     </div>
-    <table class="vi-lines">
-      <thead><tr><th>Description</th><th>Amount</th></tr></thead>
-      <tbody>
-        <tr><td><b>${esc(siteLine)}</b><span>${esc(ev.name)}${ev.dateLabel ? ' &middot; ' + esc(ev.dateLabel) : ''}${d.siteLabel ? ' &middot; Site ' + esc(d.siteLabel) : ''}${d.categoryName ? ' &middot; ' + esc(d.categoryName) : ''}</span></td><td>${money(d.siteCents)}</td></tr>
-        <tr><td><b>Booking fee</b><span>4% + $0.99</span></td><td>${money(d.feeCents)}</td></tr>
-      </tbody>
-      <tfoot>
-        <tr><td>Subtotal (ex GST)</td><td>${money(subtotal)}</td></tr>
-        <tr><td>GST (10%)</td><td>${money(d.gstCents)}</td></tr>
-        <tr class="vi-grand"><td>Total ${d.free ? '' : 'paid '}(incl GST)</td><td>${money(d.totalCents)}</td></tr>
-      </tfoot>
-    </table>
-    <div class="vi-paid">${d.free ? 'CONFIRMED' : 'PAID IN FULL'}</div>
-    <div class="vi-thanks">
-      <h2>Thank you!</h2>
-      <p>Thank you for being part of <b>${esc(ev.name || 'Eatz & Beatz')}</b>. We&rsquo;re a small team passionate about bringing great food, live entertainment and local businesses together &mdash; and we&rsquo;re really glad to have <b>${esc(b.name)}</b> on board.</p>
-      <p>The next page has everything you need for the night. Please read it, and the Vendor Terms &amp; Conditions that follow, before you arrive.</p>
-      <p class="vi-sign">The SoundzGood team</p>
-    </div>
-  </section>`;
+
+    <div class="qv-actions" id="qv-actions">
+      <button type="button" class="qv-btn qv-btn-ghost" id="qv-print">Download / Print PDF</button>
+    </div>`;
 }
 
-function pageEvent(d) {
-  const ev = d.event;
-  const where = [ev.venue, ev.location].filter(Boolean).join(', ');
-  return `<section class="vi-page">
-    ${letterhead(d, 'Event guide')}
-    <h1 class="vi-h1">${esc(ev.name || 'Eatz & Beatz')}</h1>
-    <p class="vi-sub">${esc(ev.dateLabel)}${where ? ' &middot; ' + esc(where) : ''}</p>
-    <div class="vi-cards">
-      ${KEY_TIMES.map(([k, t, n]) => `<div class="vi-card"><small>${esc(k)}</small><b>${esc(t)}</b><span>${esc(n)}</span></div>`).join('')}
-    </div>
-    <div class="vi-two">
-      <div class="vi-box"><h3>Your booking</h3><dl>
-        <dt>Business</dt><dd>${esc(d.business.name)}</dd>
-        ${d.siteLabel ? `<dt>Site</dt><dd>${esc(d.siteLabel)}</dd>` : ''}
-        ${d.categoryName ? `<dt>Category</dt><dd>${esc(d.categoryName)}</dd>` : ''}
-        <dt>Reference</dt><dd>${esc(d.reference)}</dd></dl></div>
-      <div class="vi-box"><h3>Where</h3><p><b>${esc(ev.venue || '')}</b><br>${esc(ev.location || '')}</p>
-        <p class="vi-note">Follow directions from event staff for access, setup and departure.</p></div>
-    </div>
-    <div class="vi-two">
-      <div class="vi-box"><h3>What to bring</h3><ul>${BRING.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>
-      <div class="vi-box vi-no"><h3>Please remember</h3><ul>${NOT_ALLOWED.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
-        <p class="vi-note">Halloween dress-up is optional, but encouraged &mdash; best dressed stalls can win their vendor fee back!</p></div>
-    </div>
-    <p class="vi-foot">Questions? ${esc(d.seller.email)} &middot; ${esc(d.seller.phone)}</p>
-  </section>`;
-}
-
-function pagesTerms(d) {
-  const half = 10;   // clauses on the first terms page; the rest go on the next
-  const clause = ([h, lines], i) =>
-    `<div class="vi-clause"><h4>${i + 1}. ${esc(h)}</h4>${termBodyHtml(lines, esc)}</div>`;
-  const a = VENDOR_TERMS.slice(0, half).map((c, i) => clause(c, i)).join('');
-  const b = VENDOR_TERMS.slice(half).map((c, i) => clause(c, i + half)).join('');
-  return `<section class="vi-page">
-      ${letterhead(d, 'Vendor Terms & Conditions')}
-      <div class="vi-intro">${VENDOR_TERMS_INTRO.map((t) => `<p>${esc(t)}</p>`).join('')}</div>
-      <div class="vi-cols">${a}</div></section>
-    <section class="vi-page">
-      ${letterhead(d, 'Vendor Terms & Conditions')}
-      <div class="vi-cols">${b}</div>
-      <p class="vi-foot">Thank you for supporting Eatz &amp; Beatz &mdash; SoundzGood | Eatz &amp; Beatz Events</p></section>`;
+function bottom(d) {
+  const terms = '<details class="qp-term qp-legal"><summary><span class="qp-legal-warn">&#9888;</span><span><b>Vendor Terms &amp; Conditions</b><em>'
+    + VENDOR_TERMS.length + ' clauses &middot; you agreed to these when you booked &middot; tap to read</em></span></summary>'
+    + '<div class="qp-legal-body">' + VENDOR_TERMS_INTRO.map((t) => '<p>' + esc(t) + '</p>').join('')
+    + VENDOR_TERMS.map(([h, lines], i) => '<div class="qp-legal-clause"><h4>' + (i + 1) + '. ' + esc(h) + '</h4>' + termBodyHtml(lines, esc) + '</div>').join('')
+    + '</div></details>';
+  return `
+    <section class="qp-sec qp-terms">${terms}</section>
+    <section class="qp-sec qp-vend-done">
+      <p class="qp-eyebrow">Your booking</p>
+      <h2 class="qp-h2">You&rsquo;re all set</h2>
+      <div class="qp-done">&#10003; ${d.free ? 'Booking confirmed' : 'Paid in full'} &mdash; thank you! See you at ${esc(d.event.name || 'the event')}.</div>
+    </section>`;
 }
 
 function render(d) {
   document.title = 'Invoice ' + d.invoiceNumber + ' | SoundzGood Whitsundays';
-  document.getElementById('vi-root').innerHTML = pageInvoice(d) + pageEvent(d) + pagesTerms(d);
+  document.getElementById('quote-root').innerHTML = top(d) + paper(d) + bottom(d);
+  // printing / PDF: show the whole terms, not just the open one
+  window.addEventListener('beforeprint', () => document.querySelectorAll('.qp-term').forEach((x) => { x.open = true; }));
+  const print = document.getElementById('qv-print');
+  if (print) print.addEventListener('click', () => window.print());
+}
+
+function fail(text) {
+  document.getElementById('quote-root').innerHTML =
+    `<div class="qv-empty"><h1>${esc(text)}</h1><p>If you think this is a mistake, please <a href="/contact">get in touch</a>.</p></div>`;
 }
 
 async function load() {
-  const root = document.getElementById('vi-root');
   const t = new URLSearchParams(location.search).get('t') || '';
-  if (!t || !isFirebaseConfigured) { root.innerHTML = '<p class="vi-msg">That link is not valid.</p>'; return; }
+  if (!t) return fail('No invoice in this link.');
+  if (!isFirebaseConfigured) return fail('This link cannot be opened right now.');
   try {
     const [{ initializeApp }, functions] = await Promise.all([
       import(`${SDK}/firebase-app.js`), import(`${SDK}/firebase-functions.js`),
@@ -161,9 +227,9 @@ async function load() {
     const res = await functions.httpsCallable(fns, 'getVendorInvoice')({ token: t });
     render(res.data);
   } catch (err) {
-    root.innerHTML = '<p class="vi-msg">' + esc((err && err.message) || 'That link is not valid.') + '</p>';
+    fail('This link is not valid or has expired.');
   }
 }
 
-document.getElementById('vi-print').addEventListener('click', () => window.print());
-load();
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
+else load();
