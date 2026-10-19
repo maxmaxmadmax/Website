@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=582';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=582';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=583';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=583';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -558,21 +558,30 @@ function proposalBottom(q, opts = {}) {
     + TERMS.map(([h, lines], i) => '<div class="qp-legal-clause"><h4>' + (i + 1) + '. ' + esc(h) + '</h4>' + termBodyHtml(lines, esc) + '</div>').join('')
     + '</div></details>';
 
+  /*  1 Accept quote -> 2 Get your invoice -> 3 Pay   (Max, 20 Oct 2026) */
+  const steps = (at) => '<ol class="pg-steps">'
+    + ['Accept quote', 'Get your invoice', 'Pay'].map((t, i) => '<li class="' + (i + 1 < at ? 'is-done' : (i + 1 === at ? 'is-on' : '')) + '"><span>' + (i + 1 < at ? '&#10003;' : i + 1) + '</span>' + t + '</li>').join('')
+    + '</ol>';
+  /*  once accepted: "Your invoice SG-I-0012" + Download invoice */
+  const invHead = () => q.invoiceNumber
+    ? '<div class="pg-invhead"><div><span>Your tax invoice</span><b>' + esc(q.invoiceNumber) + '</b></div><button type="button" class="qv-btn qv-btn-ghost pg-print" data-print>Download invoice</button></div>'
+    : '';
+
   let book;
   if (q.status === 'draft') {
     // an ESTIMATE (not yet approved by SoundzGood): nothing to accept or pay yet
     book = '<div class="qp-done">This is an estimate. Once we&rsquo;ve checked the details we&rsquo;ll send your formal quote to accept.</div>';
   } else if (q.paymentStatus === 'paid') {
-    book = '<div class="qp-done">&#10003; Paid in full &mdash; thank you! Your booking is locked in.</div>';
+    book = steps(4) + invHead() + '<div class="qp-done">&#10003; Paid in full &mdash; thank you! Your booking is locked in.</div>';
   } else if (q.paymentStatus === 'deposit') {
-    book = '<div class="qp-done">&#10003; Deposit of ' + money(paid) + ' received &mdash; your date is secured.</div>'
+    book = steps(3) + invHead() + '<div class="qp-done">&#10003; Deposit of ' + money(paid) + ' received &mdash; your date is secured.</div>'
       + (fullOnly(q)
         ? '<p class="qp-full-note qp-overdue"><b>Payment overdue.</b> The balance of <strong>' + money(owing) + '</strong> was due 7 days before your event. Please pay it today.</p>'
         : '<p class="qp-sub">Balance of <strong>' + money(owing) + '</strong> due ' + esc(balDue) + '.</p>')
       + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-primary qp-go" data-pay="balance">Pay the balance by card</button>' : '')
       + bank;
   } else if (q.paymentStatus === 'bank') {
-    book = (fullOnly(q)
+    book = steps(3) + invHead() + (fullOnly(q)
       ? '<div class="qp-done">&#10003; Quote accepted' + (q.acceptedName ? ' by ' + esc(q.acceptedName) : '') + '.</div><p class="qp-full-note qp-overdue"><b>Payment overdue.</b> Your event is less than 7 days away. Please transfer the full <strong>' + money(owing) + '</strong> today to keep your booking.</p>' + bank
         + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-ghost qp-go" data-pay="full">Or pay in full by card</button>' : '')
       : '<div class="qp-done">&#10003; Quote accepted' + (q.acceptedName ? ' by ' + esc(q.acceptedName) : '') + '.</div><p class="qp-full-note">Your date is not held until the deposit lands. Please transfer the ' + pct + '% deposit of <strong>' + money(deposit) + '</strong> today.</p>' + bank
@@ -581,7 +590,7 @@ function proposalBottom(q, opts = {}) {
     book = '<div class="qp-done">&#10003; Payment received &mdash; thank you! Confirming your booking&hellip;</div>';
   } else if (isInv) {
     // an invoice made in admin (not accepted online): pay it in full
-    book = '<div class="qp-done">Invoice ' + esc(ref) + ' &mdash; ' + money(owing) + ' to pay' + (balanceDueDate(q) ? (fullOnly(q) ? ', <strong>due now</strong>' : ', due ' + esc(balDue)) : '') + '.</div>'
+    book = steps(3) + invHead() + '<div class="qp-done">Invoice ' + esc(ref) + ' &mdash; ' + money(owing) + ' to pay' + (balanceDueDate(q) ? (fullOnly(q) ? ', <strong>due now</strong>' : ', due ' + esc(balDue)) : '') + '.</div>'
       + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-primary qp-go" data-pay="full">Pay by card</button>' : '')
       + bank;
   } else if (q.status === 'accepted') {
@@ -595,8 +604,10 @@ function proposalBottom(q, opts = {}) {
     const ic = (p) => '<span class="pg-ic" aria-hidden="true"><svg viewBox="0 0 24 24">' + p + '</svg></span>';
     const BANK = '<path d="M3 10h18M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18M12 3l9 5H3z"/>';
     const CARD = '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h4"/>';
+    // the button says what happens: bank -> invoice, card -> pay the amount
+    const cta = (v, amt) => v === 'bank' ? 'Accept quote &amp; get invoice' : (v === 'deposit' ? 'Accept quote &amp; pay ' + amt + ' deposit' : 'Accept quote &amp; pay ' + amt);
     const opt = (v, title, sub, amt, on, extra, off) => '<label class="pg-opt' + (off ? ' is-off' : '') + '">'
-      + '<input type="radio" name="qp-opt" value="' + v + '"' + (on ? ' checked' : '') + (off ? ' disabled' : '') + '>'
+      + '<input type="radio" name="qp-opt" value="' + v + '" data-cta="' + cta(v, amt) + '"' + (on ? ' checked' : '') + (off ? ' disabled' : '') + '>'
       + ic(v === 'bank' ? BANK : CARD)
       + '<span class="pg-opt-body"><b>' + title + '</b><em>' + sub + '</em><strong>' + amt + '</strong>' + (extra || '') + '</span>'
       + (off ? '<span class="pg-badge">Not available</span>' : '') + '</label>';
@@ -606,6 +617,7 @@ function proposalBottom(q, opts = {}) {
       : '<div class="pg-alert pg-alert-amber"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><div><b>Secure your date</b><p>Your date is held once the ' + pct + '% deposit is received.</p><small>The balance is due ' + esc(balDue) + '.</small></div></div>';
     const trust = (p, t, d) => '<div class="pg-trust-row"><span class="pg-trust-ic" aria-hidden="true"><svg viewBox="0 0 24 24">' + p + '</svg></span><div><b>' + t + '</b><span>' + d + '</span></div></div>';
     book = '<p class="pg-lead">Your booking is confirmed once payment is received.</p>'
+      + steps(1)
       + '<div class="qp-book-grid pg-grid"><div>'
       + alert
       + (full
@@ -617,7 +629,8 @@ function proposalBottom(q, opts = {}) {
         : opt('deposit', 'Credit or debit card (' + pct + '% deposit)', 'Secure your date by card. Balance due ' + esc(balDue) + '.', money(deposit), false)) : '')
       + '<label class="qp-name">Your name / Business<input type="text" id="qp-name" autocomplete="name" value="' + esc((q.customer && q.customer.name) || '') + '"></label>'
       + '<label class="qp-agree"><input type="checkbox" id="qp-agree"> <span>I have read and accept the <b>Terms &amp; Conditions</b> and this quote.</span></label>'
-      + '<button type="button" class="qv-btn qv-btn-primary qp-go pg-go" id="qp-go" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Accept &amp; continue</button>'
+      + '<button type="button" class="qv-btn qv-btn-primary qp-go pg-go" id="qp-go" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span id="qp-go-label">' + cta(full ? 'bank' : 'bank', full ? money(total) : money(deposit)) + '</span></button>'
+      + '<p class="pg-note">Accepting turns this quote into your tax invoice.</p>'
       + '</div><aside class="qp-side pg-side">'
       + '<div class="pg-total"><span class="pg-total-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3h10v18H7z"/><path d="M10 8h4M10 12h4M10 16h2"/></svg></span><div><p class="qp-eyebrow">Quote summary</p><strong>' + money(total) + '</strong><span>Total (inc. GST)</span></div></div>'
       // after any discount, so subtotal + GST = total (Max, 17 Oct 2026)
@@ -650,6 +663,8 @@ function proposalBottom(q, opts = {}) {
 }
 
 function wireProposal(q) {
+  // Download invoice (on the accepted / invoice view)
+  document.querySelectorAll('[data-print]').forEach((b) => b.addEventListener('click', () => window.print()));
   // printing / PDF: show every booking term, not just the open one
   window.addEventListener('beforeprint', () => document.querySelectorAll('.qp-term').forEach((d) => { d.open = true; }));
   const msg = document.getElementById('qp-msg');
@@ -677,6 +692,10 @@ function wireProposal(q) {
   const go = document.getElementById('qp-go');
   if (!go) return;
   // no paying or confirming until the terms box is ticked
+  const goLabel = document.getElementById('qp-go-label');
+  document.querySelectorAll('input[name="qp-opt"]').forEach((r) => r.addEventListener('change', () => {
+    if (r.checked && goLabel) goLabel.innerHTML = r.getAttribute('data-cta') || 'Accept &amp; continue';
+  }));
   const agreeBox = document.getElementById('qp-agree');
   if (agreeBox) agreeBox.addEventListener('change', () => { go.disabled = !agreeBox.checked; });
   go.addEventListener('click', async () => {
