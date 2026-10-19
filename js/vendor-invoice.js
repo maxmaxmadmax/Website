@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=561';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=561';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=561';
+import { termBodyHtml } from './terms-data.js?v=562';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=562';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=562';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -149,25 +149,25 @@ function shareText(s, d) {
 }
 
 function shareHtml(d) {
-  const card = (key, title, note, link, btn) => '<div class="vi-share-card"><p class="qp-mini">' + title + '</p>'
+  // simple: a title, one short line, the button(s). The link prints instead of the buttons.
+  const card = (title, note, link, btns) => '<div class="vi-share-card"><p class="qp-mini">' + title + '</p>'
     + '<p class="vi-share-note">' + note + '</p>'
-    + '<p class="vi-share-link">' + esc(shortUrl(link)) + '</p>'
-    + '<button type="button" class="qv-btn qv-btn-primary" data-share="' + key + '">' + btn + '</button></div>';
+    + '<p class="vi-share-link">' + esc(link) + '</p>'
+    + '<div class="vi-share-btns">' + btns + '</div></div>';
+  const btn = (key, label) => '<button type="button" class="qv-btn qv-btn-primary" data-share="' + key + '">' + label + '</button>';
+  const site = d && d.siteLabel ? ' at site ' + esc(d.siteLabel) : '';
   return '<section class="qp-sec qp-share"><p class="qp-eyebrow">Help us fill the grounds</p>'
     + '<h2 class="qp-h2">Bring your crowd</h2>'
-    + '<p class="qp-sub">More people through the gate means more sales for every stall. Let your customers know where to find you on the night &mdash; and if you know a business that would suit Eatz &amp; Beatz, send them our way.</p>'
+    + '<p class="qp-sub">A bigger crowd means more sales for every stall.</p>'
     + '<div class="vi-share-grid">'
-    + card('event', 'Tell your customers', 'Post it on your socials, add it to your stories or pop it in your next newsletter. We&rsquo;ll include your stall'
-      + (d && d.siteLabel ? ' number (site ' + esc(d.siteLabel) + ')' : '') + ' so they can find you.', SHARE_EVENT.url, 'Share the event')
-    + '<div class="vi-share-card"><p class="qp-mini">Share the promo material</p>'
-      + '<p class="vi-share-note">Please post the poster and program on your socials and in your local groups. Print them too &mdash; pop the poster up at your stall, counter or shop window so customers know what&rsquo;s on.</p>'
-      + '<p class="vi-share-link">Poster &middot; A4 program</p>'
-      + '<div class="vi-share-btns"><a class="qv-btn qv-btn-primary" href="' + POSTER_URL + '" download="Eatz-and-Beatz-poster.webp" target="_blank" rel="noopener">Download poster</a>'
-      + '<a class="qv-btn qv-btn-ghost" style="color:#111;border-color:#111;background:#fff" href="' + PROGRAM_URL + '" target="_blank" rel="noopener">Print A4 program</a></div></div>'
-    + card('vendors', 'Invite another vendor', 'Know a food van, maker or local business that would love a spot? Sites are limited &mdash; send them the vendor page to book.', SHARE_VENDORS.url, 'Share with a vendor')
+    + card('Tell your customers', 'Share the event so they can find you' + site + '.', shortUrl(SHARE_EVENT.url), btn('event', 'Share the event'))
+    + card('Share the promo', 'Post the poster and program, or print them for your stall.', 'Poster &middot; A4 program',
+      '<a class="qv-btn qv-btn-primary" href="' + POSTER_URL + '" download="Eatz-and-Beatz-poster.webp" target="_blank" rel="noopener">Poster</a>'
+      + '<a class="qv-btn qv-btn-ghost" style="color:#111;border-color:#111;background:#fff" href="' + PROGRAM_URL + '" target="_blank" rel="noopener">A4 program</a>')
+    + card('Invite a vendor', 'Know a business that would love a spot? Send them the link.', shortUrl(SHARE_VENDORS.url), btn('vendors', 'Share with a vendor'))
     + '</div>'
     + '<div class="vi-ig"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>'
-      + '<p><b>Follow us on Instagram &mdash; @soundzgood_events</b><br>All the latest updates for this event, plus our upcoming events.</p>'
+      + '<p><b>@soundzgood_events</b> &mdash; follow for event updates and what&rsquo;s coming up.</p>'
       + '<a class="qv-btn qv-btn-primary" href="' + INSTAGRAM_URL + '" target="_blank" rel="noopener">Follow us</a></div>'
     + '<p class="qv-msg" id="vi-share-msg" hidden></p></section>';
 }

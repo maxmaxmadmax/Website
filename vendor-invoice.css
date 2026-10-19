@@ -57,8 +57,8 @@ body.vi-page .qp-legal, body.vi-page .qp-legal *{ font-family:Arial,Helvetica,sa
 .vi-share-btns .qv-btn{ text-decoration:none; text-align:center; }
 @media (max-width:900px){ .vi-share-grid{ grid-template-columns:1fr 1fr; } }
 .vi-share-card{ display:flex; flex-direction:column; border:1px solid #e6e6e9; border-radius:12px; padding:16px 18px; background:#fff; }
-.vi-share-note{ margin:0 0 8px; font-size:14px; line-height:1.5; color:#444; }
-.vi-share-link{ margin:0 0 14px; font-size:13px; font-weight:700; color:#ff6b00; word-break:break-all; }
+.vi-share-note{ margin:0 0 14px; font-size:14px; line-height:1.5; color:#444; }
+.vi-share-link{ display:none; margin:0; font-size:9pt; font-weight:700; color:#ff6b00; word-break:break-all; }
 .vi-share-card .qv-btn{ margin-top:auto; align-self:flex-start; }
 @media (max-width:640px){ .vi-share-grid{ grid-template-columns:1fr; } }
 
@@ -104,6 +104,7 @@ body.vi-page .qp-legal, body.vi-page .qp-legal *{ font-family:Arial,Helvetica,sa
   body.vi-page .qv-wrap .qp-share .qv-btn{ display:none !important; }
   body.vi-page .vi-share-grid{ grid-template-columns:repeat(3,1fr) !important; }
   body.vi-page .vi-share-btns, body.vi-page .vi-ig .qv-btn{ display:none !important; }
+  body.vi-page .vi-share-link{ display:block !important; }
   body.vi-page .vi-ig{ margin-top:3mm !important; padding:3mm 4mm !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   body.vi-page .vi-ig p{ font-size:9pt !important; }
   body.vi-page .qp-share > .qp-sub{ display:none !important; } body.vi-page .vi-share-grid{ margin-top:2mm !important; } body.vi-page .vi-share-link{ margin:0 !important; }
