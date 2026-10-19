@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=550';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=550';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=550';
+import { termBodyHtml } from './terms-data.js?v=551';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=551';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=551';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -106,10 +106,14 @@ function posterOf(ev) {
 function documentsHtml(d) {
   const docs = d.documents || [];
   if (!docs.length) return '';
-  return '<div class="qp-docs"><p class="qp-mini">Your documents on file</p><ul>'
-    + docs.map((x) => '<li><a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.name) + '</a>'
-      + (x.type ? ' <span style="color:#888">&middot; ' + esc(x.type) + '</span>' : '') + '</li>').join('')
-    + '</ul></div>';
+  const row = (x) => '<a href="' + esc(x.url) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid #e3e3e6;border-radius:8px;background:#fff;text-decoration:none;color:#1a1a1a">'
+    + '<span aria-hidden="true" style="font-size:20px">&#128196;</span>'
+    + '<span style="flex:1;min-width:0"><b style="display:block;word-break:break-word">' + esc(x.name) + '</b>'
+    + (x.type ? '<span style="font-size:12.5px;color:#777">' + esc(x.type) + '</span>' : '') + '</span>'
+    + '<span style="color:#ff6b00;font-weight:700;font-size:13px">Open &rarr;</span></a>';
+  return '<div class="qp-docs" style="margin-top:22px;padding:16px 18px;border:1px solid #ddd;border-radius:12px;background:#fafafa">'
+    + '<p class="qp-mini" style="margin-top:0">Your documents on file</p>'
+    + '<div style="display:grid;gap:8px">' + docs.map(row).join('') + '</div></div>';
 }
 
 /*  HELP US SPREAD THE WORD: the event page for their own followers and the
