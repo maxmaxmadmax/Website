@@ -4419,3 +4419,6 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 
 /* vendor rows: the quote progress bar is greyed out, it does not apply (Max, 19 Oct 2026) */
 .sp-progress.sp-off{ filter:grayscale(1); opacity:.35; }
+
+/* Sales Pipeline: vendors not emailed their invoice yet (Max, 19 Oct 2026) */
+.sp-vendor-send{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:0 0 12px; padding:12px 16px; border:1px solid #ffd9b3; background:#fff7ef; border-radius:12px; font-size:14px; }

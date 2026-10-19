@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=570';
+} from './firebase-config.js?v=571';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=570';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=570';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=570';
-import { expandKit } from './kit.js?v=570';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=571';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=571';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=571';
+import { expandKit } from './kit.js?v=571';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5752,6 +5752,20 @@ function wireQuoteList() {
   const label = (d) => (d && (d.customer && (d.customer.name || d.customer.business))) || (d && d.number) || 'this job';
   wirePipeline(pipelineJobs, state.spFilter, spHelpers, {
     open(id) { location.hash = '#/quoteDocs?q=' + id; },
+    // email every paid vendor (not yet emailed) their invoice & event guide
+    async sendAllVendors(btn) {
+      const unsent = vendorInvoiceJobs().filter((v) => !v.emailedAt);
+      if (!unsent.length) return;
+      const evId = state.activeEventId;
+      const names = unsent.map((v) => '- ' + v.customer.name).join('\n');
+      if (!window.confirm('Email ' + unsent.length + ' vendor' + (unsent.length === 1 ? '' : 's') + ' their tax invoice & event guide now?\n\n' + names + '\n\nThis sends real emails to vendors.')) return;
+      btn.disabled = true; btn.textContent = 'Sending...';
+      try {
+        const res = await call('adminSendVendorInvoicesAll', { eventId: evId });
+        window.alert('Sent ' + res.sent + '.' + (res.failed && res.failed.length ? '\n\nNot sent:\n' + res.failed.join('\n') : ''));
+      } catch (err) { window.alert(err.message || 'Could not send.'); }
+      btn.disabled = false; btn.textContent = 'Done';
+    },
     // vendor tax invoice: view the page, or email a TEST to the signed-in admin only
     async vendorInvoice(id, mode, btn) {
       const bookingId = String(id).replace(/^vendor:/, '');

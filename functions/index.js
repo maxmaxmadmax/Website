@@ -1021,16 +1021,16 @@ async function confirmAndNotify(bookingId, extra = {}) {
     const evSnap = await db.collection('events').doc(booking.eventId).get();
     const event = evSnap.exists ? evSnap.data() : {};
 
-    const sent = await sendAndRecord(booking, bookingId, event, ref);
-
-    /*  confirmationEmailAt is the "we have already told them" guard a few
-        lines up. It was set from sent.sent, which sendBookingEmails has
-        never returned - it returns { vendor, office, errors } - so the
-        guard never armed and a webhook retry would have emailed the
-        vendor a second time.                                          */
-    if (sent && sent.vendor) {
-      await ref.update({ confirmationEmailAt: FieldValue.serverTimestamp() });
-    }
+    /*  AUTO-SEND (Max, 19 Oct 2026): the vendor gets the tax invoice & event
+        guide email (one email, not two); the office still gets its copy.
+        confirmationEmailAt is the "already told them" guard above.       */
+    await sendBookingEmails(booking, bookingId, event, { officeOnly: true });
+    const mail = await sendVendorInvoice(bookingId, {});
+    await ref.update({
+      emailStatus: mail.sent ? 'sent' : 'failed',
+      emailAt: FieldValue.serverTimestamp(),
+      ...(mail.sent ? { confirmationEmailAt: FieldValue.serverTimestamp() } : { emailError: String(mail.error || mail.reason || '').slice(0, 500) }),
+    });
   } catch (err) {
     logger.error('confirmation email step failed, booking is still confirmed', {
       bookingId, message: err && err.message,
@@ -3533,22 +3533,17 @@ exports.adminVendorInvoiceLink = onCall(async (request) => {
   return { ok: true, invoiceNumber: inv.invoiceNumber, link: SITE_URL + '/vendor-invoice?t=' + inv.token };
 });
 
-exports.adminSendVendorInvoice = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
-  requireAdmin(request);
-  const data = request.data || {};
-  const id = String(data.bookingId || '').trim();
-  if (!id) throw new HttpsError('invalid-argument', 'Missing booking.');
-
+/*  Sends one vendor their invoice & guide email. opts.test + opts.to sends a
+    TEST copy to that address only and records nothing.                   */
+async function sendVendorInvoice(id, opts) {
   const inv = await ensureVendorInvoice(id);
   const b = inv.booking;
   const evSnap = await db.collection('events').doc(b.eventId).get();
   const ev = evSnap.exists ? evSnap.data() : {};
   const biz = b.business || {};
-
-  const test = data.test === true;
-  const to = test ? String(request.auth.token.email || '') : String(biz.email || '');
-  if (!to) throw new HttpsError('failed-precondition', test ? 'Your admin login has no email address.' : 'That booking has no email address.');
-
+  const test = opts.test === true;
+  const to = test ? String(opts.to || '') : String(biz.email || '');
+  if (!to) return { sent: false, reason: 'no-address' };
   const total = b.totalCents != null ? b.totalCents : (b.amountCents || 0);
   const mail = await sendVendorInvoiceEmail({
     to, test,
@@ -3560,7 +3555,6 @@ exports.adminSendVendorInvoice = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, asy
     eventName: ev.name || '',
     eventDate: ev.dateLabel || '',
   });
-
   if (mail.sent && !test) {
     await db.collection('bookings').doc(id).update({
       invoiceEmailedAt: FieldValue.serverTimestamp(),
@@ -3568,6 +3562,36 @@ exports.adminSendVendorInvoice = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, asy
     });
   }
   return { ...mail, to, test, invoiceNumber: inv.invoiceNumber };
+}
+
+/*  SEND TO EVERY PAID VENDOR of an event who has not had theirs yet
+    (Max said go, 19 Oct 2026). Pressed from the Sales Pipeline.        */
+exports.adminSendVendorInvoicesAll = onCall({ secrets: [SMTP_USER, SMTP_PASS], timeoutSeconds: 300 }, async (request) => {
+  requireAdmin(request);
+  const eventId = String((request.data || {}).eventId || '').trim();
+  if (!eventId) throw new HttpsError('invalid-argument', 'Missing event.');
+  const snap = await db.collection('bookings').where('eventId', '==', eventId).get();
+  const out = { sent: 0, skipped: 0, failed: [] };
+  for (const d of snap.docs) {
+    const b = d.data();
+    if (!bookingIsPaid(b) || b.status === 'cancelled' || b.invoiceEmailedAt) { out.skipped++; continue; }
+    try {
+      const r = await sendVendorInvoice(d.id, {});
+      if (r.sent) out.sent++;
+      else out.failed.push(((b.business || {}).name || d.id) + ': ' + (r.error || r.reason || 'not sent'));
+    } catch (err) { out.failed.push(((b.business || {}).name || d.id) + ': ' + (err && err.message)); }
+  }
+  return out;
+});
+
+exports.adminSendVendorInvoice = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  requireAdmin(request);
+  const data = request.data || {};
+  const id = String(data.bookingId || '').trim();
+  if (!id) throw new HttpsError('invalid-argument', 'Missing booking.');
+  const test = data.test === true;
+  if (test && !request.auth.token.email) throw new HttpsError('failed-precondition', 'Your admin login has no email address.');
+  return sendVendorInvoice(id, { test, to: request.auth.token.email });
 });
 
 exports.getVendorInvoice = onCall(async (request) => {

@@ -322,7 +322,7 @@ function officeHtml(booking, bookingId, event) {
 /* -------------------------------------------------------------------------
    Send both. Never throws.
    ------------------------------------------------------------------------- */
-async function sendBookingEmails(booking, bookingId, event) {
+async function sendBookingEmails(booking, bookingId, event, opts = {}) {
   const tx = transport();
 
   if (!tx) {
@@ -337,7 +337,9 @@ async function sendBookingEmails(booking, bookingId, event) {
       why an invoice did not go, and the caller may want to say. */
   const results = { vendor: false, office: false, errors: [] };
 
-  if (to) {
+  /*  officeOnly: the vendor gets the new invoice & event guide email instead
+      (functions/lib/vendor-invoice-email.js), so only the office copy goes. */
+  if (to && !opts.officeOnly) {
     try {
       await tx.sendMail({
         from,

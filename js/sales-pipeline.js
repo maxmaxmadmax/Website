@@ -10,7 +10,7 @@
    (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { isBooked, pickProgress } from './stock.js?v=570';
+import { isBooked, pickProgress } from './stock.js?v=571';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -190,6 +190,7 @@ export function pipelineHtml(jobs, f, h) {
         </select>
       </div>
 
+      ${vendorSendBar(jobs, h)}
       <div class="sp-table-wrap">
         <table class="sp-table">
           <thead><tr>
@@ -204,6 +205,15 @@ export function pipelineHtml(jobs, f, h) {
         </table>
       </div>
     </div>`;
+}
+
+/*  VENDOR INVOICES NOT EMAILED YET (Max, 19 Oct 2026): one button sends
+    every paid vendor their invoice & event guide (asks first).          */
+function vendorSendBar(jobs, h) {
+  const unsent = jobs.filter((q) => q.vendor && !q.emailedAt).length;
+  if (!unsent) return '';
+  return `<div class="sp-vendor-send"><span><b>${unsent} vendor${unsent === 1 ? '' : 's'}</b> haven&rsquo;t been emailed their invoice &amp; event guide yet.</span>
+    <button type="button" class="ad-btn ad-btn-primary" data-sp-sendall>Email all ${unsent}</button></div>`;
 }
 
 /* the table rows */
@@ -323,6 +333,8 @@ export function wirePipeline(getJobs, f, h, act) {
         .catch(() => { window.prompt('Copy the customer link:', link); });
       return;
     }
+    const sa = e.target.closest('[data-sp-sendall]');
+    if (sa) { act.sendAllVendors(sa); return; }
     const vb = e.target.closest('[data-sp-vendor]');
     if (vb) { act.vendorInvoice(vb.getAttribute('data-id'), vb.getAttribute('data-sp-vendor'), vb); return; }
     const a = e.target.closest('[data-sp-act]');
