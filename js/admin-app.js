@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=571';
+} from './firebase-config.js?v=572';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=571';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=571';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=571';
-import { expandKit } from './kit.js?v=571';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=572';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=572';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=572';
+import { expandKit } from './kit.js?v=572';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5830,8 +5830,13 @@ function wireQuoteList() {
     },
     async del(id) {
       const d = findDoc(id);
-      if (!window.confirm('DELETE ' + label(d) + ' (' + ((d && d.number) || '') + ') FOREVER?\n\nThis cannot be undone. Archive keeps it instead.')) return;
-      try { await call('adminDeleteQuote', { id }); } catch (e) { window.alert(e.message || 'Could not delete.'); }
+      // an archived job with an invoice or money on it: type DELETE (it may be a tax record)
+      const money = d && (d.invoiceNumber || (d.amountPaidCents || 0) > 0 || d.kind === 'invoice');
+      if (money) {
+        const typed = window.prompt(label(d) + ' (' + (d.invoiceNumber || d.number || '') + ') has an invoice or payment on it.\n\nOnly delete TEST jobs - real tax invoices must be kept for 5 years.\n\nType DELETE to remove it forever:');
+        if (String(typed || '').trim().toUpperCase() !== 'DELETE') return;
+      } else if (!window.confirm('DELETE ' + label(d) + ' (' + ((d && d.number) || '') + ') FOREVER?\n\nThis cannot be undone. Archive keeps it instead.')) return;
+      try { await call('adminDeleteQuote', { id, force: !!money }); } catch (e) { window.alert(e.message || 'Could not delete.'); }
     },
   });
 }

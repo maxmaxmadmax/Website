@@ -10,7 +10,7 @@
    (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { isBooked, pickProgress } from './stock.js?v=571';
+import { isBooked, pickProgress } from './stock.js?v=572';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -287,7 +287,7 @@ export function rowsHtml(rows, f, h) {
               ${st.tab === 'archived'
                 ? `<button type="button" data-sp-act="restore" data-id="${h.attr(q.id)}">Restore</button>`
                 : `<button type="button" data-sp-act="archive" data-id="${h.attr(q.id)}">Archive</button>`}
-              ${canDelete(q) ? `<button type="button" class="sp-danger" data-sp-act="delete" data-id="${h.attr(q.id)}">Delete forever</button>` : ''}
+              ${canDelete(q) || st.tab === 'archived' ? `<button type="button" class="sp-danger" data-sp-act="delete" data-id="${h.attr(q.id)}">Delete forever</button>` : ''}
             </div>
           </details>
         </td>

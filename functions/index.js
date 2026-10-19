@@ -2701,13 +2701,17 @@ exports.adminArchiveQuote = onCall(async (request) => {
 
 exports.adminDeleteQuote = onCall(async (request) => {
   requireAdmin(request);
-  const { id } = request.data || {};
+  const { id, force } = request.data || {};
   const ref = db.collection('quotes').doc(String(id || ''));
   const snap = await ref.get();
   if (!snap.exists) return { ok: true };
   const q = snap.data();
-  const ok = ['draft', 'approved', 'sent', 'declined', 'cancelled'].includes(q.status)
-    && !q.invoiceNumber && !((q.amountPaidCents || 0) > 0) && q.kind !== 'invoice';
+  // ARCHIVED (cancelled / declined) jobs can be deleted even with an invoice or
+  // payment on them, when the admin typed DELETE to confirm (force) - Max, 19 Oct 2026
+  const archived = q.status === 'cancelled' || q.status === 'declined';
+  const ok = (['draft', 'approved', 'sent', 'declined', 'cancelled'].includes(q.status)
+    && !q.invoiceNumber && !((q.amountPaidCents || 0) > 0) && q.kind !== 'invoice')
+    || (archived && force === true);
   if (!ok) throw new HttpsError('failed-precondition', 'Invoices and paid jobs can\'t be deleted - archive it instead.');
   await ref.delete();
   logger.info('Quote deleted by admin', { id, number: q.number || '', by: (request.auth.token && request.auth.token.email) || request.auth.uid });
