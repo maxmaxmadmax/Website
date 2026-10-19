@@ -4416,7 +4416,3 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .inv-req-none{ margin:0; padding:10px 12px; color:var(--ad-muted); font-size:13px; }
 .inv-req-item > span{ display:block; }
 
-/* Sales Pipeline: vendor invoices dropdown (Max, 19 Oct 2026) */
-.sp-vendor-bar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 12px; padding:10px 14px; background:#fff; border:1px solid var(--ad-line); border-radius:12px; }
-.sp-vendor-bar b{ font-size:13px; }
-.sp-vendor-bar .ad-select{ min-width:260px; max-width:100%; }

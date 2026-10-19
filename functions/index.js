@@ -1005,6 +1005,11 @@ async function confirmAndNotify(bookingId, extra = {}) {
   // nothing was confirmed - a duplicate webhook, or a site taken first
   if (!result || result.ok === false || result.alreadyConfirmed) return result;
 
+  // the vendor's tax invoice number + private link, ready for the Sales Pipeline.
+  // Only makes the invoice - it is NOT emailed (Max sends those himself, for now).
+  try { await ensureVendorInvoice(bookingId); }
+  catch (err) { logger.warn('vendor invoice number failed', { bookingId, message: err && err.message }); }
+
   try {
     const ref = db.collection('bookings').doc(bookingId);
     const snap = await ref.get();
@@ -3609,4 +3614,19 @@ exports.getVendorInvoice = onCall(async (request) => {
       site: 'www.soundzgood.com.au',
     },
   };
+});
+
+/*  Gives every paid vendor booking that has no invoice yet its number + link,
+    so they all show in the Sales Pipeline. Makes invoices only - sends nothing. */
+exports.adminEnsureVendorInvoices = onCall(async (request) => {
+  requireAdmin(request);
+  const snap = await db.collection('bookings').get();
+  let made = 0;
+  for (const d of snap.docs) {
+    const b = d.data();
+    if (!bookingIsPaid(b) || (b.invoiceNumber && b.invoiceToken)) continue;
+    try { await ensureVendorInvoice(d.id); made++; }
+    catch (err) { logger.warn('ensure vendor invoice', { id: d.id, message: err && err.message }); }
+  }
+  return { ok: true, made };
 });

@@ -10,7 +10,7 @@
    (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { isBooked, pickProgress } from './stock.js?v=544';
+import { isBooked, pickProgress } from './stock.js?v=545';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -40,6 +40,12 @@ export function canDelete(q) {
 }
 
 export function stageOf(q) {
+  /*  A vendor's tax invoice (Max, 19 Oct 2026): always paid, and has its own
+      Vendors tab so it never counts as a job for the crew.               */
+  if (q.vendor) {
+    return { step: 4, tab: 'vendors', status: ['Paid', 'green'],
+             next: ['doc', 'green', 'Invoice issued', q.emailedAt ? 'Emailed to vendor' : 'Not emailed yet'] };
+  }
   const s = STAGES[q.status] || STAGES.draft;
   // payment detail for jobs waiting on money
   const pp = isBooked(q) && q.crewToken ? pickProgress(q) : null;
@@ -62,6 +68,7 @@ export const TABS = [
   ['quotes', 'Quotes', (q) => stageOf(q).tab === 'quotes'],
   ['payment', 'Awaiting payment', (q) => stageOf(q).tab === 'payment'],
   ['confirmed', 'Jobs confirmed', (q) => stageOf(q).tab === 'confirmed'],
+  ['vendors', 'Vendors', (q) => !!q.vendor],
   ['archived', 'Archived', (q) => stageOf(q).tab === 'archived'],
 ];
 
@@ -182,7 +189,6 @@ export function pipelineHtml(jobs, f, h) {
           ${dateOpt('all', 'All dates')}${dateOpt('upcoming', 'Upcoming')}${dateOpt('month', 'This month')}${dateOpt('past', 'Past')}
         </select>
       </div>
-${vendorInvoiceBar(h)}
 
       <div class="sp-table-wrap">
         <table class="sp-table">
@@ -198,23 +204,6 @@ ${vendorInvoiceBar(h)}
         </table>
       </div>
     </div>`;
-}
-
-/*  VENDOR INVOICES (Max, 19 Oct 2026): pick a paid vendor from the dropdown,
-    then View invoice (their private A4 page) or Test to me (emails it to the
-    signed-in admin only). No send-to-vendor button until Max says go.    */
-function vendorInvoiceBar(h) {
-  const vendors = h.vendors ? h.vendors() : [];
-  if (!vendors.length) return '';
-  return `<div class="sp-vendor-bar">
-        <b>Vendor invoices</b>
-        <select id="sp-vendor" class="ad-select" aria-label="Choose a vendor">
-          <option value="">Choose a vendor&hellip;</option>
-          ${vendors.map((v) => `<option value="${h.attr(v.id)}">${h.esc(v.label)}</option>`).join('')}
-        </select>
-        <button type="button" class="ad-btn ad-btn-small" data-sp-vendor="view" disabled>View invoice</button>
-        <button type="button" class="ad-btn ad-btn-small" data-sp-vendor="test" disabled title="Emails the invoice to you only">Test to me</button>
-      </div>`;
 }
 
 /* the table rows */
@@ -234,6 +223,30 @@ export function rowsHtml(rows, f, h) {
       return `<span class="sp-step${cls}"><b>${done ? '&#10003;' : ''}</b><em>${label}</em></span>`;
     }).join('');
     const [ico, tone, nTitle, nSub] = st.next;
+    if (q.vendor) {
+      return `
+      <tr data-open-q="${h.attr(q.id)}">
+        <td class="sp-cust">
+          <strong>${h.esc(c.name || 'Vendor')}<span class="ad-bot-tag">Vendor</span></strong>
+          <span>${h.esc(c.eventName || '')}${q.invoiceNumber ? ' <i>' + h.esc(q.invoiceNumber) + '</i>' : ''}</span>
+        </td>
+        <td class="sp-date">${h.esc(eventDateText(q) || '—')}</td>
+        <td><div class="sp-progress">${progress}</div></td>
+        <td><span class="sp-next sp-${tone}">${svg(ico)}<span><b>${h.esc(nTitle)}</b><em>${h.esc(nSub)}</em></span></span></td>
+        <td class="sp-total">${h.esc(h.money(q.totalCents || 0))}</td>
+        <td class="sp-act">
+          <button type="button" class="sp-view">View</button>
+          <details class="sp-more" data-no-open>
+            <summary aria-label="More"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="sp-menu">
+              <button type="button" data-sp-vendor="view" data-id="${h.attr(q.id)}">Open invoice &amp; event guide</button>
+              <button type="button" data-sp-vendor="copy" data-id="${h.attr(q.id)}">Copy vendor link</button>
+              <button type="button" data-sp-vendor="test" data-id="${h.attr(q.id)}">Email test to me</button>
+            </div>
+          </details>
+        </td>
+      </tr>`;
+    }
     return `
       <tr data-open-q="${h.attr(q.id)}">
         <td class="sp-cust">
@@ -311,11 +324,7 @@ export function wirePipeline(getJobs, f, h, act) {
       return;
     }
     const vb = e.target.closest('[data-sp-vendor]');
-    if (vb) {
-      const sel = document.getElementById('sp-vendor');
-      if (sel && sel.value && act.vendorInvoice) act.vendorInvoice(sel.value, vb.getAttribute('data-sp-vendor'), vb);
-      return;
-    }
+    if (vb) { act.vendorInvoice(vb.getAttribute('data-id'), vb.getAttribute('data-sp-vendor'), vb); return; }
     const a = e.target.closest('[data-sp-act]');
     if (a) {
       const fn = { duplicate: act.duplicate, archive: act.archive, restore: act.restore, delete: act.del, paid: act.paid, deposit: act.deposit, picklist: act.picklist, undopay: act.undopay }[a.getAttribute('data-sp-act')];
@@ -325,14 +334,14 @@ export function wirePipeline(getJobs, f, h, act) {
     if (e.target.closest('[data-no-open]')) return;   // the ⌄ menu
     if (e.target.closest('#q-new')) { act.newQuote(); return; }
     const row = e.target.closest('[data-open-q]');
-    if (row) act.open(row.getAttribute('data-open-q'));
+    if (row) {
+      const id = row.getAttribute('data-open-q');
+      if (id.startsWith('vendor:')) act.vendorInvoice(id, 'view');
+      else act.open(id);
+    }
   });
   const search = document.getElementById('sp-search');
   if (search) search.addEventListener('input', () => { f.search = search.value; paint(); });
-  const vsel = document.getElementById('sp-vendor');
-  if (vsel) vsel.addEventListener('change', () => {
-    root.querySelectorAll('[data-sp-vendor]').forEach((b) => { b.disabled = !vsel.value; });
-  });
   const dates = document.getElementById('sp-dates');
   if (dates) dates.addEventListener('change', () => { f.dates = dates.value; paint(); });
   // close any open ⌄ menu when clicking elsewhere (added once)
