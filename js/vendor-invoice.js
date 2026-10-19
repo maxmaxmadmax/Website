@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=555';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=555';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=555';
+import { termBodyHtml } from './terms-data.js?v=556';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=556';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=556';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -80,14 +80,14 @@ const BRING_GROUPS = [
   ['<path d="M5 7h14l-1 14H6zM3 7h18M9 7V4h6v3"/>', 'Pack-down &amp; clean-up', [
     'Bins and bags for your own waste',
     'Take oil, food scraps and wastewater home',
-    'Leaving early? Ask us first - vehicles still wait',
+    'Leaving early? Ask us first - no vehicle movement before 9:40 pm, for patron safety',
     'Leave your site spotless',
   ]],
 ];
 
 /*  ON THE NIGHT - the hard rules. */
 const RULES = [
-  ['No vehicle movement 4:15 pm - 9:40 pm.', 'After that, only when event staff say the route is clear - never through the crowd.'],
+  ['No vehicle movement 4:15 pm - 9:40 pm.', 'This keeps patrons safe. After 9:40 pm, only when event staff say the route is clear - never through the crowd.'],
   ['No music or speakers at your stall.', 'Let the live entertainment carry the night.'],
   ['No alcohol sales.', 'The licensed event bar only.'],
   ['Nothing in public bins or drains.', 'Commercial waste goes home with you.'],
@@ -148,34 +148,44 @@ function documentsHtml(d) {
     vendor page for other vendors. Change these for another event.        */
 const SHARE_EVENT = {
   url: 'https://www.soundzgood.com.au/eatz-beatz-halloween-2026',
-  text: 'Come and see us at Eatz & Beatz Halloween Edition - Sat 31 Oct, 4:30-9:30pm, Bowen Sports Complex. Free entry, live music, food, markets and a licensed bar!',
+  // {biz} and {site} are filled in, so the post says where to find them
+  text: 'Come and find {biz}{site} at Eatz & Beatz Halloween Edition! Sat 31 Oct, 4:30-9:30pm at Bowen Sports Complex. Free entry - food, markets, live music and a licensed bar.',
 };
 const SHARE_VENDORS = {
   url: 'https://www.soundzgood.com.au/vendor-signup',
-  text: 'Market stalls are open for Eatz & Beatz Halloween Edition - Sat 31 Oct, Bowen Sports Complex. Know another vendor? Book a stall here.',
+  text: "We're trading at Eatz & Beatz Halloween Edition in Bowen on Sat 31 Oct - you should grab a stall too! Book your site here:",
 };
+const shortUrl = (u) => u.replace('https://', '').replace('www.', '');
+function shareText(s, d) {
+  return s.text.replace('{biz}', (d && d.business.name) || 'us')
+    .replace('{site}', d && d.siteLabel ? ' (site ' + d.siteLabel + ')' : '');
+}
 
-function shareHtml() {
-  const card = (key, title, note, btn) => '<div class="qp-incl"><p class="qp-mini">' + title + '</p><p class="qp-sub" style="margin:0 0 10px">' + note + '</p>'
+function shareHtml(d) {
+  const card = (key, title, note, link, btn) => '<div class="vi-share-card"><p class="qp-mini">' + title + '</p>'
+    + '<p class="vi-share-note">' + note + '</p>'
+    + '<p class="vi-share-link">' + esc(shortUrl(link)) + '</p>'
     + '<button type="button" class="qv-btn qv-btn-primary" data-share="' + key + '">' + btn + '</button></div>';
-  return '<style>@media print{.qp-share .qv-btn{display:none}}</style><section class="qp-sec qp-share"><p class="qp-eyebrow">Help us spread the word</p>'
-    + '<h2 class="qp-h2">Promote your night</h2>'
-    + '<p class="qp-sub">A bigger crowd is good for every stall. Please share Eatz &amp; Beatz with your customers and followers &mdash; and with other vendors who might want a spot.</p>'
-    + '<div class="qp-inv-extra">'
-    + card('event', 'Share the event', 'Send your customers and followers the event page: ' + esc(SHARE_EVENT.url), 'Share the event')
-    + card('vendors', 'Invite other vendors', 'Know a food or market business that would love it? Send them the vendor page: ' + esc(SHARE_VENDORS.url), 'Share with other vendors')
+  return '<section class="qp-sec qp-share"><p class="qp-eyebrow">Help us fill the grounds</p>'
+    + '<h2 class="qp-h2">Bring your crowd</h2>'
+    + '<p class="qp-sub">More people through the gate means more sales for every stall. Let your customers know where to find you on the night &mdash; and if you know a business that would suit Eatz &amp; Beatz, send them our way.</p>'
+    + '<div class="vi-share-grid">'
+    + card('event', 'Tell your customers', 'Post it on your socials, add it to your stories or pop it in your next newsletter. We&rsquo;ll include your stall'
+      + (d && d.siteLabel ? ' number (site ' + esc(d.siteLabel) + ')' : '') + ' so they can find you.', SHARE_EVENT.url, 'Share the event')
+    + card('vendors', 'Invite another vendor', 'Know a food van, maker or local business that would love a spot? Sites are limited &mdash; send them the vendor page to book.', SHARE_VENDORS.url, 'Share with a vendor')
     + '</div><p class="qv-msg" id="vi-share-msg" hidden></p></section>';
 }
 
-function wireShare() {
+function wireShare(d) {
   document.querySelectorAll('[data-share]').forEach((btn) => btn.addEventListener('click', async () => {
     const s = btn.getAttribute('data-share') === 'vendors' ? SHARE_VENDORS : SHARE_EVENT;
+    const text = shareText(s, d);
     const msg = document.getElementById('vi-share-msg');
     try {
-      if (navigator.share) { await navigator.share({ title: 'Eatz & Beatz', text: s.text, url: s.url }); return; }
-      await navigator.clipboard.writeText(s.text + ' ' + s.url);
+      if (navigator.share) { await navigator.share({ title: 'Eatz & Beatz', text, url: s.url }); return; }
+      await navigator.clipboard.writeText(text + ' ' + s.url);
       if (msg) { msg.hidden = false; msg.textContent = 'Copied - paste it into a post or message.'; }
-    } catch (e) { if (e && e.name !== 'AbortError') window.prompt('Copy this to share:', s.text + ' ' + s.url); }
+    } catch (e) { if (e && e.name !== 'AbortError') window.prompt('Copy this to share:', text + ' ' + s.url); }
   }));
 }
 
@@ -328,10 +338,10 @@ function bottom(d) {
 
 function render(d) {
   document.title = 'Invoice ' + d.invoiceNumber + ' | SoundzGood Whitsundays';
-  document.getElementById('quote-root').innerHTML = top(d) + paper(d) + guide(d) + shareHtml() + bottom(d);
+  document.getElementById('quote-root').innerHTML = top(d) + paper(d) + guide(d) + shareHtml(d) + bottom(d);
   // printing / PDF: show the whole terms, not just the open one
   window.addEventListener('beforeprint', () => document.querySelectorAll('.qp-term').forEach((x) => { x.open = true; }));
-  wireShare();
+  wireShare(d);
   const print = document.getElementById('qv-print');
   if (print) print.addEventListener('click', () => window.print());
 }
