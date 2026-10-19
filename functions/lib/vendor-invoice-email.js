@@ -165,6 +165,8 @@ async function sendVendorInvoiceEmail(d) {
     await tx.sendMail({
       from: `${SELLER.name} <${SELLER.email}>`,
       to: d.to,
+      // a copy of every email goes to the office (Max, 20 Oct 2026)
+      ...(d.test ? {} : { bcc: OFFICE }),
       replyTo: OFFICE,
       subject: (d.test ? '[TEST] ' : '') + (d.subjectTpl ? fill(d.subjectTpl, invoiceValues(d), (v) => String(v)) : `Your tax invoice & event guide - ${d.eventName || 'Eatz & Beatz'}`),
       text: d.bodyTpl ? fill(d.bodyTpl, invoiceValues(d), (v) => String(v)) + '\n\nYour invoice & event guide: ' + d.link : text(d),

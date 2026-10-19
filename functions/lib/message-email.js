@@ -121,6 +121,8 @@ async function sendMessageEmail(msg, values, opts) {
     await tx.sendMail({
       from: `${SELLER.name} <${SELLER.email}>`,
       to: opts.to,
+      // a copy of every email goes to the office (Max, 20 Oct 2026)
+      ...(opts.test ? {} : { bcc: OFFICE }),
       replyTo: OFFICE,
       subject: (opts.test ? '[TEST] ' : '') + fill(msg.subject, values, (v) => String(v)),
       text: text(msg, values, opts),

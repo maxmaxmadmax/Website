@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=579';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=579';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=580';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=580';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -585,11 +585,13 @@ function proposalBottom(q, opts = {}) {
   } else if (q.status === 'accepted') {
     book = '<div class="qp-done">&#10003; Quote accepted. We&rsquo;ll be in touch about payment.</div>';
   } else {
-    const opt = (v, title, amt, note, on) => '<label class="qp-opt"><input type="radio" name="qp-opt" value="' + v + '"' + (on ? ' checked' : '') + '><span><b>' + title + '</b><strong>' + amt + '</strong><em>' + note + '</em></span></label>';
+    const opt = (v, title, amt, note, on, off) => '<label class="qp-opt' + (off ? ' is-off' : '') + '"><input type="radio" name="qp-opt" value="' + v + '"' + (on ? ' checked' : '') + (off ? ' disabled' : '') + '><span><b>' + title + '</b><strong>' + amt + '</strong><em>' + note + '</em></span></label>';
     const full = fullOnly(q);
     book = '<div class="qp-book-grid"><div>'
       + (full ? '<p class="qp-full-note">Your event is less than 7 days away, so payment in full is due now.</p>' : '')
-      + (q.cardOn && !full ? opt('deposit', 'Pay ' + pct + '% deposit', money(deposit), 'Secure your date now. Balance due ' + esc(balDue) + '.', true) : '')
+      + (q.cardOn ? (full
+        ? opt('deposit', 'Pay ' + pct + '% deposit', money(deposit), 'Not available &mdash; your event is less than 7 days away.', false, true)
+        : opt('deposit', 'Pay ' + pct + '% deposit', money(deposit), 'Secure your date now. Balance due ' + esc(balDue) + '.', true)) : '')
       + (q.cardOn ? opt('full', 'Pay in full', money(total), 'Pay the total now and you&rsquo;re all done.', full) : '')
       + (full
         ? opt('bank', 'Bank transfer', money(total) + ' in full', 'Accept now, pay the full amount by bank transfer today. No fees.', !q.cardOn)

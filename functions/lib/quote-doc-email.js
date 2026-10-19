@@ -108,6 +108,8 @@ async function sendQuoteLinkEmail(q, link) {
           .filter((e) => e && e.toLowerCase() !== String(to).toLowerCase());
         return cc.length ? { cc: cc.join(', ') } : {};
       })(),
+      // a copy of every email goes to the office (Max, 20 Oct 2026)
+      bcc: OFFICE,
       replyTo: OFFICE,
       subject: `Your ${docLabel(q)} ${q.kind === 'invoice' ? (q.invoiceNumber || q.number) : q.number} from SoundzGood`,
       text: text(q, link),
