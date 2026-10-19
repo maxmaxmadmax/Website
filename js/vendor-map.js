@@ -328,7 +328,10 @@ export class VendorMap {
     svg.setAttribute('aria-label', 'Vendor site map');
 
     // ---- fixed furniture, drawn first so sites sit on top ----------------
-    for (const mark of this.landmarks) {
+    /*  The ENTRY box sat on top of bays M20 and M30 (Max, 19 Oct 2026) - not drawn.
+        It is skipped here as well as removed from the default layout because
+        the live event still has it saved.                                   */
+    for (const mark of this.landmarks.filter((m) => m.kind !== 'entry')) {
       const g = document.createElementNS(ns, 'g');
       g.setAttribute('class', `vmap-landmark vmap-landmark-${mark.kind || 'other'}`);
 
@@ -528,7 +531,6 @@ export function previewLayout() {
       { id: 'walkway', label: 'WALKWAY', kind: 'path', x: 368, y: 130, w: 24, h: 420 },
       { id: 'barrier-left', label: '', kind: 'barrier', x: 40, y: 660, w: 8, h: 300 },
       { id: 'barrier-right', label: '', kind: 'barrier', x: 712, y: 660, w: 8, h: 300 },
-      { id: 'entry', label: 'ENTRY', kind: 'entry', x: 296, y: 1360, w: 168, h: 46 },
     ],
   };
 }

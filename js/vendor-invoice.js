@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=553';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=553';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=553';
+import { termBodyHtml } from './terms-data.js?v=554';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=554';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=554';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -74,7 +74,7 @@ function siteMap(d) {
   if (!m || !m.sites || !m.sites.length || !m.mine || !m.mine.length) return '';
   const w = (m.mapSize && m.mapSize.width) || 760, h = (m.mapSize && m.mapSize.height) || 1420;
   const mine = new Set(m.mine);
-  const lm = (m.landmarks || []).map((k) =>
+  const lm = (m.landmarks || []).filter((k) => k.kind !== 'entry').map((k) =>
     '<g><rect x="' + k.x + '" y="' + k.y + '" width="' + k.w + '" height="' + k.h + '" rx="' + (k.kind === 'barrier' ? 2 : 8) + '" fill="#e9e9ec" stroke="#cfcfd4"/>'
     + (k.label ? '<text x="' + (k.x + k.w / 2) + '" y="' + (k.y + k.h / 2 + 6) + '" text-anchor="middle" font-size="18" font-weight="700" fill="#777" font-family="Arial">' + esc(k.label) + '</text>' : '') + '</g>').join('');
   const sites = m.sites.map((s) => {
