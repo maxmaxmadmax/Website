@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=569';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=569';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=569';
+import { termBodyHtml } from './terms-data.js?v=570';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=570';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=570';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -54,8 +54,7 @@ const BRING = [
   'Stay inside your own site',
   'Marquee must be secured',
   'Pegs 300 mm deep max',
-  'Tagged leads, fire extinguisher',
-  'Take all your waste home',
+  "Take all your waste home - please don't use our bins for commercial waste",
   'Help us promote the event',
   'Please follow instructions given by our event staff',
 ];
