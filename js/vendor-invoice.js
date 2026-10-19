@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=549';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=549';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=549';
+import { termBodyHtml } from './terms-data.js?v=550';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=550';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=550';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -209,13 +209,15 @@ function top(d) {
     <section class="qp-sec qp-guide">
       <p class="qp-eyebrow">Event guide</p>
       <h2 class="qp-h2">What you need to know</h2>
-      <div class="qp-inv-extra">
-        <div class="qp-incl"><p class="qp-mini">What to bring</p><ul>${BRING.map((t) => '<li>' + esc(t) + '</li>').join('')}</ul></div>
-        <div class="qp-incl"><p class="qp-mini">Please remember</p><ul>${NOT_ALLOWED.map((t) => '<li>' + esc(t) + '</li>').join('')}</ul></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:30px;align-items:start">
+        <div>
+          <div class="qp-incl"><p class="qp-mini">What to bring</p><ul>${BRING.map((t) => '<li>' + esc(t) + '</li>').join('')}</ul></div>
+          <div class="qp-incl" style="margin-top:22px"><p class="qp-mini">Please remember</p><ul>${NOT_ALLOWED.map((t) => '<li>' + esc(t) + '</li>').join('')}</ul></div>
+          ${documentsHtml(d)}
+        </div>
+        <div>${siteMap(d)}</div>
       </div>
-      ${siteMap(d)}
-      ${documentsHtml(d)}
-      <p class="qp-sub">Follow directions from event staff for access, setup and departure. Questions? ${esc(d.seller.email)} &middot; ${esc(d.seller.phone)}</p>
+      <p class="qp-sub" style="margin-top:22px">Follow directions from event staff for access, setup and departure. Questions? ${esc(d.seller.email)} &middot; ${esc(d.seller.phone)}</p>
     </section>`;
 }
 
