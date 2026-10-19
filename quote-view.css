@@ -614,3 +614,56 @@
 .qp-opt.is-off{ opacity:.45; filter:grayscale(1); cursor:not-allowed; }
 .qp-overdue{ background:#fff1f0 !important; border-color:#f3b3ad !important; color:#a1261b !important; }
 .qp-overdue-row span{ color:#a1261b; font-weight:700; }
+
+/* ==========================================================================
+   PAYMENT GATEWAY (Max's mock-up, 20 Oct 2026)
+   ========================================================================== */
+.pg-lead{ margin:-6px 0 18px; color:#666; font-size:15px; }
+.pg-grid{ grid-template-columns:1fr 330px; gap:28px; }
+.pg-alert{ display:flex; gap:14px; align-items:flex-start; border-radius:12px; padding:14px 18px; margin-bottom:14px; }
+.pg-alert svg{ width:28px; height:28px; flex:none; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+.pg-alert b{ display:block; font-size:18px; }
+.pg-alert p{ margin:2px 0; font-size:15px; }
+.pg-alert small{ font-size:13px; }
+.pg-alert-red{ background:#fdecec; border:1px solid #f5c2c0; color:#b3261e; }
+.pg-alert-red svg{ stroke:#c62828; fill:#c62828; }
+.pg-alert-red svg path:last-child{ stroke:#fff; }
+.pg-alert-amber{ background:#fff7ef; border:1px solid #ffd9b3; color:#8a4300; }
+.pg-alert-amber svg{ stroke:#ff6b00; }
+.pg-opt{ position:relative; display:flex; gap:14px; align-items:flex-start; border:2px solid #ececec; border-radius:12px; padding:16px 18px; margin-bottom:12px; cursor:pointer; background:#fff; }
+.pg-opt:has(input:checked){ border-color:#ff6b00; background:#fff7ef; }
+.pg-opt input{ width:20px; height:20px; margin-top:12px; accent-color:#ff6b00; flex:none; }
+.pg-ic{ width:46px; height:46px; flex:none; border-radius:50%; background:#fff1e4; display:flex; align-items:center; justify-content:center; }
+.pg-opt:not(:has(input:checked)) .pg-ic{ background:#f1f2f4; }
+.pg-ic svg{ width:24px; height:24px; fill:none; stroke:#ff6b00; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+.pg-opt:not(:has(input:checked)) .pg-ic svg{ stroke:#333; }
+.pg-opt-body{ display:grid; gap:2px; flex:1; min-width:0; }
+.pg-opt-body b{ font-size:17px; }
+.pg-opt-body em{ font-style:normal; font-size:14px; color:#666; }
+.pg-opt-body strong{ font-size:26px; margin-top:6px; }
+.pg-ref{ display:none; align-items:center; gap:8px; margin-top:10px; padding:8px 12px; border-radius:8px; background:#ffe9d4; font-size:14px; color:#333; }
+.pg-ref svg{ width:16px; height:16px; fill:none; stroke:#ff6b00; stroke-width:2; }
+.pg-opt:has(input:checked) .pg-ref{ display:flex; }
+.pg-opt.is-off{ opacity:.55; cursor:not-allowed; background:#fafafa; }
+.pg-opt.is-off b, .pg-opt.is-off strong{ color:#999; }
+.pg-badge{ position:absolute; top:14px; right:14px; font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; background:#eee; color:#777; border-radius:6px; padding:4px 8px; }
+.pg-go{ display:flex; align-items:center; justify-content:center; gap:10px; }
+.pg-go svg{ width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; }
+.pg-side{ background:#f6f6f7; border-radius:14px; padding:20px; }
+.pg-total{ display:flex; gap:14px; align-items:center; padding-bottom:14px; margin-bottom:10px; border-bottom:1px solid #e3e3e6; }
+.pg-total-ic{ width:56px; height:56px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; flex:none; }
+.pg-total-ic svg{ width:28px; height:28px; fill:none; stroke:#ff6b00; stroke-width:1.8; }
+.pg-total .qp-eyebrow{ margin:0; }
+.pg-total strong{ display:block; font-size:32px; line-height:1.1; }
+.pg-total span{ color:#666; font-size:13px; }
+.pg-due{ display:flex; justify-content:space-between; font-weight:800; border-radius:8px; padding:10px 12px; margin:10px 0 6px; }
+.pg-due-red{ background:#fdecec; color:#b3261e; }
+.pg-due-amber{ background:#fff1e4; color:#9a4a00; }
+.pg-trust{ margin-top:16px; background:#ececee; border-radius:12px; padding:6px 14px; }
+.pg-trust-row{ display:flex; gap:12px; align-items:flex-start; padding:10px 0; }
+.pg-trust-row + .pg-trust-row{ border-top:1px solid #dcdce0; }
+.pg-trust-ic{ width:34px; height:34px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; flex:none; }
+.pg-trust-ic svg{ width:18px; height:18px; fill:none; stroke:#333; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+.pg-trust-row b{ display:block; font-size:14px; }
+.pg-trust-row span{ font-size:12.5px; color:#666; }
+@media (max-width:820px){ .pg-grid{ grid-template-columns:1fr; } .pg-opt-body strong{ font-size:22px; } }

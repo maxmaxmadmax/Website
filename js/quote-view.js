@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=581';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=581';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=582';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=582';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -587,33 +587,52 @@ function proposalBottom(q, opts = {}) {
   } else if (q.status === 'accepted') {
     book = '<div class="qp-done">&#10003; Quote accepted. We&rsquo;ll be in touch about payment.</div>';
   } else {
-    const opt = (v, title, amt, note, on, off) => '<label class="qp-opt' + (off ? ' is-off' : '') + '"><input type="radio" name="qp-opt" value="' + v + '"' + (on ? ' checked' : '') + (off ? ' disabled' : '') + '><span><b>' + title + '</b><strong>' + amt + '</strong><em>' + note + '</em></span></label>';
+    /*  THE PAYMENT GATEWAY (Max's mock-up, 20 Oct 2026): bank transfer first,
+        then card in full, then card deposit (greyed out within 7 days). An alert
+        on top - "Payment overdue" inside 7 days, otherwise "deposit secures
+        your date". Summary card on the right with what is due now.        */
     const full = fullOnly(q);
-    book = '<div class="qp-book-grid"><div>'
+    const ic = (p) => '<span class="pg-ic" aria-hidden="true"><svg viewBox="0 0 24 24">' + p + '</svg></span>';
+    const BANK = '<path d="M3 10h18M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18M12 3l9 5H3z"/>';
+    const CARD = '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h4"/>';
+    const opt = (v, title, sub, amt, on, extra, off) => '<label class="pg-opt' + (off ? ' is-off' : '') + '">'
+      + '<input type="radio" name="qp-opt" value="' + v + '"' + (on ? ' checked' : '') + (off ? ' disabled' : '') + '>'
+      + ic(v === 'bank' ? BANK : CARD)
+      + '<span class="pg-opt-body"><b>' + title + '</b><em>' + sub + '</em><strong>' + amt + '</strong>' + (extra || '') + '</span>'
+      + (off ? '<span class="pg-badge">Not available</span>' : '') + '</label>';
+    const refChip = '<span class="pg-ref"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/></svg>Use reference: <b>' + esc(ref) + '</b></span>';
+    const alert = full
+      ? '<div class="pg-alert pg-alert-red"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20z"/><path d="M12 10v5M12 18h.01"/></svg><div><b>Payment overdue</b><p>Your event is less than 7 days away, so the full amount is now due.</p><small>Please make payment today to keep your booking.</small></div></div>'
+      : '<div class="pg-alert pg-alert-amber"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><div><b>Secure your date</b><p>Your date is held once the ' + pct + '% deposit is received.</p><small>The balance is due ' + esc(balDue) + '.</small></div></div>';
+    const trust = (p, t, d) => '<div class="pg-trust-row"><span class="pg-trust-ic" aria-hidden="true"><svg viewBox="0 0 24 24">' + p + '</svg></span><div><b>' + t + '</b><span>' + d + '</span></div></div>';
+    book = '<p class="pg-lead">Your booking is confirmed once payment is received.</p>'
+      + '<div class="qp-book-grid pg-grid"><div>'
+      + alert
       + (full
-        ? '<p class="qp-full-note qp-overdue"><b>Payment overdue.</b> Your event is less than 7 days away, so the full amount is due now. Please pay today to keep your booking.</p>'
-        : '<p class="qp-full-note">Your date is not held until payment is received. Pay the ' + pct + '% deposit today to secure it &mdash; the balance is due ' + esc(balDue) + '.</p>')
-      + (full
-        ? opt('bank', 'Bank transfer &mdash; pay in full today', money(total), 'Accept now and transfer the full amount today. Use ' + esc(ref) + ' as the reference.', true)
-        : opt('bank', 'Bank transfer &mdash; pay the deposit', money(deposit), 'Accept now and transfer the ' + pct + '% deposit today. Use ' + esc(ref) + ' as the reference.', true))
-      + (q.cardOn ? opt('full', 'Card &mdash; pay in full', money(total), full ? 'The fastest way to confirm your booking.' : 'Pay the full amount now and you&rsquo;re all done.', false) : '')
+        ? opt('bank', 'Bank transfer (Pay in full)', 'Pay the full amount now via bank transfer.', money(total), true, refChip)
+        : opt('bank', 'Bank transfer (' + pct + '% deposit)', 'Pay the deposit now via bank transfer.', money(deposit), true, refChip))
+      + (q.cardOn ? opt('full', 'Credit or debit card (Pay in full)', 'Fast, secure payment with Visa, Mastercard or Amex.', money(total), false) : '')
       + (q.cardOn ? (full
-        ? opt('deposit', 'Card &mdash; pay ' + pct + '% deposit', money(deposit), 'Not available &mdash; your event is less than 7 days away.', false, true)
-        : opt('deposit', 'Card &mdash; pay ' + pct + '% deposit', money(deposit), 'Secure your date now. Balance due ' + esc(balDue) + '.', false)) : '')
-      + '<label class="qp-name">Your name<input type="text" id="qp-name" autocomplete="name" value="' + esc((q.customer && q.customer.name) || '') + '"></label>'
+        ? opt('deposit', 'Credit or debit card (' + pct + '% deposit)', 'A ' + pct + '% deposit is not available as your event is less than 7 days away.', money(deposit), false, '', true)
+        : opt('deposit', 'Credit or debit card (' + pct + '% deposit)', 'Secure your date by card. Balance due ' + esc(balDue) + '.', money(deposit), false)) : '')
+      + '<label class="qp-name">Your name / Business<input type="text" id="qp-name" autocomplete="name" value="' + esc((q.customer && q.customer.name) || '') + '"></label>'
       + '<label class="qp-agree"><input type="checkbox" id="qp-agree"> <span>I have read and accept the <b>Terms &amp; Conditions</b> and this quote.</span></label>'
-      + '<button type="button" class="qv-btn qv-btn-primary qp-go" id="qp-go" disabled>Accept &amp; continue</button>'
-      + '<p class="qp-secure">&#128274; Card payments are processed securely by Stripe.</p>'
-      + '</div><aside class="qp-side"><p class="qp-eyebrow">Quote summary</p>'
+      + '<button type="button" class="qv-btn qv-btn-primary qp-go pg-go" id="qp-go" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Accept &amp; continue</button>'
+      + '</div><aside class="qp-side pg-side">'
+      + '<div class="pg-total"><span class="pg-total-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3h10v18H7z"/><path d="M10 8h4M10 12h4M10 16h2"/></svg></span><div><p class="qp-eyebrow">Quote summary</p><strong>' + money(total) + '</strong><span>Total (inc. GST)</span></div></div>'
       // after any discount, so subtotal + GST = total (Max, 17 Oct 2026)
       + '<div class="qv-sumrow"><span>Subtotal (ex GST)</span><span>' + money(Math.round(q.totalCents || 0) - Math.round(q.gstCents || 0)) + '</span></div>'
       + '<div class="qv-sumrow"><span>GST (10%)</span><span>' + money(q.gstCents) + '</span></div>'
-      + '<div class="qv-sumrow qv-grand"><span>Total inc. GST</span><span>' + money(total) + '</span></div>'
+      + '<div class="qv-sumrow qv-grand"><span>Total (inc. GST)</span><span>' + money(total) + '</span></div>'
       + (full
-        ? '<div class="qv-sumrow qp-overdue-row"><span>Overdue &mdash; due now</span><span>' + money(total) + '</span></div>'
-        : '<div class="qv-sumrow"><span>Deposit (' + pct + '%)</span><span>' + money(deposit) + '</span></div>'
+        ? '<div class="pg-due pg-due-red"><span>Amount due now</span><span>' + money(total) + '</span></div>'
+        : '<div class="pg-due pg-due-amber"><span>Deposit due now</span><span>' + money(deposit) + '</span></div>'
           + '<div class="qv-sumrow"><span>Balance due ' + esc(balDue) + '</span><span>' + money(total - deposit) + '</span></div>')
-      + '</aside></div>';
+      + '<div class="pg-trust">'
+      + trust('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>', 'Secure payments', 'Card payments are processed securely by Stripe.')
+      + trust('<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>', 'Your booking is protected', 'Once payment is received, your booking is confirmed.')
+      + trust('<path d="M7 3h10v18l-2-1.5L13 21l-2-1.5L9 21l-2-1.5z"/><path d="M10 8h4M10 12h4"/>', 'Tax invoice provided', 'Your tax invoice is on this page once you&rsquo;ve paid.')
+      + '</div></aside></div>';
   }
 
   const termsSec = opts.terms === false ? '' : `
