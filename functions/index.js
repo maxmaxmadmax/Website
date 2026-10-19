@@ -3499,7 +3499,7 @@ exports.eventLineup = onRequest({ cors: true }, async (req, res) => {
 
    NOTHING IS SENT AUTOMATICALLY. Max previews one, then says go.
    ------------------------------------------------------------------------- */
-const { sendVendorInvoiceEmail, renderVendorInvoiceEmail } = require('./lib/vendor-invoice-email');
+const { sendVendorInvoiceEmail } = require('./lib/vendor-invoice-email');
 
 function bookingIsPaid(b) {
   return b.status === 'confirmed' || b.paymentStatus === 'paid' || b.paymentStatus === 'free';
@@ -3551,7 +3551,18 @@ async function sendVendorInvoice(id, opts) {
   const to = test ? String(opts.to || '') : String(biz.email || '');
   if (!to) return { sent: false, reason: 'no-address' };
   const total = b.totalCents != null ? b.totalCents : (b.amountCents || 0);
+  // wording from the Messages page: the APPROVED copy (a test can use the draft)
+  let tpl = {};
+  try {
+    const ms = await db.collection('messages').where('eventId', '==', b.eventId).get();
+    const sys = ms.docs.map((x) => x.data()).find((x) => x.system === 'invoice');
+    if (sys && opts.useDraft && sys.body) tpl = { subjectTpl: sys.subject, bodyTpl: sys.body };
+    else if (sys && sys.approvedBody) tpl = { subjectTpl: sys.approvedSubject, bodyTpl: sys.approvedBody };
+  } catch (e) { logger.warn('invoice wording', e && e.message); }
   const mail = await sendVendorInvoiceEmail({
+    ...tpl,
+    siteLabel: b.siteLabel || '',
+    eventVenue: [ev.venue, ev.location].filter(Boolean).join(', '),
     to, test,
     link: SITE_URL + '/vendor-invoice?t=' + inv.token,
     invoiceNumber: inv.invoiceNumber,
@@ -3791,13 +3802,17 @@ async function invoiceEmailPaused(eventId) {
   return snap.docs.some((d) => d.data().system === 'invoice' && d.data().status === 'paused');
 }
 
+/*  The invoice email's wording, as Max approved it on 19 Oct 2026. */
+const INVOICE_SUBJECT = 'Your tax invoice & event guide - {{event_name}}';
+const INVOICE_BODY = "Hi {{vendor_name}}, thank you for being part of {{event_name}} on {{event_date}}. Your tax invoice, event details and vendor instructions are all in one place.\n\nHelp us promote the event! A bigger crowd means more sales for every stall. Your guide includes the event poster, the A4 program and share links - please post them on your socials, share them with your customers, pop the poster up and help us advertise.";
+
 /*  The starter messages: Max checks the wording and approves. */
 function starterMessages(eventId) {
   const base = { eventId, audience: 'vendors', who: 'all', promo: false };
   return [
     { ...base, system: 'invoice', name: 'Booking confirmed + invoice & guide', status: 'approved',
-      subject: 'Your tax invoice & event guide - {{event_name}}', trigger: { type: 'payment' },
-      body: 'Sent automatically the moment a vendor pays: their tax invoice, event guide, site map and promo material.' },
+      subject: INVOICE_SUBJECT, trigger: { type: 'payment' }, body: INVOICE_BODY,
+      approvedSubject: INVOICE_SUBJECT, approvedBody: INVOICE_BODY },
     { ...base, name: 'One week to go', status: 'review',
       subject: 'One week to go - {{event_name}}', trigger: { type: 'daysBefore', days: 7 },
       body: "Hi {{vendor_name}},\n\n{{event_name}} is only a week away and we can't wait to have {{business_name}} with us at site {{site_number}}.\n\nA few reminders:\n- Set up and vehicle parked by 4:15 pm\n- No vehicles moving on site between 4:15 pm and 9:40 pm\n- Marquee secured, pegs 300 mm deep max\n- Take all your waste home\n\nYour site map, invoice, poster and program are all in your event guide below. Please help us spread the word!\n\nSee you soon,\nThe SoundzGood team" },
@@ -3815,8 +3830,14 @@ exports.adminMessagesSeed = onCall(async (request) => {
   requireAdmin(request);
   const eventId = String((request.data || {}).eventId || '').trim();
   if (!eventId) throw new HttpsError('invalid-argument', 'Missing event.');
-  const have = await db.collection('messages').where('eventId', '==', eventId).limit(1).get();
-  if (!have.empty) return { ok: true, added: 0 };
+  const have = await db.collection('messages').where('eventId', '==', eventId).get();
+  if (!have.empty) {
+    const sys = have.docs.find((d) => d.data().system === 'invoice');
+    if (sys && !sys.data().approvedBody) {
+      await sys.ref.update({ subject: INVOICE_SUBJECT, body: INVOICE_BODY, approvedSubject: INVOICE_SUBJECT, approvedBody: INVOICE_BODY });
+    }
+    return { ok: true, added: 0 };
+  }
   const batch = db.batch();
   starterMessages(eventId).forEach((m) => batch.set(db.collection('messages').doc(), {
     ...m, sentCount: 0, failed: [], createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
@@ -3848,7 +3869,10 @@ exports.adminMessageSave = onCall(async (request) => {
     const snap = await ref.get();
     if (!snap.exists) throw new HttpsError('not-found', 'No such message.');
     const m = snap.data();
-    if (m.system) throw new HttpsError('failed-precondition', 'The invoice email is set up separately.');
+    if (m.system) {   // invoice email: wording only; vendors keep getting the approved copy until Max approves this
+      await ref.update({ subject: fields.subject, body: fields.body, status: 'review', updatedAt: FieldValue.serverTimestamp() });
+      return { ok: true, id: ref.id, status: 'review' };
+    }
     if (m.status === 'sent') throw new HttpsError('failed-precondition', 'That message has already gone out.');
     await ref.update(fields);
     return { ok: true, id: ref.id, status: fields.status };
@@ -3874,7 +3898,12 @@ exports.adminMessageAction = onCall(async (request) => {
   if (m.system) {   // the invoice email: only pause / resume
     if (action === 'pause') { await ref.update({ status: 'paused', updatedAt: FieldValue.serverTimestamp() }); return { ok: true }; }
     if (action === 'resume') { await ref.update({ status: 'approved', updatedAt: FieldValue.serverTimestamp() }); return { ok: true }; }
-    throw new HttpsError('failed-precondition', 'The invoice email can only be paused or resumed.');
+    if (action === 'approve') {
+      if (!String(m.subject || '').trim() || !String(m.body || '').trim()) throw new HttpsError('failed-precondition', 'Fill in the subject and the message first.');
+      await ref.update({ status: 'approved', approvedSubject: m.subject, approvedBody: m.body, approvedAt: FieldValue.serverTimestamp(), approvedBy: by, updatedAt: FieldValue.serverTimestamp() });
+      return { ok: true };
+    }
+    throw new HttpsError('failed-precondition', 'The invoice email can be edited, approved, paused or resumed.');
   }
 
   if (action === 'approve' || action === 'resume') {
@@ -3919,7 +3948,7 @@ exports.adminMessageTest = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (re
   const ev = evSnap.exists ? evSnap.data() : {};
   const list = await messageRecipients({ ...m, promo: false });
   if (!list.length) throw new HttpsError('failed-precondition', 'No paid vendors yet to fill the test with.');
-  if (m.system === 'invoice') return sendVendorInvoice(list[0].id, { test: true, to });
+  if (m.system === 'invoice') return sendVendorInvoice(list[0].id, { test: true, to, useDraft: true });
   const r = await sendMessageTo(m, ev, list[0], { test: true, to });
   return { ...r, to };
 });
@@ -3982,27 +4011,3 @@ exports.vendorUnsubscribe = onRequest(async (req, res) => {
   return page('You have been unsubscribed from event news.');
 });
 
-/*  Preview of the invoice-on-payment email, exactly as the first paid vendor
-    got it - shown on the Messages page (Max, 19 Oct 2026). Sends nothing.  */
-exports.adminMessagePreview = onCall(async (request) => {
-  requireAdmin(request);
-  const ref = db.collection('messages').doc(String((request.data || {}).id || ''));
-  const snap = await ref.get();
-  if (!snap.exists) throw new HttpsError('not-found', 'No such message.');
-  const m = snap.data();
-  const list = await messageRecipients({ ...m, who: 'all', promo: false });
-  if (!list.length) throw new HttpsError('failed-precondition', 'No paid vendors yet to show it with.');
-  const b = list[0].data();
-  const inv = await ensureVendorInvoice(list[0].id);
-  const evSnap = await db.collection('events').doc(m.eventId).get();
-  const ev = evSnap.exists ? evSnap.data() : {};
-  const biz = b.business || {};
-  const link = SITE_URL + '/vendor-invoice?t=' + inv.token;
-  const out = renderVendorInvoiceEmail({
-    link, invoiceNumber: inv.invoiceNumber,
-    totalCents: b.totalCents != null ? b.totalCents : (b.amountCents || 0),
-    businessName: biz.name || '', contactName: biz.contactName || '',
-    eventName: ev.name || '', eventDate: ev.dateLabel || '',
-  });
-  return { ...out, vendor: biz.name || '', link };
-});

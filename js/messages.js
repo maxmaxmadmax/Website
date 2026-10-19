@@ -29,6 +29,7 @@ const FIELDS = [
   ['event_date', 'Event date'],
   ['event_venue', 'Venue'],
 ];
+const INVOICE_FIELDS = [['total_paid', 'Total paid'], ['invoice_number', 'Invoice number']];
 
 const STATUS = {
   draft: ['Draft', 'grey'],
@@ -123,7 +124,23 @@ function sampleValues(b, ev) {
     event_name: ev.name || 'Your event',
     event_date: ev.dateLabel || ev.dateISO || '',
     event_venue: [ev.venue, ev.location].filter(Boolean).join(', '),
+    total_paid: '$' + ((((b && (b.totalCents != null ? b.totalCents : b.amountCents)) || 11549) / 100).toFixed(2)),
+    invoice_number: (b && b.invoiceNumber) || 'SG-I-0000',
   };
+}
+
+/*  The plain sentence at the top of a message. */
+function sentenceHtml(ctx, d, m, ev) {
+  const { state } = ctx;
+  const esc = ctx.h.esc;
+  if (m.system) {
+    const all = paidVendors(state.bookings, state.activeEventId);
+    return `This sends <b>&ldquo;${esc(fill(d.subject, sampleValues(all[0], ev), String) || '(no subject yet)')}&rdquo;</b> to <b>each vendor the moment they pay</b>. ${all.filter((b) => b.invoiceEmailedAt).length} of ${all.length} paid vendors have it.`;
+  }
+  const list = recipients(state.bookings, state.activeEventId, d);
+  const day = sendDate(d, ev);
+  return `This sends <b>&ldquo;${esc(fill(d.subject, sampleValues(list[0], ev), String) || '(no subject yet)')}&rdquo;</b> to <b>${list.length} ${esc(WHO_SHORT[d.who] || WHO_SHORT.all)}</b>`
+    + (day ? ` on <b>${esc(niceDay(day))} at ${SEND_TIME}</b>.` : ' &mdash; <b>pick when</b>.');
 }
 
 /* ---------- the draft being edited ---------- */
@@ -215,46 +232,23 @@ function editorHtml(ctx, ev) {
   const [label, tone] = STATUS[m.status] || STATUS.draft;
   const back = '<button type="button" class="ms-back" data-ms-back>&larr; All messages</button>';
 
-  /* the invoice email: fixed wording, pause / resume / test only */
-  if (m.system) {
-    const all = paidVendors(state.bookings, state.activeEventId);
-    return `<div class="ms">${back}
-      <div class="ms-title"><h1>${h.esc(m.name)}</h1><span class="ms-chip ms-${tone}">${h.esc(label)}</span></div>
-      <div class="ms-sentence">Sends each vendor their <b>tax invoice &amp; event guide</b> the moment they pay. ${all.filter((b) => b.invoiceEmailedAt).length} of ${all.length} paid vendors have it.</div>
-      <div class="ad-card ms-card ms-pad">
-        <p class="ms-prev-h" id="ms-sys-h">Loading the email&hellip;</p>
-        <p class="ms-sys-subj" id="ms-sys-subj"></p>
-        <iframe class="ms-sys-frame" id="ms-sys-frame" title="Email preview"></iframe>
-        <p class="ms-sys-link" id="ms-sys-link"></p>
-        <div class="ms-actions">
-          <button type="button" class="ad-btn" data-ms-act="test">Test to me</button>
-          ${m.status === 'paused'
-            ? '<button type="button" class="ad-btn ad-btn-primary" data-ms-act="resume">Resume</button>'
-            : '<button type="button" class="ad-btn" data-ms-act="pause">Pause</button>'}
-        </div>
-        <p class="ms-msg" id="ms-msg" hidden></p>
-      </div>
-    </div>`;
-  }
-
+  const sys = !!m.system;
   const saved = isNew ? null : draftFrom(m);
   const dirty = isNew || !sameDraft(saved, d);
-  const list = recipients(state.bookings, state.activeEventId, d);
-  const day = sendDate(d, ev);
-  const sentence = `This sends <b>&ldquo;${h.esc(fill(d.subject, sampleValues(list[0], ev), String) || '(no subject yet)')}&rdquo;</b> to <b>${list.length} ${h.esc((WHO_SHORT[d.who] || WHO_SHORT.all))}</b>`
-    + (day ? ` on <b>${h.esc(niceDay(day))} at ${SEND_TIME}</b>.` : ' &mdash; <b>pick when</b>.');
+  const list = sys ? paidVendors(state.bookings, state.activeEventId) : recipients(state.bookings, state.activeEventId, d);
+  const sentence = sentenceHtml(ctx, d, m, ev);
   const locked = m.status === 'sent';
   const t = d.trigger || {};
   const failed = m.failed || [];
 
   return `<div class="ms">${back}
     <div class="ms-title"><h1>${h.esc(d.name || (isNew ? 'New message' : 'Message'))}</h1><span class="ms-chip ms-${tone}">${h.esc(label)}</span>
-      ${!isNew ? `<span class="ms-count">Sent ${m.sentCount || 0} of ${list.length}</span>` : ''}</div>
+      ${!isNew ? `<span class="ms-count">Sent ${sys ? list.filter((b) => b.invoiceEmailedAt).length : (m.sentCount || 0)} of ${list.length}</span>` : ''}</div>
     <div class="ms-sentence" id="ms-sentence">${sentence}</div>
     <div class="ms-grid">
       <div class="ad-card ms-card ms-pad">
         <label class="ms-f"><span>Name (just for you)</span><input class="ad-input" data-ms="name" value="${h.attr(d.name)}" placeholder="e.g. One week to go"${locked ? ' disabled' : ''}></label>
-        <div class="ms-row">
+        ${sys ? '<p class="ms-fixed-when"><b>Who:</b> each vendor &nbsp;&middot;&nbsp; <b>When:</b> the moment they pay (total and guide button are added below your text)</p>' : `<div class="ms-row">
           <label class="ms-f"><span>Who</span><select class="ad-select" data-ms="who"${locked ? ' disabled' : ''}>
             ${Object.keys(WHO).map((k) => `<option value="${k}"${d.who === k ? ' selected' : ''}>${WHO[k]}</option>`).join('')}
           </select></label>
@@ -266,25 +260,26 @@ function editorHtml(ctx, ev) {
           ${t.type === 'date'
             ? `<label class="ms-f"><span>Date</span><input type="date" class="ad-input" data-ms="trigger.date" value="${h.attr(t.date || '')}"${locked ? ' disabled' : ''}></label>`
             : `<label class="ms-f ms-days"><span>Days</span><input type="number" min="0" max="365" class="ad-input" data-ms="trigger.days" value="${h.attr(t.days || 0)}"${locked ? ' disabled' : ''}></label>`}
-        </div>
+        </div>`}
         <details class="ms-list"><summary>See who gets it (${list.length})</summary>
           <ul>${list.map((b) => `<li>${h.esc((b.business || {}).name || '')} <span>${h.esc((b.business || {}).email || '')}${b.siteLabel ? ' · site ' + h.esc(b.siteLabel) : ''}</span></li>`).join('') || '<li>No paid vendors match yet.</li>'}</ul>
         </details>
         <label class="ms-f"><span>Subject</span><input class="ad-input" data-ms="subject" value="${h.attr(d.subject)}"${locked ? ' disabled' : ''}></label>
         <label class="ms-f"><span>Message</span><textarea class="ad-input ms-body" data-ms="body" rows="14"${locked ? ' disabled' : ''}>${h.esc(d.body)}</textarea></label>
         <p class="ms-help">Blank line = new paragraph. Start a line with &ldquo;- &rdquo; for a bullet. Click to add:</p>
-        <div class="ms-chips">${FIELDS.map(([k, l]) => `<button type="button" data-ms-field="${k}" title="${h.attr(l)}"${locked ? ' disabled' : ''}>{{${k}}}</button>`).join('')}</div>
-        <label class="ms-check"><input type="checkbox" data-ms="promo"${d.promo ? ' checked' : ''}${locked ? ' disabled' : ''}> Promotional (news about other events) &mdash; adds an unsubscribe link</label>
+        <div class="ms-chips">${(sys ? FIELDS.concat(INVOICE_FIELDS) : FIELDS).map(([k, l]) => `<button type="button" data-ms-field="${k}" title="${h.attr(l)}"${locked ? ' disabled' : ''}>{{${k}}}</button>`).join('')}</div>
+        ${sys ? '' : `<label class="ms-check"><input type="checkbox" data-ms="promo"${d.promo ? ' checked' : ''}${locked ? ' disabled' : ''}> Promotional (news about other events) &mdash; adds an unsubscribe link</label>`}
         <div class="ms-actions">
           ${locked ? '' : `<button type="button" class="ad-btn${dirty ? ' ad-btn-primary' : ''}" data-ms-act="save">${dirty ? 'Save' : 'Saved'}</button>`}
           ${!isNew ? '<button type="button" class="ad-btn" data-ms-act="test">Test to me</button>' : ''}
           ${!isNew && !dirty && m.status === 'review' ? '<button type="button" class="ad-btn ms-approve" data-ms-act="approve">Approve</button>' : ''}
           ${!isNew && m.status === 'approved' ? '<button type="button" class="ad-btn" data-ms-act="pause">Pause</button>' : ''}
           ${!isNew && m.status === 'paused' ? '<button type="button" class="ad-btn ad-btn-primary" data-ms-act="resume">Resume</button>' : ''}
-          ${!isNew && ['approved', 'paused', 'review'].includes(m.status) ? '<button type="button" class="ad-btn" data-ms-act="cancel">Cancel</button>' : ''}
-          ${!isNew && !(m.sentCount > 0) ? '<button type="button" class="ad-btn ms-del" data-ms-act="delete">Delete</button>' : ''}
+          ${!isNew && !sys && ['approved', 'paused', 'review'].includes(m.status) ? '<button type="button" class="ad-btn" data-ms-act="cancel">Cancel</button>' : ''}
+          ${!isNew && !sys && !(m.sentCount > 0) ? '<button type="button" class="ad-btn ms-del" data-ms-act="delete">Delete</button>' : ''}
         </div>
-        ${dirty && !isNew && m.status !== 'draft' ? '<p class="ms-note">Changes need your OK again after you save.</p>' : ''}
+        ${dirty && !isNew && m.status !== 'draft' ? `<p class="ms-note">Changes need your OK again after you save.${sys ? ' Vendors keep getting the approved wording until then.' : ''}</p>` : ''}
+        ${sys && m.status === 'review' && !dirty ? '<p class="ms-note">Vendors are still getting the last approved wording &mdash; press Approve to switch to this.</p>' : ''}
         <p class="ms-msg" id="ms-msg" hidden></p>
         ${failed.length ? `<div class="ms-failed"><p><b>${failed.length} didn&rsquo;t go</b></p>${failed.map((f) => `<div><span>${h.esc(f.name)} &middot; ${h.esc(f.to)}<em>${h.esc(f.error)}</em></span><button type="button" class="ad-btn ad-btn-small" data-ms-resend="${h.attr(f.bookingId)}">Resend</button></div>`).join('')}</div>` : ''}
       </div>
@@ -300,8 +295,17 @@ function previewHtml(ctx) {
   const { state, h } = ctx;
   const ev = (state.events || []).find((e) => e.id === state.activeEventId) || {};
   const d = state.msgDraft || blankMessage();
-  const first = recipients(state.bookings, state.activeEventId, d)[0];
+  const m = (state.messages || []).find((x) => x.id === state.msgOpen) || {};
+  const first = (m.system ? paidVendors(state.bookings, state.activeEventId) : recipients(state.bookings, state.activeEventId, d))[0];
   const v = sampleValues(first, ev);
+  if (m.system) {
+    return `<div class="ms-mail"><div class="ms-mail-top">SOUNDZGOOD WHITSUNDAYS<b>Thank you &mdash; you&rsquo;re booked in</b></div>
+    <p class="ms-mail-subj">${h.esc(fill(d.subject, v, String))}</p>
+    <div class="ms-mail-body">${bodyHtml(d.body, v, h.esc)}
+      <div class="ms-mail-total"><small>TOTAL PAID (INCL GST)</small><b>${h.esc(v.total_paid)}</b><span>Invoice ${h.esc(v.invoice_number)}</span></div>
+      <p class="ms-mail-btn"><span>View your invoice &amp; event guide &rarr;</span></p></div>
+    <div class="ms-mail-foot">SoundzGood Whitsundays &middot; 34a Williams St, Bowen QLD 4805</div></div>`;
+  }
   return `<div class="ms-mail"><div class="ms-mail-top">SOUNDZGOOD WHITSUNDAYS</div>
     <p class="ms-mail-subj">${h.esc(fill(d.subject, v, String))}</p>
     <div class="ms-mail-body">${bodyHtml(d.body, v, h.esc)}
@@ -318,27 +322,12 @@ export function wireMessages(ctx) {
   if (!root) return;
 
   // first visit to an event with no messages: add the starters
-  if (state.activeEventId && state.messagesLoaded && !(state.messages || []).length && !state.msgSeeding && state.msgSeededFor !== state.activeEventId) {
+  if (state.activeEventId && state.messagesLoaded && !state.msgSeeding && state.msgSeededFor !== state.activeEventId) {
     state.msgSeeding = true;
     state.msgSeededFor = state.activeEventId;
     call('adminMessagesSeed', { eventId: state.activeEventId })
       .catch((e) => window.alert(e.message || 'Could not add the starter messages.'))
       .finally(() => { state.msgSeeding = false; });
-  }
-
-  // the invoice email: fetch the real thing (as the first paid vendor got it)
-  const frame = document.getElementById('ms-sys-frame');
-  if (frame) {
-    call('adminMessagePreview', { id: state.msgOpen }).then((r) => {
-      const hEl = document.getElementById('ms-sys-h');
-      if (hEl) hEl.textContent = 'Exactly what ' + (r.vendor || 'a vendor') + ' received';
-      const sEl = document.getElementById('ms-sys-subj');
-      if (sEl) sEl.textContent = 'Subject: ' + r.subject;
-      frame.srcdoc = r.html;
-      frame.onload = () => { try { frame.style.height = frame.contentDocument.documentElement.scrollHeight + 'px'; } catch (e) { /* ignore */ } };
-      const l = document.getElementById('ms-sys-link');
-      if (l) { l.innerHTML = ''; const a = document.createElement('a'); a.href = r.link; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Open their invoice & event guide page →'; l.appendChild(a); }
-    }).catch((e) => { const hEl = document.getElementById('ms-sys-h'); if (hEl) hEl.textContent = e.message || 'Could not load the preview.'; });
   }
 
   const prev = document.getElementById('ms-prev');
@@ -402,6 +391,10 @@ export function wireMessages(ctx) {
       if (what === 'test') {
         const r = await call('adminMessageTest', { id });
         say(r.sent ? 'Test sent to ' + r.to + ' only. No vendor was emailed.' : 'Test did not send: ' + (r.error || r.reason || ''), !r.sent);
+      } else if (what === 'approve' && ((state.messages || []).find((x) => x.id === id) || {}).system) {
+        if (!window.confirm('Approve this wording? Every vendor who pays from now on gets it.')) { act.disabled = false; return; }
+        await call('adminMessageAction', { id, action: 'approve' });
+        say('Approved - new vendors get this wording.');
       } else if (what === 'approve') {
         const m = (state.messages || []).find((x) => x.id === id) || {};
         const ev = (state.events || []).find((x) => x.id === state.activeEventId) || {};
@@ -443,12 +436,8 @@ export function wireMessages(ctx) {
     const s = document.getElementById('ms-sentence');
     if (s) {
       const ev = (state.events || []).find((x) => x.id === state.activeEventId) || {};
-      const d = state.msgDraft;
-      const n = recipients(state.bookings, state.activeEventId, d).length;
-      const day = sendDate(d, ev);
-      const esc = ctx.h.esc;
-      s.innerHTML = `This sends <b>&ldquo;${esc(fill(d.subject, sampleValues(recipients(state.bookings, state.activeEventId, d)[0], ev), String) || '(no subject yet)')}&rdquo;</b> to <b>${n} ${esc((WHO_SHORT[d.who] || WHO_SHORT.all))}</b>`
-        + (day ? ` on <b>${esc(niceDay(day))} at ${SEND_TIME}</b>.` : ' &mdash; <b>pick when</b>.');
+      const m = (state.messages || []).find((x) => x.id === state.msgOpen) || {};
+      s.innerHTML = sentenceHtml(ctx, state.msgDraft, m, ev);
     }
     const save = root.querySelector('[data-ms-act="save"]');
     if (save) { save.textContent = 'Save'; save.classList.add('ad-btn-primary'); }

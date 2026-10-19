@@ -133,4 +133,4 @@ async function sendMessageEmail(msg, values, opts) {
   }
 }
 
-module.exports = { sendMessageEmail, fieldsFor };
+module.exports = { sendMessageEmail, fieldsFor, bodyHtml, fill };
