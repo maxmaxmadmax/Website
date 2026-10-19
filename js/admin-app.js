@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=541';
+} from './firebase-config.js?v=543';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=541';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=541';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=541';
-import { expandKit } from './kit.js?v=541';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=543';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=543';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=543';
+import { expandKit } from './kit.js?v=543';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -3466,6 +3466,8 @@ function renderVendorEmailRows() {
         <td><span class="ad-dot ad-dot-green"></span> Paid</td>
         <td>${emailStatusCell(b)}</td>
         <td class="ad-cell-right">
+          <button type="button" class="ad-btn ad-btn-small" data-inv-view="${attr(b.id)}">Invoice</button>
+          <button type="button" class="ad-btn ad-btn-small" data-inv-test="${attr(b.id)}" title="Emails the invoice to you only">Test to me</button>
           <button type="button" class="ad-btn ad-btn-small" data-resend="${attr(b.id)}">
             ${everSent ? 'Resend Email' : 'Send Email'}
           </button>
@@ -3475,6 +3477,33 @@ function renderVendorEmailRows() {
 
   host.querySelectorAll('[data-resend]').forEach(function (btn) {
     btn.addEventListener('click', function () { resendVendorEmail(btn); });
+  });
+  /*  VENDOR TAX INVOICE (Max, 19 Oct 2026). "Invoice" opens the page the
+      vendor would get; "Test to me" emails it to the signed-in admin ONLY.
+      There is deliberately no send-to-vendor button yet - Max approves the
+      look first, then says go.                                         */
+  host.querySelectorAll('[data-inv-view]').forEach(function (btn) {
+    btn.addEventListener('click', async function () {
+      const was = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Opening...';
+      try {
+        const res = await call('adminVendorInvoiceLink', { bookingId: btn.getAttribute('data-inv-view') });
+        window.open(res.link, '_blank', 'noopener');
+      } catch (err) { window.alert(err.message || 'Could not open the invoice.'); }
+      btn.disabled = false; btn.textContent = was;
+    });
+  });
+  host.querySelectorAll('[data-inv-test]').forEach(function (btn) {
+    btn.addEventListener('click', async function () {
+      const was = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Sending...';
+      try {
+        const res = await call('adminSendVendorInvoice', { bookingId: btn.getAttribute('data-inv-test'), test: true });
+        window.alert(res.sent ? 'Test sent to ' + res.to + ' only. The vendor was NOT emailed.'
+          : 'It did not send. ' + (res.error || res.reason || ''));
+      } catch (err) { window.alert(err.message || 'Could not send the test.'); }
+      btn.disabled = false; btn.textContent = was;
+    });
   });
 }
 

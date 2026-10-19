@@ -3470,3 +3470,143 @@ exports.eventLineup = onRequest({ cors: true }, async (req, res) => {
     res.status(500).json({ error: 'failed' });
   }
 });
+
+/* -------------------------------------------------------------------------
+   VENDOR TAX INVOICES  (Max, 19 Oct 2026)
+
+   Each paid vendor booking gets an invoice number from the SAME sequence as
+   the Sales Pipeline invoices (SG-I-0001 ...) and a private link to a
+   printable page (/vendor-invoice?t=<token>) holding the tax invoice, a
+   thank-you, the event details and the vendor instructions.
+
+     adminVendorInvoiceLink   admin - makes the invoice number + link if
+                              there isn't one yet, returns the link (preview)
+     adminSendVendorInvoice   admin - emails it. { test: true } sends ONLY to
+                              the signed-in admin and records nothing. Without
+                              test it goes to the vendor.
+     getVendorInvoice         public - the page's data, by token
+
+   NOTHING IS SENT AUTOMATICALLY. Max previews one, then says go.
+   ------------------------------------------------------------------------- */
+const { sendVendorInvoiceEmail } = require('./lib/vendor-invoice-email');
+
+function bookingIsPaid(b) {
+  return b.status === 'confirmed' || b.paymentStatus === 'paid' || b.paymentStatus === 'free';
+}
+
+/*  Gives the booking an invoice number + token, once. Safe to call again. */
+async function ensureVendorInvoice(bookingId) {
+  const ref = db.collection('bookings').doc(bookingId);
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new HttpsError('not-found', 'No such booking.');
+    const b = snap.data();
+    if (!bookingIsPaid(b)) {
+      throw new HttpsError('failed-precondition', 'That booking has not been paid, so there is no invoice.');
+    }
+    if (b.invoiceNumber && b.invoiceToken) {
+      return { booking: b, invoiceNumber: b.invoiceNumber, token: b.invoiceToken };
+    }
+    const num = b.invoiceNumber ? null : await nextInvoiceNumber(tx);
+    const invoiceNumber = b.invoiceNumber || invoiceNo(num.n);
+    const token = b.invoiceToken || crypto.randomBytes(16).toString('hex');
+    if (num) num.write();
+    tx.update(ref, {
+      invoiceNumber,
+      invoiceToken: token,
+      ...(b.invoicedAt ? {} : { invoicedAt: FieldValue.serverTimestamp() }),
+    });
+    return { booking: b, invoiceNumber, token };
+  });
+}
+
+exports.adminVendorInvoiceLink = onCall(async (request) => {
+  requireAdmin(request);
+  const id = String((request.data || {}).bookingId || '').trim();
+  if (!id) throw new HttpsError('invalid-argument', 'Missing booking.');
+  const inv = await ensureVendorInvoice(id);
+  return { ok: true, invoiceNumber: inv.invoiceNumber, link: SITE_URL + '/vendor-invoice?t=' + inv.token };
+});
+
+exports.adminSendVendorInvoice = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  requireAdmin(request);
+  const data = request.data || {};
+  const id = String(data.bookingId || '').trim();
+  if (!id) throw new HttpsError('invalid-argument', 'Missing booking.');
+
+  const inv = await ensureVendorInvoice(id);
+  const b = inv.booking;
+  const evSnap = await db.collection('events').doc(b.eventId).get();
+  const ev = evSnap.exists ? evSnap.data() : {};
+  const biz = b.business || {};
+
+  const test = data.test === true;
+  const to = test ? String(request.auth.token.email || '') : String(biz.email || '');
+  if (!to) throw new HttpsError('failed-precondition', test ? 'Your admin login has no email address.' : 'That booking has no email address.');
+
+  const total = b.totalCents != null ? b.totalCents : (b.amountCents || 0);
+  const mail = await sendVendorInvoiceEmail({
+    to, test,
+    link: SITE_URL + '/vendor-invoice?t=' + inv.token,
+    invoiceNumber: inv.invoiceNumber,
+    totalCents: total,
+    businessName: biz.name || '',
+    contactName: biz.contactName || '',
+    eventName: ev.name || '',
+    eventDate: ev.dateLabel || '',
+  });
+
+  if (mail.sent && !test) {
+    await db.collection('bookings').doc(id).update({
+      invoiceEmailedAt: FieldValue.serverTimestamp(),
+      invoiceEmailedTo: to,
+    });
+  }
+  return { ...mail, to, test, invoiceNumber: inv.invoiceNumber };
+});
+
+exports.getVendorInvoice = onCall(async (request) => {
+  const token = String((request.data || {}).token || '').trim();
+  if (!/^[a-f0-9]{20,40}$/.test(token)) throw new HttpsError('invalid-argument', 'That link is not valid.');
+
+  const snap = await db.collection('bookings').where('invoiceToken', '==', token).limit(1).get();
+  if (snap.empty) throw new HttpsError('not-found', 'That link is not valid.');
+  const b = snap.docs[0].data();
+  if (b.status === 'cancelled') throw new HttpsError('failed-precondition', 'This invoice is no longer available.');
+
+  const evSnap = await db.collection('events').doc(b.eventId).get();
+  const ev = evSnap.exists ? evSnap.data() : {};
+  const biz = b.business || {};
+  const secs = (t) => (t && t.seconds != null ? t.seconds : null);
+
+  const site = b.amountCents || 0;
+  const fee = b.bookingFeeCents != null ? b.bookingFeeCents : 0;
+  const gst = b.gstCents != null ? b.gstCents : 0;
+  const total = b.totalCents != null ? b.totalCents : site + fee + gst;
+
+  return {
+    invoiceNumber: b.invoiceNumber || '',
+    issuedAt: secs(b.confirmedAt) || secs(b.invoicedAt),
+    reference: b.reference || '',
+    business: { name: biz.name || '', contactName: biz.contactName || '', email: biz.email || '', phone: biz.phone || '' },
+    siteLabel: b.siteLabel || '',
+    categoryName: b.categoryName || '',
+    vendorType: b.vendorType || '',
+    bayCount: b.bayCount || 1,
+    free: b.paymentStatus === 'free' || total === 0,
+    siteCents: site, feeCents: fee, gstCents: gst, totalCents: total,
+    event: {
+      name: ev.name || '', subtitle: ev.subtitle || '', dateLabel: ev.dateLabel || '',
+      venue: ev.venue || '', location: ev.location || '',
+    },
+    seller: {
+      name: 'SoundzGood Whitsundays',
+      legal: process.env.SG_LEGAL_NAME || '',
+      abn: process.env.SG_ABN || '',
+      email: process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au',
+      phone: '0422 393 022',
+      address: '34a Williams St, Bowen QLD 4805',
+      site: 'www.soundzgood.com.au',
+    },
+  };
+});
