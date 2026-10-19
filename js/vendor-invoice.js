@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=546';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=546';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=546';
+import { termBodyHtml } from './terms-data.js?v=547';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=547';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=547';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -65,6 +65,30 @@ const NOT_ALLOWED = [
   'No commercial waste in public bins or drains',
   'Halloween dress-up is optional, but encouraged - best dressed stalls can win their vendor fee back!',
 ];
+
+/*  THE SITE MAP: every site in light grey, the landmarks (stage, bar ...) for
+    orientation, and this vendor's own site(s) in orange with "YOUR SITE".
+    Plain SVG with inline colours so it prints and needs no extra CSS.     */
+function siteMap(d) {
+  const m = d.map;
+  if (!m || !m.sites || !m.sites.length || !m.mine || !m.mine.length) return '';
+  const w = (m.mapSize && m.mapSize.width) || 760, h = (m.mapSize && m.mapSize.height) || 1420;
+  const mine = new Set(m.mine);
+  const lm = (m.landmarks || []).map((k) =>
+    '<g><rect x="' + k.x + '" y="' + k.y + '" width="' + k.w + '" height="' + k.h + '" rx="' + (k.kind === 'barrier' ? 2 : 8) + '" fill="#e9e9ec" stroke="#cfcfd4"/>'
+    + (k.label ? '<text x="' + (k.x + k.w / 2) + '" y="' + (k.y + k.h / 2 + 6) + '" text-anchor="middle" font-size="18" font-weight="700" fill="#777" font-family="Arial">' + esc(k.label) + '</text>' : '') + '</g>').join('');
+  const sites = m.sites.map((s) => {
+    const own = mine.has(s.id);
+    const tf = s.rotate ? ' transform="rotate(' + s.rotate + ' ' + (s.x + s.w / 2) + ' ' + (s.y + s.h / 2) + ')"' : '';
+    return '<g' + tf + '><rect x="' + s.x + '" y="' + s.y + '" width="' + s.w + '" height="' + s.h + '" rx="6" fill="' + (own ? '#ff6b00' : '#f4f4f5') + '" stroke="' + (own ? '#b24a00' : '#cfcfd4') + '" stroke-width="' + (own ? 3 : 1.5) + '"/>'
+      + '<text x="' + (s.x + s.w / 2) + '" y="' + (s.y + s.h / 2 + 5) + '" text-anchor="middle" font-size="' + (own ? 22 : 17) + '" font-weight="' + (own ? 800 : 600) + '" fill="' + (own ? '#fff' : '#9a9aa2') + '" font-family="Arial">' + esc(s.label) + '</text></g>';
+  }).join('');
+  const names = m.sites.filter((s) => mine.has(s.id)).map((s) => s.label).join(' + ');
+  return '<div class="qp-map"><p class="qp-mini">Where you are</p>'
+    + '<p class="qp-sub" style="margin:0 0 10px">Your site: <strong>' + esc(names) + '</strong> &mdash; highlighted in orange on the plan.</p>'
+    + '<svg viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="Site map, your site ' + esc(names) + ' highlighted" style="display:block;width:100%;max-width:280px;height:auto;margin:0 auto;border:1px solid #e3e3e6;border-radius:10px;background:#fff">'
+    + lm + sites + '</svg></div>';
+}
 
 function top(d) {
   const ev = d.event;
@@ -129,6 +153,7 @@ function top(d) {
         <div class="qp-incl"><p class="qp-mini">What to bring</p><ul>${BRING.map((t) => '<li>' + esc(t) + '</li>').join('')}</ul></div>
         <div class="qp-incl"><p class="qp-mini">Please remember</p><ul>${NOT_ALLOWED.map((t) => '<li>' + esc(t) + '</li>').join('')}</ul></div>
       </div>
+      ${siteMap(d)}
       <p class="qp-sub">Follow directions from event staff for access, setup and departure. Questions? ${esc(d.seller.email)} &middot; ${esc(d.seller.phone)}</p>
     </section>`;
 }

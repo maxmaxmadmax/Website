@@ -3589,7 +3589,25 @@ exports.getVendorInvoice = onCall(async (request) => {
   const gst = b.gstCents != null ? b.gstCents : 0;
   const total = b.totalCents != null ? b.totalCents : site + fee + gst;
 
+  // the site plan, with this vendor's site(s) marked (drawn on the invoice page)
+  let map = null;
+  try {
+    const sitesSnap = await db.collection('events').doc(b.eventId).collection('sites').get();
+    const sites = [];
+    sitesSnap.forEach((d) => {
+      const x = d.data();
+      sites.push({ id: d.id, label: x.label || d.id, type: x.type || '', x: x.x, y: x.y, w: x.w, h: x.h, rotate: x.rotate || 0 });
+    });
+    map = {
+      sites,
+      landmarks: ev.landmarks || [],
+      mapSize: ev.map || { width: 760, height: 1420 },
+      mine: Array.isArray(b.siteIds) && b.siteIds.length ? b.siteIds : (b.siteId ? [b.siteId] : []),
+    };
+  } catch (e) { logger.warn('getVendorInvoice map', e); }
+
   return {
+    map,
     invoiceNumber: b.invoiceNumber || '',
     issuedAt: secs(b.confirmedAt) || secs(b.invoicedAt),
     reference: b.reference || '',
