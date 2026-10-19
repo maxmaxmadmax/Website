@@ -10,7 +10,7 @@
    (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { isBooked, pickProgress } from './stock.js?v=543';
+import { isBooked, pickProgress } from './stock.js?v=544';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -182,6 +182,7 @@ export function pipelineHtml(jobs, f, h) {
           ${dateOpt('all', 'All dates')}${dateOpt('upcoming', 'Upcoming')}${dateOpt('month', 'This month')}${dateOpt('past', 'Past')}
         </select>
       </div>
+${vendorInvoiceBar(h)}
 
       <div class="sp-table-wrap">
         <table class="sp-table">
@@ -197,6 +198,23 @@ export function pipelineHtml(jobs, f, h) {
         </table>
       </div>
     </div>`;
+}
+
+/*  VENDOR INVOICES (Max, 19 Oct 2026): pick a paid vendor from the dropdown,
+    then View invoice (their private A4 page) or Test to me (emails it to the
+    signed-in admin only). No send-to-vendor button until Max says go.    */
+function vendorInvoiceBar(h) {
+  const vendors = h.vendors ? h.vendors() : [];
+  if (!vendors.length) return '';
+  return `<div class="sp-vendor-bar">
+        <b>Vendor invoices</b>
+        <select id="sp-vendor" class="ad-select" aria-label="Choose a vendor">
+          <option value="">Choose a vendor&hellip;</option>
+          ${vendors.map((v) => `<option value="${h.attr(v.id)}">${h.esc(v.label)}</option>`).join('')}
+        </select>
+        <button type="button" class="ad-btn ad-btn-small" data-sp-vendor="view" disabled>View invoice</button>
+        <button type="button" class="ad-btn ad-btn-small" data-sp-vendor="test" disabled title="Emails the invoice to you only">Test to me</button>
+      </div>`;
 }
 
 /* the table rows */
@@ -292,6 +310,12 @@ export function wirePipeline(getJobs, f, h, act) {
         .catch(() => { window.prompt('Copy the customer link:', link); });
       return;
     }
+    const vb = e.target.closest('[data-sp-vendor]');
+    if (vb) {
+      const sel = document.getElementById('sp-vendor');
+      if (sel && sel.value && act.vendorInvoice) act.vendorInvoice(sel.value, vb.getAttribute('data-sp-vendor'), vb);
+      return;
+    }
     const a = e.target.closest('[data-sp-act]');
     if (a) {
       const fn = { duplicate: act.duplicate, archive: act.archive, restore: act.restore, delete: act.del, paid: act.paid, deposit: act.deposit, picklist: act.picklist, undopay: act.undopay }[a.getAttribute('data-sp-act')];
@@ -305,6 +329,10 @@ export function wirePipeline(getJobs, f, h, act) {
   });
   const search = document.getElementById('sp-search');
   if (search) search.addEventListener('input', () => { f.search = search.value; paint(); });
+  const vsel = document.getElementById('sp-vendor');
+  if (vsel) vsel.addEventListener('change', () => {
+    root.querySelectorAll('[data-sp-vendor]').forEach((b) => { b.disabled = !vsel.value; });
+  });
   const dates = document.getElementById('sp-dates');
   if (dates) dates.addEventListener('change', () => { f.dates = dates.value; paint(); });
   // close any open ⌄ menu when clicking elsewhere (added once)

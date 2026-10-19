@@ -33,12 +33,12 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=543';
+} from './firebase-config.js?v=544';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=543';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=543';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=543';
-import { expandKit } from './kit.js?v=543';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=544';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=544';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=544';
+import { expandKit } from './kit.js?v=544';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5709,7 +5709,16 @@ VIEWS.quoteDocs = {
 /*  SALES PIPELINE - the list of every job (Max's mock-up, 16 Oct 2026).
     The look and the filtering live in js/sales-pipeline.js; this just hands
     it the live quotes and opens a job when a row is clicked.               */
-const spHelpers = { esc, attr, money };
+const spHelpers = {
+  esc, attr, money,
+  // paid vendor bookings for the Vendor invoices dropdown
+  vendors() {
+    return (state.bookings || [])
+      .filter((b) => b.status === 'confirmed' || b.paymentStatus === 'paid' || b.paymentStatus === 'free')
+      .map((b) => ({ id: b.id, label: ((b.business || {}).name || 'Vendor') + (b.siteLabel ? ' - site ' + b.siteLabel : '') + ' (' + money(b.totalCents != null ? b.totalCents : b.amountCents) + ')' }))
+      .sort((x, y) => x.label.localeCompare(y.label));
+  },
+};
 function quoteListHtml() {
   return pipelineHtml(state.quoteDocs || [], state.spFilter, spHelpers);
 }
@@ -5719,6 +5728,21 @@ function wireQuoteList() {
   const label = (d) => (d && (d.customer && (d.customer.name || d.customer.business))) || (d && d.number) || 'this job';
   wirePipeline(() => state.quoteDocs || [], state.spFilter, spHelpers, {
     open(id) { location.hash = '#/quoteDocs?q=' + id; },
+    // vendor tax invoice: view the page, or email a TEST to the signed-in admin only
+    async vendorInvoice(id, mode, btn) {
+      const was = btn.textContent;
+      btn.disabled = true; btn.textContent = mode === 'test' ? 'Sending...' : 'Opening...';
+      try {
+        if (mode === 'test') {
+          const res = await call('adminSendVendorInvoice', { bookingId: id, test: true });
+          window.alert(res.sent ? 'Test sent to ' + res.to + ' only. The vendor was NOT emailed.' : 'It did not send. ' + (res.error || res.reason || ''));
+        } else {
+          const res = await call('adminVendorInvoiceLink', { bookingId: id });
+          window.open(res.link, '_blank', 'noopener');
+        }
+      } catch (err) { window.alert(err.message || 'Could not do that.'); }
+      btn.disabled = false; btn.textContent = was;
+    },
     newQuote() { state.openQuoteId = null; location.hash = '#/quoteDocs?q=new'; },
     // a new estimate with the same customer, items and settings - opens it
     async duplicate(id) {
