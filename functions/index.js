@@ -1025,6 +1025,8 @@ async function confirmAndNotify(bookingId, extra = {}) {
         guide email (one email, not two); the office still gets its copy.
         confirmationEmailAt is the "already told them" guard above.       */
     await sendBookingEmails(booking, bookingId, event, { officeOnly: true });
+    // paused in the Messages page? then no vendor email (the office copy still went)
+    if (await invoiceEmailPaused(booking.eventId)) return result;
     const mail = await sendVendorInvoice(bookingId, {});
     await ref.update({
       emailStatus: mail.sent ? 'sent' : 'failed',
@@ -3686,4 +3688,296 @@ exports.adminEnsureVendorInvoices = onCall(async (request) => {
     catch (err) { logger.warn('ensure vendor invoice', { id: d.id, message: err && err.message }); }
   }
   return { ok: true, made };
+});
+
+/* =========================================================================
+   MESSAGES  (Max, 19 Oct 2026)  -  step 1: vendors
+
+   Emails written in the admin Messages page, stored in messages/{id}:
+     eventId, audience ('vendors'), name, subject, body (plain text + {{fields}}),
+     who ('all' | 'food' | 'market'), promo (adds an unsubscribe link),
+     trigger { type: 'payment' | 'daysBefore' | 'daysAfter' | 'date', days, date },
+     status  'draft'    still being written
+             'review'   complete, waiting for Max's OK
+             'approved' sends itself at 9:35 am on its day
+             'paused' | 'cancelled' | 'sent'
+     system  'invoice' = the tax invoice & guide email sent on payment
+   Each send is recorded in messages/{id}/sends/{bookingId}, so nobody gets
+   the same message twice. NOTHING SENDS UNTIL MAX APPROVES IT, and any edit
+   to an approved message puts it back to 'review'.
+   ========================================================================= */
+const { sendMessageEmail, fieldsFor } = require('./lib/message-email');
+
+const MSG_TZ = 'Australia/Brisbane';
+const MSG_SEND_AT = '9:35 am';
+const UNSUB_URL = process.env.UNSUB_URL || 'https://vendorunsubscribe-4smug72szq-ts.a.run.app';
+
+const brisbaneToday = () => new Date().toLocaleDateString('en-CA', { timeZone: MSG_TZ });   // YYYY-MM-DD
+function brisbaneMinutesNow() {
+  const parts = new Intl.DateTimeFormat('en-AU', { timeZone: MSG_TZ, hour: 'numeric', minute: 'numeric', hour12: false }).formatToParts(new Date());
+  const get = (t) => Number((parts.find((p) => p.type === t) || {}).value || 0);
+  return (get('hour') % 24) * 60 + get('minute');
+}
+function addDaysISO(iso, n) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+  if (!m) return '';
+  return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3] + n)).toISOString().slice(0, 10);
+}
+/*  The day a message goes out, or '' if it can't be worked out. */
+function messageSendDate(msg, ev) {
+  const t = msg.trigger || {};
+  const days = Math.max(0, Math.round(Number(t.days) || 0));
+  if (t.type === 'daysBefore') return addDaysISO(ev.dateISO, -days);
+  if (t.type === 'daysAfter') return addDaysISO(ev.dateISO, days);
+  if (t.type === 'date') return /^\d{4}-\d{2}-\d{2}$/.test(String(t.date || '')) ? t.date : '';
+  return '';
+}
+function messageComplete(msg) {
+  return !!(String(msg.subject || '').trim() && String(msg.body || '').trim() && msg.trigger && msg.trigger.type);
+}
+
+/*  Paid vendors of the event that this message is for. */
+async function messageRecipients(msg) {
+  const snap = await db.collection('bookings').where('eventId', '==', msg.eventId).get();
+  return snap.docs.filter((d) => {
+    const b = d.data();
+    if (!bookingIsPaid(b) || b.status === 'cancelled') return false;
+    if (!(b.business && b.business.email)) return false;
+    if (msg.who === 'food' && b.vendorType !== 'food') return false;
+    if (msg.who === 'market' && b.vendorType !== 'market') return false;
+    if (msg.promo && b.promoOptOut) return false;
+    return true;
+  });
+}
+
+async function sendMessageTo(msg, ev, bookingDoc, opts) {
+  const b = bookingDoc.data();
+  const inv = await ensureVendorInvoice(bookingDoc.id);
+  const values = fieldsFor(b, ev, SITE_URL + '/vendor-invoice?t=' + inv.token);
+  return sendMessageEmail(msg, values, {
+    to: opts.test ? opts.to : (b.business || {}).email,
+    test: !!opts.test,
+    unsubscribeLink: msg.promo ? UNSUB_URL + '?t=' + inv.token : '',
+  });
+}
+
+/*  Recount sent / failed onto the message, from its sends. */
+async function refreshMessageCounts(ref) {
+  const sends = await ref.collection('sends').get();
+  let sentCount = 0;
+  const failed = [];
+  sends.forEach((s) => {
+    const x = s.data();
+    if (x.ok) sentCount++;
+    else failed.push({ bookingId: s.id, name: x.name || '', to: x.to || '', error: String(x.error || '').slice(0, 200) });
+  });
+  await ref.update({ sentCount, failed });
+}
+
+async function recordSend(ref, bookingDoc, result) {
+  const b = bookingDoc.data();
+  await ref.collection('sends').doc(bookingDoc.id).set({
+    ok: !!result.sent,
+    to: (b.business || {}).email || '',
+    name: (b.business || {}).name || '',
+    error: result.sent ? '' : String(result.error || result.reason || 'not sent'),
+    at: FieldValue.serverTimestamp(),
+  });
+}
+
+/*  Is the tax-invoice-on-payment email paused for this event? */
+async function invoiceEmailPaused(eventId) {
+  const snap = await db.collection('messages').where('eventId', '==', eventId).get();
+  return snap.docs.some((d) => d.data().system === 'invoice' && d.data().status === 'paused');
+}
+
+/*  The starter messages: Max checks the wording and approves. */
+function starterMessages(eventId) {
+  const base = { eventId, audience: 'vendors', who: 'all', promo: false };
+  return [
+    { ...base, system: 'invoice', name: 'Booking confirmed + invoice & guide', status: 'approved',
+      subject: 'Your tax invoice & event guide - {{event_name}}', trigger: { type: 'payment' },
+      body: 'Sent automatically the moment a vendor pays: their tax invoice, event guide, site map and promo material.' },
+    { ...base, name: 'One week to go', status: 'review',
+      subject: 'One week to go - {{event_name}}', trigger: { type: 'daysBefore', days: 7 },
+      body: "Hi {{vendor_name}},\n\n{{event_name}} is only a week away and we can't wait to have {{business_name}} with us at site {{site_number}}.\n\nA few reminders:\n- Set up and vehicle parked by 4:15 pm\n- No vehicles moving on site between 4:15 pm and 9:40 pm\n- Marquee secured, pegs 300 mm deep max\n- Take all your waste home\n\nYour site map, invoice, poster and program are all in your event guide below. Please help us spread the word!\n\nSee you soon,\nThe SoundzGood team" },
+    { ...base, name: 'Day before', status: 'review',
+      subject: 'See you tomorrow - {{event_name}}', trigger: { type: 'daysBefore', days: 1 },
+      body: "Hi {{vendor_name}},\n\nTomorrow's the big night! Your quick checklist:\n- You're at site {{site_number}}\n- Set up and vehicle parked by 4:15 pm\n- Doors open 4:30 pm\n- No vehicles moving on site until 9:40 pm\n\nOn the night, please follow directions from our event staff.\n\nSee you tomorrow,\nThe SoundzGood team" },
+    { ...base, name: 'Thank you', status: 'review',
+      subject: 'Thank you for being part of {{event_name}}', trigger: { type: 'daysAfter', days: 1 },
+      body: "Hi {{vendor_name}},\n\nThank you for joining us at {{event_name}} - we hope it was a great night for {{business_name}}.\n\nWe'd love your feedback. Just reply to this email and tell us what worked and what we can do better.\n\nFollow us on Instagram @soundzgood_events for our next events.\n\nThanks again,\nThe SoundzGood team" },
+  ];
+}
+
+/*  First open of the Messages page for an event: add the starters. */
+exports.adminMessagesSeed = onCall(async (request) => {
+  requireAdmin(request);
+  const eventId = String((request.data || {}).eventId || '').trim();
+  if (!eventId) throw new HttpsError('invalid-argument', 'Missing event.');
+  const have = await db.collection('messages').where('eventId', '==', eventId).limit(1).get();
+  if (!have.empty) return { ok: true, added: 0 };
+  const batch = db.batch();
+  starterMessages(eventId).forEach((m) => batch.set(db.collection('messages').doc(), {
+    ...m, sentCount: 0, failed: [], createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
+  }));
+  await batch.commit();
+  return { ok: true, added: 4 };
+});
+
+/*  Save (new or edited). An edit to an approved / paused message goes back to
+    'review' - it needs Max's OK again.                                       */
+exports.adminMessageSave = onCall(async (request) => {
+  requireAdmin(request);
+  const d = request.data || {};
+  const clean = (v, n) => String(v == null ? '' : v).slice(0, n);
+  const t = d.trigger || {};
+  const trigger = ['daysBefore', 'daysAfter', 'date'].includes(t.type)
+    ? { type: t.type, days: Math.max(0, Math.min(365, Math.round(Number(t.days) || 0))), date: clean(t.date, 10) }
+    : null;
+  const fields = {
+    name: clean(d.name, 120), subject: clean(d.subject, 200), body: clean(d.body, 20000),
+    who: ['all', 'food', 'market'].includes(d.who) ? d.who : 'all',
+    promo: d.promo === true, trigger,
+    updatedAt: FieldValue.serverTimestamp(),
+  };
+  fields.status = messageComplete(fields) ? 'review' : 'draft';
+
+  if (d.id) {
+    const ref = db.collection('messages').doc(String(d.id));
+    const snap = await ref.get();
+    if (!snap.exists) throw new HttpsError('not-found', 'No such message.');
+    const m = snap.data();
+    if (m.system) throw new HttpsError('failed-precondition', 'The invoice email is set up separately.');
+    if (m.status === 'sent') throw new HttpsError('failed-precondition', 'That message has already gone out.');
+    await ref.update(fields);
+    return { ok: true, id: ref.id, status: fields.status };
+  }
+  const eventId = clean(d.eventId, 100);
+  if (!eventId) throw new HttpsError('invalid-argument', 'Missing event.');
+  const ref = await db.collection('messages').add({
+    ...fields, eventId, audience: 'vendors', sentCount: 0, failed: [], createdAt: FieldValue.serverTimestamp(),
+  });
+  return { ok: true, id: ref.id, status: fields.status };
+});
+
+/*  approve | pause | resume | cancel | delete */
+exports.adminMessageAction = onCall(async (request) => {
+  requireAdmin(request);
+  const { id, action } = request.data || {};
+  const ref = db.collection('messages').doc(String(id || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'No such message.');
+  const m = snap.data();
+  const by = (request.auth.token && request.auth.token.email) || request.auth.uid;
+
+  if (m.system) {   // the invoice email: only pause / resume
+    if (action === 'pause') { await ref.update({ status: 'paused', updatedAt: FieldValue.serverTimestamp() }); return { ok: true }; }
+    if (action === 'resume') { await ref.update({ status: 'approved', updatedAt: FieldValue.serverTimestamp() }); return { ok: true }; }
+    throw new HttpsError('failed-precondition', 'The invoice email can only be paused or resumed.');
+  }
+
+  if (action === 'approve' || action === 'resume') {
+    if (!messageComplete(m)) throw new HttpsError('failed-precondition', 'Fill in who, when, the subject and the message first.');
+    const evSnap = await db.collection('events').doc(m.eventId).get();
+    const day = messageSendDate(m, evSnap.exists ? evSnap.data() : {});
+    if (!day) throw new HttpsError('failed-precondition', 'Pick when it should send.');
+    const today = brisbaneToday();
+    if (day < today || (day === today && brisbaneMinutesNow() >= 9 * 60 + 35)) {
+      throw new HttpsError('failed-precondition', 'That send day (' + day + ', ' + MSG_SEND_AT + ') has already passed - pick a later day.');
+    }
+    await ref.update({ status: 'approved', approvedAt: FieldValue.serverTimestamp(), approvedBy: by, updatedAt: FieldValue.serverTimestamp() });
+    return { ok: true, sendDate: day };
+  }
+  if (action === 'pause') {
+    if (m.status !== 'approved') throw new HttpsError('failed-precondition', 'Only an approved message can be paused.');
+    await ref.update({ status: 'paused', updatedAt: FieldValue.serverTimestamp() });
+    return { ok: true };
+  }
+  if (action === 'cancel') {
+    await ref.update({ status: 'cancelled', updatedAt: FieldValue.serverTimestamp() });
+    return { ok: true };
+  }
+  if (action === 'delete') {
+    if ((m.sentCount || 0) > 0) throw new HttpsError('failed-precondition', 'That message has been sent to people - cancel it instead.');
+    await ref.delete();
+    return { ok: true };
+  }
+  throw new HttpsError('invalid-argument', 'Unknown action.');
+});
+
+/*  Test: the message as the first vendor would get it, to the admin only. */
+exports.adminMessageTest = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  requireAdmin(request);
+  const to = String(request.auth.token.email || '');
+  if (!to) throw new HttpsError('failed-precondition', 'Your admin login has no email address.');
+  const ref = db.collection('messages').doc(String((request.data || {}).id || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'No such message.');
+  const m = snap.data();
+  const evSnap = await db.collection('events').doc(m.eventId).get();
+  const ev = evSnap.exists ? evSnap.data() : {};
+  const list = await messageRecipients({ ...m, promo: false });
+  if (!list.length) throw new HttpsError('failed-precondition', 'No paid vendors yet to fill the test with.');
+  if (m.system === 'invoice') return sendVendorInvoice(list[0].id, { test: true, to });
+  const r = await sendMessageTo(m, ev, list[0], { test: true, to });
+  return { ...r, to };
+});
+
+/*  Resend one (from the failed list). */
+exports.adminMessageResend = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  requireAdmin(request);
+  const { id, bookingId } = request.data || {};
+  const ref = db.collection('messages').doc(String(id || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'No such message.');
+  const m = snap.data();
+  const bSnap = await db.collection('bookings').doc(String(bookingId || '')).get();
+  if (!bSnap.exists) throw new HttpsError('not-found', 'No such booking.');
+  const evSnap = await db.collection('events').doc(m.eventId).get();
+  const r = await sendMessageTo(m, evSnap.exists ? evSnap.data() : {}, bSnap, {});
+  await recordSend(ref, bSnap, r);
+  await refreshMessageCounts(ref);
+  return r;
+});
+
+/*  Every morning at 9:35 am: send each approved message whose day is today. */
+exports.sendScheduledMessages = onSchedule(
+  { schedule: '35 9 * * *', timeZone: MSG_TZ, secrets: [SMTP_USER, SMTP_PASS], timeoutSeconds: 540 },
+  async () => {
+    const today = brisbaneToday();
+    const snap = await db.collection('messages').where('status', '==', 'approved').get();
+    for (const doc of snap.docs) {
+      const m = doc.data();
+      if (m.system) continue;
+      try {
+        const evSnap = await db.collection('events').doc(m.eventId).get();
+        const ev = evSnap.exists ? evSnap.data() : {};
+        if (messageSendDate(m, ev) !== today) continue;
+        const list = await messageRecipients(m);
+        for (const b of list) {
+          const already = await doc.ref.collection('sends').doc(b.id).get();
+          if (already.exists && already.data().ok) continue;
+          const r = await sendMessageTo(m, ev, b, {});
+          await recordSend(doc.ref, b, r);
+        }
+        await refreshMessageCounts(doc.ref);
+        await doc.ref.update({ status: 'sent', sentAt: FieldValue.serverTimestamp() });
+        logger.info('scheduled message sent', { id: doc.id, name: m.name, count: list.length });
+      } catch (err) {
+        logger.error('scheduled message failed', { id: doc.id, message: err && err.message });
+      }
+    }
+  },
+);
+
+/*  Unsubscribe from promotional emails (link at the bottom of them). */
+exports.vendorUnsubscribe = onRequest(async (req, res) => {
+  const token = String(req.query.t || '').trim();
+  const page = (msg) => res.status(200).send('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font-family:Arial;padding:40px;text-align:center;background:#f4f4f5"><div style="max-width:480px;margin:auto;background:#fff;padding:30px;border-radius:12px"><p style="color:#ff6b00;letter-spacing:2px;font-size:12px">SOUNDZGOOD WHITSUNDAYS</p><h2>' + msg + '</h2><p style="color:#666">You will still get emails about bookings you make.</p></div></body>');
+  if (!/^[a-f0-9]{20,40}$/.test(token)) return page('That link is not valid.');
+  const snap = await db.collection('bookings').where('invoiceToken', '==', token).limit(1).get();
+  if (snap.empty) return page('That link is not valid.');
+  await snap.docs[0].ref.update({ promoOptOut: true, promoOptOutAt: FieldValue.serverTimestamp() });
+  return page('You have been unsubscribed from event news.');
 });
