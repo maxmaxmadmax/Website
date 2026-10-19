@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=564';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=564';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=564';
+import { termBodyHtml } from './terms-data.js?v=565';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=565';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=565';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -70,7 +70,7 @@ const BRING_GROUPS = [
 /*  ON THE NIGHT - the hard rules. */
 const RULES = [
   ['No vehicles moving on site between 4:15 pm and 9:40 pm.', 'This keeps patrons safe - after 9:40 pm, move only when event staff say the route is clear.'],
-  ['No music or speakers', ''],
+  ['No music or speakers.', 'We are bringing the vibes.'],
   ['No alcohol sales or BYO.', 'Please support our licensed event bar.'],
   ['Nothing in public bins or drains', ''],
 ];
