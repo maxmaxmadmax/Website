@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=551';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=551';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=551';
+import { termBodyHtml } from './terms-data.js?v=552';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=552';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=552';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -171,7 +171,7 @@ function top(d) {
 
   return `
     <section class="qp-hero">
-      <div class="qp-hero-photo" style="--qp-photo:none;background:linear-gradient(160deg,#ff7a1a 0%,#ff6b00 30%,#8a3400 65%,#0b0b0b 100%)">
+      <div class="qp-hero-photo" style="--qp-photo:none;background:linear-gradient(180deg,#ff6b00 0%,#d95a00 55%,#0b0b0b 100%)">
         <div class="qp-hero-in" style="max-width:none;width:100%;display:flex;flex-wrap:wrap;gap:30px;align-items:center">
           ${posterOf(ev) ? '<img src="' + esc(posterOf(ev)) + '" alt="' + esc(ev.name) + ' poster" style="flex:0 0 auto;width:min(100%,270px);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.5)">' : ''}
           <div style="flex:1 1 300px;max-width:680px">
@@ -209,7 +209,11 @@ function top(d) {
         </dl></div>
       </div>
     </section>
+`;
+}
 
+function guide(d) {
+  return `
     <section class="qp-sec qp-guide">
       <p class="qp-eyebrow">Event guide</p>
       <h2 class="qp-h2">What you need to know</h2>
@@ -285,18 +289,12 @@ function bottom(d) {
     + VENDOR_TERMS.map(([h, lines], i) => '<div class="qp-legal-clause"><h4>' + (i + 1) + '. ' + esc(h) + '</h4>' + termBodyHtml(lines, esc) + '</div>').join('')
     + '</div></details>';
   return `
-    ${shareHtml()}
-    <section class="qp-sec qp-terms">${terms}</section>
-    <section class="qp-sec qp-vend-done">
-      <p class="qp-eyebrow">Your booking</p>
-      <h2 class="qp-h2">You&rsquo;re all set</h2>
-      <div class="qp-done">&#10003; ${d.free ? 'Booking confirmed' : 'Paid in full'} &mdash; thank you! See you at ${esc(d.event.name || 'the event')}.</div>
-    </section>`;
+    <section class="qp-sec qp-terms">${terms}</section>`;
 }
 
 function render(d) {
   document.title = 'Invoice ' + d.invoiceNumber + ' | SoundzGood Whitsundays';
-  document.getElementById('quote-root').innerHTML = top(d) + paper(d) + bottom(d);
+  document.getElementById('quote-root').innerHTML = top(d) + paper(d) + guide(d) + shareHtml() + bottom(d);
   // printing / PDF: show the whole terms, not just the open one
   window.addEventListener('beforeprint', () => document.querySelectorAll('.qp-term').forEach((x) => { x.open = true; }));
   wireShare();

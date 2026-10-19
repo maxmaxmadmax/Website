@@ -1,0 +1,52 @@
+/* ==========================================================================
+   VENDOR INVOICE PAGE - spacing fixes on top of quote-view.css (Max, 19 Oct 2026)
+
+   quote-view.css stretches each quote "page" to a full screen / A4 sheet with
+   the content spread out, which suits a long quote but leaves a short vendor
+   invoice looking empty. These rules (all under body.vi-page, so quotes are
+   untouched) keep the same look but pack it neatly.
+
+   Printed A4:  1 hero + investment   2 event guide + map + share
+                3 tax invoice + all set   4-5 vendor terms
+   ========================================================================== */
+body.vi-page .qv-wrap .qp-hero{ min-height:0 !important; }
+body.vi-page .qv-wrap .qp-hero-photo{ min-height:0 !important; }
+body.vi-page .qv-wrap .qp-hero-photo::before{ display:none !important; }
+body.vi-page .qv-wrap .qp-hero .qp-tiles{ margin-top:0 !important; }
+body.vi-page .qv-wrap .qp-invest{ min-height:0 !important; display:block !important; padding-top:30px !important; }
+body.vi-page .qv-wrap .qp-invest .qp-inv{ margin:18px 0 !important; }
+body.vi-page .qv-wrap .qp-invest .qp-inv-extra{ margin-top:26px !important; }
+body.vi-page .qv-wrap .qv-doc{ min-height:0 !important; display:block !important; }
+body.vi-page .qv-wrap .qv-sumwrap{ margin:12px 0 0 auto !important; padding-top:0 !important; }
+body.vi-page .qp-legal{ font-family:Arial,Helvetica,sans-serif; }
+
+body.vi-page .qp-legal, body.vi-page .qp-legal *{ font-family:Arial,Helvetica,sans-serif !important; }
+
+@media print{
+  /* page 1: the cover, tiles at the bottom like the quote */
+  body.vi-page .qv-wrap .qp-hero{ min-height:270mm !important; break-after:page !important; }
+  body.vi-page .qv-wrap .qp-hero-photo{ min-height:120mm !important; }
+  body.vi-page .qv-wrap .qp-hero .qp-tiles{ margin-top:auto !important; }
+  /* page 2: summary, then the tax invoice under it */
+  body.vi-page .qv-wrap .qp-invest{ min-height:0 !important; display:block !important; break-after:avoid !important; margin-top:0 !important; padding:0 6mm !important; }
+  body.vi-page .qv-wrap .qp-invest .qp-inv{ margin:4mm 0 !important; }
+  body.vi-page .qv-wrap .qp-invest .qp-inv-extra{ margin-top:4mm !important; }
+  body.vi-page .qv-wrap .qv-doc{ break-before:avoid !important; min-height:0 !important; display:block !important; margin-top:6mm !important; break-after:page !important; }
+  body.vi-page .qv-wrap .qv-foot{ display:none !important; }
+  body.vi-page .qv-wrap .qv-sumwrap{ margin:5mm 0 0 auto !important; padding:0 !important; }
+  /* page 3: guide + map + documents, then share */
+  body.vi-page .qv-wrap .qp-guide{ padding:0 6mm !important; break-inside:avoid; }
+  body.vi-page .qp-guide .qp-incl li{ font-size:9.5pt !important; padding-bottom:3px !important; }
+  body.vi-page .qp-map svg{ max-width:230px !important; }
+  body.vi-page .qv-wrap .qp-share{ padding:0 6mm !important; margin-top:5mm !important; }
+  body.vi-page .qp-share .qp-h2{ font-size:15pt !important; margin:0 0 1.5mm !important; }
+  body.vi-page .qp-share .qp-sub{ font-size:9pt !important; margin:0 0 2mm !important; }
+  body.vi-page .qp-share .qp-inv-extra{ margin-top:3mm !important; gap:6mm !important; }
+  body.vi-page .qv-wrap .qp-share .qv-btn{ display:none !important; }
+  /* pages 4-5: terms in two columns */
+  body.vi-page .qv-wrap .qp-terms{ break-before:page !important; }
+  body.vi-page .qp-legal-body{ max-height:none !important; overflow:visible !important; column-count:2; column-gap:8mm; background:#fff !important; }
+  body.vi-page .qp-term, body.vi-page .qp-legal{ break-inside:auto !important; }
+  body.vi-page .qp-legal-clause{ break-inside:auto; }
+  body.vi-page .qp-legal-body p, body.vi-page .qp-legal-body li{ font-size:8.3pt !important; line-height:1.35 !important; }
+}
