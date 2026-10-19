@@ -22,6 +22,25 @@ body.vi-page .qp-legal{ font-family:Arial,Helvetica,sans-serif; }
 
 body.vi-page .qp-legal, body.vi-page .qp-legal *{ font-family:Arial,Helvetica,sans-serif !important; }
 
+/* EVENT GUIDE: bring cards, night rules, dress-up note (Max, 19 Oct 2026) */
+.vi-guide-grid{ display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:30px; align-items:start; }
+.vi-cards{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.vi-card{ border:1px solid #e6e6e9; border-radius:10px; padding:12px 14px; background:#fff; }
+.vi-card-h{ display:flex; align-items:center; gap:8px; margin:0 0 6px; font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:#111; }
+.vi-card-h svg{ width:20px; height:20px; flex:none; fill:none; stroke:#ff6b00; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.vi-card ul{ margin:0; padding:0; list-style:none; }
+.vi-card li{ position:relative; padding:0 0 4px 14px; font-size:13px; line-height:1.4; color:#333; }
+.vi-card li::before{ content:""; position:absolute; left:2px; top:7px; width:5px; height:5px; border-radius:50%; background:#ff6b00; }
+.vi-rules{ list-style:none; margin:0; padding:12px 14px; border:1px solid #f3c9c4; background:#fff6f5; border-radius:10px; display:grid; gap:8px; }
+.vi-rules li{ display:flex; gap:10px; align-items:flex-start; font-size:13.5px; line-height:1.4; color:#444; }
+.vi-rules b{ color:#111; }
+.vi-x{ flex:none; width:20px; height:20px; border-radius:50%; background:#d93025; color:#fff; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+.vi-dress{ display:flex; gap:12px; align-items:center; margin-top:14px; padding:12px 14px; border-radius:10px; background:linear-gradient(90deg,#fff1e4,#fff8f1); border:1px solid #ffd9b3; }
+.vi-dress span{ font-size:26px; line-height:1; }
+.vi-dress p{ margin:0; font-size:13.5px; line-height:1.45; color:#333; }
+@media (max-width:760px){ .vi-guide-grid{ grid-template-columns:1fr; } }
+@media (max-width:480px){ .vi-cards{ grid-template-columns:1fr; } }
+
 @media print{
   @page :first{ margin:0; }
   /* page 1: the cover, tiles at the bottom like the quote */
@@ -37,17 +56,24 @@ body.vi-page .qp-legal, body.vi-page .qp-legal *{ font-family:Arial,Helvetica,sa
   body.vi-page .qv-wrap .qv-sumwrap{ margin:5mm 0 0 auto !important; padding:0 !important; }
   /* page 3: guide + map + documents, then share */
   body.vi-page .qv-wrap .qp-guide{ padding:0 6mm !important; break-inside:avoid; }
-  body.vi-page .qp-guide .qp-incl li{ font-size:9.5pt !important; padding-bottom:3px !important; }
+  body.vi-page .vi-guide-grid{ grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) !important; gap:6mm !important; }
+  body.vi-page .vi-cards{ grid-template-columns:1fr 1fr !important; gap:2.5mm !important; }
+  body.vi-page .vi-rules{ gap:1.5mm !important; padding:2.5mm 3mm !important; }
+  body.vi-page .vi-dress{ margin-top:3mm !important; padding:2.5mm 3mm !important; }
+  body.vi-page .qp-docs{ margin-top:3mm !important; padding:2.5mm 3mm !important; }
+  body.vi-page .vi-guide-foot{ display:none !important; }
+  body.vi-page .vi-card{ padding:2.5mm 3mm; } body.vi-page .vi-card li, body.vi-page .vi-rules li, body.vi-page .vi-dress p{ font-size:9pt !important; }
+  body.vi-page .vi-card, body.vi-page .vi-rules, body.vi-page .vi-dress, body.vi-page .vi-x{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   body.vi-page .qp-map svg{ max-width:230px !important; }
-  body.vi-page .qv-wrap .qp-share{ padding:0 6mm !important; margin-top:5mm !important; }
+  body.vi-page .qv-wrap .qp-share{ padding:0 6mm !important; margin-top:0 !important; break-before:page !important; }
   body.vi-page .qp-share .qp-h2{ font-size:15pt !important; margin:0 0 1.5mm !important; }
   body.vi-page .qp-share .qp-sub{ font-size:9pt !important; margin:0 0 2mm !important; }
   body.vi-page .qp-share .qp-inv-extra{ margin-top:3mm !important; gap:6mm !important; }
   body.vi-page .qv-wrap .qp-share .qv-btn{ display:none !important; }
   /* pages 4-5: terms in two columns */
-  body.vi-page .qv-wrap .qp-terms{ break-before:page !important; }
+  body.vi-page .qv-wrap .qp-terms{ break-before:avoid !important; margin-top:6mm !important; }
   body.vi-page .qp-legal-body{ max-height:none !important; overflow:visible !important; column-count:2; column-gap:8mm; background:#fff !important; }
   body.vi-page .qp-term, body.vi-page .qp-legal{ break-inside:auto !important; }
   body.vi-page .qp-legal-clause{ break-inside:auto; }
-  body.vi-page .qp-legal-body p, body.vi-page .qp-legal-body li{ font-size:8.3pt !important; line-height:1.35 !important; }
+  body.vi-page .qp-legal-body p, body.vi-page .qp-legal-body li{ font-size:8pt !important; line-height:1.32 !important; }
 }

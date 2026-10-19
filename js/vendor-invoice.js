@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=554';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=554';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=554';
+import { termBodyHtml } from './terms-data.js?v=555';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=555';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=555';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -46,24 +46,52 @@ const KEY_TIMES = [
   ['Car', 'Vehicles move after 9:40 pm', 'Only when staff say the route is clear'],
 ];
 
-const BRING = [
-  'Marquee, tables, chairs and weights',
-  'Your own power (quiet or silenced generators only) and water',
-  'Test-and-tagged leads; secured gas bottles',
-  'Fire safety equipment for what you do',
-  'Certificate of Currency (public liability, $20 million)',
-  'Licences and permits that apply to your stall',
-  'Bags and bins for your own commercial waste',
-  'Pegs no deeper than 300 mm - irrigation underneath!',
-  'Safe, visible guy ropes',
+/*  THE EVENT GUIDE, from the Vendor Terms (Max, 19 Oct 2026): six cards of
+    [icon path, title, lines], then the hard rules for the night.        */
+const BRING_GROUPS = [
+  ['<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', 'Arrive &amp; set up', [
+    'Arrive early - be fully set up by 4:15 pm',
+    'Vehicle parked or off the grounds by 4:15 pm',
+    'Set up inside your site only - no swapping sites',
+    'Keep walkways and emergency exits clear',
+  ]],
+  ['<path d="M3 20h18M5 20V10l7-6 7 6v10M9 20v-6h6v6"/>', 'Your stall', [
+    'Bring your own marquee, tables, chairs and lighting',
+    'Weights on every marquee leg - it must be secure',
+    'Pegs 300 mm deep max - irrigation pipes below',
+    'No trip hazards: ropes, pegs and leads visible',
+  ]],
+  ['<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>', 'Power &amp; water', [
+    'No power or water supplied - bring your own',
+    'Quiet or silenced generators only',
+    'Test-and-tagged leads and appliances',
+  ]],
+  ['<path d="M12 3c3 4 6 6 6 11a6 6 0 01-12 0c0-3 2-5 3-7 1 2 2 3 3 3 0-3-1-5 0-7z"/>', 'Gas &amp; fire safety', [
+    'Gas bottles secured, appliances fitted correctly',
+    'Fire extinguisher / blanket suited to your stall',
+    'Report any fire or incident to us straight away',
+  ]],
+  ['<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/>', 'Paperwork', [
+    'Public liability - $20 million Certificate of Currency',
+    'Food business licence (food vendors)',
+    'Any permits for what you sell',
+    'Tell us if anything changes or expires',
+  ]],
+  ['<path d="M5 7h14l-1 14H6zM3 7h18M9 7V4h6v3"/>', 'Pack-down &amp; clean-up', [
+    'Bins and bags for your own waste',
+    'Take oil, food scraps and wastewater home',
+    'Leaving early? Ask us first - vehicles still wait',
+    'Leave your site spotless',
+  ]],
 ];
 
-const NOT_ALLOWED = [
-  'No vehicle movement between 4:15 pm and 9:40 pm',
-  'No own music or speakers',
-  'No alcohol sales (licensed event bar only)',
-  'No commercial waste in public bins or drains',
-  'Halloween dress-up is optional, but encouraged - best dressed stalls can win their vendor fee back!',
+/*  ON THE NIGHT - the hard rules. */
+const RULES = [
+  ['No vehicle movement 4:15 pm - 9:40 pm.', 'After that, only when event staff say the route is clear - never through the crowd.'],
+  ['No music or speakers at your stall.', 'Let the live entertainment carry the night.'],
+  ['No alcohol sales.', 'The licensed event bar only.'],
+  ['Nothing in public bins or drains.', 'Commercial waste goes home with you.'],
+  ['Event staff have the final say.', 'Unsafe setups must be fixed or removed when asked.'],
 ];
 
 /*  THE SITE MAP: every site in light grey, the landmarks (stage, bar ...) for
@@ -213,19 +241,25 @@ function top(d) {
 }
 
 function guide(d) {
+  const bring = BRING_GROUPS.map(([ic, title, lines]) => '<div class="vi-card">'
+    + '<p class="vi-card-h"><svg viewBox="0 0 24 24" aria-hidden="true">' + ic + '</svg>' + title + '</p>'
+    + '<ul>' + lines.map((t) => '<li>' + esc(t) + '</li>').join('') + '</ul></div>').join('');
+  const rules = RULES.map(([t, n]) => '<li><span class="vi-x" aria-hidden="true">&#10005;</span><span><b>' + esc(t) + '</b> ' + esc(n) + '</span></li>').join('');
   return `
     <section class="qp-sec qp-guide">
       <p class="qp-eyebrow">Event guide</p>
       <h2 class="qp-h2">What you need to know</h2>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:30px;align-items:start">
+      <div class="vi-guide-grid">
         <div>
-          <div class="qp-incl"><p class="qp-mini">What to bring</p><ul>${BRING.map((t) => '<li>' + esc(t) + '</li>').join('')}</ul></div>
-          <div class="qp-incl" style="margin-top:22px"><p class="qp-mini">Please remember</p><ul>${NOT_ALLOWED.map((t) => '<li>' + esc(t) + '</li>').join('')}</ul></div>
-          ${documentsHtml(d)}
+          <p class="qp-mini">What to bring</p>
+          <div class="vi-cards">${bring}</div>
+          <p class="qp-mini" style="margin-top:20px">On the night</p>
+          <ul class="vi-rules">${rules}</ul>
+          <div class="vi-dress"><span aria-hidden="true">&#127875;</span><p><b>Win your vendor fee back!</b> Dress up and deck out your stall for Halloween - the best dressed stall gets their fee refunded.</p></div>
         </div>
-        <div>${siteMap(d)}</div>
+        <div>${siteMap(d)}${documentsHtml(d)}</div>
       </div>
-      <p class="qp-sub" style="margin-top:22px">Follow directions from event staff for access, setup and departure. Questions? ${esc(d.seller.email)} &middot; ${esc(d.seller.phone)}</p>
+      <p class="qp-sub vi-guide-foot" style="margin-top:22px">Follow directions from event staff for access, setup and departure. Questions? ${esc(d.seller.email)} &middot; ${esc(d.seller.phone)}</p>
     </section>`;
 }
 
