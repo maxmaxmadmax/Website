@@ -23,13 +23,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=534';
+} from './firebase-config.js?v=535';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=534';
-import { termBodyHtml } from './terms-data.js?v=534';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=535';
+import { termBodyHtml } from './terms-data.js?v=535';
 import {
   VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION,
-} from './vendor-terms-data.js?v=534';
+} from './vendor-terms-data.js?v=535';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2331,11 +2331,18 @@ function wireStaticControls() {
     link.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      const inReview = !!link.closest('[data-sec="review"]');
+      if (inReview) {              // the review step has its own copy right there
+        const box2 = document.getElementById('vs-terms-box2');
+        if (box2) { box2.open = true; box2.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        return;
+      }
       openFaqs();
       const box = document.getElementById('vs-terms-box');
-      if (box) box.open = true;
-      const box2 = document.getElementById('vs-terms-box2');
-      if (box2) box2.open = true;
+      if (box) {
+        box.open = true;
+        setTimeout(() => box.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+      }
     });
   });
 
