@@ -23,8 +23,9 @@ body.vi-page .qp-legal{ font-family:Arial,Helvetica,sans-serif; }
 body.vi-page .qp-legal, body.vi-page .qp-legal *{ font-family:Arial,Helvetica,sans-serif !important; }
 
 @media print{
+  @page :first{ margin:0; }
   /* page 1: the cover, tiles at the bottom like the quote */
-  body.vi-page .qv-wrap .qp-hero{ min-height:270mm !important; break-after:page !important; }
+  body.vi-page .qv-wrap .qp-hero{ min-height:301.5mm !important; break-after:page !important; }
   body.vi-page .qv-wrap .qp-hero-photo{ min-height:120mm !important; }
   body.vi-page .qv-wrap .qp-hero .qp-tiles{ margin-top:auto !important; }
   /* page 2: summary, then the tax invoice under it */
