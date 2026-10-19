@@ -33,13 +33,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=577';
+} from './firebase-config.js?v=578';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=577';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=577';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=577';
-import { messagesHtml, wireMessages } from './messages.js?v=577';
-import { expandKit } from './kit.js?v=577';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=578';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=578';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=578';
+import { messagesHtml, wireMessages } from './messages.js?v=578';
+import { expandKit } from './kit.js?v=578';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -4943,12 +4943,12 @@ function quoteDeliveryCents(d) {
 
 /* =========================================================================
    LABOUR RATES (Max, 15 Oct 2026) - KEEP IN STEP with functions/lib/labour.js
-   $75/hr. Saturday x1.25, Sunday x1.5, public holiday x1.5. Setup is charged
+   $80/hr. Saturday x1.25, Sunday x1.5, public holiday x1.5. Setup is charged
    on the first hire day, pack-down (50% of setup) on the last, each at its
    own day's rate; each part minimum 1 hr, then up to the half hour.
    Setup time is the man-minute figure on each inventory item.
    ========================================================================= */
-const LABOUR_RATE_CENTS = 7500;   // $75 / hour (Max, 17 Oct 2026 - was $85)
+const LABOUR_RATE_CENTS = 8000;   // $80 / hour (Max, 20 Oct 2026 - was $75)
 const PACKDOWN_PCT = 0.5;   // pack-down = 50% of setup time (Max, 15 Oct 2026)
 const LOADING = { saturday: 1.25, sunday: 1.5, holiday: 1.5 };
 
@@ -5030,7 +5030,7 @@ function labourParts(setupMins, opts) {
     const loading = rate.mult === 1 ? '' : ' + ' + Math.round((rate.mult - 1) * 100) + '% ' + rate.label;
     return {
       ...p, hours, mult: rate.mult, rateLabel: rate.label, cents,
-      // what the client reads, e.g. "Setup - Sat 31 Oct" / "3 hrs @ $75/hr + 25% Saturday weekend surcharge"
+      // what the client reads, e.g. "Setup - Sat 31 Oct" / "3 hrs @ $80/hr + 25% Saturday weekend surcharge"
       lineName: p.name + (shortDate(p.date) ? ' – ' + shortDate(p.date) : ''),
       lineDesc: `${hrs} @ $${LABOUR_RATE_CENTS / 100}/hr${loading}`,   // same as functions/lib/labour.js
     };
@@ -5395,7 +5395,7 @@ function quoteBuilderHtml() {
               ${metaRow('Created', esc(created))}
               ${metaRow('Event / Job', `<input class="qb-min" data-qc="eventName" value="${attr(c.eventName)}" placeholder="Event name">`)}
               ${metaRow('Event type', `<select class="qb-min" data-qc="eventType">${Object.keys(EVENT_TYPES).map((k) => `<option value="${k}"${(c.eventType || guessEventType(c.eventName)) === k ? ' selected' : ''}>${EVENT_TYPES[k]}</option>`).join('')}</select>`)}
-              ${metaRow('Event date', `<input class="qb-min" data-qc="eventDate" value="${attr(c.eventDate)}" placeholder="e.g. Sat 14 Mar">`)}
+              ${metaRow('Event date', `<input type="date" class="qb-min" data-qevdate value="${attr(isoFromPretty(c.eventDate) || (quoteDraft.hire && quoteDraft.hire.startDate) || '')}">`)}
               ${metaRow('Hire period', `<span class="qb-hp">${hirePeriod}</span>`)}
               ${metaRow('Days charged', `<input class="qb-min qb-min-num" type="number" min="1" step="1" data-qh="days" value="${attr(h.days)}">`)}
             </div>
@@ -5497,6 +5497,16 @@ function quoteBuilderHtml() {
 
 /*  "2026-10-20" -> "Tue 20 Oct 2026" for the Event date box. */
 let quoteEventDateAuto = '';
+/*  "Tue 20 Oct 2026" -> "2026-10-20", for the event-date calendar (Max, 20 Oct 2026).
+    Older quotes typed without a year come back blank - just pick the date. */
+function isoFromPretty(text) {
+  const m = /(\d{1,2})\s+([A-Za-z]{3})[a-z]*\s+(\d{4})/.exec(String(text || ''));
+  if (!m) return /^\d{4}-\d{2}-\d{2}$/.test(String(text || '')) ? text : '';
+  const mon = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].indexOf(m[2].toLowerCase());
+  if (mon < 0) return '';
+  return m[3] + '-' + String(mon + 1).padStart(2, '0') + '-' + String(m[1]).padStart(2, '0');
+}
+
 function prettyEventDate(iso) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
   if (!m) return '';
@@ -5792,7 +5802,7 @@ function renderQuoteTotals() {
   // 2% booking & admin fee row, with an on/off tick (Max, 16 Oct 2026)
   const feeRow = `
     <div class="qb-sumrow">
-      <span><label class="qb-labtoggle"><input type="checkbox" data-qfee${quoteDraft.feeExcluded ? '' : ' checked'}> Booking &amp; admin fee (${BOOKING_FEE_PCT}%)</label></span>
+      <span><label class="qb-labtoggle"><input type="checkbox" data-qfee${quoteDraft.feeExcluded ? '' : ' checked'}> Booking &amp; admin fee</label></span>
       <span class="${quoteDraft.feeExcluded ? 'qb-laboff' : ''}">${quoteDraft.feeExcluded ? 'off' : esc(money(m.feeCents))}</span>
     </div>`;
   host.innerHTML = `
@@ -6222,6 +6232,8 @@ function wireQuoteBuilder() {
   wrap.addEventListener('input', (e) => {
     const t = e.target;
     if (t.dataset.qc) { quoteDraft.customer[t.dataset.qc] = t.value; return; }
+    // event date calendar: saved as "Tue 20 Oct 2026" like before
+    if (t.hasAttribute('data-qevdate')) { quoteDraft.customer.eventDate = prettyEventDate(t.value); return; }
     if (t.dataset.qmeta) { quoteDraft[t.dataset.qmeta] = t.value; return; }
     if (t.hasAttribute('data-qdisc')) {
       quoteDraft.discountCents = Math.max(0, Math.round(Number(t.value || 0) * 100));
@@ -6281,7 +6293,7 @@ function wireQuoteBuilder() {
           if (!cur || cur === quoteEventDateAuto || cur === prettyEventDate(oldStart)) {
             quoteEventDateAuto = prettyEventDate(t.value);
             quoteDraft.customer.eventDate = quoteEventDateAuto;
-            const ed = wrap.querySelector('[data-qc="eventDate"]'); if (ed) ed.value = quoteEventDateAuto;
+            const ed = wrap.querySelector('[data-qevdate]'); if (ed) ed.value = t.value;
           }
         }
         const d = daysBetween(quoteDraft.hire.startDate, quoteDraft.hire.endDate);
@@ -6627,6 +6639,10 @@ async function saveQuoteDoc(btn, quiet) {
   if (btn) btn.disabled = true;
   try {
     const id = state.openQuoteId === '__new__' ? null : state.openQuoteId;
+    // no event date picked: it is the first hire day (Max, 20 Oct 2026)
+    if (!String(quoteDraft.customer.eventDate || '').trim() && quoteDraft.hire && quoteDraft.hire.startDate) {
+      quoteDraft.customer.eventDate = prettyEventDate(quoteDraft.hire.startDate);
+    }
     const res = await call('adminSaveQuote', { id, quote: quoteDraftForSave() });
     if (res && res.id) {
       state.openQuoteId = res.id;

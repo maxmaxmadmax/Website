@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=577';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=577';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=578';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=578';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -228,7 +228,7 @@ function render(q) {
     bySec[k].forEach((u) => L.push(...u));
   });
 
-  // total labour hours, read from each line ("2.5 hrs @ $75/hr ...")
+  // total labour hours, read from each line ("2.5 hrs @ $80/hr ...")
   const labHrs = L.filter((l) => l.type === 'labour')
     .reduce((t, l) => t + (parseFloat((/^([\d.]+) hrs?\b/.exec(l.description || '') || [])[1]) || 0), 0);
 
@@ -465,7 +465,7 @@ function proposalTop(q, days) {
   // Valid for 30 days from the quote date; the list is built from what's on the quote.
   const VALID_DAYS = 30;
   const validUntil = q.createdAt ? fmtDate(q.createdAt + VALID_DAYS * 86400) : '';
-  // total crew hours, read off each labour line ("2.5 hrs @ $75/hr ...")
+  // total crew hours, read off each labour line ("2.5 hrs @ $80/hr ...")
   const labHrs = lab.reduce((t, l) => t + (parseFloat((/^([\d.]+) hrs?\b/.exec(l.description || '') || [])[1]) || 0), 0);
   const incl = groups.filter((g) => g.name !== 'Other').map((g) => g.name.toLowerCase());
   const included = []
