@@ -13,9 +13,16 @@ body.vi-page .qv-wrap .qp-hero{ min-height:0 !important; }
 body.vi-page .qv-wrap .qp-hero-photo{ min-height:0 !important; }
 body.vi-page .qv-wrap .qp-hero-photo::before{ display:none !important; }
 body.vi-page .qv-wrap .qp-hero .qp-tiles{ margin-top:0 !important; }
-body.vi-page .qv-wrap .qp-invest{ min-height:0 !important; display:block !important; padding-top:30px !important; }
-body.vi-page .qv-wrap .qp-invest .qp-inv{ margin:18px 0 !important; }
-body.vi-page .qv-wrap .qp-invest .qp-inv-extra{ margin-top:26px !important; }
+/* on screen, each section gets room to breathe */
+body.vi-page .qv-wrap .qp-invest{ min-height:0 !important; display:block !important; padding-top:56px !important; padding-bottom:56px !important; }
+body.vi-page .qv-wrap .qp-invest .qp-h2{ margin-bottom:8px; }
+body.vi-page .qv-wrap .qp-invest .qp-inv{ margin:30px 0 !important; }
+body.vi-page .qv-wrap .qp-invest .qp-inv td{ padding-top:14px; padding-bottom:14px; }
+body.vi-page .qv-wrap .qp-invest .qp-inv-extra{ margin-top:40px !important; gap:40px !important; }
+body.vi-page .qv-wrap .qp-invest .qp-incl li{ padding-bottom:10px; }
+body.vi-page .qv-wrap .qp-invest .qp-qd{ padding:20px 22px; }
+body.vi-page .qv-wrap .qp-invest .qp-qd dl div{ padding:9px 0; }
+body.vi-page .qv-wrap .qp-guide, body.vi-page .qv-wrap .qp-share{ padding-top:56px !important; padding-bottom:56px !important; }
 body.vi-page .qv-wrap .qv-doc{ min-height:0 !important; display:block !important; }
 body.vi-page .qv-wrap .qv-sumwrap{ margin:12px 0 0 auto !important; padding-top:0 !important; }
 body.vi-page .qp-legal{ font-family:Arial,Helvetica,sans-serif; }

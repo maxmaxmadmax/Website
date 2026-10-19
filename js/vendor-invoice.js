@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=558';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=558';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=558';
+import { termBodyHtml } from './terms-data.js?v=559';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=559';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=559';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -80,7 +80,6 @@ const BRING_GROUPS = [
   ['<path d="M5 7h14l-1 14H6zM3 7h18M9 7V4h6v3"/>', 'Pack-down &amp; clean-up', [
     'Bins and bags for your own waste',
     'Take oil, food scraps and wastewater home',
-    'Leaving early? Ask us first - no vehicle movement before 9:40 pm, for patron safety',
     'Leave your site spotless',
   ]],
 ];
