@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=567';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=567';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=567';
+import { termBodyHtml } from './terms-data.js?v=568';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=568';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=568';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -52,11 +52,13 @@ const KEY_TIMES = [
 const BRING = [
   'Set up and vehicle parked by 4:15 pm',
   'Stay inside your own site',
-  'Marquee must be secured, pegs 300 mm deep max',
-  'Your own power and water',
-  'Quiet generator, tagged leads, fire extinguisher',
+  'Marquee must be secured',
+  'Pegs 300 mm deep max',
+  'Tagged leads, fire extinguisher',
   '$20m public liability, licences and permits',
   'Take all your waste home',
+  'Help us promote the event',
+  'Please follow instructions given by our event staff',
 ];
 
 /*  ON THE NIGHT - the hard rules. */
