@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=560';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=560';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=560';
+import { termBodyHtml } from './terms-data.js?v=561';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=561';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=561';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -245,19 +245,17 @@ function top(d) {
 }
 
 function guide(d) {
-  const bring = BRING_GROUPS.map(([ic, title, lines]) => '<div class="vi-card">'
-    + '<p class="vi-card-h"><svg viewBox="0 0 24 24" aria-hidden="true">' + ic + '</svg>' + title + '</p>'
-    + '<ul>' + lines.map((t) => '<li>' + esc(t) + '</li>').join('') + '</ul></div>').join('');
+  const bring = BRING_GROUPS.flatMap((g) => g[2]).map((t) => '<li>' + esc(t) + '</li>').join('');
   const rules = RULES.map(([t, n]) => '<li><span class="vi-x" aria-hidden="true">&#10005;</span><span><b>' + esc(t) + '</b> ' + esc(n) + '</span></li>').join('');
   return `
     <section class="qp-sec qp-guide">
       <p class="qp-eyebrow">Event guide</p>
       <h2 class="qp-h2">What you need to know</h2>
-      <p class="qp-mini">What to bring</p>
-      <div class="vi-cards">${bring}</div>
       <div class="vi-guide-grid">
         <div>
-          <p class="qp-mini">On the night</p>
+          <p class="qp-mini">What to bring</p>
+          <div class="qp-incl"><ul>${bring}</ul></div>
+          <p class="qp-mini" style="margin-top:24px">On the night</p>
           <ul class="vi-rules">${rules}</ul>
           <div class="vi-dress"><span aria-hidden="true">&#127875;</span><p><b>Win your vendor fee back!</b> Dress up and deck out your stall for Halloween - the best dressed stall gets their fee refunded.</p></div>
           ${documentsHtml(d)}

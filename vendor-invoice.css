@@ -30,7 +30,8 @@ body.vi-page .qp-legal{ font-family:Arial,Helvetica,sans-serif; }
 body.vi-page .qp-legal, body.vi-page .qp-legal *{ font-family:Arial,Helvetica,sans-serif !important; }
 
 /* EVENT GUIDE: bring cards, night rules, dress-up note (Max, 19 Oct 2026) */
-.vi-guide-grid{ display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:36px; align-items:start; margin-top:36px; }
+.vi-guide-grid{ display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:36px; align-items:start; margin-top:20px; }
+.qp-guide .qp-incl li{ padding-bottom:10px; }
 .vi-cards{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
 @media (max-width:900px){ .vi-cards{ grid-template-columns:1fr 1fr; } }
 .vi-card{ border:1px solid #e6e6e9; border-radius:12px; padding:18px 20px; background:#fff; }
