@@ -2516,7 +2516,9 @@ function sanitizeQuote(q) {
     business: text(q.customer && q.customer.business, 120),
     email: text(q.customer && q.customer.email, 200),
     // a second address that gets a copy of the quote / invoice email (accounts etc.)
-    ccEmail: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text(q.customer && q.customer.ccEmail, 200)) ? text(q.customer && q.customer.ccEmail, 200) : '',
+    // CC: one or more addresses separated by commas (Max, 20 Oct 2026) - only valid ones kept
+    ccEmail: String((q.customer && q.customer.ccEmail) || '').split(/[,;\s]+/).map((e) => e.trim())
+      .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)).slice(0, 10).join(', ').slice(0, 600),
     phone: text(q.customer && q.customer.phone, 40),
     address: text(q.customer && q.customer.address, 300),
     eventName: text(q.customer && q.customer.eventName, 160),

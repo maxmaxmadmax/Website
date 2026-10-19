@@ -102,7 +102,12 @@ async function sendQuoteLinkEmail(q, link) {
       from: `${SELLER.name} <${SELLER.email}>`,
       to,
       // the customer's CC address (e.g. their accounts team) gets a copy - Max, 15 Oct 2026
-      ...(q.customer && q.customer.ccEmail && q.customer.ccEmail.toLowerCase() !== String(to).toLowerCase() ? { cc: q.customer.ccEmail } : {}),
+      // several CC addresses allowed, comma separated (Max, 20 Oct 2026); never the main one twice
+      ...(() => {
+        const cc = String((q.customer && q.customer.ccEmail) || '').split(/[,;\s]+/).map((e) => e.trim())
+          .filter((e) => e && e.toLowerCase() !== String(to).toLowerCase());
+        return cc.length ? { cc: cc.join(', ') } : {};
+      })(),
       replyTo: OFFICE,
       subject: `Your ${docLabel(q)} ${q.kind === 'invoice' ? (q.invoiceNumber || q.number) : q.number} from SoundzGood`,
       text: text(q, link),

@@ -33,13 +33,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=576';
+} from './firebase-config.js?v=577';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=576';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=576';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=576';
-import { messagesHtml, wireMessages } from './messages.js?v=576';
-import { expandKit } from './kit.js?v=576';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=577';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=577';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=577';
+import { messagesHtml, wireMessages } from './messages.js?v=577';
+import { expandKit } from './kit.js?v=577';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5411,7 +5411,7 @@ function quoteBuilderHtml() {
             <input class="qb-cin" data-qc="address" value="${attr(c.address)}" placeholder="Address">
             <input class="qb-cin" data-qc="phone" value="${attr(c.phone)}" placeholder="Phone">
             <input class="qb-cin" type="email" data-qc="email" value="${attr(c.email)}" placeholder="Email">
-            <input class="qb-cin qb-cin-cc" type="email" data-qc="ccEmail" value="${attr(c.ccEmail || '')}" placeholder="CC email (optional - gets a copy)">
+            <input class="qb-cin qb-cin-cc" type="email" multiple data-qc="ccEmail" value="${attr(c.ccEmail || '')}" placeholder="CC emails (optional) - separate with commas, all get a copy">
           </div>
           <div class="qb-hire">
             <p class="qb-block-h">Hire period</p>
@@ -7733,7 +7733,7 @@ function cleanCustomer(c) {
   return {
     name: t(c.name, 120), business: t(c.business, 120),
     type: CUST_TYPES[c.type] ? c.type : 'private',
-    address: t(c.address, 300), phone: t(c.phone, 40), email: t(c.email, 200), ccEmail: t(c.ccEmail, 200), notes: t(c.notes, 2000),
+    address: t(c.address, 300), phone: t(c.phone, 40), email: t(c.email, 200), ccEmail: t(c.ccEmail, 600), notes: t(c.notes, 2000),
     updatedAt: Date.now(),
   };
 }
@@ -7895,7 +7895,7 @@ function customerDetailHtml() {
           <label class="ad-field inv-span2"><span>Email</span>
             <input class="ad-input" type="email" data-cf="email" value="${attr(c.email)}"></label>
           <label class="ad-field inv-span2"><span>CC email (optional)</span>
-            <input class="ad-input" type="email" data-cf="ccEmail" value="${attr(c.ccEmail)}" placeholder="e.g. accounts@ - also gets a copy"></label>
+            <input class="ad-input" type="email" multiple data-cf="ccEmail" value="${attr(c.ccEmail)}" placeholder="e.g. accounts@, events@ - separate with commas, all get a copy"></label>
           <label class="ad-field inv-span2"><span>Address</span>
             <input class="ad-input" data-cf="address" value="${attr(c.address)}"></label>
           <label class="ad-field inv-span2"><span>Notes</span>
