@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=566';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=566';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=566';
+import { termBodyHtml } from './terms-data.js?v=567';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=567';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=567';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -48,23 +48,15 @@ const KEY_TIMES = [
 
 /*  THE EVENT GUIDE, from the Vendor Terms (Max, 19 Oct 2026): six cards of
     [icon path, title, lines], then the hard rules for the night.        */
-const BRING_GROUPS = [
-  ['<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', 'Arrive &amp; set up', [
-    'Set up and vehicle parked by 4:15 pm',
-    'Stay inside your own site',
-  ]],
-  ['<path d="M3 20h18M5 20V10l7-6 7 6v10M9 20v-6h6v6"/>', 'Your stall', [
-    'Marquee, tables, chairs and weights',
-    'Pegs 300 mm deep max',
-  ]],
-  ['<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>', 'Power &amp; safety', [
-    'Your own power and water',
-    'Quiet generator, tagged leads, fire extinguisher',
-  ]],
-  ['<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/>', 'Paperwork &amp; waste', [
-    '$20m public liability, licences and permits',
-    'Take all your waste home',
-  ]],
+/*  WHAT TO BRING - Max's list, 19 Oct 2026 */
+const BRING = [
+  'Set up and vehicle parked by 4:15 pm',
+  'Stay inside your own site',
+  'Marquee must be secured, pegs 300 mm deep max',
+  'Your own power and water',
+  'Quiet generator, tagged leads, fire extinguisher',
+  '$20m public liability, licences and permits',
+  'Take all your waste home',
 ];
 
 /*  ON THE NIGHT - the hard rules. */
@@ -245,7 +237,7 @@ function top(d) {
 }
 
 function guide(d) {
-  const bring = BRING_GROUPS.flatMap((g) => g[2]).map((t) => '<li>' + esc(t) + '</li>').join('');
+  const bring = BRING.map((t) => '<li>' + esc(t) + '</li>').join('');
   const rules = RULES.map(([t, n]) => '<li><span class="vi-x" aria-hidden="true">&#10005;</span><span><b>' + esc(t) + '</b> ' + esc(n) + '</span></li>').join('');
   return `
     <section class="qp-sec qp-guide">
