@@ -35,10 +35,10 @@
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap">
 
     <link rel="icon" href="images/logo.png">
-    <link rel="stylesheet" href="style.css?v=532">
-    <link rel="stylesheet" href="vendor-signup.css?v=532">
-    <script src="js/main.js?v=532" defer></script>
-    <script type="module" src="js/vendor-signup.js?v=532"></script>
+    <link rel="stylesheet" href="style.css?v=534">
+    <link rel="stylesheet" href="vendor-signup.css?v=534">
+    <script src="js/main.js?v=534" defer></script>
+    <script type="module" src="js/vendor-signup.js?v=534"></script>
 </head>
 
 <body class="vendor-signup">
@@ -226,11 +226,16 @@
                                 </dl>
 
                                 <div class="vs-faqs">
+                                <details id="vs-terms-box">
+                                    <summary>Vendor Terms &amp; Conditions</summary>
+                                    <div class="vs-terms" data-terms-body></div>
+                                </details>
+
                                 <details>
                                     <summary>When and where is the Eatz &amp; Beatz Halloween Market?</summary>
                                     <p>
-                                        Saturday 31 October 2026, from 4:00 pm to 10:00 pm, at the
-                                        Bowen Sporting Complex.
+                                        Saturday 31 October 2026, from 4:30 pm to 9:30 pm, at the
+                                        Bowen Sports Complex.
                                     </p>
                                 </details>
 
@@ -656,8 +661,19 @@
                 <p class="vs-busy" data-busy="review" hidden>Taking you to checkout&hellip;</p>
                 <p class="vs-error" data-error="review" hidden></p>
 
+                <details class="vs-terms-read" id="vs-terms-box2">
+                    <summary>&#9888; Vendor Terms &amp; Conditions &mdash; read before booking <em>binding once you pay or confirm &middot; tap to read</em></summary>
+                    <div class="vs-terms" data-terms-body></div>
+                </details>
+
+                <label class="vs-check vs-terms-ok">
+                    <input type="checkbox" id="vs-terms-ok">
+                    <span>I have read and agree to the Eatz &amp; Beatz Vendor Terms &amp; Conditions, including the cancellation policy, insurance requirements and event safety rules. I confirm that all information and supporting documents provided are accurate, current and valid.
+                    <button type="button" class="vs-inline-link" data-open-terms>Read the terms</button></span>
+                </label>
+
                 <div class="vs-sec-actions vs-paybar">
-                    <button type="button" class="btn btn-ticket" id="vs-pay">Pay and Book</button>
+                    <button type="button" class="btn btn-ticket" id="vs-pay" disabled>Pay and Book</button>
                 </div>
 
                 <div class="vs-lock" aria-hidden="true">

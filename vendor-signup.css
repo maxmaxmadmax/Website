@@ -2803,3 +2803,15 @@
 .vs-type.is-soldout > *:not(.vs-type-soldout){ opacity:.45; filter:grayscale(1); }
 .vs-type-soldout{ top:-10px !important; right:-6px !important; font-size:.85rem !important; padding:6px 12px !important; box-shadow:0 3px 8px rgba(0,0,0,.25); z-index:2; }
 .vs-type-soldout{ top:auto !important; bottom:16px !important; right:16px !important; }
+
+/* Vendor Terms & Conditions (Max, 19 Oct 2026) */
+.vs-terms{ max-height:420px; overflow-y:auto; padding:4px 4px 4px 0; }
+.vs-terms h4{ margin:14px 0 4px; font-size:15px; }
+.vs-terms p, .vs-terms li{ font-size:14px; line-height:1.5; margin:0 0 6px; }
+.vs-terms ul{ margin:0 0 6px 18px; padding:0; }
+.vs-terms-ok{ margin:14px 0 6px; }
+#vs-pay:disabled{ opacity:.45; cursor:not-allowed; filter:grayscale(1); }
+.vs-terms-read{ margin:14px 0 0; border:1px solid #e3b341; border-radius:12px; background:#fffaf0; padding:10px 14px; }
+.vs-terms-read summary{ cursor:pointer; font-weight:700; }
+.vs-terms-read summary em{ display:block; font-weight:400; font-style:normal; font-size:12.5px; opacity:.75; }
+.vs-terms-read .vs-terms{ margin-top:10px; }

@@ -55,7 +55,7 @@ var GG_LISTINGS = [
     {
         name:  'Eatz & Beatz — Halloween Edition',
         date:  '2026-10-31',
-        venue: 'Bowen Sporting Complex',
+        venue: 'Bowen Sports Complex',
         area:  'bowen',
         cats:  ['markets', 'food', 'family', 'live'],
         tags:  ['Food', 'Markets', 'Music', 'Family'],

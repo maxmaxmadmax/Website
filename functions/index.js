@@ -703,7 +703,7 @@ exports.createCheckout = onCall(
   { secrets: [STRIPE_SECRET_KEY, SMTP_USER, SMTP_PASS] },
   async (request) => {
   const uid = requireAuth(request);
-  const { bookingId } = request.data || {};
+  const { bookingId, termsAccepted, termsVersion } = request.data || {};
 
   if (!bookingId) {
     throw new HttpsError('invalid-argument', 'Missing booking.');
@@ -724,6 +724,18 @@ exports.createCheckout = onCall(
   if (!booking.siteId) {
     throw new HttpsError('failed-precondition', 'Choose a site first.');
   }
+
+  /* The Vendor Terms tick. Nothing moves to payment (or free confirmation)
+     without it, and we keep when and which version was agreed. Keep the
+     version in step with js/vendor-terms-data.js. */
+  if (termsAccepted !== true) {
+    throw new HttpsError('failed-precondition',
+      'Please agree to the Eatz & Beatz Vendor Terms & Conditions first.');
+  }
+  await bookingRef.update({
+    termsAcceptedAt: FieldValue.serverTimestamp(),
+    termsVersion: String(termsVersion || '').slice(0, 60),
+  });
 
   /* The category limit is checked here, right before money moves. The site
      is chosen earlier in the flow than the category, so holdSite cannot be

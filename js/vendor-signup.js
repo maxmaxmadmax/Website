@@ -23,9 +23,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=532';
+} from './firebase-config.js?v=534';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=532';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=534';
+import { termBodyHtml } from './terms-data.js?v=534';
+import {
+  VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION,
+} from './vendor-terms-data.js?v=534';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -1251,6 +1255,24 @@ function renderDocumentList() {
 /* -------------------------------------------------------------------------
    Checkout
    ------------------------------------------------------------------------- */
+/*  The Vendor Terms tick. The pay button stays grey until it is ticked, and
+    createCheckout refuses without it too (functions/index.js).          */
+function termsAgreed() {
+  const box = document.getElementById('vs-terms-ok');
+  return !!(box && box.checked);
+}
+function syncPayButton() {
+  const payBtn = document.getElementById('vs-pay');
+  if (payBtn) payBtn.disabled = !termsAgreed();
+}
+function renderVendorTerms() {
+  const html = termBodyHtml(VENDOR_TERMS_INTRO, escapeHtml)
+    + VENDOR_TERMS.map(([title, lines], i) =>
+      `<h4>${i + 1}. ${escapeHtml(title)}</h4>` + termBodyHtml(lines, escapeHtml)).join('')
+    + termBodyHtml(VENDOR_TERMS_OUTRO, escapeHtml);
+  document.querySelectorAll('[data-terms-body]').forEach((el) => { el.innerHTML = html; });
+}
+
 async function payAndBook() {
   if (state.preview) {
     setStepError('review',
@@ -1262,6 +1284,11 @@ async function payAndBook() {
       beside the pay button, then go there. Leaving it only on the step
       means somebody who has scrolled to the bottom sees the page move
       and never learns why.                                          */
+  if (!termsAgreed()) {
+    setStepError('review', 'Please tick the box to agree to the Vendor Terms & Conditions.');
+    return;
+  }
+
   const missing = firstIncomplete();
   if (missing) {
     const label = (SECTIONS.find((sec) => sec.id === missing) || {}).label || 'an earlier step';
@@ -1280,7 +1307,11 @@ async function payAndBook() {
     await saveDraft();
 
     const call = fb.fn.httpsCallable(fb.fns, 'createCheckout');
-    const res = await call({ bookingId: state.bookingId });
+    const res = await call({
+      bookingId: state.bookingId,
+      termsAccepted: true,
+      termsVersion: VENDOR_TERMS_VERSION,
+    });
 
     if (res.data.free || res.data.alreadyConfirmed) {
       await refreshConfirmed();
@@ -2161,11 +2192,9 @@ function renderReview() {
     payBtn.textContent = !hasSite()
       ? 'Pay and Book'
       : (b.totalCents === 0 ? 'Confirm booking' : `Pay ${exact(b.totalCents)} AUD`);
-    /*  Never disabled. A disabled pay button is a button that does
-        nothing when you press it and says nothing about why - which is
-        exactly what somebody does when they have missed a field. It is
-        live, and pressing it says what is still needed.              */
-    payBtn.disabled = false;
+    /*  Grey until the Vendor Terms are ticked (Max, 19 Oct 2026). After
+        that it is live, and pressing it says what else is still needed. */
+    payBtn.disabled = !termsAgreed();
   }
 }
 
@@ -2292,6 +2321,23 @@ function wireStaticControls() {
   // pay
   const payBtn = document.getElementById('vs-pay');
   if (payBtn) payBtn.addEventListener('click', payAndBook);
+  renderVendorTerms();
+  const termsBox = document.getElementById('vs-terms-ok');
+  if (termsBox) termsBox.addEventListener('change', () => {
+    syncPayButton();
+    if (termsAgreed()) setStepError('review', '');
+  });
+  document.querySelectorAll('[data-open-terms]').forEach((link) => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openFaqs();
+      const box = document.getElementById('vs-terms-box');
+      if (box) box.open = true;
+      const box2 = document.getElementById('vs-terms-box2');
+      if (box2) box2.open = true;
+    });
+  });
 
   // jump to the flow from the hero
   document.querySelectorAll('[data-start]').forEach((btn) => {
