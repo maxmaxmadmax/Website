@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=547';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=547';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=547';
+import { termBodyHtml } from './terms-data.js?v=548';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=548';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=548';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -90,6 +90,28 @@ function siteMap(d) {
     + lm + sites + '</svg></div>';
 }
 
+/*  The event's own poster: the picture set on the event in admin, else the
+    poster we hold for it (same list as the vendor page).                  */
+const EVENT_POSTERS = [
+  { match: (ev) => /eatz/i.test(ev.name || '') && String(ev.dateISO || '').startsWith('2026-10-31'),
+    url: '/images/events/eatz-beatz-halloween-2026-v3.webp' },
+];
+function posterOf(ev) {
+  if (ev.image) return ev.image;
+  const p = EVENT_POSTERS.find((x) => x.match(ev));
+  return p ? p.url : '';
+}
+
+/*  What this vendor uploaded when they booked (insurance, licences ...). */
+function documentsHtml(d) {
+  const docs = d.documents || [];
+  if (!docs.length) return '';
+  return '<div class="qp-docs"><p class="qp-mini">Your documents on file</p><ul>'
+    + docs.map((x) => '<li><a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.name) + '</a>'
+      + (x.type ? ' <span style="color:#888">&middot; ' + esc(x.type) + '</span>' : '') + '</li>').join('')
+    + '</ul></div>';
+}
+
 function top(d) {
   const ev = d.event;
   const where = [ev.venue, ev.location].filter(Boolean).join(', ');
@@ -110,11 +132,14 @@ function top(d) {
 
   return `
     <section class="qp-hero">
-      <div class="qp-hero-photo" style="--qp-photo:url('/images/services/community-events.webp')">
-        <div class="qp-hero-in">
-          <p class="qp-eyebrow">Vendor invoice &amp; event guide</p>
-          <h1>${esc(ev.name || 'Eatz & Beatz')}</h1>
-          <p class="qp-when">${ev.dateLabel ? svgIcon('Date') + esc(ev.dateLabel) : ''}${where ? '<br>' + svgIcon('Pin') + esc(where) : ''}</p>
+      <div class="qp-hero-photo" style="--qp-photo:none;background:#0b0b0b">
+        <div class="qp-hero-in" style="max-width:none;width:100%;display:flex;flex-wrap:wrap;gap:28px;align-items:center;justify-content:space-between">
+          <div style="flex:1 1 320px;max-width:680px">
+            <p class="qp-eyebrow">Vendor invoice &amp; event guide</p>
+            <h1>${esc(ev.name || 'Eatz & Beatz')}</h1>
+            <p class="qp-when">${ev.dateLabel ? svgIcon('Date') + esc(ev.dateLabel) : ''}${where ? '<br>' + svgIcon('Pin') + esc(where) : ''}</p>
+          </div>
+          ${posterOf(ev) ? '<img src="' + esc(posterOf(ev)) + '" alt="' + esc(ev.name) + ' poster" style="flex:0 0 auto;width:min(100%,270px);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.5)">' : ''}
         </div>
       </div>
       <div class="qp-hero-body">
@@ -154,6 +179,7 @@ function top(d) {
         <div class="qp-incl"><p class="qp-mini">Please remember</p><ul>${NOT_ALLOWED.map((t) => '<li>' + esc(t) + '</li>').join('')}</ul></div>
       </div>
       ${siteMap(d)}
+      ${documentsHtml(d)}
       <p class="qp-sub">Follow directions from event staff for access, setup and departure. Questions? ${esc(d.seller.email)} &middot; ${esc(d.seller.phone)}</p>
     </section>`;
 }

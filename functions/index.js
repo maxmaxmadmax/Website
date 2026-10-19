@@ -3606,8 +3606,19 @@ exports.getVendorInvoice = onCall(async (request) => {
     };
   } catch (e) { logger.warn('getVendorInvoice map', e); }
 
+  // the documents this vendor uploaded - only links to our own storage bucket
+  const DOC_HOSTS = ['firebasestorage.googleapis.com', 'storage.googleapis.com', 'soundzgood-8c86f.firebasestorage.app'];
+  const documents = (Array.isArray(b.documents) ? b.documents : []).map((x) => {
+    try {
+      const u = new URL(String(x.url || ''));
+      if (u.protocol !== 'https:' || !DOC_HOSTS.includes(u.hostname)) return null;
+      return { name: String(x.name || 'Document').slice(0, 200), type: String(x.type || '').slice(0, 60), url: u.href };
+    } catch (e) { return null; }
+  }).filter(Boolean);
+
   return {
     map,
+    documents,
     invoiceNumber: b.invoiceNumber || '',
     issuedAt: secs(b.confirmedAt) || secs(b.invoicedAt),
     reference: b.reference || '',
@@ -3619,7 +3630,7 @@ exports.getVendorInvoice = onCall(async (request) => {
     free: b.paymentStatus === 'free' || total === 0,
     siteCents: site, feeCents: fee, gstCents: gst, totalCents: total,
     event: {
-      name: ev.name || '', subtitle: ev.subtitle || '', dateLabel: ev.dateLabel || '',
+      name: ev.name || '', subtitle: ev.subtitle || '', dateLabel: ev.dateLabel || '', dateISO: ev.dateISO || '', image: ev.image || '',
       venue: ev.venue || '', location: ev.location || '',
     },
     seller: {
