@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=559';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=559';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=559';
+import { termBodyHtml } from './terms-data.js?v=560';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=560';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=560';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -50,47 +50,29 @@ const KEY_TIMES = [
     [icon path, title, lines], then the hard rules for the night.        */
 const BRING_GROUPS = [
   ['<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', 'Arrive &amp; set up', [
-    'Arrive early - be fully set up by 4:15 pm',
-    'Vehicle parked or off the grounds by 4:15 pm',
-    'Set up inside your site only - no swapping sites',
-    'Keep walkways and emergency exits clear',
+    'Set up and vehicle parked by 4:15 pm',
+    'Stay inside your own site',
   ]],
   ['<path d="M3 20h18M5 20V10l7-6 7 6v10M9 20v-6h6v6"/>', 'Your stall', [
-    'Bring your own marquee, tables, chairs and lighting',
-    'Weights on every marquee leg - it must be secure',
-    'Pegs 300 mm deep max - irrigation pipes below',
-    'No trip hazards: ropes, pegs and leads visible',
+    'Marquee, tables, chairs and weights',
+    'Pegs 300 mm deep max',
   ]],
-  ['<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>', 'Power &amp; water', [
-    'No power or water supplied - bring your own',
-    'Quiet or silenced generators only',
-    'Test-and-tagged leads and appliances',
+  ['<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>', 'Power &amp; safety', [
+    'Your own power and water',
+    'Quiet generator, tagged leads, fire extinguisher',
   ]],
-  ['<path d="M12 3c3 4 6 6 6 11a6 6 0 01-12 0c0-3 2-5 3-7 1 2 2 3 3 3 0-3-1-5 0-7z"/>', 'Gas &amp; fire safety', [
-    'Gas bottles secured, appliances fitted correctly',
-    'Fire extinguisher / blanket suited to your stall',
-    'Report any fire or incident to us straight away',
-  ]],
-  ['<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/>', 'Paperwork', [
-    'Public liability - $20 million Certificate of Currency',
-    'Food business licence (food vendors)',
-    'Any permits for what you sell',
-    'Tell us if anything changes or expires',
-  ]],
-  ['<path d="M5 7h14l-1 14H6zM3 7h18M9 7V4h6v3"/>', 'Pack-down &amp; clean-up', [
-    'Bins and bags for your own waste',
-    'Take oil, food scraps and wastewater home',
-    'Leave your site spotless',
+  ['<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/>', 'Paperwork &amp; waste', [
+    '$20m public liability, licences and permits',
+    'Take all your waste home',
   ]],
 ];
 
 /*  ON THE NIGHT - the hard rules. */
 const RULES = [
-  ['No vehicle movement 4:15 pm - 9:40 pm.', 'This keeps patrons safe. After 9:40 pm, only when event staff say the route is clear - never through the crowd.'],
-  ['No music or speakers at your stall.', 'Let the live entertainment carry the night.'],
-  ['No alcohol sales.', 'The licensed event bar only.'],
-  ['Nothing in public bins or drains.', 'Commercial waste goes home with you.'],
-  ['Event staff have the final say.', 'Unsafe setups must be fixed or removed when asked.'],
+  ['No vehicles 4:15 pm - 9:40 pm', 'for patron safety'],
+  ['No music or speakers', ''],
+  ['No alcohol sales', ''],
+  ['Nothing in public bins or drains', ''],
 ];
 
 /*  THE SITE MAP: every site in light grey, the landmarks (stage, bar ...) for
@@ -271,15 +253,16 @@ function guide(d) {
     <section class="qp-sec qp-guide">
       <p class="qp-eyebrow">Event guide</p>
       <h2 class="qp-h2">What you need to know</h2>
+      <p class="qp-mini">What to bring</p>
+      <div class="vi-cards">${bring}</div>
       <div class="vi-guide-grid">
         <div>
-          <p class="qp-mini">What to bring</p>
-          <div class="vi-cards">${bring}</div>
-          <p class="qp-mini" style="margin-top:20px">On the night</p>
+          <p class="qp-mini">On the night</p>
           <ul class="vi-rules">${rules}</ul>
           <div class="vi-dress"><span aria-hidden="true">&#127875;</span><p><b>Win your vendor fee back!</b> Dress up and deck out your stall for Halloween - the best dressed stall gets their fee refunded.</p></div>
+          ${documentsHtml(d)}
         </div>
-        <div>${siteMap(d)}${documentsHtml(d)}</div>
+        <div>${siteMap(d)}</div>
       </div>
       <p class="qp-sub vi-guide-foot" style="margin-top:22px">Follow directions from event staff for access, setup and departure. Questions? ${esc(d.seller.email)} &middot; ${esc(d.seller.phone)}</p>
     </section>`;
