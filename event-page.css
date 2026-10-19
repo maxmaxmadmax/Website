@@ -415,17 +415,16 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 }
 
 .ep-mt ul{ list-style:none; padding:0; margin:0; display:grid; gap:4px; }
-/* one business per line, bold capitals (Max, 14 Oct 2026). A name too long
-   for the tile ends in ... rather than wrapping onto a second line. */
+/* one business per line, bold capitals (Max, 14 Oct 2026). The FULL name always
+   shows - a long one wraps onto a second line (Max, 19 Oct 2026: it used to end in ...). */
 .ep-mt li{
     font-size:.78rem;
     font-weight:bold;
     letter-spacing:.02em;
     text-transform:uppercase;
     color:#3a1e08;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
+    line-height:1.25;
+    overflow-wrap:anywhere;
 }
 
 .ep-mt a{
@@ -1612,3 +1611,12 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-page-3 .ep-ent-photo{ height:38mm !important; }
 }
 @media print{ .ep-page-3 .ep-ent-band .ep-ent-photo{ flex:1 1 auto !important; height:auto !important; min-height:38mm !important; } }
+
+/* a portrait photo that should show from the top of the card (face first) */
+.ep-fv-pic-top{ background-position:center top !important; }
+
+/* schedule headings in CAPITALS, descriptions as written (Max, 19 Oct 2026) */
+.ep-times li > span{ text-transform:uppercase; letter-spacing:.02em; }
+.ep-times li > span small{ text-transform:none; letter-spacing:0; }
+.ep-times b{ white-space:nowrap; }
+@media print{ .ep-page-3 .ep-times li{ font-size:9.2pt !important; } .ep-page-3 .ep-times li > span{ letter-spacing:0 !important; } .ep-page-3 .ep-times small{ font-size:7pt !important; margin-left:1.5mm !important; } }

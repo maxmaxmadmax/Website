@@ -78,7 +78,7 @@
         'Grumpy Mas':           { tag: 'Burgers',       line: 'Hearty food.'   /* their own words - Max, 15 Oct 2026 */, photo: 'images/vendors/grumpy-mas.webp' },   // photo from Max, 14 Oct 2026
         'Loopy Scoops':         { tag: 'Ice cream',     line: 'Soft serve, premium scooped ice cream and snow cones.',
                                   link: 'https://www.facebook.com/p/Loopy-Scoops-61575237328097/' },   // Max, 15 Oct 2026
-        'Sweet Wheels':         { tag: 'Sweet treats',  line: 'Sweet treats from the red food van.', cat: 'lollies-fairy-floss' },
+        'Sweet Wheels':         { tag: 'Sweet treats',  line: 'Sweet treats from the red food van.', cat: 'lollies-fairy-floss', photo: 'images/vendors/sweet-wheels.webp', top: true },   // sketch from Max, 19 Oct 2026 (top: keeps the face in the card)
         'Tropical Blendz':      { tag: 'Drinks',        line: 'Fresh drinks and smoothies.', cat: 'drinks-juice-smoothies', photo: 'images/vendors/tropical-blendz.webp', logo: true },   // their logo - Max, 14 Oct 2026
         'Tropical Pizza':       { tag: 'Pizza',         line: 'Pizza, wings and soft drinks.', photo: 'images/vendors/tropical-pizza.webp' },   // from their truck - Max, 14 Oct 2026
         'Vandito Viesta':       { tag: 'Mexican',       line: 'Nachos and tacos - beef, chicken, pulled pork and beans.',
@@ -127,7 +127,7 @@
         // the vendor's own photo first, else the generic one for their kind of food
         var img = w.photo || (PHOTOS.indexOf(cat) >= 0 ? 'images/vendor-cats/' + cat + '.webp' : '');
         var pic = img
-            ? '<span class="ep-fv-pic' + (w.logo ? ' ep-fv-pic-logo' : '') + '" style="background-image:url(\'' + img + '\')"></span>'
+            ? '<span class="ep-fv-pic' + (w.logo ? ' ep-fv-pic-logo' : '') + (w.top ? ' ep-fv-pic-top' : '') + '" style="background-image:url(\'' + img + '\')"></span>'
             : '<span class="ep-fv-pic ep-fv-pic-none" aria-hidden="true"></span>';
         var inner = pic +
             '<span class="ep-fv-text">' +
