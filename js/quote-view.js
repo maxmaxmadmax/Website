@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=578';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=578';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=579';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=579';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -481,7 +481,9 @@ function proposalTop(q, days) {
     + '<div><dt>Quote</dt><dd>' + esc(q.number || '') + '</dd></div>'
     + (q.createdAt ? '<div><dt>Issued</dt><dd>' + esc(fmtDate(q.createdAt)) + '</dd></div>' : '')
     + (validUntil ? '<div><dt>Valid until</dt><dd>' + esc(validUntil) + '</dd></div>' : '')
-    + '<div><dt>To secure</dt><dd>' + pct + '% deposit &middot; ' + money(Math.round((q.totalCents || 0) * pct / 100)) + '</dd></div>'
+    + (fullOnly(q)
+      ? '<div><dt>To secure</dt><dd>Payment in full &middot; ' + money(q.totalCents || 0) + '</dd></div>'
+      : '<div><dt>To secure</dt><dd>' + pct + '% deposit &middot; ' + money(Math.round((q.totalCents || 0) * pct / 100)) + '</dd></div>')
     + '</dl></div></div>';
   const disc = q.discountCents ? '<tr class="qp-disc"><td>Discount</td><td>&minus;' + money(q.discountCents) + '</td><td></td><td>&minus;' + money(Math.round(q.discountCents * 1.1)) + '</td></tr>' : '';
 
@@ -519,6 +521,20 @@ function proposalTop(q, days) {
 
 // booking terms live in js/terms-data.js (also used by the /terms page)
 
+/*  PAY IN FULL WITHIN 7 DAYS (Max, 20 Oct 2026). The balance is due 7 days
+    before the event, so once that day arrives there is no deposit option -
+    only payment in full. The server (quoteCheckout) enforces the same rule. */
+function balanceDueDate(q) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String((q.hire && q.hire.startDate) || ''));
+  return m ? new Date(+m[1], +m[2] - 1, +m[3] - 7) : null;
+}
+function fullOnly(q) {
+  const due = balanceDueDate(q);
+  if (!due) return false;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  return due <= today;
+}
+
 function proposalBottom(q, opts = {}) {
   const isInv = q.kind === 'invoice';
   const total = Math.round(q.totalCents || 0);
@@ -550,27 +566,34 @@ function proposalBottom(q, opts = {}) {
     book = '<div class="qp-done">&#10003; Paid in full &mdash; thank you! Your booking is locked in.</div>';
   } else if (q.paymentStatus === 'deposit') {
     book = '<div class="qp-done">&#10003; Deposit of ' + money(paid) + ' received &mdash; your date is secured.</div>'
-      + '<p class="qp-sub">Balance of <strong>' + money(owing) + '</strong> due ' + esc(balDue) + '.</p>'
+      + '<p class="qp-sub">Balance of <strong>' + money(owing) + '</strong> ' + (fullOnly(q) ? 'is <strong>due now</strong>' : 'due ' + esc(balDue)) + '.</p>'
       + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-primary qp-go" data-pay="balance">Pay the balance by card</button>' : '')
       + bank;
   } else if (q.paymentStatus === 'bank') {
-    book = '<div class="qp-done">&#10003; Quote accepted' + (q.acceptedName ? ' by ' + esc(q.acceptedName) : '') + '. Please pay the ' + pct + '% deposit of <strong>' + money(deposit) + '</strong> by bank transfer to secure your date.</div>' + bank
-      + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-ghost qp-go" data-pay="deposit">Or pay the deposit by card</button>' : '');
+    book = (fullOnly(q)
+      ? '<div class="qp-done">&#10003; Quote accepted' + (q.acceptedName ? ' by ' + esc(q.acceptedName) : '') + '. Your event is less than 7 days away, so please pay the full <strong>' + money(owing) + '</strong> by bank transfer now.</div>' + bank
+        + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-ghost qp-go" data-pay="full">Or pay in full by card</button>' : '')
+      : '<div class="qp-done">&#10003; Quote accepted' + (q.acceptedName ? ' by ' + esc(q.acceptedName) : '') + '. Please pay the ' + pct + '% deposit of <strong>' + money(deposit) + '</strong> by bank transfer to secure your date.</div>' + bank
+        + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-ghost qp-go" data-pay="deposit">Or pay the deposit by card</button>' : ''));
   } else if (justPaid) {
     book = '<div class="qp-done">&#10003; Payment received &mdash; thank you! Confirming your booking&hellip;</div>';
   } else if (isInv) {
     // an invoice made in admin (not accepted online): pay it in full
-    book = '<div class="qp-done">Invoice ' + esc(ref) + ' &mdash; ' + money(owing) + ' to pay.</div>'
+    book = '<div class="qp-done">Invoice ' + esc(ref) + ' &mdash; ' + money(owing) + ' to pay' + (balanceDueDate(q) ? (fullOnly(q) ? ', <strong>due now</strong>' : ', due ' + esc(balDue)) : '') + '.</div>'
       + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-primary qp-go" data-pay="full">Pay by card</button>' : '')
       + bank;
   } else if (q.status === 'accepted') {
     book = '<div class="qp-done">&#10003; Quote accepted. We&rsquo;ll be in touch about payment.</div>';
   } else {
     const opt = (v, title, amt, note, on) => '<label class="qp-opt"><input type="radio" name="qp-opt" value="' + v + '"' + (on ? ' checked' : '') + '><span><b>' + title + '</b><strong>' + amt + '</strong><em>' + note + '</em></span></label>';
+    const full = fullOnly(q);
     book = '<div class="qp-book-grid"><div>'
-      + (q.cardOn ? opt('deposit', 'Pay ' + pct + '% deposit', money(deposit), 'Secure your date now. Balance due ' + esc(balDue) + '.', true)
-        + opt('full', 'Pay in full', money(total), 'Pay the total now and you&rsquo;re all done.', false) : '')
-      + opt('bank', 'Bank transfer', money(deposit) + ' deposit', 'Accept now, pay the deposit by bank transfer. No fees.', !q.cardOn)
+      + (full ? '<p class="qp-full-note">Your event is less than 7 days away, so payment in full is due now.</p>' : '')
+      + (q.cardOn && !full ? opt('deposit', 'Pay ' + pct + '% deposit', money(deposit), 'Secure your date now. Balance due ' + esc(balDue) + '.', true) : '')
+      + (q.cardOn ? opt('full', 'Pay in full', money(total), 'Pay the total now and you&rsquo;re all done.', full) : '')
+      + (full
+        ? opt('bank', 'Bank transfer', money(total) + ' in full', 'Accept now, pay the full amount by bank transfer today. No fees.', !q.cardOn)
+        : opt('bank', 'Bank transfer', money(deposit) + ' deposit', 'Accept now, pay the deposit by bank transfer. No fees.', !q.cardOn))
       + '<label class="qp-name">Your name<input type="text" id="qp-name" autocomplete="name" value="' + esc((q.customer && q.customer.name) || '') + '"></label>'
       + '<label class="qp-agree"><input type="checkbox" id="qp-agree"> <span>I have read and accept the <b>Terms &amp; Conditions</b> and this quote.</span></label>'
       + '<button type="button" class="qv-btn qv-btn-primary qp-go" id="qp-go" disabled>Accept &amp; continue</button>'
@@ -580,8 +603,10 @@ function proposalBottom(q, opts = {}) {
       + '<div class="qv-sumrow"><span>Subtotal (ex GST)</span><span>' + money(Math.round(q.totalCents || 0) - Math.round(q.gstCents || 0)) + '</span></div>'
       + '<div class="qv-sumrow"><span>GST (10%)</span><span>' + money(q.gstCents) + '</span></div>'
       + '<div class="qv-sumrow qv-grand"><span>Total inc. GST</span><span>' + money(total) + '</span></div>'
-      + '<div class="qv-sumrow"><span>Deposit (' + pct + '%)</span><span>' + money(deposit) + '</span></div>'
-      + '<div class="qv-sumrow"><span>Balance due ' + esc(balDue) + '</span><span>' + money(total - deposit) + '</span></div>'
+      + (full
+        ? '<div class="qv-sumrow"><span>Due now (in full)</span><span>' + money(total) + '</span></div>'
+        : '<div class="qv-sumrow"><span>Deposit (' + pct + '%)</span><span>' + money(deposit) + '</span></div>'
+          + '<div class="qv-sumrow"><span>Balance due ' + esc(balDue) + '</span><span>' + money(total - deposit) + '</span></div>')
       + '</aside></div>';
   }
 

@@ -608,3 +608,6 @@
 .qv-sechead td{ padding:16px 10px 6px !important; font-weight:800; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:#111; border-bottom:2px solid #111 !important; background:#fff !important; }
 .qv-table tbody tr.qv-sechead:first-child td{ padding-top:8px !important; }
 @media print{ .qv-sechead td{ padding:3mm 2mm 1mm !important; font-size:8.5pt; break-after:avoid; } }
+
+/* event within 7 days: full payment only (Max, 20 Oct 2026) */
+.qp-full-note{ margin:0 0 12px; padding:10px 14px; border-radius:10px; background:#fff7ef; border:1px solid #ffd9b3; font-weight:600; color:#7a3c00; }

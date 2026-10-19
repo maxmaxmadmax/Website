@@ -3019,9 +3019,13 @@ exports.quoteCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request)
   const total = Math.max(0, Math.round(q.totalCents || 0));
   const paid = Math.max(0, Math.round(q.amountPaidCents || 0));
   const owing = total - paid;
-  let amount = option === 'full' || paid > 0 ? owing : Math.round(total * QUOTE_DEPOSIT_PCT / 100);
+  // PAY IN FULL WITHIN 7 DAYS (Max, 20 Oct 2026): the balance is due 7 days
+  // before the event, so from then on there is no deposit option.
+  const dueDay = addDaysISO(q.hire && q.hire.startDate, -7);
+  const fullOnly = !!dueDay && dueDay <= brisbaneToday();
+  let amount = option === 'full' || paid > 0 || fullOnly ? owing : Math.round(total * QUOTE_DEPOSIT_PCT / 100);
   if (amount < 50) throw new HttpsError('failed-precondition', 'Nothing left to pay on this quote.');
-  const label = paid > 0 ? 'balance' : (option === 'full' ? 'payment in full' : QUOTE_DEPOSIT_PCT + '% deposit');
+  const label = paid > 0 ? 'balance' : (option === 'full' || fullOnly ? 'payment in full' : QUOTE_DEPOSIT_PCT + '% deposit');
 
   const stripe = getStripe();
   const back = SITE_URL + '/quote?t=' + token;
