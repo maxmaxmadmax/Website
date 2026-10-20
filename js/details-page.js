@@ -8,7 +8,7 @@
    Uses the sponsor page styles (sponsor.css).
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=610';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=611';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) => String(v == null ? '' : v)
@@ -58,7 +58,10 @@ function render(d) {
     <form class="spn-form" id="dt-form">
       ${f('firstName', 'First name', firstName, 'text', true)}
       ${f('lastName', 'Last name', lastName, 'text', true)}
-      ${f('business', 'Business / organisation', c.business, 'text', false, true)}
+      <label class="spn-wide">Business / organisation <span>(optional)</span>
+        <button type="button" class="dt-info" id="dt-info-biz" aria-label="What is this?" aria-expanded="false">i</button>
+        <small class="dt-info-text" id="dt-info-biz-text" hidden>This is who the quote and invoice will be made out to. Leave it blank to have them in your own name.</small>
+        <input name="business" type="text" value="${esc(c.business || '')}"></label>
       ${f('email', 'Email', c.email, 'email', true)}
       ${f('phone', 'Phone', c.phone, 'tel', true)}
       ${f('ccEmail', 'Accounts / billing email', c.ccEmail, 'text', false, true, 'Gets a copy of the quote and invoice')}
@@ -86,6 +89,13 @@ function render(d) {
     return out;
   };
   const filled = () => missing().length === 0;
+  const infoBtn = document.getElementById('dt-info-biz');
+  infoBtn.addEventListener('click', (e) => {
+    e.preventDefault();   // inside a label - don't jump into the box
+    const note = document.getElementById('dt-info-biz-text');
+    note.hidden = !note.hidden;
+    infoBtn.setAttribute('aria-expanded', String(!note.hidden));
+  });
   const check = () => {
     const m = missing();
     dtBtn.disabled = m.length > 0;

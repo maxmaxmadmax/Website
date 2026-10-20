@@ -74,3 +74,7 @@
 /* details form: red star on required boxes */
 .dt-req{ color:#d11; font-weight:800; }
 .dt-note{ margin:4px 0 12px; font-size:13px; color:#555; }
+/* details form: the (i) next to Business */
+#dt-form .dt-info{ display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; margin-left:6px; padding:0; border:0; border-radius:50%; background:#ff6b00; color:#fff; font:italic 800 12px/1 Georgia, serif; cursor:pointer; vertical-align:middle; }
+#dt-form .dt-info-text{ display:block; font-weight:400; font-size:13px; color:#555; background:#fff4ec; border-left:3px solid #ff6b00; padding:8px 10px; border-radius:6px; margin-top:6px; }
+#dt-form .dt-info-text[hidden]{ display:none; }
