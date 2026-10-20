@@ -33,13 +33,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=592';
+} from './firebase-config.js?v=593';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=592';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=592';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=592';
-import { messagesHtml, wireMessages } from './messages.js?v=592';
-import { expandKit } from './kit.js?v=592';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=593';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=593';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=593';
+import { messagesHtml, wireMessages } from './messages.js?v=593';
+import { expandKit } from './kit.js?v=593';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -89,11 +89,6 @@ const state = {
   noteDraft: '',
   addingVendor: false,
   ready: false,
-
-  /*  Old estimate-bot leads (quoteLeads) - kept for their history.     */
-  quoteLeads: [],
-  quoteFilter: { search: '', status: 'all' },
-  openLeadId: null,
 
   /*  The equipment inventory / price list. Loaded live so the Inventory
       page and the bot never disagree. null until first load.            */
@@ -190,7 +185,6 @@ async function init() {
     showApp(user);
     await loadEvents();
     subscribeToEvent();
-    subscribeToQuoteLeads();
     subscribeToInventory();
     subscribeToQuoteDocs();
     subscribeToPackages();
@@ -388,7 +382,7 @@ function wireChrome() {
    Routing
    ------------------------------------------------------------------------- */
 const BUILT = ['events', 'vendors', 'applications', 'map', 'entertainment',
-               'settings', 'vendorEmail', 'quotes', 'inventory',
+               'settings', 'vendorEmail', 'inventory',
                'quoteDocs', 'packages', 'resources', 'leads', 'leadRate', 'customers'];
 
 /*  Vendors is where the work is, so it is what you land on. */
@@ -544,24 +538,6 @@ function subscribeToEvent() {
       render();
     },
     (err) => console.error('categories', err)
-  ));
-}
-
-/*  ESTIMATE-BOT LEADS
-
-    Not tied to an event - a quote can come in for anything - so this is its
-    own subscription, set up once at sign-in and left running. Newest first,
-    the way the table wants them.                                          */
-function subscribeToQuoteLeads() {
-  const { collection, onSnapshot, query, orderBy } = fb.f;
-  unsubscribes.push(onSnapshot(
-    query(collection(fb.db, 'quoteLeads'), orderBy('createdAt', 'desc')),
-    (snap) => {
-      state.quoteLeads = [];
-      snap.forEach((d) => state.quoteLeads.push({ id: d.id, ...d.data() }));
-      if (state.view === 'quotes') render();
-    },
-    (err) => console.error('quoteLeads', err)
   ));
 }
 
@@ -3234,292 +3210,6 @@ VIEWS.vendorEmail = {
   html() { return messagesHtml(msgCtx()); },
   wire() { wireMessages(msgCtx()); },
 };
-
-/* =========================================================================
-   ESTIMATE BOT  -  admin views
-
-   quotes   who asked, what they asked for, and the range they saw
-
-   Leads are read-only here (a lead is a record of what happened) apart from
-   a status and a note.
-   ========================================================================= */
-
-const QUOTE_STATUS = {
-  new:       ['ad-pill-blue',  'New'],
-  contacted: ['ad-pill-amber', 'Contacted'],
-  quoted:    ['ad-pill-amber', 'Quoted'],
-  won:       ['ad-pill-green', 'Won'],
-  lost:      ['ad-pill-grey',  'Lost'],
-};
-const QUOTE_STATUS_ORDER = ['new', 'contacted', 'quoted', 'won', 'lost'];
-
-function quoteRange(lead) {
-  const lo = money(lead.estimateLowCents);
-  const hi = money(lead.estimateHighCents);
-  return lo === hi ? lo : lo + ' \u2013 ' + hi;
-}
-
-function quoteStatusPill(status) {
-  const [cls, label] = QUOTE_STATUS[status] || QUOTE_STATUS.new;
-  return `<span class="ad-pill ${cls}">${esc(label)}</span>`;
-}
-
-/* -------------------------------------------------------------------------
-   Quote Leads
-   ------------------------------------------------------------------------- */
-VIEWS.quotes = {
-  html() {
-    const leads = state.quoteLeads || [];
-    const open = leads.filter((l) => (l.status || 'new') === 'new').length;
-
-    return `
-      <div class="ad-mail-head-row">
-        <span class="ad-mail-icon" aria-hidden="true">&#128172;</span>
-        <div class="ad-mail-title">
-          <h1>Quote Leads</h1>
-          <p>Estimates people worked out with the bot on the services page.</p>
-        </div>
-        <div class="ad-mail-status">
-          <span class="ad-pill ad-pill-blue">${open} new</span>
-          <p class="ad-mail-when">${leads.length} total</p>
-        </div>
-      </div>
-
-      <section class="ad-card ad-panel">
-        <header class="ad-panel-head">
-          <div>
-            <h2>Enquiries</h2>
-            <p class="ad-panel-sub">Newest first. Click a row to see the full answers.</p>
-          </div>
-          <div class="ad-quote-tools">
-            <select id="ad-quote-status" class="ad-select" aria-label="Filter by status">
-              <option value="all">All statuses</option>
-              ${QUOTE_STATUS_ORDER.map((s) =>
-                `<option value="${s}">${esc(QUOTE_STATUS[s][1])}</option>`).join('')}
-            </select>
-            <input type="search" id="ad-quote-search" class="ad-search"
-                   placeholder="Search leads..." aria-label="Search leads">
-          </div>
-        </header>
-
-        <div class="ad-table-wrap">
-          <table class="ad-table ad-quote-table">
-            <thead>
-              <tr>
-                <th>When</th><th>Name</th><th>Event</th><th>Where</th>
-                <th>Estimate</th><th>Status</th><th>Email</th><th></th>
-              </tr>
-            </thead>
-            <tbody id="ad-quote-rows"></tbody>
-          </table>
-        </div>
-      </section>
-    `;
-  },
-
-  wire() { wireQuotes(); },
-};
-
-function quoteLeadsFiltered() {
-  const leads = state.quoteLeads || [];
-  const f = state.quoteFilter;
-  const needle = (f.search || '').trim().toLowerCase();
-
-  return leads.filter((l) => {
-    if (f.status !== 'all' && (l.status || 'new') !== f.status) return false;
-    if (!needle) return true;
-    return [l.name, l.email, l.phone, l.eventTypeLabel, l.locationLabel,
-            (l.serviceLabels || []).join(' '), l.message]
-      .filter(Boolean).join(' ').toLowerCase().includes(needle);
-  });
-}
-
-function quoteEmailCell(l) {
-  if (l.emailStatus === 'sent') {
-    return '<span class="ad-dot ad-dot-green"></span> Sent';
-  }
-  if (l.emailStatus === 'failed') {
-    return '<span class="ad-dot ad-dot-red"></span> Failed';
-  }
-  return '<span class="ad-dot"></span> <span class="ad-cell-muted">\u2014</span>';
-}
-
-function leadDetailRow(l) {
-  const line = (k, v) => v
-    ? `<div class="ad-quote-dl"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>` : '';
-
-  return `
-    <tr class="ad-quote-detail-row">
-      <td colspan="8">
-        <div class="ad-quote-detail">
-          <div class="ad-quote-cols">
-            <div>
-              <h3>Their event</h3>
-              ${line('Event type', l.eventTypeLabel)}
-              ${line('Where', l.locationLabel)}
-              ${line('Guests', l.sizeLabel)}
-              ${line('Length', l.durationLabel)}
-              ${line('Looking for', (l.serviceLabels || []).join(', '))}
-              ${line('Their date', l.eventDate)}
-              ${line('Estimate shown', quoteRange(l))}
-            </div>
-            <div>
-              <h3>Contact</h3>
-              ${line('Name', l.name)}
-              <div class="ad-quote-dl"><dt>Email</dt>
-                <dd><a href="mailto:${attr(l.email)}">${esc(l.email)}</a></dd></div>
-              ${l.phone ? `<div class="ad-quote-dl"><dt>Phone</dt>
-                <dd><a href="tel:${attr(l.phone)}">${esc(l.phone)}</a></dd></div>` : ''}
-              ${l.message ? `<div class="ad-quote-note-box">
-                <dt>Message</dt><p>${esc(l.message)}</p></div>` : ''}
-            </div>
-          </div>
-
-          <div class="ad-quote-actions">
-            <div class="ad-quote-statusrow">
-              <span class="ad-quote-actions-label">Status</span>
-              ${QUOTE_STATUS_ORDER.map((s) => {
-                const on = (l.status || 'new') === s;
-                return `<button type="button" class="ad-btn ad-btn-small ad-quote-status-btn${
-                  on ? ' is-on' : ''}" data-set-status="${attr(l.id)}" data-status="${s}">
-                  ${esc(QUOTE_STATUS[s][1])}</button>`;
-              }).join('')}
-            </div>
-
-            <div class="ad-quote-noterow">
-              <label class="ad-quote-actions-label" for="ad-quote-note-${attr(l.id)}">
-                Private note</label>
-              <div class="ad-quote-noteline">
-                <input type="text" id="ad-quote-note-${attr(l.id)}"
-                       class="ad-input ad-quote-noteinput"
-                       value="${attr(l.note || '')}" placeholder="Just for the team...">
-                <button type="button" class="ad-btn ad-btn-small"
-                        data-save-note="${attr(l.id)}">Save</button>
-              </div>
-            </div>
-
-            <div class="ad-quote-mailrow">
-              <button type="button" class="ad-btn ad-btn-small" data-resend-quote="${attr(l.id)}">
-                ${l.emailStatus === 'sent' ? 'Resend estimate email' : 'Send estimate email'}
-              </button>
-              <span class="ad-quote-msg" data-quote-msg="${attr(l.id)}"></span>
-            </div>
-          </div>
-        </div>
-      </td>
-    </tr>`;
-}
-
-function renderQuoteRows() {
-  const host = document.getElementById('ad-quote-rows');
-  if (!host) return;
-
-  const rows = quoteLeadsFiltered();
-  if (!rows.length) {
-    host.innerHTML = '<tr><td colspan="8" class="ad-cell-muted">'
-      + 'No leads yet. They will appear here the moment somebody finishes the bot.</td></tr>';
-    return;
-  }
-
-  host.innerHTML = rows.map((l) => {
-    const open = state.openLeadId === l.id;
-    return `
-      <tr class="ad-quote-row${open ? ' is-open' : ''}" data-open-lead="${attr(l.id)}">
-        <td class="ad-cell-muted">${esc(dateShort(l.createdAt))}</td>
-        <td class="ad-cell-strong">${esc(l.name || '')}</td>
-        <td>${esc(l.eventTypeLabel || '\u2014')}</td>
-        <td>${esc(l.locationLabel || '\u2014')}</td>
-        <td>${esc(quoteRange(l))}</td>
-        <td>${quoteStatusPill(l.status || 'new')}</td>
-        <td>${quoteEmailCell(l)}</td>
-        <td class="ad-cell-right"><span class="ad-quote-caret">${open ? '\u25be' : '\u25b8'}</span></td>
-      </tr>
-      ${open ? leadDetailRow(l) : ''}`;
-  }).join('');
-}
-
-function wireQuotes() {
-  renderQuoteRows();
-
-  const search = document.getElementById('ad-quote-search');
-  const status = document.getElementById('ad-quote-status');
-  if (search) {
-    search.value = state.quoteFilter.search;
-    search.addEventListener('input', () => {
-      state.quoteFilter.search = search.value;
-      renderQuoteRows();
-    });
-  }
-  if (status) {
-    status.value = state.quoteFilter.status;
-    status.addEventListener('change', () => {
-      state.quoteFilter.status = status.value;
-      renderQuoteRows();
-    });
-  }
-
-  const host = document.getElementById('ad-quote-rows');
-  if (!host) return;
-
-  host.addEventListener('click', async (e) => {
-    const openBtn = e.target.closest('[data-open-lead]');
-    const setStatus = e.target.closest('[data-set-status]');
-    const saveNote = e.target.closest('[data-save-note]');
-    const resend = e.target.closest('[data-resend-quote]');
-
-    if (setStatus) {
-      const id = setStatus.getAttribute('data-set-status');
-      const to = setStatus.getAttribute('data-status');
-      try {
-        await call('adminUpdateQuoteLead', { leadId: id, status: to });
-        const lead = (state.quoteLeads || []).find((x) => x.id === id);
-        if (lead) lead.status = to;      // optimistic; the snapshot confirms
-        renderQuoteRows();
-      } catch (err) { alert(err.message || 'Could not update.'); }
-      return;
-    }
-
-    if (saveNote) {
-      const id = saveNote.getAttribute('data-save-note');
-      const input = document.getElementById('ad-quote-note-' + id);
-      const msg = host.querySelector(`[data-quote-msg="${cssEsc(id)}"]`);
-      try {
-        await call('adminUpdateQuoteLead', { leadId: id, note: input ? input.value : '' });
-        if (msg) { msg.textContent = 'Note saved.'; msg.className = 'ad-quote-msg is-ok'; }
-      } catch (err) {
-        if (msg) { msg.textContent = err.message || 'Could not save.'; msg.className = 'ad-quote-msg is-bad'; }
-      }
-      return;
-    }
-
-    if (resend) {
-      const id = resend.getAttribute('data-resend-quote');
-      const msg = host.querySelector(`[data-quote-msg="${cssEsc(id)}"]`);
-      resend.disabled = true;
-      if (msg) { msg.textContent = 'Sending\u2026'; msg.className = 'ad-quote-msg'; }
-      try {
-        const res = await call('adminResendQuoteEmail', { leadId: id });
-        if (res && res.sent) {
-          if (msg) { msg.textContent = 'Sent.'; msg.className = 'ad-quote-msg is-ok'; }
-        } else {
-          const why = (res && (res.error || res.reason)) || 'no reason given';
-          if (msg) { msg.textContent = 'Did not send: ' + why; msg.className = 'ad-quote-msg is-bad'; }
-        }
-      } catch (err) {
-        if (msg) { msg.textContent = err.message || 'Could not send.'; msg.className = 'ad-quote-msg is-bad'; }
-      } finally {
-        resend.disabled = false;
-      }
-      return;
-    }
-
-    if (openBtn) {
-      const id = openBtn.getAttribute('data-open-lead');
-      state.openLeadId = state.openLeadId === id ? null : id;
-      renderQuoteRows();
-    }
-  });
-}
 
 /*  A value safe to drop inside a CSS attribute selector. Ids are Firestore's
     own, so this is belt and braces rather than a real threat.             */
@@ -8128,7 +7818,6 @@ async function importCustomers(btn) {
     found.push({ ...rec, source });
   };
   (state.quoteDocs || []).forEach((q) => add(q.customer || {}, q.source === 'bot' ? 'quote bot' : 'quote'));
-  (state.quoteLeads || []).forEach((l) => add({ name: l.name, email: l.email, phone: l.phone }, 'enquiry'));
 
   const fresh = found.filter((c) => !findCustomerMatch(c) &&
     !(state.customers || []).some((x) => !x.email && !x.phone && custNameKey(x.name || x.business) === custNameKey(c.name || c.business)));

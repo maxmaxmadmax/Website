@@ -174,9 +174,9 @@ service cloud.firestore {
     //   config/{doc}          server-only settings (e.g. the quote/invoice
     //                         number counters). Closed to browsers.
     //
-    //   quoteLeads/{id}       old estimates from the retired first bot, kept
-    //                         for their history. Closed to browsers; read by
-    //                         admins in Quote Leads.
+    //   quoteLeads/{id}       old estimates from the retired first bot. Kept in
+    //                         the database, closed to browsers (page removed
+    //                         20 Oct 2026).
     // ---------------------------------------------------------------
     match /config/{docId} {
       allow read: if false;   // nothing public lives in config any more (Quote Pricing retired 17 Oct 2026)
@@ -234,11 +234,6 @@ service cloud.firestore {
     match /tellInbox/{id} { allow read: if isAdmin(); allow write: if false; }
     match /tellOutbox/{id} { allow read: if isAdmin(); allow write: if false; }
     match /tell/{id} { allow read: if isAdmin(); allow write: if false; }
-
-    match /quoteLeads/{leadId} {
-      allow read: if isAdmin();
-      allow write: if false;
-    }
 
     //  Quotes / invoices. A quote carries a customer's details, prices and a
     //  secret token for its public link. Admins read and work them in the

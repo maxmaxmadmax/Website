@@ -2363,18 +2363,9 @@ exports.adminSendTestVendorEmail = onCall(
 /* =========================================================================
    ESTIMATE BOT
 
-   The legacy price table + lead admin. The public estimate bot itself is now
-   submitBotQuote (further down) - it prices from packages, emails the visitor
-   a price guide, and creates a reviewable draft. These remain for the old
-   `quoteLeads` records:
-
-     adminUpdateQuoteLead   admin  - Max moves a lead along / adds a note
-     adminResendQuoteEmail  admin  - Max re-sends a visitor their estimate
-
-   The lead is written only here, with the Admin SDK, so the price a visitor
-   is emailed is recomputed server-side from the saved pricing and cannot be
-   forged by editing the page. The pricing document is public-read (the bot
-   needs it to show a live range) but function/admin-write only.
+   The public estimate bot is submitBotQuote (further down): it prices from
+   packages, emails the visitor a price guide and creates a draft quote in the
+   Sales Pipeline. The old Quote Leads page was removed on 20 Oct 2026.
    ========================================================================= */
 
 /*  The equipment inventory. The bot prices the extras a visitor picks from
@@ -2396,74 +2387,9 @@ async function loadQuoteInventory() {
   return [];
 }
 
-const QUOTE_STATES = ['new', 'contacted', 'quoted', 'won', 'lost'];
-
-/*  RETIRED: submitQuoteLead was the original services estimate bot. It
-    auto-emailed the visitor a price with no staff review and saved a
-    `quoteLeads` doc. The package bot (submitBotQuote, below) replaced it -
-    it emails the same price guide AND creates a reviewable draft quote.
-    The estimate-email system it used (lib/quote-email.js) is kept and now
-    reused by submitBotQuote. Deleted from deploy via functions:delete.    */
-
-exports.adminUpdateQuoteLead = onCall(async (request) => {
-  requireAdmin(request);
-  const { leadId, status, note } = request.data || {};
-  const id = String(leadId || '').trim();
-  if (!id) throw new HttpsError('invalid-argument', 'Missing lead id.');
-
-  const ref = db.collection('quoteLeads').doc(id);
-  const snap = await ref.get();
-  if (!snap.exists) throw new HttpsError('not-found', 'No such lead.');
-
-  const update = { updatedAt: FieldValue.serverTimestamp() };
-
-  if (status !== undefined) {
-    if (!QUOTE_STATES.includes(status)) {
-      throw new HttpsError('invalid-argument',
-        'Status must be one of: ' + QUOTE_STATES.join(', '));
-    }
-    update.status = status;
-  }
-
-  if (note !== undefined) {
-    update.note = String(note || '').trim().slice(0, 2000);
-  }
-
-  await ref.update(update);
-  return { ok: true };
-});
-
-exports.adminResendQuoteEmail = onCall(
-  { secrets: [SMTP_USER, SMTP_PASS] },
-  async (request) => {
-    requireAdmin(request);
-    const id = String((request.data || {}).leadId || '').trim();
-    if (!id) throw new HttpsError('invalid-argument', 'Missing lead id.');
-
-    const ref = db.collection('quoteLeads').doc(id);
-    const snap = await ref.get();
-    if (!snap.exists) throw new HttpsError('not-found', 'No such lead.');
-
-    const lead = snap.data();
-    if (!lead.email) {
-      throw new HttpsError('failed-precondition', 'That lead has no email address.');
-    }
-
-    const mail = await sendQuoteEmail(lead);
-    try {
-      await ref.update({
-        emailStatus: mail.sent ? 'sent' : 'failed',
-        emailAt: FieldValue.serverTimestamp(),
-        emailError: mail.sent ? FieldValue.delete()
-          : String(mail.error || mail.reason || '').slice(0, 500),
-      });
-    } catch (err) {
-      logger.warn('could not record quote email status', { message: err && err.message });
-    }
-
-    return mail;
-  },
-);
+/*  REMOVED 20 Oct 2026: the old Quote Leads page (adminUpdateQuoteLead,
+    adminResendQuoteEmail). The bot's estimates live in the Sales Pipeline;
+    old quoteLeads documents are left in the database untouched.          */
 
 
 /* =========================================================================
