@@ -33,13 +33,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=590';
+} from './firebase-config.js?v=592';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=590';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=590';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=590';
-import { messagesHtml, wireMessages } from './messages.js?v=590';
-import { expandKit } from './kit.js?v=590';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=592';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=592';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=592';
+import { messagesHtml, wireMessages } from './messages.js?v=592';
+import { expandKit } from './kit.js?v=592';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -505,6 +505,18 @@ function subscribeToEvent() {
       render();
     },
     (err) => console.error('sites', err)
+  ));
+
+  // vendor waitlist (Max, 20 Oct 2026)
+  state.waitlist = [];
+  unsubscribes.push(onSnapshot(
+    query(collection(fb.db, 'waitlist'), where('eventId', '==', evId)),
+    (snap) => {
+      state.waitlist = [];
+      snap.forEach((d) => state.waitlist.push({ id: d.id, ...d.data() }));
+      if (state.view === 'vendorEmail' && !state.msgOpen) render();
+    },
+    (err) => console.error('waitlist', err)
   ));
 
   // Messages page (Max, 19 Oct 2026)

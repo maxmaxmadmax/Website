@@ -80,6 +80,11 @@ function bodyHtml(body, values) {
 }
 
 function html(msg, values, opts) {
+  const actions = (opts.actions || []).map((a) => `<a href="${esc(a.url)}" style="display:inline-block;margin:6px;${a.primary
+      ? 'background:#ff6b00;color:#fff;'
+      : 'background:#fff;color:#111;border:2px solid #111;'}text-decoration:none;font-weight:bold;font-size:15px;padding:12px 22px;border-radius:10px;">${esc(a.label)}</a>`).join('');
+  const actionBlock = actions ? `<p style="text-align:center;margin:20px 0 6px;">${actions}</p>` : '';
+  const noteBlock = opts.note ? `<p style="margin:12px 0 0;font-size:13px;color:#777;text-align:center;">${esc(opts.note)}</p>` : '';
   const button = values.guide_link
     ? `<p style="text-align:center;margin:22px 0 6px;">
         <a href="${esc(values.guide_link)}" style="display:inline-block;background:#ff6b00;color:#fff;text-decoration:none;font-weight:bold;font-size:15px;padding:13px 26px;border-radius:10px;">View your invoice &amp; event guide &rarr;</a>
@@ -95,6 +100,8 @@ function html(msg, values, opts) {
     <div style="padding:24px;font-size:15px;line-height:1.6;color:#111;">
       ${bodyHtml(msg.body, values)}
       ${button}
+      ${actionBlock}
+      ${noteBlock}
     </div>
     <div style="padding:18px 24px;background:#fafafa;border-top:1px solid #eee;">
       <p style="margin:0;font-size:12px;color:#777;line-height:1.6;">
@@ -111,6 +118,8 @@ function text(msg, values, opts) {
   return [
     plain,
     values.guide_link ? '\nYour invoice & event guide: ' + values.guide_link : '',
+    ...(opts.actions || []).map((a) => a.label + ': ' + a.url),
+    opts.note || '',
     '',
     `${SELLER.name} - ${SELLER.email} - ${SELLER.site}`,
     opts.unsubscribeLink ? 'Unsubscribe from event news: ' + opts.unsubscribeLink : '',

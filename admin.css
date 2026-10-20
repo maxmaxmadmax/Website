@@ -1615,23 +1615,7 @@ body.ad-fit .ad-main{ min-height:0; }
 /*  Max's drawing has a photograph here. A photograph is one more image to
     ship and keep in step with the brand; the words do the same job for
     nothing, and they are the words already on the trailer.          */
-.ad-rail-card{
-    margin:14px 12px 4px;
-    padding:18px 16px;
-    border-radius:var(--ad-radius);
-    background:linear-gradient(150deg, #2a1403 0%, #1b1e26 70%);
-    border:1px solid var(--ad-ink-line);
-}
 
-.ad-rail-card-line{
-    margin:0;
-    font-family:"Brush Script MT", "Segoe Script", cursive;
-    font-size:1.25rem;
-    line-height:1.25;
-    color:#fff;
-}
-
-.ad-rail-card-line + .ad-rail-card-line{ color:var(--ad-orange); }
 
 /* ==========================================================================
    VENDOR EMAILS
@@ -4535,3 +4519,18 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ms .ms-grid{ grid-template-columns:minmax(0,1.1fr) minmax(420px,1fr); }
 .ms .ms-body{ min-height:340px; }
 .ms-table td:nth-child(1){ width:18%; } .ms-table td:nth-child(2){ width:38%; }
+
+/* Messages: waitlist card + waitlist email preview (Max, 20 Oct 2026) */
+.ms-wl{ margin-top:16px; }
+.ms-wl-head{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; padding:14px 16px 6px; }
+.ms-wl-head b{ font-size:16px; }
+.ms-wl-head span{ color:var(--ad-muted); font-size:13px; }
+.ms-wl-head em{ font-style:normal; font-size:13px; color:#9a6200; margin-left:auto; }
+.ms-mail-btn2{ display:inline-block; margin-left:6px; border:2px solid #111; color:#111 !important; background:#fff !important; font-weight:700; padding:8px 16px !important; border-radius:8px; font-size:13px; }
+.ms-mail-note{ text-align:center; font-size:12px; color:#777; }
+
+/* SIDEBAR: logo pinned at the top, your name + Log out pinned at the bottom,
+   only the menu scrolls in between (Max, 20 Oct 2026) */
+.ad-rail{ overflow:hidden; }
+.ad-rail .ad-brand, .ad-rail .ad-rail-foot{ flex:none; }
+.ad-rail .ad-nav{ flex:1 1 auto; min-height:0; overflow-y:auto; }

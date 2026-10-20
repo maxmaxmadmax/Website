@@ -30,6 +30,7 @@ const FIELDS = [
   ['event_venue', 'Venue'],
 ];
 const INVOICE_FIELDS = [['total_paid', 'Total paid'], ['invoice_number', 'Invoice number']];
+const WAITLIST_FIELDS = [['expires_at', 'Hold ends (4 hours)']];
 
 const STATUS = {
   draft: ['Draft', 'grey'],
@@ -76,6 +77,7 @@ function niceDay(iso) {
 function whenText(msg, ev) {
   const t = msg.trigger || {};
   if (t.type === 'payment') return 'As each vendor pays';
+  if (t.type === 'waitlist') return 'When a spot opens';
   const day = niceDay(sendDate(msg, ev));
   const n = Math.round(Number(t.days) || 0);
   const rel = t.type === 'daysBefore' ? (n === 1 ? 'Day before' : n + ' days before')
@@ -136,6 +138,9 @@ function sampleValues(b, ev) {
 function sentenceHtml(ctx, d, m, ev) {
   const { state } = ctx;
   const esc = ctx.h.esc;
+  if (m.system === 'waitlist') {
+    return `This sends <b>&ldquo;${esc(fill(d.subject, sampleValues(null, ev), String) || '(no subject yet)')}&rdquo;</b> to <b>the next person on the waitlist</b> the moment a spot opens. They get <b>4 hours</b> to accept or decline from the email, then it goes to the next person.`;
+  }
   if (m.system) {
     const all = paidVendors(state.bookings, state.activeEventId);
     return `This sends <b>&ldquo;${esc(fill(d.subject, sampleValues(all[0], ev), String) || '(no subject yet)')}&rdquo;</b> to <b>each vendor the moment they pay</b>. ${all.filter((b) => b.invoiceEmailedAt).length} of ${all.length} paid vendors have it.`;
@@ -169,23 +174,24 @@ export function messagesHtml(ctx) {
 
   const tab = state.msgTab || 'vendors';
   const list = (state.messages || []).slice().sort((a, b) => {
-    if (a.system && !b.system) return -1;
-    if (b.system && !a.system) return 1;
+    const rank = (x) => (x.system === 'invoice' ? 0 : x.system === 'waitlist' ? 1 : 2);
+    if (rank(a) !== rank(b)) return rank(a) - rank(b);
     return (sendDate(a, ev) || '9999').localeCompare(sendDate(b, ev) || '9999');
   });
   const rows = list.map((m) => {
     const [label, tone] = STATUS[m.status] || STATUS.draft;
-    const total = m.system ? paidVendors(state.bookings, state.activeEventId).length : recipients(state.bookings, state.activeEventId, m).length;
-    const sent = m.system
+    const wl = m.system === 'waitlist';
+    const total = wl ? (state.waitlist || []).length : (m.system ? paidVendors(state.bookings, state.activeEventId).length : recipients(state.bookings, state.activeEventId, m).length);
+    const sent = wl ? (m.sentCount || 0) : (m.system
       ? paidVendors(state.bookings, state.activeEventId).filter((b) => b.invoiceEmailedAt).length
-      : (m.sentCount || 0);
+      : (m.sentCount || 0));
     const failed = (m.failed || []).length;
     return `<tr data-ms-open="${h.attr(m.id)}">
       <td class="ms-when">${h.esc(whenText(m, ev))}</td>
       <td><strong>${h.esc(m.name || '(no name)')}</strong><span class="ms-sub">${h.esc(fill(m.subject || '', { event_name: ev.name || '', event_date: ev.dateLabel || '' }, String))}</span></td>
-      <td>${h.esc(m.system ? 'Each vendor as they pay' : (WHO[m.who] || WHO.all))}${m.promo ? ' <span class="ms-tag">Promo</span>' : ''}</td>
+      <td>${h.esc(wl ? 'Next on the waitlist' : (m.system ? 'Each vendor as they pay' : (WHO[m.who] || WHO.all)))}${m.promo ? ' <span class="ms-tag">Promo</span>' : ''}</td>
       <td><span class="ms-chip ms-${tone}">${h.esc(label)}</span></td>
-      <td class="ms-sent">${sent} of ${total}${failed ? ` <span class="ms-fail">${failed} failed</span>` : ''}</td>
+      <td class="ms-sent">${wl ? sent + ' offer' + (sent === 1 ? '' : 's') : sent + ' of ' + total}${failed ? ` <span class="ms-fail">${failed} failed</span>` : ''}</td>
     </tr>`;
   }).join('');
 
@@ -210,7 +216,8 @@ export function messagesHtml(ctx) {
         <tbody>${rows || `<tr><td colspan="5" class="ad-cell-muted">${state.msgSeeding ? 'Adding the starter messages&hellip;' : 'No messages yet.'}</td></tr>`}</tbody>
       </table>
     </div>
-    <p class="ms-key">You also get an office copy of every new vendor booking at info@soundzgood.com.au.</p>`}
+    <p class="ms-key">You also get an office copy of every new vendor booking at info@soundzgood.com.au.</p>
+    ${waitlistHtml(ctx)}`}
     <p class="ms-key"><span class="ms-chip ms-grey">Draft</span> still being written &nbsp; <span class="ms-chip ms-amber">Your OK</span> ready &mdash; needs your approval &nbsp; <span class="ms-chip ms-green">Auto</span> approved, sends itself</p>
   </div>`;
 }
@@ -253,6 +260,32 @@ function sentHtml(ctx) {
         <iframe class="ms-log-frame" id="ms-log-frame" title="Email"></iframe>
       </aside>` : ''}
     </div>`;
+}
+
+/*  THE WAITLIST for this event (Max, 20 Oct 2026). */
+const WL_STATUS = {
+  waiting: ['Waiting', 'grey'], offered: ['Offered - 4 hrs', 'amber'], claimed: ['Booking now', 'blue'],
+  booked: ['Booked', 'green'], declined: ['Declined', 'grey'], expired: ['Ran out of time', 'grey'],
+};
+function waitlistHtml(ctx) {
+  const { state, h } = ctx;
+  const list = (state.waitlist || []).slice().sort((a, b) => ((a.createdAt && a.createdAt.seconds) || 0) - ((b.createdAt && b.createdAt.seconds) || 0));
+  const msg = (state.messages || []).find((m) => m.system === 'waitlist');
+  const off = !msg || msg.status !== 'approved';
+  let pos = { food: 0, market: 0 };
+  return `<div class="ad-card ms-card ms-wl">
+    <div class="ms-wl-head"><b>Waitlist</b><span>${list.filter((w) => w.status === 'waiting').length} waiting</span>
+      ${off ? '<em>Offers are switched off until you approve &ldquo;Waitlist - a spot opened&rdquo; above.</em>' : '<em>When a spot opens the next person is emailed automatically.</em>'}</div>
+    <table class="ms-table"><thead><tr><th>#</th><th>Business</th><th>Type</th><th>Contact</th><th>Status</th></tr></thead><tbody>
+    ${list.map((w) => {
+      const [lab, tone] = WL_STATUS[w.status] || WL_STATUS.waiting;
+      const n = w.status === 'waiting' ? ++pos[w.vendorType] : '';
+      return `<tr class="ms-fixed"><td>${n}</td><td><strong>${h.esc(w.name)}</strong><span class="ms-sub">${h.esc(w.description || '')}</span></td>
+        <td>${w.vendorType === 'food' ? 'Food van' : 'Market stall'}</td>
+        <td>${h.esc(w.contactName)}<span class="ms-sub">${h.esc(w.email)}${w.phone ? ' · ' + h.esc(w.phone) : ''}</span></td>
+        <td><span class="ms-chip ms-${tone}">${h.esc(lab)}</span>${w.siteLabel && ['offered', 'claimed', 'booked'].includes(w.status) ? '<span class="ms-sub">site ' + h.esc(w.siteLabel) + '</span>' : ''}</td></tr>`;
+    }).join('') || '<tr class="ms-fixed"><td colspan="5" class="ad-cell-muted">Nobody on the waitlist yet. The form appears on the vendor page when a type sells out.</td></tr>'}
+    </tbody></table></div>`;
 }
 
 function clientsHtml(h, state) {
@@ -299,7 +332,8 @@ function editorHtml(ctx, ev) {
     <div class="ms-grid">
       <div class="ad-card ms-card ms-pad">
         <label class="ms-f"><span>Name (just for you)</span><input class="ad-input" data-ms="name" value="${h.attr(d.name)}" placeholder="e.g. One week to go"${locked ? ' disabled' : ''}></label>
-        ${sys ? '<p class="ms-fixed-when"><b>Who:</b> each vendor &nbsp;&middot;&nbsp; <b>When:</b> the moment they pay (total and guide button are added below your text)</p>' : `<div class="ms-row">
+        ${m.system === 'waitlist' ? '<p class="ms-fixed-when"><b>Who:</b> the next person on the waitlist &nbsp;&middot;&nbsp; <b>When:</b> the moment a spot opens (Accept and Decline buttons and the 4-hour note are added below your text)</p>'
+          : sys ? '<p class="ms-fixed-when"><b>Who:</b> each vendor &nbsp;&middot;&nbsp; <b>When:</b> the moment they pay (total and guide button are added below your text)</p>' : `<div class="ms-row">
           <label class="ms-f"><span>Who</span><select class="ad-select" data-ms="who"${locked ? ' disabled' : ''}>
             ${Object.keys(WHO).map((k) => `<option value="${k}"${d.who === k ? ' selected' : ''}>${WHO[k]}</option>`).join('')}
           </select></label>
@@ -318,7 +352,7 @@ function editorHtml(ctx, ev) {
         <label class="ms-f"><span>Subject</span><input class="ad-input" data-ms="subject" value="${h.attr(d.subject)}"${locked ? ' disabled' : ''}></label>
         <label class="ms-f"><span>Message</span><textarea class="ad-input ms-body" data-ms="body" rows="14"${locked ? ' disabled' : ''}>${h.esc(d.body)}</textarea></label>
         <p class="ms-help">Blank line = new paragraph. Start a line with &ldquo;- &rdquo; for a bullet. Click to add:</p>
-        <div class="ms-chips">${(sys ? FIELDS.concat(INVOICE_FIELDS) : FIELDS).map(([k, l]) => `<button type="button" data-ms-field="${k}" title="${h.attr(l)}"${locked ? ' disabled' : ''}>{{${k}}}</button>`).join('')}</div>
+        <div class="ms-chips">${(m.system === 'waitlist' ? FIELDS.concat(WAITLIST_FIELDS) : sys ? FIELDS.concat(INVOICE_FIELDS) : FIELDS).map(([k, l]) => `<button type="button" data-ms-field="${k}" title="${h.attr(l)}"${locked ? ' disabled' : ''}>{{${k}}}</button>`).join('')}</div>
         ${sys ? '' : `<label class="ms-check"><input type="checkbox" data-ms="promo"${d.promo ? ' checked' : ''}${locked ? ' disabled' : ''}> Promotional (news about other events) &mdash; adds an unsubscribe link</label>`}
         <div class="ms-actions">
           ${locked ? '' : `<button type="button" class="ad-btn${dirty ? ' ad-btn-primary' : ''}" data-ms-act="save">${dirty ? 'Save' : 'Saved'}</button>`}
@@ -330,7 +364,8 @@ function editorHtml(ctx, ev) {
           ${!isNew && !sys && !(m.sentCount > 0) ? '<button type="button" class="ad-btn ms-del" data-ms-act="delete">Delete</button>' : ''}
         </div>
         ${dirty && !isNew && m.status !== 'draft' ? `<p class="ms-note">Changes need your OK again after you save.${sys ? ' Vendors keep getting the approved wording until then.' : ''}</p>` : ''}
-        ${sys && m.status === 'review' && !dirty ? '<p class="ms-note">Vendors are still getting the last approved wording &mdash; press Approve to switch to this.</p>' : ''}
+        ${m.system === 'invoice' && m.status === 'review' && !dirty ? '<p class="ms-note">Vendors are still getting the last approved wording &mdash; press Approve to switch to this.</p>' : ''}
+        ${m.system === 'waitlist' && m.status !== 'approved' && m.status !== 'paused' && !dirty ? '<p class="ms-note">The waitlist sends no offers until you approve this email.</p>' : ''}
         <p class="ms-msg" id="ms-msg" hidden></p>
         ${failed.length ? `<div class="ms-failed"><p><b>${failed.length} didn&rsquo;t go</b></p>${failed.map((f) => `<div><span>${h.esc(f.name)} &middot; ${h.esc(f.to)}<em>${h.esc(f.error)}</em></span><button type="button" class="ad-btn ad-btn-small" data-ms-resend="${h.attr(f.bookingId)}">Resend</button></div>`).join('')}</div>` : ''}
       </div>
@@ -349,6 +384,15 @@ function previewHtml(ctx) {
   const m = (state.messages || []).find((x) => x.id === state.msgOpen) || {};
   const first = (m.system ? paidVendors(state.bookings, state.activeEventId) : recipients(state.bookings, state.activeEventId, d))[0];
   const v = sampleValues(first, ev);
+  if (m.system === 'waitlist') {
+    const wv = { ...v, vendor_name: 'Sam', business_name: 'Sample Food Co', site_number: 'F4', expires_at: 'Sat 24 Oct, 1:35 pm' };
+    return `<div class="ms-mail"><div class="ms-mail-top">SOUNDZGOOD WHITSUNDAYS</div>
+    <p class="ms-mail-subj">${h.esc(fill(d.subject, wv, String))}</p>
+    <div class="ms-mail-body">${bodyHtml(d.body, wv, h.esc)}
+      <p class="ms-mail-btn"><span>Accept &amp; book my spot</span> <span class="ms-mail-btn2">No thanks - decline</span></p>
+      <p class="ms-mail-note">This spot is held for you until ${h.esc(wv.expires_at)}. It is only yours once payment is received.</p></div>
+    <div class="ms-mail-foot">SoundzGood Whitsundays</div></div>`;
+  }
   if (m.system) {
     return `<div class="ms-mail"><div class="ms-mail-top">SOUNDZGOOD WHITSUNDAYS<b>Thank you &mdash; you&rsquo;re booked in</b></div>
     <p class="ms-mail-subj">${h.esc(fill(d.subject, v, String))}</p>
@@ -486,7 +530,8 @@ export function wireMessages(ctx) {
         const r = await call('adminMessageTest', { id });
         say(r.sent ? 'Test sent to ' + r.to + ' only. No vendor was emailed.' : 'Test did not send: ' + (r.error || r.reason || ''), !r.sent);
       } else if (what === 'approve' && ((state.messages || []).find((x) => x.id === id) || {}).system) {
-        if (!window.confirm('Approve this wording? Every vendor who pays from now on gets it.')) { act.disabled = false; return; }
+        const wlMsg = ((state.messages || []).find((x) => x.id === id) || {}).system === 'waitlist';
+        if (!window.confirm(wlMsg ? 'Approve this email? From now on, when a spot opens the next person on the waitlist is emailed automatically and gets 4 hours to claim it.' : 'Approve this wording? Every vendor who pays from now on gets it.')) { act.disabled = false; return; }
         await call('adminMessageAction', { id, action: 'approve' });
         say('Approved - new vendors get this wording.');
       } else if (what === 'approve') {

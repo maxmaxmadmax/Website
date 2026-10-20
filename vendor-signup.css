@@ -2816,3 +2816,18 @@
 .vs-terms-read summary em{ display:block; font-weight:400; font-style:normal; font-size:12.5px; opacity:.75; }
 .vs-terms-read .vs-terms{ margin-top:10px; }
 .vs-terms-line{ margin:0 0 12px; font-size:14px; }
+
+/* WAITLIST (Max, 20 Oct 2026) */
+.vs-waitlist{ display:grid; gap:12px; margin:16px 0 0; }
+.vs-wl-card{ border:1px solid rgba(255,107,0,.45); background:rgba(255,107,0,.08); border-radius:14px; padding:16px 18px; }
+.vs-wl-card > b{ display:block; font-size:16px; margin-bottom:4px; }
+.vs-wl-card > p{ margin:0 0 12px; font-size:14px; opacity:.85; }
+.vs-wl-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; margin-bottom:12px; }
+.vs-wl-grid label{ display:grid; gap:4px; font-size:13px; font-weight:600; }
+.vs-wl-grid input{ font:inherit; font-size:15px; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,.25); background:rgba(0,0,0,.25); color:inherit; }
+.vs-wl-wide{ grid-column:1 / -1; }
+.vs-wl-msg{ margin:8px 0 0; color:#ff8a80; font-size:14px; }
+.vs-wl-done{ border-color:rgba(76,175,80,.6); background:rgba(76,175,80,.12); }
+.vs-claim-banner{ margin:90px auto 0; max-width:1100px; padding:14px 18px; border-radius:12px; background:#ff6b00; color:#fff; font-size:15px; line-height:1.5; }
+.vs-claim-banner.is-bad{ background:#b3261e; }
+@media (max-width:640px){ .vs-wl-grid{ grid-template-columns:1fr; } .vs-claim-banner{ margin:80px 12px 0; } }

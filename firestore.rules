@@ -245,6 +245,12 @@ service cloud.firestore {
     //  desk; everything else goes through Cloud Functions - a customer views
     //  and accepts theirs through getQuote / acceptQuote (Admin SDK, by
     //  token), never by reading the collection. So it is closed to browsers.
+    // Vendor waitlist (Max, 20 Oct 2026): admins read; only the server writes
+    match /waitlist/{entryId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // Sent emails log (Max, 20 Oct 2026): admins read; only the server writes
     match /emailLog/{logId} {
       allow read: if isAdmin();

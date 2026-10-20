@@ -23,13 +23,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=590';
+} from './firebase-config.js?v=592';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=590';
-import { termBodyHtml } from './terms-data.js?v=590';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=592';
+import { termBodyHtml } from './terms-data.js?v=592';
 import {
   VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION,
-} from './vendor-terms-data.js?v=590';
+} from './vendor-terms-data.js?v=592';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -417,7 +417,7 @@ function soldOutOf(sites) {
   const out = {};
   ['food', 'market'].forEach((t) => {
     const of = (sites || []).filter((x) => x.type === t);
-    out[t] = of.length > 0 && !of.some((x) => siteFree(x) || x.status === 'held');
+    out[t] = of.length > 0 && !of.some((x) => siteFree(x) || (x.status === 'held' && !x.waitlistHold));
   });
   return out;
 }
@@ -598,6 +598,7 @@ function watchAuth() {
     if (map) map.setUid(user ? user.uid : null);
     if (user) loadExistingBooking();
     render();
+    if (user) claimFromWaitlist();
 
     if (!user) signInQuietly();
   });
@@ -2207,7 +2208,7 @@ function renderSoldOut() {
   const so = state.soldOut || {};
   document.querySelectorAll('[data-vendor-type]').forEach((btn) => {
     const t = btn.getAttribute('data-vendor-type');
-    const out = !!so[t];
+    const out = !!so[t] && !(state.claim && state.claim.vendorType === t);
     btn.classList.toggle('is-soldout', out);
     btn.disabled = out;
     btn.setAttribute('aria-disabled', out ? 'true' : 'false');
@@ -2219,17 +2220,112 @@ function renderSoldOut() {
       btn.appendChild(stamp);
     } else if (!out && stamp) stamp.remove();
   });
-  if (state.vendorType && so[state.vendorType] && !(state.siteIds && state.siteIds.length)) {
+  if (state.vendorType && so[state.vendorType] && !(state.claim && state.claim.vendorType === state.vendorType) && !(state.siteIds && state.siteIds.length)) {
     state.vendorType = null;
     document.querySelectorAll('[data-vendor-type]').forEach((b) => b.classList.remove('is-selected'));
   }
+  renderWaitlist(so);
+}
+
+/*  JOIN THE WAITLIST (Max, 20 Oct 2026): under each sold-out type. When a
+    spot opens the first person is emailed and gets 4 hours to claim it. */
+const WL_WORD = { food: 'Food vans', market: 'Market stalls' };
+function renderWaitlist(so) {
+  const host = document.getElementById('vs-waitlist');
+  if (!host) return;
+  const types = ['food', 'market'].filter((t) => so[t] && !(state.claim && state.claim.vendorType === t));
+  host.hidden = !types.length || !state.eventId;
+  if (host.hidden) { host.innerHTML = ''; return; }
+  state.wlDone = state.wlDone || {};
+  // keep what someone is typing if the page redraws
+  if (host.querySelector('form') && types.every((t) => host.querySelector('[data-wl-type="' + t + '"]'))) return;
+  host.innerHTML = types.map((t) => state.wlDone[t]
+    ? '<div class="vs-wl-card vs-wl-done" data-wl-type="' + t + '"><b>You&rsquo;re on the ' + WL_WORD[t].toLowerCase() + ' waitlist' + (state.wlDone[t] > 0 ? ' (#' + state.wlDone[t] + ')' : '') + '.</b>'
+      + '<p>We&rsquo;ll email you the moment a spot opens. You&rsquo;ll have 4 hours to claim it, and it&rsquo;s yours once you pay.</p></div>'
+    : '<form class="vs-wl-card" data-wl-type="' + t + '">'
+      + '<b>' + WL_WORD[t] + ' are sold out &mdash; join the waitlist</b>'
+      + '<p>If a spot opens we&rsquo;ll email you straight away. You&rsquo;ll have 4 hours to claim it.</p>'
+      + '<div class="vs-wl-grid">'
+      + '<label>Business name<input name="name" required autocomplete="organization"></label>'
+      + '<label>Your name<input name="contactName" required autocomplete="name"></label>'
+      + '<label>Email<input name="email" type="email" required autocomplete="email"></label>'
+      + '<label>Phone<input name="phone" type="tel" autocomplete="tel"></label>'
+      + '<label class="vs-wl-wide">What do you sell?<input name="description" maxlength="300"></label>'
+      + '</div><button type="submit" class="btn">Join the waitlist</button><p class="vs-wl-msg" hidden></p></form>').join('');
+}
+
+async function joinWaitlist(form) {
+  const t = form.getAttribute('data-wl-type');
+  const v = (n) => (form.querySelector('[name="' + n + '"]') || {}).value || '';
+  const msg = form.querySelector('.vs-wl-msg');
+  const btn = form.querySelector('button');
+  btn.disabled = true;
+  try {
+    if (!fb) throw new Error('Still getting set up - try again in a moment.');
+    const call = fb.fn.httpsCallable(fb.fns, 'joinWaitlist');
+    const res = await call({ eventId: state.eventId, vendorType: t, name: v('name'), contactName: v('contactName'), email: v('email'), phone: v('phone'), description: v('description') });
+    state.wlDone = state.wlDone || {};
+    state.wlDone[t] = (res.data && res.data.position) || -1;
+    const host = document.getElementById('vs-waitlist');
+    if (host) host.innerHTML = '';
+    renderWaitlist(state.soldOut || {});
+  } catch (err) {
+    btn.disabled = false;
+    if (msg) { msg.hidden = false; msg.textContent = (err && err.message) || 'Could not join the waitlist. Please try again.'; }
+  }
+}
+
+/*  ACCEPT FROM THE WAITLIST EMAIL: /vendor-signup?claim=<token>. The held site
+    moves to this visitor, their details are filled in, and they book + pay as
+    normal. The spot is only theirs once payment is received.            */
+async function claimFromWaitlist() {
+  const token = new URLSearchParams(window.location.search).get('claim');
+  if (!token || state.claimTried || !fb || !state.user) return;
+  state.claimTried = true;
+  try {
+    const res = await fb.fn.httpsCallable(fb.fns, 'claimWaitlist')({ token });
+    const c = res.data;
+    state.claim = c;
+    // wait for the events list, then open theirs
+    for (let i = 0; i < 40 && !(state.events || []).some((e) => e.id === c.eventId); i++) await new Promise((r) => setTimeout(r, 250));
+    if (state.eventId !== c.eventId) chooseEvent(c.eventId);
+    const fill = { 'vs-biz-name': c.name, 'vs-biz-contact': c.contactName, 'vs-biz-email': c.email, 'vs-biz-phone': c.phone, 'vs-biz-desc': c.description };
+    Object.keys(fill).forEach((id) => {
+      const el = document.getElementById(id);
+      if (el && !el.value && fill[id]) { el.value = fill[id]; el.dispatchEvent(new Event('input', { bubbles: true })); }
+    });
+    renderSoldOut();
+    const typeBtn = document.querySelector('[data-vendor-type="' + c.vendorType + '"]');
+    if (typeBtn) { typeBtn.disabled = false; typeBtn.click(); }
+    const until = new Date(c.expiresAt).toLocaleString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+    showClaimBanner('<b>Your waitlist spot: site ' + escapeHtml(c.siteLabel) + '</b> is held for you until ' + escapeHtml(until)
+      + '. Check your details, choose site ' + escapeHtml(c.siteLabel) + ' on the map and pay to secure it &mdash; it&rsquo;s only yours once payment is received.');
+  } catch (err) {
+    showClaimBanner((err && err.message) || 'Sorry - this offer is no longer available.', true);
+  }
+}
+function showClaimBanner(html, bad) {
+  let el = document.getElementById('vs-claim-banner');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'vs-claim-banner';
+    const main = document.querySelector('main') || document.body;
+    main.insertBefore(el, main.firstChild);
+  }
+  el.className = 'vs-claim-banner' + (bad ? ' is-bad' : '');
+  el.innerHTML = html;
 }
 
 function wireStaticControls() {
+  // the waitlist forms (drawn by renderWaitlist)
+  const wl = document.getElementById('vs-waitlist');
+  if (wl) wl.addEventListener('submit', (e) => { e.preventDefault(); joinWaitlist(e.target); });
+
   // vendor type
   document.querySelectorAll('[data-vendor-type]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      if ((state.soldOut || {})[btn.getAttribute('data-vendor-type')]) return;   // sold out
+      const vt = btn.getAttribute('data-vendor-type');
+      if ((state.soldOut || {})[vt] && !(state.claim && state.claim.vendorType === vt)) return;   // sold out
       state.vendorType = btn.getAttribute('data-vendor-type');
 
         document.querySelectorAll('[data-vendor-type]').forEach((b) => {
