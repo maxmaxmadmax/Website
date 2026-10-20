@@ -33,13 +33,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=585';
+} from './firebase-config.js?v=586';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=585';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=585';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=585';
-import { messagesHtml, wireMessages } from './messages.js?v=585';
-import { expandKit } from './kit.js?v=585';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=586';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=586';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=586';
+import { messagesHtml, wireMessages } from './messages.js?v=586';
+import { expandKit } from './kit.js?v=586';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5417,12 +5417,12 @@ function quoteBuilderHtml() {
           <div class="qb-to">
             <p class="qb-block-h">${isInvoice ? 'Bill to' : 'Quote to'}</p>
             ${quoteCustSearchHtml()}
-            <input class="qb-cin qb-cin-strong" data-qc="name" value="${attr(c.name)}" placeholder="Customer name">
-            <input class="qb-cin" data-qc="business" value="${attr(c.business)}" placeholder="Business (optional)">
-            <input class="qb-cin" data-qc="address" value="${attr(c.address)}" placeholder="Address">
-            <input class="qb-cin" data-qc="phone" value="${attr(c.phone)}" placeholder="Phone">
-            <input class="qb-cin" type="email" data-qc="email" value="${attr(c.email)}" placeholder="Email">
-            <input class="qb-cin qb-cin-cc" type="email" multiple data-qc="ccEmail" value="${attr(c.ccEmail || '')}" placeholder="CC emails (optional) - separate with commas, all get a copy">
+            <label class="qb-fl"><span>Name</span><input class="qb-cin qb-cin-strong" data-qc="name" value="${attr(c.name)}" placeholder="Customer name"></label>
+            <label class="qb-fl"><span>Business</span><input class="qb-cin" data-qc="business" value="${attr(c.business)}" placeholder="Business (optional)"></label>
+            <label class="qb-fl"><span>Address</span><input class="qb-cin" data-qc="address" value="${attr(c.address)}" placeholder="Address"></label>
+            <label class="qb-fl"><span>Phone</span><input class="qb-cin" data-qc="phone" value="${attr(c.phone)}" placeholder="Phone"></label>
+            <label class="qb-fl"><span>Email</span><input class="qb-cin" type="email" data-qc="email" value="${attr(c.email)}" placeholder="Email"></label>
+            <div class="qb-fl"><span>CC &middot; also gets a copy</span><div class="qb-cc" id="qb-cc">${ccChipsInner(c.ccEmail)}</div></div>
           </div>
           <div class="qb-hire">
             <p class="qb-block-h">Hire period</p>
@@ -5510,6 +5510,22 @@ function quoteBuilderHtml() {
 let quoteEventDateAuto = '';
 /*  "Tue 20 Oct 2026" -> "2026-10-20", for the event-date calendar (Max, 20 Oct 2026).
     Older quotes typed without a year come back blank - just pick the date. */
+/*  CC EMAILS AS CHIPS (Max, 20 Oct 2026): type an address, press Enter or a
+    comma, and it becomes a tag; x removes it. Saved as "a@b.com, c@d.com"
+    in customer.ccEmail, the same as before - everyone listed gets a copy. */
+const CC_RE = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
+function ccList(str) {
+  return String(str || '').split(/[,;\s]+/).map((e) => e.trim()).filter(Boolean);
+}
+function ccChipsInner(str) {
+  const list = ccList(str);
+  return ''
+    + list.map((e, i) => '<span class="qb-chip' + (CC_RE.test(e) ? '' : ' is-bad') + '" title="' + attr(CC_RE.test(e) ? 'Gets a copy of every email' : 'This does not look like an email address') + '">'
+      + esc(e) + '<button type="button" data-cc-del="' + i + '" aria-label="Remove ' + attr(e) + '">&times;</button></span>').join('')
+    + '<input class="qb-cc-in" type="email" autocomplete="off" placeholder="' + (list.length ? 'Add another&hellip;' : 'Copy someone in (optional) - type an email, press Enter') + '">'
+    + '<p class="qb-cc-msg" hidden></p>';
+}
+
 function isoFromPretty(text) {
   const m = /(\d{1,2})\s+([A-Za-z]{3})[a-z]*\s+(\d{4})/.exec(String(text || ''));
   if (!m) return /^\d{4}-\d{2}-\d{2}$/.test(String(text || '')) ? text : '';
@@ -6238,6 +6254,58 @@ function wireQuoteBuilder() {
   const wrap = document.querySelector('.q-build');
   if (!wrap) return;
 
+
+  // CC chips
+  const ccBox = document.getElementById('qb-cc');
+  if (ccBox) {
+    const ccSet = (list, keepFocus) => {
+      quoteDraft.customer.ccEmail = list.join(', ');
+      ccBox.innerHTML = ccChipsInner(quoteDraft.customer.ccEmail);
+      if (keepFocus) ccBox.querySelector('.qb-cc-in').focus();
+      if (typeof scheduleQuoteAutosave === 'function') scheduleQuoteAutosave();
+    };
+    const ccAdd = (input, keepFocus) => {
+      const typed = ccList(input.value);
+      if (!typed.length) return;
+      const bad = typed.filter((x) => !CC_RE.test(x));
+      if (bad.length) {
+        const msg = ccBox.querySelector('.qb-cc-msg');
+        if (msg) { msg.hidden = false; msg.textContent = '"' + bad.join(', ') + '" doesn\'t look like an email address.'; }
+        return;
+      }
+      const have = ccList(quoteDraft.customer.ccEmail);
+      typed.forEach((x) => { if (!have.some((h) => h.toLowerCase() === x.toLowerCase())) have.push(x); });
+      ccSet(have, keepFocus);
+    };
+    ccBox.addEventListener('click', (e) => {
+      const del = e.target.closest('[data-cc-del]');
+      if (del) {
+        const list = ccList(quoteDraft.customer.ccEmail);
+        list.splice(Number(del.getAttribute('data-cc-del')), 1);
+        ccSet(list, true);
+        return;
+      }
+      const inp = ccBox.querySelector('.qb-cc-in');
+      if (inp && e.target === ccBox) inp.focus();
+    });
+    ccBox.addEventListener('keydown', (e) => {
+      if (!e.target.classList.contains('qb-cc-in')) return;
+      if (e.key === 'Enter' || e.key === ',' || e.key === ';' || (e.key === 'Tab' && e.target.value.trim())) {
+        e.preventDefault();
+        ccAdd(e.target, true);
+      } else if (e.key === 'Backspace' && !e.target.value) {
+        const list = ccList(quoteDraft.customer.ccEmail);
+        if (list.length) { list.pop(); ccSet(list, true); }
+      }
+    });
+    ccBox.addEventListener('paste', (e) => {
+      if (!e.target.classList.contains('qb-cc-in')) return;
+      setTimeout(() => ccAdd(e.target, true), 0);
+    });
+    ccBox.addEventListener('focusout', (e) => {
+      if (e.target.classList.contains('qb-cc-in') && e.target.value.trim()) ccAdd(e.target, false);
+    });
+  }
 
   // customer / hire / meta fields
   wrap.addEventListener('input', (e) => {
@@ -8133,7 +8201,7 @@ async function syncCustomerFromQuote() {
       const changes = {};
       ['name', 'business', 'address', 'phone', 'email', 'ccEmail'].forEach((k) => {
         const v = String(c[k] || '').trim();
-        if (v && v !== (target[k] || '')) changes[k] = v.slice(0, k === 'address' ? 300 : 200);
+        if (v && v !== (target[k] || '')) changes[k] = v.slice(0, k === 'address' ? 300 : (k === 'ccEmail' ? 600 : 200));
       });
       if (Object.keys(changes).length) {
         changes.updatedAt = Date.now();

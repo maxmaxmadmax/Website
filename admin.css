@@ -4504,3 +4504,18 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 
 /* late payment charges in the Sales Pipeline (Max, 20 Oct 2026) */
 .sp-late{ display:block; font-size:11px; font-weight:600; color:var(--ad-red); }
+
+/* CC emails as chips in the quote builder (Max, 20 Oct 2026) */
+.qb-cc{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:6px 8px; border:1px dashed var(--ad-line); border-radius:10px; background:#fafbfc; cursor:text; margin-top:4px; }
+.qb-cc:focus-within{ border-style:solid; border-color:var(--ad-orange); background:#fff; }
+.qb-cc-label{ font-size:11px; font-weight:800; letter-spacing:.08em; color:var(--ad-muted); padding:0 4px; }
+.qb-chip{ display:inline-flex; align-items:center; gap:4px; padding:4px 6px 4px 10px; border-radius:999px; background:#fff2e8; color:#7a3c00; font-size:13px; font-weight:600; }
+.qb-chip.is-bad{ background:#fdecec; color:#b3261e; }
+.qb-chip button{ border:0; background:none; font-size:16px; line-height:1; cursor:pointer; color:inherit; opacity:.6; padding:0 2px; }
+.qb-chip button:hover{ opacity:1; }
+.qb-cc-in{ flex:1; min-width:180px; border:0; outline:0; background:transparent; font:inherit; font-size:14px; padding:4px 2px; }
+.qb-cc-msg{ flex-basis:100%; margin:2px 4px; font-size:12px; color:#b3261e; }
+/* tiny labels on the quote's customer fields (Max, 20 Oct 2026) */
+.qb-fl{ display:block; margin:0; }
+.qb-fl > span{ display:block; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#9aa0a8; margin:6px 0 0 2px; }
+.qb-fl .qb-cin{ margin-top:0; width:100%; box-sizing:border-box; }
