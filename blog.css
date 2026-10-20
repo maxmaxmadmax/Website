@@ -79,3 +79,4 @@ body:has(.bl-wrap) #navbar > nav{ background:#000; }
 /* the one-line verdict */
 .bl-verdict{ margin:30px 0 !important; padding:18px 22px; border-left:4px solid var(--sg-orange); background:#fafafa; border-radius:10px;
   font-family:var(--sg-font-display); font-size:clamp(19px, 3vw, 23px); line-height:1.35; color:#111; }
+.bl-verdict cite{ display:block; margin-top:8px; font-family:var(--sg-font); font-style:normal; font-size:13px; font-weight:700; color:#777; }
