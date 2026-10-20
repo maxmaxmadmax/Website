@@ -33,13 +33,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=603';
+} from './firebase-config.js?v=604';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=603';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=603';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=603';
-import { messagesHtml, wireMessages } from './messages.js?v=603';
-import { expandKit } from './kit.js?v=603';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=604';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=604';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=604';
+import { messagesHtml, wireMessages } from './messages.js?v=604';
+import { expandKit } from './kit.js?v=604';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5108,6 +5108,7 @@ function quoteFromDoc(doc) {
       return c;
     }),
     feeExcluded: doc.feeExcluded === true,
+    autoSendOnDetails: doc.autoSendOnDetails === true,
     discountCents: Math.max(0, Math.round(doc.discountCents || 0)),
     labourExcluded: doc.labourExcluded === true,
     labourPH: { setup: !!(doc.labourPH && doc.labourPH.setup), pack: !!(doc.labourPH && doc.labourPH.pack) },
@@ -5239,6 +5240,7 @@ function quoteBuilderHtml() {
           <div class="qb-to">
             <p class="qb-block-h">${isInvoice ? 'Bill to' : 'Quote to'}</p>
             ${quoteCustSearchHtml()}
+            <label class="qb-autosend"><input type="checkbox" data-qauto${quoteDraft.autoSendOnDetails ? ' checked' : ''}> Send them the quote automatically when they fill it in</label>
             <button type="button" class="qb-askbtn" id="q-askdetails">&#128241; Text ${attr(String(c.name || 'the customer').split(' ')[0])} a link to fill in their own details</button>
             <label class="qb-fl"><span>Name</span><input class="qb-cin qb-cin-strong" data-qc="name" value="${attr(c.name)}" placeholder="Customer name"></label>
             <label class="qb-fl"><span>Business</span><input class="qb-cin" data-qc="business" value="${attr(c.business)}" placeholder="Business (optional)"></label>
@@ -6138,6 +6140,7 @@ function wireQuoteBuilder() {
     const t = e.target;
     if (t.dataset.qc) { quoteDraft.customer[t.dataset.qc] = t.value; return; }
     // event date calendar: saved as "Tue 20 Oct 2026" like before
+    if (t.hasAttribute('data-qauto')) { quoteDraft.autoSendOnDetails = t.checked; scheduleQuoteAutosave(); return; }
     if (t.hasAttribute('data-qevdate')) { quoteDraft.customer.eventDate = prettyEventDate(t.value); return; }
     if (t.dataset.qmeta) { quoteDraft[t.dataset.qmeta] = t.value; return; }
     if (t.hasAttribute('data-qdisc')) {
@@ -6427,6 +6430,7 @@ function quoteDraftForSave() {
   return {
     ...quoteDraft, lines,
     feeExcluded: quoteDraft.feeExcluded === true,
+    autoSendOnDetails: quoteDraft.autoSendOnDetails === true,
     labourExcluded: quoteDraft.labourExcluded === true,
     labourOff: { setup: !!(quoteDraft.labourOff || {}).setup, pack: !!(quoteDraft.labourOff || {}).pack },
     labourPackDate: quoteDraft.labourPackDate || '',

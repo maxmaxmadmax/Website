@@ -65,3 +65,9 @@
 .spn-thanks-big{ text-align:center; }
 .spn-thanks-big h2{ font-size:32px; }
 .spn-thanks-big .spn-btn{ margin-top:6px; }
+/* details form: "(optional)" sits beside the label so every box lines up */
+.spn-form label > span{ display:inline; }
+.spn-form label{ align-content:start; }
+#dt-form label{ display:block; }
+#dt-form label > span{ display:inline; margin-left:4px; }
+#dt-form label > input{ display:block; width:100%; box-sizing:border-box; margin-top:6px; }

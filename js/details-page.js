@@ -8,7 +8,7 @@
    Uses the sponsor page styles (sponsor.css).
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=603';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=604';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) => String(v == null ? '' : v)
@@ -30,11 +30,12 @@ function prettyFromIso(iso) {
   return new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).replace(/,/g, '');
 }
 
-function done(quoteLink) {
+function done(quoteLink, autoSent) {
   document.getElementById('dt-root').innerHTML = `<section class="spn-sec spn-thanks-big">
     <h2>Thank you!</h2>
+    ${autoSent ? '<p>Your details are in &mdash; <b>your quote is on its way to your inbox</b>. You can also look at it now:</p>' : ''}
     ${quoteLink
-      ? `<p>Your details are in. Your quote is ready to look at:</p><p><a class="spn-btn" href="${esc(quoteLink)}">View your quote &rarr;</a></p>`
+      ? (autoSent ? '' : '<p>Your details are in. Your quote is ready to look at:</p>') + `<p><a class="spn-btn" href="${esc(quoteLink)}">View your quote &rarr;</a></p>`
       : '<p>Your details are in &mdash; Max will send your quote shortly.</p>'}
     <p class="spn-sub">Questions? Call Max on 0422 393 022.</p></section>`;
 }
@@ -76,7 +77,7 @@ function render(d) {
         ccEmail: v('ccEmail'), address: v('address'), eventName: v('eventName'),
         eventDate: prettyFromIso(v('eventDate')), eventVenue: v('eventVenue'),
       });
-      done(res.data && res.data.quoteLink);
+      done(res.data && res.data.quoteLink, res.data && res.data.autoSent);
     } catch (err) {
       btn.disabled = false;
       msg.hidden = false;

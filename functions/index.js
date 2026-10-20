@@ -2496,6 +2496,7 @@ function sanitizeQuote(q) {
     discountCents: Math.max(0, Math.round(Number(q.discountCents) || 0)),
     labourExcluded: q.labourExcluded === true,
     feeExcluded: q.feeExcluded === true,
+    autoSendOnDetails: q.autoSendOnDetails === true,   // send the quote when the customer fills in their details (Max, 20 Oct 2026)
     labourPH: { setup: !!(q.labourPH && q.labourPH.setup), pack: !!(q.labourPH && q.labourPH.pack) },
     labourOff: { setup: !!(q.labourOff && q.labourOff.setup), pack: !!(q.labourOff && q.labourOff.pack) },
     labourPackDate: /^\d{4}-\d{2}-\d{2}$/.test(String(q.labourPackDate || '')) ? String(q.labourPackDate) : '',
@@ -4554,8 +4555,26 @@ exports.submitDetails = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (reque
       + '\n\nThey are already on the quote - open it in the Sales Pipeline.',
   }, {}, { to: process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au' });
 
+  /*  PRE-APPROVED (Max, 20 Oct 2026): "Send them the quote automatically when
+      they fill it in" was ticked - the quote goes to the email they just gave. */
+  let autoSent = false;
+  if (q.autoSendOnDetails && q.token && ['approved', 'sent'].includes(q.status) && !q.autoSentOnDetailsAt) {
+    const link = SITE_URL + '/quote?t=' + q.token;
+    const mail = await sendQuoteLinkEmail({ ...q, customer }, link);
+    if (mail.sent) {
+      autoSent = true;
+      await doc.ref.update({
+        ...(q.status === 'approved' ? { status: 'sent', sentAt: FieldValue.serverTimestamp() } : {}),
+        autoSentOnDetailsAt: FieldValue.serverTimestamp(),
+        lastEmailedAt: FieldValue.serverTimestamp(),
+        lastEmailedTo: customer.email + (customer.ccEmail ? ' (cc ' + customer.ccEmail + ')' : ''),
+        emailCount: FieldValue.increment(1),
+      });
+    }
+  }
+
   const ready = ['approved', 'sent', 'accepted', 'invoiced', 'paid'].includes(q.status) && q.token;
-  return { ok: true, quoteLink: ready ? SITE_URL + '/quote?t=' + q.token : '' };
+  return { ok: true, autoSent, quoteLink: ready ? SITE_URL + '/quote?t=' + q.token : '' };
 });
 
 /* =========================================================================

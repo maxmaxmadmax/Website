@@ -6,7 +6,7 @@
    admin and everyone on the crew link sees the same list. The list also
    refreshes itself every 20 seconds while it's open.
    ========================================================================== */
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=603';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=604';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 

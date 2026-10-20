@@ -4574,3 +4574,5 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 /* Ask the customer for their details - in the Quote to box (Max, 20 Oct 2026) */
 .qb-askbtn{ display:block; width:100%; margin:8px 0 4px; padding:10px 12px; border:1px solid #ffd9b3; background:#fff7ef; color:#9a4a00; border-radius:10px; font:inherit; font-weight:700; font-size:14px; text-align:left; cursor:pointer; }
 .qb-askbtn:hover{ background:#ffefe0; }
+.qb-autosend{ display:flex; gap:8px; align-items:center; margin:8px 2px 0; font-size:13px; color:#444; cursor:pointer; }
+.qb-autosend input{ accent-color:var(--ad-orange); width:16px; height:16px; }
