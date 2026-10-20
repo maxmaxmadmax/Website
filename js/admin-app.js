@@ -33,13 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=627';
+} from './firebase-config.js?v=628';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=627';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=627';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=627';
-import { messagesHtml, wireMessages } from './messages.js?v=627';
-import { expandKit } from './kit.js?v=627';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=628';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=628';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=628';
+import { messagesHtml, wireMessages } from './messages.js?v=628';
+import { dashboardHtml } from './dashboard.js?v=628';
+import { expandKit } from './kit.js?v=628';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -381,12 +382,12 @@ function wireChrome() {
 /* -------------------------------------------------------------------------
    Routing
    ------------------------------------------------------------------------- */
-const BUILT = ['events', 'vendors', 'applications', 'map', 'entertainment',
+const BUILT = ['dashboard', 'events', 'vendors', 'applications', 'map', 'entertainment',
                'settings', 'vendorEmail', 'inventory',
                'quoteDocs', 'packages', 'resources', 'leads', 'leadRate', 'customers'];
 
-/*  Vendors is where the work is, so it is what you land on. */
-const HOME = 'vendors';
+/*  The Dashboard is what you land on (Max, 20 Oct 2026). */
+const HOME = 'dashboard';
 
 function routeFromHash() {
   const [want0, qs] = (location.hash.replace('#/', '') || HOME).split('?');
@@ -508,7 +509,7 @@ function subscribeToEvent() {
     (snap) => {
       state.sponsors = [];
       snap.forEach((d) => state.sponsors.push({ id: d.id, ...d.data() }));
-      if (state.view === 'vendorEmail' && !state.msgOpen && state.msgTab === 'sponsors') render();
+      if ((state.view === 'vendorEmail' && !state.msgOpen && state.msgTab === 'sponsors') || state.view === 'dashboard') render();
     },
     (err) => console.error('sponsors', err)
   ));
@@ -520,7 +521,7 @@ function subscribeToEvent() {
     (snap) => {
       state.waitlist = [];
       snap.forEach((d) => state.waitlist.push({ id: d.id, ...d.data() }));
-      if (state.view === 'vendorEmail' && !state.msgOpen) render();
+      if ((state.view === 'vendorEmail' && !state.msgOpen) || state.view === 'dashboard') render();
     },
     (err) => console.error('waitlist', err)
   ));
@@ -536,7 +537,7 @@ function subscribeToEvent() {
       state.messages = [];
       snap.forEach((d) => state.messages.push({ id: d.id, ...d.data() }));
       state.messagesLoaded = true;
-      if (state.view === 'vendorEmail') render();
+      if (state.view === 'vendorEmail' || state.view === 'dashboard') render();
     },
     (err) => console.error('messages', err)
   ));
@@ -623,7 +624,7 @@ function subscribeToQuoteDocs() {
       updateBotBadge();
       promoteMyEstimates();
       if (state.pendingQuoteId && state.view === 'quoteDocs') { state.pendingQuoteId = null; routeFromHash(); render(); return; }
-      if (state.view === 'quoteDocs' && !state.openQuoteId) render();
+      if ((state.view === 'quoteDocs' && !state.openQuoteId) || state.view === 'dashboard') render();
     },
     (err) => console.error('quotes', err)
   ));
@@ -3305,6 +3306,27 @@ async function loadLog() {
   snap.forEach((d) => out.push({ id: d.id, ...d.data() }));
   return out;
 }
+/*  DASHBOARD (Max, 20 Oct 2026) - the look lives in js/dashboard.js.
+    The email log is not live (it's 150 docs), so it is read once when the
+    dashboard opens, for the "emails that failed" to-do.                   */
+let dashLog = null;
+let dashLogAt = 0;
+VIEWS.dashboard = {
+  html() {
+    return dashboardHtml({
+      quotes: state.quoteDocs || [], bookings: state.bookings || [], sites: state.sites || [],
+      sponsors: state.sponsors || [], waitlist: state.waitlist || [], messages: state.messages || [],
+      events: state.events || [], activeEventId: state.activeEventId, emailLog: dashLog || [],
+      h: { esc, attr, money },
+    });
+  },
+  wire() {
+    if (Date.now() - dashLogAt < 5 * 60000) return;   // at most every 5 minutes
+    dashLogAt = Date.now();
+    loadLog().then((log) => { dashLog = log; if (state.view === 'dashboard') render(); }).catch(() => {});
+  },
+};
+
 VIEWS.vendorEmail = {
   html() { return messagesHtml(msgCtx()); },
   wire() { wireMessages(msgCtx()); },

@@ -88,10 +88,23 @@ export function pickKey(p) {
 }
 
 /* { lines, packed, returned } for a job's pick list */
-export function pickProgress(q) {
-  const items = pickItems(q && q.lines);
+/*  Since 20 Oct 2026 the pick list is laid out like the quote and saves a
+    tick per LINE (key = itemKey + '_L' + line index - KEEP IN STEP with the
+    rows in getPickList, functions/index.js). Ticks saved before that are per
+    item, so a line falls back to its item's tick.                        */
+export function pickLineProgress(q) {
   const t = (q && q.pickTicks) || {};
-  let packed = 0, returned = 0;
-  items.forEach((p) => { const k = t[pickKey(p)]; if (k && k.packed) packed++; if (k && k.returned) returned++; });
-  return { lines: items.length, packed, returned };
+  let lines = 0, packed = 0, returned = 0;
+  ((q && q.lines) || []).forEach((l, idx) => {
+    if (!l || !['item', 'kit', 'custom'].includes(l.type) || l.resType) return;
+    if (!Math.max(0, Math.round(Number(l.qty) || 0))) return;
+    const name = String(l.name || '').replace(/ \(included\)$/i, '').trim();
+    const itemKey = pickKey({ itemId: l.itemId || '', name });
+    const k = t[itemKey.slice(0, 110) + '_L' + idx] || t[itemKey] || {};
+    lines++;
+    if (k.packed) packed++;
+    if (k.returned) returned++;
+  });
+  return { lines, packed, returned };
 }
+export function pickProgress(q) { return pickLineProgress(q); }
