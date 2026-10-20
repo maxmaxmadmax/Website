@@ -71,3 +71,5 @@
 #dt-form label{ display:block; }
 #dt-form label > span{ display:inline; margin-left:4px; }
 #dt-form label > input{ display:block; width:100%; box-sizing:border-box; margin-top:6px; }
+/* details form: what is still needed before the button lights up */
+.dt-hint{ grid-column:1 / -1; margin:-4px 0 0; font-size:13px; color:#b45309; min-height:1em; }

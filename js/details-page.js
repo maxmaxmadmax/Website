@@ -8,7 +8,7 @@
    Uses the sponsor page styles (sponsor.css).
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=607';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=608';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) => String(v == null ? '' : v)
@@ -61,6 +61,7 @@ function render(d) {
       <label>Event date <span>(optional)</span><input name="eventDate" type="date" value="${esc(date)}"></label>
       ${f('eventVenue', 'Venue', c.eventVenue, 'text', false, true, 'Where is it on?')}
       <button type="submit" class="spn-btn">${d.received ? 'Save my details' : (d.quoteLink || d.autoSend ? 'View my quote' : 'Send my details')}</button>
+      <p class="dt-hint" id="dt-hint"></p>
       <p class="spn-msg" id="dt-msg" hidden></p>
     </form>
   </section>`;
@@ -68,15 +69,25 @@ function render(d) {
       name are filled in (Max, 20 Oct 2026). */
   const dtForm = document.getElementById('dt-form');
   const dtBtn = dtForm.querySelector('button[type="submit"]');
-  const filled = () => {
+  const dtHint = document.getElementById('dt-hint');
+  // what is still missing, in plain words (empty list = good to go)
+  const missing = () => {
     const val = (n) => String((dtForm.querySelector('[name="' + n + '"]') || {}).value || '').trim();
-    return val('name').split(/\s+/).length >= 2
-      && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('email'))
-      && val('phone').replace(/[^0-9]/g, '').length >= 8
-      && !!val('eventName');
+    const out = [];
+    if (val('name').split(/\s+/).length < 2) out.push('your first and last name');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('email'))) out.push('your email');
+    if (val('phone').replace(/[^0-9]/g, '').length < 8) out.push('your phone number');
+    if (!val('eventName')) out.push('the event name');
+    return out;
   };
-  const check = () => { dtBtn.disabled = !filled(); };
+  const filled = () => missing().length === 0;
+  const check = () => {
+    const m = missing();
+    dtBtn.disabled = m.length > 0;
+    dtHint.textContent = m.length ? 'Please add ' + m.join(', ').replace(/, ([^,]*)$/, ' and $1') + '.' : '';
+  };
   dtForm.addEventListener('input', check);
+  dtForm.addEventListener('change', check);   // autofill sometimes only fires "change"
   check();
   dtForm.addEventListener('submit', async (e) => {
     e.preventDefault();
