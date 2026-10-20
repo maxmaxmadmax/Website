@@ -1587,3 +1587,9 @@
     #sg-services-page .sgs-an-card:hover{ transform:none; }
     #sg-services-page .sgs-an-card:hover .sgs-an-art{ transform:none; }
 }
+
+/* job story link on an event card (Max, 20 Oct 2026) - stretched so the whole card clicks */
+.sgs-an-card{ position:relative; }
+.sgs-an-read{ display:inline-block; margin-top:12px; color:var(--sg-gold, #ffb700); font-size:12px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; text-decoration:none; }
+.sgs-an-read::after{ content:""; position:absolute; inset:0; }
+.sgs-an-read:hover{ text-decoration:underline; }

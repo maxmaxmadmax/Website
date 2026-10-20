@@ -1,0 +1,63 @@
+/* ==========================================================================
+   JOB STORIES / BLOG POSTS  (Max, 20 Oct 2026)
+   One article per event we've worked on - e.g. don-river-dash-event-sound-bowen.html.
+   Dark site colours from style.css; a narrow column so it's easy to read.
+   ========================================================================== */
+
+.bl-wrap{ background:var(--sg-black); padding:110px 16px 70px; }
+.bl-post{ max-width:760px; margin:0 auto; color:var(--sg-muted); font-size:17px; line-height:1.7; }
+
+/* breadcrumb */
+.bl-crumbs{ font-size:13px; color:var(--sg-dim); margin-bottom:22px; }
+.bl-crumbs a{ color:var(--sg-dim); text-decoration:none; }
+.bl-crumbs a:hover{ color:var(--sg-orange); }
+.bl-crumbs span{ margin:0 4px; }
+
+/* title block */
+.bl-eyebrow{ color:var(--sg-orange); font-size:12px; font-weight:800; letter-spacing:.18em; text-transform:uppercase; margin:0 0 10px; }
+.bl-head h1{ font-family:var(--sg-font-display); color:var(--sg-text); font-size:clamp(28px, 5vw, 44px); line-height:1.1; margin:0 0 18px; }
+.bl-lead{ font-size:19px; color:var(--sg-text); margin:0 0 28px; }
+
+.bl-hero{ margin:0 0 28px; }
+.bl-hero img{ display:block; width:100%; height:auto; border-radius:14px; }
+
+/* quick facts */
+.bl-facts{ display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:1px; background:var(--sg-border);
+  border:1px solid var(--sg-border); border-radius:12px; overflow:hidden; margin:0 0 36px; }
+.bl-facts div{ background:var(--sg-panel); padding:14px 16px; }
+.bl-facts dt{ font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--sg-orange); }
+.bl-facts dd{ margin:4px 0 0; color:var(--sg-text); font-size:15px; line-height:1.4; }
+
+/* body copy */
+.bl-post h2{ font-family:var(--sg-font-display); color:var(--sg-text); font-size:clamp(21px, 3.2vw, 27px); line-height:1.2; margin:40px 0 12px; }
+.bl-post p{ margin:0 0 16px; }
+.bl-post ul{ margin:0 0 18px; padding-left:22px; }
+.bl-post li{ margin:0 0 8px; }
+.bl-post strong{ color:var(--sg-text); }
+.bl-post a{ color:var(--sg-gold); }
+
+.bl-gear{ list-style:none; padding:0 !important; }
+.bl-gear li{ background:var(--sg-panel); border-left:3px solid var(--sg-orange); border-radius:8px; padding:12px 14px; }
+.bl-gear b{ color:var(--sg-gold); margin-right:6px; }
+
+.bl-quote{ margin:0 0 18px; padding:20px 22px; background:var(--sg-panel); border-left:4px solid var(--sg-gold); border-radius:10px;
+  font-family:var(--sg-font-display); font-size:26px; color:var(--sg-text); }
+.bl-quote span{ display:block; margin-top:6px; font-family:var(--sg-font); font-size:13px; color:var(--sg-dim); }
+
+/* call to action */
+.bl-cta{ margin-top:34px; padding:24px; border-radius:14px; background:linear-gradient(140deg, #2a1300, #111 60%); border:1px solid #3a1d00;
+  display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+.bl-cta p{ flex:1 1 100%; margin:0 0 4px; }
+.bl-cta p strong{ display:block; font-family:var(--sg-font-display); font-size:22px; margin-bottom:2px; }
+.bl-btn{ display:inline-block; border:0; cursor:pointer; background:var(--sg-orange); color:#fff !important; font:inherit; font-weight:800; font-size:15px;
+  padding:13px 20px; border-radius:10px; text-decoration:none; }
+.bl-btn:hover{ background:var(--sg-orange-bright); }
+.bl-btn-ghost{ background:transparent; border:1px solid #555; }
+.bl-btn-ghost:hover{ background:#222; }
+
+@media (max-width:600px){
+  .bl-wrap{ padding-top:90px; }
+  .bl-post{ font-size:16px; }
+  .bl-lead{ font-size:17px; }
+  .bl-btn{ width:100%; text-align:center; }
+}
