@@ -4534,3 +4534,30 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ad-rail{ overflow:hidden; }
 .ad-rail .ad-brand, .ad-rail .ad-rail-foot{ flex:none; }
 .ad-rail .ad-nav{ flex:1 1 auto; min-height:0; overflow-y:auto; }
+
+/* Messages > Sponsors (Max, 20 Oct 2026) */
+.ms-sp-goal{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; padding:14px 18px; margin-bottom:14px; }
+.ms-sp-goal b{ font-size:18px; }
+.ms-sp-goal span{ color:#9a6200; font-weight:700; }
+.ms-sp-goal a{ margin-left:auto; color:var(--ad-orange); font-weight:700; text-decoration:none; }
+.ms-sp-bar{ flex:1 1 240px; height:12px; border-radius:999px; background:#eceef1; overflow:hidden; display:flex; }
+.ms-sp-bar span{ background:#1f9d55; }
+.ms-sp-bar i{ background:#f5b041; }
+.ms-sp{ margin-top:14px; }
+.ms-sp-bar2{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:14px 16px 8px; }
+.ms-sp-bar2 b{ font-size:16px; }
+.ms-sp-bar2 > span{ color:var(--ad-muted); margin-right:auto; }
+.ms-sp-warn{ margin:0 16px 8px; }
+.ms-sp-form{ display:flex; gap:8px; flex-wrap:wrap; padding:6px 16px 12px; }
+.ms-sp-form .ad-input{ flex:1 1 160px; }
+.ms-sp-pick{ padding:6px 16px 12px; }
+.ms-sp-picklist{ max-height:260px; overflow:auto; border:1px solid var(--ad-line); border-radius:8px; padding:6px 10px; margin-bottom:8px; }
+.ms-sp-picklist label{ display:block; padding:5px 0; font-size:14px; }
+.ms-sp-picklist span{ color:var(--ad-muted); font-size:13px; }
+.ms-sp-sel{ max-width:150px; font-size:13px; padding:4px 6px; }
+.ms-sp-chip{ display:none; }
+.ms-sp-email{ max-width:200px; font-size:13px; padding:4px 8px; }
+.ms-sp-amt{ width:90px; font-size:13px; padding:4px 8px; margin-top:4px; }
+.ms-sp-note{ white-space:nowrap; text-align:right; }
+.ms-sp-del{ border:0; background:none; font-size:18px; color:#c62828; cursor:pointer; opacity:.6; }
+.ms-sp-del:hover{ opacity:1; }

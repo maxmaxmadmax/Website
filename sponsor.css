@@ -1,0 +1,61 @@
+/* ==========================================================================
+   SPONSOR PAGE (Max, 20 Oct 2026) - also prints as the A4 sponsor pack
+   ========================================================================== */
+.spn-page{ background:#0b0b0b; }
+.spn-wrap{ max-width:1100px; margin:0 auto; padding:110px 20px 40px; color:#fff; font-family:Arial,Helvetica,sans-serif; }
+.spn-loading{ text-align:center; padding:80px 0; }
+.spn-hero{ display:flex; flex-wrap:wrap; gap:32px; align-items:center; padding:32px; border-radius:18px;
+  background:linear-gradient(180deg,#ff6b00 0%,#d95a00 55%,#0b0b0b 100%); }
+.spn-poster{ width:min(100%,280px); border-radius:12px; box-shadow:0 12px 32px rgba(0,0,0,.5); }
+.spn-hero-text{ flex:1 1 320px; }
+.spn-eyebrow{ margin:0; font-size:12px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
+.spn-hero h1{ margin:6px 0 6px; font-size:clamp(30px,5vw,48px); line-height:1.05; text-transform:uppercase; }
+.spn-when{ margin:0 0 14px; font-weight:700; }
+.spn-lead{ margin:0 0 18px; font-size:16px; line-height:1.6; max-width:620px; }
+.spn-hero-btns{ display:flex; flex-wrap:wrap; gap:10px; }
+.spn-btn{ display:inline-block; border:0; cursor:pointer; background:#ff6b00; color:#fff; font:inherit; font-weight:800; font-size:15px; padding:13px 22px; border-radius:10px; text-decoration:none; }
+.spn-hero .spn-btn{ background:#111; }
+.spn-btn-ghost{ background:#fff !important; color:#111 !important; }
+.spn-btn:disabled{ opacity:.5; cursor:default; }
+.spn-sec{ background:#fff; color:#1a1a1a; border-radius:18px; padding:30px; margin-top:18px; }
+.spn-sec h2{ margin:0 0 10px; font-size:26px; text-transform:uppercase; }
+.spn-sub{ margin:0 0 16px; color:#666; }
+.spn-why{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+.spn-why div{ background:#fff7ef; border:1px solid #ffd9b3; border-radius:12px; padding:16px; }
+.spn-why b{ display:block; font-size:16px; margin-bottom:6px; }
+.spn-why p{ margin:0; font-size:14px; line-height:1.5; color:#444; }
+.spn-costs ul{ columns:2; margin:10px 0 0; padding-left:20px; line-height:1.8; }
+.spn-levels{ display:grid; grid-template-columns:repeat(auto-fit,minmax(175px,1fr)); gap:12px; }
+.spn-level{ display:flex; flex-direction:column; border:2px solid #ececec; border-radius:14px; padding:18px; }
+.spn-level.is-top{ border-color:#ff6b00; background:#fff7ef; }
+.spn-level.is-out{ opacity:.55; }
+.spn-level-name{ margin:0; font-weight:800; font-size:15px; text-transform:uppercase; letter-spacing:.03em; }
+.spn-level-price{ margin:6px 0 2px; font-size:26px; font-weight:900; }
+.spn-level-price small{ font-size:13px; font-weight:600; color:#777; }
+.spn-level-left{ margin:0 0 10px; font-size:13px; font-weight:700; color:#b25b00; }
+.spn-level ul{ margin:0 0 14px; padding-left:18px; font-size:14px; line-height:1.5; color:#333; flex:1; }
+.spn-level .spn-btn{ align-self:flex-start; padding:10px 16px; font-size:14px; }
+.spn-form{ display:grid; grid-template-columns:1fr 1fr; gap:12px 14px; }
+.spn-form label{ display:grid; gap:5px; font-size:13px; font-weight:700; }
+.spn-form label span{ font-weight:400; color:#888; }
+.spn-form input, .spn-form select, .spn-form textarea{ font:inherit; font-size:15px; padding:11px 12px; border:1px solid #ccc; border-radius:8px; }
+.spn-wide{ grid-column:1 / -1; }
+.spn-form .spn-btn{ grid-column:1 / -1; justify-self:start; }
+.spn-msg{ grid-column:1 / -1; color:#b3261e; margin:0; }
+.spn-done{ grid-column:1 / -1; background:#e7f6ee; border:1px solid #b9e6cd; color:#0f7a43; border-radius:12px; padding:16px 18px; }
+.spn-done b{ font-size:18px; }
+.spn-thanks{ text-align:center; }
+.spn-print-only{ display:none; }
+@media (max-width:760px){ .spn-why{ grid-template-columns:1fr; } .spn-form{ grid-template-columns:1fr; } .spn-costs ul{ columns:1; } .spn-hero{ padding:20px; } }
+
+/* THE SPONSOR PACK: the same page on A4 */
+@media print{
+  @page{ size:A4; margin:12mm; }
+  html, body{ -webkit-print-color-adjust:exact; print-color-adjust:exact; background:#fff !important; }
+  #navbar, #footer, .spn-hero-btns, .spn-level .spn-btn, .spn-form, .spn-form-sec .spn-sub{ display:none !important; }
+  .spn-wrap{ padding:0; max-width:none; }
+  .spn-sec{ padding:14px 4mm; margin-top:8px; break-inside:avoid; }
+  .spn-hero{ break-after:avoid; }
+  .spn-levels{ grid-template-columns:repeat(3,1fr); }
+  .spn-print-only{ display:block; font-size:16px; font-weight:800; }
+}

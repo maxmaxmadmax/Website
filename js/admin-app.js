@@ -33,13 +33,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=593';
+} from './firebase-config.js?v=594';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=593';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=593';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=593';
-import { messagesHtml, wireMessages } from './messages.js?v=593';
-import { expandKit } from './kit.js?v=593';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=594';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=594';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=594';
+import { messagesHtml, wireMessages } from './messages.js?v=594';
+import { expandKit } from './kit.js?v=594';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -499,6 +499,18 @@ function subscribeToEvent() {
       render();
     },
     (err) => console.error('sites', err)
+  ));
+
+  // sponsorship outreach (Max, 20 Oct 2026)
+  state.sponsors = [];
+  unsubscribes.push(onSnapshot(
+    query(collection(fb.db, 'sponsors'), where('eventId', '==', evId)),
+    (snap) => {
+      state.sponsors = [];
+      snap.forEach((d) => state.sponsors.push({ id: d.id, ...d.data() }));
+      if (state.view === 'vendorEmail' && !state.msgOpen && state.msgTab === 'sponsors') render();
+    },
+    (err) => console.error('sponsors', err)
   ));
 
   // vendor waitlist (Max, 20 Oct 2026)
@@ -3197,7 +3209,23 @@ window.__sgAdmin = { state, VIEWS, call, render };
    The page itself lives in js/messages.js; the view key stays 'vendorEmail'
    so old links still land here.
    ========================================================================= */
-function msgCtx() { return { state, h: { esc, attr }, call, render, loadLog }; }
+function msgCtx() { return { state, h: { esc, attr }, call, render, loadLog, sponsors: sponsorStore }; }
+/*  Sponsors tab: the list of businesses to ask (admins write it directly). */
+const sponsorStore = {
+  async add(p) {
+    const { collection, addDoc, serverTimestamp } = fb.f;
+    await addDoc(collection(fb.db, 'sponsors'), { business: '', contactName: '', email: '', phone: '', source: 'manual', ...p,
+      eventId: state.activeEventId, status: 'todo', createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  },
+  async update(id, p) {
+    const { doc, updateDoc, serverTimestamp } = fb.f;
+    await updateDoc(doc(fb.db, 'sponsors', id), { ...p, updatedAt: serverTimestamp() });
+  },
+  async remove(id) {
+    const { doc, deleteDoc } = fb.f;
+    await deleteDoc(doc(fb.db, 'sponsors', id));
+  },
+};
 /*  The last 150 emails the system sent (Messages > Sent emails). */
 async function loadLog() {
   const { collection, getDocs, query, orderBy, limit } = fb.f;

@@ -3762,6 +3762,13 @@ function starterMessages(eventId) {
     { ...base, system: 'waitlist', name: 'Waitlist - a spot opened', status: 'review', trigger: { type: 'waitlist' },
       subject: 'A spot just opened at {{event_name}} - claim it now',
       body: "Hi {{vendor_name}},\n\nGood news - a spot has just opened at {{event_name}} on {{event_date}}, and you're next on the waitlist.\n\nWe've reserved site {{site_number}} for {{business_name}} until {{expires_at}}. Press Accept below to book and pay - the spot is only yours once payment is received.\n\nCan't make it? Press Decline and we'll offer it to the next vendor.\n\nThanks,\nThe SoundzGood team" },
+    // SPONSORSHIP (Max, 20 Oct 2026): the ask (sent when Max presses Send) and a follow-up 7 days later
+    { ...base, audience: 'sponsors', system: 'sponsor-ask', name: 'Sponsorship - the ask', status: 'review', trigger: { type: 'manual' },
+      subject: 'Partnering with {{event_name}} - keeping it free for local families',
+      body: "Hi {{vendor_name}},\n\nI'm Max from SoundzGood - we run Eatz & Beatz, the free community night in Bowen with local food, markets and live music.\n\nWe're planning our next event and we'd love {{business_name}} to be part of it. Keeping the night free for families takes local businesses who believe in it, and in return we put your business in front of the whole community - on the posters, our socials, the event page and from the stage on the night.\n\nThere are a few ways to get involved, from a small supporter right up to presenting partner. Everything is on the page below - have a look and let me know if anything suits.\n\nThanks for considering it,\nMax\nSoundzGood Whitsundays - 0422 393 022" },
+    { ...base, audience: 'sponsors', system: 'sponsor-followup', name: 'Sponsorship - follow-up', status: 'review', trigger: { type: 'sponsorFollowup', days: 7 },
+      subject: 'Following up - {{event_name}}',
+      body: "Hi {{vendor_name}},\n\nJust following up on my note last week about supporting {{event_name}}. No pressure at all - if it's not the right time, a quick reply is perfect and I won't chase again.\n\nIf you'd like to have a chat about it, I'm on 0422 393 022.\n\nThanks,\nMax" },
     // GOOGLE REVIEW (Max, 20 Oct 2026): 3 days after - the Tuesday after a Saturday event
     { ...base, name: 'Google review', status: 'review',
       subject: 'Could you leave us a quick review? - {{event_name}}', trigger: { type: 'daysAfter', days: 3 },
@@ -3896,9 +3903,16 @@ exports.adminMessageTest = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (re
   const m = snap.data();
   const evSnap = await db.collection('events').doc(m.eventId).get();
   const ev = evSnap.exists ? evSnap.data() : {};
-  const list = m.system === 'waitlist' ? [] : await messageRecipients({ ...m, promo: false });
-  if (!list.length && m.system !== 'waitlist') throw new HttpsError('failed-precondition', 'No paid vendors yet to fill the test with.');
+  const noList = m.system === 'waitlist' || m.audience === 'sponsors';
+  const list = noList ? [] : await messageRecipients({ ...m, promo: false });
+  if (!list.length && !noList) throw new HttpsError('failed-precondition', 'No paid vendors yet to fill the test with.');
   if (m.system === 'invoice') return sendVendorInvoice(list[0].id, { test: true, to, useDraft: true });
+  if (m.system === 'sponsor-ask' || m.system === 'sponsor-followup') {
+    const r = await sendMessageEmail({ subject: m.subject, body: m.body }, sponsorValues({ business: 'Sample Business', contactName: 'Sam' }, ev), {
+      to, test: true, actions: [{ label: 'See the sponsor options', url: sponsorLink(m.eventId, ''), primary: true }], note: SPONSOR_NOTE,
+    });
+    return { ...r, to };
+  }
   if (m.system === 'waitlist') {
     const r = await sendMessageEmail({ subject: m.subject, body: m.body }, {
       vendor_name: 'Sam', business_name: 'Sample Food Co', site_number: 'F4', event_name: ev.name || '', event_date: ev.dateLabel || '',
@@ -4280,3 +4294,172 @@ exports.waitlistRespond = onRequest(async (req, res) => {
   await releaseWaitlistSite(w.eventId, w.siteId, d.id, w.claimedUid);
   return page('No worries - thanks for letting us know.', 'We have passed the spot on to the next vendor. We hope to see you at a future event!');
 });
+
+/* =========================================================================
+   SPONSORSHIP OUTREACH  (Max, 20 Oct 2026)
+
+   Messages > Sponsors: Max adds businesses (Lead Generator, typed in, past
+   sponsors), ticks who to ask and presses Send. Each gets the approved
+   "Sponsorship - the ask" email with a personal link to /sponsor. Anyone
+   still "Asked" 7 days later gets the approved follow-up at 9:35 am. The
+   sponsor page's "I'm interested" form lands back here and emails the office.
+
+   sponsors/{id}: eventId, business, contactName, email, phone, source,
+     status todo | asked | interested | yes | no, level, amountCents, notes,
+     message, token, askedAt, followedUpAt, interestedAt
+   KEEP IN STEP: SPONSOR_LEVELS in js/sponsor-data.js (same keys / spots).
+   ========================================================================= */
+const SPONSOR_LEVELS = {
+  platinum: { name: 'Platinum - Presenting Partner', priceCents: 500000, spots: 1 },
+  gold: { name: 'Gold', priceCents: 200000, spots: 2 },
+  silver: { name: 'Silver', priceCents: 100000, spots: 3 },
+  bronze: { name: 'Bronze', priceCents: 50000, spots: 5 },
+  supporter: { name: 'Supporter', priceCents: 0, spots: 0 },
+};
+const sponsorLink = (eventId, token) => SITE_URL + '/sponsor?e=' + encodeURIComponent(eventId) + (token ? '&t=' + token : '');
+const SPONSOR_NOTE = 'Not for you? Just reply and let us know - we won\'t email you about it again.';
+
+function sponsorValues(p, ev) {
+  return {
+    vendor_name: p.contactName || p.business || 'there',
+    business_name: p.business || 'your business',
+    site_number: '', guide_link: '',
+    event_name: ev.name || 'Eatz & Beatz',
+    event_date: ev.dateLabel || ev.dateISO || '',
+    event_venue: [ev.venue, ev.location].filter(Boolean).join(', '),
+  };
+}
+
+/*  PUBLIC: the sponsor page - event, spots left per level, and (personal link) who they are. */
+exports.getSponsorInfo = onCall(async (request) => {
+  const { eventId, token } = request.data || {};
+  const id = String(eventId || '').trim();
+  if (!id) throw new HttpsError('invalid-argument', 'Missing event.');
+  const evSnap = await db.collection('events').doc(id).get();
+  if (!evSnap.exists) throw new HttpsError('not-found', 'That event does not exist.');
+  const ev = evSnap.data();
+  const snap = await db.collection('sponsors').where('eventId', '==', id).get();
+  const taken = {};
+  let prospect = null;
+  snap.forEach((d) => {
+    const x = d.data();
+    if (x.status === 'yes' && x.level) taken[x.level] = (taken[x.level] || 0) + 1;
+    if (token && /^[a-f0-9]{20,40}$/.test(String(token)) && x.token === token) {
+      prospect = { business: x.business || '', contactName: x.contactName || '', email: x.email || '', phone: x.phone || '' };
+    }
+  });
+  const left = {};
+  Object.keys(SPONSOR_LEVELS).forEach((k) => { left[k] = Math.max(0, SPONSOR_LEVELS[k].spots - (taken[k] || 0)); });
+  return {
+    event: { name: ev.name || '', dateLabel: ev.dateLabel || '', dateISO: ev.dateISO || '', venue: ev.venue || '', location: ev.location || '', image: ev.image || '' },
+    left, prospect,
+  };
+});
+
+/*  PUBLIC: "I'm interested" from the sponsor page. */
+exports.sponsorInterest = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  const d = request.data || {};
+  const clean = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
+  const eventId = clean(d.eventId, 100);
+  const email = clean(d.email, 200).toLowerCase();
+  const level = SPONSOR_LEVELS[d.level] ? d.level : 'supporter';
+  const fields = {
+    business: clean(d.business, 160), contactName: clean(d.contactName, 120), email,
+    phone: clean(d.phone, 40), level, message: clean(d.message, 2000),
+  };
+  if (!eventId) throw new HttpsError('invalid-argument', 'Missing event.');
+  if (!fields.business || !fields.contactName) throw new HttpsError('invalid-argument', 'Please fill in your business and your name.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new HttpsError('invalid-argument', 'Please enter a valid email address.');
+  const evSnap = await db.collection('events').doc(eventId).get();
+  if (!evSnap.exists) throw new HttpsError('not-found', 'That event does not exist.');
+  const ev = evSnap.data();
+
+  const snap = await db.collection('sponsors').where('eventId', '==', eventId).get();
+  const token = String(d.token || '');
+  const match = snap.docs.find((x) => (token && x.data().token === token)) || snap.docs.find((x) => String(x.data().email || '').toLowerCase() === email);
+  const update = { ...fields, interestedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
+  if (match) {
+    if (match.data().status !== 'yes') update.status = 'interested';
+    await match.ref.update(update);
+  } else {
+    await db.collection('sponsors').add({ ...update, eventId, source: 'website', status: 'interested', createdAt: FieldValue.serverTimestamp() });
+  }
+
+  // tell the office straight away
+  const lv = SPONSOR_LEVELS[level];
+  await sendMessageEmail({
+    subject: 'Sponsor interest: ' + fields.business + ' - ' + lv.name,
+    body: 'New sponsor interest for ' + (ev.name || eventId) + ':\n\n'
+      + '- Business: ' + fields.business + '\n- Contact: ' + fields.contactName + '\n- Email: ' + email
+      + (fields.phone ? '\n- Phone: ' + fields.phone : '') + '\n- Level: ' + lv.name + (lv.priceCents ? ' ($' + (lv.priceCents / 100).toLocaleString('en-AU') + ' + GST)' : '')
+      + (fields.message ? '\n\nTheir message:\n' + fields.message : '') + '\n\nSee it in the admin under Messages > Sponsors.',
+  }, {}, { to: process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au' });
+  return { ok: true };
+});
+
+/*  Send "the ask" to the ticked businesses (admin). */
+exports.adminSponsorSend = onCall({ secrets: [SMTP_USER, SMTP_PASS], timeoutSeconds: 300 }, async (request) => {
+  requireAdmin(request);
+  const { eventId, ids } = request.data || {};
+  const evId = String(eventId || '');
+  const ms = await db.collection('messages').where('eventId', '==', evId).get();
+  const msgDoc = ms.docs.find((x) => x.data().system === 'sponsor-ask');
+  const msg = msgDoc && msgDoc.data();
+  if (!msg || msg.status !== 'approved') throw new HttpsError('failed-precondition', 'Approve the "Sponsorship - the ask" email first.');
+  const evSnap = await db.collection('events').doc(evId).get();
+  const ev = evSnap.exists ? evSnap.data() : {};
+  const out = { sent: 0, skipped: 0, failed: [] };
+  for (const id of (Array.isArray(ids) ? ids : []).slice(0, 200)) {
+    const ref = db.collection('sponsors').doc(String(id));
+    const snap = await ref.get();
+    if (!snap.exists) { out.skipped++; continue; }
+    const p = snap.data();
+    if (p.eventId !== evId || !p.email || p.status !== 'todo') { out.skipped++; continue; }
+    const token = p.token || crypto.randomBytes(16).toString('hex');
+    const r = await sendMessageEmail({ subject: msg.approvedSubject || msg.subject, body: msg.approvedBody || msg.body }, sponsorValues(p, ev), {
+      to: p.email,
+      actions: [{ label: 'See the sponsor options', url: sponsorLink(evId, token), primary: true }],
+      note: SPONSOR_NOTE,
+    });
+    if (r.sent) {
+      out.sent++;
+      await ref.update({ status: 'asked', token, askedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+    } else out.failed.push((p.business || id) + ': ' + (r.error || r.reason || 'not sent'));
+  }
+  if (out.sent && msgDoc) await msgDoc.ref.update({ sentCount: FieldValue.increment(out.sent) });
+  return out;
+});
+
+/*  Every morning at 9:35 am: a polite follow-up 7 days after the ask (approved email only). */
+exports.sponsorFollowups = onSchedule(
+  { schedule: '35 9 * * *', timeZone: MSG_TZ, secrets: [SMTP_USER, SMTP_PASS], timeoutSeconds: 300 },
+  async () => {
+    const msgs = await db.collection('messages').where('status', '==', 'approved').get();
+    for (const md of msgs.docs) {
+      const msg = md.data();
+      if (msg.system !== 'sponsor-followup') continue;
+      try {
+        const evSnap = await db.collection('events').doc(msg.eventId).get();
+        const ev = evSnap.exists ? evSnap.data() : {};
+        const days = Math.max(1, Number((msg.trigger || {}).days) || 7);
+        const cutoff = Date.now() - days * 86400000;
+        const snap = await db.collection('sponsors').where('eventId', '==', msg.eventId).get();
+        let sent = 0;
+        for (const d of snap.docs) {
+          const p = d.data();
+          const asked = p.askedAt && p.askedAt.toMillis ? p.askedAt.toMillis() : 0;
+          if (p.status !== 'asked' || !asked || asked > cutoff || p.followedUpAt || !p.email) continue;
+          const r = await sendMessageEmail({ subject: msg.approvedSubject || msg.subject, body: msg.approvedBody || msg.body }, sponsorValues(p, ev), {
+            to: p.email,
+            actions: [{ label: 'See the sponsor options', url: sponsorLink(msg.eventId, p.token), primary: true }],
+            note: SPONSOR_NOTE,
+          });
+          if (r.sent) { sent++; await d.ref.update({ followedUpAt: FieldValue.serverTimestamp() }); }
+        }
+        if (sent) await md.ref.update({ sentCount: FieldValue.increment(sent) });
+      } catch (err) {
+        logger.error('sponsor follow-ups failed', { id: md.id, message: err && err.message });
+      }
+    }
+  },
+);

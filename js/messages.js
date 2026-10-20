@@ -17,6 +17,8 @@
    ctx = { state, h: { esc, attr }, call, render, money }
    ========================================================================== */
 
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS } from './sponsor-data.js?v=594';
+
 export const SEND_TIME = '9:35 am';
 
 /*  The fields a message can use - KEEP IN STEP with fieldsFor() in
@@ -78,6 +80,8 @@ function whenText(msg, ev) {
   const t = msg.trigger || {};
   if (t.type === 'payment') return 'As each vendor pays';
   if (t.type === 'waitlist') return 'When a spot opens';
+  if (t.type === 'manual') return 'When you press Send';
+  if (t.type === 'sponsorFollowup') return (t.days || 7) + ' days after the ask';
   const day = niceDay(sendDate(msg, ev));
   const n = Math.round(Number(t.days) || 0);
   const rel = t.type === 'daysBefore' ? (n === 1 ? 'Day before' : n + ' days before')
@@ -138,6 +142,12 @@ function sampleValues(b, ev) {
 function sentenceHtml(ctx, d, m, ev) {
   const { state } = ctx;
   const esc = ctx.h.esc;
+  if (m.system === 'sponsor-ask') {
+    return `This sends <b>&ldquo;${esc(fill(d.subject, sampleValues(null, ev), String) || '(no subject yet)')}&rdquo;</b> to the businesses you tick on the <b>Sponsors</b> tab, when you press Send.`;
+  }
+  if (m.system === 'sponsor-followup') {
+    return `This sends <b>&ldquo;${esc(fill(d.subject, sampleValues(null, ev), String) || '(no subject yet)')}&rdquo;</b> to any business still &ldquo;Asked&rdquo; <b>7 days after the ask</b>, at ${SEND_TIME}. Anyone who replied or said yes or no is skipped.`;
+  }
   if (m.system === 'waitlist') {
     return `This sends <b>&ldquo;${esc(fill(d.subject, sampleValues(null, ev), String) || '(no subject yet)')}&rdquo;</b> to <b>the next person on the waitlist</b> the moment a spot opens. They get <b>4 hours</b> to accept or decline from the email, then it goes to the next person.`;
   }
@@ -173,7 +183,7 @@ export function messagesHtml(ctx) {
   if (state.msgOpen) return editorHtml(ctx, ev);
 
   const tab = state.msgTab || 'vendors';
-  const list = (state.messages || []).slice().sort((a, b) => {
+  const list = (state.messages || []).filter((m) => m.audience !== 'sponsors').slice().sort((a, b) => {
     const rank = (x) => (x.system === 'invoice' ? 0 : x.system === 'waitlist' ? 1 : 2);
     if (rank(a) !== rank(b)) return rank(a) - rank(b);
     return (sendDate(a, ev) || '9999').localeCompare(sendDate(b, ev) || '9999');
@@ -207,10 +217,10 @@ export function messagesHtml(ctx) {
       <button type="button" class="ms-tab${tab === 'vendors' ? ' is-on' : ''}" role="tab" data-ms-tab="vendors">Vendors</button>
       <button type="button" class="ms-tab${tab === 'clients' ? ' is-on' : ''}" role="tab" data-ms-tab="clients">Clients</button>
       <button type="button" class="ms-tab" disabled title="Coming soon">Crew &amp; performers</button>
-      <button type="button" class="ms-tab" disabled title="Coming soon">Sponsors &amp; suppliers</button>
+      <button type="button" class="ms-tab${tab === 'sponsors' ? ' is-on' : ''}" role="tab" data-ms-tab="sponsors">Sponsors</button>
       <button type="button" class="ms-tab ms-tab-log${tab === 'sent' ? ' is-on' : ''}" role="tab" data-ms-tab="sent">Sent emails</button>
     </div>
-    ${tab === 'sent' ? sentHtml(ctx) : tab === 'clients' ? clientsHtml(h, state) : `<div class="ad-card ms-card">
+    ${tab === 'sent' ? sentHtml(ctx) : tab === 'sponsors' ? sponsorsHtml(ctx) : tab === 'clients' ? clientsHtml(h, state) : `<div class="ad-card ms-card">
       <table class="ms-table">
         <thead><tr><th>When</th><th>Message &amp; subject</th><th>Who</th><th>Status</th><th>Sent</th></tr></thead>
         <tbody>${rows || `<tr><td colspan="5" class="ad-cell-muted">${state.msgSeeding ? 'Adding the starter messages&hellip;' : 'No messages yet.'}</td></tr>`}</tbody>
@@ -259,6 +269,83 @@ function sentHtml(ctx) {
         <p class="ms-log-meta"><b>${h.esc(open.subject)}</b><br>To: ${h.esc(open.to)}${open.cc ? '<br>CC: ' + h.esc(open.cc) : ''}${open.bcc ? '<br>Copy: ' + h.esc(open.bcc) : ''}<br>${h.esc(whenSent(open.at))}${open.ok ? '' : '<br><span class="ms-fail">Failed: ' + h.esc(open.error || '') + '</span>'}</p>
         <iframe class="ms-log-frame" id="ms-log-frame" title="Email"></iframe>
       </aside>` : ''}
+    </div>`;
+}
+
+/*  SPONSORS (Max, 20 Oct 2026): the two sponsor emails, the $10k goal, and the
+    list of businesses - add from the Lead Generator, by hand or past sponsors;
+    tick and Send; track Asked / Interested / Yes / No.                    */
+const SP_STATUS = {
+  todo: ['To ask', 'grey'], asked: ['Asked', 'blue'], interested: ['Interested', 'amber'], yes: ['Yes!', 'green'], no: ['No', 'grey'],
+};
+const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
+const money0 = (c) => '$' + Math.round((c || 0) / 100).toLocaleString('en-AU');
+function sponsorCents(p) {
+  if (p.amountCents) return p.amountCents;
+  return (LEVEL[p.level] && LEVEL[p.level].priceCents) || 0;
+}
+function sponsorsHtml(ctx) {
+  const { state, h } = ctx;
+  const list = (state.sponsors || []).slice().sort((a, b) => (a.business || '').localeCompare(b.business || ''));
+  const msgs = (state.messages || []).filter((m) => m.audience === 'sponsors')
+    .sort((a, b) => (a.system === 'sponsor-ask' ? -1 : 1) - (b.system === 'sponsor-ask' ? -1 : 1));
+  const yes = list.filter((p) => p.status === 'yes').reduce((t, p) => t + sponsorCents(p), 0);
+  const maybe = list.filter((p) => p.status === 'interested').reduce((t, p) => t + sponsorCents(p), 0);
+  const pct = Math.min(100, Math.round(yes / SPONSOR_GOAL_CENTS * 100));
+  const pct2 = Math.min(100 - pct, Math.round(maybe / SPONSOR_GOAL_CENTS * 100));
+  const ask = msgs.find((m) => m.system === 'sponsor-ask');
+  const ticked = state.spTicked || {};
+  const nTicked = list.filter((p) => ticked[p.id] && p.status === 'todo' && p.email).length;
+  const added = new Set(list.map((p) => String(p.business || '').toLowerCase()));
+  const leads = (state.leads || []).filter((l) => l.email && !added.has(String(l.title || '').toLowerCase()));
+  const evId = state.activeEventId;
+  const evName = ((state.events || []).find((e) => e.id === evId) || {}).name || '';
+  const msgRows = msgs.map((m) => {
+    const [label, tone] = STATUS[m.status] || STATUS.draft;
+    return `<tr data-ms-open="${h.attr(m.id)}"><td class="ms-when">${h.esc(whenText(m, {}))}</td>
+      <td><strong>${h.esc(m.name)}</strong><span class="ms-sub">${h.esc(fill(m.subject || '', { event_name: evName }, String))}</span></td>
+      <td><span class="ms-chip ms-${tone}">${h.esc(label)}</span></td><td class="ms-sent">${m.sentCount || 0} sent</td></tr>`;
+  }).join('');
+  const row = (p) => {
+    const [lab, tone] = SP_STATUS[p.status] || SP_STATUS.todo;
+    const can = p.status === 'todo' && p.email;
+    return `<tr class="ms-fixed">
+      <td><input type="checkbox" data-sp-tick="${h.attr(p.id)}"${ticked[p.id] && can ? ' checked' : ''}${can ? '' : ' disabled'} aria-label="Ask ${h.attr(p.business)}"></td>
+      <td><strong>${h.esc(p.business)}</strong><span class="ms-sub">${h.esc({ lead: 'Lead Generator', past: 'Past sponsor', manual: 'Added by you', website: 'Sponsor page' }[p.source] || '')}</span></td>
+      <td>${h.esc(p.contactName || '')}${p.email ? '<span class="ms-sub">' + h.esc(p.email) + '</span>' : '<input class="ad-input ms-sp-email" data-sp-email="' + h.attr(p.id) + '" placeholder="Add their email" type="email">'}</td>
+      <td><select class="ad-select ms-sp-sel" data-sp-status="${h.attr(p.id)}">${Object.keys(SP_STATUS).map((k) => `<option value="${k}"${(p.status || 'todo') === k ? ' selected' : ''}>${SP_STATUS[k][0]}</option>`).join('')}</select>
+        <span class="ms-chip ms-${tone} ms-sp-chip">${h.esc(lab)}</span></td>
+      <td><select class="ad-select ms-sp-sel" data-sp-level="${h.attr(p.id)}"><option value="">Level&hellip;</option>${SPONSOR_LEVELS.map((l) => `<option value="${l.key}"${p.level === l.key ? ' selected' : ''}>${h.esc(l.name.split(' - ')[0])}${l.priceCents ? ' ' + money0(l.priceCents) : ''}</option>`).join('')}</select>
+        ${p.level === 'supporter' ? `<input class="ad-input ms-sp-amt" data-sp-amount="${h.attr(p.id)}" placeholder="$ value" value="${p.amountCents ? Math.round(p.amountCents / 100) : ''}">` : ''}</td>
+      <td class="ms-sp-note">${p.message ? '<span title="' + h.attr(p.message) + '">&#128172;</span>' : ''}<button type="button" class="ms-sp-del" data-sp-del="${h.attr(p.id)}" title="Remove">&times;</button></td>
+    </tr>`;
+  };
+  return `<div class="ms-sp-goal ad-card">
+      <div><b>${money0(yes)}</b> committed of your <b>${money0(SPONSOR_GOAL_CENTS)}</b> goal${maybe ? ' &middot; <span>' + money0(maybe) + ' interested</span>' : ''}</div>
+      <div class="ms-sp-bar"><span style="width:${pct}%"></span><i style="width:${pct2}%"></i></div>
+      <a href="/sponsor?e=${encodeURIComponent(evId)}" target="_blank" rel="noopener">Open the sponsor page &#8599;</a>
+    </div>
+    <div class="ad-card ms-card"><table class="ms-table"><thead><tr><th>When</th><th>Email</th><th>Status</th><th>Sent</th></tr></thead><tbody>${msgRows}</tbody></table></div>
+    <div class="ad-card ms-card ms-sp">
+      <div class="ms-sp-bar2">
+        <b>Businesses to ask</b><span>${list.length}</span>
+        <button type="button" class="ad-btn ad-btn-small" data-sp-add>+ Add a business</button>
+        <button type="button" class="ad-btn ad-btn-small" data-sp-leads>From Lead Generator (${leads.length})</button>
+        <button type="button" class="ad-btn ad-btn-small" data-sp-past>Add past sponsors</button>
+        <button type="button" class="ad-btn ad-btn-primary ms-sp-send" data-sp-send${nTicked ? '' : ' disabled'}>Send the ask to ${nTicked} ticked</button>
+      </div>
+      ${ask && ask.status !== 'approved' ? '<p class="ms-note ms-sp-warn">Approve &ldquo;Sponsorship - the ask&rdquo; above before you can send.</p>' : ''}
+      ${state.spAdding ? `<form class="ms-sp-form" data-sp-form>
+        <input class="ad-input" name="business" placeholder="Business" required>
+        <input class="ad-input" name="contactName" placeholder="Contact name">
+        <input class="ad-input" name="email" type="email" placeholder="Email">
+        <input class="ad-input" name="phone" placeholder="Phone">
+        <button type="submit" class="ad-btn ad-btn-primary">Add</button><button type="button" class="ad-btn" data-sp-cancel>Cancel</button></form>` : ''}
+      ${state.spPicking ? `<div class="ms-sp-pick"><p>Tick the businesses to add (only ones with an email are shown):</p>
+        <div class="ms-sp-picklist">${leads.map((l) => `<label><input type="checkbox" data-sp-lead="${h.attr(l.id)}"> <b>${h.esc(l.title || '')}</b> <span>${h.esc(l.contactName || '')} &middot; ${h.esc(l.email)}</span></label>`).join('') || '<p class="ad-cell-muted">No leads with an email that aren&rsquo;t already on the list.</p>'}</div>
+        <button type="button" class="ad-btn ad-btn-primary" data-sp-leadadd>Add ticked</button> <button type="button" class="ad-btn" data-sp-cancel>Cancel</button></div>` : ''}
+      <table class="ms-table"><thead><tr><th></th><th>Business</th><th>Contact</th><th>Status</th><th>Level</th><th></th></tr></thead>
+      <tbody>${list.map(row).join('') || '<tr class="ms-fixed"><td colspan="6" class="ad-cell-muted">No businesses yet - add some from your Lead Generator, by hand, or your past sponsors.</td></tr>'}</tbody></table>
     </div>`;
 }
 
@@ -332,7 +419,9 @@ function editorHtml(ctx, ev) {
     <div class="ms-grid">
       <div class="ad-card ms-card ms-pad">
         <label class="ms-f"><span>Name (just for you)</span><input class="ad-input" data-ms="name" value="${h.attr(d.name)}" placeholder="e.g. One week to go"${locked ? ' disabled' : ''}></label>
-        ${m.system === 'waitlist' ? '<p class="ms-fixed-when"><b>Who:</b> the next person on the waitlist &nbsp;&middot;&nbsp; <b>When:</b> the moment a spot opens (Accept and Decline buttons and the 4-hour note are added below your text)</p>'
+        ${m.system === 'sponsor-ask' ? '<p class="ms-fixed-when"><b>Who:</b> the businesses you tick on the Sponsors tab &nbsp;&middot;&nbsp; <b>When:</b> when you press Send (a &ldquo;See the sponsor options&rdquo; button with their personal link is added below your text)</p>'
+          : m.system === 'sponsor-followup' ? '<p class="ms-fixed-when"><b>Who:</b> anyone still &ldquo;Asked&rdquo; &nbsp;&middot;&nbsp; <b>When:</b> 7 days after the ask, at 9:35 am</p>'
+          : m.system === 'waitlist' ? '<p class="ms-fixed-when"><b>Who:</b> the next person on the waitlist &nbsp;&middot;&nbsp; <b>When:</b> the moment a spot opens (Accept and Decline buttons and the 4-hour note are added below your text)</p>'
           : sys ? '<p class="ms-fixed-when"><b>Who:</b> each vendor &nbsp;&middot;&nbsp; <b>When:</b> the moment they pay (total and guide button are added below your text)</p>' : `<div class="ms-row">
           <label class="ms-f"><span>Who</span><select class="ad-select" data-ms="who"${locked ? ' disabled' : ''}>
             ${Object.keys(WHO).map((k) => `<option value="${k}"${d.who === k ? ' selected' : ''}>${WHO[k]}</option>`).join('')}
@@ -384,6 +473,15 @@ function previewHtml(ctx) {
   const m = (state.messages || []).find((x) => x.id === state.msgOpen) || {};
   const first = (m.system ? paidVendors(state.bookings, state.activeEventId) : recipients(state.bookings, state.activeEventId, d))[0];
   const v = sampleValues(first, ev);
+  if (m.audience === 'sponsors') {
+    const sv = { ...v, vendor_name: 'Sam', business_name: 'Sample Business' };
+    return `<div class="ms-mail"><div class="ms-mail-top">SOUNDZGOOD WHITSUNDAYS</div>
+    <p class="ms-mail-subj">${h.esc(fill(d.subject, sv, String))}</p>
+    <div class="ms-mail-body">${bodyHtml(d.body, sv, h.esc)}
+      <p class="ms-mail-btn"><span>See the sponsor options</span></p>
+      <p class="ms-mail-note">Not for you? Just reply and let us know - we won't email you about it again.</p></div>
+    <div class="ms-mail-foot">SoundzGood Whitsundays</div></div>`;
+  }
   if (m.system === 'waitlist') {
     const wv = { ...v, vendor_name: 'Sam', business_name: 'Sample Food Co', site_number: 'F4', expires_at: 'Sat 24 Oct, 1:35 pm' };
     return `<div class="ms-mail"><div class="ms-mail-top">SOUNDZGOOD WHITSUNDAYS</div>
@@ -467,6 +565,46 @@ export function wireMessages(ctx) {
       return;
     }
     if (e.target.closest('[data-ms-logrefresh]')) { refreshLog(); return; }
+    // ---- Sponsors tab ----
+    if (e.target.closest('[data-sp-add]')) { state.spAdding = !state.spAdding; state.spPicking = false; render(); return; }
+    if (e.target.closest('[data-sp-leads]')) { state.spPicking = !state.spPicking; state.spAdding = false; render(); return; }
+    if (e.target.closest('[data-sp-cancel]')) { state.spAdding = false; state.spPicking = false; render(); return; }
+    if (e.target.closest('[data-sp-past]')) {
+      const have = new Set((state.sponsors || []).map((p) => String(p.business || '').toLowerCase()));
+      const add = PAST_SPONSORS.filter((n) => !have.has(n.toLowerCase()));
+      if (!add.length) { window.alert('Your past sponsors are already on the list.'); return; }
+      for (const n of add) await ctx.sponsors.add({ business: n, source: 'past' });
+      return;
+    }
+    if (e.target.closest('[data-sp-leadadd]')) {
+      const ids = [...root.querySelectorAll('[data-sp-lead]:checked')].map((x) => x.getAttribute('data-sp-lead'));
+      for (const id of ids) {
+        const l = (state.leads || []).find((x) => x.id === id);
+        if (l) await ctx.sponsors.add({ business: l.title || '', contactName: l.contactName || '', email: l.email || '', phone: l.phone || '', source: 'lead', leadId: l.id });
+      }
+      state.spPicking = false; render();
+      return;
+    }
+    const del = e.target.closest('[data-sp-del]');
+    if (del) {
+      const p = (state.sponsors || []).find((x) => x.id === del.getAttribute('data-sp-del'));
+      if (p && window.confirm('Remove ' + (p.business || 'this business') + ' from the list?')) await ctx.sponsors.remove(p.id);
+      return;
+    }
+    if (e.target.closest('[data-sp-send]')) {
+      const ticked = state.spTicked || {};
+      const go = (state.sponsors || []).filter((p) => ticked[p.id] && p.status === 'todo' && p.email);
+      if (!go.length) return;
+      if (!window.confirm('Send the sponsorship email to ' + go.length + ' business' + (go.length === 1 ? '' : 'es') + '?\n\n' + go.map((p) => '- ' + p.business).join('\n'))) return;
+      const b = e.target.closest('[data-sp-send]'); b.disabled = true; b.textContent = 'Sending...';
+      try {
+        const r = await call('adminSponsorSend', { eventId: state.activeEventId, ids: go.map((p) => p.id) });
+        state.spTicked = {};
+        window.alert('Sent ' + r.sent + '.' + (r.failed && r.failed.length ? '\n\nNot sent:\n' + r.failed.join('\n') : ''));
+      } catch (err) { window.alert(err.message || 'Could not send.'); }
+      render();
+      return;
+    }
     if (e.target.closest('[data-ms-cclose]')) { state.clientPrev = null; render(); return; }
     const cRow = e.target.closest('[data-ms-cprev]');
     if (cRow) {
@@ -531,6 +669,14 @@ export function wireMessages(ctx) {
         say(r.sent ? 'Test sent to ' + r.to + ' only. No vendor was emailed.' : 'Test did not send: ' + (r.error || r.reason || ''), !r.sent);
       } else if (what === 'approve' && ((state.messages || []).find((x) => x.id === id) || {}).system) {
         const wlMsg = ((state.messages || []).find((x) => x.id === id) || {}).system === 'waitlist';
+        const spMsg = ((state.messages || []).find((x) => x.id === id) || {}).audience === 'sponsors';
+        if (spMsg) {
+          if (!window.confirm('Approve this sponsorship email? It only goes when you press Send on the Sponsors tab (or 7 days later for the follow-up).')) { act.disabled = false; return; }
+          await call('adminMessageAction', { id, action: 'approve' });
+          say('Approved.');
+          act.disabled = false;
+          return;
+        }
         if (!window.confirm(wlMsg ? 'Approve this email? From now on, when a spot opens the next person on the waitlist is emailed automatically and gets 4 hours to claim it.' : 'Approve this wording? Every vendor who pays from now on gets it.')) { act.disabled = false; return; }
         await call('adminMessageAction', { id, action: 'approve' });
         say('Approved - new vendors get this wording.');
@@ -585,4 +731,26 @@ export function wireMessages(ctx) {
   };
   root.addEventListener('input', onEdit);
   root.addEventListener('change', onEdit);
+  root.addEventListener('change', async (e) => {
+    const t = e.target;
+    if (t.matches('[data-sp-tick]')) { state.spTicked = { ...(state.spTicked || {}), [t.getAttribute('data-sp-tick')]: t.checked }; render(); return; }
+    if (t.matches('[data-sp-status]')) { await ctx.sponsors.update(t.getAttribute('data-sp-status'), { status: t.value }); return; }
+    if (t.matches('[data-sp-level]')) { await ctx.sponsors.update(t.getAttribute('data-sp-level'), { level: t.value }); return; }
+    if (t.matches('[data-sp-amount]')) { await ctx.sponsors.update(t.getAttribute('data-sp-amount'), { amountCents: Math.max(0, Math.round(Number(String(t.value).replace(/[^0-9.]/g, '')) * 100) || 0) }); return; }
+    if (t.matches('[data-sp-email]')) {
+      const v = String(t.value || '').trim();
+      if (v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { window.alert('That doesn\'t look like an email address.'); return; }
+      await ctx.sponsors.update(t.getAttribute('data-sp-email'), { email: v });
+    }
+  });
+  root.addEventListener('submit', async (e) => {
+    if (!e.target.matches('[data-sp-form]')) return;
+    e.preventDefault();
+    const f = e.target;
+    const v = (n) => String((f.querySelector('[name="' + n + '"]') || {}).value || '').trim();
+    if (!v('business')) return;
+    if (v('email') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v('email'))) { window.alert('That doesn\'t look like an email address.'); return; }
+    await ctx.sponsors.add({ business: v('business'), contactName: v('contactName'), email: v('email'), phone: v('phone'), source: 'manual' });
+    state.spAdding = false; render();
+  });
 }

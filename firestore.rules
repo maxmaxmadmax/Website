@@ -240,6 +240,11 @@ service cloud.firestore {
     //  desk; everything else goes through Cloud Functions - a customer views
     //  and accepts theirs through getQuote / acceptQuote (Admin SDK, by
     //  token), never by reading the collection. So it is closed to browsers.
+    // Sponsorship outreach (Max, 20 Oct 2026): admins manage the list; the server sends
+    match /sponsors/{sponsorId} {
+      allow read, write: if isAdmin();
+    }
+
     // Vendor waitlist (Max, 20 Oct 2026): admins read; only the server writes
     match /waitlist/{entryId} {
       allow read: if isAdmin();
