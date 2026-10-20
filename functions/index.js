@@ -1221,7 +1221,10 @@ exports.stripeWebhook = onRequest(
 
           // A quote payment (quoteCheckout), not a vendor booking.
           if (session.metadata && session.metadata.quoteId) {
-            if (session.payment_status === 'paid') await recordQuotePayment(session);
+            if (session.payment_status === 'paid') {
+              await recordQuotePayment(session);
+              await autoGearOnDeposit(String(session.metadata.quoteId));   // gear list out once the deposit is in
+            }
             break;
           }
           const bookingId = bookingOf(session);
@@ -2561,7 +2564,7 @@ async function nextInvoiceNumber(tx) {
 }
 const invoiceNo = (n) => 'SG-I-' + String(n).padStart(4, '0');
 
-exports.adminSetQuoteStatus = onCall(async (request) => {
+exports.adminSetQuoteStatus = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
   requireAdmin(request);
   const { id, status } = request.data || {};
   if (!QUOTE_DOC_STATES.includes(status)) throw new HttpsError('invalid-argument', 'Bad status.');
@@ -2615,6 +2618,7 @@ exports.adminSetQuoteStatus = onCall(async (request) => {
   }
 
   await ref.update(update);
+  if (update.status === 'paid') await autoGearOnDeposit(ref.id);   // paid in full by bank / cash - gear list out
   return { ok: true, invoiceNumber: update.invoiceNumber || snap.data().invoiceNumber || '' };
 });
 
@@ -2701,7 +2705,7 @@ async function quoteByCrewToken(token) {
 
 /* ADMIN - a bank-transfer deposit has arrived: books the job (it becomes an
    invoice if it isn't one yet) and unlocks the pick list.                 */
-exports.adminDepositReceived = onCall(async (request) => {
+exports.adminDepositReceived = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
   requireAdmin(request);
   const { id } = request.data || {};
   const ref = db.collection('quotes').doc(String(id || ''));
@@ -2722,6 +2726,7 @@ exports.adminDepositReceived = onCall(async (request) => {
   if (!q.invoiceNumber) { update.invoiceNumber = invoiceNo((await nextInvoiceNumber()).n); update.invoicedAt = FieldValue.serverTimestamp(); }
   if (!q.crewToken) update.crewToken = crypto.randomBytes(16).toString('hex');
   await ref.update(update);
+  await autoGearOnDeposit(ref.id);   // gear list out once the deposit is in
   return { ok: true };
 });
 
@@ -4606,18 +4611,102 @@ exports.adminSendGearList = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (r
   if (!pickReady(q)) throw new HttpsError('failed-precondition', 'The gear list unlocks once the deposit is in.');
   const to = emailList((q.customer || {}).gearEmails);
   if (!to) throw new HttpsError('failed-precondition', 'Add the band / crew emails in "Gear list to" on the quote first.');
+  const r = await sendGearListEmail(ref, q, 'manual');
+  return { ...r, to };
+});
+
+/* =========================================================================
+   GEAR LIST - AUTOMATIC  (Max, 20 Oct 2026)
+   "make it automatic when deposit is paid ... and 3 days before the event
+   and again on the day". The band / crew in "Gear list to" get the gear
+   list (no prices); the office gets the pick list link (with ticks) for
+   staff. Nothing goes before the deposit is in. If the event date moves,
+   the reminders follow the new date.
+   ========================================================================= */
+
+/*  "Tue 20 Oct 2026" or "2026-10-20" -> "2026-10-20"; falls back to the hire start. */
+function quoteEventISO(q) {
+  const raw = String(((q.customer || {}).eventDate) || '');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const MON = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+  const m = /(\d{1,2})\s+([A-Za-z]{3})[a-z]*\s+(\d{4})/.exec(raw);
+  if (m && MON.indexOf(m[2].toLowerCase()) >= 0) {
+    return m[3] + '-' + String(MON.indexOf(m[2].toLowerCase()) + 1).padStart(2, '0') + '-' + String(m[1]).padStart(2, '0');
+  }
+  return (q.hire && q.hire.startDate) || '';
+}
+const brisbaneTodayISO = () => new Intl.DateTimeFormat('en-CA', { timeZone: MSG_TZ }).format(new Date());
+
+/*  Sends the gear list to "Gear list to" and (for automatic sends) the pick
+    list link to the office. reason: 'manual' | 'deposit' | '3days' | 'today'. */
+async function sendGearListEmail(ref, q, reason) {
   let token = q.crewToken;
   if (!token) { token = crypto.randomBytes(16).toString('hex'); await ref.update({ crewToken: token }); }
   const c = q.customer || {};
   const ev = c.eventName || 'your event';
   const when = c.eventDate || (q.hire && q.hire.startDate) || '';
-  const r = await sendMessageEmail({
-    subject: 'Gear list - ' + ev + (when ? ' (' + when + ')' : ''),
-    body: 'Hi,\n\nHere is the gear SoundzGood Whitsundays is supplying for ' + ev + (when ? ' on ' + when : '') + '. Have a look and let us know if anything is missing or needs changing.\n\nThanks,\nMax\nSoundzGood Whitsundays - 0422 393 022',
-  }, {}, {
-    to,
-    actions: [{ label: 'View the gear list', url: SITE_URL + '/picklist?t=' + token + '&v=gear', primary: true }],
-  });
-  if (r.sent) await ref.update({ gearListSentAt: FieldValue.serverTimestamp(), gearListSentTo: to });
+  const lead = reason === '3days' ? '3 days to go - ' : reason === 'today' ? 'Today - ' : '';
+  const to = emailList(c.gearEmails);
+  let r = { sent: false, reason: 'no gear list emails' };
+  if (to) {
+    r = await sendMessageEmail({
+      subject: lead + 'Gear list - ' + ev + (when ? ' (' + when + ')' : ''),
+      body: 'Hi,\n\n'
+        + (reason === 'today' ? 'See you today! ' : reason === '3days' ? 'Your event is 3 days away. ' : '')
+        + 'Here is the gear SoundzGood Whitsundays is supplying for ' + ev + (when ? ' on ' + when : '') + '. Have a look and let us know if anything is missing or needs changing.\n\nThanks,\nMax\nSoundzGood Whitsundays - 0422 393 022',
+    }, {}, {
+      to,
+      actions: [{ label: 'View the gear list', url: SITE_URL + '/picklist?t=' + token + '&v=gear', primary: true }],
+    });
+    if (r.sent) await ref.update({ gearListSentAt: FieldValue.serverTimestamp(), gearListSentTo: to });
+  }
+  // staff copy - the full pick list with Packed / Returned ticks
+  if (reason !== 'manual') {
+    await sendMessageEmail({
+      subject: lead + 'Pick list - ' + ev + (when ? ' (' + when + ')' : '') + ' - ' + (q.invoiceNumber || q.number || ''),
+      body: (reason === 'deposit' ? 'The deposit is in, so this job is booked. ' : '')
+        + 'Here is the pick list for ' + ev + (when ? ' on ' + when : '') + '.'
+        + (to ? '\n\nThe gear list (no prices) also went to: ' + to : '\n\nNo "Gear list to" emails on this job, so the band / crew were not sent anything.'),
+    }, {}, {
+      to: process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au',
+      actions: [{ label: 'Open the pick list', url: SITE_URL + '/picklist?t=' + token, primary: true }],
+    });
+  }
   return { ...r, to };
-});
+}
+
+/*  Once per job, the moment the deposit (or full payment) lands. */
+async function autoGearOnDeposit(id) {
+  try {
+    const ref = db.collection('quotes').doc(String(id || ''));
+    const snap = await ref.get();
+    if (!snap.exists) return;
+    const q = snap.data();
+    if (!pickReady(q) || q.gearAutoDepositAt) return;
+    await ref.update({ gearAutoDepositAt: FieldValue.serverTimestamp() });   // claim it first - a webhook retry can't double-send
+    await sendGearListEmail(ref, { ...q }, 'deposit');
+  } catch (err) { logger.error('gear list on deposit', { id, err: err && err.message }); }
+}
+
+/*  Every morning at 9:35: jobs 3 days out, and jobs on today. */
+exports.gearListReminders = onSchedule(
+  { schedule: '35 9 * * *', timeZone: MSG_TZ, secrets: [SMTP_USER, SMTP_PASS], timeoutSeconds: 300 },
+  async () => {
+    const today = brisbaneTodayISO();
+    const snap = await db.collection('quotes').where('status', 'in', ['invoiced', 'paid']).get();
+    for (const doc of snap.docs) {
+      const q = doc.data();
+      if (!pickReady(q) || q.archived) continue;
+      const ev = quoteEventISO(q);
+      if (!ev) continue;
+      const reason = addDaysISO(ev, -3) === today ? '3days' : ev === today ? 'today' : '';
+      if (!reason) continue;
+      const key = reason + '_' + ev;   // a new date = new reminders
+      if (q.gearReminders && q.gearReminders[key]) continue;
+      try {
+        await doc.ref.update({ ['gearReminders.' + key]: FieldValue.serverTimestamp() });
+        await sendGearListEmail(doc.ref, q, reason);
+      } catch (err) { logger.error('gear list reminder', { id: doc.id, err: err && err.message }); }
+    }
+  }
+);
