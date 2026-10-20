@@ -4533,6 +4533,7 @@ exports.submitDetails = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (reque
   if (!f.name) throw new HttpsError('invalid-argument', 'Please enter your name.');
   if (!DETAIL_EMAIL_RE.test(f.email)) throw new HttpsError('invalid-argument', 'Please enter a valid email address.');
   if (!f.phone) throw new HttpsError('invalid-argument', 'Please enter a phone number.');
+  if (!f.eventName) throw new HttpsError('invalid-argument', 'Please enter the event name.');
 
   const customer = { ...(q.customer || {}) };
   Object.keys(f).forEach((k) => { if (f[k]) customer[k] = f[k]; });

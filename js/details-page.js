@@ -8,7 +8,7 @@
    Uses the sponsor page styles (sponsor.css).
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=606';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=607';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) => String(v == null ? '' : v)
@@ -51,25 +51,40 @@ function render(d) {
     <h2>Your quote is ready for review</h2>
     <p class="spn-sub">${d.received ? 'Thank you &mdash; we have your details. If anything has changed, update it below and press Save.' : 'Add your details below to view your quote.'}</p>
     <form class="spn-form" id="dt-form">
-      ${f('name', 'Your name', c.name, 'text', true)}
+      ${f('name', 'Full name', c.name, 'text', true, false, 'First and last name')}
       ${f('business', 'Business / organisation', c.business, 'text', false)}
       ${f('email', 'Email', c.email, 'email', true)}
       ${f('phone', 'Phone', c.phone, 'tel', true)}
       ${f('ccEmail', 'Accounts / billing email', c.ccEmail, 'text', false, true, 'Gets a copy of the quote and invoice')}
       ${f('address', 'Address', c.address, 'text', false, true)}
-      ${f('eventName', 'Event name', c.eventName, 'text', false)}
+      ${f('eventName', 'Event name', c.eventName, 'text', true)}
       <label>Event date <span>(optional)</span><input name="eventDate" type="date" value="${esc(date)}"></label>
       ${f('eventVenue', 'Venue', c.eventVenue, 'text', false, true, 'Where is it on?')}
       <button type="submit" class="spn-btn">${d.received ? 'Save my details' : (d.quoteLink || d.autoSend ? 'View my quote' : 'Send my details')}</button>
       <p class="spn-msg" id="dt-msg" hidden></p>
     </form>
   </section>`;
-  document.getElementById('dt-form').addEventListener('submit', async (e) => {
+  /*  The button stays greyed out until full name, email, phone and event
+      name are filled in (Max, 20 Oct 2026). */
+  const dtForm = document.getElementById('dt-form');
+  const dtBtn = dtForm.querySelector('button[type="submit"]');
+  const filled = () => {
+    const val = (n) => String((dtForm.querySelector('[name="' + n + '"]') || {}).value || '').trim();
+    return val('name').split(/\s+/).length >= 2
+      && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('email'))
+      && val('phone').replace(/[^0-9]/g, '').length >= 8
+      && !!val('eventName');
+  };
+  const check = () => { dtBtn.disabled = !filled(); };
+  dtForm.addEventListener('input', check);
+  check();
+  dtForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const form = e.target;
     const v = (n) => (form.querySelector('[name="' + n + '"]') || {}).value || '';
     const btn = form.querySelector('button[type="submit"]');
     const msg = document.getElementById('dt-msg');
+    if (!filled()) return;
     btn.disabled = true;
     try {
       const res = await fns.httpsCallable(fns.fns, 'submitDetails')({
