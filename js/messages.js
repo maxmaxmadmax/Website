@@ -17,7 +17,7 @@
    ctx = { state, h: { esc, attr }, call, render, money }
    ========================================================================== */
 
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS } from './sponsor-data.js?v=598';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS } from './sponsor-data.js?v=599';
 
 export const SEND_TIME = '9:35 am';
 
@@ -311,7 +311,7 @@ function sponsorsHtml(ctx) {
     const can = p.status === 'todo' && p.email;
     return `<tr class="ms-fixed">
       <td><input type="checkbox" data-sp-tick="${h.attr(p.id)}"${ticked[p.id] && can ? ' checked' : ''}${can ? '' : ' disabled'} aria-label="Ask ${h.attr(p.business)}"></td>
-      <td><strong>${h.esc(p.business)}</strong><span class="ms-sub">${h.esc({ lead: 'Lead Generator', past: 'Past sponsor', manual: 'Added by you', website: 'Sponsor page' }[p.source] || '')}</span></td>
+      <td><strong>${h.esc(p.business)}</strong><span class="ms-sub">${h.esc({ lead: 'Lead Generator', past: 'Past sponsor', manual: 'Added by you', website: 'Sponsor page', suggested: 'Big Bowen business' }[p.source] || '')}</span>${p.notes ? '<span class="ms-sub ms-sp-tip">' + h.esc(p.notes) + '</span>' : ''}</td>
       <td>${h.esc(p.contactName || '')}${p.email ? '<span class="ms-sub">' + h.esc(p.email) + '</span>' : '<input class="ad-input ms-sp-email" data-sp-email="' + h.attr(p.id) + '" placeholder="Add their email" type="email">'}</td>
       <td><select class="ad-select ms-sp-sel" data-sp-status="${h.attr(p.id)}">${Object.keys(SP_STATUS).map((k) => `<option value="${k}"${(p.status || 'todo') === k ? ' selected' : ''}>${SP_STATUS[k][0]}</option>`).join('')}</select>
         <span class="ms-chip ms-${tone} ms-sp-chip">${h.esc(lab)}</span></td>
@@ -331,6 +331,7 @@ function sponsorsHtml(ctx) {
         <b>Businesses to ask</b><span>${list.length}</span>
         <button type="button" class="ad-btn ad-btn-small" data-sp-add>+ Add a business</button>
         <button type="button" class="ad-btn ad-btn-small" data-sp-leads>From Lead Generator (${leads.length})</button>
+        <button type="button" class="ad-btn ad-btn-small" data-sp-big>Add big Bowen businesses (${SUGGESTED_SPONSORS.filter((s) => !added.has(s.business.toLowerCase())).length})</button>
         <button type="button" class="ad-btn ad-btn-small" data-sp-past>Add past sponsors</button>
         <button type="button" class="ad-btn ad-btn-primary ms-sp-send" data-sp-send${nTicked ? '' : ' disabled'}>Send the ask to ${nTicked} ticked</button>
       </div>
@@ -587,6 +588,13 @@ export function wireMessages(ctx) {
     if (e.target.closest('[data-sp-add]')) { state.spAdding = !state.spAdding; state.spPicking = false; render(); return; }
     if (e.target.closest('[data-sp-leads]')) { state.spPicking = !state.spPicking; state.spAdding = false; render(); return; }
     if (e.target.closest('[data-sp-cancel]')) { state.spAdding = false; state.spPicking = false; render(); return; }
+    if (e.target.closest('[data-sp-big]')) {
+      const have = new Set((state.sponsors || []).map((p) => String(p.business || '').toLowerCase()));
+      const add = SUGGESTED_SPONSORS.filter((s) => !have.has(s.business.toLowerCase()));
+      if (!add.length) { window.alert('They are all on your list already.'); return; }
+      for (const s of add) await ctx.sponsors.add({ business: s.business, email: s.email, notes: s.note, source: 'suggested' });
+      return;
+    }
     if (e.target.closest('[data-sp-past]')) {
       const have = new Set((state.sponsors || []).map((p) => String(p.business || '').toLowerCase()));
       const add = PAST_SPONSORS.filter((n) => !have.has(n.toLowerCase()));

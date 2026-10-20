@@ -3032,7 +3032,7 @@ const { labourParts, labourDayRate } = require('./lib/labour');   // crew rate +
 const BOT_PACKDOWN_PCT = 0.75;
 const BOT_ZONES = [
   ['Bowen (local)', 0], ['Merinda', 12], ['Guthalungra', 38], ['Proserpine', 64],
-  ['Home Hill', 79], ['Cannonvale', 84], ['Collinsville', 86], ['Scottville', 88],
+  ['Home Hill', 79], ['Cannonvale', 84], ['Cape Gloucester Resort', 85], ['Collinsville', 86], ['Scottville', 88],
   ['Airlie Beach', 88], ['Jubilee Pocket', 90], ['Ayr', 91], ['Bloomsbury', 95],
   ['Shute Harbour', 98], ['Brandon', 98], ['Giru', 130], ['Glenden', 150],
   ['Mackay', 189], ['Townsville', 200], ['Charters Towers', 245], ['Moranbah', 300],

@@ -33,13 +33,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=598';
+} from './firebase-config.js?v=599';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=598';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=598';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=598';
-import { messagesHtml, wireMessages } from './messages.js?v=598';
-import { expandKit } from './kit.js?v=598';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=599';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=599';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=599';
+import { messagesHtml, wireMessages } from './messages.js?v=599';
+import { expandKit } from './kit.js?v=599';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -4719,6 +4719,7 @@ const DELIVERY_ZONES = [
   { town: 'Proserpine', km: 64 },
   { town: 'Home Hill', km: 79 },
   { town: 'Cannonvale', km: 84 },
+  { town: 'Cape Gloucester Resort', km: 85 },   // by road (Max, 20 Oct 2026)
   { town: 'Collinsville', km: 86 },
   { town: 'Scottville', km: 88 },
   { town: 'Airlie Beach', km: 88 },

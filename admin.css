@@ -4569,3 +4569,4 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 }
 .ms-mail-btn a:hover{ filter:brightness(1.08); }
 .ms-mail-body a{ color:#ff6b00; font-weight:700; }
+.ms-sp-tip{ font-style:italic; max-width:420px; }

@@ -55,3 +55,19 @@ export const EVENT_COSTS = [
   'Stage, sound and lighting', 'Security and first aid', 'Toilets, power and waste',
   'Permits and insurance', 'Marketing and posters', 'Kids activities and prizes',
 ];
+
+/*  BIG BOWEN BUSINESSES to ask (researched 20 Oct 2026 - Max: "go after big
+    business in Bowen", not our vendors). Emails only where one was published
+    for community / sponsorship enquiries - the rest need an email added.  */
+export const SUGGESTED_SPONSORS = [
+  { business: 'Abbot Point Operations (Bravus)', email: '', note: 'Runs the NQXT port near Bowen - one of the biggest local employers; has a Community Support Program. Find the contact on abbotpointoperations.com.au.' },
+  { business: 'North Queensland Bulk Ports (NQBP)', email: 'AJulian@nqbp.com.au', note: 'Community Relationship Advisor (Angela Julian, 07 4969 0705). Their Community Fund is for non-profits, so pitch this as a sponsorship.' },
+  { business: 'RATCH-Australia (Collinsville Solar Farm)', email: 'enquiries@ratchaustralia.com', note: 'Published email for sponsorship enquiries; they support local community events.' },
+  { business: 'Whitsunday Regional Council', email: '', note: 'Community Sponsorship Program runs in rounds - check dates on whitsundayrc.qld.gov.au (a later round opens 1 March 2027).' },
+  { business: 'Bowen Gumlu Growers Association', email: '', note: 'Represents the big Bowen/Gumlu growers - good for a "locally grown" partnership.' },
+  { business: 'Mulgowie Farming Company', email: '', note: 'Large family-owned grower with a Bowen packhouse.' },
+  { business: 'Koorelah Farms', email: '', note: 'One of Australia\'s largest outdoor tomato growers, Bowen.' },
+  { business: 'Hillery Group', email: '', note: 'Bowen-based contractor (worked on the Collinsville solar farm).' },
+  { business: 'McDonald\'s Bowen', email: '', note: 'Sponsors local community awards in the Whitsundays.' },
+  { business: 'Queensland Country Bank', email: '', note: 'Runs "Good For Good" community grants and has backed Bowen clubs.' },
+];
