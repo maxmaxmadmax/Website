@@ -197,10 +197,11 @@ export function messagesHtml(ctx) {
     <div class="ms-tabs" role="tablist">
       <button type="button" class="ms-tab${tab === 'vendors' ? ' is-on' : ''}" role="tab" data-ms-tab="vendors">Vendors</button>
       <button type="button" class="ms-tab${tab === 'clients' ? ' is-on' : ''}" role="tab" data-ms-tab="clients">Clients</button>
+      <button type="button" class="ms-tab ms-tab-log${tab === 'sent' ? ' is-on' : ''}" role="tab" data-ms-tab="sent">Sent emails</button>
       <button type="button" class="ms-tab" disabled title="Coming soon">Crew &amp; performers</button>
       <button type="button" class="ms-tab" disabled title="Coming soon">Sponsors &amp; suppliers</button>
     </div>
-    ${tab === 'clients' ? clientsHtml(h) : `<div class="ad-card ms-card">
+    ${tab === 'sent' ? sentHtml(ctx) : tab === 'clients' ? clientsHtml(h) : `<div class="ad-card ms-card">
       <table class="ms-table">
         <thead><tr><th>When</th><th>Message &amp; subject</th><th>Who</th><th>Status</th><th>Sent</th></tr></thead>
         <tbody>${rows || `<tr><td colspan="5" class="ad-cell-muted">${state.msgSeeding ? 'Adding the starter messages&hellip;' : 'No messages yet.'}</td></tr>`}</tbody>
@@ -209,6 +210,46 @@ export function messagesHtml(ctx) {
     <p class="ms-key">You also get an office copy of every new vendor booking at info@soundzgood.com.au.</p>`}
     <p class="ms-key"><span class="ms-chip ms-grey">Draft</span> still being written &nbsp; <span class="ms-chip ms-amber">Your OK</span> ready &mdash; needs your approval &nbsp; <span class="ms-chip ms-green">Auto</span> approved, sends itself</p>
   </div>`;
+}
+
+/*  SENT EMAILS: everything the system has sent, newest first. Click one to
+    see exactly what went (Max, 20 Oct 2026). Filled by functions/lib/mail-log.js. */
+const KIND = {
+  quote: 'Quote / invoice', estimate: 'Bot estimate', 'vendor-invoice': 'Vendor invoice', message: 'Message',
+  lead: 'Lead outreach', 'office-copy': 'Office copy', 'vendor-confirmation': 'Vendor confirmation', email: 'Email',
+};
+function whenSent(at) {
+  const ms = at && (at.seconds != null ? at.seconds * 1000 : (typeof at.toMillis === 'function' ? at.toMillis() : 0));
+  if (!ms) return '';
+  return new Date(ms).toLocaleString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+}
+function sentHtml(ctx) {
+  const { state, h } = ctx;
+  if (!state.emailLog) return '<div class="ad-card ms-card ms-pad"><p class="ad-cell-muted">Loading sent emails&hellip;</p></div>';
+  const q = String(state.emailLogFilter || '').toLowerCase();
+  const rows = state.emailLog.filter((m) => !q || [m.to, m.cc, m.subject, KIND[m.kind]].join(' ').toLowerCase().includes(q));
+  const open = state.emailLog.find((m) => m.id === state.emailLogOpen);
+  return `<div class="ms-log-bar">
+      <input type="search" class="ad-input" data-ms-logq placeholder="Search by email, subject or type&hellip;" value="${h.attr(state.emailLogFilter || '')}">
+      <button type="button" class="ad-btn" data-ms-logrefresh>Refresh</button>
+    </div>
+    <div class="ms-log-grid${open ? ' has-open' : ''}">
+      <div class="ad-card ms-card"><table class="ms-table">
+        <thead><tr><th>When</th><th>To</th><th>Subject</th><th>Type</th><th>Status</th></tr></thead>
+        <tbody>${rows.map((m) => `<tr data-ms-log="${h.attr(m.id)}"${open && open.id === m.id ? ' class="is-sel"' : ''}>
+          <td class="ms-when">${h.esc(whenSent(m.at))}</td>
+          <td>${h.esc(m.to)}${m.cc ? '<span class="ms-sub">cc ' + h.esc(m.cc) + '</span>' : ''}</td>
+          <td>${h.esc(m.subject)}</td>
+          <td>${h.esc(KIND[m.kind] || m.kind)}</td>
+          <td>${m.test ? '<span class="ms-chip ms-blue">Test</span>' : (m.ok ? '<span class="ms-chip ms-green">Sent</span>' : '<span class="ms-chip ms-red" title="' + h.attr(m.error || '') + '">Failed</span>')}</td>
+        </tr>`).join('') || '<tr><td colspan="5" class="ad-cell-muted">No emails logged yet - they appear here from now on.</td></tr>'}</tbody>
+      </table></div>
+      ${open ? `<aside class="ad-card ms-card ms-pad ms-log-view">
+        <button type="button" class="ms-back" data-ms-logclose>&times; Close</button>
+        <p class="ms-log-meta"><b>${h.esc(open.subject)}</b><br>To: ${h.esc(open.to)}${open.cc ? '<br>CC: ' + h.esc(open.cc) : ''}${open.bcc ? '<br>Copy: ' + h.esc(open.bcc) : ''}<br>${h.esc(whenSent(open.at))}${open.ok ? '' : '<br><span class="ms-fail">Failed: ' + h.esc(open.error || '') + '</span>'}</p>
+        <iframe class="ms-log-frame" id="ms-log-frame" title="Email"></iframe>
+      </aside>` : ''}
+    </div>`;
 }
 
 function clientsHtml(h) {
@@ -330,6 +371,27 @@ export function wireMessages(ctx) {
       .finally(() => { state.msgSeeding = false; });
   }
 
+  // Sent emails: load, search, show the chosen one
+  const refreshLog = () => {
+    if (!ctx.loadLog) return;
+    ctx.loadLog().then((list) => { state.emailLog = list; render(); })
+      .catch((err) => { state.emailLog = []; window.alert(err.message || 'Could not load sent emails.'); render(); });
+  };
+  if (state.msgTab === 'sent' && !state.emailLog) refreshLog();
+  const logFrame = document.getElementById('ms-log-frame');
+  if (logFrame) {
+    const m = (state.emailLog || []).find((x) => x.id === state.emailLogOpen);
+    if (m) logFrame.srcdoc = m.html || ('<pre style="white-space:pre-wrap;font-family:Arial;padding:16px">' + ctx.h.esc(m.text || '') + '</pre>');
+  }
+  const logQ = root.querySelector('[data-ms-logq]');
+  if (logQ) logQ.addEventListener('input', () => {
+    state.emailLogFilter = logQ.value;
+    const pos = logQ.selectionStart;
+    render();
+    const again = document.querySelector('[data-ms-logq]');
+    if (again) { again.focus(); again.selectionStart = again.selectionEnd = pos; }
+  });
+
   const prev = document.getElementById('ms-prev');
   const paintPreview = () => { if (prev) prev.innerHTML = previewHtml(ctx); };
   paintPreview();
@@ -342,7 +404,16 @@ export function wireMessages(ctx) {
 
   root.addEventListener('click', async (e) => {
     const tabBtn = e.target.closest('[data-ms-tab]');
-    if (tabBtn) { state.msgTab = tabBtn.getAttribute('data-ms-tab'); render(); return; }
+    if (tabBtn) {
+      state.msgTab = tabBtn.getAttribute('data-ms-tab');
+      if (state.msgTab === 'sent' && !state.emailLog) refreshLog();
+      render();
+      return;
+    }
+    if (e.target.closest('[data-ms-logrefresh]')) { refreshLog(); return; }
+    if (e.target.closest('[data-ms-logclose]')) { state.emailLogOpen = null; render(); return; }
+    const logRow = e.target.closest('[data-ms-log]');
+    if (logRow) { state.emailLogOpen = logRow.getAttribute('data-ms-log'); render(); return; }
     const open = e.target.closest('[data-ms-open]');
     if (open) { state.msgOpen = open.getAttribute('data-ms-open'); state.msgDraft = null; render(); return; }
     if (e.target.closest('[data-ms-new]')) { state.msgOpen = 'new'; state.msgDraft = blankMessage(); render(); return; }

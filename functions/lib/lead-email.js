@@ -67,6 +67,7 @@ async function sendLeadEmail({ to, subject, body }) {
 
   try {
     await tx.sendMail({
+      kind: 'lead',
       from: `${SELLER.name} <${SELLER.email}>`,
       to,
       replyTo: OFFICE,

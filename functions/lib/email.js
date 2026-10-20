@@ -342,6 +342,7 @@ async function sendBookingEmails(booking, bookingId, event, opts = {}) {
   if (to && !opts.officeOnly) {
     try {
       await tx.sendMail({
+        kind: 'vendor-confirmation',
         from,
         to,
         replyTo: OFFICE_COPY,
@@ -368,6 +369,7 @@ async function sendBookingEmails(booking, bookingId, event, opts = {}) {
 
   try {
     await tx.sendMail({
+      kind: 'office-copy',
       from,
       to: OFFICE_COPY,
       replyTo: to || OFFICE_COPY,

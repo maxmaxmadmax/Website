@@ -119,6 +119,7 @@ async function sendMessageEmail(msg, values, opts) {
   if (!opts.to) return { sent: false, reason: 'no-address' };
   try {
     await tx.sendMail({
+      kind: 'message',
       from: `${SELLER.name} <${SELLER.email}>`,
       to: opts.to,
       // a copy of every email goes to the office (Max, 20 Oct 2026)

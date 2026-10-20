@@ -21,6 +21,7 @@ const { initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue, Timestamp } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
 
+require('./lib/mail-log');   // every email the system sends is logged (Messages > Sent emails)
 const layout = require('./lib/layout');
 const { sendBookingEmails } = require('./lib/email');
 const { sendQuoteEmail } = require('./lib/quote-email');

@@ -33,13 +33,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=586';
+} from './firebase-config.js?v=588';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=586';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=586';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=586';
-import { messagesHtml, wireMessages } from './messages.js?v=586';
-import { expandKit } from './kit.js?v=586';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=588';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=588';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=588';
+import { messagesHtml, wireMessages } from './messages.js?v=588';
+import { expandKit } from './kit.js?v=588';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -3209,7 +3209,15 @@ window.__sgAdmin = { state, VIEWS, call, render };
    The page itself lives in js/messages.js; the view key stays 'vendorEmail'
    so old links still land here.
    ========================================================================= */
-function msgCtx() { return { state, h: { esc, attr }, call, render }; }
+function msgCtx() { return { state, h: { esc, attr }, call, render, loadLog }; }
+/*  The last 150 emails the system sent (Messages > Sent emails). */
+async function loadLog() {
+  const { collection, getDocs, query, orderBy, limit } = fb.f;
+  const snap = await getDocs(query(collection(fb.db, 'emailLog'), orderBy('at', 'desc'), limit(150)));
+  const out = [];
+  snap.forEach((d) => out.push({ id: d.id, ...d.data() }));
+  return out;
+}
 VIEWS.vendorEmail = {
   html() { return messagesHtml(msgCtx()); },
   wire() { wireMessages(msgCtx()); },

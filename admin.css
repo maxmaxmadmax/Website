@@ -4426,7 +4426,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 /* ==========================================================================
    MESSAGES page (Max, 19 Oct 2026) - js/messages.js
    ========================================================================== */
-.ms{ max-width:1180px; }
+.ms{ max-width:none; width:100%; }   /* fills the page (Max, 20 Oct 2026) */
 .ms-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:14px; }
 .ms-head h1, .ms-title h1{ margin:0 0 4px; font-size:24px; }
 .ms-head p{ margin:0; color:var(--ad-muted); font-size:14px; }
@@ -4519,3 +4519,19 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-fl{ display:block; margin:0; }
 .qb-fl > span{ display:block; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#9aa0a8; margin:6px 0 0 2px; }
 .qb-fl .qb-cin{ margin-top:0; width:100%; box-sizing:border-box; }
+
+/* Messages > Sent emails (Max, 20 Oct 2026) */
+.ms-tab-log{ margin-left:auto; }
+.ms-red{ background:#fdecec; color:#b3261e; }
+.ms-log-bar{ display:flex; gap:8px; margin-bottom:10px; }
+.ms-log-bar .ad-input{ flex:1; max-width:420px; }
+.ms-log-grid{ display:grid; grid-template-columns:1fr; gap:14px; align-items:start; }
+.ms-log-grid.has-open{ grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+@media (max-width:1100px){ .ms-log-grid.has-open{ grid-template-columns:1fr; } }
+.ms-table tbody tr.is-sel td{ background:#fff7ef; }
+.ms-log-meta{ font-size:13px; line-height:1.6; margin:4px 0 10px; color:#444; }
+.ms-log-frame{ width:100%; height:720px; border:1px solid var(--ad-line); border-radius:10px; background:#f4f4f5; }
+/* Messages fills the page: wider editor + preview, roomier table (Max, 20 Oct 2026) */
+.ms .ms-grid{ grid-template-columns:minmax(0,1.1fr) minmax(420px,1fr); }
+.ms .ms-body{ min-height:340px; }
+.ms-table td:nth-child(1){ width:18%; } .ms-table td:nth-child(2){ width:38%; }

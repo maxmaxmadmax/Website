@@ -179,6 +179,7 @@ async function sendQuoteEmail(lead) {
 
   try {
     await tx.sendMail({
+      kind: 'estimate',
       from: `${SELLER.name} <${SELLER.email}>`,
       to,
       replyTo: OFFICE,

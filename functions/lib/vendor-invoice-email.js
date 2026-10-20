@@ -163,6 +163,7 @@ async function sendVendorInvoiceEmail(d) {
 
   try {
     await tx.sendMail({
+      kind: 'vendor-invoice',
       from: `${SELLER.name} <${SELLER.email}>`,
       to: d.to,
       // a copy of every email goes to the office (Max, 20 Oct 2026)

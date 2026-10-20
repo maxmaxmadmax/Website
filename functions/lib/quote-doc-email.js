@@ -99,6 +99,7 @@ async function sendQuoteLinkEmail(q, link) {
 
   try {
     await tx.sendMail({
+      kind: 'quote',
       from: `${SELLER.name} <${SELLER.email}>`,
       to,
       // the customer's CC address (e.g. their accounts team) gets a copy - Max, 15 Oct 2026
