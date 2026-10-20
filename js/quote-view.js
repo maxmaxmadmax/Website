@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=595';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=595';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=596';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=596';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -591,7 +591,7 @@ function proposalBottom(q, opts = {}) {
       + bank;
   } else if (q.paymentStatus === 'bank') {
     book = steps(3) + invHead() + lateBox + (fullOnly(q)
-      ? '<div class="qp-done">&#10003; Quote accepted' + (q.acceptedName ? ' by ' + esc(q.acceptedName) : '') + '.</div><p class="qp-full-note qp-overdue"><b>Payment overdue.</b> Your event is less than 7 days away. Please transfer the full <strong>' + money(owing) + '</strong> today to keep your booking.</p>' + bank
+      ? '<div class="qp-done">&#10003; Quote accepted' + (q.acceptedName ? ' by ' + esc(q.acceptedName) : '') + '.</div><p class="qp-full-note qp-overdue"><b>Payment due now.</b> Your event is less than 7 days away. Please transfer the full <strong>' + money(owing) + '</strong> today to keep your booking.</p>' + bank
         + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-ghost qp-go" data-pay="full">Or pay in full by card</button>' : '')
       : '<div class="qp-done">&#10003; Quote accepted' + (q.acceptedName ? ' by ' + esc(q.acceptedName) : '') + '.</div><p class="qp-full-note">Your date is not held until the deposit lands. Please transfer the ' + pct + '% deposit of <strong>' + money(deposit) + '</strong> today.</p>' + bank
         + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-ghost qp-go" data-pay="deposit">Or pay the deposit by card</button>' : ''));
@@ -607,7 +607,7 @@ function proposalBottom(q, opts = {}) {
   } else {
     /*  THE PAYMENT GATEWAY (Max's mock-up, 20 Oct 2026): bank transfer first,
         then card in full, then card deposit (greyed out within 7 days). An alert
-        on top - "Payment overdue" inside 7 days, otherwise "deposit secures
+        on top - "Payment due now" inside 7 days ("overdue" only once a balance is late), otherwise "deposit secures
         your date". Summary card on the right with what is due now.        */
     const full = fullOnly(q);
     const ic = (p) => '<span class="pg-ic" aria-hidden="true"><svg viewBox="0 0 24 24">' + p + '</svg></span>';
@@ -622,7 +622,7 @@ function proposalBottom(q, opts = {}) {
       + (off ? '<span class="pg-badge">Not available</span>' : '') + '</label>';
     const refChip = '<span class="pg-ref"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/></svg>Use reference: <b>' + esc(ref) + '</b></span>';
     const alert = full
-      ? '<div class="pg-alert pg-alert-red"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20z"/><path d="M12 10v5M12 18h.01"/></svg><div><b>Payment overdue</b><p>Your event is less than 7 days away, so the full amount is now due.</p><small>Please make payment today to keep your booking.</small></div></div>'
+      ? '<div class="pg-alert pg-alert-red"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20z"/><path d="M12 10v5M12 18h.01"/></svg><div><b>Payment due now</b><p>Your event is less than 7 days away, so the full amount is due now.</p><small>Please pay today to secure your booking.</small></div></div>'
       : '<div class="pg-alert pg-alert-amber"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><div><b>Secure your date</b><p>Your date is held once the ' + pct + '% deposit is received.</p><small>The balance is due ' + esc(balDue) + '.</small></div></div>';
     const trust = (p, t, d) => '<div class="pg-trust-row"><span class="pg-trust-ic" aria-hidden="true"><svg viewBox="0 0 24 24">' + p + '</svg></span><div><b>' + t + '</b><span>' + d + '</span></div></div>';
     book = '<p class="pg-lead">Your booking is confirmed once payment is received.</p>'
