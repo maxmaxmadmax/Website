@@ -90,6 +90,10 @@ function main() {
     }
   }
 
+  // version.json - every page checks it (js/main.js) and loads itself fresh if
+  // it is older, so nobody has to hard-refresh after a deploy (Max, 20 Oct 2026)
+  fs.writeFileSync(path.join(ROOT, 'version.json'), JSON.stringify({ v: next }) + '\n');
+
   console.log(`\nv=${next} on ${refs} references across ${touched} files.`);
 }
 

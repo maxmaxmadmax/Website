@@ -27,6 +27,40 @@ var SG_VERSION = (function () {
     return found ? found[1] : '';
 }());
 
+/*  ALWAYS THE LATEST PAGE (Max, 20 Oct 2026)
+
+    GitHub Pages tells browsers to keep each page for ten minutes, and that
+    can't be changed there - so after a deploy people kept seeing the old
+    page until they hard-refreshed. Now every page asks version.json
+    (written by tools/bump-assets.js, never cached) whether there is a newer
+    version. If there is, it loads the page again under a new address
+    (?_v=N), which the browser has never saved, so it comes fresh. Then the
+    ?_v=N is tidied off the address bar. Once per version, so it can never
+    loop. Costs one tiny request per page. */
+(function freshPage() {
+    try {
+        var params = new URLSearchParams(location.search);
+        var landed = params.get('_v');
+        if (landed) {
+            // we came here to get the fresh copy - tidy the address bar
+            params.delete('_v');
+            var clean = location.pathname + (params.toString() ? '?' + params : '') + location.hash;
+            history.replaceState(history.state, '', clean);
+        }
+        if (!SG_VERSION || !window.fetch) return;
+        fetch('/version.json?t=' + Date.now(), { cache: 'no-store' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) {
+                if (!d || !(Number(d.v) > Number(SG_VERSION))) return;
+                if (landed === String(d.v)) return;          // already tried this version
+                var p = new URLSearchParams(location.search);
+                p.set('_v', d.v);
+                location.replace(location.pathname + '?' + p + location.hash);
+            })
+            .catch(function () { /* offline - keep what we have */ });
+    } catch (e) { /* very old browser - no harm done */ }
+}());
+
 function versioned(url) {
     return SG_VERSION ? url + '?v=' + encodeURIComponent(SG_VERSION) : url;
 }
