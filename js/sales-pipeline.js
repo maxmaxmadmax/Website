@@ -10,7 +10,7 @@
    (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { isBooked, pickProgress } from './stock.js?v=584';
+import { isBooked, pickProgress } from './stock.js?v=585';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -40,7 +40,7 @@ export function canDelete(q) {
 }
 
 /*  LATE PAYMENT CHARGE DUE? (Max, 20 Oct 2026) - same rule as lateFeeState()
-    in functions/index.js: unpaid more than 14 days after the due date (7 days
+    in functions/index.js: unpaid more than 28 days after the due date (7 days
     before the event), then every further full month. Returns the next 2%
     amount in cents, or 0.                                                  */
 function isoAdd(iso, n) {
@@ -54,7 +54,7 @@ export function lateFeeDue(q) {
   if (!(q.kind === 'invoice' || ['accepted', 'invoiced'].includes(q.status))) return 0;
   const due = isoAdd(q.hire && q.hire.startDate, -7);
   if (!due) return 0;
-  const first = isoAdd(due, 15);
+  const first = isoAdd(due, 29);   // more than 28 days after the due date
   const now = new Date();
   const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
   if (today < first) return 0;

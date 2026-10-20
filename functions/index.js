@@ -4022,7 +4022,7 @@ exports.vendorUnsubscribe = onRequest(async (req, res) => {
 
 /* =========================================================================
    LATE PAYMENT CHARGES  (Max, 20 Oct 2026)
-   Terms "Overdue payments": an invoice still unpaid MORE THAN 14 DAYS after its
+   Terms "Overdue payments": an invoice still unpaid MORE THAN 28 DAYS after its
    due date (due = 7 days before the event) may get 2% of the outstanding
    balance, and another 2% for each further full month. NOTHING IS ADDED BY
    ITSELF - the Sales Pipeline shows "Late fee due" and Max presses Add.
@@ -4039,7 +4039,7 @@ function lateFeeState(q) {
   if (!(q.kind === 'invoice' || ['accepted', 'invoiced'].includes(q.status))) return { allowed: 0, owing };
   const due = addDaysISO(q.hire && q.hire.startDate, -7);
   if (!due) return { allowed: 0, owing };
-  const first = addDaysISO(due, 15);   // more than 14 days after the due date
+  const first = addDaysISO(due, 29);   // more than 28 days after the due date
   const today = brisbaneToday();
   if (today < first) return { allowed: 0, owing, first };
   const [fy, fm, fd] = first.split('-').map(Number);

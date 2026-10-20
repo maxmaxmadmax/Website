@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=584';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=584';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=585';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=585';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -549,7 +549,7 @@ function proposalBottom(q, opts = {}) {
   const lateBox = (q.lateFees || []).length
     ? '<div class="pg-late"><b>Late payment charges added</b>'
       + q.lateFees.map((x) => '<div><span>2% late payment charge' + (x.date ? ' &middot; ' + esc(x.date.split('-').reverse().join('/')) : '') + '</span><span>' + money(x.cents) + '</span></div>').join('')
-      + '<p>Your invoice was unpaid more than 14 days after its due date, so a 2% charge applies (see Terms &amp; Conditions &ldquo;Overdue payments&rdquo;). Another 2% is added for each further month unpaid. Amount now owing: <strong>' + money(owing) + '</strong>.</p></div>'
+      + '<p>Your invoice was unpaid more than 28 days after its due date, so a 2% charge applies (see Terms &amp; Conditions &ldquo;Overdue payments&rdquo;). Another 2% is added for each further month unpaid. Amount now owing: <strong>' + money(owing) + '</strong>.</p></div>'
     : '';
   const balDue = (() => {
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String((q.hire && q.hire.startDate) || ''));
