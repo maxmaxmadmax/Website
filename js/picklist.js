@@ -6,7 +6,7 @@
    admin and everyone on the crew link sees the same list. The list also
    refreshes itself every 20 seconds while it's open.
    ========================================================================== */
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=614';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=615';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -69,6 +69,14 @@ function progressHtml() {
 // &v=gear - the band / crew gear list: no ticks, no money flags (Max, 20 Oct 2026)
 const GEAR_VIEW = new URLSearchParams(location.search).get('v') === 'gear';
 
+/*  "18:30" -> "6:30pm" (the details form stores 24-hour time). Anything else is shown as-is. */
+function niceTime(v) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(v || '').trim());
+  if (!m) return String(v || '');
+  const h = +m[1];
+  return (h % 12 || 12) + ':' + m[2] + (h < 12 ? 'am' : 'pm');
+}
+
 function render() {
   const d = data;
   const t = d.ticks || {};
@@ -87,7 +95,11 @@ function render() {
   const info = (label, value) => value ? `<div><dt>${label}</dt><dd>${value}</dd></div>` : '';
   const contact = [d.contact.name, d.contact.business].filter(Boolean).map(esc).join(' &middot; ')
     + (d.contact.phone ? `<br><a href="tel:${esc(d.contact.phone.replace(/[^\d+]/g, ''))}">${esc(d.contact.phone)}</a>` : '');
-  const times = d.times.start || d.times.finish ? esc([d.times.start, d.times.finish].filter(Boolean).join(' – ')) : '';
+  const times = d.times.start || d.times.finish ? esc([niceTime(d.times.start), niceTime(d.times.finish)].filter(Boolean).join(' – ')) : '';
+  // venue with a tap-for-directions link (falls back to the customer's address / town)
+  const where = d.venue
+    ? `${esc(d.venue)}<br><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.venue)}" target="_blank" rel="noopener">Directions &rarr;</a>`
+    : esc(d.contact.address || d.town || '');
 
   document.getElementById('pl-root').innerHTML = `
     <header class="pl-head">
@@ -98,13 +110,15 @@ function render() {
     <section class="pl-job">
       <h2>${esc(d.eventName || 'Job')}</h2>
       <dl class="pl-info">
+        ${info('Event date', esc(d.eventDate || ''))}
+        ${info('Event starts', times)}
+        ${info('Venue', where)}
         ${info('Hire dates', range)}
-        ${info('Event times', times)}
-        ${info('Where', esc(d.contact.address || d.town || ''))}
         ${info('Getting there', esc(d.delivery))}
         ${info('On-site contact', contact)}
         ${info('Crew', d.crew.map((x) => esc(x.name) + (x.note ? ' <small>' + esc(x.note) + '</small>' : '')).join('<br>'))}
       </dl>
+      ${d.customerNotes ? `<p class="pl-notes"><b>From the customer:</b> ${esc(d.customerNotes)}</p>` : ''}
       ${d.notes ? `<p class="pl-notes"><b>Notes:</b> ${esc(d.notes)}</p>` : ''}
       ${GEAR_VIEW ? '<p class="pl-notes">This is the gear SoundzGood Whitsundays is supplying. Anything missing? Call Max on 0422 393 022.</p>' : d.paidInFull ? '' : '<p class="pl-flag">Balance still owing on this job &mdash; check with Max before handing over gear.</p>'}
     </section>

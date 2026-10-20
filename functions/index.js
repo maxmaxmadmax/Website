@@ -2786,7 +2786,10 @@ exports.getPickList = onCall(async (request) => {
     town: (q.delivery && q.delivery.town) || '',
     delivery: del ? (del.name || 'Delivery & pickup') : 'Customer pickup',
     contact: { name: c.name || '', business: c.business || '', phone: c.phone || '', address: c.address || '' },
-    times: { start: q.botStart || '', finish: q.botFinish || '' },
+    // from the customer details form (Max, 20 Oct 2026): where the gear goes, when it starts, what to know
+    venue: c.eventVenue || '',
+    times: { start: c.eventStartTime || q.botStart || '', finish: q.botFinish || '' },
+    customerNotes: c.customerNotes || '',
     crew,
     notes: q.crewNotes || '',
     items,
