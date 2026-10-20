@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=629';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=629';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=630';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=630';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -590,10 +590,15 @@ function proposalBottom(q, opts = {}) {
       + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-primary qp-go" data-pay="balance">Pay the balance by card</button>' : '')
       + bank;
   } else if (q.paymentStatus === 'bank') {
+    const accepted = '<div class="qp-done">&#10003; Quote accepted' + (q.acceptedName ? ' by ' + esc(q.acceptedName) : '') + '.</div>';
     book = steps(3) + invHead() + lateBox + (fullOnly(q)
       ? '<div class="qp-done">&#10003; Quote accepted' + (q.acceptedName ? ' by ' + esc(q.acceptedName) : '') + '.</div><p class="qp-full-note qp-overdue"><b>Payment due now.</b> Your event is less than 7 days away. Please transfer the full <strong>' + money(owing) + '</strong> today to keep your booking.</p>' + bank
         + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-ghost qp-go" data-pay="full">Or pay in full by card</button>' : '')
-      : '<div class="qp-done">&#10003; Quote accepted' + (q.acceptedName ? ' by ' + esc(q.acceptedName) : '') + '.</div><p class="qp-full-note">Your date is not held until the deposit lands. Please transfer the ' + pct + '% deposit of <strong>' + money(deposit) + '</strong> today.</p>' + bank
+      : q.bankPlan === 'full'
+        // they chose bank transfer IN FULL (Max, 20 Oct 2026)
+        ? accepted + '<p class="qp-full-note">You chose to pay in full. Please transfer <strong>' + money(owing) + '</strong> by ' + esc(balDue) + '. Your date is held once the payment lands.</p>' + bank
+          + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-ghost qp-go" data-pay="full">Or pay in full by card</button>' : '')
+        : '<div class="qp-done">&#10003; Quote accepted' + (q.acceptedName ? ' by ' + esc(q.acceptedName) : '') + '.</div><p class="qp-full-note">Your date is not held until the deposit lands. Please transfer the ' + pct + '% deposit of <strong>' + money(deposit) + '</strong> today.</p>' + bank
         + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-ghost qp-go" data-pay="deposit">Or pay the deposit by card</button>' : ''));
   } else if (justPaid) {
     book = '<div class="qp-done">&#10003; Payment received &mdash; thank you! Confirming your booking&hellip;</div>';
@@ -614,10 +619,10 @@ function proposalBottom(q, opts = {}) {
     const BANK = '<path d="M3 10h18M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18M12 3l9 5H3z"/>';
     const CARD = '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h4"/>';
     // the button says what happens: bank -> invoice, card -> pay the amount
-    const cta = (v, amt) => v === 'bank' ? 'Accept quote &amp; get invoice' : (v === 'deposit' ? 'Accept quote &amp; pay ' + amt + ' deposit' : 'Accept quote &amp; pay ' + amt);
+    const cta = (v, amt) => v.indexOf('bank') === 0 ? 'Accept quote &amp; get invoice' : (v === 'deposit' ? 'Accept quote &amp; pay ' + amt + ' deposit' : 'Accept quote &amp; pay ' + amt);
     const opt = (v, title, sub, amt, on, extra, off) => '<label class="pg-opt' + (off ? ' is-off' : '') + '">'
       + '<input type="radio" name="qp-opt" value="' + v + '" data-cta="' + cta(v, amt) + '"' + (on ? ' checked' : '') + (off ? ' disabled' : '') + '>'
-      + ic(v === 'bank' ? BANK : CARD)
+      + ic(v.indexOf('bank') === 0 ? BANK : CARD)
       + '<span class="pg-opt-body"><b>' + title + '</b><em>' + sub + '</em><strong>' + amt + '</strong>' + (extra || '') + '</span>'
       + (off ? '<span class="pg-badge">Not available</span>' : '') + '</label>';
     const refChip = '<span class="pg-ref"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/></svg>Use reference: <b>' + esc(ref) + '</b></span>';
@@ -631,7 +636,9 @@ function proposalBottom(q, opts = {}) {
       + alert
       + (full
         ? opt('bank', 'Bank transfer (Pay in full)', 'Pay the full amount now via bank transfer.', money(total), true, refChip)
-        : opt('bank', 'Bank transfer (' + pct + '% deposit)', 'Pay the deposit now via bank transfer.', money(deposit), true, refChip))
+        : opt('bank', 'Bank transfer (' + pct + '% deposit)', 'Pay the deposit now via bank transfer.', money(deposit), true, refChip)
+          // pay it all up front by bank (Max, 20 Oct 2026)
+          + opt('bankfull', 'Bank transfer (Pay in full)', 'Pay the full amount now via bank transfer. Nothing more to pay later.', money(total), false, refChip))
       + (q.cardOn ? opt('full', 'Credit or debit card (Pay in full)', 'Fast, secure payment with Visa, Mastercard or Amex.', money(total), false) : '')
       + (q.cardOn ? (full
         ? opt('deposit', 'Credit or debit card (' + pct + '% deposit)', 'A ' + pct + '% deposit is not available as your event is less than 7 days away.', money(deposit), false, '', true)
@@ -648,8 +655,10 @@ function proposalBottom(q, opts = {}) {
       + '<div class="qv-sumrow qv-grand"><span>Total (inc. GST)</span><span>' + money(total) + '</span></div>'
       + (full
         ? '<div class="pg-due pg-due-red"><span>Amount due now</span><span>' + money(total) + '</span></div>'
-        : '<div class="pg-due pg-due-amber"><span>Deposit due now</span><span>' + money(deposit) + '</span></div>'
-          + '<div class="qv-sumrow"><span>Balance due ' + esc(balDue) + '</span><span>' + money(total - deposit) + '</span></div>')
+        : '<div class="pg-due pg-due-amber" data-due="deposit"><span>Deposit due now</span><span>' + money(deposit) + '</span></div>'
+          + '<div class="qv-sumrow" data-due="deposit"><span>Balance due ' + esc(balDue) + '</span><span>' + money(total - deposit) + '</span></div>'
+          // shown instead when a pay-in-full option is picked (Max, 20 Oct 2026)
+          + '<div class="pg-due pg-due-amber" data-due="full" hidden><span>Amount due now</span><span>' + money(total) + '</span></div>')
       + '<div class="pg-trust">'
       + trust('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>', 'Secure payments', 'Card payments are processed securely by Stripe.')
       + trust('<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>', 'Your booking is protected', 'Once payment is received, your booking is confirmed.')
@@ -704,6 +713,12 @@ function wireProposal(q) {
   const goLabel = document.getElementById('qp-go-label');
   document.querySelectorAll('input[name="qp-opt"]').forEach((r) => r.addEventListener('change', () => {
     if (r.checked && goLabel) goLabel.innerHTML = r.getAttribute('data-cta') || 'Accept &amp; continue';
+    // the summary follows the choice: deposit + balance, or the whole amount now
+    if (r.checked) {
+      const whole = r.value === 'full' || r.value === 'bankfull';
+      document.querySelectorAll('[data-due="deposit"]').forEach((el) => { el.hidden = whole; });
+      document.querySelectorAll('[data-due="full"]').forEach((el) => { el.hidden = !whole; });
+    }
   }));
   const agreeBox = document.getElementById('qp-agree');
   if (agreeBox) agreeBox.addEventListener('change', () => { go.disabled = !agreeBox.checked; });
@@ -715,9 +730,9 @@ function wireProposal(q) {
     if (!agreed) return say('Please tick the box to accept the Terms & Conditions.', true);
     go.disabled = true;
     try {
-      if (pick === 'bank') {
+      if (pick === 'bank' || pick === 'bankfull') {
         say('Accepting…');
-        await callable.accept({ token: token(), name, method: 'bank' });
+        await callable.accept({ token: token(), name, method: 'bank', plan: pick === 'bankfull' ? 'full' : 'deposit' });
         const res = await callable.get({ token: token() });
         render(res.data);
         const b = document.getElementById('qp-book'); if (b) b.scrollIntoView();

@@ -17,9 +17,9 @@
    acceptedAt). Close enough for a dashboard; the invoices are the record.
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=629';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=629';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=629';
+import { isBooked, pickLineProgress } from './stock.js?v=630';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=630';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=630';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -107,8 +107,7 @@ export function todoGroups(ctx) {
     .map((m) => ({ text: m.name || m.subject || 'A message', href: '#/vendorEmail' })));
   add('failed', 'Emails that failed', (ctx.emailLog || []).filter((e) => e.ok === false && !e.test && ms(e.at) > weekAgo)
     .map((e) => ({ text: (e.subject || 'Email') + ' → ' + (e.to || ''), href: '#/vendorEmail' })));
-  add('apps', 'Vendor applications to review', (ctx.bookings || []).filter((b) => !b.reviewStatus && b.status !== 'confirmed' && b.status !== 'cancelled' && b.status !== 'draft')
-    .map((b) => ({ text: ((b.business && b.business.name) || 'A vendor') + (b.siteLabel ? ' · site ' + b.siteLabel : ''), href: '#/applications' })));
+  // (vendor applications removed 20 Oct 2026 - vendors book and pay themselves, nothing to review)
   add('waitlist', 'Waitlist offers out', (ctx.waitlist || []).filter((w) => w.status === 'offered')
     .map((w) => ({ text: (w.name || 'A vendor') + ' has been offered a spot', href: '#/vendorEmail' })));
   return out;
@@ -237,7 +236,7 @@ export function dashboardHtml(ctx) {
         <div><p class="db-stat-label">Sponsorship</p><p class="db-stat-num">${money(evc.sponsorCents)} <small>of ${money(evc.goal)}</small></p>
           <div class="db-bar"><i style="width:${Math.min(100, Math.round(evc.sponsorCents / evc.goal * 100))}%"></i></div></div>
       </div>
-      <p class="db-event-links"><a href="#/applications">Applications</a> &middot; <a href="#/map">Sites &amp; Map</a> &middot; <a href="#/vendorEmail">Messages</a></p>
+      <p class="db-event-links"><a href="#/vendors">Vendors</a> &middot; <a href="#/map">Sites &amp; Map</a> &middot; <a href="#/vendorEmail">Messages</a></p>
     </div>` : ''}
 
     <div class="ad-card db-panel">

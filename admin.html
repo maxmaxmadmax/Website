@@ -16,11 +16,11 @@
       and the two would fight each other. Keeping them apart also means
       nothing done in here can reach the public site, and nothing done
       there can reach this.                                             -->
-<link rel="stylesheet" href="admin.css?v=629">
+<link rel="stylesheet" href="admin.css?v=630">
 <!--  The DJ list for the Friday Nights panel. Same roster the
         entertainment page shows.                                  -->
-  <script src="js/roster.js?v=629" defer></script>
-  <script type="module" src="js/admin-app.js?v=629"></script>
+  <script src="js/roster.js?v=630" defer></script>
+  <script type="module" src="js/admin-app.js?v=630"></script>
   <!-- ADMIN AUTO-UPDATE: phones may keep this page for up to 10 min after a
        change is published. On open (and when the tab comes back into view) we
        ask for the live page, bypassing any cache; if its version is newer than
@@ -119,9 +119,9 @@
       <button type="button" class="ad-nav-item" data-view="events">
         <span class="ad-ico" aria-hidden="true">◈</span> Events
       </button>
-      <button type="button" class="ad-nav-item" data-view="applications">
-        <span class="ad-ico" aria-hidden="true">☰</span> Applications
-      </button>
+      <!-- Applications removed from the menu (Max, 20 Oct 2026): vendors book and pay
+           themselves now, so there is nothing to decide. Vendors > Unpaid shows the
+           same people. #/applications still opens if an old link points there. -->
       <button type="button" class="ad-nav-item" data-view="vendors">
         <span class="ad-ico" aria-hidden="true">☺</span> Vendors
       </button>

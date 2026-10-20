@@ -2942,6 +2942,7 @@ exports.getQuote = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
     acceptedAt: secs(q.acceptedAt),
     createdAt: secs(q.createdAt),
     paymentStatus: q.paymentStatus || '',      // '' | bank | deposit | paid
+    bankPlan: q.bankPlan || '',                // bank payers: 'deposit' | 'full'
     paymentMethod: q.paymentMethod || '',
     amountPaidCents: q.amountPaidCents || 0,
     depositPct: QUOTE_DEPOSIT_PCT,
@@ -2977,7 +2978,8 @@ exports.acceptQuote = onCall(async (request) => {
     acceptedName: name,
     acceptedAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
-    ...(bank ? { paymentMethod: 'bank', paymentStatus: 'bank' } : {}),
+    // BANK IN FULL (Max, 20 Oct 2026): a bank payer picks deposit or the whole amount
+    ...(bank ? { paymentMethod: 'bank', paymentStatus: 'bank', bankPlan: data.plan === 'full' ? 'full' : 'deposit' } : {}),
   });
   return { ok: true };
 });

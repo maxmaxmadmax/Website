@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=629';
+} from './firebase-config.js?v=630';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=629';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=629';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=629';
-import { messagesHtml, wireMessages } from './messages.js?v=629';
-import { dashboardHtml } from './dashboard.js?v=629';
-import { expandKit } from './kit.js?v=629';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=630';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=630';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=630';
+import { messagesHtml, wireMessages } from './messages.js?v=630';
+import { dashboardHtml } from './dashboard.js?v=630';
+import { expandKit } from './kit.js?v=630';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -1900,7 +1900,7 @@ function wireSitePanel() {
   const jump = document.querySelector('[data-open-booking]');
   if (jump) jump.addEventListener('click', () => {
     state.openBookingId = jump.getAttribute('data-open-booking');
-    location.hash = '#/applications';
+    location.hash = '#/vendors';   // Applications left the menu (20 Oct 2026)
   });
 
   const unseat = document.getElementById('ad-site-unseat');
