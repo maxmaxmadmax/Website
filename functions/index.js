@@ -94,6 +94,31 @@ function requireAuth(request) {
   return request.auth.uid;
 }
 
+/*  RATE LIMIT (security audit, 20 Oct 2026). The public forms need no login,
+    so without this a script could flood the database or use the estimate
+    bot to email strangers. Counts per visitor (by IP, hashed - no IPs are
+    stored) per form, in a fixed window. rateLimits/ is closed to browsers. */
+function callerIp(request) {
+  const r = request.rawRequest || {};
+  const fwd = String((r.headers && r.headers['x-forwarded-for']) || '').split(',')[0].trim();
+  return String(r.ip || fwd || 'unknown');
+}
+async function rateLimit(key, max, windowMins) {
+  const ref = db.collection('rateLimits').doc(crypto.createHash('sha256').update(key).digest('hex').slice(0, 40));
+  const now = Date.now();
+  const win = windowMins * 60000;
+  const ok = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const d = snap.exists ? snap.data() : {};
+    const fresh = !d.start || now - d.start >= win;
+    const n = fresh ? 1 : (d.n || 0) + 1;
+    tx.set(ref, { start: fresh ? now : d.start, n, expireAt: new Date((fresh ? now : d.start) + win) });
+    return n <= max;
+  });
+  if (!ok) throw new HttpsError('resource-exhausted', 'Too many tries - please wait a while and try again, or call Max on 0422 393 022.');
+}
+const limitIp = (request, form, max, mins) => rateLimit(form + '|ip|' + callerIp(request), max, mins);
+
 function requireAdmin(request) {
   requireAuth(request);
   if (request.auth.token.admin !== true) {
@@ -3113,6 +3138,7 @@ function botFindItem(inv, kws) {
 }
 
 exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  await limitIp(request, 'bot', 10, 60);   // security audit: 10 estimates an hour per visitor
   const d = request.data || {};
   if (String(d.website || d.company_url || '').trim()) return { ok: true };   // honeypot
 
@@ -3138,6 +3164,7 @@ exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
 
   if (!eventType) throw new HttpsError('invalid-argument', 'Please choose an event type.');
   if (!name || !(email || phone)) throw new HttpsError('invalid-argument', 'Please leave your name and a contact.');
+  if (email) await rateLimit('bot|to|' + email.toLowerCase(), 3, 24 * 60);   // security audit: never a spam cannon
 
   const inv = await loadQuoteInventory();
   const byId = {};
@@ -4014,6 +4041,9 @@ exports.vendorUnsubscribe = onRequest(async (req, res) => {
   if (!/^[a-f0-9]{20,40}$/.test(token)) return page('That link is not valid.');
   const snap = await db.collection('bookings').where('invoiceToken', '==', token).limit(1).get();
   if (snap.empty) return page('That link is not valid.');
+  // SECURITY AUDIT (20 Oct 2026): email scanners open links by themselves -
+  // opening the link only shows a button; pressing it does the unsubscribe.
+  if (req.method !== 'POST') return page('Unsubscribe from event news?<form method="post" style="margin-top:18px"><button style="background:#ff6b00;color:#fff;border:0;padding:12px 22px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer">Yes, unsubscribe me</button></form>');
   await snap.docs[0].ref.update({ promoOptOut: true, promoOptOutAt: FieldValue.serverTimestamp() });
   return page('You have been unsubscribed from event news.');
 });
@@ -4132,6 +4162,7 @@ const WAITLIST_URL = process.env.WAITLIST_URL || 'https://waitlistrespond-4smug7
 
 /*  The vendor page: join. No account needed; one entry per email per type. */
 exports.joinWaitlist = onCall(async (request) => {
+  await limitIp(request, 'waitlist', 10, 60);   // security audit
   const d = request.data || {};
   const clean = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
   const eventId = clean(d.eventId, 100);
@@ -4325,6 +4356,9 @@ exports.waitlistRespond = onRequest(async (req, res) => {
   const d = snap.docs[0];
   const w = d.data();
   if (!['offered', 'claimed'].includes(w.status)) return page('All sorted.', 'This offer has already been answered.');
+  // SECURITY AUDIT (20 Oct 2026): email scanners open links by themselves -
+  // opening the link only asks; pressing the button gives the spot up.
+  if (req.method !== 'POST') return page('Give up this spot?', 'If you can&rsquo;t make it, press the button and we&rsquo;ll offer the spot to the next vendor.<form method="post" style="margin-top:18px"><button style="background:#111;color:#fff;border:0;padding:12px 22px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer">Yes, decline the spot</button></form>');
   await d.ref.update({ status: 'declined', declinedAt: FieldValue.serverTimestamp() });
   await releaseWaitlistSite(w.eventId, w.siteId, d.id, w.claimedUid);
   return page('No worries - thanks for letting us know.', 'We have passed the spot on to the next vendor. We hope to see you at a future event!');
@@ -4393,6 +4427,7 @@ exports.getSponsorInfo = onCall(async (request) => {
 
 /*  PUBLIC: "I'm interested" from the sponsor page. */
 exports.sponsorInterest = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  await limitIp(request, 'sponsor', 10, 60);   // security audit
   const d = request.data || {};
   const clean = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
   const eventId = clean(d.eventId, 100);
@@ -4552,6 +4587,7 @@ exports.getDetailsForm = onCall(async (request) => {
 
 /*  PUBLIC: they press Submit. */
 exports.submitDetails = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  await limitIp(request, 'details', 20, 60);   // security audit
   const d = request.data || {};
   const doc = await quoteByDetailsToken(d.token);
   const q = doc.data();

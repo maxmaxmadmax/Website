@@ -73,7 +73,14 @@ service cloud.firestore {
         // nor an approval or a staff note - both are set by admins only
         && !('reviewStatus' in request.resource.data)
         && !('notes' in request.resource.data)
-        && request.resource.data.vendorType in ['food', 'market'];
+        && request.resource.data.vendorType in ['food', 'market']
+        // SECURITY AUDIT (20 Oct 2026): only the fields the signup form
+        // writes - nothing the server owns (invoice number / token, terms,
+        // prices, sites) can be planted on a new booking.
+        && request.resource.data.keys().hasOnly([
+             'uid', 'eventId', 'vendorType', 'bayCount', 'business', 'categoryId',
+             'setup', 'documents', 'status', 'paymentStatus', 'createdAt', 'updatedAt'
+           ]);
 
       //  UPDATE IS ABOUT WHAT CHANGED, NOT WHAT IS PRESENT
       //
@@ -100,6 +107,11 @@ service cloud.firestore {
         && resource.data.status in ['draft', 'pending_payment']
         && resource.data.paymentStatus in ['none', 'unpaid']
         && request.resource.data.vendorType in ['food', 'market']
+        // SECURITY AUDIT (20 Oct 2026): a vendor's save may only touch the
+        // fields the signup form saves (saveDraft in js/vendor-signup.js).
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+             'vendorType', 'bayCount', 'business', 'categoryId', 'setup', 'documents', 'updatedAt'
+           ])
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
              // who they are, and where they are up to
              'uid', 'status', 'paymentStatus',
