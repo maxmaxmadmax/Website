@@ -68,3 +68,14 @@ body:has(.bl-wrap){ background:#fff; }
 /* the site menu sits over the page with a see-through fade - on a white
    page that turns grey, so blog pages get a solid black bar */
 body:has(.bl-wrap) #navbar > nav{ background:#000; }
+
+/* big numbers strip (Max, 20 Oct 2026) */
+.bl-stats{ list-style:none; display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; padding:0 !important; margin:0 0 34px !important; }
+.bl-stats li{ margin:0; text-align:center; background:#fff7f0; border-radius:12px; padding:16px 8px; }
+.bl-stats b{ display:block; font-family:var(--sg-font-display); font-size:clamp(26px, 5vw, 38px); line-height:1; color:var(--sg-orange); }
+.bl-stats span{ display:block; margin-top:6px; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#555; }
+@media (max-width:600px){ .bl-stats{ grid-template-columns:repeat(2, 1fr); } }
+
+/* the one-line verdict */
+.bl-verdict{ margin:30px 0 !important; padding:18px 22px; border-left:4px solid var(--sg-orange); background:#fafafa; border-radius:10px;
+  font-family:var(--sg-font-display); font-size:clamp(19px, 3vw, 23px); line-height:1.35; color:#111; }
