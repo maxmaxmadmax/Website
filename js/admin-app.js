@@ -33,13 +33,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=602';
+} from './firebase-config.js?v=603';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=602';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=602';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=602';
-import { messagesHtml, wireMessages } from './messages.js?v=602';
-import { expandKit } from './kit.js?v=602';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=603';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=603';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=603';
+import { messagesHtml, wireMessages } from './messages.js?v=603';
+import { expandKit } from './kit.js?v=603';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5199,7 +5199,6 @@ function quoteBuilderHtml() {
         <div class="qb-bar-spacer"></div>
         ${link ? `<a class="ad-btn ad-btn-ghost" href="${attr(link)}" target="_blank" rel="noopener">Preview</a>` : ''}
         <span class="qb-auto" id="q-auto"></span>
-        ${doc ? '<button type="button" class="ad-btn" id="q-askdetails" title="Text the customer a link to fill in their own details">Ask for details</button>' : ''}
         <button type="button" class="ad-btn${doc ? '' : ' ad-btn-primary'}" id="q-save">Save</button>
         ${doc && status === 'draft' ? '<button type="button" class="ad-btn ad-btn-primary" id="q-approve">&#10003; Approve as quote</button>' : ''}
         ${doc && status !== 'draft' ? `<button type="button" class="ad-btn ad-btn-primary" id="q-send">${status === 'approved' ? '&#9993; Send Quote' : '&#9993; Resend'}</button>` : ''}
@@ -5240,13 +5239,14 @@ function quoteBuilderHtml() {
           <div class="qb-to">
             <p class="qb-block-h">${isInvoice ? 'Bill to' : 'Quote to'}</p>
             ${quoteCustSearchHtml()}
+            <button type="button" class="qb-askbtn" id="q-askdetails">&#128241; Text ${attr(String(c.name || 'the customer').split(' ')[0])} a link to fill in their own details</button>
             <label class="qb-fl"><span>Name</span><input class="qb-cin qb-cin-strong" data-qc="name" value="${attr(c.name)}" placeholder="Customer name"></label>
             <label class="qb-fl"><span>Business</span><input class="qb-cin" data-qc="business" value="${attr(c.business)}" placeholder="Business (optional)"></label>
             <label class="qb-fl"><span>Address</span><input class="qb-cin" data-qc="address" value="${attr(c.address)}" placeholder="Address"></label>
             <label class="qb-fl"><span>Phone</span><input class="qb-cin" data-qc="phone" value="${attr(c.phone)}" placeholder="Phone"></label>
             <label class="qb-fl"><span>Email</span><input class="qb-cin" type="email" data-qc="email" value="${attr(c.email)}" placeholder="Email"></label>
-            <div class="qb-fl"><span>CC &middot; billing / accounts copy</span><div class="qb-cc" id="qb-cc">${ccChipsInner(c.ccEmail)}</div></div>
-            <div class="qb-fl"><span>Gear list to &middot; band / crew (no prices)</span><div class="qb-cc" id="qb-gear">${ccChipsInner(c.gearEmails)}</div></div>
+            <div class="qb-fl"><span>CC &middot; billing / accounts copy</span><div class="qb-cc" id="qb-cc">${ccChipsInner(c.ccEmail, 'Accounts email (optional) - press Enter')}</div></div>
+            <div class="qb-fl"><span>Gear list to &middot; band / crew (no prices)</span><div class="qb-cc" id="qb-gear">${ccChipsInner(c.gearEmails, 'Band or crew email - press Enter')}</div></div>
           </div>
           <div class="qb-hire">
             <p class="qb-block-h">Hire period</p>
@@ -5341,12 +5341,12 @@ const CC_RE = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
 function ccList(str) {
   return String(str || '').split(/[,;\s]+/).map((e) => e.trim()).filter(Boolean);
 }
-function ccChipsInner(str) {
+function ccChipsInner(str, ph) {
   const list = ccList(str);
   return ''
     + list.map((e, i) => '<span class="qb-chip' + (CC_RE.test(e) ? '' : ' is-bad') + '" title="' + attr(CC_RE.test(e) ? 'Gets a copy of every email' : 'This does not look like an email address') + '">'
       + esc(e) + '<button type="button" data-cc-del="' + i + '" aria-label="Remove ' + attr(e) + '">&times;</button></span>').join('')
-    + '<input class="qb-cc-in" type="email" autocomplete="off" placeholder="' + (list.length ? 'Add another&hellip;' : 'Copy someone in (optional) - type an email, press Enter') + '">'
+    + '<input class="qb-cc-in" type="email" autocomplete="off" placeholder="' + (list.length ? 'Add another&hellip;' : (ph || 'Copy someone in (optional) - type an email, press Enter')) + '">'
     + '<p class="qb-cc-msg" hidden></p>';
 }
 
@@ -6085,7 +6085,7 @@ function wireQuoteBuilder() {
   if (ccBox) {
     const ccSet = (list, keepFocus) => {
       quoteDraft.customer[field] = list.join(', ');
-      ccBox.innerHTML = ccChipsInner(quoteDraft.customer[field]);
+      ccBox.innerHTML = ccChipsInner(quoteDraft.customer[field], field === 'gearEmails' ? 'Band or crew email - press Enter' : 'Accounts email (optional) - press Enter');
       if (keepFocus) ccBox.querySelector('.qb-cc-in').focus();
       if (typeof scheduleQuoteAutosave === 'function') scheduleQuoteAutosave();
     };
@@ -6314,6 +6314,11 @@ function wireQuoteActions() {
   const askBtn = document.getElementById('q-askdetails');
   if (askBtn) askBtn.addEventListener('click', async () => {
     try {
+      if (!state.openQuoteId || state.openQuoteId === '__new__') {
+        if (!String(quoteDraft.customer.name || '').trim()) { window.alert('Type their name first, then press this.'); return; }
+        await saveQuoteDoc(null, true);
+      }
+      if (!state.openQuoteId || state.openQuoteId === '__new__') return;
       const res = await call('adminDetailsLink', { id: state.openQuoteId });
       const first = String(quoteDraft.customer.name || '').split(' ')[0];
       const text = 'Hi' + (first ? ' ' + first : '') + ", it's Max from SoundzGood - can you pop your details in here so I can send your quote? " + res.url;
