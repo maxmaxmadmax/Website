@@ -87,7 +87,8 @@
                                   photo: 'images/vendors/vandito-viesta.webp',
                                   link: 'https://www.facebook.com/p/Vandito-Viesta-61586241928820/' },   // Max, 15 Oct 2026
 
-        'Pretty Girl Ave':      { cat: 'gifts-novelty' },   // booked as Other
+        'Pretty Girl Ave':      { cat: 'gifts-novelty',   // booked as Other
+                                  link: 'https://pretty-girl-ave.deed.page/' },   // their page - Max, 21 Oct 2026
 
         // booked under Plants / Garden, but they sell sweets
         'Sian\'s Sugar Shack':  { cat: 'local-produce-packaged', label: 'Sweets & Treats' }
