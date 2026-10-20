@@ -8,7 +8,7 @@
    Uses the sponsor page styles (sponsor.css).
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=613';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=614';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) => String(v == null ? '' : v)
@@ -65,12 +65,12 @@ function render(d) {
       ${f('email', 'Email', c.email, 'email', true)}
       ${f('phone', 'Phone', c.phone, 'tel', true)}
       ${f('ccEmail', 'Accounts / billing email', c.ccEmail, 'text', false, true, 'Gets a copy of the quote and invoice')}
-      ${f('address', 'Address', c.address, 'text', false, true)}
+      ${f('address', 'Your address', c.address, 'text', false, true, 'For the invoice')}
       ${f('eventName', 'Event name', c.eventName, 'text', true)}
       <label>Event date <span>(optional)</span><input name="eventDate" type="date" value="${esc(date)}"></label>
       <label>Event start time <b class="dt-req">*</b><input name="eventStartTime" type="time" required value="${esc(c.eventStartTime || '')}">
         <small class="dt-help">We&rsquo;ll schedule our arrival and set-up around this.</small></label>
-      ${f('eventVenue', 'Venue', c.eventVenue, 'text', true, false, 'Where is it on?')}
+      ${f('eventVenue', 'Venue name &amp; address', c.eventVenue, 'text', true, false, 'e.g. Cape Gloucester Resort, Hydeaway Bay')}
       <label class="spn-wide">Anything we should know? <span>(optional)</span>
         <textarea name="customerNotes" rows="4" placeholder="Access, parking, power, timings, special requests&hellip;">${esc(c.customerNotes || '')}</textarea></label>
       <button type="submit" class="spn-btn">${d.received ? 'Save my details' : (d.quoteLink || d.autoSend ? 'View my quote' : 'Send my details')}</button>
