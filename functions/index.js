@@ -4609,6 +4609,13 @@ exports.adminSendGearList = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (r
   if (!snap.exists) throw new HttpsError('not-found', 'No such quote.');
   const q = snap.data();
   if (!pickReady(q)) throw new HttpsError('failed-precondition', 'The gear list unlocks once the deposit is in.');
+  // TEST (Max, 20 Oct 2026): the gear list + the pick list email, both to the signed-in admin only
+  if ((request.data || {}).test === true) {
+    const me = String(request.auth.token.email || '');
+    if (!me) throw new HttpsError('failed-precondition', 'Your admin login has no email address.');
+    const r = await sendGearListEmail(ref, q, 'deposit', me);
+    return { ...r, to: me, test: true };
+  }
   const to = emailList((q.customer || {}).gearEmails);
   if (!to) throw new HttpsError('failed-precondition', 'Add the band / crew emails in "Gear list to" on the quote first.');
   const r = await sendGearListEmail(ref, q, 'manual');
@@ -4639,14 +4646,14 @@ const brisbaneTodayISO = () => new Intl.DateTimeFormat('en-CA', { timeZone: MSG_
 
 /*  Sends the gear list to "Gear list to" and (for automatic sends) the pick
     list link to the office. reason: 'manual' | 'deposit' | '3days' | 'today'. */
-async function sendGearListEmail(ref, q, reason) {
+async function sendGearListEmail(ref, q, reason, testTo) {
   let token = q.crewToken;
   if (!token) { token = crypto.randomBytes(16).toString('hex'); await ref.update({ crewToken: token }); }
   const c = q.customer || {};
   const ev = c.eventName || 'your event';
   const when = c.eventDate || (q.hire && q.hire.startDate) || '';
-  const lead = reason === '3days' ? '3 days to go - ' : reason === 'today' ? 'Today - ' : '';
-  const to = emailList(c.gearEmails);
+  const lead = (testTo ? '[TEST] ' : '') + (reason === '3days' ? '3 days to go - ' : reason === 'today' ? 'Today - ' : '');
+  const to = testTo || emailList(c.gearEmails);
   let r = { sent: false, reason: 'no gear list emails' };
   if (to) {
     r = await sendMessageEmail({
@@ -4658,7 +4665,7 @@ async function sendGearListEmail(ref, q, reason) {
       to,
       actions: [{ label: 'View the gear list', url: SITE_URL + '/picklist?t=' + token + '&v=gear', primary: true }],
     });
-    if (r.sent) await ref.update({ gearListSentAt: FieldValue.serverTimestamp(), gearListSentTo: to });
+    if (r.sent && !testTo) await ref.update({ gearListSentAt: FieldValue.serverTimestamp(), gearListSentTo: to });
   }
   // staff copy - the full pick list with Packed / Returned ticks
   if (reason !== 'manual') {
@@ -4668,7 +4675,7 @@ async function sendGearListEmail(ref, q, reason) {
         + 'Here is the pick list for ' + ev + (when ? ' on ' + when : '') + '.'
         + (to ? '\n\nThe gear list (no prices) also went to: ' + to : '\n\nNo "Gear list to" emails on this job, so the band / crew were not sent anything.'),
     }, {}, {
-      to: process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au',
+      to: testTo || process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au',
       actions: [{ label: 'Open the pick list', url: SITE_URL + '/picklist?t=' + token, primary: true }],
     });
   }

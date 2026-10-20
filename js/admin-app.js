@@ -33,13 +33,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=617';
+} from './firebase-config.js?v=618';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=617';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=617';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=617';
-import { messagesHtml, wireMessages } from './messages.js?v=617';
-import { expandKit } from './kit.js?v=617';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=618';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=618';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=618';
+import { messagesHtml, wireMessages } from './messages.js?v=618';
+import { expandKit } from './kit.js?v=618';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5049,6 +5049,13 @@ function wireQuoteList() {
       try { await call('adminPickListLink', { id }); } catch (e) { window.alert(e.message || 'Could not make the pick list.'); }
     },
     // GEAR LIST to the band / crew - no prices (Max, 20 Oct 2026)
+    // TEST: the gear list + pick list emails, to Max only (nothing recorded)
+    async geartest(id) {
+      try {
+        const r = await call('adminSendGearList', { id, test: true });
+        window.alert(r.sent ? 'Test sent to ' + r.to + ' - check your inbox (2 emails).' : 'It did not send: ' + (r.error || r.reason || ''));
+      } catch (e) { window.alert(e.message || 'Could not send.'); }
+    },
     async gearlist(id) {
       const d = findDoc(id);
       const to = String((d.customer || {}).gearEmails || '').trim();
