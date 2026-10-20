@@ -8,7 +8,7 @@
    Uses the sponsor page styles (sponsor.css).
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=615';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=616';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) => String(v == null ? '' : v)
@@ -40,6 +40,18 @@ function done(quoteLink, autoSent) {
     <p class="spn-sub">Questions? Call Max on 0422 393 022.</p></section>`;
 }
 
+/*  Start-time choices every 30 minutes, 6:00am to 11:30pm. */
+function timeOptions(current) {
+  let out = '<option value="">Choose a time</option>';
+  for (let m = 6 * 60; m < 24 * 60; m += 30) {
+    const hh = String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+    const h = Math.floor(m / 60);
+    const label = (h % 12 || 12) + ':' + String(m % 60).padStart(2, '0') + (h < 12 ? 'am' : 'pm');
+    out += '<option value="' + hh + '"' + (hh === current ? ' selected' : '') + '>' + label + '</option>';
+  }
+  return out;
+}
+
 function render(d) {
   const c = d.customer || {};
   const date = isoFromPretty(c.eventDate) || d.startDate || '';
@@ -62,15 +74,15 @@ function render(d) {
         <button type="button" class="dt-info" id="dt-info-biz" aria-label="What is this?" aria-expanded="false">i</button>
         <small class="dt-info-text" id="dt-info-biz-text" hidden>This is who the quote and invoice will be made out to. Leave it blank to have them in your own name.</small>
         <input name="business" type="text" value="${esc(c.business || '')}"></label>
-      ${f('email', 'Email', c.email, 'email', true)}
-      ${f('phone', 'Phone', c.phone, 'tel', true)}
+      ${f('email', 'Email', c.email, 'email', true, false, 'Your email')}
+      ${f('phone', 'Phone', c.phone, 'tel', true, false, 'Your event day contact')}
       ${f('ccEmail', 'Accounts / billing email', c.ccEmail, 'text', false, true, 'Gets a copy of the quote and invoice')}
       ${f('address', 'Your address', c.address, 'text', false, true, 'For the invoice')}
       ${f('eventName', 'Event name', c.eventName, 'text', true)}
       <label>Event date <span>(optional)</span><input name="eventDate" type="date" value="${esc(date)}"></label>
-      <label>Event start time <b class="dt-req">*</b><input name="eventStartTime" type="time" required value="${esc(c.eventStartTime || '')}">
+      <label>Event start time <b class="dt-req">*</b><select name="eventStartTime" required>${timeOptions(c.eventStartTime)}</select>
         <small class="dt-help">We&rsquo;ll schedule our arrival and set-up around this.</small></label>
-      ${f('eventVenue', 'Venue name &amp; address', c.eventVenue, 'text', true, false, 'e.g. Cape Gloucester Resort, Hydeaway Bay')}
+      ${f('eventVenue', 'Venue name &amp; address', c.eventVenue, 'text', true, false)}
       <label class="spn-wide">Anything we should know? <span>(optional)</span>
         <textarea name="customerNotes" rows="4" placeholder="Access, parking, power, timings, special requests&hellip;">${esc(c.customerNotes || '')}</textarea></label>
       <button type="submit" class="spn-btn">${d.received ? 'Save my details' : (d.quoteLink || d.autoSend ? 'View my quote' : 'Send my details')}</button>
