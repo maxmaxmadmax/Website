@@ -17,9 +17,9 @@
    acceptedAt). Close enough for a dashboard; the invoices are the record.
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=634';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=634';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=634';
+import { isBooked, pickLineProgress } from './stock.js?v=635';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=635';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=635';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -45,6 +45,22 @@ const soldAt = (q) => ms(q.acceptedAt) || (['accepted', 'invoiced', 'paid'].incl
 const paidAt = (q) => ms(q.lastPaidAt) || ms(q.paidAt) || ms(q.acceptedAt);
 const who = (q) => { const c = q.customer || {}; return c.business || c.name || 'No name yet'; };
 const shortDate = (iso) => { const t = Date.parse(iso + 'T00:00:00'); return t ? new Date(t).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : ''; };
+
+/*  GRAND VIEW FRIDAYS (Max, 20 Oct 2026): we play the Grand View Hotel every
+    Friday. Any Friday in the window with nobody booked there is flagged, so
+    Max remembers to book a DJ.                                            */
+const isGrandView = (venue) => /grand\s*view/i.test(String(venue || ''));
+export function fridaysWithoutDj(schedule, days) {
+  const out = [];
+  const d = new Date(); d.setHours(0, 0, 0, 0);
+  for (let i = 0; i <= days; i++) {
+    const x = new Date(d.getTime() + i * 86400000);
+    if (x.getDay() !== 5) continue;
+    const iso = x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
+    if (!(schedule || []).some((b) => b.date === iso && isGrandView(b.venue))) out.push(iso);
+  }
+  return out;
+}
 
 /* the first day of a month, `back` months ago */
 function monthStart(back) { const d = new Date(); return new Date(d.getFullYear(), d.getMonth() - back, 1).getTime(); }
@@ -83,9 +99,13 @@ export function dashboardData(ctx) {
     id: 'gig:' + b.id, isGig: true, hire: { startDate: b.date },
     customer: { name: actName(b.slug), eventName: b.time || '', eventVenue: b.venue || '' },
   }));
+  const openFridays = ctx.schedule ? fridaysWithoutDj(ctx.schedule, 30).map((iso) => ({
+    id: 'fri:' + iso, isGig: true, noDj: true, hire: { startDate: iso },
+    customer: { name: 'Grand View Hotel', eventName: 'Friday night', eventVenue: 'Grand View Hotel, Bowen' },
+  })) : [];
   const upcoming = jobs.filter((q) => !dead(q) && (isBooked(q) || ['approved', 'sent', 'accepted', 'invoiced'].includes(q.status)))
     .filter((q) => inWindow(q.hire && q.hire.startDate))
-    .concat(events, gigs)
+    .concat(events, gigs, openFridays)
     .sort((a, b) => String(a.hire.startDate).localeCompare(String(b.hire.startDate)));
   const next30 = sum(upcoming.filter((q) => !q.isEvent && !q.isGig && isBooked(q)), (q) => q.totalCents);
 
@@ -111,6 +131,8 @@ export function todoGroups(ctx) {
   const out = [];
   const add = (key, label, items, href) => { if (items.length) out.push({ key, label, items, href }); };
 
+  if (ctx.schedule) add('dj', 'Book a DJ for the Grand View', fridaysWithoutDj(ctx.schedule, 30)
+    .map((iso) => ({ text: shortDate(iso) + ' - nobody booked yet', href: '#/entertainment' })));
   add('approve', 'Quotes to approve', jobs.filter((q) => q.status === 'draft')
     .map((q) => ({ text: who(q) + (q.source === 'bot' ? ' · from the website bot' : ''), href: '#/quoteDocs?q=' + q.id })));
   add('details', 'Details just in', jobs.filter((q) => q.detailsReceivedAt && ['draft', 'approved'].includes(q.status))
@@ -257,11 +279,11 @@ export function dashboardHtml(ctx) {
           <div class="db-job-main">
             <p class="db-job-who">${esc(c.name)}${c.eventName ? ' &middot; <span>' + esc(c.eventName) + '</span>' : ''}</p>
             ${c.eventVenue ? `<p class="db-job-sub">${esc(c.eventVenue)}</p>` : ''}
-            <p class="db-job-tags"><span class="ad-pill db-pill-gig">Gig</span></p>
+            <p class="db-job-tags">${q.noDj ? '<span class="ad-pill ad-pill-red">No DJ booked</span>' : '<span class="ad-pill db-pill-gig">Gig</span>'}</p>
           </div>
           <div class="db-job-acts">
             ${weatherBox(ctx.weather && ctx.weather[q.id], esc)}
-            <a class="ad-btn" href="#/entertainment">Entertainment</a>
+            <a class="ad-btn${q.noDj ? ' ad-btn-primary' : ''}" href="#/entertainment">${q.noDj ? 'Book a DJ' : 'Entertainment'}</a>
           </div>
         </li>`;
   };

@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=634';
+} from './firebase-config.js?v=635';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=634';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=634';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=634';
-import { messagesHtml, wireMessages } from './messages.js?v=634';
-import { dashboardHtml, dashboardData } from './dashboard.js?v=634';
-import { expandKit } from './kit.js?v=634';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=635';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=635';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=635';
+import { messagesHtml, wireMessages } from './messages.js?v=635';
+import { dashboardHtml, dashboardData } from './dashboard.js?v=635';
+import { expandKit } from './kit.js?v=635';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -286,6 +286,7 @@ async function loadSchedule() {
     state.schedule = rows
       .filter((r) => r.date)
       .sort((x, y) => x.date.localeCompare(y.date));
+    state.scheduleLoaded = true;   // the dashboard only flags DJ-less Fridays once it knows
   } catch (err) {
     state.schedule = [];
   }
@@ -3424,7 +3425,7 @@ VIEWS.dashboard = {
       sponsors: state.sponsors || [], waitlist: state.waitlist || [], messages: state.messages || [],
       events: state.events || [], activeEventId: state.activeEventId, emailLog: dashLog || [],
       reminders: state.reminders || [], weather: dashWeather,
-      schedule: state.schedule || [], talent: state.talent || [],
+      schedule: state.scheduleLoaded ? state.schedule : null, talent: state.talent || [],
       h: { esc, attr, money },
     });
   },
@@ -3443,7 +3444,7 @@ VIEWS.dashboard = {
       inp.value = '';
       reminderStore.add(text).catch((err) => window.alert(friendly(err)));
     });
-    loadDashWeather(dashboardData({ quotes: state.quoteDocs || [], bookings: state.bookings || [], events: state.events || [], schedule: state.schedule || [], talent: state.talent || [] }).upcoming).catch(() => {});
+    loadDashWeather(dashboardData({ quotes: state.quoteDocs || [], bookings: state.bookings || [], events: state.events || [], schedule: state.scheduleLoaded ? state.schedule : null, talent: state.talent || [] }).upcoming).catch(() => {});
     if (Date.now() - dashLogAt < 5 * 60000) return;   // at most every 5 minutes
     dashLogAt = Date.now();
     loadLog().then((log) => { dashLog = log; if (state.view === 'dashboard') render(); }).catch(() => {});
