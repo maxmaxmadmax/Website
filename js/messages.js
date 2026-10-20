@@ -46,11 +46,11 @@ const WHO_SHORT = { all: 'paid vendors', food: 'food vendors', market: 'market s
 /*  EMAILS ALREADY GOING OUT TO CLIENTS (shown so everything is in one place).
     Their wording still lives in the server for now (functions/lib/quote-email.js
     and quote-doc-email.js) - they become editable in step 2.             */
-const CLIENT_EMAILS = [
-  ['When they finish the website quote bot', 'Instant estimate', 'Your SoundzGood estimate - (event type)', 'The person who used the bot', 'Auto'],
-  ['When you press Send on a quote', 'Quote ready', 'Your quote SG-Q-0000 from SoundzGood', 'That client (and their CC email)', 'You send it'],
-  ['When you press Send on an invoice', 'Invoice ready', 'Your invoice SG-I-0000 from SoundzGood', 'That client (and their CC email)', 'You send it'],
-  ['When you email a lead from the Lead Generator', 'Lead outreach', 'You write it each time', 'That business', 'You send it'],
+const CLIENT_EMAILS = [   // [when, name, subject, who, status, preview key]
+  ['When they finish the website quote bot', 'Instant estimate', 'Your SoundzGood estimate - (event type)', 'The person who used the bot', 'Auto', 'estimate'],
+  ['When you press Send on a quote', 'Quote ready', 'Your quote SG-Q-0000 from SoundzGood', 'That client (and their CC email)', 'You send it', 'quote'],
+  ['When you press Send on an invoice', 'Invoice ready', 'Your invoice SG-I-0000 from SoundzGood', 'That client (and their CC email)', 'You send it', 'invoice'],
+  ['When you email a lead from the Lead Generator', 'Lead outreach', 'You write it each time', 'That business', 'You send it', 'lead'],
 ];
 
 /* ---------- small helpers ---------- */
@@ -197,11 +197,11 @@ export function messagesHtml(ctx) {
     <div class="ms-tabs" role="tablist">
       <button type="button" class="ms-tab${tab === 'vendors' ? ' is-on' : ''}" role="tab" data-ms-tab="vendors">Vendors</button>
       <button type="button" class="ms-tab${tab === 'clients' ? ' is-on' : ''}" role="tab" data-ms-tab="clients">Clients</button>
-      <button type="button" class="ms-tab ms-tab-log${tab === 'sent' ? ' is-on' : ''}" role="tab" data-ms-tab="sent">Sent emails</button>
       <button type="button" class="ms-tab" disabled title="Coming soon">Crew &amp; performers</button>
       <button type="button" class="ms-tab" disabled title="Coming soon">Sponsors &amp; suppliers</button>
+      <button type="button" class="ms-tab ms-tab-log${tab === 'sent' ? ' is-on' : ''}" role="tab" data-ms-tab="sent">Sent emails</button>
     </div>
-    ${tab === 'sent' ? sentHtml(ctx) : tab === 'clients' ? clientsHtml(h) : `<div class="ad-card ms-card">
+    ${tab === 'sent' ? sentHtml(ctx) : tab === 'clients' ? clientsHtml(h, state) : `<div class="ad-card ms-card">
       <table class="ms-table">
         <thead><tr><th>When</th><th>Message &amp; subject</th><th>Who</th><th>Status</th><th>Sent</th></tr></thead>
         <tbody>${rows || `<tr><td colspan="5" class="ad-cell-muted">${state.msgSeeding ? 'Adding the starter messages&hellip;' : 'No messages yet.'}</td></tr>`}</tbody>
@@ -252,16 +252,23 @@ function sentHtml(ctx) {
     </div>`;
 }
 
-function clientsHtml(h) {
-  return `<div class="ad-card ms-card"><table class="ms-table">
+function clientsHtml(h, state) {
+  const p = state.clientPrev;
+  return `<div class="ms-log-grid${p ? ' has-open' : ''}"><div class="ad-card ms-card"><table class="ms-table">
       <thead><tr><th>When</th><th>Message &amp; subject</th><th>Who</th><th>Status</th></tr></thead>
-      <tbody>${CLIENT_EMAILS.map(([when, name, subj, who, st]) => `<tr class="ms-fixed">
+      <tbody>${CLIENT_EMAILS.map(([when, name, subj, who, st, key]) => `<tr data-ms-cprev="${key}"${p && p.key === key ? ' class="is-sel"' : ''}>
         <td class="ms-when">${h.esc(when)}</td>
         <td><strong>${h.esc(name)}</strong><span class="ms-sub">${h.esc(subj)}</span></td>
         <td>${h.esc(who)}</td>
         <td><span class="ms-chip ${st === 'Auto' ? 'ms-green' : 'ms-blue'}">${h.esc(st)}</span></td></tr>`).join('')}</tbody>
     </table></div>
-    <p class="ms-key">These client emails already go out today. Editing them here, plus the quote follow-ups, balance reminders and review requests, comes in step 2.</p>`;
+    ${p ? `<aside class="ad-card ms-card ms-pad ms-log-view">
+        <button type="button" class="ms-back" data-ms-cclose>&times; Close</button>
+        <p class="ms-log-meta"><b>${h.esc(p.subject || '')}</b>${p.note ? '<br>' + h.esc(p.note) : ''}</p>
+        ${p.loading ? '<p class="ad-cell-muted">Loading&hellip;</p>' : '<iframe class="ms-log-frame" id="ms-cprev-frame" title="Email preview"></iframe>'}
+      </aside>` : ''}
+    </div>
+    <p class="ms-key">Click any of these to see the email. These client emails already go out today. Editing them here, plus the quote follow-ups, balance reminders and review requests, comes in step 2.</p>`;
 }
 
 function editorHtml(ctx, ev) {
@@ -378,6 +385,8 @@ export function wireMessages(ctx) {
       .catch((err) => { state.emailLog = []; window.alert(err.message || 'Could not load sent emails.'); render(); });
   };
   if (state.msgTab === 'sent' && !state.emailLog) refreshLog();
+  const cFrame = document.getElementById('ms-cprev-frame');
+  if (cFrame && state.clientPrev && state.clientPrev.html) cFrame.srcdoc = state.clientPrev.html;
   const logFrame = document.getElementById('ms-log-frame');
   if (logFrame) {
     const m = (state.emailLog || []).find((x) => x.id === state.emailLogOpen);
@@ -411,6 +420,17 @@ export function wireMessages(ctx) {
       return;
     }
     if (e.target.closest('[data-ms-logrefresh]')) { refreshLog(); return; }
+    if (e.target.closest('[data-ms-cclose]')) { state.clientPrev = null; render(); return; }
+    const cRow = e.target.closest('[data-ms-cprev]');
+    if (cRow) {
+      const key = cRow.getAttribute('data-ms-cprev');
+      state.clientPrev = { key, loading: true };
+      render();
+      call('adminPreviewClientEmail', { kind: key })
+        .then((r) => { if (state.clientPrev && state.clientPrev.key === key) { state.clientPrev = { key, ...r }; render(); } })
+        .catch((err) => { state.clientPrev = { key, subject: err.message || 'Could not load the preview.' }; render(); });
+      return;
+    }
     if (e.target.closest('[data-ms-logclose]')) { state.emailLogOpen = null; render(); return; }
     const logRow = e.target.closest('[data-ms-log]');
     if (logRow) { state.emailLogOpen = logRow.getAttribute('data-ms-log'); render(); return; }

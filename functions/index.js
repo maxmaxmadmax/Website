@@ -4081,3 +4081,30 @@ exports.adminRemoveLateFee = onCall(async (request) => {
   await ref.update({ lateFees: fees, lateFeeCents: fees.reduce((t, x) => t + (x.cents || 0), 0), updatedAt: FieldValue.serverTimestamp() });
   return { ok: true };
 });
+
+/*  PREVIEW A CLIENT EMAIL (Messages > Clients, Max, 20 Oct 2026). Shows the
+    real layout: quote / invoice use your most recent one, the bot estimate
+    and lead email use sample words. Sends nothing.                         */
+exports.adminPreviewClientEmail = onCall(async (request) => {
+  requireAdmin(request);
+  const kind = String((request.data || {}).kind || '');
+  if (kind === 'estimate') {
+    const { __test } = require('./lib/quote-email');
+    const lead = { name: 'Sam', eventTypeLabel: 'Wedding', locationLabel: 'Airlie Beach', sizeLabel: '80-150 guests',
+      durationLabel: '5 hours', serviceLabels: ['Sound', 'Lighting'], estimateLowCents: 180000, estimateHighCents: 240000 };
+    return { subject: 'Your SoundzGood estimate - Wedding', html: __test.leadHtml(lead), note: 'Sample details - each person sees their own answers and price range.' };
+  }
+  if (kind === 'lead') {
+    const { leadHtml } = require('./lib/lead-email');
+    return { subject: '(you write the subject)', html: leadHtml('Hi there,\n\nThis is where your own message goes - you write it each time in the Lead Generator.\n\nCheers,\nMax'), note: 'You write these each time - this shows the letterhead it goes out in.' };
+  }
+  if (kind === 'quote' || kind === 'invoice') {
+    const { renderQuoteLinkEmail } = require('./lib/quote-doc-email');
+    const snap = await db.collection('quotes').orderBy('createdAt', 'desc').limit(40).get();
+    const doc = snap.docs.find((d) => (kind === 'invoice' ? d.data().kind === 'invoice' : d.data().kind !== 'invoice' && d.data().status !== 'draft'));
+    const q = doc ? doc.data() : { kind, number: 'SG-Q-0000', invoiceNumber: 'SG-I-0000', customer: { name: 'Sam', eventName: 'Your event' }, totalCents: 100000, token: 'x' };
+    const out = renderQuoteLinkEmail(q, SITE_URL + '/quote?t=' + (q.token || ''));
+    return { ...out, note: doc ? 'Your most recent ' + kind + ' (' + ((q.customer && q.customer.name) || '') + ').' : 'Sample ' + kind + '.' };
+  }
+  throw new HttpsError('invalid-argument', 'Unknown email.');
+});

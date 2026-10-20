@@ -123,4 +123,10 @@ async function sendQuoteLinkEmail(q, link) {
   }
 }
 
-module.exports = { sendQuoteLinkEmail };
+/*  For the Messages page preview (Max, 20 Oct 2026). */
+function renderQuoteLinkEmail(q, link) {
+  const ref = q.kind === 'invoice' ? (q.invoiceNumber || q.number) : q.number;
+  return { subject: `Your ${docLabel(q)} ${ref} from SoundzGood`, html: html(q, link) };
+}
+
+module.exports = { sendQuoteLinkEmail, renderQuoteLinkEmail };
