@@ -4576,3 +4576,4 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-askbtn:hover{ background:#ffefe0; }
 .qb-autosend{ display:flex; gap:8px; align-items:center; margin:8px 2px 0; font-size:13px; color:#444; cursor:pointer; }
 .qb-autosend input{ accent-color:var(--ad-orange); width:16px; height:16px; }
+.qb-cnotes{ resize:vertical; min-height:60px; font:inherit; }

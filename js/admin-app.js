@@ -33,13 +33,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=611';
+} from './firebase-config.js?v=613';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=611';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=611';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=611';
-import { messagesHtml, wireMessages } from './messages.js?v=611';
-import { expandKit } from './kit.js?v=611';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=613';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=613';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=613';
+import { messagesHtml, wireMessages } from './messages.js?v=613';
+import { expandKit } from './kit.js?v=613';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -4692,7 +4692,7 @@ function guessEventType(name) {
 function blankQuote() {
   return {
     kind: 'quote',
-    customer: { name: '', business: '', email: '', ccEmail: '', gearEmails: '', phone: '', address: '', eventName: '', eventDate: '', eventVenue: '', eventType: '' },
+    customer: { name: '', business: '', email: '', ccEmail: '', gearEmails: '', phone: '', address: '', eventName: '', eventDate: '', eventVenue: '', eventStartTime: '', customerNotes: '', eventType: '' },
     hire: { startDate: '', endDate: '', days: 1 },
     lines: [],
     discountCents: 0,
@@ -5230,6 +5230,7 @@ function quoteBuilderHtml() {
               ${metaRow('Event type', `<select class="qb-min" data-qc="eventType">${Object.keys(EVENT_TYPES).map((k) => `<option value="${k}"${(c.eventType || guessEventType(c.eventName)) === k ? ' selected' : ''}>${EVENT_TYPES[k]}</option>`).join('')}</select>`)}
               ${metaRow('Venue', `<input class="qb-min" data-qc="eventVenue" value="${attr(c.eventVenue || '')}" placeholder="Venue / address">`)}
               ${metaRow('Event date', `<input type="date" class="qb-min" data-qevdate value="${attr(isoFromPretty(c.eventDate) || (quoteDraft.hire && quoteDraft.hire.startDate) || '')}">`)}
+              ${metaRow('Event starts', `<input type="time" class="qb-min" data-qc="eventStartTime" value="${attr(c.eventStartTime || '')}">`)}
               ${metaRow('Hire period', `<span class="qb-hp">${hirePeriod}</span>`)}
               ${metaRow('Days charged', `<input class="qb-min qb-min-num" type="number" min="1" step="1" data-qh="days" value="${attr(h.days)}">`)}
             </div>
@@ -5249,6 +5250,7 @@ function quoteBuilderHtml() {
             <label class="qb-fl"><span>Email</span><input class="qb-cin" type="email" data-qc="email" value="${attr(c.email)}" placeholder="Email"></label>
             <div class="qb-fl"><span>CC &middot; billing / accounts copy</span><div class="qb-cc" id="qb-cc">${ccChipsInner(c.ccEmail, 'Accounts email (optional) - press Enter')}</div></div>
             <div class="qb-fl"><span>Gear list to &middot; band / crew (no prices)</span><div class="qb-cc" id="qb-gear">${ccChipsInner(c.gearEmails, 'Band or crew email - press Enter')}</div></div>
+            <label class="qb-fl"><span>Customer notes</span><textarea class="qb-cin qb-cnotes" rows="3" data-qc="customerNotes" placeholder="Anything the customer told us">${esc(c.customerNotes || '')}</textarea></label>
           </div>
           <div class="qb-hire">
             <p class="qb-block-h">Hire period</p>

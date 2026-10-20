@@ -2453,6 +2453,8 @@ function sanitizeQuote(q) {
     eventType: text(q.customer && q.customer.eventType, 40),
     eventDate: text(q.customer && q.customer.eventDate, 60),
     eventVenue: text(q.customer && q.customer.eventVenue, 200),   // venue (customer details form, 20 Oct 2026)
+    eventStartTime: text(q.customer && q.customer.eventStartTime, 20),   // when the event starts - we work out bump-in from it
+    customerNotes: text(q.customer && q.customer.customerNotes, 2000),   // "anything we should know" from the details form
     // the band / crew who get the gear list with NO prices - not the billing CC (Max, 20 Oct 2026)
     gearEmails: String((q.customer && q.customer.gearEmails) || '').split(/[,;\s]+/).map((e) => e.trim())
       .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)).slice(0, 10).join(', ').slice(0, 600),
@@ -4510,7 +4512,7 @@ exports.getDetailsForm = onCall(async (request) => {
     customer: {
       name: c.name || '', business: c.business || '', email: c.email || '', ccEmail: c.ccEmail || '',
       phone: c.phone || '', address: c.address || '', eventName: c.eventName || '', eventDate: c.eventDate || '',
-      eventVenue: c.eventVenue || '',
+      eventVenue: c.eventVenue || '', eventStartTime: c.eventStartTime || '', customerNotes: c.customerNotes || '',
     },
     startDate: (q.hire && q.hire.startDate) || '',
     received: !!q.detailsReceivedAt,
@@ -4529,11 +4531,14 @@ exports.submitDetails = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (reque
     name: clean(d.name, 120), business: clean(d.business, 120), email: clean(d.email, 200).toLowerCase(),
     ccEmail: emailList(d.ccEmail), phone: clean(d.phone, 40), address: clean(d.address, 300),
     eventName: clean(d.eventName, 160), eventDate: clean(d.eventDate, 60), eventVenue: clean(d.eventVenue, 200),
+    eventStartTime: clean(d.eventStartTime, 20), customerNotes: clean(d.customerNotes, 2000),
   };
   if (!f.name) throw new HttpsError('invalid-argument', 'Please enter your name.');
   if (!DETAIL_EMAIL_RE.test(f.email)) throw new HttpsError('invalid-argument', 'Please enter a valid email address.');
   if (!f.phone) throw new HttpsError('invalid-argument', 'Please enter a phone number.');
   if (!f.eventName) throw new HttpsError('invalid-argument', 'Please enter the event name.');
+  if (!f.eventStartTime) throw new HttpsError('invalid-argument', 'Please enter the event start time.');
+  if (!f.eventVenue) throw new HttpsError('invalid-argument', 'Please enter the venue.');
 
   const customer = { ...(q.customer || {}) };
   Object.keys(f).forEach((k) => { if (f[k]) customer[k] = f[k]; });
@@ -4553,7 +4558,8 @@ exports.submitDetails = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (reque
     body: (f.name || 'A customer') + ' filled in their details for quote ' + (q.number || '') + ':\n\n'
       + ['Name: ' + f.name, f.business && 'Business: ' + f.business, 'Email: ' + f.email, f.ccEmail && 'Billing CC: ' + f.ccEmail,
         'Phone: ' + f.phone, f.address && 'Address: ' + f.address, f.eventName && 'Event: ' + f.eventName,
-        f.eventDate && 'Date: ' + f.eventDate, f.eventVenue && 'Venue: ' + f.eventVenue].filter(Boolean).map((x) => '- ' + x).join('\n')
+        f.eventDate && 'Date: ' + f.eventDate, f.eventVenue && 'Venue: ' + f.eventVenue,
+        f.eventStartTime && 'Event starts: ' + f.eventStartTime, f.customerNotes && 'Notes: ' + f.customerNotes].filter(Boolean).map((x) => '- ' + x).join('\n')
       + '\n\nThey are already on the quote - open it in the Sales Pipeline.',
   }, {}, { to: process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au' });
 

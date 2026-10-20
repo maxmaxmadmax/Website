@@ -8,7 +8,7 @@
    Uses the sponsor page styles (sponsor.css).
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=611';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=613';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) => String(v == null ? '' : v)
@@ -68,7 +68,11 @@ function render(d) {
       ${f('address', 'Address', c.address, 'text', false, true)}
       ${f('eventName', 'Event name', c.eventName, 'text', true)}
       <label>Event date <span>(optional)</span><input name="eventDate" type="date" value="${esc(date)}"></label>
-      ${f('eventVenue', 'Venue', c.eventVenue, 'text', false, true, 'Where is it on?')}
+      <label>Event start time <b class="dt-req">*</b><input name="eventStartTime" type="time" required value="${esc(c.eventStartTime || '')}">
+        <small class="dt-help">We&rsquo;ll schedule our arrival and set-up around this.</small></label>
+      ${f('eventVenue', 'Venue', c.eventVenue, 'text', true, false, 'Where is it on?')}
+      <label class="spn-wide">Anything we should know? <span>(optional)</span>
+        <textarea name="customerNotes" rows="4" placeholder="Access, parking, power, timings, special requests&hellip;">${esc(c.customerNotes || '')}</textarea></label>
       <button type="submit" class="spn-btn">${d.received ? 'Save my details' : (d.quoteLink || d.autoSend ? 'View my quote' : 'Send my details')}</button>
       <p class="spn-msg" id="dt-msg" hidden></p>
     </form>
@@ -86,6 +90,8 @@ function render(d) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('email'))) out.push('your email');
     if (val('phone').replace(/[^0-9]/g, '').length < 8) out.push('your phone number');
     if (!val('eventName')) out.push('the event name');
+    if (!val('eventStartTime')) out.push('the event start time');
+    if (!val('eventVenue')) out.push('the venue');
     return out;
   };
   const filled = () => missing().length === 0;
@@ -116,6 +122,7 @@ function render(d) {
         token: TOKEN, name: (v('firstName').trim() + ' ' + v('lastName').trim()).trim(), business: v('business'), email: v('email'), phone: v('phone'),
         ccEmail: v('ccEmail'), address: v('address'), eventName: v('eventName'),
         eventDate: prettyFromIso(v('eventDate')), eventVenue: v('eventVenue'),
+        eventStartTime: v('eventStartTime'), customerNotes: v('customerNotes'),
       });
       done(res.data && res.data.quoteLink, res.data && res.data.autoSent);
     } catch (err) {
