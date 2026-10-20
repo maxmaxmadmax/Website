@@ -8,7 +8,7 @@
    Uses the sponsor page styles (sponsor.css).
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=604';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=605';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) => String(v == null ? '' : v)
@@ -33,10 +33,10 @@ function prettyFromIso(iso) {
 function done(quoteLink, autoSent) {
   document.getElementById('dt-root').innerHTML = `<section class="spn-sec spn-thanks-big">
     <h2>Thank you!</h2>
-    ${autoSent ? '<p>Your details are in &mdash; <b>your quote is on its way to your inbox</b>. You can also look at it now:</p>' : ''}
+    ${autoSent ? '<p>Your quote has been emailed to you. You can also view it now:</p>' : ''}
     ${quoteLink
       ? (autoSent ? '' : '<p>Your details are in. Your quote is ready to look at:</p>') + `<p><a class="spn-btn" href="${esc(quoteLink)}">View your quote &rarr;</a></p>`
-      : '<p>Your details are in &mdash; Max will send your quote shortly.</p>'}
+      : '<p>We&rsquo;ve received your details. Your quote will be emailed to you shortly.</p>'}
     <p class="spn-sub">Questions? Call Max on 0422 393 022.</p></section>`;
 }
 
@@ -48,8 +48,10 @@ function render(d) {
   document.getElementById('dt-root').innerHTML = `
   <section class="spn-sec">
     <p class="spn-eyebrow" style="color:#ff6b00">SoundzGood Whitsundays</p>
-    <h2>Your details</h2>
-    <p class="spn-sub">${d.received ? 'Thanks &mdash; we have your details. Change anything below and press Save.' : 'Takes a minute. Pop your details in and we&rsquo;ll send your quote.'}</p>
+    <h2>${d.autoSend ? 'Your quote is ready' : 'Your quote is almost ready'}</h2>
+    <p class="spn-sub">${d.received && !d.autoSend ? 'Thank you &mdash; we have your details. If anything has changed, update it below and press Save.'
+      : d.autoSend ? 'Please confirm your contact details below. As soon as you press the button, we&rsquo;ll email your quote to you so you can review and accept it.'
+      : 'Please confirm your contact details below. We&rsquo;ll then finalise your quote and email it to you for review.'}</p>
     <form class="spn-form" id="dt-form">
       ${f('name', 'Your name', c.name, 'text', true)}
       ${f('business', 'Business / organisation', c.business, 'text', false)}
@@ -60,7 +62,7 @@ function render(d) {
       ${f('eventName', 'Event name', c.eventName, 'text', false)}
       <label>Event date <span>(optional)</span><input name="eventDate" type="date" value="${esc(date)}"></label>
       ${f('eventVenue', 'Venue', c.eventVenue, 'text', false, true, 'Where is it on?')}
-      <button type="submit" class="spn-btn">${d.received ? 'Save my details' : 'Send my details'}</button>
+      <button type="submit" class="spn-btn">${d.autoSend ? 'Confirm &amp; send my quote' : (d.received ? 'Save my details' : 'Confirm my details')}</button>
       <p class="spn-msg" id="dt-msg" hidden></p>
     </form>
   </section>`;

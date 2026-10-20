@@ -4514,6 +4514,7 @@ exports.getDetailsForm = onCall(async (request) => {
     },
     startDate: (q.hire && q.hire.startDate) || '',
     received: !!q.detailsReceivedAt,
+    autoSend: !!(q.autoSendOnDetails && ready && !q.autoSentOnDetailsAt),   // quote goes out the moment they submit
     quoteLink: ready ? SITE_URL + '/quote?t=' + q.token : '',
   };
 });
