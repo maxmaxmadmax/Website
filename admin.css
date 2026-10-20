@@ -4667,15 +4667,25 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .db-wx{ background:#e8f3fd; color:#0b4a7a; }
 .db-wx.is-warn{ background:var(--ad-amber-bg); color:var(--ad-amber); font-weight:700; }
 .db-wx.is-bad{ background:var(--ad-red-bg); color:var(--ad-red); font-weight:700; }
-/* the weather square beside the job buttons (Max, 20 Oct 2026) */
+/* the weather card beside the job buttons (Max, 20 Oct 2026) */
 .db-job-acts{ align-items:center; }
-.db-wxbox{ width:108px; min-height:80px; box-sizing:border-box; padding:6px 6px; border-radius:10px; background:#e8f3fd; color:#0b4a7a;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; line-height:1.25; }
-.db-wxbox-ic{ font-size:20px; line-height:1; }
-.db-wxbox b{ font-size:17px; }
-.db-wxbox small{ font-size:11.5px; white-space:nowrap; }
-.db-wxbox.is-warn{ background:var(--ad-amber-bg); color:var(--ad-amber); }
-.db-wxbox.is-bad{ background:var(--ad-red-bg); color:var(--ad-red); }
-.db-wxbox.is-later{ color:var(--ad-muted); background:var(--ad-grey-bg); }
+.db-wxbox{ width:116px; box-sizing:border-box; padding:9px 10px; border-radius:14px; color:#fff;
+  background:linear-gradient(155deg, #5ab8ff 0%, #2f80ed 100%); box-shadow:0 6px 16px rgba(47,128,237,.28); }
+.db-wxbox.is-warn{ background:linear-gradient(155deg, #ffc14d 0%, #f08a00 100%); box-shadow:0 6px 16px rgba(240,138,0,.28); }
+.db-wxbox.is-bad{ background:linear-gradient(155deg, #ff7a6b 0%, #d6332a 100%); box-shadow:0 6px 16px rgba(214,51,42,.3); }
+.db-wxbox.is-later{ background:var(--ad-grey-bg); color:var(--ad-muted); box-shadow:none; display:flex; align-items:center; gap:8px; }
+.db-wxbox svg{ width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+.db-wxbox .wx-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; }
+.db-wxbox .wx-top svg{ width:26px; height:26px; stroke-width:1.7; }
+.db-wxbox .wx-temp{ margin:0; font-size:20px; font-weight:800; line-height:1; letter-spacing:-.02em; }
+.db-wxbox .wx-temp span{ font-size:12px; font-weight:600; opacity:.75; margin-left:3px; }
+.db-wxbox .wx-row{ margin:2px 0 0; display:flex; align-items:center; gap:5px; font-size:12px; font-weight:700; white-space:nowrap; }
+.db-wxbox .wx-row em{ font-style:normal; font-weight:500; opacity:.85; margin-left:2px; }
+.db-wxbox .wx-later{ margin:0; font-size:12px; font-weight:700; line-height:1.25; }
+.db-wxbox .wx-later span{ font-weight:500; }
+.db-wxbox.is-later svg{ width:20px; height:20px; }
 @media (max-width:640px){ .db-job-acts{ flex-wrap:wrap; } }
-.db-wx-low{ font-weight:500; opacity:.75; font-size:12px; }
+/* our own events in "Next 30 days" (Max, 20 Oct 2026) */
+.db-pill-ours{ background:var(--ad-orange-soft); color:var(--ad-orange); }
+.db-job.is-event .db-job-date b{ color:var(--ad-orange); }
+.db-pill-gig{ background:#efe9fd; color:#6d3fd1; }   /* entertainment gigs (Grand View etc.) */

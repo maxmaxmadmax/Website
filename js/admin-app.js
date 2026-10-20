@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=633';
+} from './firebase-config.js?v=634';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=633';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=633';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=633';
-import { messagesHtml, wireMessages } from './messages.js?v=633';
-import { dashboardHtml, dashboardData } from './dashboard.js?v=633';
-import { expandKit } from './kit.js?v=633';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=634';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=634';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=634';
+import { messagesHtml, wireMessages } from './messages.js?v=634';
+import { dashboardHtml, dashboardData } from './dashboard.js?v=634';
+import { expandKit } from './kit.js?v=634';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -444,6 +444,12 @@ function routeFromHash() {
   if (want === 'entertainment') {
     Promise.all([loadTalent(), loadSchedule()])
       .then(() => { if (state.view === 'entertainment') render(); });
+  }
+  // the dashboard's "Next 30 days" shows the gigs too (Max, 20 Oct 2026) - fetched at most every 5 min
+  if (want === 'dashboard' && Date.now() - (state.gigsLoadedAt || 0) > 5 * 60000) {
+    state.gigsLoadedAt = Date.now();
+    Promise.all([loadTalent(), loadSchedule()])
+      .then(() => { if (state.view === 'dashboard') render(); });
   }
 }
 
@@ -3418,6 +3424,7 @@ VIEWS.dashboard = {
       sponsors: state.sponsors || [], waitlist: state.waitlist || [], messages: state.messages || [],
       events: state.events || [], activeEventId: state.activeEventId, emailLog: dashLog || [],
       reminders: state.reminders || [], weather: dashWeather,
+      schedule: state.schedule || [], talent: state.talent || [],
       h: { esc, attr, money },
     });
   },
@@ -3436,7 +3443,7 @@ VIEWS.dashboard = {
       inp.value = '';
       reminderStore.add(text).catch((err) => window.alert(friendly(err)));
     });
-    loadDashWeather(dashboardData({ quotes: state.quoteDocs || [], bookings: state.bookings || [] }).upcoming).catch(() => {});
+    loadDashWeather(dashboardData({ quotes: state.quoteDocs || [], bookings: state.bookings || [], events: state.events || [], schedule: state.schedule || [], talent: state.talent || [] }).upcoming).catch(() => {});
     if (Date.now() - dashLogAt < 5 * 60000) return;   // at most every 5 minutes
     dashLogAt = Date.now();
     loadLog().then((log) => { dashLog = log; if (state.view === 'dashboard') render(); }).catch(() => {});

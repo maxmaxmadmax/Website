@@ -17,9 +17,9 @@
    acceptedAt). Close enough for a dashboard; the invoices are the record.
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=633';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=633';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=633';
+import { isBooked, pickLineProgress } from './stock.js?v=634';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=634';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=634';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -68,10 +68,26 @@ export function dashboardData(ctx) {
     .sort((a, b) => owingOf(b) - owingOf(a));
 
   const today = isoToday(), until = isoAdd(today, 30);
-  const upcoming = jobs.filter((q) => !dead(q) && (isBooked(q) || ['accepted', 'invoiced'].includes(q.status)))
-    .filter((q) => { const s = q.hire && q.hire.startDate; return s && s >= today && s <= until && !dead(q); })
+  /*  Next 30 days (Max, 20 Oct 2026): booked jobs, accepted jobs, quotes
+      that are out (approved / sent), AND our own events like Eatz & Beatz. */
+  const inWindow = (d) => d && d >= today && d <= until;
+  const events = (ctx.events || [])
+    .filter((ev) => inWindow(ev.dateISO) && !['archived', 'cancelled', 'draft'].includes(ev.status))
+    .map((ev) => ({
+      id: 'ev:' + ev.id, isEvent: true, ev, hire: { startDate: ev.dateISO },
+      customer: { name: ev.name || 'Our event', eventName: ev.subtitle || '', eventVenue: [ev.venue, ev.location].filter(Boolean).join(', ') },
+    }));
+  // entertainment gigs - the Grand View and everywhere else (Max, 20 Oct 2026)
+  const actName = (slug) => ((ctx.talent || []).find((t) => t.slug === slug) || {}).name || slug || 'Act';
+  const gigs = (ctx.schedule || []).filter((b) => inWindow(b.date)).map((b) => ({
+    id: 'gig:' + b.id, isGig: true, hire: { startDate: b.date },
+    customer: { name: actName(b.slug), eventName: b.time || '', eventVenue: b.venue || '' },
+  }));
+  const upcoming = jobs.filter((q) => !dead(q) && (isBooked(q) || ['approved', 'sent', 'accepted', 'invoiced'].includes(q.status)))
+    .filter((q) => inWindow(q.hire && q.hire.startDate))
+    .concat(events, gigs)
     .sort((a, b) => String(a.hire.startDate).localeCompare(String(b.hire.startDate)));
-  const next30 = sum(upcoming.filter(isBooked), (q) => q.totalCents);
+  const next30 = sum(upcoming.filter((q) => !q.isEvent && !q.isGig && isBooked(q)), (q) => q.totalCents);
 
   const paidBooking = (b) => b.status === 'confirmed' || b.paymentStatus === 'paid';
   const vendorCents = sum((ctx.bookings || []).filter(paidBooking), (b) => (b.totalCents != null ? b.totalCents : b.amountCents));
@@ -150,22 +166,44 @@ export function weatherTag(w, esc) {
     + (w.gust != null ? ' (gusts ' + Math.round(w.gust) + ')' : '') + '</span>';
 }
 
-/*  The forecast as a small square, left of the Quote button (Max, 20 Oct 2026) */
+/*  The forecast as a small card, left of the Quote button (Max, 20 Oct 2026).
+    Line icons (not emoji) on a sky gradient - amber when wet or windy, red
+    for heavy rain, strong gusts or storms.                                */
+const WX_SVG = {
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  part: '<path d="M8 3v1.5M3.5 7.5H5M4.8 4.3l1 1M11.2 4.3l-1 1"/><path d="M5.5 10a3 3 0 0 1 5.6-1.6"/><path d="M8 19h9a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.6 1.4A2.8 2.8 0 0 0 8 19z"/>',
+  cloud: '<path d="M7 18h10a4 4 0 0 0 0-8 6 6 0 0 0-11.5 1.7A3.2 3.2 0 0 0 7 18z"/>',
+  rain: '<path d="M7 14h10a4 4 0 0 0 0-8 6 6 0 0 0-11.5 1.7A3.2 3.2 0 0 0 7 14z"/><path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3"/>',
+  storm: '<path d="M7 13h10a4 4 0 0 0 0-8 6 6 0 0 0-11.5 1.7A3.2 3.2 0 0 0 7 13z"/><path d="M12 14l-2 4h3l-2 4"/>',
+  drop: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+  wind: '<path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8"/>',
+  cal: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+};
+const wxSvg = (k) => '<svg viewBox="0 0 24 24" aria-hidden="true">' + WX_SVG[k] + '</svg>';
+function wxKind(code) {
+  if (code == null) return 'cloud';
+  if (code === 0) return 'sun';
+  if (code <= 2) return 'part';
+  if (code >= 95) return 'storm';
+  if (code >= 51) return 'rain';
+  return 'cloud';
+}
 export function weatherBox(w, esc) {
   if (!w) return '';
   if (w.later) {
     const from = new Date(Date.parse(w.date + 'T00:00:00') - 15 * 86400000);
-    return '<div class="db-wxbox is-later" title="Forecasts reach about 15 days ahead"><span class="db-wxbox-ic">&#128197;</span><b>Forecast</b><small>from ' + esc(isNaN(from) ? '' : from.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })) + '</small></div>';
+    return '<div class="db-wxbox is-later" title="Forecasts reach about 15 days ahead">' + wxSvg('cal')
+      + '<p class="wx-later">Forecast<br><span>from ' + esc(isNaN(from) ? '' : from.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })) + '</span></p></div>';
   }
   if (w.rain == null && w.gust == null) return '';
   const wet = (w.rain || 0) >= 50 || (w.mm || 0) >= 5, windy = (w.gust || 0) >= 40;
   const bad = (w.rain || 0) >= 70 || (w.mm || 0) >= 15 || (w.gust || 0) >= 55 || w.code >= 95;
-  const mm = w.mm != null ? (w.mm >= 10 ? Math.round(w.mm) : Math.round(w.mm * 10) / 10) + ' mm' : '';
+  const mm = w.mm != null ? (w.mm >= 10 ? Math.round(w.mm) : Math.round(w.mm * 10) / 10) + 'mm' : '';
   return '<div class="db-wxbox' + (bad ? ' is-bad' : wet || windy ? ' is-warn' : '') + '" title="Forecast for the event day">'
-    + '<span class="db-wxbox-ic">' + wxIcon(w.code) + '</span>'
-    + (w.temp != null ? '<b>' + Math.round(w.temp) + '&deg;' + (w.low != null ? ' <span class="db-wx-low">/ ' + Math.round(w.low) + '&deg;</span>' : '') + '</b>' : '')   // high / low
-    + '<small>&#128167; ' + Math.round(w.rain || 0) + '%' + (mm ? ' &middot; ' + mm : '') + '</small>'
-    + '<small>&#127788;&#65039; ' + Math.round(w.wind || 0) + (w.gust != null ? '&ndash;' + Math.round(w.gust) : '') + ' km/h</small>'
+    + '<div class="wx-top">' + wxSvg(wxKind(w.code))
+    + (w.temp != null ? '<p class="wx-temp">' + Math.round(w.temp) + '&deg;' + (w.low != null ? '<span>' + Math.round(w.low) + '&deg;</span>' : '') + '</p>' : '') + '</div>'
+    + '<p class="wx-row">' + wxSvg('drop') + Math.round(w.rain || 0) + '%' + (mm ? '<em>' + mm + '</em>' : '') + '</p>'
+    + '<p class="wx-row">' + wxSvg('wind') + Math.round(w.wind || 0) + (w.gust != null ? '&ndash;' + Math.round(w.gust) : '') + '<em>km/h</em></p>'
     + '</div>';
 }
 
@@ -189,7 +227,47 @@ export function dashboardHtml(ctx) {
       </div>`;
   const hour = new Date().getHours();
 
+  const eventRow = (q) => {
+    const c = q.customer;
+    const sitesNote = q.ev.id === ctx.activeEventId && (ctx.sites || []).length
+      ? (ctx.sites || []).filter((x) => x.status === 'booked').length + ' of ' + ctx.sites.length + ' sites sold' : '';
+    return `
+        <li class="db-job is-event">
+          <div class="db-job-date"><b>${esc(shortDate(q.hire.startDate))}</b></div>
+          <div class="db-job-main">
+            <p class="db-job-who">${esc(c.name)}${c.eventName ? ' &middot; <span>' + esc(c.eventName) + '</span>' : ''}</p>
+            ${c.eventVenue ? `<p class="db-job-sub">${esc(c.eventVenue)}</p>` : ''}
+            <p class="db-job-tags">
+              <span class="ad-pill db-pill-ours">Our event</span>
+              ${sitesNote ? `<span class="db-tag">${esc(sitesNote)}</span>` : ''}
+            </p>
+          </div>
+          <div class="db-job-acts">
+            ${weatherBox(ctx.weather && ctx.weather[q.id], esc)}
+            <a class="ad-btn" href="#/vendors">Vendors</a>
+            <a class="ad-btn" href="#/map">Map</a>
+          </div>
+        </li>`;
+  };
+  const gigRow = (q) => {
+    const c = q.customer;
+    return `
+        <li class="db-job is-gig">
+          <div class="db-job-date"><b>${esc(shortDate(q.hire.startDate))}</b></div>
+          <div class="db-job-main">
+            <p class="db-job-who">${esc(c.name)}${c.eventName ? ' &middot; <span>' + esc(c.eventName) + '</span>' : ''}</p>
+            ${c.eventVenue ? `<p class="db-job-sub">${esc(c.eventVenue)}</p>` : ''}
+            <p class="db-job-tags"><span class="ad-pill db-pill-gig">Gig</span></p>
+          </div>
+          <div class="db-job-acts">
+            ${weatherBox(ctx.weather && ctx.weather[q.id], esc)}
+            <a class="ad-btn" href="#/entertainment">Entertainment</a>
+          </div>
+        </li>`;
+  };
   const jobRow = (q) => {
+    if (q.isEvent) return eventRow(q);
+    if (q.isGig) return gigRow(q);
     const c = q.customer || {};
     const st = stageOf(q);
     const pp = q.crewToken ? pickLineProgress(q) : null;
@@ -243,7 +321,7 @@ export function dashboardHtml(ctx) {
       ${card('Sales this month', d.salesNow, trend(d.salesNow, d.salesLast))}
       ${card('Money in this month', d.inNow, trend(d.inNow, d.inLast))}
       ${card('Money owed', d.owedCents, `<span class="db-trend">${d.owed.length} job${d.owed.length === 1 ? '' : 's'}${d.owed.length ? ': ' + esc(d.owed.slice(0, 2).map(who).join(', ')) + (d.owed.length > 2 ? '&hellip;' : '') : ''}</span>`)}
-      ${card('Next 30 days', d.next30, `<span class="db-trend">${d.upcoming.filter(isBooked).length} confirmed job${d.upcoming.filter(isBooked).length === 1 ? '' : 's'}</span>`)}
+      ${card('Next 30 days', d.next30, `<span class="db-trend">${d.upcoming.filter((q) => !q.isEvent && !q.isGig && isBooked(q)).length} confirmed job${d.upcoming.filter((q) => !q.isEvent && !q.isGig && isBooked(q)).length === 1 ? '' : 's'}</span>`)}
       ${card('Vendor site fees', d.vendorCents, `<span class="db-trend">${esc(evc ? evc.ev.name || 'This event' : 'This event')}</span>`)}
     </div>
 
