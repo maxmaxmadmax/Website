@@ -17,7 +17,7 @@
    ctx = { state, h: { esc, attr }, call, render, money }
    ========================================================================== */
 
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS } from './sponsor-data.js?v=596';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS } from './sponsor-data.js?v=597';
 
 export const SEND_TIME = '9:35 am';
 
@@ -459,15 +459,26 @@ function editorHtml(ctx, ev) {
         ${failed.length ? `<div class="ms-failed"><p><b>${failed.length} didn&rsquo;t go</b></p>${failed.map((f) => `<div><span>${h.esc(f.name)} &middot; ${h.esc(f.to)}<em>${h.esc(f.error)}</em></span><button type="button" class="ad-btn ad-btn-small" data-ms-resend="${h.attr(f.bookingId)}">Resend</button></div>`).join('')}</div>` : ''}
       </div>
       <aside class="ad-card ms-card ms-pad">
-        <p class="ms-prev-h">Preview &mdash; as ${h.esc(((list[0] || {}).business || {}).name || 'a vendor')} sees it</p>
+        <p class="ms-prev-h">Preview &mdash; ${m.audience === 'sponsors' ? 'as a business sees it (sample details)' : m.system === 'waitlist' ? 'as the next person on the waitlist sees it (sample details)' : 'as ' + h.esc(((list[0] || {}).business || {}).name || 'a vendor') + ' sees it'} &middot; buttons and links open for real</p>
         <div class="ms-prev" id="ms-prev"></div>
       </aside>
     </div>
   </div>`;
 }
 
+/*  PREVIEW LINKS ARE REAL (Max, 20 Oct 2026): every button in a preview opens
+    the page it goes to, in a new tab, so Max can test it.               */
+function guideLinkFor(state) {
+  const b = paidVendors(state.bookings, state.activeEventId).find((x) => x.invoiceToken);
+  return b ? '/vendor-invoice?t=' + b.invoiceToken : '';
+}
+const pbtn = (h, label, url, cls) => url
+  ? '<a class="' + (cls || '') + '" href="' + h.attr(url) + '" target="_blank" rel="noopener">' + label + '</a>'
+  : '<span class="' + (cls || '') + '" title="Opens when a vendor has paid">' + label + '</span>';
+
 function previewHtml(ctx) {
   const { state, h } = ctx;
+  const guide = guideLinkFor(state);
   const ev = (state.events || []).find((e) => e.id === state.activeEventId) || {};
   const d = state.msgDraft || blankMessage();
   const m = (state.messages || []).find((x) => x.id === state.msgOpen) || {};
@@ -478,7 +489,7 @@ function previewHtml(ctx) {
     return `<div class="ms-mail"><div class="ms-mail-top">SOUNDZGOOD WHITSUNDAYS</div>
     <p class="ms-mail-subj">${h.esc(fill(d.subject, sv, String))}</p>
     <div class="ms-mail-body">${bodyHtml(d.body, sv, h.esc)}
-      <p class="ms-mail-btn"><span>See the sponsor options</span></p>
+      <p class="ms-mail-btn">${pbtn(h, 'See the sponsor options', '/sponsor?e=' + encodeURIComponent(state.activeEventId || ''))}</p>
       <p class="ms-mail-note">Not for you? Just reply and let us know - we won't email you about it again.</p></div>
     <div class="ms-mail-foot">SoundzGood Whitsundays</div></div>`;
   }
@@ -487,7 +498,7 @@ function previewHtml(ctx) {
     return `<div class="ms-mail"><div class="ms-mail-top">SOUNDZGOOD WHITSUNDAYS</div>
     <p class="ms-mail-subj">${h.esc(fill(d.subject, wv, String))}</p>
     <div class="ms-mail-body">${bodyHtml(d.body, wv, h.esc)}
-      <p class="ms-mail-btn"><span>Accept &amp; book my spot</span> <span class="ms-mail-btn2">No thanks - decline</span></p>
+      <p class="ms-mail-btn">${pbtn(h, 'Accept &amp; book my spot', '/vendor-signup')} <span class="ms-mail-btn2" title="In the real email this passes the spot to the next person">No thanks - decline</span></p>
       <p class="ms-mail-note">This spot is held for you until ${h.esc(wv.expires_at)}. It is only yours once payment is received.</p></div>
     <div class="ms-mail-foot">SoundzGood Whitsundays</div></div>`;
   }
@@ -496,13 +507,13 @@ function previewHtml(ctx) {
     <p class="ms-mail-subj">${h.esc(fill(d.subject, v, String))}</p>
     <div class="ms-mail-body">${bodyHtml(d.body, v, h.esc)}
       <div class="ms-mail-total"><small>TOTAL PAID (INCL GST)</small><b>${h.esc(v.total_paid)}</b><span>Invoice ${h.esc(v.invoice_number)}</span></div>
-      <p class="ms-mail-btn"><span>View your invoice &amp; event guide &rarr;</span></p></div>
+      <p class="ms-mail-btn">${pbtn(h, 'View your invoice &amp; event guide &rarr;', guide)}</p></div>
     <div class="ms-mail-foot">SoundzGood Whitsundays &middot; 34a Williams St, Bowen QLD 4805</div></div>`;
   }
   return `<div class="ms-mail"><div class="ms-mail-top">SOUNDZGOOD WHITSUNDAYS</div>
     <p class="ms-mail-subj">${h.esc(fill(d.subject, v, String))}</p>
     <div class="ms-mail-body">${bodyHtml(d.body, v, h.esc)}
-      <p class="ms-mail-btn"><span>View your invoice &amp; event guide &rarr;</span></p></div>
+      <p class="ms-mail-btn">${pbtn(h, 'View your invoice &amp; event guide &rarr;', guide)}</p></div>
     <div class="ms-mail-foot">SoundzGood Whitsundays${d.promo ? '<br><u>Unsubscribe from event news</u>' : ''}</div></div>`;
 }
 
