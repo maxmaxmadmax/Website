@@ -10,7 +10,7 @@
    (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { isBooked, pickProgress } from './stock.js?v=601';
+import { isBooked, pickProgress } from './stock.js?v=602';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -287,7 +287,7 @@ export function rowsHtml(rows, f, h) {
     return `
       <tr data-open-q="${h.attr(q.id)}">
         <td class="sp-cust">
-          <strong>${h.esc(c.name || c.business || 'No name yet')}${q.source === 'bot' ? '<span class="ad-bot-tag">Bot</span>' : ''}</strong>
+          <strong>${h.esc(c.name || c.business || 'No name yet')}${q.source === 'bot' ? '<span class="ad-bot-tag">Bot</span>' : ''}${q.detailsReceivedAt && ['draft', 'approved'].includes(q.status) ? '<span class="ad-bot-tag sp-details-tag">Details in</span>' : ''}</strong>
           <span>${h.esc(c.eventName || c.eventType || '')}${num ? ' <i>' + h.esc(num) + '</i>' : ''}</span>
         </td>
         <td class="sp-date">${h.esc(eventDateText(q) || '—')}</td>
@@ -309,6 +309,7 @@ export function rowsHtml(rows, f, h) {
                   ? `<a href="/picklist?t=${h.attr(q.crewToken)}" target="_blank" rel="noopener">Open pick list</a>
               <button type="button" data-sp-copy="${h.attr('https://www.soundzgood.com.au/picklist?t=' + q.crewToken)}">Copy crew link</button>`
                   : `<button type="button" data-sp-act="picklist" data-id="${h.attr(q.id)}">Make pick list</button>`)
+                + `<button type="button" data-sp-act="gearlist" data-id="${h.attr(q.id)}">Email gear list (no prices)</button>`
                 : (['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) ? `<button type="button" data-sp-act="deposit" data-id="${h.attr(q.id)}">Deposit received</button>` : '')}
               ${['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) ? `<button type="button" data-sp-act="paid" data-id="${h.attr(q.id)}">Mark paid</button>` : ''}
               ${(isBooked(q) || q.paymentStatus) && q.paymentMethod !== 'card' && !(q.stripeSessions && q.stripeSessions.length) ? `<button type="button" data-sp-act="undopay" data-id="${h.attr(q.id)}">Undo deposit / payment</button>` : ''}
@@ -368,7 +369,7 @@ export function wirePipeline(getJobs, f, h, act) {
     if (vb) { act.vendorInvoice(vb.getAttribute('data-id'), vb.getAttribute('data-sp-vendor'), vb); return; }
     const a = e.target.closest('[data-sp-act]');
     if (a) {
-      const fn = { duplicate: act.duplicate, archive: act.archive, restore: act.restore, delete: act.del, paid: act.paid, deposit: act.deposit, picklist: act.picklist, undopay: act.undopay, latefee: act.latefee, unlatefee: act.unlatefee }[a.getAttribute('data-sp-act')];
+      const fn = { duplicate: act.duplicate, archive: act.archive, restore: act.restore, delete: act.del, paid: act.paid, deposit: act.deposit, picklist: act.picklist, undopay: act.undopay, latefee: act.latefee, unlatefee: act.unlatefee, gearlist: act.gearlist }[a.getAttribute('data-sp-act')];
       if (fn) fn(a.getAttribute('data-id'));
       return;
     }

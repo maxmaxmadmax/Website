@@ -6,7 +6,7 @@
    admin and everyone on the crew link sees the same list. The list also
    refreshes itself every 20 seconds while it's open.
    ========================================================================== */
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=601';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=602';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -66,6 +66,9 @@ function progressHtml() {
   return bar(c.packed, 'Packed', 'is-packed') + bar(c.returned, 'Returned', 'is-returned');
 }
 
+// &v=gear - the band / crew gear list: no ticks, no money flags (Max, 20 Oct 2026)
+const GEAR_VIEW = new URLSearchParams(location.search).get('v') === 'gear';
+
 function render() {
   const d = data;
   const t = d.ticks || {};
@@ -89,7 +92,7 @@ function render() {
   document.getElementById('pl-root').innerHTML = `
     <header class="pl-head">
       <img src="/images/logo-quote.png" alt="SoundzGood Whitsundays" class="pl-logo">
-      <div class="pl-head-r"><h1>Pick list</h1><p>${esc(d.number)}</p></div>
+      <div class="pl-head-r"><h1>${GEAR_VIEW ? 'Gear list' : 'Pick list'}</h1><p>${esc(d.number)}</p></div>
     </header>
 
     <section class="pl-job">
@@ -103,10 +106,10 @@ function render() {
         ${info('Crew', d.crew.map((x) => esc(x.name) + (x.note ? ' <small>' + esc(x.note) + '</small>' : '')).join('<br>'))}
       </dl>
       ${d.notes ? `<p class="pl-notes"><b>Notes:</b> ${esc(d.notes)}</p>` : ''}
-      ${d.paidInFull ? '' : '<p class="pl-flag">Balance still owing on this job &mdash; check with Max before handing over gear.</p>'}
+      ${GEAR_VIEW ? '<p class="pl-notes">This is the gear SoundzGood Whitsundays is supplying. Anything missing? Call Max on 0422 393 022.</p>' : d.paidInFull ? '' : '<p class="pl-flag">Balance still owing on this job &mdash; check with Max before handing over gear.</p>'}
     </section>
 
-    <section class="pl-progress" id="pl-progress">${progressHtml()}</section>
+    ${GEAR_VIEW ? '' : `<section class="pl-progress" id="pl-progress">${progressHtml()}</section>`}
 
     <section class="pl-list">
       <p class="pl-count">${c.total} line${c.total === 1 ? '' : 's'} &middot; ${c.pieces} piece${c.pieces === 1 ? '' : 's'} in total</p>
@@ -117,7 +120,7 @@ function render() {
             <div class="pl-row${t[i.key] && t[i.key].packed ? ' is-packed' : ''}">
               <span class="pl-qty">${esc(i.qty)}&times;</span>
               <span class="pl-name">${esc(i.name)}</span>
-              <span class="pl-ticks">${box(i, 'packed', 'Packed')}${box(i, 'returned', 'Returned')}</span>
+              ${GEAR_VIEW ? '' : `<span class="pl-ticks">${box(i, 'packed', 'Packed')}${box(i, 'returned', 'Returned')}</span>`}
             </div>`).join('')}
         </div>`).join('')}
     </section>
@@ -125,7 +128,7 @@ function render() {
     <footer class="pl-foot">
       <button type="button" class="pl-btn" id="pl-print">Print</button>
       <span id="pl-msg" class="pl-msg"></span>
-      <span class="pl-sig">Packed by ____________________ &nbsp; Checked back in by ____________________</span>
+      ${GEAR_VIEW ? '' : '<span class="pl-sig">Packed by ____________________ &nbsp; Checked back in by ____________________</span>'}
     </footer>`;
 
   document.getElementById('pl-print').addEventListener('click', () => window.print());

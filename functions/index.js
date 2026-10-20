@@ -2452,6 +2452,10 @@ function sanitizeQuote(q) {
     eventName: text(q.customer && q.customer.eventName, 160),
     eventType: text(q.customer && q.customer.eventType, 40),
     eventDate: text(q.customer && q.customer.eventDate, 60),
+    eventVenue: text(q.customer && q.customer.eventVenue, 200),   // venue (customer details form, 20 Oct 2026)
+    // the band / crew who get the gear list with NO prices - not the billing CC (Max, 20 Oct 2026)
+    gearEmails: String((q.customer && q.customer.gearEmails) || '').split(/[,;\s]+/).map((e) => e.trim())
+      .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)).slice(0, 10).join(', ').slice(0, 600),
   };
   const hire = {
     startDate: text(q.hire && q.hire.startDate, 40),
@@ -4463,3 +4467,123 @@ exports.sponsorFollowups = onSchedule(
     }
   },
 );
+
+/* =========================================================================
+   CUSTOMER FILLS IN THEIR OWN DETAILS  (Max, 20 Oct 2026)
+   From a quote, Max texts the customer a link (/details?t=<detailsToken>).
+   They fill in name, business, email, billing CC, phone, address, event,
+   date and venue. It lands straight on the quote and in Customers, and the
+   office gets an email. Sends nothing to the customer.
+   ========================================================================= */
+const DETAIL_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const emailList = (v) => String(v || '').split(/[,;\s]+/).map((e) => e.trim()).filter((e) => DETAIL_EMAIL_RE.test(e)).slice(0, 10).join(', ');
+
+exports.adminDetailsLink = onCall(async (request) => {
+  requireAdmin(request);
+  const ref = db.collection('quotes').doc(String((request.data || {}).id || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'Save the quote first.');
+  let token = snap.data().detailsToken;
+  if (!token) {
+    token = crypto.randomBytes(16).toString('hex');
+    await ref.update({ detailsToken: token, detailsRequestedAt: FieldValue.serverTimestamp() });
+  }
+  return { url: SITE_URL + '/details?t=' + token };
+});
+
+async function quoteByDetailsToken(token) {
+  const t = String(token || '').trim();
+  if (!/^[a-f0-9]{20,40}$/.test(t)) throw new HttpsError('invalid-argument', 'That link is not valid.');
+  const snap = await db.collection('quotes').where('detailsToken', '==', t).limit(1).get();
+  if (snap.empty) throw new HttpsError('not-found', 'That link is not valid.');
+  return snap.docs[0];
+}
+
+/*  PUBLIC: the form, pre-filled with what we already have. */
+exports.getDetailsForm = onCall(async (request) => {
+  const doc = await quoteByDetailsToken((request.data || {}).token);
+  const q = doc.data();
+  const c = q.customer || {};
+  const ready = ['approved', 'sent', 'accepted', 'invoiced', 'paid'].includes(q.status) && q.token;
+  return {
+    customer: {
+      name: c.name || '', business: c.business || '', email: c.email || '', ccEmail: c.ccEmail || '',
+      phone: c.phone || '', address: c.address || '', eventName: c.eventName || '', eventDate: c.eventDate || '',
+      eventVenue: c.eventVenue || '',
+    },
+    startDate: (q.hire && q.hire.startDate) || '',
+    received: !!q.detailsReceivedAt,
+    quoteLink: ready ? SITE_URL + '/quote?t=' + q.token : '',
+  };
+});
+
+/*  PUBLIC: they press Submit. */
+exports.submitDetails = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  const d = request.data || {};
+  const doc = await quoteByDetailsToken(d.token);
+  const q = doc.data();
+  const clean = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
+  const f = {
+    name: clean(d.name, 120), business: clean(d.business, 120), email: clean(d.email, 200).toLowerCase(),
+    ccEmail: emailList(d.ccEmail), phone: clean(d.phone, 40), address: clean(d.address, 300),
+    eventName: clean(d.eventName, 160), eventDate: clean(d.eventDate, 60), eventVenue: clean(d.eventVenue, 200),
+  };
+  if (!f.name) throw new HttpsError('invalid-argument', 'Please enter your name.');
+  if (!DETAIL_EMAIL_RE.test(f.email)) throw new HttpsError('invalid-argument', 'Please enter a valid email address.');
+  if (!f.phone) throw new HttpsError('invalid-argument', 'Please enter a phone number.');
+
+  const customer = { ...(q.customer || {}) };
+  Object.keys(f).forEach((k) => { if (f[k]) customer[k] = f[k]; });
+  await doc.ref.update({ customer, detailsReceivedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+
+  // the customer list: update the one with this email, or add them
+  try {
+    const cs = await db.collection('customers').where('email', '==', f.email).limit(1).get();
+    const rec = { name: f.name, business: f.business, email: f.email, ccEmail: f.ccEmail, phone: f.phone, address: f.address, updatedAt: Date.now() };
+    Object.keys(rec).forEach((k) => { if (rec[k] === '') delete rec[k]; });
+    if (cs.empty) await db.collection('customers').add({ type: f.business ? 'business' : 'private', notes: '', ...rec, createdAt: Date.now() });
+    else await cs.docs[0].ref.set(rec, { merge: true });
+  } catch (err) { logger.warn('details: customer list', err && err.message); }
+
+  await sendMessageEmail({
+    subject: (f.name || 'A customer') + ' filled in their details - ' + (q.number || ''),
+    body: (f.name || 'A customer') + ' filled in their details for quote ' + (q.number || '') + ':\n\n'
+      + ['Name: ' + f.name, f.business && 'Business: ' + f.business, 'Email: ' + f.email, f.ccEmail && 'Billing CC: ' + f.ccEmail,
+        'Phone: ' + f.phone, f.address && 'Address: ' + f.address, f.eventName && 'Event: ' + f.eventName,
+        f.eventDate && 'Date: ' + f.eventDate, f.eventVenue && 'Venue: ' + f.eventVenue].filter(Boolean).map((x) => '- ' + x).join('\n')
+      + '\n\nThey are already on the quote - open it in the Sales Pipeline.',
+  }, {}, { to: process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au' });
+
+  const ready = ['approved', 'sent', 'accepted', 'invoiced', 'paid'].includes(q.status) && q.token;
+  return { ok: true, quoteLink: ready ? SITE_URL + '/quote?t=' + q.token : '' };
+});
+
+/* =========================================================================
+   EMAIL THE GEAR LIST (no prices) to the band / crew  (Max, 20 Oct 2026)
+   Goes to the quote's "Gear list to" emails (customer.gearEmails) - never
+   the billing CC. Links to the pick list in read-only gear view.
+   ========================================================================= */
+exports.adminSendGearList = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  requireAdmin(request);
+  const ref = db.collection('quotes').doc(String((request.data || {}).id || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'No such quote.');
+  const q = snap.data();
+  if (!pickReady(q)) throw new HttpsError('failed-precondition', 'The gear list unlocks once the deposit is in.');
+  const to = emailList((q.customer || {}).gearEmails);
+  if (!to) throw new HttpsError('failed-precondition', 'Add the band / crew emails in "Gear list to" on the quote first.');
+  let token = q.crewToken;
+  if (!token) { token = crypto.randomBytes(16).toString('hex'); await ref.update({ crewToken: token }); }
+  const c = q.customer || {};
+  const ev = c.eventName || 'your event';
+  const when = c.eventDate || (q.hire && q.hire.startDate) || '';
+  const r = await sendMessageEmail({
+    subject: 'Gear list - ' + ev + (when ? ' (' + when + ')' : ''),
+    body: 'Hi,\n\nHere is the gear SoundzGood Whitsundays is supplying for ' + ev + (when ? ' on ' + when : '') + '. Have a look and let us know if anything is missing or needs changing.\n\nThanks,\nMax\nSoundzGood Whitsundays - 0422 393 022',
+  }, {}, {
+    to,
+    actions: [{ label: 'View the gear list', url: SITE_URL + '/picklist?t=' + token + '&v=gear', primary: true }],
+  });
+  if (r.sent) await ref.update({ gearListSentAt: FieldValue.serverTimestamp(), gearListSentTo: to });
+  return { ...r, to };
+});

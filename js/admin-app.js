@@ -33,13 +33,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=601';
+} from './firebase-config.js?v=602';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=601';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=601';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=601';
-import { messagesHtml, wireMessages } from './messages.js?v=601';
-import { expandKit } from './kit.js?v=601';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=602';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=602';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=602';
+import { messagesHtml, wireMessages } from './messages.js?v=602';
+import { expandKit } from './kit.js?v=602';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -4692,7 +4692,7 @@ function guessEventType(name) {
 function blankQuote() {
   return {
     kind: 'quote',
-    customer: { name: '', business: '', email: '', ccEmail: '', phone: '', address: '', eventName: '', eventDate: '', eventType: '' },
+    customer: { name: '', business: '', email: '', ccEmail: '', gearEmails: '', phone: '', address: '', eventName: '', eventDate: '', eventVenue: '', eventType: '' },
     hire: { startDate: '', endDate: '', days: 1 },
     lines: [],
     discountCents: 0,
@@ -5048,6 +5048,17 @@ function wireQuoteList() {
     async picklist(id) {
       try { await call('adminPickListLink', { id }); } catch (e) { window.alert(e.message || 'Could not make the pick list.'); }
     },
+    // GEAR LIST to the band / crew - no prices (Max, 20 Oct 2026)
+    async gearlist(id) {
+      const d = findDoc(id);
+      const to = String((d.customer || {}).gearEmails || '').trim();
+      if (!to) { window.alert('Open the quote and add the band / crew emails under "Gear list to" first.'); return; }
+      if (!window.confirm('Email the gear list (no prices) for ' + label(d) + ' to:\n\n' + to + '?')) return;
+      try {
+        const r = await call('adminSendGearList', { id });
+        window.alert(r.sent ? 'Sent to ' + r.to + '.' : 'It did not send: ' + (r.error || r.reason || ''));
+      } catch (e) { window.alert(e.message || 'Could not send.'); }
+    },
     // LATE PAYMENT CHARGE (Max, 20 Oct 2026): 2% of what is still owing - asks first
     async latefee(id) {
       const d = findDoc(id);
@@ -5188,6 +5199,7 @@ function quoteBuilderHtml() {
         <div class="qb-bar-spacer"></div>
         ${link ? `<a class="ad-btn ad-btn-ghost" href="${attr(link)}" target="_blank" rel="noopener">Preview</a>` : ''}
         <span class="qb-auto" id="q-auto"></span>
+        ${doc ? '<button type="button" class="ad-btn" id="q-askdetails" title="Text the customer a link to fill in their own details">Ask for details</button>' : ''}
         <button type="button" class="ad-btn${doc ? '' : ' ad-btn-primary'}" id="q-save">Save</button>
         ${doc && status === 'draft' ? '<button type="button" class="ad-btn ad-btn-primary" id="q-approve">&#10003; Approve as quote</button>' : ''}
         ${doc && status !== 'draft' ? `<button type="button" class="ad-btn ad-btn-primary" id="q-send">${status === 'approved' ? '&#9993; Send Quote' : '&#9993; Resend'}</button>` : ''}
@@ -5216,6 +5228,7 @@ function quoteBuilderHtml() {
               ${metaRow('Created', esc(created))}
               ${metaRow('Event / Job', `<input class="qb-min" data-qc="eventName" value="${attr(c.eventName)}" placeholder="Event name">`)}
               ${metaRow('Event type', `<select class="qb-min" data-qc="eventType">${Object.keys(EVENT_TYPES).map((k) => `<option value="${k}"${(c.eventType || guessEventType(c.eventName)) === k ? ' selected' : ''}>${EVENT_TYPES[k]}</option>`).join('')}</select>`)}
+              ${metaRow('Venue', `<input class="qb-min" data-qc="eventVenue" value="${attr(c.eventVenue || '')}" placeholder="Venue / address">`)}
               ${metaRow('Event date', `<input type="date" class="qb-min" data-qevdate value="${attr(isoFromPretty(c.eventDate) || (quoteDraft.hire && quoteDraft.hire.startDate) || '')}">`)}
               ${metaRow('Hire period', `<span class="qb-hp">${hirePeriod}</span>`)}
               ${metaRow('Days charged', `<input class="qb-min qb-min-num" type="number" min="1" step="1" data-qh="days" value="${attr(h.days)}">`)}
@@ -5232,7 +5245,8 @@ function quoteBuilderHtml() {
             <label class="qb-fl"><span>Address</span><input class="qb-cin" data-qc="address" value="${attr(c.address)}" placeholder="Address"></label>
             <label class="qb-fl"><span>Phone</span><input class="qb-cin" data-qc="phone" value="${attr(c.phone)}" placeholder="Phone"></label>
             <label class="qb-fl"><span>Email</span><input class="qb-cin" type="email" data-qc="email" value="${attr(c.email)}" placeholder="Email"></label>
-            <div class="qb-fl"><span>CC &middot; also gets a copy</span><div class="qb-cc" id="qb-cc">${ccChipsInner(c.ccEmail)}</div></div>
+            <div class="qb-fl"><span>CC &middot; billing / accounts copy</span><div class="qb-cc" id="qb-cc">${ccChipsInner(c.ccEmail)}</div></div>
+            <div class="qb-fl"><span>Gear list to &middot; band / crew (no prices)</span><div class="qb-cc" id="qb-gear">${ccChipsInner(c.gearEmails)}</div></div>
           </div>
           <div class="qb-hire">
             <p class="qb-block-h">Hire period</p>
@@ -6065,12 +6079,13 @@ function wireQuoteBuilder() {
   if (!wrap) return;
 
 
-  // CC chips
-  const ccBox = document.getElementById('qb-cc');
+  // email chips: billing CC and the gear list (band / crew)
+  [['qb-cc', 'ccEmail'], ['qb-gear', 'gearEmails']].forEach(([boxId, field]) => {
+  const ccBox = document.getElementById(boxId);
   if (ccBox) {
     const ccSet = (list, keepFocus) => {
-      quoteDraft.customer.ccEmail = list.join(', ');
-      ccBox.innerHTML = ccChipsInner(quoteDraft.customer.ccEmail);
+      quoteDraft.customer[field] = list.join(', ');
+      ccBox.innerHTML = ccChipsInner(quoteDraft.customer[field]);
       if (keepFocus) ccBox.querySelector('.qb-cc-in').focus();
       if (typeof scheduleQuoteAutosave === 'function') scheduleQuoteAutosave();
     };
@@ -6083,14 +6098,14 @@ function wireQuoteBuilder() {
         if (msg) { msg.hidden = false; msg.textContent = '"' + bad.join(', ') + '" doesn\'t look like an email address.'; }
         return;
       }
-      const have = ccList(quoteDraft.customer.ccEmail);
+      const have = ccList(quoteDraft.customer[field]);
       typed.forEach((x) => { if (!have.some((h) => h.toLowerCase() === x.toLowerCase())) have.push(x); });
       ccSet(have, keepFocus);
     };
     ccBox.addEventListener('click', (e) => {
       const del = e.target.closest('[data-cc-del]');
       if (del) {
-        const list = ccList(quoteDraft.customer.ccEmail);
+        const list = ccList(quoteDraft.customer[field]);
         list.splice(Number(del.getAttribute('data-cc-del')), 1);
         ccSet(list, true);
         return;
@@ -6104,7 +6119,7 @@ function wireQuoteBuilder() {
         e.preventDefault();
         ccAdd(e.target, true);
       } else if (e.key === 'Backspace' && !e.target.value) {
-        const list = ccList(quoteDraft.customer.ccEmail);
+        const list = ccList(quoteDraft.customer[field]);
         if (list.length) { list.pop(); ccSet(list, true); }
       }
     });
@@ -6116,6 +6131,7 @@ function wireQuoteBuilder() {
       if (e.target.classList.contains('qb-cc-in') && e.target.value.trim()) ccAdd(e.target, false);
     });
   }
+  });
 
   // customer / hire / meta fields
   wrap.addEventListener('input', (e) => {
@@ -6292,6 +6308,23 @@ function wireQuoteActions() {
     await saveQuoteDoc(approve, true);
     if (state.openQuoteId === '__new__') return;
     try { await run('adminSetQuoteStatus', { id: state.openQuoteId, status: 'approved' }, 'Approved - now a quote. Hit Send when ready.'); render(); } catch (e) { /* message shown */ }
+  });
+
+  // ASK FOR DETAILS (Max, 20 Oct 2026): text the customer a link to fill in their own details
+  const askBtn = document.getElementById('q-askdetails');
+  if (askBtn) askBtn.addEventListener('click', async () => {
+    try {
+      const res = await call('adminDetailsLink', { id: state.openQuoteId });
+      const first = String(quoteDraft.customer.name || '').split(' ')[0];
+      const text = 'Hi' + (first ? ' ' + first : '') + ", it's Max from SoundzGood - can you pop your details in here so I can send your quote? " + res.url;
+      const phone = String(quoteDraft.customer.phone || '').replace(/[^0-9+]/g, '');
+      if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+        location.href = 'sms:' + phone + '?&body=' + encodeURIComponent(text);
+      } else {
+        try { await navigator.clipboard.writeText(text); window.alert('Copied - paste it into a text or email:\n\n' + text); }
+        catch (e) { window.prompt('Copy this and text it to them:', text); }
+      }
+    } catch (err) { window.alert(err.message || 'Could not make the link.'); }
   });
 
   const send = document.getElementById('q-send');

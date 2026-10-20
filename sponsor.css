@@ -59,3 +59,9 @@
   .spn-levels{ grid-template-columns:repeat(3,1fr); }
   .spn-print-only{ display:block; font-size:16px; font-weight:800; }
 }
+
+/* the customer details page (details.html) reuses these styles (Max, 20 Oct 2026) */
+.spn-narrow{ max-width:760px; }
+.spn-thanks-big{ text-align:center; }
+.spn-thanks-big h2{ font-size:32px; }
+.spn-thanks-big .spn-btn{ margin-top:6px; }
