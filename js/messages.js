@@ -17,7 +17,7 @@
    ctx = { state, h: { esc, attr }, call, render, money }
    ========================================================================== */
 
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS } from './sponsor-data.js?v=597';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS } from './sponsor-data.js?v=598';
 
 export const SEND_TIME = '9:35 am';
 
@@ -406,7 +406,14 @@ function editorHtml(ctx, ev) {
   const sys = !!m.system;
   const saved = isNew ? null : draftFrom(m);
   const dirty = isNew || !sameDraft(saved, d);
-  const list = sys ? paidVendors(state.bookings, state.activeEventId) : recipients(state.bookings, state.activeEventId, d);
+  /*  who it goes to: vendors for vendor emails; for the sponsor emails, the
+      businesses on the Sponsors tab - NEVER the vendors (Max, 20 Oct 2026) */
+  const spons = m.audience === 'sponsors';
+  const list = spons
+    ? (state.sponsors || []).filter((p) => p.email && (m.system === 'sponsor-followup' ? p.status === 'asked' : p.status === 'todo'))
+        .map((p) => ({ business: { name: p.business, email: p.email } }))
+    : m.system === 'waitlist' ? []
+    : sys ? paidVendors(state.bookings, state.activeEventId) : recipients(state.bookings, state.activeEventId, d);
   const sentence = sentenceHtml(ctx, d, m, ev);
   const locked = m.status === 'sent';
   const t = d.trigger || {};
@@ -414,7 +421,7 @@ function editorHtml(ctx, ev) {
 
   return `<div class="ms">${back}
     <div class="ms-title"><h1>${h.esc(d.name || (isNew ? 'New message' : 'Message'))}</h1><span class="ms-chip ms-${tone}">${h.esc(label)}</span>
-      ${!isNew ? `<span class="ms-count">Sent ${sys ? list.filter((b) => b.invoiceEmailedAt).length : (m.sentCount || 0)} of ${list.length}</span>` : ''}</div>
+      ${!isNew ? `<span class="ms-count">${spons || m.system === 'waitlist' ? 'Sent ' + (m.sentCount || 0) : 'Sent ' + (sys ? list.filter((b) => b.invoiceEmailedAt).length : (m.sentCount || 0)) + ' of ' + list.length}</span>` : ''}</div>
     <div class="ms-sentence" id="ms-sentence">${sentence}</div>
     <div class="ms-grid">
       <div class="ad-card ms-card ms-pad">
@@ -435,9 +442,9 @@ function editorHtml(ctx, ev) {
             ? `<label class="ms-f"><span>Date</span><input type="date" class="ad-input" data-ms="trigger.date" value="${h.attr(t.date || '')}"${locked ? ' disabled' : ''}></label>`
             : `<label class="ms-f ms-days"><span>Days</span><input type="number" min="0" max="365" class="ad-input" data-ms="trigger.days" value="${h.attr(t.days || 0)}"${locked ? ' disabled' : ''}></label>`}
         </div>`}
-        <details class="ms-list"><summary>See who gets it (${list.length})</summary>
-          <ul>${list.map((b) => `<li>${h.esc((b.business || {}).name || '')} <span>${h.esc((b.business || {}).email || '')}${b.siteLabel ? ' · site ' + h.esc(b.siteLabel) : ''}</span></li>`).join('') || '<li>No paid vendors match yet.</li>'}</ul>
-        </details>
+        ${m.system === 'waitlist' ? '<div hidden>' : `<details class="ms-list"><summary>${spons ? (m.system === 'sponsor-followup' ? 'Businesses still waiting on a reply' : 'Businesses ready to ask (tick them on the Sponsors tab)') : 'See who gets it'} (${list.length})</summary>`}
+          <ul>${list.map((b) => `<li>${h.esc((b.business || {}).name || '')} <span>${h.esc((b.business || {}).email || '')}${b.siteLabel ? ' · site ' + h.esc(b.siteLabel) : ''}</span></li>`).join('') || (spons ? '<li>No businesses yet - add them on the Sponsors tab.</li>' : '<li>No paid vendors match yet.</li>')}</ul>
+        ${m.system === 'waitlist' ? '</div>' : '</details>'}
         <label class="ms-f"><span>Subject</span><input class="ad-input" data-ms="subject" value="${h.attr(d.subject)}"${locked ? ' disabled' : ''}></label>
         <label class="ms-f"><span>Message</span><textarea class="ad-input ms-body" data-ms="body" rows="14"${locked ? ' disabled' : ''}>${h.esc(d.body)}</textarea></label>
         <p class="ms-help">Blank line = new paragraph. Start a line with &ldquo;- &rdquo; for a bullet. Click to add:</p>
