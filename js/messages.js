@@ -17,7 +17,7 @@
    ctx = { state, h: { esc, attr }, call, render, money }
    ========================================================================== */
 
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS } from './sponsor-data.js?v=600';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=601';
 
 export const SEND_TIME = '9:35 am';
 
@@ -347,7 +347,18 @@ function sponsorsHtml(ctx) {
         <button type="button" class="ad-btn ad-btn-primary" data-sp-leadadd>Add ticked</button> <button type="button" class="ad-btn" data-sp-cancel>Cancel</button></div>` : ''}
       <table class="ms-table"><thead><tr><th></th><th>Business</th><th>Contact</th><th>Status</th><th>Level</th><th></th></tr></thead>
       <tbody>${list.map(row).join('') || '<tr class="ms-fixed"><td colspan="6" class="ad-cell-muted">No businesses yet - add some from your Lead Generator, by hand, or your past sponsors.</td></tr>'}</tbody></table>
-    </div>`;
+    </div>
+    ${needsEmailHtml(h, added)}`;
+}
+
+/*  Worth asking, but no public email yet: find it, type it in, Add. */
+function needsEmailHtml(h, added) {
+  const todo = NEEDS_EMAIL.filter((n) => !added.has(n.business.toLowerCase()));
+  if (!todo.length) return '';
+  return `<div class="ad-card ms-card ms-sp ms-sp-need"><div class="ms-sp-bar2"><b>Worth asking &mdash; find their email</b><span>${todo.length}</span></div>
+    <table class="ms-table"><tbody>${todo.map((n) => `<tr class="ms-fixed"><td><strong>${h.esc(n.business)}</strong><span class="ms-sub ms-sp-tip">${h.esc(n.tip)}</span></td>
+      <td><input class="ad-input ms-sp-email" type="email" placeholder="Their email" data-need-email="${h.attr(n.business)}"></td>
+      <td class="ad-cell-right"><button type="button" class="ad-btn ad-btn-small" data-need-add="${h.attr(n.business)}">Add</button></td></tr>`).join('')}</tbody></table></div>`;
 }
 
 /*  THE WAITLIST for this event (Max, 20 Oct 2026). */
@@ -588,6 +599,16 @@ export function wireMessages(ctx) {
     if (e.target.closest('[data-sp-add]')) { state.spAdding = !state.spAdding; state.spPicking = false; render(); return; }
     if (e.target.closest('[data-sp-leads]')) { state.spPicking = !state.spPicking; state.spAdding = false; render(); return; }
     if (e.target.closest('[data-sp-cancel]')) { state.spAdding = false; state.spPicking = false; render(); return; }
+    const needAdd = e.target.closest('[data-need-add]');
+    if (needAdd) {
+      const name = needAdd.getAttribute('data-need-add');
+      const box = [...root.querySelectorAll('[data-need-email]')].find((x) => x.getAttribute('data-need-email') === name);
+      const email = String((box && box.value) || '').trim();
+      if (!/^[^s@]+@[^s@]+.[^s@]+$/.test(email)) { window.alert('Type their email first.'); return; }
+      const n = NEEDS_EMAIL.find((x) => x.business === name) || {};
+      await ctx.sponsors.add({ business: name, email, notes: n.tip || '', source: 'suggested' });
+      return;
+    }
     if (e.target.closest('[data-sp-big]')) {
       const have = new Set((state.sponsors || []).map((p) => String(p.business || '').toLowerCase()));
       const add = SUGGESTED_SPONSORS.filter((s) => !have.has(s.business.toLowerCase()));

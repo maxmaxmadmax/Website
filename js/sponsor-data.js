@@ -68,3 +68,11 @@ export const SUGGESTED_SPONSORS = [
   { business: 'Mulgowie Farming Company', email: 'info@mulgowie.com.au', note: 'Large family-owned grower with a Bowen packhouse (07 5465 9222).' },
   { business: 'Hillery Group', email: 'info@hillerygroup.com.au', note: 'Bowen civil and mining contractor, 167 Richmond Rd (07 4786 5100).' },
 ];
+
+/*  WORTH ASKING, BUT NO PUBLIC EMAIL YET - shown at the bottom of the Sponsors
+    tab with an email box, so Max can find it and add them (20 Oct 2026).  */
+export const NEEDS_EMAIL = [
+  { business: 'Koorelah Farms', tip: 'Big Bowen tomato grower, Inveroona Rd. Call (07) 4785 1999 and ask who handles sponsorship.' },
+  { business: "McDonald's Bowen", tip: 'Backs local community awards. Ask the store manager for the franchisee\'s email.' },
+  { business: 'Queensland Country Bank', tip: 'Runs "Good For Good" community grants. Ask the local branch manager for the sponsorship contact.' },
+];
