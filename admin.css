@@ -4655,3 +4655,11 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
   .db-chart{ gap:3px; }
   .db-col-val{ display:none; }
 }
+
+/* dashboard reminders (Max, 20 Oct 2026) */
+.db-rem{ background:var(--ad-orange-soft); border-radius:10px; padding:10px 12px 12px !important; margin-bottom:8px; border-top:0 !important; }
+.db-rem li{ padding:4px 0; }
+.db-rem label{ display:flex; gap:8px; align-items:flex-start; cursor:pointer; font-size:13px; color:var(--ad-text); }
+.db-rem input[type="checkbox"]{ margin-top:2px; accent-color:var(--ad-orange); width:16px; height:16px; flex:none; }
+.db-rem li.is-done span{ text-decoration:line-through; color:var(--ad-faint); }
+.db-rem-add input{ width:100%; box-sizing:border-box; margin-top:8px; padding:8px 10px; border:1px solid var(--ad-line); border-radius:8px; font:inherit; font-size:13px; background:#fff; }

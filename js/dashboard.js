@@ -17,9 +17,9 @@
    acceptedAt). Close enough for a dashboard; the invoices are the record.
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=628';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=628';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=628';
+import { isBooked, pickLineProgress } from './stock.js?v=629';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=629';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=629';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -177,6 +177,13 @@ export function dashboardHtml(ctx) {
   };
 
   const max = Math.max(1, ...d.chart.map((m) => m.cents));
+  const rems = ctx.reminders || [];
+  const remHtml = `
+          <div class="db-todo db-rem">
+            <p class="db-todo-h">Reminders ${rems.length ? '<span class="db-count">' + rems.length + '</span>' : ''}</p>
+            <ul>${rems.map((r) => `<li><label><input type="checkbox" data-rem-done="${attr(r.id)}"> <span>${esc(r.text)}</span></label></li>`).join('')}</ul>
+            <form class="db-rem-add" data-rem-add><input type="text" placeholder="Add a reminder and press Enter" maxlength="300" aria-label="Add a reminder"></form>
+          </div>`;
   return `
   <section class="db">
     <header class="db-head">
@@ -201,13 +208,14 @@ export function dashboardHtml(ctx) {
 
     <div class="db-cols">
       <div class="ad-card db-panel">
-        <h2>To-dos ${todos.length ? '<span class="db-count">' + todos.reduce((t, g) => t + g.items.length, 0) + '</span>' : ''}</h2>
+        <h2>To-dos ${todos.length || rems.length ? '<span class="db-count">' + (todos.reduce((t, g) => t + g.items.length, 0) + rems.length) + '</span>' : ''}</h2>
+        ${remHtml}
         ${todos.length ? todos.map((g) => `
           <div class="db-todo">
             <p class="db-todo-h"><a href="${attr(g.href)}">${esc(g.label)}</a> <span class="db-count">${g.items.length}</span></p>
             <ul>${g.items.slice(0, 4).map((it) => `<li><a href="${attr(it.href)}">${esc(it.text)}</a></li>`).join('')}
               ${g.items.length > 4 ? `<li><a href="${attr(g.href)}">+ ${g.items.length - 4} more</a></li>` : ''}</ul>
-          </div>`).join('') : '<p class="db-empty">All caught up. Nothing waiting on you.</p>'}
+          </div>`).join('') : (rems.length ? '' : '<p class="db-empty">All caught up. Nothing waiting on you.</p>')}
       </div>
 
       <div class="ad-card db-panel">

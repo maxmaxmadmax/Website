@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=628';
+} from './firebase-config.js?v=629';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=628';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=628';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=628';
-import { messagesHtml, wireMessages } from './messages.js?v=628';
-import { dashboardHtml } from './dashboard.js?v=628';
-import { expandKit } from './kit.js?v=628';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=629';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=629';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=629';
+import { messagesHtml, wireMessages } from './messages.js?v=629';
+import { dashboardHtml } from './dashboard.js?v=629';
+import { expandKit } from './kit.js?v=629';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -188,6 +188,7 @@ async function init() {
     subscribeToEvent();
     subscribeToInventory();
     subscribeToQuoteDocs();
+    subscribeToReminders();
     subscribeToPackages();
     subscribeToResources();
     subscribeToCustomers();
@@ -614,6 +615,48 @@ function promoteMyEstimates() {
   mine.forEach((q) => { call('adminSetQuoteStatus', { id: q.id, status: 'approved' }).catch((e) => console.warn('promote', q.number, e)); });
 }
 
+/*  DASHBOARD REMINDERS (Max, 20 Oct 2026) - Max's own to-do list, shown at
+    the top of the dashboard's To-dos. The first time it is empty it is
+    filled with the things flagged in the 20 Oct session; a marker doc
+    (_seeded) stops that happening again once he has ticked them off.     */
+const REMINDER_SEED = [
+  "Phone-test the vendor page: pick an event, hold a site, upload a document, stop before paying, release the site",
+  "Send yourself a test email from Messages (checks the email upgrade)",
+  "Turn on 2-step verification on the admin Google account",
+  "Fix Dion's real quote (put his details back) and delete max@soundzgood.com.au from Customers",
+  "Blog: check Daniel McDonald + Sue Tapp are happy to be quoted, photo permissions (Dash, Stonka), and the 2027 Dash booking",
+  "Add crew emails in Crew & Vehicles (then crew emails can be switched on)",
+  "Find the Register.com login (for SPF/DMARC - stops emails going to spam)",
+  "Ideas for later: RSVP button, sponsor report, mailing list, client Google reviews (Messages step 2)"
+];
+function subscribeToReminders() {
+  const { collection, onSnapshot, doc, setDoc, serverTimestamp } = fb.f;
+  unsubscribes.push(onSnapshot(collection(fb.db, 'reminders'), (snap) => {
+    const all = [];
+    snap.forEach((d) => all.push({ id: d.id, ...d.data() }));
+    if (!all.length && !snap.metadata.fromCache && !state.remindersSeeding) {
+      state.remindersSeeding = true;
+      const t = Date.now();
+      Promise.all(REMINDER_SEED.map((text, i) => setDoc(doc(fb.db, 'reminders', 'seed-' + (i + 1)), { text, done: false, createdAt: t + i })))
+        .then(() => setDoc(doc(fb.db, 'reminders', '_seeded'), { at: serverTimestamp() }))
+        .catch((e) => console.warn('reminders seed', e));
+    }
+    state.reminders = all.filter((r) => r.id !== '_seeded' && !r.done)
+      .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    if (state.view === 'dashboard') render();
+  }, (err) => console.error('reminders', err)));
+}
+const reminderStore = {
+  add(text) {
+    const { collection, addDoc } = fb.f;
+    return addDoc(collection(fb.db, 'reminders'), { text: String(text).slice(0, 300), done: false, createdAt: Date.now() });
+  },
+  done(id) {
+    const { doc, updateDoc } = fb.f;
+    return updateDoc(doc(fb.db, 'reminders', id), { done: true, doneAt: Date.now() });
+  },
+};
+
 function subscribeToQuoteDocs() {
   const { collection, onSnapshot, query, orderBy } = fb.f;
   unsubscribes.push(onSnapshot(
@@ -758,7 +801,8 @@ function friendly(err) {
 
 function money(cents) {
   if (cents == null) return '—';
-  return '$' + (cents / 100).toFixed(cents % 100 ? 2 : 0);
+  const dp = cents % 100 ? 2 : 0;
+  return '$' + (cents / 100).toLocaleString('en-AU', { minimumFractionDigits: dp, maximumFractionDigits: dp });   // $1,095.60 (Max, 20 Oct 2026)
 }
 
 function dateShort(ts) {
@@ -3317,10 +3361,25 @@ VIEWS.dashboard = {
       quotes: state.quoteDocs || [], bookings: state.bookings || [], sites: state.sites || [],
       sponsors: state.sponsors || [], waitlist: state.waitlist || [], messages: state.messages || [],
       events: state.events || [], activeEventId: state.activeEventId, emailLog: dashLog || [],
+      reminders: state.reminders || [],
       h: { esc, attr, money },
     });
   },
   wire() {
+    const desk = document.getElementById('ad-desk');
+    desk.querySelectorAll('[data-rem-done]').forEach((box) => box.addEventListener('change', () => {
+      box.closest('li').classList.add('is-done');
+      reminderStore.done(box.getAttribute('data-rem-done')).catch((e) => { window.alert(friendly(e)); box.checked = false; });
+    }));
+    const form = desk.querySelector('[data-rem-add]');
+    if (form) form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const inp = form.querySelector('input');
+      const text = inp.value.trim();
+      if (!text) return;
+      inp.value = '';
+      reminderStore.add(text).catch((err) => window.alert(friendly(err)));
+    });
     if (Date.now() - dashLogAt < 5 * 60000) return;   // at most every 5 minutes
     dashLogAt = Date.now();
     loadLog().then((log) => { dashLog = log; if (state.view === 'dashboard') render(); }).catch(() => {});
