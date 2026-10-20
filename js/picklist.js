@@ -6,7 +6,7 @@
    admin and everyone on the crew link sees the same list. The list also
    refreshes itself every 20 seconds while it's open.
    ========================================================================== */
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=616';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=617';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -115,7 +115,8 @@ function render() {
         ${info('Venue', where)}
         ${info('Hire dates', range)}
         ${info('Getting there', esc(d.delivery))}
-        ${info('On-site contact', contact)}
+        ${info('Event day contact', d.dayContact ? esc(d.dayContact).replace(/(\+?\d[\d\s]{7,}\d)/, (n) => '<a href="tel:' + n.replace(/\s/g, '') + '">' + n + '</a>') : '')}
+        ${info(d.dayContact ? 'Customer' : 'On-site contact', contact)}
         ${info('Crew', d.crew.map((x) => esc(x.name) + (x.note ? ' <small>' + esc(x.note) + '</small>' : '')).join('<br>'))}
       </dl>
       ${d.customerNotes ? `<p class="pl-notes"><b>From the customer:</b> ${esc(d.customerNotes)}</p>` : ''}

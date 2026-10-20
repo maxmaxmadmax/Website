@@ -33,13 +33,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=616';
+} from './firebase-config.js?v=617';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=616';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=616';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=616';
-import { messagesHtml, wireMessages } from './messages.js?v=616';
-import { expandKit } from './kit.js?v=616';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=617';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=617';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=617';
+import { messagesHtml, wireMessages } from './messages.js?v=617';
+import { expandKit } from './kit.js?v=617';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -4692,7 +4692,7 @@ function guessEventType(name) {
 function blankQuote() {
   return {
     kind: 'quote',
-    customer: { name: '', business: '', email: '', ccEmail: '', gearEmails: '', phone: '', address: '', eventName: '', eventDate: '', eventVenue: '', eventStartTime: '', customerNotes: '', eventType: '' },
+    customer: { name: '', business: '', email: '', ccEmail: '', gearEmails: '', phone: '', address: '', eventName: '', eventDate: '', eventVenue: '', eventStartTime: '', customerNotes: '', dayContact: '', eventType: '' },
     hire: { startDate: '', endDate: '', days: 1 },
     lines: [],
     discountCents: 0,
@@ -5250,6 +5250,7 @@ function quoteBuilderHtml() {
             <label class="qb-fl"><span>Email</span><input class="qb-cin" type="email" data-qc="email" value="${attr(c.email)}" placeholder="Email"></label>
             <div class="qb-fl"><span>CC &middot; billing / accounts copy</span><div class="qb-cc" id="qb-cc">${ccChipsInner(c.ccEmail, 'Accounts email (optional) - press Enter')}</div></div>
             <div class="qb-fl"><span>Gear list to &middot; band / crew (no prices)</span><div class="qb-cc" id="qb-gear">${ccChipsInner(c.gearEmails, 'Band or crew email - press Enter')}</div></div>
+            <label class="qb-fl"><span>Event day contact</span><input class="qb-cin" data-qc="dayContact" value="${attr(c.dayContact || '')}" placeholder="Name &amp; phone on the day"></label>
             <label class="qb-fl"><span>Customer notes</span><textarea class="qb-cin qb-cnotes" rows="3" data-qc="customerNotes" placeholder="Anything the customer told us">${esc(c.customerNotes || '')}</textarea></label>
           </div>
           <div class="qb-hire">

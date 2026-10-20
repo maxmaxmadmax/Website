@@ -8,7 +8,7 @@
    Uses the sponsor page styles (sponsor.css).
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=616';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=617';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) => String(v == null ? '' : v)
@@ -75,7 +75,8 @@ function render(d) {
         <small class="dt-info-text" id="dt-info-biz-text" hidden>This is who the quote and invoice will be made out to. Leave it blank to have them in your own name.</small>
         <input name="business" type="text" value="${esc(c.business || '')}"></label>
       ${f('email', 'Email', c.email, 'email', true, false, 'Your email')}
-      ${f('phone', 'Phone', c.phone, 'tel', true, false, 'Your event day contact')}
+      ${f('phone', 'Phone', c.phone, 'tel', true, false, 'Your phone')}
+      ${f('dayContact', 'Event day contact', c.dayContact, 'text', false, true, 'Name and phone of who we deal with on the day')}
       ${f('ccEmail', 'Accounts / billing email', c.ccEmail, 'text', false, true, 'Gets a copy of the quote and invoice')}
       ${f('address', 'Your address', c.address, 'text', false, true, 'For the invoice')}
       ${f('eventName', 'Event name', c.eventName, 'text', true)}
@@ -134,7 +135,7 @@ function render(d) {
         token: TOKEN, name: (v('firstName').trim() + ' ' + v('lastName').trim()).trim(), business: v('business'), email: v('email'), phone: v('phone'),
         ccEmail: v('ccEmail'), address: v('address'), eventName: v('eventName'),
         eventDate: prettyFromIso(v('eventDate')), eventVenue: v('eventVenue'),
-        eventStartTime: v('eventStartTime'), customerNotes: v('customerNotes'),
+        eventStartTime: v('eventStartTime'), customerNotes: v('customerNotes'), dayContact: v('dayContact'),
       });
       done(res.data && res.data.quoteLink, res.data && res.data.autoSent);
     } catch (err) {

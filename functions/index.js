@@ -2455,6 +2455,7 @@ function sanitizeQuote(q) {
     eventVenue: text(q.customer && q.customer.eventVenue, 200),   // venue (customer details form, 20 Oct 2026)
     eventStartTime: text(q.customer && q.customer.eventStartTime, 20),   // when the event starts - we work out bump-in from it
     customerNotes: text(q.customer && q.customer.customerNotes, 2000),   // "anything we should know" from the details form
+    dayContact: text(q.customer && q.customer.dayContact, 200),   // event day contact - name & phone
     // the band / crew who get the gear list with NO prices - not the billing CC (Max, 20 Oct 2026)
     gearEmails: String((q.customer && q.customer.gearEmails) || '').split(/[,;\s]+/).map((e) => e.trim())
       .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)).slice(0, 10).join(', ').slice(0, 600),
@@ -2790,6 +2791,7 @@ exports.getPickList = onCall(async (request) => {
     venue: c.eventVenue || '',
     times: { start: c.eventStartTime || q.botStart || '', finish: q.botFinish || '' },
     customerNotes: c.customerNotes || '',
+    dayContact: c.dayContact || '',
     crew,
     notes: q.crewNotes || '',
     items,
@@ -4516,6 +4518,7 @@ exports.getDetailsForm = onCall(async (request) => {
       name: c.name || '', business: c.business || '', email: c.email || '', ccEmail: c.ccEmail || '',
       phone: c.phone || '', address: c.address || '', eventName: c.eventName || '', eventDate: c.eventDate || '',
       eventVenue: c.eventVenue || '', eventStartTime: c.eventStartTime || '', customerNotes: c.customerNotes || '',
+      dayContact: c.dayContact || '',
     },
     startDate: (q.hire && q.hire.startDate) || '',
     received: !!q.detailsReceivedAt,
@@ -4535,6 +4538,7 @@ exports.submitDetails = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (reque
     ccEmail: emailList(d.ccEmail), phone: clean(d.phone, 40), address: clean(d.address, 300),
     eventName: clean(d.eventName, 160), eventDate: clean(d.eventDate, 60), eventVenue: clean(d.eventVenue, 200),
     eventStartTime: clean(d.eventStartTime, 20), customerNotes: clean(d.customerNotes, 2000),
+    dayContact: clean(d.dayContact, 200),
   };
   if (!f.name) throw new HttpsError('invalid-argument', 'Please enter your name.');
   if (!DETAIL_EMAIL_RE.test(f.email)) throw new HttpsError('invalid-argument', 'Please enter a valid email address.');
@@ -4562,7 +4566,7 @@ exports.submitDetails = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (reque
       + ['Name: ' + f.name, f.business && 'Business: ' + f.business, 'Email: ' + f.email, f.ccEmail && 'Billing CC: ' + f.ccEmail,
         'Phone: ' + f.phone, f.address && 'Address: ' + f.address, f.eventName && 'Event: ' + f.eventName,
         f.eventDate && 'Date: ' + f.eventDate, f.eventVenue && 'Venue: ' + f.eventVenue,
-        f.eventStartTime && 'Event starts: ' + f.eventStartTime, f.customerNotes && 'Notes: ' + f.customerNotes].filter(Boolean).map((x) => '- ' + x).join('\n')
+        f.eventStartTime && 'Event starts: ' + f.eventStartTime, f.dayContact && 'Event day contact: ' + f.dayContact, f.customerNotes && 'Notes: ' + f.customerNotes].filter(Boolean).map((x) => '- ' + x).join('\n')
       + '\n\nThey are already on the quote - open it in the Sales Pipeline.',
   }, {}, { to: process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au' });
 
