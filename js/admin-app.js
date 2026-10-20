@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=630';
+} from './firebase-config.js?v=631';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=630';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=630';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=630';
-import { messagesHtml, wireMessages } from './messages.js?v=630';
-import { dashboardHtml } from './dashboard.js?v=630';
-import { expandKit } from './kit.js?v=630';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=631';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=631';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=631';
+import { messagesHtml, wireMessages } from './messages.js?v=631';
+import { dashboardHtml, dashboardData } from './dashboard.js?v=631';
+import { expandKit } from './kit.js?v=631';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -3355,13 +3355,69 @@ async function loadLog() {
     dashboard opens, for the "emails that failed" to-do.                   */
 let dashLog = null;
 let dashLogAt = 0;
+
+/*  EVENT-DAY WEATHER (Max, 20 Oct 2026): rain and wind for each job in the
+    next 30 days, from Open-Meteo (free, no account, no key). Only the town
+    and the date are sent - never a customer's details. Forecasts reach ~16
+    days ahead; further out the job just says when the forecast will show.
+    Kept in memory for an hour so the dashboard doesn't keep asking.     */
+const dashWeather = {};            // jobId -> { day } | { later: true }
+const geoCache = {};               // place -> { lat, lon } | null
+async function geocode(place) {
+  const key = String(place || '').toLowerCase();
+  if (key in geoCache) return geoCache[key];
+  geoCache[key] = null;
+  try {
+    const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&country_code=AU&name=' + encodeURIComponent(place));
+    const d = await r.json();
+    const hit = d && d.results && d.results[0];
+    if (hit) geoCache[key] = { lat: hit.latitude, lon: hit.longitude };
+  } catch (e) { /* no place found */ }
+  return geoCache[key];
+}
+/*  where to forecast: the delivery town, else the venue, else Bowen */
+async function jobPlace(q) {
+  const town = String((q.delivery && q.delivery.town) || '').replace(/\(.*?\)/g, '').trim();
+  const venue = String((q.customer && q.customer.eventVenue) || '')
+    .replace(/\b(resort|hotel|club|hall|showgrounds?|park|centre|center|tavern|pub|bowls|sports?|complex|beach house)\b/gi, '').split(',')[0].trim();
+  for (const p of [town, venue, 'Bowen']) {
+    if (p && p.toLowerCase() !== 'other') { const g = await geocode(p); if (g) return g; }
+  }
+  return null;
+}
+async function loadDashWeather(jobs) {
+  const today = new Date();
+  const limit = new Date(today.getTime() + 15 * 86400000).toISOString().slice(0, 10);
+  let changed = false;
+  for (const q of jobs) {
+    const day = q.hire && q.hire.startDate;
+    const have = dashWeather[q.id];
+    if (!day || (have && have.date === day && Date.now() - have.at < 3600000)) continue;
+    if (day > limit) { dashWeather[q.id] = { date: day, at: Date.now(), later: true }; changed = true; continue; }
+    const g = await jobPlace(q);
+    if (!g) continue;
+    try {
+      const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + g.lat + '&longitude=' + g.lon
+        + '&daily=weather_code,temperature_2m_max,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max'
+        + '&timezone=Australia%2FBrisbane&start_date=' + day + '&end_date=' + day);
+      const d = (await r.json()).daily || {};
+      dashWeather[q.id] = {
+        date: day, at: Date.now(),
+        code: (d.weather_code || [])[0], temp: (d.temperature_2m_max || [])[0],
+        rain: (d.precipitation_probability_max || [])[0], wind: (d.wind_speed_10m_max || [])[0], gust: (d.wind_gusts_10m_max || [])[0],
+      };
+      changed = true;
+    } catch (e) { /* leave it blank */ }
+  }
+  if (changed && state.view === 'dashboard') render();
+}
 VIEWS.dashboard = {
   html() {
     return dashboardHtml({
       quotes: state.quoteDocs || [], bookings: state.bookings || [], sites: state.sites || [],
       sponsors: state.sponsors || [], waitlist: state.waitlist || [], messages: state.messages || [],
       events: state.events || [], activeEventId: state.activeEventId, emailLog: dashLog || [],
-      reminders: state.reminders || [],
+      reminders: state.reminders || [], weather: dashWeather,
       h: { esc, attr, money },
     });
   },
@@ -3380,6 +3436,7 @@ VIEWS.dashboard = {
       inp.value = '';
       reminderStore.add(text).catch((err) => window.alert(friendly(err)));
     });
+    loadDashWeather(dashboardData({ quotes: state.quoteDocs || [], bookings: state.bookings || [] }).upcoming).catch(() => {});
     if (Date.now() - dashLogAt < 5 * 60000) return;   // at most every 5 minutes
     dashLogAt = Date.now();
     loadLog().then((log) => { dashLog = log; if (state.view === 'dashboard') render(); }).catch(() => {});

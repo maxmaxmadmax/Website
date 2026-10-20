@@ -17,9 +17,9 @@
    acceptedAt). Close enough for a dashboard; the invoices are the record.
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=630';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=630';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=630';
+import { isBooked, pickLineProgress } from './stock.js?v=631';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=631';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=631';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -128,6 +128,28 @@ export function eventCard(ctx) {
   return { ev, days, sold, total: sites.length, vendorCents, sponsorCents, goal: SPONSOR_GOAL_CENTS };
 }
 
+/* ---------- event-day weather (Max, 20 Oct 2026) ---------- */
+function wxIcon(code) {
+  if (code == null) return '';
+  if (code === 0) return '&#9728;&#65039;';                 // sun
+  if (code <= 2) return '&#127780;&#65039;';                // sun + cloud
+  if (code === 3 || code === 45 || code === 48) return '&#9729;&#65039;';   // cloud / fog
+  if (code >= 95) return '&#9928;&#65039;';                 // storm
+  if (code >= 51) return '&#127783;&#65039;';               // rain
+  return '&#9729;&#65039;';
+}
+export function weatherTag(w, esc) {
+  if (!w) return '';
+  if (w.later) return '<span class="db-tag db-wx">Forecast from ' + esc(new Date(Date.parse(w.date + 'T00:00:00') - 15 * 86400000).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })) + '</span>';
+  if (w.rain == null && w.gust == null) return '';
+  const wet = (w.rain || 0) >= 50, windy = (w.gust || 0) >= 40;
+  const warn = (w.rain || 0) >= 70 || (w.gust || 0) >= 55 || w.code >= 95;
+  return '<span class="db-tag db-wx' + (warn ? ' is-bad' : wet || windy ? ' is-warn' : '') + '" title="Forecast for the event day">'
+    + wxIcon(w.code) + ' ' + (w.temp != null ? Math.round(w.temp) + '&deg; &middot; ' : '')
+    + Math.round(w.rain || 0) + '% rain &middot; wind ' + Math.round(w.wind || 0) + ' km/h'
+    + (w.gust != null ? ' (gusts ' + Math.round(w.gust) + ')' : '') + '</span>';
+}
+
 /* ---------- the page ---------- */
 export function dashboardHtml(ctx) {
   const { esc, attr, money } = ctx.h;
@@ -164,6 +186,7 @@ export function dashboardHtml(ctx) {
             <p class="db-job-tags">
               <span class="ad-pill ad-pill-${st.status[1]}">${esc(owingOf(q) > 0 && isBooked(q) ? 'Deposit in · ' + money(owingOf(q)) + ' owing' : st.status[0])}</span>
               ${pp && pp.lines ? `<span class="db-tag">${pp.returned === pp.lines ? 'All gear back' : pp.packed + ' of ' + pp.lines + ' packed'}</span>` : ''}
+              ${weatherTag(ctx.weather && ctx.weather[q.id], esc)}
               ${crew.length ? `<span class="db-tag">${esc(crew.slice(0, 3).join(', '))}${crew.length > 3 ? ' +' + (crew.length - 3) : ''}</span>` : ''}
             </p>
           </div>

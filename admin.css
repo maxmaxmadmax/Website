@@ -4663,3 +4663,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .db-rem input[type="checkbox"]{ margin-top:2px; accent-color:var(--ad-orange); width:16px; height:16px; flex:none; }
 .db-rem li.is-done span{ text-decoration:line-through; color:var(--ad-faint); }
 .db-rem-add input{ width:100%; box-sizing:border-box; margin-top:8px; padding:8px 10px; border:1px solid var(--ad-line); border-radius:8px; font:inherit; font-size:13px; background:#fff; }
+/* event-day weather on dashboard jobs (Max, 20 Oct 2026) */
+.db-wx{ background:#e8f3fd; color:#0b4a7a; }
+.db-wx.is-warn{ background:var(--ad-amber-bg); color:var(--ad-amber); font-weight:700; }
+.db-wx.is-bad{ background:var(--ad-red-bg); color:var(--ad-red); font-weight:700; }
