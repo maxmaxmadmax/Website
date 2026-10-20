@@ -8,7 +8,7 @@
    Uses the sponsor page styles (sponsor.css).
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=609';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=610';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) => String(v == null ? '' : v)
@@ -43,6 +43,10 @@ function done(quoteLink, autoSent) {
 function render(d) {
   const c = d.customer || {};
   const date = isoFromPretty(c.eventDate) || d.startDate || '';
+  // first / last name boxes (Max, 20 Oct 2026) - the quote still keeps one "name"
+  const nameParts = String(c.name || '').trim().split(/\s+/);
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.slice(1).join(' ');
   const f = (name, label, val, type, req, wide, ph) => `<label class="${wide ? 'spn-wide' : ''}">${label}${req ? ' <b class="dt-req">*</b>' : ' <span>(optional)</span>'}
     <input name="${name}" type="${type || 'text'}" value="${esc(val || '')}"${req ? ' required' : ''}${ph ? ' placeholder="' + esc(ph) + '"' : ''}></label>`;
   document.getElementById('dt-root').innerHTML = `
@@ -52,8 +56,9 @@ function render(d) {
     <p class="spn-sub">${d.received ? 'Thank you &mdash; we have your details. If anything has changed, update it below and press Save.' : 'Add your details below to view your quote.'}</p>
     <p class="dt-note"><b class="dt-req">*</b> Required</p>
     <form class="spn-form" id="dt-form">
-      ${f('name', 'Full name', c.name, 'text', true, false, 'First and last name')}
-      ${f('business', 'Business / organisation', c.business, 'text', false)}
+      ${f('firstName', 'First name', firstName, 'text', true)}
+      ${f('lastName', 'Last name', lastName, 'text', true)}
+      ${f('business', 'Business / organisation', c.business, 'text', false, true)}
       ${f('email', 'Email', c.email, 'email', true)}
       ${f('phone', 'Phone', c.phone, 'tel', true)}
       ${f('ccEmail', 'Accounts / billing email', c.ccEmail, 'text', false, true, 'Gets a copy of the quote and invoice')}
@@ -73,7 +78,8 @@ function render(d) {
   const missing = () => {
     const val = (n) => String((dtForm.querySelector('[name="' + n + '"]') || {}).value || '').trim();
     const out = [];
-    if (val('name').split(/\s+/).length < 2) out.push('your first and last name');
+    if (!val('firstName')) out.push('your first name');
+    if (!val('lastName')) out.push('your last name');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('email'))) out.push('your email');
     if (val('phone').replace(/[^0-9]/g, '').length < 8) out.push('your phone number');
     if (!val('eventName')) out.push('the event name');
@@ -97,7 +103,7 @@ function render(d) {
     btn.disabled = true;
     try {
       const res = await fns.httpsCallable(fns.fns, 'submitDetails')({
-        token: TOKEN, name: v('name'), business: v('business'), email: v('email'), phone: v('phone'),
+        token: TOKEN, name: (v('firstName').trim() + ' ' + v('lastName').trim()).trim(), business: v('business'), email: v('email'), phone: v('phone'),
         ccEmail: v('ccEmail'), address: v('address'), eventName: v('eventName'),
         eventDate: prettyFromIso(v('eventDate')), eventVenue: v('eventVenue'),
       });
