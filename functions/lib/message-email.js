@@ -60,6 +60,11 @@ function fill(text, values, clean) {
   });
 }
 
+/*  A web address in the text becomes a link (e.g. the Google review link). */
+function linkify(html) {
+  return html.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" style="color:#ff6b00;font-weight:bold;">$1</a>');
+}
+
 /*  Plain text -> paragraphs and bullet lists, already filled in. */
 function bodyHtml(body, values) {
   return String(body || '').replace(/\r/g, '').split(/\n\s*\n/).map((block) => {
@@ -67,10 +72,10 @@ function bodyHtml(body, values) {
     if (!lines.length) return '';
     if (lines.every((l) => /^\s*-\s+/.test(l))) {
       return '<ul style="margin:0 0 14px;padding-left:20px;">'
-        + lines.map((l) => '<li style="margin:0 0 6px;">' + fill(esc(l.replace(/^\s*-\s+/, '')), values, esc) + '</li>').join('')
+        + lines.map((l) => '<li style="margin:0 0 6px;">' + linkify(fill(esc(l.replace(/^\s*-\s+/, '')), values, esc)) + '</li>').join('')
         + '</ul>';
     }
-    return '<p style="margin:0 0 14px;">' + lines.map((l) => fill(esc(l), values, esc)).join('<br>') + '</p>';
+    return '<p style="margin:0 0 14px;">' + lines.map((l) => linkify(fill(esc(l), values, esc))).join('<br>') + '</p>';
   }).join('');
 }
 

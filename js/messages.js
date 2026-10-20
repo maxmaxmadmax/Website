@@ -105,14 +105,17 @@ function fill(text, values, clean) {
     return v === undefined ? whole : clean(v);
   });
 }
+function linkify(html) {
+  return html.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+}
 function bodyHtml(body, values, esc) {
   return String(body || '').replace(/\r/g, '').split(/\n\s*\n/).map((block) => {
     const lines = block.split('\n').filter((l) => l.trim() !== '');
     if (!lines.length) return '';
     if (lines.every((l) => /^\s*-\s+/.test(l))) {
-      return '<ul>' + lines.map((l) => '<li>' + fill(esc(l.replace(/^\s*-\s+/, '')), values, esc) + '</li>').join('') + '</ul>';
+      return '<ul>' + lines.map((l) => '<li>' + linkify(fill(esc(l.replace(/^\s*-\s+/, '')), values, esc)) + '</li>').join('') + '</ul>';
     }
-    return '<p>' + lines.map((l) => fill(esc(l), values, esc)).join('<br>') + '</p>';
+    return '<p>' + lines.map((l) => linkify(fill(esc(l), values, esc))).join('<br>') + '</p>';
   }).join('');
 }
 function sampleValues(b, ev) {

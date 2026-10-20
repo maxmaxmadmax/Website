@@ -3831,6 +3831,10 @@ function starterMessages(eventId) {
     { ...base, name: 'Thank you', status: 'review',
       subject: 'Thank you for being part of {{event_name}}', trigger: { type: 'daysAfter', days: 1 },
       body: "Hi {{vendor_name}},\n\nThank you for joining us at {{event_name}} - we hope it was a great night for {{business_name}}.\n\nWe'd love your feedback. Just reply to this email and tell us what worked and what we can do better.\n\nFollow us on Instagram @soundzgood_events for our next events.\n\nThanks again,\nThe SoundzGood team" },
+    // GOOGLE REVIEW (Max, 20 Oct 2026): 3 days after - the Tuesday after a Saturday event
+    { ...base, name: 'Google review', status: 'review',
+      subject: 'Could you leave us a quick review? - {{event_name}}', trigger: { type: 'daysAfter', days: 3 },
+      body: "Hi {{vendor_name}},\n\nThanks again for being part of {{event_name}}. We hope it was a great night for {{business_name}}.\n\nCould you take 30 seconds to leave us a Google review? It really helps us grow community events like this one:\nhttps://g.page/r/CSUgRhfqGvdnEAI/review\n\nThank you!\nThe SoundzGood team" },
   ];
 }
 
@@ -3845,14 +3849,20 @@ exports.adminMessagesSeed = onCall(async (request) => {
     if (sys && !sys.data().approvedBody) {
       await sys.ref.update({ subject: INVOICE_SUBJECT, body: INVOICE_BODY, approvedSubject: INVOICE_SUBJECT, approvedBody: INVOICE_BODY });
     }
-    return { ok: true, added: 0 };
+    // a starter added later (e.g. Google review) appears on events that already have messages
+    const names = new Set(have.docs.map((d) => d.data().name));
+    const missing = starterMessages(eventId).filter((m) => !m.system && !names.has(m.name));
+    for (const m of missing) {
+      await db.collection('messages').add({ ...m, sentCount: 0, failed: [], createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+    }
+    return { ok: true, added: missing.length };
   }
   const batch = db.batch();
   starterMessages(eventId).forEach((m) => batch.set(db.collection('messages').doc(), {
     ...m, sentCount: 0, failed: [], createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
   }));
   await batch.commit();
-  return { ok: true, added: 4 };
+  return { ok: true, added: starterMessages(eventId).length };
 });
 
 /*  Save (new or edited). An edit to an approved / paused message goes back to
