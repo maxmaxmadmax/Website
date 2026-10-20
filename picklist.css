@@ -77,3 +77,9 @@ body{ margin:0; background:#f2f2f2; color:#111; font-family:Arial, Helvetica, sa
   .pl-box span{ width:22px; height:22px; font-size:14px; }
   .pl-sig{ display:block; margin-top:14mm; font-size:12px; }
 }
+/* laid out like the quote (Max, 20 Oct 2026): included parts sit under their item */
+.pl-row.pl-sub{ padding-left:22px; }
+.pl-row.pl-sub .pl-name{ font-weight:500; color:#333; }
+.pl-arrow{ color:#aaa; margin-right:8px; }
+.pl-kit{ display:inline-block; margin-left:6px; padding:1px 6px; border-radius:4px; background:#ff6b00; color:#fff; font-size:10px; font-weight:800; text-transform:uppercase; vertical-align:middle; }
+.pl-subhead{ margin:8px 0 0 22px; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#888; }

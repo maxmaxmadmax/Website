@@ -2784,7 +2784,25 @@ exports.getPickList = onCall(async (request) => {
     // operators and vehicles booked on the job
     .concat((q.lines || []).filter((l) => l.resType).map((l) => ({ name: (l.qty > 1 ? l.qty + ' × ' : '') + (l.name || ''), note: l.resType === 'staff' ? ((l.days || 1) + ' day' + ((l.days || 1) === 1 ? '' : 's')) : 'vehicle' })));
   const del = (q.lines || []).find((l) => l.type === 'delivery');
+  /*  LAID OUT LIKE THE QUOTE (Max, 20 Oct 2026): every gear line in quote
+      order; "sub" = an included part that sits under the item above it.
+      Each line has its own tick (key), itemKey reads ticks saved before. */
+  const rows = [];
+  (q.lines || []).forEach((l, idx) => {
+    if (!l || !['item', 'kit', 'custom'].includes(l.type) || l.resType) return;
+    const qty = Math.max(0, Math.round(Number(l.qty) || 0));
+    if (!qty) return;
+    const name = String(l.name || '').replace(/ \(included\)$/i, '').trim();
+    const itemKey = pickKey({ itemId: l.itemId || '', name });
+    rows.push({
+      key: itemKey.slice(0, 110) + '_L' + idx, itemKey, name, qty,
+      sub: l.type === 'kit', custom: !l.itemId,
+      category: l.category || cat[l.itemId] || '',
+      sysOrder: l.sysOrder != null ? l.sysOrder : null,
+    });
+  });
   return {
+    rows,
     number: q.invoiceNumber || q.number || '',
     eventName: c.eventName || '',
     eventDate: c.eventDate || '',
