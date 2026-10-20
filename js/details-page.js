@@ -8,7 +8,7 @@
    Uses the sponsor page styles (sponsor.css).
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=605';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=606';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) => String(v == null ? '' : v)
@@ -48,10 +48,8 @@ function render(d) {
   document.getElementById('dt-root').innerHTML = `
   <section class="spn-sec">
     <p class="spn-eyebrow" style="color:#ff6b00">SoundzGood Whitsundays</p>
-    <h2>${d.autoSend ? 'Your quote is ready' : 'Your quote is almost ready'}</h2>
-    <p class="spn-sub">${d.received && !d.autoSend ? 'Thank you &mdash; we have your details. If anything has changed, update it below and press Save.'
-      : d.autoSend ? 'Please confirm your contact details below. As soon as you press the button, we&rsquo;ll email your quote to you so you can review and accept it.'
-      : 'Please confirm your contact details below. We&rsquo;ll then finalise your quote and email it to you for review.'}</p>
+    <h2>Your quote is ready for review</h2>
+    <p class="spn-sub">${d.received ? 'Thank you &mdash; we have your details. If anything has changed, update it below and press Save.' : 'Add your details below to view your quote.'}</p>
     <form class="spn-form" id="dt-form">
       ${f('name', 'Your name', c.name, 'text', true)}
       ${f('business', 'Business / organisation', c.business, 'text', false)}
@@ -62,7 +60,7 @@ function render(d) {
       ${f('eventName', 'Event name', c.eventName, 'text', false)}
       <label>Event date <span>(optional)</span><input name="eventDate" type="date" value="${esc(date)}"></label>
       ${f('eventVenue', 'Venue', c.eventVenue, 'text', false, true, 'Where is it on?')}
-      <button type="submit" class="spn-btn">${d.autoSend ? 'Confirm &amp; send my quote' : (d.received ? 'Save my details' : 'Confirm my details')}</button>
+      <button type="submit" class="spn-btn">${d.received ? 'Save my details' : (d.quoteLink || d.autoSend ? 'View my quote' : 'Send my details')}</button>
       <p class="spn-msg" id="dt-msg" hidden></p>
     </form>
   </section>`;
