@@ -17,9 +17,9 @@
    acceptedAt). Close enough for a dashboard; the invoices are the record.
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=631';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=631';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=631';
+import { isBooked, pickLineProgress } from './stock.js?v=632';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=632';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=632';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -146,7 +146,7 @@ export function weatherTag(w, esc) {
   const warn = (w.rain || 0) >= 70 || (w.gust || 0) >= 55 || w.code >= 95;
   return '<span class="db-tag db-wx' + (warn ? ' is-bad' : wet || windy ? ' is-warn' : '') + '" title="Forecast for the event day">'
     + wxIcon(w.code) + ' ' + (w.temp != null ? Math.round(w.temp) + '&deg; &middot; ' : '')
-    + Math.round(w.rain || 0) + '% rain &middot; wind ' + Math.round(w.wind || 0) + ' km/h'
+    + Math.round(w.rain || 0) + '% rain' + (w.mm != null ? ' (' + (w.mm >= 10 ? Math.round(w.mm) : Math.round(w.mm * 10) / 10) + ' mm)' : '') + ' &middot; wind ' + Math.round(w.wind || 0) + ' km/h'
     + (w.gust != null ? ' (gusts ' + Math.round(w.gust) + ')' : '') + '</span>';
 }
 

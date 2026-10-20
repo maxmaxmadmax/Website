@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=631';
+} from './firebase-config.js?v=632';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=631';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=631';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=631';
-import { messagesHtml, wireMessages } from './messages.js?v=631';
-import { dashboardHtml, dashboardData } from './dashboard.js?v=631';
-import { expandKit } from './kit.js?v=631';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=632';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=632';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=632';
+import { messagesHtml, wireMessages } from './messages.js?v=632';
+import { dashboardHtml, dashboardData } from './dashboard.js?v=632';
+import { expandKit } from './kit.js?v=632';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -3398,13 +3398,13 @@ async function loadDashWeather(jobs) {
     if (!g) continue;
     try {
       const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + g.lat + '&longitude=' + g.lon
-        + '&daily=weather_code,temperature_2m_max,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max'
+        + '&daily=weather_code,temperature_2m_max,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max'
         + '&timezone=Australia%2FBrisbane&start_date=' + day + '&end_date=' + day);
       const d = (await r.json()).daily || {};
       dashWeather[q.id] = {
         date: day, at: Date.now(),
         code: (d.weather_code || [])[0], temp: (d.temperature_2m_max || [])[0],
-        rain: (d.precipitation_probability_max || [])[0], wind: (d.wind_speed_10m_max || [])[0], gust: (d.wind_gusts_10m_max || [])[0],
+        rain: (d.precipitation_probability_max || [])[0], mm: (d.precipitation_sum || [])[0], wind: (d.wind_speed_10m_max || [])[0], gust: (d.wind_gusts_10m_max || [])[0],
       };
       changed = true;
     } catch (e) { /* leave it blank */ }
