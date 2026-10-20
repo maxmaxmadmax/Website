@@ -8,7 +8,7 @@
    Uses the sponsor page styles (sponsor.css).
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=608';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=609';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) => String(v == null ? '' : v)
@@ -43,13 +43,14 @@ function done(quoteLink, autoSent) {
 function render(d) {
   const c = d.customer || {};
   const date = isoFromPretty(c.eventDate) || d.startDate || '';
-  const f = (name, label, val, type, req, wide, ph) => `<label class="${wide ? 'spn-wide' : ''}">${label}${req ? '' : ' <span>(optional)</span>'}
+  const f = (name, label, val, type, req, wide, ph) => `<label class="${wide ? 'spn-wide' : ''}">${label}${req ? ' <b class="dt-req">*</b>' : ' <span>(optional)</span>'}
     <input name="${name}" type="${type || 'text'}" value="${esc(val || '')}"${req ? ' required' : ''}${ph ? ' placeholder="' + esc(ph) + '"' : ''}></label>`;
   document.getElementById('dt-root').innerHTML = `
   <section class="spn-sec">
     <p class="spn-eyebrow" style="color:#ff6b00">SoundzGood Whitsundays</p>
     <h2>Your quote is ready for review</h2>
     <p class="spn-sub">${d.received ? 'Thank you &mdash; we have your details. If anything has changed, update it below and press Save.' : 'Add your details below to view your quote.'}</p>
+    <p class="dt-note"><b class="dt-req">*</b> Required</p>
     <form class="spn-form" id="dt-form">
       ${f('name', 'Full name', c.name, 'text', true, false, 'First and last name')}
       ${f('business', 'Business / organisation', c.business, 'text', false)}
@@ -61,7 +62,6 @@ function render(d) {
       <label>Event date <span>(optional)</span><input name="eventDate" type="date" value="${esc(date)}"></label>
       ${f('eventVenue', 'Venue', c.eventVenue, 'text', false, true, 'Where is it on?')}
       <button type="submit" class="spn-btn">${d.received ? 'Save my details' : (d.quoteLink || d.autoSend ? 'View my quote' : 'Send my details')}</button>
-      <p class="dt-hint" id="dt-hint"></p>
       <p class="spn-msg" id="dt-msg" hidden></p>
     </form>
   </section>`;
@@ -69,7 +69,6 @@ function render(d) {
       name are filled in (Max, 20 Oct 2026). */
   const dtForm = document.getElementById('dt-form');
   const dtBtn = dtForm.querySelector('button[type="submit"]');
-  const dtHint = document.getElementById('dt-hint');
   // what is still missing, in plain words (empty list = good to go)
   const missing = () => {
     const val = (n) => String((dtForm.querySelector('[name="' + n + '"]') || {}).value || '').trim();
@@ -84,7 +83,6 @@ function render(d) {
   const check = () => {
     const m = missing();
     dtBtn.disabled = m.length > 0;
-    dtHint.textContent = m.length ? 'Please add ' + m.join(', ').replace(/, ([^,]*)$/, ' and $1') + '.' : '';
   };
   dtForm.addEventListener('input', check);
   dtForm.addEventListener('change', check);   // autofill sometimes only fires "change"
