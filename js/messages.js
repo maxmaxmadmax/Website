@@ -17,7 +17,7 @@
    ctx = { state, h: { esc, attr }, call, render, money }
    ========================================================================== */
 
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS } from './sponsor-data.js?v=599';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS } from './sponsor-data.js?v=600';
 
 export const SEND_TIME = '9:35 am';
 
@@ -591,8 +591,11 @@ export function wireMessages(ctx) {
     if (e.target.closest('[data-sp-big]')) {
       const have = new Set((state.sponsors || []).map((p) => String(p.business || '').toLowerCase()));
       const add = SUGGESTED_SPONSORS.filter((s) => !have.has(s.business.toLowerCase()));
-      if (!add.length) { window.alert('They are all on your list already.'); return; }
+      // ones added earlier without an email get it filled in now
+      const fill = (state.sponsors || []).filter((p) => !p.email && SUGGESTED_SPONSORS.some((s) => s.business.toLowerCase() === String(p.business || '').toLowerCase()));
+      if (!add.length && !fill.length) { window.alert('They are all on your list already.'); return; }
       for (const s of add) await ctx.sponsors.add({ business: s.business, email: s.email, notes: s.note, source: 'suggested' });
+      for (const p of fill) { const s = SUGGESTED_SPONSORS.find((x) => x.business.toLowerCase() === String(p.business).toLowerCase()); await ctx.sponsors.update(p.id, { email: s.email, notes: s.note }); }
       return;
     }
     if (e.target.closest('[data-sp-past]')) {
