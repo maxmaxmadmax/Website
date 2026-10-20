@@ -17,9 +17,9 @@
    acceptedAt). Close enough for a dashboard; the invoices are the record.
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=632';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=632';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=632';
+import { isBooked, pickLineProgress } from './stock.js?v=633';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=633';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=633';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -150,6 +150,25 @@ export function weatherTag(w, esc) {
     + (w.gust != null ? ' (gusts ' + Math.round(w.gust) + ')' : '') + '</span>';
 }
 
+/*  The forecast as a small square, left of the Quote button (Max, 20 Oct 2026) */
+export function weatherBox(w, esc) {
+  if (!w) return '';
+  if (w.later) {
+    const from = new Date(Date.parse(w.date + 'T00:00:00') - 15 * 86400000);
+    return '<div class="db-wxbox is-later" title="Forecasts reach about 15 days ahead"><span class="db-wxbox-ic">&#128197;</span><b>Forecast</b><small>from ' + esc(isNaN(from) ? '' : from.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })) + '</small></div>';
+  }
+  if (w.rain == null && w.gust == null) return '';
+  const wet = (w.rain || 0) >= 50 || (w.mm || 0) >= 5, windy = (w.gust || 0) >= 40;
+  const bad = (w.rain || 0) >= 70 || (w.mm || 0) >= 15 || (w.gust || 0) >= 55 || w.code >= 95;
+  const mm = w.mm != null ? (w.mm >= 10 ? Math.round(w.mm) : Math.round(w.mm * 10) / 10) + ' mm' : '';
+  return '<div class="db-wxbox' + (bad ? ' is-bad' : wet || windy ? ' is-warn' : '') + '" title="Forecast for the event day">'
+    + '<span class="db-wxbox-ic">' + wxIcon(w.code) + '</span>'
+    + (w.temp != null ? '<b>' + Math.round(w.temp) + '&deg;' + (w.low != null ? ' <span class="db-wx-low">/ ' + Math.round(w.low) + '&deg;</span>' : '') + '</b>' : '')   // high / low
+    + '<small>&#128167; ' + Math.round(w.rain || 0) + '%' + (mm ? ' &middot; ' + mm : '') + '</small>'
+    + '<small>&#127788;&#65039; ' + Math.round(w.wind || 0) + (w.gust != null ? '&ndash;' + Math.round(w.gust) : '') + ' km/h</small>'
+    + '</div>';
+}
+
 /* ---------- the page ---------- */
 export function dashboardHtml(ctx) {
   const { esc, attr, money } = ctx.h;
@@ -186,11 +205,11 @@ export function dashboardHtml(ctx) {
             <p class="db-job-tags">
               <span class="ad-pill ad-pill-${st.status[1]}">${esc(owingOf(q) > 0 && isBooked(q) ? 'Deposit in · ' + money(owingOf(q)) + ' owing' : st.status[0])}</span>
               ${pp && pp.lines ? `<span class="db-tag">${pp.returned === pp.lines ? 'All gear back' : pp.packed + ' of ' + pp.lines + ' packed'}</span>` : ''}
-              ${weatherTag(ctx.weather && ctx.weather[q.id], esc)}
               ${crew.length ? `<span class="db-tag">${esc(crew.slice(0, 3).join(', '))}${crew.length > 3 ? ' +' + (crew.length - 3) : ''}</span>` : ''}
             </p>
           </div>
           <div class="db-job-acts">
+            ${weatherBox(ctx.weather && ctx.weather[q.id], esc)}
             <a class="ad-btn" href="#/quoteDocs?q=${attr(q.id)}">Quote</a>
             ${q.crewToken ? `<a class="ad-btn" href="/picklist?t=${attr(q.crewToken)}" target="_blank" rel="noopener">Pick list</a>` : ''}
             ${phone ? `<a class="ad-btn" href="tel:${attr(phone)}">Call</a>` : ''}

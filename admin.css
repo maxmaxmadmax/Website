@@ -4667,3 +4667,15 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .db-wx{ background:#e8f3fd; color:#0b4a7a; }
 .db-wx.is-warn{ background:var(--ad-amber-bg); color:var(--ad-amber); font-weight:700; }
 .db-wx.is-bad{ background:var(--ad-red-bg); color:var(--ad-red); font-weight:700; }
+/* the weather square beside the job buttons (Max, 20 Oct 2026) */
+.db-job-acts{ align-items:center; }
+.db-wxbox{ width:108px; min-height:80px; box-sizing:border-box; padding:6px 6px; border-radius:10px; background:#e8f3fd; color:#0b4a7a;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; line-height:1.25; }
+.db-wxbox-ic{ font-size:20px; line-height:1; }
+.db-wxbox b{ font-size:17px; }
+.db-wxbox small{ font-size:11.5px; white-space:nowrap; }
+.db-wxbox.is-warn{ background:var(--ad-amber-bg); color:var(--ad-amber); }
+.db-wxbox.is-bad{ background:var(--ad-red-bg); color:var(--ad-red); }
+.db-wxbox.is-later{ color:var(--ad-muted); background:var(--ad-grey-bg); }
+@media (max-width:640px){ .db-job-acts{ flex-wrap:wrap; } }
+.db-wx-low{ font-weight:500; opacity:.75; font-size:12px; }
