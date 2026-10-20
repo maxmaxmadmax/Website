@@ -23,15 +23,21 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=626';
+} from './firebase-config.js?v=627';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=626';
-import { termBodyHtml } from './terms-data.js?v=626';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=627';
+import { termBodyHtml } from './terms-data.js?v=627';
 import {
   VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION,
-} from './vendor-terms-data.js?v=626';
+} from './vendor-terms-data.js?v=627';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
+
+/*  SPEED: ask for the event list the moment this script runs, before the
+    page has even finished building. loadEventsFast() picks it up. */
+const EARLY_EVENTS = isFirebaseConfigured && !new URLSearchParams(location.search).has('preview')
+  ? restList('events').catch(() => null)
+  : null;
 
 /* Prices shown before the server confirms them. The server prices from the
    event document; these are only for display.
@@ -211,6 +217,8 @@ const state = {
 };
 
 let fb = null;          // firebase handles once loaded
+let fbReadyResolve;
+const fbReady = new Promise((r) => { fbReadyResolve = r; });   // resolves when fb is set
 let map = null;
 let categories = [];
 let sitesUnsub = null;
@@ -231,8 +239,15 @@ async function init() {
     return;
   }
 
+  /*  SPEED (Max, 20 Oct 2026): the map and the event cards no longer wait
+      for Firebase. The events come straight from Firestore's web address
+      (they are public), so a vendor sees them in a second or two. */
+  buildMap();
+  loadEventsFast();
+
   try {
     fb = await loadFirebase();
+    fbReadyResolve();
     watchAuth();
   } catch (err) {
     console.error('Firebase failed to start', err);
@@ -242,7 +257,6 @@ async function init() {
     return;
   }
 
-  buildMap();
   await handleReturnFromStripe();
 
   /*  Sites and categories belong to an event, so nothing is subscribed
@@ -250,7 +264,7 @@ async function init() {
   if (state.eventId) subscribeToEvent();
 
   render();
-  loadEvents();
+  if (!state.eventsLoaded) loadEvents();   // the quick way failed - use Firebase
 }
 
 /*  Everything that hangs off the chosen event, in one place so that
@@ -273,6 +287,56 @@ function subscribeToEvent() {
 /*  Every event a vendor is allowed to see, soonest first. Read once rather
     than watched: the list changes when we add an event, not while somebody
     is part way through a form.                                          */
+/*  Firestore's REST answer -> plain values. Timestamps keep toMillis() so
+    siteFree() works the same as with the SDK. */
+function restValue(v) {
+  if (!v) return null;
+  if ('stringValue' in v) return v.stringValue;
+  if ('integerValue' in v) return Number(v.integerValue);
+  if ('doubleValue' in v) return v.doubleValue;
+  if ('booleanValue' in v) return v.booleanValue;
+  if ('nullValue' in v) return null;
+  if ('timestampValue' in v) { const ms = Date.parse(v.timestampValue); return { toMillis: () => ms, toDate: () => new Date(ms) }; }
+  if ('mapValue' in v) return restFields((v.mapValue && v.mapValue.fields) || {});
+  if ('arrayValue' in v) return ((v.arrayValue && v.arrayValue.values) || []).map(restValue);
+  return null;
+}
+function restFields(fields) {
+  const out = {};
+  Object.keys(fields).forEach((k) => { out[k] = restValue(fields[k]); });
+  return out;
+}
+async function restList(path) {
+  const url = 'https://firestore.googleapis.com/v1/projects/' + firebaseConfig.projectId
+    + '/databases/(default)/documents/' + path + '?pageSize=500&key=' + firebaseConfig.apiKey;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('REST ' + res.status);
+  const data = await res.json();
+  return (data.documents || []).map((d) => ({ id: d.name.split('/').pop(), ...restFields(d.fields || {}) }));
+}
+
+/*  The event cards without waiting for Firebase (Max, 20 Oct 2026). If this
+    fails for any reason, init() falls back to loadEvents() below. */
+async function loadEventsFast() {
+  if (state.preview) return;
+  try {
+    const rows = (await EARLY_EVENTS) || await restList('events');
+    if (state.eventsLoaded) return;
+    state.events = rows
+      .filter((ev) => EVENT_STATUS[ev.status])
+      .sort((a, b) => String(a.dateISO || '').localeCompare(String(b.dateISO || '')));
+    state.eventsLoaded = true;
+    renderEvents();
+
+    // sold-out stickers, the same quick way
+    Promise.all(state.events.filter((ev) => ev.status === 'open').map(async (ev) => {
+      try { ev.soldOut = soldOutOf(await restList('events/' + ev.id + '/sites')); } catch (e) { /* no sticker */ }
+    })).then(() => renderEvents());
+  } catch (err) {
+    console.warn('quick event list failed - using Firebase', err && err.message);
+  }
+}
+
 async function loadEvents() {
   if (state.preview) {
     state.events = [{
@@ -529,34 +593,49 @@ function resetForNewEvent() {
     what they are already looking at.                                    */
 function startPreview() {
   categories = previewCategories();
-  buildMap();
+  if (!map) buildMap();
   const layout = previewLayout();
   map.setLayout(layout);
   render();
 }
 
+/*  SPEED (Max, 20 Oct 2026): only what the first screen needs (app, auth,
+    firestore) is loaded up front. Storage (the document upload) and
+    functions (holding a site, paying) follow in the background - every
+    place that uses them calls `await fbMore()` first, so they are always
+    there in time. This used to be ~800KB before anything could happen. */
 async function loadFirebase() {
-  const [{ initializeApp }, auth, firestore, storage, functions] = await Promise.all([
+  const [{ initializeApp }, auth, firestore] = await Promise.all([
     import(`${SDK}/firebase-app.js`),
     import(`${SDK}/firebase-auth.js`),
     import(`${SDK}/firebase-firestore.js`),
-    import(`${SDK}/firebase-storage.js`),
-    import(`${SDK}/firebase-functions.js`),
   ]);
 
   const app = initializeApp(firebaseConfig);
 
-  return {
+  const handles = {
     app,
     auth: auth.getAuth(app),
     db: firestore.getFirestore(app),
-    storage: storage.getStorage(app),
-    fns: functions.getFunctions(app, functionsRegion),
     a: auth,
     f: firestore,
-    s: storage,
-    fn: functions,
   };
+  handles.more = Promise.all([
+    import(`${SDK}/firebase-storage.js`),
+    import(`${SDK}/firebase-functions.js`),
+  ]).then(([storage, functions]) => {
+    handles.storage = storage.getStorage(app);
+    handles.s = storage;
+    handles.fns = functions.getFunctions(app, functionsRegion);
+    handles.fn = functions;
+  });
+  return handles;
+}
+
+/*  Wait for storage + functions (and Firebase itself, if a vendor is quick). */
+async function fbMore() {
+  if (!fb) await fbReady;
+  await fb.more;
 }
 
 /* -------------------------------------------------------------------------
@@ -876,6 +955,7 @@ async function releaseHeldSites() {
 
   setBusy('site', true);
   try {
+    await fbMore();
     const call = fb.fn.httpsCallable(fb.fns, 'releaseHold');
     await call({ eventId: state.eventId, siteIds: ids });
     forget();
@@ -930,6 +1010,7 @@ async function holdChosenSites() {
         state; this is what actually writes it to the booking.       */
     await saveDraft();
 
+    await fbMore();
     const call = fb.fn.httpsCallable(fb.fns, 'holdSite');
     const res = await call({ eventId: state.eventId, siteIds: ids, bookingId: state.bookingId });
 
@@ -1199,6 +1280,7 @@ async function uploadDocument(file, docType) {
   setStepError('documents', '');
 
   try {
+    await fbMore();
     const { ref, uploadBytes, getDownloadURL } = fb.s;
     const safeName = file.name.replace(/[^\w.\-]+/g, '_');
     const path = `vendor-documents/${state.user.uid}/${Date.now()}-${safeName}`;
@@ -1307,6 +1389,7 @@ async function payAndBook() {
   try {
     await saveDraft();
 
+    await fbMore();
     const call = fb.fn.httpsCallable(fb.fns, 'createCheckout');
     const res = await call({
       bookingId: state.bookingId,
@@ -2262,6 +2345,7 @@ async function joinWaitlist(form) {
   btn.disabled = true;
   try {
     if (!fb) throw new Error('Still getting set up - try again in a moment.');
+    await fbMore();
     const call = fb.fn.httpsCallable(fb.fns, 'joinWaitlist');
     const res = await call({ eventId: state.eventId, vendorType: t, name: v('name'), contactName: v('contactName'), email: v('email'), phone: v('phone'), description: v('description') });
     state.wlDone = state.wlDone || {};
@@ -2283,6 +2367,7 @@ async function claimFromWaitlist() {
   if (!token || state.claimTried || !fb || !state.user) return;
   state.claimTried = true;
   try {
+    await fbMore();
     const res = await fb.fn.httpsCallable(fb.fns, 'claimWaitlist')({ token });
     const c = res.data;
     state.claim = c;

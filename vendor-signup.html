@@ -29,16 +29,24 @@
           are the faces from the design Max sent through. Both have a real
           fallback stack, so the page reads properly if Google is slow or
           blocked.                                                     -->
+    <!-- speed: start talking to the event list + Firebase servers straight away -->
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap">
 
     <link rel="icon" href="images/logo.png">
-    <link rel="stylesheet" href="style.css?v=626">
-    <link rel="stylesheet" href="vendor-signup.css?v=626">
-    <script src="js/main.js?v=626" defer></script>
-    <script type="module" src="js/vendor-signup.js?v=626"></script>
+    <link rel="stylesheet" href="style.css?v=627">
+    <link rel="stylesheet" href="vendor-signup.css?v=627">
+    <script src="js/main.js?v=627" defer></script>
+    <!-- speed: fetch the page's helper files at the same time as the main script -->
+    <link rel="modulepreload" href="js/firebase-config.js?v=627">
+    <link rel="modulepreload" href="js/vendor-map.js?v=627">
+    <link rel="modulepreload" href="js/terms-data.js?v=627">
+    <link rel="modulepreload" href="js/vendor-terms-data.js?v=627">
+    <script type="module" src="js/vendor-signup.js?v=627"></script>
 </head>
 
 <body class="vendor-signup">
