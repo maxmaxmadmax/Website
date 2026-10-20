@@ -17,7 +17,7 @@
    ctx = { state, h: { esc, attr }, call, render, money }
    ========================================================================== */
 
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS } from './sponsor-data.js?v=594';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS } from './sponsor-data.js?v=595';
 
 export const SEND_TIME = '9:35 am';
 

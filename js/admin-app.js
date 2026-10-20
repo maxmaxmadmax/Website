@@ -33,13 +33,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=594';
+} from './firebase-config.js?v=595';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=594';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=594';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=594';
-import { messagesHtml, wireMessages } from './messages.js?v=594';
-import { expandKit } from './kit.js?v=594';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=595';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=595';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=595';
+import { messagesHtml, wireMessages } from './messages.js?v=595';
+import { expandKit } from './kit.js?v=595';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -1639,6 +1639,7 @@ VIEWS.map = {
           <h1>Map &amp; Sites</h1>
           <p>Click a site to see who is on it and move them.</p>
         </div>
+        <div class="ad-page-actions"><button type="button" class="ad-btn" id="ad-map-print">Print vendor report</button></div>
       </div>
 
       <div class="ad-legend">
@@ -1693,9 +1694,79 @@ VIEWS.map = {
       });
     });
 
+    const printBtn = document.getElementById('ad-map-print');
+    if (printBtn) printBtn.addEventListener('click', printVendorReport);
+
     wireSitePanel();
   },
 };
+
+/*  VENDOR REPORT FOR THE NIGHT (Max, 20 Oct 2026): page 1 the map with each
+    business's name on its site, then a list by site - business, contact,
+    phone, type. Opens in its own tab and goes straight to print / PDF.    */
+function printVendorReport() {
+  const ev = state.events.find((e) => e.id === state.activeEventId) || {};
+  const size = ev.map || { width: 760, height: 1420 };
+  const marks = (ev.landmarks || []).filter((m) => m.kind !== 'entry');
+  const who = (s) => bookingOnSite(s);
+  // a business name over up to 3 short lines
+  const lines = (text, max) => {
+    const words = String(text || '').split(/\s+/).filter(Boolean);
+    const out = [];
+    let cur = '';
+    words.forEach((w) => { if ((cur + ' ' + w).trim().length > max && cur) { out.push(cur); cur = w; } else cur = (cur + ' ' + w).trim(); });
+    if (cur) out.push(cur);
+    if (out.length > 3) { out.length = 3; out[2] = out[2].slice(0, max - 1) + '\u2026'; }
+    return out;
+  };
+  const svg = '<svg viewBox="0 0 ' + size.width + ' ' + size.height + '" class="map">'
+    + marks.map((m) => '<rect x="' + m.x + '" y="' + m.y + '" width="' + m.w + '" height="' + m.h + '" rx="4" fill="#eceef1" stroke="#c9ccd2"/>'
+      + (m.label ? '<text x="' + (m.x + m.w / 2) + '" y="' + (m.y + m.h / 2 + 6) + '" class="mk">' + esc(m.label) + '</text>' : '')).join('')
+    + state.sites.map((s) => {
+      const b = who(s);
+      const spin = s.rotate ? ' transform="rotate(' + s.rotate + ' ' + (s.x + s.w / 2) + ' ' + (s.y + s.h / 2) + ')"' : '';
+      const name = b ? lines((b.business || {}).name, s.type === 'food' ? 11 : 9) : [];
+      const fs2 = s.type === 'food' ? 12 : 9.5;
+      const top = s.y + 15;
+      return '<g' + spin + '><rect x="' + s.x + '" y="' + s.y + '" width="' + s.w + '" height="' + s.h + '" rx="3" fill="' + (b ? '#fff1e4' : '#fff') + '" stroke="' + (b ? '#ff6b00' : '#bbb') + '" stroke-width="1.5"/>'
+        + '<text x="' + (s.x + s.w / 2) + '" y="' + top + '" class="sl">' + esc(s.label) + '</text>'
+        + name.map((t, i) => '<text x="' + (s.x + s.w / 2) + '" y="' + (top + 4 + (i + 1) * (fs2 + 2)) + '" class="nm" style="font-size:' + fs2 + 'px">' + esc(t) + '</text>').join('')
+        + '</g>';
+    }).join('') + '</svg>';
+  const rows = state.sites.map((s) => ({ s, b: who(s) })).filter((x) => x.b)
+    .sort((x, y) => String(x.s.label).localeCompare(String(y.s.label), undefined, { numeric: true }));
+  // one row per booking (a market stall can take several bays)
+  const seen = new Set();
+  const list = [];
+  rows.forEach(({ s, b }) => {
+    if (seen.has(b.id)) { list.find((r) => r.b.id === b.id).sites.push(s.label); return; }
+    seen.add(b.id);
+    list.push({ b, sites: [s.label] });
+  });
+  const free = state.sites.filter((s) => s.status === 'available').length;
+  const table = '<table><thead><tr><th>Site</th><th>Business</th><th>Contact</th><th>Phone</th><th>Type</th><th>&#10003;</th></tr></thead><tbody>'
+    + list.map(({ b, sites }) => {
+      const biz = b.business || {};
+      return '<tr><td><b>' + esc(sites.join(', ')) + '</b></td><td>' + esc(biz.name || '') + (b.categoryName ? '<br><small>' + esc(b.categoryName) + '</small>' : '') + '</td><td>' + esc(biz.contactName || '') + '</td><td>' + esc(biz.phone || '') + '</td><td>' + (b.vendorType === 'food' ? 'Food' : 'Market') + '</td><td class="tick"></td></tr>';
+    }).join('') + '</tbody></table>';
+  const when = new Date().toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+  const html = '<!doctype html><html><head><meta charset="utf-8"><title>Vendor report - ' + esc(ev.name || '') + '</title><style>'
+    + '@page{size:A4;margin:10mm}body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:0}'
+    + 'h1{font-size:20px;margin:0}p.sub{margin:2px 0 8px;color:#555;font-size:12px}'
+    + '.p1{height:270mm;display:flex;flex-direction:column}.map{flex:1;width:100%;height:100%;min-height:0}'
+    + 'text{text-anchor:middle;font-family:Arial}.mk{font-size:16px;font-weight:700;fill:#888}.sl{font-size:12px;font-weight:800;fill:#111}.nm{fill:#7a3c00;font-weight:700}'
+    + '.p2{break-before:page}table{width:100%;border-collapse:collapse;font-size:12px}th{text-align:left;background:#111;color:#fff;padding:6px 8px}'
+    + 'td{padding:6px 8px;border-bottom:1px solid #ddd;vertical-align:top}small{color:#777}td.tick{width:28px;border:1px solid #bbb}tr{break-inside:avoid}'
+    + '</style></head><body>'
+    + '<section class="p1"><h1>' + esc(ev.name || 'Event') + ' &mdash; vendor map</h1><p class="sub">' + esc(ev.dateLabel || '') + (ev.venue ? ' &middot; ' + esc(ev.venue) : '') + ' &middot; ' + list.length + ' vendors &middot; ' + free + ' sites free &middot; printed ' + esc(when) + '</p>' + svg + '</section>'
+    + '<section class="p2"><h1>Vendors by site</h1><p class="sub">Tick each one off as they arrive.</p>' + table + '</section>'
+    + '<script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script></body></html>';
+  const w = window.open('', '_blank');
+  if (!w) { window.alert('Your browser blocked the report window - allow pop-ups for this site and try again.'); return; }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+}
 
 function sitePanel(site) {
   const on = bookingOnSite(site);

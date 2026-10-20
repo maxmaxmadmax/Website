@@ -4561,3 +4561,9 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ms-sp-note{ white-space:nowrap; text-align:right; }
 .ms-sp-del{ border:0; background:none; font-size:18px; color:#c62828; cursor:pointer; opacity:.6; }
 .ms-sp-del:hover{ opacity:1; }
+
+/* Sites & Map: the whole map fits on the screen, no scrolling (Max, 20 Oct 2026) */
+@media (min-width:1081px){
+  .ad-map-wrap{ max-height:none; height:calc(100vh - 210px); overflow:hidden; display:flex; justify-content:center; align-items:center; }
+  .ad-map-wrap .ad-map{ width:auto; height:100%; max-width:100%; }
+}
