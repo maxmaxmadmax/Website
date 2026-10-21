@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=652';
+} from './firebase-config.js?v=653';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=652';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=652';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=652';
-import { messagesHtml, wireMessages } from './messages.js?v=652';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=652';
-import { expandKit } from './kit.js?v=652';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=653';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=653';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=653';
+import { messagesHtml, wireMessages } from './messages.js?v=653';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=653';
+import { expandKit } from './kit.js?v=653';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2907,7 +2907,10 @@ function bookingPanel(b) {
             ${(() => {
               const inv = (state.quoteDocs || []).find((q) => q.gigBookingId === b.id && q.status !== 'cancelled');
               const dk = ((state.actRates || {})[b.slug] || {}).deck;
-              return `${dk ? '<p class="ent-deck">&#127911; Their deck: <b>' + esc(dk) + '</b></p>' : ''}<button type="button" class="ad-btn" data-pub-times="${attr(b.id)}">&#128241; Text DJ their link</button>
+              // no invoice yet? say what's missing (Max, 21 Oct 2026)
+              const missing = [!b.customerId && 'Invoice to', !b.templateId && 'Template', (b.status || 'confirmed') !== 'confirmed' && 'Confirmed status'].filter(Boolean);
+              const noInv = !inv && missing.length ? '<p class="ent-noinv">&#9888; No invoice yet - press <b>Edit</b> and set ' + missing.join(' + ') + ', then Save.</p>' : '';
+              return `${noInv}${dk ? '<p class="ent-deck">&#127911; Their deck: <b>' + esc(dk) + '</b></p>' : ''}<button type="button" class="ad-btn" data-pub-times="${attr(b.id)}">&#128241; Text DJ their link</button>
               ${inv ? `<a class="ad-btn" href="#/quoteDocs?q=${attr(inv.id)}">Invoice ${esc(money(inv.totalCents))} &middot; ${esc(inv.status === 'approved' ? 'ready' : inv.status)}</a>` : ''}`;
             })()}
           </div>

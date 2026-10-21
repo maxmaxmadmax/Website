@@ -4812,3 +4812,4 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-tplbar p{ margin:0; flex:1 1 320px; }
 .qb-tplname{ display:flex; align-items:center; gap:8px; font-weight:700; }
 .qb-tplname input{ padding:7px 10px; border:1px solid #c7d2fe; border-radius:8px; font:inherit; font-size:14px; min-width:220px; background:#fff; }
+.ent-noinv{ margin:0 0 8px; font-size:13px; padding:8px 10px; background:var(--ad-amber-bg); color:var(--ad-amber); border-radius:8px; width:100%; }
