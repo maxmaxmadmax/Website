@@ -4704,3 +4704,5 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .db-sep + .db-job{ border-top:0; }
 @media (max-width:1100px){ .db-job{ grid-template-columns:86px minmax(0, 1fr) 120px; } .db-job-acts{ grid-column:2 / -1; } }
 @media (max-width:640px){ .db-job{ grid-template-columns:1fr; } .db-job-acts{ grid-column:auto; } .db-job-wx{ justify-content:flex-start; } }
+/* the financial-year week number, same as the Gig Opportunities calendar (Max, 21 Oct 2026) */
+.db-week{ display:inline-block; margin-left:8px; padding:2px 9px; border-radius:20px; background:var(--ad-orange); color:#fff; font-size:12px; font-weight:800; }

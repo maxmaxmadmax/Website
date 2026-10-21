@@ -17,9 +17,9 @@
    acceptedAt). Close enough for a dashboard; the invoices are the record.
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=639';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=639';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=639';
+import { isBooked, pickLineProgress } from './stock.js?v=640';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=640';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=640';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -349,7 +349,7 @@ export function dashboardHtml(ctx) {
     <header class="db-head">
       <div>
         <h1>${hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : 'Evening'}, Max</h1>
-        <p>${esc(new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))}</p>
+        <p>${esc(new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))}${ctx.fyWeek ? ` <span class="db-week">Week ${esc(ctx.fyWeek.week)} &middot; ${esc(ctx.fyWeek.label)}</span>` : ''}</p>
       </div>
       <div class="db-quick">
         <a class="ad-btn ad-btn-primary" href="#/quoteDocs?q=new">+ New quote</a>

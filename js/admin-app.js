@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=639';
+} from './firebase-config.js?v=640';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=639';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=639';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=639';
-import { messagesHtml, wireMessages } from './messages.js?v=639';
-import { dashboardHtml, dashboardData } from './dashboard.js?v=639';
-import { expandKit } from './kit.js?v=639';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=640';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=640';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=640';
+import { messagesHtml, wireMessages } from './messages.js?v=640';
+import { dashboardHtml, dashboardData } from './dashboard.js?v=640';
+import { expandKit } from './kit.js?v=640';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -3429,6 +3429,7 @@ VIEWS.dashboard = {
       sponsors: state.sponsors || [], waitlist: state.waitlist || [], messages: state.messages || [],
       events: state.events || [], activeEventId: state.activeEventId, emailLog: dashLog || [],
       reminders: state.reminders || [], weather: dashWeather,
+      fyWeek: (() => { const t = new Date(); t.setHours(0, 0, 0, 0); t.setDate(t.getDate() - ((t.getDay() + 6) % 7)); return leadFyWeek(t); })(),
       schedule: state.scheduleLoaded ? state.schedule : null, talent: state.talent || [],
       h: { esc, attr, money },
     });
@@ -8705,6 +8706,23 @@ function leadCalendarHtml() {
       if (wk) (byWeek[wk] = byWeek[wk] || []).push(p);
     }
     if (wk && r.stage === 'won') wonWeek[wk] = (wonWeek[wk] || 0) + 1;
+  });
+  /*  JOBS WON (Max, 21 Oct 2026): every booked job in the Sales Pipeline
+      (deposit in or paid) shows on this calendar as won - a gold dot and a
+      trophy on its event week. A job already counted through a won lead
+      that links to it isn't counted twice.                              */
+  const wonViaLead = new Set((state.leads || []).filter((l) => l.stage === 'won' && l.linkedQuoteId).map((l) => l.linkedQuoteId));
+  (state.quoteDocs || []).forEach((q) => {
+    if (q.vendor || wonViaLead.has(q.id) || q.status === 'cancelled' || q.status === 'declined') return;
+    if (!(q.status === 'paid' || q.paymentStatus === 'deposit' || q.paymentStatus === 'paid')) return;
+    const iso = q.hire && q.hire.startDate;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(iso || ''))) return;
+    const r = { eventDate: iso };
+    const k = leadMonthKey(r);
+    const wk = leadWeekKey(r);
+    if (!k || !byMonth) return;
+    (byMonth[k] = byMonth[k] || []).push('won');
+    if (wk) { (byWeek[wk] = byWeek[wk] || []).push('won'); wonWeek[wk] = (wonWeek[wk] || 0) + 1; }
   });
 
   const rank = { won: -1, high: 0, medium: 1, low: 2 };
