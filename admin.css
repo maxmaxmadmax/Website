@@ -4737,3 +4737,15 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .db-job{ grid-template-columns:86px minmax(0, 1fr) 92px 300px; }
 @media (max-width:1100px){ .db-job{ grid-template-columns:86px minmax(0, 1fr) 92px; } }
 @media (max-width:640px){ .db-job{ grid-template-columns:1fr; } }
+
+/* pub nights: rates on the roster, regular nights, start/finish (Max, 21 Oct 2026) */
+.ad-rate-in{ width:80px; padding:6px 8px; border:1px solid var(--ad-line); border-radius:8px; font:inherit; font-size:13px; }
+.ad-rate-wide{ width:170px; }
+.ad-regular select{ padding:6px 8px; border:1px solid var(--ad-line); border-radius:8px; font:inherit; font-size:13px; }
+.ad-rn-new{ background:var(--ad-orange-soft); }
+.ad-book-times{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+/* pub invoices on the dashboard (Max, 21 Oct 2026) */
+.db-todo li{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+.db-todo-btns{ display:inline-flex; gap:5px; margin-left:auto; }
+.db-mini{ padding:3px 9px !important; font-size:11.5px !important; }
+.db-invtag{ background:#fff3e6; color:#b45309; font-weight:700; text-decoration:none; }

@@ -46,7 +46,7 @@ export function pickItems(lines) {
   const byKey = {};
   (lines || []).forEach((l) => {
     if (!l || !['item', 'kit', 'custom'].includes(l.type)) return;
-    if (l.resType) return;   // crew & vehicles are not gear
+    if (l.resType || l.noPick) return;   // crew & vehicles (and pub DJ lines) are not gear
     const qty = Math.max(0, Math.round(Number(l.qty) || 0));
     if (!qty) return;
     const name = String(l.name || '').replace(/ \(included\)$/i, '').trim();
@@ -96,7 +96,7 @@ export function pickLineProgress(q) {
   const t = (q && q.pickTicks) || {};
   let lines = 0, packed = 0, returned = 0;
   ((q && q.lines) || []).forEach((l, idx) => {
-    if (!l || !['item', 'kit', 'custom'].includes(l.type) || l.resType) return;
+    if (!l || !['item', 'kit', 'custom'].includes(l.type) || l.resType || l.noPick) return;
     if (!Math.max(0, Math.round(Number(l.qty) || 0))) return;
     const name = String(l.name || '').replace(/ \(included\)$/i, '').trim();
     const itemKey = pickKey({ itemId: l.itemId || '', name });

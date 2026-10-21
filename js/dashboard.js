@@ -17,9 +17,9 @@
    acceptedAt). Close enough for a dashboard; the invoices are the record.
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=643';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=643';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=643';
+import { isBooked, pickLineProgress } from './stock.js?v=644';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=644';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=644';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -49,18 +49,29 @@ const shortDate = (iso) => { const t = Date.parse(iso + 'T00:00:00'); return t ?
 /*  GRAND VIEW FRIDAYS (Max, 20 Oct 2026): we play the Grand View Hotel every
     Friday. Any Friday in the window with nobody booked there is flagged, so
     Max remembers to book a DJ.                                            */
-const isGrandView = (venue) => /grand\s*view/i.test(String(venue || ''));
-export function fridaysWithoutDj(schedule, days) {
+/*  KEEP IN STEP with pubCore() in js/admin-app.js + functions/index.js */
+const PUB_WORDS = /\b(hotel|tavern|pub|bar|club|the|inn|bowen|qld|queensland)\b/g;
+export function pubCore(v) {
+  return String(v || '').toLowerCase().split(',')[0].replace(/&/g, ' and ').replace(/[^a-z0-9 ]+/g, ' ')
+    .replace(PUB_WORDS, ' ').replace(/\s+/g, ' ').trim();
+}
+const samePub = (a, b) => { const x = pubCore(a), y = pubCore(b); return !!x && !!y && (x.includes(y) || y.includes(x)); };
+/*  REGULAR NIGHTS (Max, 21 Oct 2026): every pub night in the window with
+    nobody booked. No list saved yet = the Grand View every Friday.        */
+export function openRegularNights(schedule, nights, days) {
+  const list = nights && nights.length ? nights : [{ venue: 'Grand View Hotel, Bowen', weekday: 5 }];
   const out = [];
   const d = new Date(); d.setHours(0, 0, 0, 0);
   for (let i = 0; i <= days; i++) {
     const x = new Date(d.getTime() + i * 86400000);
-    if (x.getDay() !== 5) continue;
     const iso = x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
-    if (!(schedule || []).some((b) => b.date === iso && isGrandView(b.venue))) out.push(iso);
+    list.filter((n) => Number(n.weekday) === x.getDay()).forEach((n) => {
+      if (!(schedule || []).some((b) => b.date === iso && samePub(b.venue, n.venue))) out.push({ iso, venue: n.venue, weekday: n.weekday });
+    });
   }
   return out;
 }
+const dayWord = (w) => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][Number(w)] || '';
 
 /* the first day of a month, `back` months ago */
 function monthStart(back) { const d = new Date(); return new Date(d.getFullYear(), d.getMonth() - back, 1).getTime(); }
@@ -96,12 +107,12 @@ export function dashboardData(ctx) {
   // entertainment gigs - the Grand View and everywhere else (Max, 20 Oct 2026)
   const actName = (slug) => ((ctx.talent || []).find((t) => t.slug === slug) || {}).name || slug || 'Act';
   const gigs = (ctx.schedule || []).filter((b) => inWindow(b.date)).map((b) => ({
-    id: 'gig:' + b.id, isGig: true, hire: { startDate: b.date },
+    id: 'gig:' + b.id, isGig: true, bookingId: b.id, hire: { startDate: b.date },
     customer: { name: actName(b.slug), eventName: b.time || '', eventVenue: b.venue || '' },
   }));
-  const openFridays = ctx.schedule ? fridaysWithoutDj(ctx.schedule, 30).map((iso) => ({
-    id: 'fri:' + iso, isGig: true, noDj: true, hire: { startDate: iso },
-    customer: { name: 'Grand View Hotel', eventName: 'Friday night', eventVenue: 'Grand View Hotel, Bowen' },
+  const openFridays = ctx.schedule ? openRegularNights(ctx.schedule, ctx.regularNights, 30).map((n) => ({
+    id: 'fri:' + n.iso + ':' + pubCore(n.venue), isGig: true, noDj: true, hire: { startDate: n.iso },
+    customer: { name: String(n.venue).split(',')[0], eventName: dayWord(n.weekday) + ' night', eventVenue: n.venue },
   })) : [];
   const upcoming = jobs.filter((q) => !dead(q) && (isBooked(q) || ['approved', 'sent', 'accepted', 'invoiced'].includes(q.status)))
     .filter((q) => inWindow(q.hire && q.hire.startDate))
@@ -131,8 +142,20 @@ export function todoGroups(ctx) {
   const out = [];
   const add = (key, label, items, href) => { if (items.length) out.push({ key, label, items, href }); };
 
-  if (ctx.schedule) add('dj', 'Book a DJ for the Grand View', fridaysWithoutDj(ctx.schedule, 30)
-    .map((iso) => ({ text: shortDate(iso) + ' - nobody booked yet', href: '#/entertainment' })));
+  if (ctx.schedule) add('dj', 'Book a DJ', openRegularNights(ctx.schedule, ctx.regularNights, 30)
+    .map((n) => ({ text: shortDate(n.iso) + ' · ' + String(n.venue).split(',')[0] + ' - nobody booked yet', href: '#/entertainment' })));
+  // PUB INVOICES (Max, 21 Oct 2026): the night's been played - ready for Max's OK
+  add('pub', 'Pub invoices to send', jobs.filter((q) => q.pubNight && q.status === 'approved' && String(q.pubDate || '') <= today)
+    .map((q) => {
+      const dj = (q.lines || []).filter((l) => l.pubDj && /^DJ performance/.test(l.name || '')).map((l) => String(l.name).replace(/^DJ performance - /, '') + ' ' + String(l.description || '').split(' @')[0]).join(', ');
+      return {
+        text: String(q.pubVenue || '').split(',')[0] + ' · ' + shortDate(q.pubDate) + ' · ' + ctx.h.money(q.totalCents) + (dj ? ' · ' + dj : '')
+          + ((q.pubNoRate || []).length ? ' · add a rate for ' + q.pubNoRate.join(', ') : ''),
+        href: '#/quoteDocs?q=' + q.id,
+        btns: ((q.pubBookings || [])[0] ? '<button type="button" class="ad-btn db-mini" data-pub-times="' + ctx.h.attr(q.pubBookings[0]) + '">&#128241; DJ times</button>' : '')
+          + '<button type="button" class="ad-btn ad-btn-primary db-mini" data-pub-send="' + ctx.h.attr(q.id) + '">Send</button>',
+      };
+    }));
   add('approve', 'Quotes to approve', jobs.filter((q) => q.status === 'draft')
     .map((q) => ({ text: who(q) + (q.source === 'bot' ? ' · from the website bot' : ''), href: '#/quoteDocs?q=' + q.id })));
   add('details', 'Details just in', jobs.filter((q) => q.detailsReceivedAt && ['draft', 'approved'].includes(q.status))
@@ -302,7 +325,12 @@ export function dashboardHtml(ctx) {
           <div class="db-job-main">
             <p class="db-job-who">${esc(c.name)}${c.eventName ? ' &middot; <span>' + esc(c.eventName) + '</span>' : ''}</p>
             ${c.eventVenue ? `<p class="db-job-sub">${esc(c.eventVenue)}</p>` : ''}
-            <p class="db-job-tags">${q.noDj ? '<span class="ad-pill ad-pill-red">No DJ booked</span>' : '<span class="ad-pill db-pill-gig">Gig</span>'}</p>
+            <p class="db-job-tags">${q.noDj ? '<span class="ad-pill ad-pill-red">No DJ booked</span>' : '<span class="ad-pill db-pill-gig">Gig</span>'}${(() => {
+              const inv = (ctx.quotes || []).find((x) => x.pubNight && x.pubDate === q.hire.startDate && pubCore(x.pubVenue) === pubCore(c.eventVenue) && x.status !== 'cancelled');
+              if (!inv) return '';
+              const word = inv.status === 'approved' ? 'Invoice ready' : inv.paymentStatus === 'paid' || inv.status === 'paid' ? 'Paid' : 'Invoice sent';
+              return ` <a class="db-tag db-invtag" href="#/quoteDocs?q=${attr(inv.id)}">${esc(word)} &middot; ${esc(money(inv.totalCents))}</a>`;
+            })()}</p>
           </div>
           <div class="db-job-wx">${weatherBox(ctx.weather && ctx.weather[q.id], esc)}</div>
           <div class="db-job-acts">
@@ -381,7 +409,7 @@ export function dashboardHtml(ctx) {
         ${todos.length ? todos.map((g) => `
           <div class="db-todo">
             <p class="db-todo-h"><a href="${attr(g.href)}">${esc(g.label)}</a> <span class="db-count">${g.items.length}</span></p>
-            <ul>${g.items.slice(0, 4).map((it) => `<li><a href="${attr(it.href)}">${esc(it.text)}</a></li>`).join('')}
+            <ul>${g.items.slice(0, g.key === 'pub' ? 20 : 4).map((it) => `<li><a href="${attr(it.href)}">${esc(it.text)}</a>${it.btns ? '<span class="db-todo-btns">' + it.btns + '</span>' : ''}</li>`).join('')}
               ${g.items.length > 4 ? `<li><a href="${attr(g.href)}">+ ${g.items.length - 4} more</a></li>` : ''}</ul>
           </div>`).join('') : (rems.length ? '' : '<p class="db-empty">All caught up. Nothing waiting on you.</p>')}
       </div>

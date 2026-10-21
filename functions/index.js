@@ -2512,6 +2512,9 @@ function sanitizeQuote(q) {
     if (l.pkgId) line.pkgId = text(l.pkgId, 60);   // belongs to a package (itemised + package discount)
     // parts Max removed from this kit on the quote - they stay off when it is rebuilt
     if (Array.isArray(l.removedParts) && l.removedParts.length) line.removedParts = l.removedParts.slice(0, 100).map((x) => text(x, 60)).filter(Boolean);
+    // PUB NIGHTS (Max, 21 Oct 2026): the DJ lines the pub invoice swaps each week - never gear
+    if (l.pubDj === true) line.pubDj = true;
+    if (l.noPick === true) line.noPick = true;
     // CREW & VEHICLES (from Crew & Vehicles): their own subtotal, never gear
     if (['staff', 'vehicle', 'trailer'].includes(l.resType)) {
       line.resType = l.resType;
@@ -2707,7 +2710,7 @@ function pickItems(lines) {
   const byKey = {};
   (lines || []).forEach((l) => {
     if (!l || !['item', 'kit', 'custom'].includes(l.type)) return;
-    if (l.resType) return;   // crew & vehicles are not gear to pack
+    if (l.resType || l.noPick) return;   // crew & vehicles (and pub DJ lines) are not gear to pack
     const qty = Math.max(0, Math.round(Number(l.qty) || 0));
     if (!qty) return;
     const name = String(l.name || '').replace(/ \(included\)$/i, '').trim();
@@ -2833,7 +2836,7 @@ exports.getPickList = onCall(async (request) => {
       Each line has its own tick (key), itemKey reads ticks saved before. */
   const rows = [];
   (q.lines || []).forEach((l, idx) => {
-    if (!l || !['item', 'kit', 'custom'].includes(l.type) || l.resType) return;
+    if (!l || !['item', 'kit', 'custom'].includes(l.type) || l.resType || l.noPick) return;
     const qty = Math.max(0, Math.round(Number(l.qty) || 0));
     if (!qty) return;
     const name = String(l.name || '').replace(/ \(included\)$/i, '').trim();
@@ -4845,4 +4848,231 @@ exports.adminAssignCrew = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (req
     (r.sent ? sent : failed).push(x.name);
   }
   return { ok: true, assigned: staff.map((x) => x.name), sent, noEmail, failed };
+});
+
+/* =========================================================================
+   PUB NIGHT INVOICES  (Max, 21 Oct 2026)
+
+   Regular nights (regularNights/, e.g. Grand View Hotel every Friday) get an
+   invoice per night that makes itself:
+     - book a DJ at that pub (Entertainment) -> adminPubSync({ date, venue })
+     - it COPIES THE PUB'S LAST INVOICE (same gear, production, billing, so
+       the pick list lines up) and swaps in a line per DJ: hours x their
+       rate + their travel (actRates/{slug}, private - talent/ is public)
+     - after the gig the DJ gets a link (/dj-times?t=) to put in real times;
+       the invoice updates
+     - it WAITS FOR MAX'S OK (status 'approved' = ready); adminSendPubInvoice
+       turns it into a tax invoice and emails it.
+   The first invoice for a new pub is made by hand; after that it copies.
+   No margin for now: the pub pays the DJ's rate + travel + production.
+   ========================================================================= */
+const PUB_WORDS = /\b(hotel|tavern|pub|bar|club|the|inn|bowen|qld|queensland)\b/g;
+function pubCore(v) {
+  return String(v || '').toLowerCase().split(',')[0].replace(/&/g, ' and ').replace(/[^a-z0-9 ]+/g, ' ')
+    .replace(PUB_WORDS, ' ').replace(/\s+/g, ' ').trim();
+}
+const samePub = (a, b) => { const x = pubCore(a), y = pubCore(b); return !!x && !!y && (x.includes(y) || y.includes(x)); };
+
+/*  "21:30" + "01:30" -> 4 (hours, to the quarter). Finishing after midnight is fine. */
+function pubHours(start, finish) {
+  const m = (t) => { const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); return r ? +r[1] * 60 + +r[2] : null; };
+  const a = m(start), b = m(finish);
+  if (a == null || b == null) return 0;
+  let mins = b - a;
+  if (mins <= 0) mins += 24 * 60;
+  return Math.round(mins / 15) / 4;
+}
+const ampm = (t) => { const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); if (!r) return ''; const h = +r[1]; return (h % 12 || 12) + (r[2] === '00' ? '' : ':' + r[2]) + (h < 12 ? 'am' : 'pm'); };
+const prettyDay = (iso) => { const [y, m, d] = String(iso).split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).replace(/,/g, ''); };
+
+async function regularNightFor(venue) {
+  const snap = await db.collection('regularNights').get();
+  let hit = null;
+  snap.forEach((d) => { if (!hit && samePub(d.data().venue, venue)) hit = { id: d.id, ...d.data() }; });
+  return hit;
+}
+
+/*  Build / update / cancel the invoice for one pub on one night. Returns a
+    short result the admin page can tell Max about.                      */
+async function pubSync(date, venue) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date || ''))) return { skipped: 'no date' };
+  const night = await regularNightFor(venue);
+  if (!night) return { skipped: 'not a regular night' };
+  const key = pubCore(night.venue) + '|' + date;
+
+  const bSnap = await db.collection('talentSchedule').where('date', '==', date).get();
+  const bookings = [];
+  bSnap.forEach((d) => { const b = d.data(); if (samePub(b.venue, night.venue) && b.status !== 'cancelled') bookings.push({ id: d.id, ...b }); });
+
+  const existingSnap = await db.collection('quotes').where('pubKey', '==', key).limit(1).get();
+  const existing = existingSnap.empty ? null : existingSnap.docs[0];
+  const ex = existing ? existing.data() : null;
+
+  // once it has gone to the pub it's theirs - don't change it under them
+  if (ex && !['approved', 'cancelled'].includes(ex.status)) return { locked: true, id: existing.id };
+
+  if (!bookings.length) {
+    if (existing && ex.status === 'approved') await existing.ref.update({ status: 'cancelled', cancelledAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+    return { cancelled: !!existing };
+  }
+
+  // what to copy: this night's own invoice, else the pub's most recent one
+  let base = ex;
+  if (!base) {
+    const all = await db.collection('quotes').get();
+    const cands = [];
+    all.forEach((d) => {
+      const q = d.data();
+      if (q.vendor || ['cancelled', 'declined', 'draft'].includes(q.status)) return;
+      const c = q.customer || {};
+      const isPub = (q.pubVenue && samePub(q.pubVenue, night.venue))
+        || [c.business, c.name, c.eventVenue, c.eventName].some((t) => samePub(t, night.venue));
+      if (isPub) cands.push(q);
+    });
+    cands.sort((a, b) => String((b.hire && b.hire.startDate) || '').localeCompare(String((a.hire && a.hire.startDate) || '')));
+    base = cands.find((q) => String((q.hire && q.hire.startDate) || '') < date) || cands[0] || null;
+  }
+  if (!base) return { needFirst: true, venue: night.venue };
+
+  // the DJs
+  const djLines = [];
+  const noRate = [];
+  for (const b of bookings) {
+    const t = await db.collection('talent').doc(b.slug).get();
+    const name = (t.exists && t.data().name) || b.slug;
+    const r = await db.collection('actRates').doc(b.slug).get();
+    const rate = r.exists ? r.data() : {};
+    const start = b.actualStart || b.start || night.start || '';
+    const finish = b.actualFinish || b.finish || night.finish || '';
+    const hours = pubHours(start, finish);
+    const perHour = Math.max(0, Math.round(rate.hourlyRateCents || 0));
+    if (!perHour) noRate.push(name);
+    djLines.push({
+      type: 'custom', name: 'DJ performance - ' + name,
+      description: (hours ? hours + ' hrs' : 'Hours to confirm') + (perHour ? ' @ $' + (perHour / 100).toFixed(2).replace(/\.00$/, '') + '/hr' : '')
+        + (start && finish ? ' · ' + ampm(start) + '-' + ampm(finish) : '') + (b.timesConfirmedAt ? ' (confirmed)' : ''),
+      qty: 1, unitCents: Math.round(hours * perHour), days: 1, pubDj: true, noPick: true,
+    });
+    const travel = Math.max(0, Math.round(rate.travelCents || 0));
+    if (travel) djLines.push({ type: 'custom', name: 'DJ travel - ' + name, description: '', qty: 1, unitCents: travel, days: 1, pubDj: true, noPick: true });
+  }
+
+  // gear / production lines copied; the booking fee worked out again on the new total
+  const kept = (base.lines || []).filter((l) => !l.pubDj && l.type !== 'fee');
+  let lines = kept.concat(djLines);
+  const hadFee = (base.lines || []).some((l) => l.type === 'fee') && base.feeExcluded !== true;
+  if (hadFee) {
+    const pre = quoteMoney({ hire: { days: 1 }, lines, discountCents: base.discountCents || 0 });
+    const fee = Math.round(pre.netCents * 2 / 100 / 1000) * 1000;
+    if (fee > 0) lines.push({ type: 'fee', name: 'Booking & admin', qty: 1, unitCents: fee, days: 1 });
+  }
+  const clean = sanitizeQuote({
+    ...base,
+    kind: 'quote',
+    customer: { ...(base.customer || {}), eventDate: prettyDay(date), eventStartTime: (bookings[0].actualStart || bookings[0].start || night.start || '') },
+    hire: { startDate: date, endDate: date, days: 1 },
+    labourPackDate: '',
+    lines,
+  });
+  const money = quoteMoney(clean);
+  const meta = { pubNight: true, pubKey: key, pubVenue: night.venue, pubDate: date, pubBookings: bookings.map((b) => b.id), pubNoRate: noRate };
+
+  if (existing) {
+    await existing.ref.update({ ...clean, ...money, ...meta, status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+    return { updated: true, id: existing.id, totalCents: money.totalCents, noRate };
+  }
+  const counterRef = db.collection('config').doc('counters');
+  const seq = await db.runTransaction(async (tx) => {
+    const c = await tx.get(counterRef);
+    const n = ((c.exists && c.data().quoteSeq) || 0) + 1;
+    tx.set(counterRef, { quoteSeq: n }, { merge: true });
+    return n;
+  });
+  const ref = await db.collection('quotes').add({
+    number: 'SG-Q-' + String(seq).padStart(4, '0'), token: crypto.randomBytes(16).toString('hex'),
+    status: 'approved', approvedAt: FieldValue.serverTimestamp(), ...clean, ...money, ...meta,
+    createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(), createdBy: 'pub-auto',
+  });
+  return { created: true, id: ref.id, totalCents: money.totalCents, noRate };
+}
+
+exports.adminPubSync = onCall(async (request) => {
+  requireAdmin(request);
+  const d = request.data || {};
+  return pubSync(String(d.date || ''), String(d.venue || ''));
+});
+
+/*  ADMIN - the link the DJ uses to put in their real times */
+exports.adminPubTimesLink = onCall(async (request) => {
+  requireAdmin(request);
+  const ref = db.collection('talentSchedule').doc(String((request.data || {}).bookingId || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'No such booking.');
+  let token = snap.data().timesToken;
+  if (!token) { token = crypto.randomBytes(16).toString('hex'); await ref.update({ timesToken: token }); }
+  const r = await db.collection('actRates').doc(snap.data().slug).get();
+  return { url: SITE_URL + '/dj-times?t=' + token, phone: (r.exists && r.data().phone) || '' };
+});
+
+async function bookingByTimesToken(token) {
+  const t = String(token || '').trim();
+  if (!/^[a-f0-9]{20,40}$/.test(t)) throw new HttpsError('invalid-argument', 'That link is not valid.');
+  const snap = await db.collection('talentSchedule').where('timesToken', '==', t).limit(1).get();
+  if (snap.empty) throw new HttpsError('not-found', 'That link is not valid.');
+  return snap.docs[0];
+}
+
+/*  PUBLIC - the DJ's page */
+exports.getPubTimes = onCall(async (request) => {
+  const doc = await bookingByTimesToken((request.data || {}).token);
+  const b = doc.data();
+  const t = await db.collection('talent').doc(b.slug).get();
+  return {
+    act: (t.exists && t.data().name) || b.slug, date: b.date, venue: b.venue || '',
+    start: b.actualStart || b.start || '', finish: b.actualFinish || b.finish || '',
+    confirmed: !!b.timesConfirmedAt,
+  };
+});
+
+/*  PUBLIC - the DJ confirms. Updates the booking and the pub's invoice. */
+exports.submitPubTimes = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  await limitIp(request, 'djtimes', 20, 60);
+  const d = request.data || {};
+  const ok = (t) => /^\d{1,2}:\d{2}$/.test(String(t || ''));
+  if (!ok(d.start) || !ok(d.finish)) throw new HttpsError('invalid-argument', 'Please pick a start and a finish time.');
+  const doc = await bookingByTimesToken(d.token);
+  const b = doc.data();
+  await doc.ref.update({ actualStart: String(d.start), actualFinish: String(d.finish), timesConfirmedAt: FieldValue.serverTimestamp() });
+  const res = await pubSync(b.date, b.venue);
+  const t = await db.collection('talent').doc(b.slug).get();
+  const act = (t.exists && t.data().name) || b.slug;
+  await sendMessageEmail({
+    subject: act + ' confirmed their times - ' + (b.venue || 'pub') + ' ' + prettyDay(b.date),
+    body: act + ' played ' + ampm(d.start) + ' to ' + ampm(d.finish) + ' (' + pubHours(d.start, d.finish) + ' hrs) at ' + (b.venue || 'the pub') + ' on ' + prettyDay(b.date) + '.\n\n'
+      + (res.locked ? 'The invoice had already been sent, so it was NOT changed - check it in the Sales Pipeline.' : 'The invoice has been updated and is waiting for you to send it from the dashboard.'),
+  }, {}, { to: process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au' });
+  return { ok: true, hours: pubHours(d.start, d.finish), locked: !!res.locked };
+});
+
+/*  ADMIN - Max's OK: make it a tax invoice and email it to the pub */
+exports.adminSendPubInvoice = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  requireAdmin(request);
+  const ref = db.collection('quotes').doc(String((request.data || {}).id || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'No such invoice.');
+  const q = snap.data();
+  if (!(q.customer && q.customer.email)) throw new HttpsError('failed-precondition', 'The pub has no email on this invoice - add it to the invoice first.');
+  if (!['approved', 'sent', 'invoiced'].includes(q.status)) throw new HttpsError('failed-precondition', 'This one can\'t be sent.');
+  const update = { kind: 'invoice', status: 'invoiced', updatedAt: FieldValue.serverTimestamp() };
+  if (!q.invoiceNumber) { update.invoiceNumber = invoiceNo((await nextInvoiceNumber()).n); update.invoicedAt = FieldValue.serverTimestamp(); }
+  await ref.update(update);
+  const mail = await sendQuoteLinkEmail({ ...q, ...update, invoiceNumber: update.invoiceNumber || q.invoiceNumber }, SITE_URL + '/quote?t=' + q.token);
+  if (mail.sent) {
+    await ref.update({
+      sentAt: FieldValue.serverTimestamp(), lastEmailedAt: FieldValue.serverTimestamp(),
+      lastEmailedTo: String(q.customer.email || '') + (q.customer.ccEmail ? ' (cc ' + q.customer.ccEmail + ')' : ''),
+      emailCount: FieldValue.increment(1),
+    });
+  }
+  return { ...mail, invoiceNumber: update.invoiceNumber || q.invoiceNumber };
 });

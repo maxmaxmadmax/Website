@@ -276,6 +276,16 @@ service cloud.firestore {
       match /sends/{sendId} { allow read: if isAdmin(); allow write: if false; }
     }
 
+    // PUB NIGHTS (Max, 21 Oct 2026). DJ rates + contact details are PRIVATE -
+    // talent/ is public, so they live here instead. Regular nights (pub +
+    // weekday + usual times) drive the pub invoices and "No DJ booked".
+    match /actRates/{slug} {
+      allow read, write: if isAdmin();
+    }
+    match /regularNights/{nightId} {
+      allow read, write: if isAdmin();
+    }
+
     // Dashboard reminders (Max, 20 Oct 2026): Max's own to-do list, admins only
     match /reminders/{reminderId} {
       allow read, write: if isAdmin();

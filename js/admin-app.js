@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=643';
+} from './firebase-config.js?v=644';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=643';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=643';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=643';
-import { messagesHtml, wireMessages } from './messages.js?v=643';
-import { dashboardHtml, dashboardData } from './dashboard.js?v=643';
-import { expandKit } from './kit.js?v=643';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=644';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=644';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=644';
+import { messagesHtml, wireMessages } from './messages.js?v=644';
+import { dashboardHtml, dashboardData } from './dashboard.js?v=644';
+import { expandKit } from './kit.js?v=644';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -272,6 +272,87 @@ async function loadTalent() {
   }
 }
 
+/*  PUB NIGHTS (Max, 21 Oct 2026): DJ rates (private - talent/ is public) and
+    the regular nights. Loaded with the roster.                            */
+async function loadPubSettings() {
+  try {
+    const { collection, getDocs } = fb.f;
+    const [rates, nights] = await Promise.all([getDocs(collection(fb.db, 'actRates')), getDocs(collection(fb.db, 'regularNights'))]);
+    state.actRates = {};
+    rates.forEach((d) => { state.actRates[d.id] = d.data(); });
+    state.regularNights = [];
+    nights.forEach((d) => state.regularNights.push({ id: d.id, ...d.data() }));
+    state.regularNights.sort((a, b) => (a.weekday - b.weekday) || String(a.venue).localeCompare(String(b.venue)));
+  } catch (err) {
+    state.actRates = state.actRates || {};
+    state.regularNights = state.regularNights || [];
+  }
+}
+/*  KEEP IN STEP with pubCore() in functions/index.js - how a pub is matched */
+const PUB_WORDS = /\b(hotel|tavern|pub|bar|club|the|inn|bowen|qld|queensland)\b/g;
+function pubCore(v) {
+  return String(v || '').toLowerCase().split(',')[0].replace(/&/g, ' and ').replace(/[^a-z0-9 ]+/g, ' ')
+    .replace(PUB_WORDS, ' ').replace(/\s+/g, ' ').trim();
+}
+const samePub = (a, b) => { const x = pubCore(a), y = pubCore(b); return !!x && !!y && (x.includes(y) || y.includes(x)); };
+const regularNightFor = (venue) => (state.regularNights || []).find((n) => samePub(n.venue, venue)) || null;
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const ampmT = (t) => { const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); if (!r) return ''; const h = +r[1]; return (h % 12 || 12) + (r[2] === '00' ? '' : ':' + r[2]) + (h < 12 ? 'am' : 'pm'); };
+/*  times every 15 minutes from midday round to 4am (DJs finish late) */
+function timeOpts15(current, blank) {
+  let out = '<option value="">' + (blank || '—') + '</option>';
+  for (let m = 12 * 60; m < 28 * 60; m += 15) {
+    const hh = String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+    out += '<option value="' + hh + '"' + (hh === current ? ' selected' : '') + '>' + ampmT(hh) + '</option>';
+  }
+  return out;
+}
+/*  After any booking change: make / update / cancel that pub's invoice. */
+async function pubSyncNights(pairs) {
+  const notes = [];
+  const seen = new Set();
+  for (const [date, venue] of pairs) {
+    const k = date + '|' + pubCore(venue);
+    if (!date || seen.has(k) || !regularNightFor(venue)) continue;
+    seen.add(k);
+    try {
+      const r = await call('adminPubSync', { date, venue });
+      if (r.needFirst) notes.push('No earlier invoice for ' + r.venue + ' yet - make the first one by hand (Sales Pipeline), then they make themselves.');
+      if (r.noRate && r.noRate.length) notes.push('Add a rate for ' + r.noRate.join(', ') + ' (Entertainment > The roster).');
+      if (r.locked) notes.push('The ' + prettyDate(date) + ' invoice was already sent, so it was not changed.');
+    } catch (e) { notes.push('Invoice not updated for ' + prettyDate(date) + ': ' + friendly(e)); }
+  }
+  return notes;
+}
+/*  Text the DJ the link to put in their real times (phone: sms, computer: copy) */
+async function textDjTimes(bookingId) {
+  try {
+    const b = (state.schedule || []).find((x) => x.id === bookingId) || {};
+    const act = (state.talent || []).find((t) => t.slug === b.slug) || {};
+    const res = await call('adminPubTimesLink', { bookingId });
+    const first = String(act.name || '').split(' ')[0];
+    const text = 'Hi' + (first ? ' ' + first : '') + ', thanks for playing ' + (b.venue || 'the pub').split(',')[0] + (b.date ? ' on ' + prettyDate(b.date) : '') + '! Can you pop your start and finish times in here: ' + res.url;
+    const phone = String(res.phone || '').replace(/[^0-9+]/g, '');
+    if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+      location.href = 'sms:' + phone + '?&body=' + encodeURIComponent(text);
+    } else {
+      try { await navigator.clipboard.writeText(text); window.alert('Copied - paste it into a text to the DJ:\n\n' + text); }
+      catch (e) { window.prompt('Copy this and text it to the DJ:', text); }
+    }
+  } catch (err) { window.alert(friendly(err)); }
+}
+/*  Send a pub invoice - with Max's OK */
+async function sendPubInvoice(id) {
+  const q = (state.quoteDocs || []).find((x) => x.id === id);
+  if (!q) return;
+  const c = q.customer || {};
+  if (!window.confirm('Send the ' + (q.pubVenue || 'pub').split(',')[0] + ' invoice for ' + (c.eventDate || '') + ' (' + money(q.totalCents) + ') to ' + (c.email || 'NO EMAIL') + '?')) return;
+  try {
+    const r = await call('adminSendPubInvoice', { id });
+    window.alert(r.sent ? 'Sent - invoice ' + (r.invoiceNumber || '') + '.' : 'It did not send: ' + (r.error || r.reason || ''));
+  } catch (err) { window.alert(friendly(err)); }
+}
+
 async function loadSchedule() {
   try {
     const { collection, getDocs } = fb.f;
@@ -443,13 +524,13 @@ function routeFromHash() {
       again once it lands - the panel is already on screen by then, with
       its dropdowns unset for the half second it takes.                */
   if (want === 'entertainment') {
-    Promise.all([loadTalent(), loadSchedule()])
+    Promise.all([loadTalent(), loadSchedule(), loadPubSettings()])
       .then(() => { if (state.view === 'entertainment') render(); });
   }
   // the dashboard's "Next 30 days" shows the gigs too (Max, 20 Oct 2026) - fetched at most every 5 min
   if (want === 'dashboard' && Date.now() - (state.gigsLoadedAt || 0) > 5 * 60000) {
     state.gigsLoadedAt = Date.now();
-    Promise.all([loadTalent(), loadSchedule()])
+    Promise.all([loadTalent(), loadSchedule(), loadPubSettings()])
       .then(() => { if (state.view === 'dashboard') render(); });
   }
 }
@@ -2412,7 +2493,7 @@ VIEWS.entertainment = {
       ${rosterPanel(acts)}`;
   },
 
-  wire() { wireEntertainment(); },
+  wire() { wireEntertainment(); wirePubBits(); },
 };
 
 
@@ -2513,7 +2594,16 @@ function bookingPanel(b) {
           <input type="text" id="ad-f-venue" value="${attr(draft.venue || 'Grand View Hotel, Bowen')}">
         </label>
 
-        <label class="ad-field">Time
+        ${(() => { const rn = regularNightFor(draft.venue || 'Grand View Hotel, Bowen'); const st = draft.start || (!draft.id && rn ? rn.start : '') || ''; const fi = draft.finish || (!draft.id && rn ? rn.finish : '') || ''; return `
+        <div class="ad-book-times">
+          <label class="ad-field">Start
+            <select id="ad-f-start">${timeOpts15(st)}</select>
+          </label>
+          <label class="ad-field">Finish
+            <select id="ad-f-finish">${timeOpts15(fi, 'Late')}</select>
+          </label>
+        </div>`; })()}
+        <label class="ad-field">Time (shown on the website)
           <input type="text" id="ad-f-time" value="${attr(draft.time || '9:30 PM – Late')}">
         </label>
 
@@ -2602,12 +2692,110 @@ function bookingPanel(b) {
             <button type="button" class="ad-btn ad-btn-danger" data-book-remove="${attr(b.id)}">
               Remove
             </button>
+            ${regularNightFor(b.venue) ? (() => {
+              const inv = (state.quoteDocs || []).find((q) => q.pubKey === pubCore(regularNightFor(b.venue).venue) + '|' + b.date);
+              return `<button type="button" class="ad-btn" data-pub-times="${attr(b.id)}">&#128241; Text DJ their times link</button>
+              ${inv ? `<a class="ad-btn" href="#/quoteDocs?q=${attr(inv.id)}">Invoice ${esc(money(inv.totalCents))} &middot; ${esc(inv.status === 'approved' ? 'ready' : inv.status)}</a>` : ''}`;
+            })() : ''}
           </div>
         </div>
 
         <p class="ad-action-msg" id="ad-book-msg" hidden></p>
       </div>
     </section>`;
+}
+
+/*  REGULAR NIGHTS (Max, 21 Oct 2026): pub + night + usual times. Booking a DJ
+    there makes that night's invoice; nights with nobody booked are flagged
+    on the dashboard.                                                      */
+function regularNightsPanel() {
+  const rows = state.regularNights || [];
+  const daySel = (cur, id) => '<select ' + id + '>' + WEEKDAYS.map((d, i) => '<option value="' + i + '"' + (Number(cur) === i ? ' selected' : '') + '>' + d + '</option>').join('') + '</select>';
+  return `
+    <section class="ad-card ad-panel ad-regular">
+      <header class="ad-panel-head"><h2>Regular nights</h2></header>
+      <div class="ad-panel-intro">
+        <p>Pubs you play every week. Booking a DJ there makes that night's invoice by copying the pub's last one,
+           with the DJ's hours &times; their rate + travel (rates are in the roster above). It waits for you to send it.</p>
+      </div>
+      <div class="ad-table-wrap"><table class="ad-table">
+        <thead><tr><th>Pub</th><th>Night</th><th>Usual start</th><th>Usual finish</th><th></th></tr></thead>
+        <tbody>
+          ${rows.map((n) => `<tr>
+            <td><input class="ad-rate-in ad-rate-wide" data-rn="${attr(n.id)}" data-rnf="venue" value="${attr(n.venue || '')}"></td>
+            <td>${daySel(n.weekday, 'data-rn="' + attr(n.id) + '" data-rnf="weekday"')}</td>
+            <td><select data-rn="${attr(n.id)}" data-rnf="start">${timeOpts15(n.start || '')}</select></td>
+            <td><select data-rn="${attr(n.id)}" data-rnf="finish">${timeOpts15(n.finish || '', 'Late')}</select></td>
+            <td><button type="button" class="ad-btn" data-rn-save="${attr(n.id)}">Save</button>
+                <button type="button" class="ad-btn ad-btn-danger" data-rn-del="${attr(n.id)}">Remove</button></td>
+          </tr>`).join('')}
+          <tr class="ad-rn-new">
+            <td><input class="ad-rate-in ad-rate-wide" id="ad-rn-venue" placeholder="e.g. Grand View Hotel, Bowen"></td>
+            <td>${daySel(5, 'id="ad-rn-day"')}</td>
+            <td><select id="ad-rn-start">${timeOpts15('21:30')}</select></td>
+            <td><select id="ad-rn-finish">${timeOpts15('', 'Late')}</select></td>
+            <td><button type="button" class="ad-btn ad-btn-primary" id="ad-rn-add">Add</button></td>
+          </tr>
+        </tbody>
+      </table></div>
+      <p class="ad-action-msg" id="ad-rn-msg" hidden></p>
+    </section>`;
+}
+
+function wirePubBits() {
+  const { doc, setDoc, deleteDoc, addDoc, collection } = fb.f;
+  // DJ rates (private)
+  document.querySelectorAll('[data-rate-save]').forEach((btn) => btn.addEventListener('click', async () => {
+    const slug = btn.getAttribute('data-rate-save');
+    const val = (f) => ((document.querySelector('[data-rate="' + cssEsc(slug) + '"][data-rf="' + f + '"]') || {}).value || '').trim();
+    const cents = (v) => Math.max(0, Math.round((parseFloat(v) || 0) * 100));
+    btn.disabled = true;
+    try {
+      await setDoc(doc(fb.db, 'actRates', slug), {
+        hourlyRateCents: cents(val('hourly')), travelCents: cents(val('travel')),
+        phone: val('phone').slice(0, 40), email: val('email').toLowerCase().slice(0, 200), updatedAt: Date.now(),
+      }, { merge: true });
+      await loadPubSettings();
+      btn.textContent = 'Saved';
+      setTimeout(() => { btn.textContent = 'Save'; btn.disabled = false; }, 1200);
+    } catch (err) { btn.disabled = false; window.alert(friendly(err)); }
+  }));
+  // regular nights
+  const rnVal = (id, f) => (document.querySelector('[data-rn="' + cssEsc(id) + '"][data-rnf="' + f + '"]') || {}).value || '';
+  document.querySelectorAll('[data-rn-save]').forEach((btn) => btn.addEventListener('click', async () => {
+    const id = btn.getAttribute('data-rn-save');
+    try {
+      await setDoc(doc(fb.db, 'regularNights', id), { venue: rnVal(id, 'venue').trim().slice(0, 120), weekday: Number(rnVal(id, 'weekday')), start: rnVal(id, 'start'), finish: rnVal(id, 'finish'), updatedAt: Date.now() }, { merge: true });
+      await loadPubSettings(); render();
+    } catch (err) { window.alert(friendly(err)); }
+  }));
+  document.querySelectorAll('[data-rn-del]').forEach((btn) => btn.addEventListener('click', async () => {
+    if (!window.confirm('Stop this regular night? Invoices already made are kept.')) return;
+    try { await deleteDoc(doc(fb.db, 'regularNights', btn.getAttribute('data-rn-del'))); await loadPubSettings(); render(); }
+    catch (err) { window.alert(friendly(err)); }
+  }));
+  const add = document.getElementById('ad-rn-add');
+  if (add) add.addEventListener('click', async () => {
+    const venue = String((document.getElementById('ad-rn-venue') || {}).value || '').trim();
+    if (!venue) { window.alert('Type the pub first.'); return; }
+    try {
+      await addDoc(collection(fb.db, 'regularNights'), {
+        venue: venue.slice(0, 120), weekday: Number(document.getElementById('ad-rn-day').value),
+        start: document.getElementById('ad-rn-start').value, finish: document.getElementById('ad-rn-finish').value, createdAt: Date.now(),
+      });
+      await loadPubSettings(); render();
+    } catch (err) { window.alert(friendly(err)); }
+  });
+  // the booking form: picking a regular pub fills in its usual times
+  const venueIn = document.getElementById('ad-f-venue');
+  if (venueIn) venueIn.addEventListener('change', () => {
+    const rn = regularNightFor(venueIn.value);
+    const s = document.getElementById('ad-f-start'), f = document.getElementById('ad-f-finish');
+    if (rn && s && !s.value) s.value = rn.start || '';
+    if (rn && f && !f.value) f.value = rn.finish || '';
+  });
+  // text the DJ their times link
+  document.querySelectorAll('[data-pub-times]').forEach((b) => b.addEventListener('click', () => textDjTimes(b.getAttribute('data-pub-times'))));
 }
 
 /*  Small icons for the facts list. Inline rather than a font or a sprite:
@@ -2659,7 +2847,7 @@ function rosterPanel(acts) {
       ${acts.length ? `
         <div class="ad-table-wrap">
           <table class="ad-table">
-            <thead><tr><th>Name</th><th>Act</th><th>Photo</th><th></th></tr></thead>
+            <thead><tr><th>Name</th><th>Act</th><th>Rate /hr</th><th>Travel</th><th>Phone</th><th>Email</th><th></th><th>Photo</th><th></th></tr></thead>
             <tbody>
               ${acts.map((t) => `
                 <tr>
@@ -2671,6 +2859,12 @@ function rosterPanel(acts) {
                     </span>
                   </td>
                   <td>${esc(ACT_LABELS[t.act] || t.act || '')}</td>
+                  ${(() => { const r = (state.actRates || {})[t.slug] || {}; const d = (c) => (c ? (c / 100).toFixed(2).replace(/\.00$/, '') : ''); return `
+                  <td><input class="ad-rate-in" type="number" min="0" step="1" data-rate="${attr(t.slug)}" data-rf="hourly" value="${attr(d(r.hourlyRateCents))}" placeholder="$" aria-label="Rate per hour"></td>
+                  <td><input class="ad-rate-in" type="number" min="0" step="1" data-rate="${attr(t.slug)}" data-rf="travel" value="${attr(d(r.travelCents))}" placeholder="$" aria-label="Travel fee"></td>
+                  <td><input class="ad-rate-in ad-rate-wide" type="tel" data-rate="${attr(t.slug)}" data-rf="phone" value="${attr(r.phone || '')}" placeholder="Mobile" aria-label="Phone"></td>
+                  <td><input class="ad-rate-in ad-rate-wide" type="email" data-rate="${attr(t.slug)}" data-rf="email" value="${attr(r.email || '')}" placeholder="Email" aria-label="Email"></td>
+                  <td><button type="button" class="ad-btn" data-rate-save="${attr(t.slug)}">Save</button></td>`; })()}
                   <td class="ad-cell-muted">${t.photo ? esc(t.photo) : '—'}</td>
                   <td>
                     <button type="button" class="ad-btn ad-btn-danger"
@@ -2697,7 +2891,8 @@ function rosterPanel(acts) {
 
         <p class="ad-action-msg" id="ad-act-msg" hidden></p>
       </div>
-    </section>`;
+    </section>
+    ${regularNightsPanel()}`;
 }
 
 /*  The four counts. An icon in a tinted square, the number, then what it
@@ -2892,10 +3087,14 @@ function wireEntertainment() {
       if (!date) { say('ad-book-msg', 'Pick a date.', false); return; }
       if (!slug) { say('ad-book-msg', 'Pick an act.', false); return; }
 
+      const startT = (document.getElementById('ad-f-start') || {}).value || '';
+      const finishT = (document.getElementById('ad-f-finish') || {}).value || '';
       const base = {
         slug,
         venue: document.getElementById('ad-f-venue').value.trim(),
-        time: document.getElementById('ad-f-time').value.trim(),
+        start: startT, finish: finishT,   // pub invoices work the hours out from these (Max, 21 Oct 2026)
+        time: startT && finishT ? ampmT(startT).toUpperCase().replace(/(AM|PM)$/, ' $1') + ' – ' + ampmT(finishT).toUpperCase().replace(/(AM|PM)$/, ' $1')
+          : document.getElementById('ad-f-time').value.trim(),
         status: document.getElementById('ad-f-status').value,
         notes: document.getElementById('ad-f-notes').value.trim(),
       };
@@ -2928,9 +3127,13 @@ function wireEntertainment() {
 
         /*  Moving a booking to another night or another act changes its
             id, so the one it used to be has to go or there would be two. */
+        const oldB = old ? (state.schedule || []).find((x) => x.id === old) : null;
         if (old && !made.some((m) => m.id === old)) {
           await fb.f.deleteDoc(fb.f.doc(fb.db, 'talentSchedule', old));
         }
+        // the pub's invoice for each of those nights (and the night it moved from)
+        const pubNotes = await pubSyncNights(made.map((m) => [m.date, base.venue]).concat(oldB ? [[oldB.date, oldB.venue]] : []));
+        if (pubNotes.length) window.alert(pubNotes.join('\n\n'));
         await loadSchedule();
         state.bookEditing = false;
         state.bookingOpen = made[0].id;
@@ -2960,11 +3163,13 @@ function wireEntertainment() {
 
       try {
         await fb.f.setDoc(fb.f.doc(fb.db, 'talentSchedule', bookingId(date, b.slug)), {
-          date, slug: b.slug, venue: b.venue || '', time: b.time || '',
+          date, slug: b.slug, venue: b.venue || '', time: b.time || '', start: b.start || '', finish: b.finish || '',
           status: b.status || 'confirmed', notes: b.notes || '',
           updatedAt: fb.f.serverTimestamp(),
         });
 
+        const pn = await pubSyncNights([[date, b.venue]]);
+        if (pn.length) window.alert(pn.join('\n\n'));
         await loadSchedule();
         state.bookingOpen = bookingId(date, b.slug);
         render();
@@ -2985,7 +3190,9 @@ function wireEntertainment() {
       btn.disabled = true;
 
       try {
+        const gone = (state.schedule || []).find((x) => x.id === id);
         await fb.f.deleteDoc(fb.f.doc(fb.db, 'talentSchedule', id));
+        if (gone) await pubSyncNights([[gone.date, gone.venue]]);   // cancels that night's invoice if nobody's left
         if (state.bookingOpen === id) state.bookingOpen = null;
         await loadSchedule();
         render();
@@ -3031,6 +3238,7 @@ function wireEntertainment() {
             updatedAt: fb.f.serverTimestamp(),
           });
         }
+        await pubSyncNights(waiting.map((w) => [w.date, 'Grand View Hotel, Bowen']));
 
         await loadSchedule();
         render();
@@ -3470,11 +3678,15 @@ VIEWS.dashboard = {
       reminders: state.reminders || [], weather: dashWeather,
       fyWeek: (() => { const t = new Date(); t.setHours(0, 0, 0, 0); t.setDate(t.getDate() - ((t.getDay() + 6) % 7)); return leadFyWeek(t); })(),
       schedule: state.scheduleLoaded ? state.schedule : null, talent: state.talent || [],
+      regularNights: state.regularNights || null,
       h: { esc, attr, money },
     });
   },
   wire() {
     const desk = document.getElementById('ad-desk');
+    // PUB INVOICES (Max, 21 Oct 2026): send with Max's OK; text the DJ their times link
+    desk.querySelectorAll('[data-pub-send]').forEach((b) => b.addEventListener('click', () => sendPubInvoice(b.getAttribute('data-pub-send'))));
+    desk.querySelectorAll('[data-pub-times]').forEach((b) => b.addEventListener('click', () => textDjTimes(b.getAttribute('data-pub-times'))));
     // ASSIGN CREW (Max, 21 Oct 2026): tick who's working, they get emailed
     desk.querySelectorAll('[data-crew]').forEach((b) => b.addEventListener('click', () => openCrewPicker(b.getAttribute('data-crew'))));
     // copy a share link (waitlist / vendor signup) - Max, 21 Oct 2026
