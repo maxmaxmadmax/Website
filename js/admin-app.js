@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=644';
+} from './firebase-config.js?v=645';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=644';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=644';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=644';
-import { messagesHtml, wireMessages } from './messages.js?v=644';
-import { dashboardHtml, dashboardData } from './dashboard.js?v=644';
-import { expandKit } from './kit.js?v=644';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=645';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=645';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=645';
+import { messagesHtml, wireMessages } from './messages.js?v=645';
+import { dashboardHtml, dashboardData } from './dashboard.js?v=645';
+import { expandKit } from './kit.js?v=645';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2716,7 +2716,8 @@ function regularNightsPanel() {
       <header class="ad-panel-head"><h2>Regular nights</h2></header>
       <div class="ad-panel-intro">
         <p>Pubs you play every week. Booking a DJ there makes that night's invoice by copying the pub's last one,
-           with the DJ's hours &times; their rate + travel (rates are in the roster above). It waits for you to send it.</p>
+           with the DJ's hours &times; their rate (roster above). Travel is added only when the DJ lives in a different
+           town to the pub: km each way &times; 2 &times; $0.80. It waits for you to send it.</p>
       </div>
       <div class="ad-table-wrap"><table class="ad-table">
         <thead><tr><th>Pub</th><th>Night</th><th>Usual start</th><th>Usual finish</th><th></th></tr></thead>
@@ -2752,7 +2753,7 @@ function wirePubBits() {
     btn.disabled = true;
     try {
       await setDoc(doc(fb.db, 'actRates', slug), {
-        hourlyRateCents: cents(val('hourly')), travelCents: cents(val('travel')),
+        hourlyRateCents: cents(val('hourly')), location: val('location').slice(0, 80),   // travel is worked out from this (Max, 21 Oct 2026)
         phone: val('phone').slice(0, 40), email: val('email').toLowerCase().slice(0, 200), updatedAt: Date.now(),
       }, { merge: true });
       await loadPubSettings();
@@ -2847,7 +2848,7 @@ function rosterPanel(acts) {
       ${acts.length ? `
         <div class="ad-table-wrap">
           <table class="ad-table">
-            <thead><tr><th>Name</th><th>Act</th><th>Rate /hr</th><th>Travel</th><th>Phone</th><th>Email</th><th></th><th>Photo</th><th></th></tr></thead>
+            <thead><tr><th>Name</th><th>Act</th><th>Rate /hr</th><th>Location</th><th>Phone</th><th>Email</th><th></th><th>Photo</th><th></th></tr></thead>
             <tbody>
               ${acts.map((t) => `
                 <tr>
@@ -2861,7 +2862,7 @@ function rosterPanel(acts) {
                   <td>${esc(ACT_LABELS[t.act] || t.act || '')}</td>
                   ${(() => { const r = (state.actRates || {})[t.slug] || {}; const d = (c) => (c ? (c / 100).toFixed(2).replace(/\.00$/, '') : ''); return `
                   <td><input class="ad-rate-in" type="number" min="0" step="1" data-rate="${attr(t.slug)}" data-rf="hourly" value="${attr(d(r.hourlyRateCents))}" placeholder="$" aria-label="Rate per hour"></td>
-                  <td><input class="ad-rate-in" type="number" min="0" step="1" data-rate="${attr(t.slug)}" data-rf="travel" value="${attr(d(r.travelCents))}" placeholder="$" aria-label="Travel fee"></td>
+                  <td><input class="ad-rate-in ad-rate-mid" type="text" data-rate="${attr(t.slug)}" data-rf="location" value="${attr(r.location || '')}" placeholder="e.g. Mackay" aria-label="Where they live"></td>
                   <td><input class="ad-rate-in ad-rate-wide" type="tel" data-rate="${attr(t.slug)}" data-rf="phone" value="${attr(r.phone || '')}" placeholder="Mobile" aria-label="Phone"></td>
                   <td><input class="ad-rate-in ad-rate-wide" type="email" data-rate="${attr(t.slug)}" data-rf="email" value="${attr(r.email || '')}" placeholder="Email" aria-label="Email"></td>
                   <td><button type="button" class="ad-btn" data-rate-save="${attr(t.slug)}">Save</button></td>`; })()}

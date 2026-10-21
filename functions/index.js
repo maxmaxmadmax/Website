@@ -4885,6 +4885,39 @@ function pubHours(start, finish) {
 const ampm = (t) => { const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); if (!r) return ''; const h = +r[1]; return (h % 12 || 12) + (r[2] === '00' ? '' : ':' + r[2]) + (h < 12 ? 'am' : 'pm'); };
 const prettyDay = (iso) => { const [y, m, d] = String(iso).split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).replace(/,/g, ''); };
 
+/*  DJ TRAVEL (Max, 21 Oct 2026): from where the DJ lives (actRates.location)
+    to the gig's town. Same town = no travel. Otherwise km each way x 2 x
+    $0.80 - the same rate as delivery. Straight-line distance x 1.2 for the
+    road, rounded to 5 km. Towns looked up on Open-Meteo (free, no key).  */
+const DJ_KM_CENTS = 80;
+const townCache = {};
+async function townLatLon(town) {
+  const key = String(town || '').trim().toLowerCase();
+  if (!key) return null;
+  if (key in townCache) return townCache[key];
+  townCache[key] = null;
+  try {
+    const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?count=10&country_code=AU&name=' + encodeURIComponent(town));
+    const d = await r.json();
+    const hit = (d.results || []).find((x) => x.admin1 === 'Queensland') || (d.results || [])[0];
+    if (hit) townCache[key] = { lat: hit.latitude, lon: hit.longitude };
+  } catch (e) { /* unknown town */ }
+  return townCache[key];
+}
+async function djTravel(fromTown, venue) {
+  const parts = String(venue || '').split(',').map((x) => x.trim()).filter(Boolean);
+  const toTown = parts.length > 1 ? parts[parts.length - 1] : 'Bowen';
+  if (!String(fromTown || '').trim()) return { cents: 0 };
+  if (String(fromTown).trim().toLowerCase() === toTown.toLowerCase()) return { cents: 0, from: fromTown, to: toTown, km: 0 };
+  const [a, b] = await Promise.all([townLatLon(fromTown), townLatLon(toTown)]);
+  if (!a || !b) return { cents: 0, unknown: fromTown };
+  const R = 6371, rad = (x) => x * Math.PI / 180;
+  const h = Math.sin(rad(b.lat - a.lat) / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(rad(b.lon - a.lon) / 2) ** 2;
+  const km = Math.round(2 * R * Math.asin(Math.sqrt(h)) * 1.2 / 5) * 5;
+  if (km < 20) return { cents: 0, from: fromTown, to: toTown, km };   // next door - no charge
+  return { cents: km * 2 * DJ_KM_CENTS, from: fromTown, to: toTown, km };
+}
+
 async function regularNightFor(venue) {
   const snap = await db.collection('regularNights').get();
   let hit = null;
@@ -4953,8 +4986,9 @@ async function pubSync(date, venue) {
         + (start && finish ? ' · ' + ampm(start) + '-' + ampm(finish) : '') + (b.timesConfirmedAt ? ' (confirmed)' : ''),
       qty: 1, unitCents: Math.round(hours * perHour), days: 1, pubDj: true, noPick: true,
     });
-    const travel = Math.max(0, Math.round(rate.travelCents || 0));
-    if (travel) djLines.push({ type: 'custom', name: 'DJ travel - ' + name, description: '', qty: 1, unitCents: travel, days: 1, pubDj: true, noPick: true });
+    const tr = await djTravel(rate.location, b.venue || night.venue);
+    if (tr.cents) djLines.push({ type: 'custom', name: 'DJ travel - ' + name, description: tr.from + ' to ' + tr.to + ' · ' + tr.km + ' km each way (' + (tr.km * 2) + ' km return) @ $0.80/km', qty: 1, unitCents: tr.cents, days: 1, pubDj: true, noPick: true });
+    if (tr.unknown) noRate.push(name + ' (can\'t find "' + tr.unknown + '")');
   }
 
   // gear / production lines copied; the booking fee worked out again on the new total
