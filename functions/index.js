@@ -5191,6 +5191,8 @@ async function gigSync(bookingId) {
   const tr = await djTravel(rate.location, b.venue);
   if (tr.cents) djLines.push({ type: 'custom', name: 'DJ travel - ' + name, description: tr.from + ' to ' + tr.to, qty: 1, unitCents: tr.cents, days: 1, pubDj: true, noPick: true });
   if (tr.missing) notes.push(name + ' (no travel fee set for ' + tr.missing + ')');
+  // the management fee on every DJ booking, ex GST (Max, 21 Oct 2026)
+  djLines.push({ type: 'custom', name: 'DJ booking management fee', description: '', qty: 1, unitCents: 8000, days: 1, pubDj: true, noPick: true });
 
   let lines = djLines.concat((tpl.lines || []).filter((l) => !l.pubDj && l.type !== 'fee'));   // the DJ at the top (Max, 21 Oct 2026)
   if ((tpl.lines || []).some((l) => l.type === 'fee') && tpl.feeExcluded !== true) {
