@@ -4799,3 +4799,12 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .sp-step.is-skip b{ background:#eceef2; border-color:#d5d8de; }
 .sp-step.is-skip em{ color:#c0c4cc; }
 .sp-step.is-skip + .sp-step.is-done::before{ background:#d5d8de; }
+/* nights with no DJ (Max, 21 Oct 2026) */
+.ent-date{ font-weight:600; white-space:nowrap; }
+.ent-open td{ background:repeating-linear-gradient(135deg, #fff 0 9px, #fdf1f0 9px 18px); }
+.ent-book{ padding:6px 12px; font-size:12px; }
+.ad-cal-day.is-nodj{ border-color:#f2c6c3; background:#fff7f6; cursor:pointer; }
+.ad-cal-nodj{ display:block; margin-top:2px; font-size:10px; font-weight:800; color:var(--ad-red); }
+.inv-t-red{ background:var(--ad-red-bg); color:var(--ad-red); }
+.ent .inv-tiles:has(> :nth-child(5)){ grid-template-columns:repeat(5, minmax(0,1fr)); }
+@media (max-width:900px){ .ent .inv-tiles:has(> :nth-child(5)){ grid-template-columns:repeat(2, minmax(0,1fr)); } }

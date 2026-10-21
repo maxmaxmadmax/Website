@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=648';
+} from './firebase-config.js?v=649';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=648';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=648';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=648';
-import { messagesHtml, wireMessages } from './messages.js?v=648';
-import { dashboardHtml, dashboardData } from './dashboard.js?v=648';
-import { expandKit } from './kit.js?v=648';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=649';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=649';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=649';
+import { messagesHtml, wireMessages } from './messages.js?v=649';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=649';
+import { expandKit } from './kit.js?v=649';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2499,12 +2499,21 @@ function gigsMainHtml() {
   const twoWeeksAgo = isoDay(new Date(Date.now() - 14 * 86400000));
   const timesDue = all.filter((b) => b.date < today && b.date >= twoWeeksAgo && !b.timesConfirmedAt && b.templateId);
   const shown = filteredBookings();
+  /*  NIGHTS WITH NO DJ (Max, 21 Oct 2026): every Grand View Friday in the next
+      8 weeks with nobody booked shows in the list (and on the calendar) with a
+      "Book a DJ" button - same rule as the dashboard.                      */
+  const openNights = openRegularNights(all, null, 56);
+  const showOpen = !String(state.bookFilter.text || '').trim() && ['upcoming', 'all', 'grandview', 'grand-view'].includes(state.bookFilter.tab || 'upcoming');
+  const rowsAll = shown.map((b) => ({ kind: 'gig', date: b.date, b }))
+    .concat(showOpen ? openNights.map((n) => ({ kind: 'open', date: n.iso, n })) : [])
+    .sort((x, y) => x.date.localeCompare(y.date));
   return `
       <div class="inv-main">
         ${entHead('gigs')}
         <div class="inv-tiles">
           ${invTile('&#128197;', 'inv-t-blue', thisWeek.length, 'This week', '')}
           ${invTile('&#127925;', 'inv-t-green', upcoming.length, 'Upcoming', '')}
+          ${invTile('&#10071;', 'inv-t-red', openNights.length, 'Nights with no DJ', '')}
           ${invTile('&#9203;', 'inv-t-amber', waitingDj.length, 'Waiting on DJ', '')}
           ${invTile('&#128338;', 'inv-t-slate', timesDue.length, 'Times to come in', '')}
         </div>
@@ -2522,11 +2531,22 @@ function gigsMainHtml() {
               <table class="ad-table inv-table">
                 <thead><tr><th>Date</th><th>DJ</th><th>Venue</th><th>Times</th><th>Progress</th><th></th></tr></thead>
                 <tbody>
-                  ${shown.length ? shown.map((b) => {
+                  ${rowsAll.length ? rowsAll.map((row) => {
+                    if (row.kind === 'open') {
+                      return `<tr class="inv-row ent-open">
+                      <td class="ent-date">${esc(prettyDate(row.date))}</td>
+                      <td><span class="ad-pill ad-pill-red">No DJ booked</span></td>
+                      <td class="ad-cell-muted">${esc(String(row.n.venue).split(',')[0])}</td>
+                      <td class="ad-cell-muted">—</td>
+                      <td></td>
+                      <td class="ad-cell-right"><button type="button" class="ad-btn ad-btn-primary ent-book" data-book-night="${attr(row.date)}" data-book-venue="${attr(row.n.venue)}">Book a DJ</button></td>
+                    </tr>`;
+                    }
+                    const b = row.b;
                     const act = (state.talent || []).find((t) => t.slug === b.slug) || {};
                     return `<tr class="inv-row${state.bookingOpen === b.id && state.entPanel ? ' is-open' : ''}${b.date < today ? ' is-past' : ''}" data-book-open="${attr(b.id)}">
-                      <td class="ad-cell-strong ent-date">${esc(prettyDate(b.date))}</td>
-                      <td class="inv-item-cell"><span class="ad-act-face ent-face" style="${act.photo ? `background-image:url('/${attr(act.photo)}')` : ''}"></span><span class="inv-item-name">${esc(act.name || b.slug)}</span></td>
+                      <td class="ent-date">${esc(prettyDate(b.date))}</td>
+                      <td><span class="inv-item-cell"><span class="ad-act-face ent-face" style="${act.photo ? `background-image:url('/${attr(act.photo)}')` : ''}"></span><span class="inv-item-name">${esc(act.name || b.slug)}</span></span></td>
                       <td class="ad-cell-muted">${esc(String(b.venue || '—').split(',')[0])}</td>
                       <td class="ad-cell-muted">${esc(b.time || '—')}</td>
                       <td>${gigDots(b)}</td>
@@ -2573,7 +2593,7 @@ function djMainHtml() {
                 const r = djRate(t.slug);
                 const nx = djNextGig(t.slug);
                 return `<tr class="inv-row${state.openDj === t.slug ? ' is-open' : ''}" data-dj-open="${attr(t.slug)}">
-                  <td class="inv-item-cell"><span class="ad-act-face ent-face" style="${t.photo ? `background-image:url('/${attr(t.photo)}')` : ''}"></span><span class="inv-item-name">${esc(t.name)}</span></td>
+                  <td><span class="inv-item-cell"><span class="ad-act-face ent-face" style="${t.photo ? `background-image:url('/${attr(t.photo)}')` : ''}"></span><span class="inv-item-name">${esc(t.name)}</span></span></td>
                   <td><span class="inv-pill inv-st-blue">${esc(ACT_LABELS[t.act] || t.act || 'DJ')}</span></td>
                   <td>${r.location ? esc(r.location) : '<span class="ad-cell-muted">—</span>'}</td>
                   <td class="inv-num">${r.hourlyRateCents ? esc(money(r.hourlyRateCents)) + '<span class="inv-perday">/hr</span>' : '<span class="ad-cell-muted">—</span>'}</td>
@@ -2636,6 +2656,11 @@ function wireEntPage() {
   const ds = document.getElementById('dj-search');
   if (ds) ds.addEventListener('input', () => { state.djSearch = ds.value; const pos = ds.selectionStart; render(); const n = document.getElementById('dj-search'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } });
   desk.querySelectorAll('[data-dj-open]').forEach((r) => r.addEventListener('click', () => { state.openDj = r.getAttribute('data-dj-open'); render(); }));
+  desk.querySelectorAll('[data-book-night]').forEach((b) => b.addEventListener('click', () => {
+    state.bookDraft = { date: b.getAttribute('data-book-night'), venue: b.getAttribute('data-book-venue') || 'Grand View Hotel, Bowen', slug: (state.talent[0] || {}).slug || '', status: 'confirmed' };
+    state.bookEditing = true; state.entPanel = true; state.bookingOpen = null;
+    render();
+  }));
   desk.querySelectorAll('[data-dj-new]').forEach((b) => b.addEventListener('click', () => { state.openDj = '__new__'; render(); }));
   desk.querySelectorAll('[data-dj-book]').forEach((b) => b.addEventListener('click', () => {
     state.entTab = 'gigs'; state.openDj = null; state.entPanel = true; state.bookEditing = true;
@@ -2692,11 +2717,12 @@ function calendarHtml() {
   for (let d = 1; d <= days; d++) {
     const iso = isoDay(new Date(cursor.getFullYear(), cursor.getMonth(), d));
     const on = state.schedule.filter((b) => b.date === iso);
+    const noDj = !on.length && openRegularNights(state.schedule, null, 56).some((n) => n.iso === iso);
 
     cells.push(`
-      <div class="ad-cal-day${iso === today ? ' is-today' : ''}${on.length ? ' has-booking' : ''}"
-           ${on.length ? `data-book-open="${attr(on[0].id)}"` : ''}>
-        <span class="ad-cal-num">${d}</span>
+      <div class="ad-cal-day${iso === today ? ' is-today' : ''}${on.length ? ' has-booking' : ''}${noDj ? ' is-nodj' : ''}"
+           ${on.length ? `data-book-open="${attr(on[0].id)}"` : noDj ? `data-book-night="${attr(iso)}" data-book-venue="Grand View Hotel, Bowen" title="No DJ booked - click to book"` : ''}>
+        <span class="ad-cal-num">${d}</span>${noDj ? '<span class="ad-cal-nodj">No DJ</span>' : ''}
         ${on.map((b) => {
           const act = state.talent.find((t) => t.slug === b.slug) || {};
           return `<span class="ad-cal-act ${(b.status || 'confirmed') === 'pending' ? 'is-pending' : ''}">${esc(act.name || b.slug)}</span>`;
