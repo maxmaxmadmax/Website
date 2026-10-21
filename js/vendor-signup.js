@@ -23,13 +23,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=637';
+} from './firebase-config.js?v=638';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=637';
-import { termBodyHtml } from './terms-data.js?v=637';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=638';
+import { termBodyHtml } from './terms-data.js?v=638';
 import {
   VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION,
-} from './vendor-terms-data.js?v=637';
+} from './vendor-terms-data.js?v=638';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -327,6 +327,7 @@ async function loadEventsFast() {
       .sort((a, b) => String(a.dateISO || '').localeCompare(String(b.dateISO || '')));
     state.eventsLoaded = true;
     renderEvents();
+    followEventLink();
 
     // sold-out stickers, the same quick way
     Promise.all(state.events.filter((ev) => ev.status === 'open').map(async (ev) => {
@@ -351,6 +352,7 @@ async function loadEvents() {
     }];
     state.eventsLoaded = true;
     renderEvents();
+    followEventLink();
     return;
   }
 
@@ -368,6 +370,7 @@ async function loadEvents() {
 
     state.eventsLoaded = true;
     renderEvents();
+    followEventLink();
 
     // which vendor types have sold out, per open event (for the poster sticker)
     Promise.all(state.events.filter((ev) => ev.status === 'open').map(async (ev) => {
@@ -412,6 +415,21 @@ function eventSkeleton() {
       '</div>' +
     '</article>'
   ).repeat(3);
+}
+
+/*  SHARE LINKS (Max, 21 Oct 2026):
+      /vendor-signup?event=<id>             opens with that event picked
+      /vendor-signup?event=<id>&waitlist=1  ...and jumps to the waitlist form
+    so Max can text vendors who keep asking if they can come.             */
+const LINK = new URLSearchParams(location.search);
+let linkEventDone = false;
+let linkWaitlistDone = false;
+function followEventLink() {
+  if (linkEventDone || !LINK.get('event')) return;
+  const ev = (state.events || []).find((e) => e.id === LINK.get('event'));
+  if (!ev) return;
+  linkEventDone = true;
+  if (state.eventId !== ev.id) chooseEvent(ev.id);
 }
 
 function renderEvents() {
@@ -2335,6 +2353,17 @@ function renderWaitlist(so) {
       + '<label>Phone<input name="phone" type="tel" autocomplete="tel"></label>'
       + '<label class="vs-wl-wide">What do you sell?<input name="description" maxlength="300"></label>'
       + '</div><button type="submit" class="btn">Join the waitlist</button><p class="vs-wl-msg" hidden></p></form>').join('');
+  if (LINK.get('waitlist') && !linkWaitlistDone) {
+    linkWaitlistDone = true;
+    setTimeout(() => {
+      const rail = document.getElementById('vs-rail');
+      const top = Math.max(0, host.getBoundingClientRect().top + window.scrollY - (rail ? rail.getBoundingClientRect().height : 0) - 20);
+      window.scrollTo({ top, behavior: 'smooth' });
+      setTimeout(() => { if (Math.abs(window.scrollY - top) > 40) window.scrollTo(0, top); }, 900);   // jump if smooth scroll didn't happen
+      const first = host.querySelector('input');
+      if (first) first.focus({ preventScroll: true });
+    }, 700);
+  }
 }
 
 async function joinWaitlist(form) {

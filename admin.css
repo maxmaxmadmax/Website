@@ -4689,3 +4689,4 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .db-pill-ours{ background:var(--ad-orange-soft); color:var(--ad-orange); }
 .db-job.is-event .db-job-date b{ color:var(--ad-orange); }
 .db-pill-gig{ background:#efe9fd; color:#6d3fd1; }   /* entertainment gigs (Grand View etc.) */
+.db-copy{ padding:5px 10px; font-size:12px; margin-right:4px; }

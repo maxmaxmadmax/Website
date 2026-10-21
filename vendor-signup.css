@@ -2824,7 +2824,8 @@
 .vs-wl-card > p{ margin:0 0 12px; font-size:14px; opacity:.85; }
 .vs-wl-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; margin-bottom:12px; }
 .vs-wl-grid label{ display:grid; gap:4px; font-size:13px; font-weight:600; }
-.vs-wl-grid input{ font:inherit; font-size:15px; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,.25); background:rgba(0,0,0,.25); color:inherit; }
+.vs-wl-grid input{ font:inherit; font-size:15px; padding:10px 12px; border-radius:8px; border:1px solid #e3c7b0; background:#fff; color:#111; }   /* white, not grey (Max, 21 Oct 2026) */
+.vs-wl-grid input:focus{ outline:2px solid #ff6b00; outline-offset:1px; border-color:#ff6b00; }
 .vs-wl-wide{ grid-column:1 / -1; }
 .vs-wl-msg{ margin:8px 0 0; color:#ff8a80; font-size:14px; }
 .vs-wl-done{ border-color:rgba(76,175,80,.6); background:rgba(76,175,80,.12); }

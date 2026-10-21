@@ -17,9 +17,9 @@
    acceptedAt). Close enough for a dashboard; the invoices are the record.
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=637';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=637';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=637';
+import { isBooked, pickLineProgress } from './stock.js?v=638';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=638';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=638';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -378,7 +378,7 @@ export function dashboardHtml(ctx) {
         <div><p class="db-stat-label">Sponsorship</p><p class="db-stat-num">${money(evc.sponsorCents)} <small>of ${money(evc.goal)}</small></p>
           <div class="db-bar"><i style="width:${Math.min(100, Math.round(evc.sponsorCents / evc.goal * 100))}%"></i></div></div>
       </div>
-      <p class="db-event-links"><a href="#/vendors">Vendors</a> &middot; <a href="#/map">Sites &amp; Map</a> &middot; <a href="#/vendorEmail">Messages</a></p>
+      <p class="db-event-links"><button type="button" class="ad-btn db-copy" data-copy="${attr('https://www.soundzgood.com.au/vendor-signup?event=' + evc.ev.id + '&waitlist=1')}">Copy waitlist link</button> <button type="button" class="ad-btn db-copy" data-copy="${attr('https://www.soundzgood.com.au/vendor-signup?event=' + evc.ev.id)}">Copy vendor signup link</button> &nbsp; <a href="#/vendors">Vendors</a> &middot; <a href="#/map">Sites &amp; Map</a> &middot; <a href="#/vendorEmail">Messages</a></p>
     </div>` : ''}
 
     <div class="ad-card db-panel">

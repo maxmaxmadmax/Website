@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=637';
+} from './firebase-config.js?v=638';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=637';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=637';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=637';
-import { messagesHtml, wireMessages } from './messages.js?v=637';
-import { dashboardHtml, dashboardData } from './dashboard.js?v=637';
-import { expandKit } from './kit.js?v=637';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=638';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=638';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=638';
+import { messagesHtml, wireMessages } from './messages.js?v=638';
+import { dashboardHtml, dashboardData } from './dashboard.js?v=638';
+import { expandKit } from './kit.js?v=638';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -3431,6 +3431,12 @@ VIEWS.dashboard = {
   },
   wire() {
     const desk = document.getElementById('ad-desk');
+    // copy a share link (waitlist / vendor signup) - Max, 21 Oct 2026
+    desk.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
+      const url = b.getAttribute('data-copy');
+      try { await navigator.clipboard.writeText(url); const old = b.textContent; b.textContent = 'Copied!'; setTimeout(() => { b.textContent = old; }, 1500); }
+      catch (e) { window.prompt('Copy this link:', url); }
+    }));
     desk.querySelectorAll('[data-rem-done]').forEach((box) => box.addEventListener('change', () => {
       box.closest('li').classList.add('is-done');
       reminderStore.done(box.getAttribute('data-rem-done')).catch((e) => { window.alert(friendly(e)); box.checked = false; });
