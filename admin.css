@@ -4706,3 +4706,13 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 @media (max-width:640px){ .db-job{ grid-template-columns:1fr; } .db-job-acts{ grid-column:auto; } .db-job-wx{ justify-content:flex-start; } }
 /* the financial-year week number, same as the Gig Opportunities calendar (Max, 21 Oct 2026) */
 .db-week{ display:inline-block; margin-left:8px; padding:2px 9px; border-radius:20px; background:var(--ad-orange); color:#fff; font-size:12px; font-weight:800; }
+
+/* CONFIRMED vs WAITING rows in Next 30 days (Max, 21 Oct 2026) */
+.db-jobs .db-job{ border-top:0; border-radius:12px; padding:12px 14px; margin-top:8px; }
+.db-job.is-confirmed{ background:linear-gradient(90deg, #e3f6ea 0%, #f3fbf6 45%, #fff 100%); box-shadow:inset 4px 0 0 var(--ad-green); }
+.db-job.is-pending{ background:repeating-linear-gradient(135deg, #f7f8fa 0 9px, #eceef2 9px 18px); box-shadow:inset 4px 0 0 #c4c9d2; }
+.db-job.is-pending .db-job-who, .db-job.is-pending .db-job-date b{ color:#4b5563; }
+.db-state{ display:block; margin-top:4px; font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+.db-state.is-ok{ color:var(--ad-green); }
+.db-state.is-wait{ color:#8a919c; }
+.db-sep + .db-job{ margin-top:6px; }

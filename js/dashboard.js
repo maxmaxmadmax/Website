@@ -17,9 +17,9 @@
    acceptedAt). Close enough for a dashboard; the invoices are the record.
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=640';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=640';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=640';
+import { isBooked, pickLineProgress } from './stock.js?v=641';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=641';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=641';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -248,6 +248,10 @@ function withWeeks(list, row) {
   }).join('');
 }
 
+/*  CONFIRMED vs WAITING (Max, 21 Oct 2026): confirmed rows get a green glow,
+    waiting rows grey diagonal stripes, and a word under the date.        */
+const stateTag = (ok) => ok ? '<span class="db-state is-ok">&#10003; Confirmed</span>' : '<span class="db-state is-wait">Waiting</span>';
+
 /* ---------- the page ---------- */
 export function dashboardHtml(ctx) {
   const { esc, attr, money } = ctx.h;
@@ -273,8 +277,8 @@ export function dashboardHtml(ctx) {
     const sitesNote = q.ev.id === ctx.activeEventId && (ctx.sites || []).length
       ? (ctx.sites || []).filter((x) => x.status === 'booked').length + ' of ' + ctx.sites.length + ' sites sold' : '';
     return `
-        <li class="db-job is-event">
-          <div class="db-job-date"><b>${esc(shortDate(q.hire.startDate))}</b></div>
+        <li class="db-job is-event is-confirmed">
+          <div class="db-job-date"><b>${esc(shortDate(q.hire.startDate))}</b>${stateTag(true)}</div>
           <div class="db-job-main">
             <p class="db-job-who">${esc(c.name)}${c.eventName ? ' &middot; <span>' + esc(c.eventName) + '</span>' : ''}</p>
             ${c.eventVenue ? `<p class="db-job-sub">${esc(c.eventVenue)}</p>` : ''}
@@ -293,8 +297,8 @@ export function dashboardHtml(ctx) {
   const gigRow = (q) => {
     const c = q.customer;
     return `
-        <li class="db-job is-gig">
-          <div class="db-job-date"><b>${esc(shortDate(q.hire.startDate))}</b></div>
+        <li class="db-job is-gig ${q.noDj ? 'is-pending' : 'is-confirmed'}">
+          <div class="db-job-date"><b>${esc(shortDate(q.hire.startDate))}</b>${stateTag(!q.noDj)}</div>
           <div class="db-job-main">
             <p class="db-job-who">${esc(c.name)}${c.eventName ? ' &middot; <span>' + esc(c.eventName) + '</span>' : ''}</p>
             ${c.eventVenue ? `<p class="db-job-sub">${esc(c.eventVenue)}</p>` : ''}
@@ -316,8 +320,8 @@ export function dashboardHtml(ctx) {
       .map((l) => String(l.name || '').trim()).filter(Boolean);
     const phone = String(c.phone || '').replace(/[^0-9+]/g, '');
     return `
-        <li class="db-job">
-          <div class="db-job-date"><b>${esc(shortDate(q.hire.startDate))}</b></div>
+        <li class="db-job ${isBooked(q) ? 'is-confirmed' : 'is-pending'}">
+          <div class="db-job-date"><b>${esc(shortDate(q.hire.startDate))}</b>${stateTag(isBooked(q))}</div>
           <div class="db-job-main">
             <p class="db-job-who">${esc(who(q))}${c.eventName ? ' &middot; <span>' + esc(c.eventName) + '</span>' : ''}</p>
             ${c.eventVenue ? `<p class="db-job-sub">${esc(c.eventVenue)}</p>` : ''}
