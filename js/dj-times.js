@@ -8,7 +8,7 @@
    Uses the sponsor page styles (sponsor.css), like the details form.
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=647';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=648';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) => String(v == null ? '' : v)
@@ -45,7 +45,35 @@ function done(hours, waiting) {
     <p class="spn-sub">Something wrong? Call Max on 0422 393 022.</p></section>`;
 }
 
+/*  BEFORE THE GIG (Max, 21 Oct 2026): the same link asks "are you in?". From
+    5pm on the night it switches to the times form below.                  */
+function renderConfirm(d) {
+  const when = niceDay(d.date) + (d.plannedStart ? ', ' + ampm(d.plannedStart) + (d.plannedFinish ? ' to ' + ampm(d.plannedFinish) : '') : '');
+  document.getElementById('dj-root').innerHTML = `
+  <section class="spn-sec">
+    <p class="spn-eyebrow" style="color:#ff6b00">SoundzGood Whitsundays</p>
+    <h2>${d.djConfirmed ? 'You&rsquo;re confirmed' : 'You&rsquo;re booked'}</h2>
+    <p class="spn-sub"><b>${esc(d.act)}</b> &middot; ${esc(String(d.venue || '').split(',')[0])}<br>${esc(when)}</p>
+    ${d.djConfirmed
+      ? '<p class="dj-ok">&#10003; Thanks &mdash; you&rsquo;re locked in. After the gig, open this same link to put in your times.</p>'
+      : '<button type="button" class="spn-btn" id="dj-in">I&rsquo;m in &#10003;</button><p class="spn-msg" id="dj-msg" hidden></p>'}
+    <p class="spn-sub" style="margin-top:14px">Can&rsquo;t make it? Call Max on 0422 393 022.</p>
+  </section>`;
+  const btn = document.getElementById('dj-in');
+  if (btn) btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    try {
+      await fns.httpsCallable(fns.fns, 'submitDjConfirm')({ token: TOKEN });
+      renderConfirm({ ...d, djConfirmed: true });
+    } catch (err) {
+      btn.disabled = false;
+      const m = document.getElementById('dj-msg'); m.hidden = false; m.textContent = (err && err.message) || 'Could not confirm. Please try again.';
+    }
+  });
+}
+
 function render(d) {
+  if (d.mode === 'confirm') { renderConfirm(d); return; }
   document.getElementById('dj-root').innerHTML = `
   <section class="spn-sec">
     <p class="spn-eyebrow" style="color:#ff6b00">SoundzGood Whitsundays</p>

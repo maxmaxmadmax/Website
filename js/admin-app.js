@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=647';
+} from './firebase-config.js?v=648';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=647';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=647';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=647';
-import { messagesHtml, wireMessages } from './messages.js?v=647';
-import { dashboardHtml, dashboardData } from './dashboard.js?v=647';
-import { expandKit } from './kit.js?v=647';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=648';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=648';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=648';
+import { messagesHtml, wireMessages } from './messages.js?v=648';
+import { dashboardHtml, dashboardData } from './dashboard.js?v=648';
+import { expandKit } from './kit.js?v=648';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -356,7 +356,10 @@ async function textDjTimes(bookingId) {
     const act = (state.talent || []).find((t) => t.slug === b.slug) || {};
     const res = await call('adminPubTimesLink', { bookingId });
     const first = String(act.name || '').split(' ')[0];
-    const text = 'Hi' + (first ? ' ' + first : '') + ', thanks for playing ' + (b.venue || 'the pub').split(',')[0] + (b.date ? ' on ' + prettyDate(b.date) : '') + '! Can you pop your start and finish times in here: ' + res.url;
+    const after = b.date && b.date <= isoDay(new Date());
+    const text = after
+      ? 'Hi' + (first ? ' ' + first : '') + ', thanks for playing ' + (b.venue || 'the pub').split(',')[0] + (b.date ? ' on ' + prettyDate(b.date) : '') + '! Can you pop your start and finish times in here: ' + res.url
+      : 'Hi' + (first ? ' ' + first : '') + ", you're booked for " + (b.venue || 'the gig').split(',')[0] + (b.date ? ' on ' + prettyDate(b.date) : '') + (b.time ? ' (' + b.time + ')' : '') + ". Tap here to confirm you're in: " + res.url;
     const phone = String(res.phone || '').replace(/[^0-9+]/g, '');
     if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
       location.href = 'sms:' + phone + '?&body=' + encodeURIComponent(text);
@@ -809,7 +812,7 @@ function render() {
 
   /*  The bookings view lays itself out to the height of the desk rather
       than to its content, so the desk has to know it is showing it. */
-  desk.classList.toggle('is-bookings', state.view === 'entertainment');
+  desk.classList.toggle('is-bookings', false);   // Entertainment overhaul (21 Oct 2026): a normal page like Crew & Vehicles
   desk.classList.toggle('show-roster',
     state.view === 'entertainment' && state.showRoster);
 
@@ -828,8 +831,7 @@ function render() {
 
   /*  The page can only be one screen tall if the shell is, and that is
       three boxes above the desk - see the note in admin.css.         */
-  document.body.classList.toggle('ad-fit',
-    state.view === 'entertainment' && !state.showRoster);
+  document.body.classList.toggle('ad-fit', false);
 
   if (view.wire) view.wire();
 }
@@ -2411,117 +2413,260 @@ function wireEventForm() {
    The events page reads the same schedule for its Friday Nights cards, so
    a booking made here is on the site within the minute.
    ------------------------------------------------------------------------- */
+/* =========================================================================
+   ENTERTAINMENT  (overhaul, Max, 21 Oct 2026)
+   Two tabs that look and work like Crew & Vehicles:
+     GIGS  calendar on the left, the list on the right, "+ New booking" and
+           every gig open in the side panel - with its status trail
+           Booked > DJ confirmed > Played > Times in > Invoice sent > Paid
+     DJS   one row per DJ (photo, location, rate, contact, their deck, next
+           gig); click to edit in the side panel. Rates + contact are
+           private (actRates/); name, act and photo are public (talent/).
+   ========================================================================= */
 VIEWS.entertainment = {
   html() {
-    const acts = state.talent;
-    const all = state.schedule;
-
-    const today = isoDay(new Date());
-    const upcoming = all.filter((b) => b.date >= today);
-    const confirmed = upcoming.filter((b) => (b.status || 'confirmed') === 'confirmed');
-    const pending = upcoming.filter((b) => b.status === 'pending');
-
-    /*  What the right hand panel is showing. Defaults to the next booking
-        there is, so the page opens on something rather than on a prompt. */
-    const picked = state.bookingOpen
-      ? all.find((b) => b.id === state.bookingOpen)
-      : upcoming[0];
-
-    const shown = filteredBookings();
-
-    return `
-      <div class="ad-page-head">
-        <div>
-          <h1>DJ Bookings</h1>
-          <p>Who is playing at the Grand View Hotel and everywhere else.</p>
-        </div>
-
-        <div class="ad-page-actions">
-          <!--  The roster is reference rather than the day's work, and it
-                is the thing that stops this page fitting on a screen. So
-                it is folded away, and this opens it.                 -->
-          <button type="button" class="ad-btn" id="ad-roster-toggle">
-            ${state.showRoster ? 'Hide the roster' : 'The roster'}
-          </button>
-
-          <button type="button" class="ad-btn ad-btn-orange" id="ad-book-new">
-            + New booking
-          </button>
-        </div>
-      </div>
-
-      <div class="ad-bstats">
-        ${statTile('Upcoming Shows', upcoming.length, '', 'blue')}
-        ${statTile('Confirmed', confirmed.length, '', 'green')}
-        ${statTile('Pending', pending.length, '', 'amber')}
-        ${statTile('Acts on Roster', acts.length, '', 'grey')}
-      </div>
-
-      ${importBanner()}
-
-      <div class="ad-book-split">
-        ${calendarHtml()}
+    const tab = state.entTab || 'gigs';
+    if (tab === 'djs') {
+      const open = state.openDj != null;
+      return `<div class="inv-wrap ent${open ? ' has-detail' : ''}">${djMainHtml()}${open ? djDetailHtml() : ''}</div>`;
+    }
+    const picked = state.bookingOpen ? (state.schedule || []).find((x) => x.id === state.bookingOpen) : null;
+    const open = state.entPanel && (state.bookEditing || picked);
+    return `<div class="inv-wrap ent${open ? ' has-detail' : ''}">${gigsMainHtml()}${open ? `
+      <aside class="inv-detail ent-detail" aria-label="Gig">
+        <button type="button" class="inv-detail-close ent-x" data-ent-close aria-label="Close">&times;</button>
+        ${!state.bookEditing && picked ? gigTrailHtml(picked) : ''}
         ${bookingPanel(picked)}
-      </div>
-
-      <section class="ad-card ad-book-list">
-
-        <div class="ad-book-tabs">
-          <div class="ad-tabs" role="group" aria-label="Which bookings">
-            ${BOOK_TABS.map((t) => `
-              <button type="button" class="ad-tab${state.bookFilter.tab === t.key ? ' is-on' : ''}"
-                      data-book-tab="${attr(t.key)}">${esc(t.label)}</button>`).join('')}
-          </div>
-
-          <input type="search" id="ad-book-search" class="ad-book-search"
-                 placeholder="Search bookings…" value="${attr(state.bookFilter.text)}"
-                 aria-label="Search bookings">
-        </div>
-        ${shown.length ? `
-          <div class="ad-table-wrap">
-            <table class="ad-table">
-              <thead><tr>
-                <th>Date</th><th>Act</th><th>Venue</th><th>Time</th><th>Status</th><th></th>
-              </tr></thead>
-              <tbody>
-                ${shown.map((b) => {
-                  const act = state.talent.find((t) => t.slug === b.slug) || {};
-                  const status = b.status || 'confirmed';
-                  return `
-                    <tr data-book-open="${attr(b.id)}">
-                      <td class="ad-cell-strong">${esc(prettyDate(b.date))}</td>
-                      <td>
-                        <span class="ad-act">
-                          <span class="ad-act-face"
-                                style="${act.photo ? `background-image:url('/${attr(act.photo)}')` : ''}"></span>
-                          ${esc(act.name || b.slug)}
-                        </span>
-                      </td>
-                      <td class="ad-cell-muted">${esc(b.venue || '—')}</td>
-                      <td class="ad-cell-muted">${esc(b.time || '—')}</td>
-                      <td>
-                        <span class="ad-pill ${status === 'pending' ? 'ad-pill-amber' : 'ad-pill-green'}">
-                          ${status === 'pending' ? 'Pending' : 'Confirmed'}
-                        </span>
-                      </td>
-                      <td>
-                        <button type="button" class="ad-btn ad-btn-danger"
-                                data-book-remove="${attr(b.id)}">Remove</button>
-                      </td>
-                    </tr>`;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>` : `
-          <p class="ad-empty">Nothing matches that.</p>`}
-      </section>
-
-      ${rosterPanel(acts)}`;
+      </aside>` : ''}</div>`;
   },
-
-  wire() { wireEntertainment(); wirePubBits(); },
+  wire() { wireEntertainment(); wirePubBits(); wireEntPage(); },
 };
 
+function entHead(tab) {
+  return `
+        <div class="inv-head">
+          <div class="inv-head-title">
+            <span class="ad-mail-icon" aria-hidden="true">&#127911;</span>
+            <div>
+              <h1>Entertainment</h1>
+              <p>Book DJs, see who&rsquo;s playing where, and keep their details in one place.</p>
+            </div>
+          </div>
+          <div class="inv-head-actions">
+            <div class="ent-tabs" role="tablist">
+              <button type="button" class="ent-tab${tab === 'gigs' ? ' is-on' : ''}" data-ent-tab="gigs">Gigs</button>
+              <button type="button" class="ent-tab${tab === 'djs' ? ' is-on' : ''}" data-ent-tab="djs">DJs</button>
+            </div>
+            ${tab === 'gigs' ? '<button type="button" class="ad-btn ad-btn-primary" id="ad-book-new">+ New booking</button>' : '<button type="button" class="ad-btn ad-btn-primary" data-dj-new>+ New DJ</button>'}
+          </div>
+        </div>`;
+}
+
+/* the gig's invoice (made from a template), if it has one */
+const gigInvoice = (b) => (state.quoteDocs || []).find((q) => q.gigBookingId === b.id && q.status !== 'cancelled') || null;
+function gigTrail(b) {
+  const inv = gigInvoice(b);
+  const played = b.date < isoDay(new Date());
+  const steps = [
+    ['Booked', true],
+    ['DJ confirmed', !!b.djConfirmedAt],
+    ['Played', played],
+    ['Times in', !!b.timesConfirmedAt],
+  ];
+  if (b.templateId || inv) {
+    steps.push(['Invoice sent', !!inv && (inv.kind === 'invoice' || ['invoiced', 'paid'].includes(inv.status))]);
+    steps.push(['Paid', !!inv && (inv.status === 'paid' || inv.paymentStatus === 'paid')]);
+  }
+  return steps;
+}
+function gigDots(b) {
+  return '<span class="ent-dots">' + gigTrail(b).map(([l, ok]) => '<i class="' + (ok ? 'is-on' : '') + '" title="' + attr(l) + (ok ? ' ✓' : '') + '"></i>').join('') + '</span>';
+}
+function gigTrailHtml(b) {
+  const steps = gigTrail(b);
+  const next = steps.find(([, ok]) => !ok);
+  return '<div class="ent-trail">' + steps.map(([l, ok]) => '<div class="ent-step' + (ok ? ' is-on' : '') + '"><span>' + (ok ? '&#10003;' : '') + '</span><em>' + esc(l) + '</em></div>').join('<b></b>') + '</div>'
+    + (next ? '<p class="ent-next">Next: <b>' + esc(next[0]) + '</b>' + (next[0] === 'DJ confirmed' || next[0] === 'Times in' ? ' &mdash; text the DJ their link below.' : '') + '</p>' : '<p class="ent-next is-done">All done &#10003;</p>');
+}
+
+function gigsMainHtml() {
+  const today = isoDay(new Date());
+  const all = state.schedule || [];
+  const upcoming = all.filter((b) => b.date >= today);
+  const weekEnd = isoDay(new Date(Date.now() + (7 - ((new Date().getDay() + 6) % 7) - 1) * 86400000));
+  const thisWeek = upcoming.filter((b) => b.date <= weekEnd);
+  const waitingDj = upcoming.filter((b) => !b.djConfirmedAt && (b.status || 'confirmed') === 'confirmed');
+  const twoWeeksAgo = isoDay(new Date(Date.now() - 14 * 86400000));
+  const timesDue = all.filter((b) => b.date < today && b.date >= twoWeeksAgo && !b.timesConfirmedAt && b.templateId);
+  const shown = filteredBookings();
+  return `
+      <div class="inv-main">
+        ${entHead('gigs')}
+        <div class="inv-tiles">
+          ${invTile('&#128197;', 'inv-t-blue', thisWeek.length, 'This week', '')}
+          ${invTile('&#127925;', 'inv-t-green', upcoming.length, 'Upcoming', '')}
+          ${invTile('&#9203;', 'inv-t-amber', waitingDj.length, 'Waiting on DJ', '')}
+          ${invTile('&#128338;', 'inv-t-slate', timesDue.length, 'Times to come in', '')}
+        </div>
+        ${importBanner()}
+        <div class="ent-split">
+          ${calendarHtml()}
+          <section class="ad-card ent-list">
+            <div class="ad-book-tabs">
+              <div class="ad-tabs" role="group" aria-label="Which bookings">
+                ${BOOK_TABS.map((t) => `<button type="button" class="ad-tab${state.bookFilter.tab === t.key ? ' is-on' : ''}" data-book-tab="${attr(t.key)}">${esc(t.label)}</button>`).join('')}
+              </div>
+              <input type="search" id="ad-book-search" class="ad-search" placeholder="Search gigs..." value="${attr(state.bookFilter.text)}" aria-label="Search gigs">
+            </div>
+            <div class="ad-table-wrap inv-table-wrap">
+              <table class="ad-table inv-table">
+                <thead><tr><th>Date</th><th>DJ</th><th>Venue</th><th>Times</th><th>Progress</th><th></th></tr></thead>
+                <tbody>
+                  ${shown.length ? shown.map((b) => {
+                    const act = (state.talent || []).find((t) => t.slug === b.slug) || {};
+                    return `<tr class="inv-row${state.bookingOpen === b.id && state.entPanel ? ' is-open' : ''}${b.date < today ? ' is-past' : ''}" data-book-open="${attr(b.id)}">
+                      <td class="ad-cell-strong ent-date">${esc(prettyDate(b.date))}</td>
+                      <td class="inv-item-cell"><span class="ad-act-face ent-face" style="${act.photo ? `background-image:url('/${attr(act.photo)}')` : ''}"></span><span class="inv-item-name">${esc(act.name || b.slug)}</span></td>
+                      <td class="ad-cell-muted">${esc(String(b.venue || '—').split(',')[0])}</td>
+                      <td class="ad-cell-muted">${esc(b.time || '—')}</td>
+                      <td>${gigDots(b)}</td>
+                      <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-book-open="${attr(b.id)}" aria-label="Open">&#8250;</button></td>
+                    </tr>`;
+                  }).join('') : '<tr><td colspan="6" class="ad-cell-muted">Nothing matches that.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>`;
+}
+
+/* ---------- DJs tab ---------- */
+const djRate = (slug) => (state.actRates || {})[slug] || {};
+function djNextGig(slug) {
+  const today = isoDay(new Date());
+  return (state.schedule || []).filter((b) => b.slug === slug && b.date >= today).sort((x, y) => x.date.localeCompare(y.date))[0] || null;
+}
+function djMainHtml() {
+  const acts = state.talent || [];
+  const needle = String(state.djSearch || '').trim().toLowerCase();
+  const rows = acts.filter((t) => !needle || searchMatch(needle, t.name, djRate(t.slug).location, ACT_LABELS[t.act]));
+  const withRate = acts.filter((t) => djRate(t.slug).hourlyRateCents).length;
+  const noEmail = acts.filter((t) => !djRate(t.slug).email).length;
+  return `
+      <div class="inv-main">
+        ${entHead('djs')}
+        <div class="inv-tiles">
+          ${invTile('&#127911;', 'inv-t-green', acts.length, 'DJs & acts', '')}
+          ${invTile('&#128176;', 'inv-t-blue', withRate, 'With a rate', '')}
+          ${invTile('&#9993;', 'inv-t-amber', noEmail, 'Missing email', '')}
+          ${invTile('&#128197;', 'inv-t-slate', (state.schedule || []).filter((b) => b.date >= isoDay(new Date())).length, 'Upcoming gigs', '')}
+        </div>
+        <div class="inv-toolbar">
+          <input type="search" id="dj-search" class="ad-search" placeholder="Search DJs..." value="${attr(state.djSearch || '')}" aria-label="Search DJs">
+        </div>
+        <div class="ad-table-wrap inv-table-wrap">
+          <table class="ad-table inv-table">
+            <thead><tr><th>Name</th><th>Act</th><th>Location</th><th class="inv-num">Rate</th><th>Contact</th><th>Next gig</th><th></th></tr></thead>
+            <tbody>
+              ${rows.length ? rows.map((t) => {
+                const r = djRate(t.slug);
+                const nx = djNextGig(t.slug);
+                return `<tr class="inv-row${state.openDj === t.slug ? ' is-open' : ''}" data-dj-open="${attr(t.slug)}">
+                  <td class="inv-item-cell"><span class="ad-act-face ent-face" style="${t.photo ? `background-image:url('/${attr(t.photo)}')` : ''}"></span><span class="inv-item-name">${esc(t.name)}</span></td>
+                  <td><span class="inv-pill inv-st-blue">${esc(ACT_LABELS[t.act] || t.act || 'DJ')}</span></td>
+                  <td>${r.location ? esc(r.location) : '<span class="ad-cell-muted">—</span>'}</td>
+                  <td class="inv-num">${r.hourlyRateCents ? esc(money(r.hourlyRateCents)) + '<span class="inv-perday">/hr</span>' : '<span class="ad-cell-muted">—</span>'}</td>
+                  <td>${r.phone || r.email ? esc([r.phone, r.email].filter(Boolean).join(' · ')) : '<span class="inv-pill inv-st-amber">Add contact</span>'}</td>
+                  <td>${nx ? esc(prettyDate(nx.date)) + ' <span class="ad-cell-muted">' + esc(String(nx.venue || '').split(',')[0]) + '</span>' : '<span class="ad-cell-muted">—</span>'}</td>
+                  <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-dj-open="${attr(t.slug)}" aria-label="Edit">&#8250;</button></td>
+                </tr>`;
+              }).join('') : '<tr><td colspan="7" class="ad-cell-muted">No DJs match. Try clearing the search, or add one above.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+        ${regularNightsPanel()}
+      </div>`;
+}
+function djDetailHtml() {
+  const isNew = state.openDj === '__new__';
+  const t = isNew ? {} : ((state.talent || []).find((x) => x.slug === state.openDj) || {});
+  const r = isNew ? {} : djRate(state.openDj);
+  const d = (c) => (c ? (c / 100).toFixed(2).replace(/\.00$/, '') : '');
+  const today = isoDay(new Date());
+  const gigs = isNew ? [] : (state.schedule || []).filter((b) => b.slug === state.openDj && b.date >= today).sort((x, y) => x.date.localeCompare(y.date)).slice(0, 8);
+  return `
+    <aside class="inv-detail ent-detail" aria-label="DJ">
+      <header class="inv-detail-head">
+        <div><h2>${isNew ? 'New DJ' : esc(t.name || 'DJ')}</h2>${isNew ? '' : '<p class="inv-detail-sub">' + esc(ACT_LABELS[t.act] || 'DJ') + '</p>'}</div>
+        <button type="button" class="inv-detail-close" data-ent-close aria-label="Close">&times;</button>
+      </header>
+      <div class="inv-detail-body">
+        ${t.photo ? `<div class="ent-djphoto" style="background-image:url('/${attr(t.photo)}')"></div>` : ''}
+        <label class="ad-field"><span>Name</span><input class="ad-input" id="dj-f-name" value="${attr(t.name || '')}" ${isNew ? '' : 'readonly'} placeholder="e.g. DJ Lucas"></label>
+        <label class="ad-field"><span>Act</span><select class="ad-select" id="dj-f-act">${Object.keys(ACT_LABELS).map((k) => `<option value="${attr(k)}"${(t.act || 'dj') === k ? ' selected' : ''}>${esc(ACT_LABELS[k])}</option>`).join('')}</select></label>
+        <label class="ad-field"><span>Photo (on the website)</span><input class="ad-input" id="dj-f-photo" value="${attr(t.photo || '')}" placeholder="images/talent/name.jpg"></label>
+        <div class="ent-2col">
+          <label class="ad-field"><span>Rate per hour ($)</span><input class="ad-input" type="number" min="0" step="1" id="dj-f-rate" value="${attr(d(r.hourlyRateCents))}"></label>
+          <label class="ad-field"><span>Location (where they live)</span><input class="ad-input" id="dj-f-loc" value="${attr(r.location || '')}" placeholder="e.g. Mackay"></label>
+          <label class="ad-field"><span>Phone</span><input class="ad-input" type="tel" id="dj-f-phone" value="${attr(r.phone || '')}" placeholder="Mobile"></label>
+          <label class="ad-field"><span>Email</span><input class="ad-input" type="email" id="dj-f-email" value="${attr(r.email || '')}" placeholder="For booking emails"></label>
+        </div>
+        <label class="ad-field"><span>Their deck (what they bring - goes on the pick list)</span><input class="ad-input" id="dj-f-deck" value="${attr(r.deck || '')}" placeholder="e.g. Pioneer DDJ-1000 - needs 2x XLR. Or: none, uses ours"></label>
+        <p class="ad-cell-muted ent-private">Rate, location, phone, email and deck are private - only the name, act and photo show on the website.</p>
+        ${gigs.length ? '<p class="ent-sub">Upcoming gigs</p><ul class="ent-gigs">' + gigs.map((b) => '<li><b>' + esc(prettyDate(b.date)) + '</b> ' + esc(String(b.venue || '').split(',')[0]) + ' ' + gigDots(b) + '</li>').join('') + '</ul>' : ''}
+      </div>
+      <footer class="inv-detail-foot">
+        <button type="button" class="ad-btn ad-btn-primary" id="dj-save">Save</button>
+        ${isNew ? '' : '<button type="button" class="ad-btn" data-dj-book="' + attr(state.openDj) + '">Book this DJ</button><button type="button" class="ad-btn ad-btn-danger" data-act-remove="' + attr(state.openDj) + '">Remove</button>'}
+        <span class="ad-quote-msg" id="dj-msg"></span>
+      </footer>
+    </aside>`;
+}
+
+function wireEntPage() {
+  const desk = document.getElementById('ad-desk');
+  desk.querySelectorAll('[data-ent-tab]').forEach((b) => b.addEventListener('click', () => {
+    state.entTab = b.getAttribute('data-ent-tab'); state.entPanel = false; state.bookEditing = false; state.openDj = null; render();
+  }));
+  desk.querySelectorAll('[data-ent-close]').forEach((b) => b.addEventListener('click', () => {
+    state.entPanel = false; state.bookEditing = false; state.openDj = null; render();
+  }));
+  // DJs tab
+  const ds = document.getElementById('dj-search');
+  if (ds) ds.addEventListener('input', () => { state.djSearch = ds.value; const pos = ds.selectionStart; render(); const n = document.getElementById('dj-search'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } });
+  desk.querySelectorAll('[data-dj-open]').forEach((r) => r.addEventListener('click', () => { state.openDj = r.getAttribute('data-dj-open'); render(); }));
+  desk.querySelectorAll('[data-dj-new]').forEach((b) => b.addEventListener('click', () => { state.openDj = '__new__'; render(); }));
+  desk.querySelectorAll('[data-dj-book]').forEach((b) => b.addEventListener('click', () => {
+    state.entTab = 'gigs'; state.openDj = null; state.entPanel = true; state.bookEditing = true;
+    state.bookDraft = { date: '', slug: b.getAttribute('data-dj-book'), status: 'confirmed' };
+    render();
+  }));
+  const save = document.getElementById('dj-save');
+  if (save) save.addEventListener('click', async () => {
+    const v = (id) => String((document.getElementById(id) || {}).value || '').trim();
+    const msg = document.getElementById('dj-msg');
+    const isNew = state.openDj === '__new__';
+    const name = v('dj-f-name');
+    if (!name) { msg.textContent = 'Give the DJ a name.'; msg.className = 'ad-quote-msg is-bad'; return; }
+    const slug = isNew ? name.toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) : state.openDj;
+    if (!slug) { msg.textContent = 'That name has no letters or numbers in it.'; return; }
+    save.disabled = true; msg.textContent = 'Saving…'; msg.className = 'ad-quote-msg';
+    try {
+      const { doc, setDoc, serverTimestamp } = fb.f;
+      await setDoc(doc(fb.db, 'talent', slug), { name, act: v('dj-f-act') || 'dj', photo: v('dj-f-photo'), hidden: false, updatedAt: serverTimestamp() }, { merge: true });
+      await setDoc(doc(fb.db, 'actRates', slug), {
+        hourlyRateCents: Math.max(0, Math.round((parseFloat(v('dj-f-rate')) || 0) * 100)),
+        location: v('dj-f-loc').slice(0, 80), phone: v('dj-f-phone').slice(0, 40),
+        email: v('dj-f-email').toLowerCase().slice(0, 200), deck: v('dj-f-deck').slice(0, 300), updatedAt: Date.now(),
+      }, { merge: true });
+      await Promise.all([loadTalent(), loadPubSettings()]);
+      state.openDj = slug;
+      render();
+      const m = document.getElementById('dj-msg'); if (m) { m.textContent = 'Saved.'; m.className = 'ad-quote-msg is-ok'; }
+    } catch (err) { save.disabled = false; msg.textContent = friendly(err); msg.className = 'ad-quote-msg is-bad'; }
+  });
+}
 
 /*  The month grid. Monday first, because that is how a week is read here,
     and every day carries a dot for each booking on it so the shape of the
@@ -2733,11 +2878,12 @@ function bookingPanel(b) {
             <button type="button" class="ad-btn ad-btn-danger" data-book-remove="${attr(b.id)}">
               Remove
             </button>
-            ${b.templateId ? (() => {
+            ${(() => {
               const inv = (state.quoteDocs || []).find((q) => q.gigBookingId === b.id && q.status !== 'cancelled');
-              return `<button type="button" class="ad-btn" data-pub-times="${attr(b.id)}">&#128241; Text DJ their times link</button>
+              const dk = ((state.actRates || {})[b.slug] || {}).deck;
+              return `${dk ? '<p class="ent-deck">&#127911; Their deck: <b>' + esc(dk) + '</b></p>' : ''}<button type="button" class="ad-btn" data-pub-times="${attr(b.id)}">&#128241; Text DJ their link</button>
               ${inv ? `<a class="ad-btn" href="#/quoteDocs?q=${attr(inv.id)}">Invoice ${esc(money(inv.totalCents))} &middot; ${esc(inv.status === 'approved' ? 'ready' : inv.status)}</a>` : ''}`;
-            })() : ''}
+            })()}
           </div>
         </div>
 
@@ -3128,6 +3274,7 @@ function wireEntertainment() {
       if (ev.target.closest('[data-book-remove]')) return;
       state.bookingOpen = el.getAttribute('data-book-open');
       state.bookEditing = false;
+      state.entPanel = true;
       render();
     });
   });
@@ -3138,6 +3285,7 @@ function wireEntertainment() {
     fresh.addEventListener('click', () => {
       state.bookDraft = { date: '', slug: (state.talent[0] || {}).slug || '', status: 'confirmed' };
       state.bookEditing = true;
+      state.entPanel = true;
       render();
     });
   }
@@ -3216,6 +3364,7 @@ function wireEntertainment() {
           await fb.f.deleteDoc(fb.f.doc(fb.db, 'talentSchedule', old));
         }
         // the pub's invoice for each of those nights (and the night it moved from)
+        for (const m of made) call('adminDjBooked', { bookingId: m.id }).catch(() => {});   // "you're booked - please confirm" (Max, 21 Oct 2026)
         const pubNotes = await gigSyncBookings(made.map((m) => m.id).concat(oldB && !made.some((m) => m.id === oldB.id) ? [oldB.id] : []));
         if (pubNotes.length) window.alert(pubNotes.join('\n\n'));
         await loadSchedule();
@@ -3278,7 +3427,7 @@ function wireEntertainment() {
         const gone = (state.schedule || []).find((x) => x.id === id);
         await fb.f.deleteDoc(fb.f.doc(fb.db, 'talentSchedule', id));
         if (gone) await gigSyncBookings([gone.id]);   // cancels that gig's invoice
-        if (state.bookingOpen === id) state.bookingOpen = null;
+        if (state.bookingOpen === id) { state.bookingOpen = null; state.entPanel = false; }
         await loadSchedule();
         render();
       } catch (err) {
@@ -3394,6 +3543,7 @@ function wireEntertainment() {
         }, { merge: true });
 
         await loadTalent();
+        state.openDj = null;
         render();
         say('ad-act-msg', (act.name || slug) + ' removed.', true);
       } catch (err) {
@@ -7975,7 +8125,7 @@ function resourceFromDoc(doc) {
   const b = blankResource(doc.type);
   return {
     type: RES_TYPES[doc.type] ? doc.type : 'staff',
-    name: doc.name || '', role: doc.role || '', phone: doc.phone || '',
+    name: doc.name || '', role: doc.role || '', phone: doc.phone || '', email: doc.email || '',   // keep it on edit (Max, 21 Oct 2026)
     rego: doc.rego || '', capacity: doc.capacity || '',
     dayRateCents: Math.max(0, Math.round(doc.dayRateCents || 0)),
     active: doc.active !== false,

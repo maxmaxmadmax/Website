@@ -4760,3 +4760,42 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-tpl{ display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--ad-muted); margin-right:6px; cursor:pointer; }
 .qb-tpl input{ accent-color:var(--ad-orange); width:16px; height:16px; }
 .qb-tplbar{ margin:0 0 12px; padding:10px 14px; border-radius:10px; background:#eef2ff; color:#3730a3; font-size:13px; }
+
+/* ENTERTAINMENT overhaul - looks like Crew & Vehicles (Max, 21 Oct 2026) */
+.ent-tabs{ display:inline-flex; background:var(--ad-grey-bg); border-radius:10px; padding:3px; margin-right:8px; }
+.ent-tab{ border:0; background:transparent; padding:7px 16px; border-radius:8px; font:inherit; font-size:13px; font-weight:700; color:var(--ad-muted); cursor:pointer; }
+.ent-tab.is-on{ background:#fff; color:var(--ad-text); box-shadow:0 1px 3px rgba(0,0,0,.12); }
+.ent-split{ display:grid; grid-template-columns:minmax(300px, 420px) minmax(0, 1fr); gap:16px; align-items:start; }
+.ent-split .ad-cal{ margin:0; }
+.ent-list .ad-book-tabs{ padding:12px 14px; }
+.ent-list .ad-search{ max-width:240px; }
+.ent-face{ width:30px; height:30px; flex:none; }
+.ent-date{ white-space:nowrap; }
+.inv-row.is-past td{ opacity:.6; }
+.ent-dots{ display:inline-flex; gap:4px; vertical-align:middle; }
+.ent-dots i{ width:9px; height:9px; border-radius:50%; background:#dfe2e8; }
+.ent-dots i.is-on{ background:var(--ad-green); }
+.ent-detail{ position:relative; }
+.ent-x{ position:absolute; top:10px; right:12px; z-index:2; }
+.ent-trail{ display:flex; align-items:flex-start; padding:16px 16px 4px; gap:0; }
+.ent-trail > b{ flex:1; height:2px; background:#dfe2e8; margin-top:11px; }
+.ent-step{ display:flex; flex-direction:column; align-items:center; gap:4px; width:52px; text-align:center; }
+.ent-step span{ width:24px; height:24px; border-radius:50%; border:2px solid #dfe2e8; background:#fff; color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; }
+.ent-step.is-on span{ background:var(--ad-green); border-color:var(--ad-green); }
+.ent-step em{ font-style:normal; font-size:10.5px; line-height:1.2; color:var(--ad-muted); }
+.ent-step.is-on em{ color:var(--ad-text); font-weight:700; }
+.ent-next{ margin:6px 16px 0; font-size:13px; color:var(--ad-muted); }
+.ent-next.is-done{ color:var(--ad-green); font-weight:700; }
+.ent-deck{ margin:0 0 8px; font-size:13px; padding:8px 10px; background:var(--ad-orange-soft); border-radius:8px; width:100%; }
+.ent-djphoto{ height:140px; border-radius:12px; background:#eee center/cover; margin-bottom:12px; }
+.ent-2col{ display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
+.ent-private{ font-size:12px; margin:4px 0 12px; }
+.ent-sub{ font-size:12px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--ad-muted); margin:10px 0 4px; }
+.ent-gigs{ list-style:none; margin:0; padding:0; font-size:13px; }
+.ent-gigs li{ padding:6px 0; border-top:1px solid var(--ad-line); display:flex; gap:8px; align-items:center; }
+.ent .ad-regular{ margin-top:16px; }
+@media (max-width:1100px){ .ent-split{ grid-template-columns:1fr; } }
+/* quotes Max made himself skip the Estimate step - greyed out (Max, 21 Oct 2026) */
+.sp-step.is-skip b{ background:#eceef2; border-color:#d5d8de; }
+.sp-step.is-skip em{ color:#c0c4cc; }
+.sp-step.is-skip + .sp-step.is-done::before{ background:#d5d8de; }

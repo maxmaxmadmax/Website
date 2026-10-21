@@ -10,7 +10,7 @@
    (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { isBooked, pickProgress } from './stock.js?v=647';
+import { isBooked, pickProgress } from './stock.js?v=648';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -257,10 +257,13 @@ export function rowsHtml(rows, f, h) {
     const st = stageOf(q);
     const c = q.customer || {};
     const num = q.kind === 'invoice' && q.invoiceNumber ? q.invoiceNumber : q.number;
+    // only the website bot makes estimates - a quote Max made himself skips that step (Max, 21 Oct 2026)
+    const fromBot = q.source === 'bot' || q.createdBy === 'bot';
     const progress = steps.map((label, i) => {
       const done = i < st.step;
-      const cls = done ? (st.step === 4 ? ' is-done is-green' : ' is-done') : '';
-      return `<span class="sp-step${cls}"><b>${done ? '&#10003;' : ''}</b><em>${label}</em></span>`;
+      const skipped = i === 0 && !fromBot;
+      const cls = skipped ? ' is-skip' : done ? (st.step === 4 ? ' is-done is-green' : ' is-done') : '';
+      return `<span class="sp-step${cls}"${skipped ? ' title="Made as a quote - no estimate step"' : ''}><b>${done && !skipped ? '&#10003;' : ''}</b><em>${label}</em></span>`;
     }).join('');
     const [ico, tone, nTitle, nSub] = st.next;
     if (q.vendor) {

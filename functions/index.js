@@ -5056,6 +5056,10 @@ exports.getPubTimes = onCall(async (request) => {
     act: (t.exists && t.data().name) || b.slug, date: b.date, venue: b.venue || '',
     start: b.actualStart || b.start || '', finish: b.actualFinish || b.finish || '',
     confirmed: !!b.timesConfirmedAt,
+    // before the gig the link asks "are you in?"; from 5pm on the night it asks for times (Max, 21 Oct 2026)
+    mode: brisbaneTodayISO() < b.date || (brisbaneTodayISO() === b.date && brisbaneMinutesNow() < 17 * 60) ? 'confirm' : 'times',
+    djConfirmed: !!b.djConfirmedAt,
+    plannedStart: b.start || '', plannedFinish: b.finish || '',
   };
 });
 
@@ -5204,6 +5208,8 @@ async function gigSync(bookingId) {
     hire: { startDate: b.date, endDate: b.date, days: 1 },
   });
   const money = quoteMoney(clean);
+  // the DJ's own deck goes on the pick list so setup staff bring the right cables (Max, 21 Oct 2026)
+  if (rate.deck) clean.crewNotes = 'DJ deck (' + name + '): ' + String(rate.deck).slice(0, 300);
   const meta = { gigBookingId: id, pubNight: true, pubKey: 'gig|' + id, pubVenue: b.venue || '', pubDate: b.date, pubBookings: [id], pubNoRate: notes, gigHours: hours, gigTemplateId: String(b.templateId) };
   if (existing) {
     await existing.ref.update({ ...clean, ...money, ...meta, status: 'approved', updatedAt: FieldValue.serverTimestamp() });
@@ -5228,3 +5234,89 @@ exports.adminGigSync = onCall(async (request) => {
   requireAdmin(request);
   return gigSync((request.data || {}).bookingId);
 });
+
+/* =========================================================================
+   DJ CONFIRMS + DJ EMAILS  (Max, 21 Oct 2026 - Entertainment overhaul)
+   One link per gig (/dj-times?t=). Before the gig the DJ taps "I'm in"
+   (djConfirmedAt); after it, they put in their times. Emails go to the DJ's
+   email on the roster (actRates) - texts need a paid SMS service, which
+   Max will look at later:
+     - when Max books them: "You're booked - please confirm"
+     - 9:35am the day before: a reminder
+     - 9:35am the day after: "please put in your times" (if not in yet)
+   ========================================================================= */
+async function ensureTimesToken(ref, b) {
+  if (b.timesToken) return b.timesToken;
+  const token = crypto.randomBytes(16).toString('hex');
+  await ref.update({ timesToken: token });
+  return token;
+}
+async function djEmailFor(b) {
+  const [t, r] = await Promise.all([db.collection('talent').doc(b.slug).get(), db.collection('actRates').doc(b.slug).get()]);
+  return { name: (t.exists && t.data().name) || b.slug, email: String((r.exists && r.data().email) || '').trim() };
+}
+async function emailDj(ref, b, kind) {
+  const dj = await djEmailFor(b);
+  if (!DETAIL_EMAIL_RE.test(dj.email)) return { sent: false, reason: 'no email' };
+  const token = await ensureTimesToken(ref, b);
+  const link = SITE_URL + '/dj-times?t=' + token;
+  const first = dj.name.split(' ')[0];
+  const where = String(b.venue || 'the gig').split(',')[0];
+  const when = prettyDay(b.date) + (b.start ? ', ' + ampm(b.start) + (b.finish ? ' to ' + ampm(b.finish) : '') : '');
+  const msg = kind === 'booked'
+    ? { subject: "You're booked: " + where + ' ' + prettyDay(b.date), body: 'Hi ' + first + ',\n\nYou are booked to play ' + where + ' on ' + when + '.\n\nPlease tap the button to confirm you are in.\n\nThanks,\nMax\nSoundzGood Whitsundays - 0422 393 022', label: "I'm in - confirm" }
+    : kind === 'tomorrow'
+      ? { subject: "Tomorrow: you're on at " + where, body: 'Hi ' + first + ',\n\nJust a reminder - you are playing ' + where + ' tomorrow, ' + when + '.' + (b.djConfirmedAt ? '' : '\n\nPlease tap the button to confirm you are in.') + '\n\nThanks,\nMax\nSoundzGood Whitsundays - 0422 393 022', label: b.djConfirmedAt ? 'View the gig' : "I'm in - confirm" }
+      : { subject: 'Your times for ' + where + ' ' + prettyDay(b.date), body: 'Hi ' + first + ',\n\nThanks for playing ' + where + '! Please tap the button and put in when you started and finished.\n\nThanks,\nMax\nSoundzGood Whitsundays - 0422 393 022', label: 'Put in my times' };
+  return sendMessageEmail({ subject: msg.subject, body: msg.body }, {}, { to: dj.email, actions: [{ label: msg.label, url: link, primary: true }] });
+}
+
+/*  ADMIN - right after booking: the "you're booked" email (once per booking) */
+exports.adminDjBooked = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  requireAdmin(request);
+  const ref = db.collection('talentSchedule').doc(String((request.data || {}).bookingId || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'No such booking.');
+  const b = snap.data();
+  if (b.bookedEmailAt || (b.status || 'confirmed') !== 'confirmed' || b.djConfirmedAt) return { skipped: true };
+  if (b.date < brisbaneTodayISO()) return { skipped: true };
+  const r = await emailDj(ref, b, 'booked');
+  if (r.sent) await ref.update({ bookedEmailAt: FieldValue.serverTimestamp() });
+  return { sent: !!r.sent, reason: r.reason || r.error || '' };
+});
+
+/*  PUBLIC - the DJ taps "I'm in" */
+exports.submitDjConfirm = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  await limitIp(request, 'djconfirm', 20, 60);
+  const doc = await bookingByTimesToken((request.data || {}).token);
+  const b = doc.data();
+  if (b.djConfirmedAt) return { ok: true, already: true };
+  await doc.ref.update({ djConfirmedAt: FieldValue.serverTimestamp() });
+  const dj = await djEmailFor(b);
+  await sendMessageEmail({
+    subject: dj.name + " is in - " + String(b.venue || 'gig').split(',')[0] + ' ' + prettyDay(b.date),
+    body: dj.name + ' confirmed they are playing ' + (b.venue || 'the gig') + ' on ' + prettyDay(b.date) + '.',
+  }, {}, { to: process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au' });
+  return { ok: true };
+});
+
+/*  9:35am every day: tomorrow's reminders, yesterday's "put in your times" */
+exports.djReminders = onSchedule(
+  { schedule: '35 9 * * *', timeZone: MSG_TZ, secrets: [SMTP_USER, SMTP_PASS], timeoutSeconds: 300 },
+  async () => {
+    const today = brisbaneTodayISO();
+    const tomorrow = addDaysISO(today, 1), yesterday = addDaysISO(today, -1);
+    for (const [day, kind, flag] of [[tomorrow, 'tomorrow', 'remindedAt'], [yesterday, 'times', 'timesAskedAt']]) {
+      const snap = await db.collection('talentSchedule').where('date', '==', day).get();
+      for (const d of snap.docs) {
+        const b = d.data();
+        if ((b.status || 'confirmed') !== 'confirmed' || b[flag]) continue;
+        if (kind === 'times' && b.timesConfirmedAt) continue;
+        try {
+          const r = await emailDj(d.ref, b, kind);
+          if (r.sent) await d.ref.update({ [flag]: FieldValue.serverTimestamp() });
+        } catch (e) { logger.error('djReminders', { id: d.id, err: e && e.message }); }
+      }
+    }
+  }
+);
