@@ -4732,3 +4732,8 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .db-modal-list em{ margin-left:auto; font-style:normal; font-size:11px; color:var(--ad-amber); background:var(--ad-amber-bg); padding:1px 7px; border-radius:20px; }
 .db-modal-note{ font-size:12px; color:var(--ad-muted); margin:12px 0; }
 .db-modal-acts{ display:flex; justify-content:flex-end; gap:8px; }
+/* weather cards 25% smaller (Max, 21 Oct 2026) */
+.db-wxbox{ zoom:.75; }
+.db-job{ grid-template-columns:86px minmax(0, 1fr) 92px 300px; }
+@media (max-width:1100px){ .db-job{ grid-template-columns:86px minmax(0, 1fr) 92px; } }
+@media (max-width:640px){ .db-job{ grid-template-columns:1fr; } }
