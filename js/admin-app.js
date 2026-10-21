@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=653';
+} from './firebase-config.js?v=654';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=653';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=653';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=653';
-import { messagesHtml, wireMessages } from './messages.js?v=653';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=653';
-import { expandKit } from './kit.js?v=653';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=654';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=654';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=654';
+import { messagesHtml, wireMessages } from './messages.js?v=654';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=654';
+import { expandKit } from './kit.js?v=654';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2806,7 +2806,7 @@ function bookingPanel(b) {
           <select id="ad-f-tpl">${tpls.length ? '' : '<option value="">No templates yet - make one in Sales Pipeline &gt; Templates</option>'}${tpls.map((q) => `<option value="${attr(q.id)}"${q.id === tplSel ? ' selected' : ''}>${esc(q.templateName || (q.customer && q.customer.eventName) || q.number)}</option>`).join('')}</select>
         </label>`; })()}
 
-        ${(() => { const rn = regularNightFor(draft.venue || 'Grand View Hotel, Bowen'); const st = draft.start || (!draft.id && rn ? rn.start : '') || ''; const fi = draft.finish || (!draft.id && rn ? rn.finish : '') || ''; return `
+        ${(() => { const rn = regularNightFor(draft.venue || 'Grand View Hotel, Bowen'); const st = draft.start || (!draft.id && rn ? rn.start : '') || (!draft.id ? '21:30' : ''); const fi = draft.finish || (!draft.id && rn ? rn.finish : '') || (!draft.id ? '01:30' : ''); return `
         <div class="ad-book-times">
           <label class="ad-field">Start
             <select id="ad-f-start">${timeOpts15(st)}</select>

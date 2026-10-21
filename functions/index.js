@@ -5175,8 +5175,9 @@ async function gigSync(bookingId) {
   const name = (t.exists && t.data().name) || b.slug;
   const r = await db.collection('actRates').doc(b.slug).get();
   const rate = r.exists ? r.data() : {};
-  const start = b.actualStart || b.start || '';
-  const finish = b.actualFinish || b.finish || '';
+  // every gig quote starts at 4 hours, 9:30pm-1:30am; the DJ's real times replace it (Max, 21 Oct 2026)
+  const start = b.actualStart || '21:30';
+  const finish = b.actualFinish || '01:30';
   const hours = gigHours(start, finish);
   const perHour = Math.max(0, Math.round(rate.hourlyRateCents || 0));
   const notes = [];
@@ -5191,7 +5192,7 @@ async function gigSync(bookingId) {
   if (tr.cents) djLines.push({ type: 'custom', name: 'DJ travel - ' + name, description: tr.from + ' to ' + tr.to, qty: 1, unitCents: tr.cents, days: 1, pubDj: true, noPick: true });
   if (tr.missing) notes.push(name + ' (no travel fee set for ' + tr.missing + ')');
 
-  let lines = (tpl.lines || []).filter((l) => !l.pubDj && l.type !== 'fee').concat(djLines);
+  let lines = djLines.concat((tpl.lines || []).filter((l) => !l.pubDj && l.type !== 'fee'));   // the DJ at the top (Max, 21 Oct 2026)
   if ((tpl.lines || []).some((l) => l.type === 'fee') && tpl.feeExcluded !== true) {
     const pre = quoteMoney({ hire: { days: 1 }, lines, discountCents: tpl.discountCents || 0 });
     const fee = Math.round(pre.netCents * 2 / 100 / 1000) * 1000;

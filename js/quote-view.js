@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=653';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=653';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=654';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=654';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -206,8 +206,10 @@ function render(q) {
 
   /*  SECTIONS. A unit is a top line plus the included parts under it; each
       unit goes into one section, in this order.                          */
-  const SECTION_ORDER = COST_GROUP_ORDER.concat(['Labour', 'Travel & transport', 'Booking & admin', 'Discount']);
+  // the DJ (gig invoices) goes first, in its own section (Max, 21 Oct 2026)
+  const SECTION_ORDER = ['Entertainment'].concat(COST_GROUP_ORDER, ['Labour', 'Travel & transport', 'Booking & admin', 'Discount']);
   const sectionOf = (l) => {
+    if (l.pubDj) return 'Entertainment';
     if (l.type === 'labour' || l.resType === 'staff') return 'Labour';
     if (l.type === 'delivery' || l.resType === 'vehicle' || l.resType === 'trailer') return 'Travel & transport';
     if (l.type === 'fee') return 'Booking & admin';
