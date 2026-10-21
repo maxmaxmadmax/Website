@@ -2532,6 +2532,7 @@ function sanitizeQuote(q) {
     feeExcluded: q.feeExcluded === true,
     autoSendOnDetails: q.autoSendOnDetails === true,   // send the quote when the customer fills in their details (Max, 20 Oct 2026)
     isTemplate: q.isTemplate === true,   // Sales Pipeline > Templates: a DJ gig invoice to copy - never sent (Max, 21 Oct 2026)
+    templateName: text(q.templateName, 80),   // its own name, e.g. "Grand View Friday"
     labourPH: { setup: !!(q.labourPH && q.labourPH.setup), pack: !!(q.labourPH && q.labourPH.pack) },
     labourOff: { setup: !!(q.labourOff && q.labourOff.setup), pack: !!(q.labourOff && q.labourOff.pack) },
     labourPackDate: /^\d{4}-\d{2}-\d{2}$/.test(String(q.labourPackDate || '')) ? String(q.labourPackDate) : '',
@@ -5198,7 +5199,7 @@ async function gigSync(bookingId) {
   }
   const tc = tpl.customer || {};
   const clean = sanitizeQuote({
-    ...tpl, isTemplate: false, kind: 'quote', labourPackDate: '', lines,
+    ...tpl, isTemplate: false, templateName: '', kind: 'quote', labourPackDate: '', lines,
     customer: {
       name: cust.name || '', business: cust.business || '', email: cust.email || '', ccEmail: cust.ccEmail || '',
       phone: cust.phone || '', address: cust.address || '',

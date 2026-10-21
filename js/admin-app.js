@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=650';
+} from './firebase-config.js?v=651';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=650';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=650';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=650';
-import { messagesHtml, wireMessages } from './messages.js?v=650';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=650';
-import { expandKit } from './kit.js?v=650';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=651';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=651';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=651';
+import { messagesHtml, wireMessages } from './messages.js?v=651';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=651';
+import { expandKit } from './kit.js?v=651';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2803,7 +2803,7 @@ function bookingPanel(b) {
           <select id="ad-f-cust"><option value="">No invoice</option>${custs.map((c) => `<option value="${attr(c.id)}"${c.id === custSel ? ' selected' : ''}>${esc(c.business || c.name || c.email || 'Customer')}${c.business && c.name ? ' (' + esc(c.name) + ')' : ''}</option>`).join('')}</select>
         </label>
         <label class="ad-field">Template
-          <select id="ad-f-tpl">${tpls.length ? '' : '<option value="">No templates yet - make one in Sales Pipeline &gt; Templates</option>'}${tpls.map((q) => `<option value="${attr(q.id)}"${q.id === tplSel ? ' selected' : ''}>${esc((q.customer && q.customer.eventName) || q.number)}</option>`).join('')}</select>
+          <select id="ad-f-tpl">${tpls.length ? '' : '<option value="">No templates yet - make one in Sales Pipeline &gt; Templates</option>'}${tpls.map((q) => `<option value="${attr(q.id)}"${q.id === tplSel ? ' selected' : ''}>${esc(q.templateName || (q.customer && q.customer.eventName) || q.number)}</option>`).join('')}</select>
         </label>`; })()}
 
         ${(() => { const rn = regularNightFor(draft.venue || 'Grand View Hotel, Bowen'); const st = draft.start || (!draft.id && rn ? rn.start : '') || ''; const fi = draft.finish || (!draft.id && rn ? rn.finish : '') || ''; return `
@@ -5787,6 +5787,7 @@ function quoteFromDoc(doc) {
     feeExcluded: doc.feeExcluded === true,
     autoSendOnDetails: doc.autoSendOnDetails === true,
     isTemplate: doc.isTemplate === true,
+    templateName: doc.templateName || '',
     discountCents: Math.max(0, Math.round(doc.discountCents || 0)),
     labourExcluded: doc.labourExcluded === true,
     labourPH: { setup: !!(doc.labourPH && doc.labourPH.setup), pack: !!(doc.labourPH && doc.labourPH.pack) },
@@ -5874,7 +5875,7 @@ function quoteBuilderHtml() {
       <!-- toolbar (not part of the printed paper) -->
       <div class="qb-bar">
         <button type="button" class="qb-back" id="q-back">&larr; Sales Pipeline</button>
-        <div class="qb-bar-title"><h1>${esc(docWord)} #${esc(num)}</h1>${doc ? qdocPill(status) : '<span class="ad-pill ad-pill-grey">New</span>'}</div>
+        <div class="qb-bar-title"><h1>${quoteDraft.isTemplate ? 'Template: ' + esc(quoteDraft.templateName || 'Untitled') : esc(docWord) + ' #' + esc(num)}</h1>${doc ? qdocPill(status) : '<span class="ad-pill ad-pill-grey">New</span>'}</div>
         <div class="qb-bar-spacer"></div>
         ${link ? `<a class="ad-btn ad-btn-ghost" href="${attr(link)}" target="_blank" rel="noopener">Preview</a>` : ''}
         <span class="qb-auto" id="q-auto"></span>
@@ -5883,7 +5884,10 @@ function quoteBuilderHtml() {
         ${!quoteDraft.isTemplate && doc && status === 'draft' ? '<button type="button" class="ad-btn ad-btn-primary" id="q-approve">&#10003; Approve as quote</button>' : ''}
         ${!quoteDraft.isTemplate && doc && status !== 'draft' ? `<button type="button" class="ad-btn ad-btn-primary" id="q-send">${status === 'approved' ? '&#9993; Send Quote' : '&#9993; Resend'}</button>` : ''}
       </div>
-      ${quoteDraft.isTemplate ? '<div class="qb-tplbar">&#128203; <b>Template</b> &mdash; booking a DJ (Entertainment) with this template copies it into that gig&rsquo;s invoice, then adds the DJ&rsquo;s hours &times; rate and travel. A template is never sent. Leave the customer and dates blank.</div>' : ''}
+      ${quoteDraft.isTemplate ? `<div class="qb-tplbar">
+        <label class="qb-tplname"><span>Template name</span><input type="text" data-qtplname value="${attr(quoteDraft.templateName || '')}" placeholder="e.g. Grand View Friday" maxlength="80"></label>
+        <p>&#128203; Booking a DJ (Entertainment) with this template copies it into that gig&rsquo;s invoice, then adds the DJ&rsquo;s hours &times; rate and travel. A template is never sent. Leave the customer and dates blank.</p>
+      </div>` : ''}
 
       ${botCard}
 
@@ -5921,8 +5925,8 @@ function quoteBuilderHtml() {
           <div class="qb-to">
             <p class="qb-block-h">${isInvoice ? 'Bill to' : 'Quote to'}</p>
             ${quoteCustSearchHtml()}
-            <label class="qb-autosend"><input type="checkbox" data-qauto${quoteDraft.autoSendOnDetails ? ' checked' : ''}> Send them the quote automatically when they fill it in</label>
-            <button type="button" class="qb-askbtn" id="q-askdetails">&#128241; Text ${attr(String(c.name || 'the customer').split(' ')[0])} a link to fill in their own details</button>
+            ${quoteDraft.isTemplate ? '' : `<label class="qb-autosend"><input type="checkbox" data-qauto${quoteDraft.autoSendOnDetails ? ' checked' : ''}> Send them the quote automatically when they fill it in</label>
+            <button type="button" class="qb-askbtn" id="q-askdetails">&#128241; Text ${attr(String(c.name || 'the customer').split(' ')[0])} a link to fill in their own details</button>`}
             <label class="qb-fl"><span>Name</span><input class="qb-cin qb-cin-strong" data-qc="name" value="${attr(c.name)}" placeholder="Customer name"></label>
             <label class="qb-fl"><span>Business</span><input class="qb-cin" data-qc="business" value="${attr(c.business)}" placeholder="Business (optional)"></label>
             <label class="qb-fl"><span>Address</span><input class="qb-cin" data-qc="address" value="${attr(c.address)}" placeholder="Address"></label>
@@ -6826,6 +6830,7 @@ function wireQuoteBuilder() {
     // event date calendar: saved as "Tue 20 Oct 2026" like before
     if (t.hasAttribute('data-qauto')) { quoteDraft.autoSendOnDetails = t.checked; scheduleQuoteAutosave(); return; }
     if (t.hasAttribute('data-qtpl')) { quoteDraft.isTemplate = t.checked; scheduleQuoteAutosave(); render(); return; }
+    if (t.hasAttribute('data-qtplname')) { quoteDraft.templateName = t.value; scheduleQuoteAutosave(); return; }
     if (t.hasAttribute('data-qevdate')) { quoteDraft.customer.eventDate = prettyEventDate(t.value); return; }
     if (t.dataset.qmeta) { quoteDraft[t.dataset.qmeta] = t.value; return; }
     if (t.hasAttribute('data-qdisc')) {
@@ -7137,6 +7142,7 @@ function quoteDraftForSave() {
     feeExcluded: quoteDraft.feeExcluded === true,
     autoSendOnDetails: quoteDraft.autoSendOnDetails === true,
     isTemplate: quoteDraft.isTemplate === true,
+    templateName: String(quoteDraft.templateName || '').slice(0, 80),
     labourExcluded: quoteDraft.labourExcluded === true,
     labourOff: { setup: !!(quoteDraft.labourOff || {}).setup, pack: !!(quoteDraft.labourOff || {}).pack },
     labourPackDate: quoteDraft.labourPackDate || '',

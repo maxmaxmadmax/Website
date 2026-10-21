@@ -4808,3 +4808,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .inv-t-red{ background:var(--ad-red-bg); color:var(--ad-red); }
 .ent .inv-tiles:has(> :nth-child(5)){ grid-template-columns:repeat(5, minmax(0,1fr)); }
 @media (max-width:900px){ .ent .inv-tiles:has(> :nth-child(5)){ grid-template-columns:repeat(2, minmax(0,1fr)); } }
+.qb-tplbar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; }
+.qb-tplbar p{ margin:0; flex:1 1 320px; }
+.qb-tplname{ display:flex; align-items:center; gap:8px; font-weight:700; }
+.qb-tplname input{ padding:7px 10px; border:1px solid #c7d2fe; border-radius:8px; font:inherit; font-size:14px; min-width:220px; background:#fff; }
