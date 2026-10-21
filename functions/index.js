@@ -2531,6 +2531,7 @@ function sanitizeQuote(q) {
     labourExcluded: q.labourExcluded === true,
     feeExcluded: q.feeExcluded === true,
     autoSendOnDetails: q.autoSendOnDetails === true,   // send the quote when the customer fills in their details (Max, 20 Oct 2026)
+    isTemplate: q.isTemplate === true,   // Sales Pipeline > Templates: a DJ gig invoice to copy - never sent (Max, 21 Oct 2026)
     labourPH: { setup: !!(q.labourPH && q.labourPH.setup), pack: !!(q.labourPH && q.labourPH.pack) },
     labourOff: { setup: !!(q.labourOff && q.labourOff.setup), pack: !!(q.labourOff && q.labourOff.pack) },
     labourPackDate: /^\d{4}-\d{2}-\d{2}$/.test(String(q.labourPackDate || '')) ? String(q.labourPackDate) : '',
@@ -2898,6 +2899,7 @@ exports.adminSendQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
   }
 
   if (q.status === 'draft') throw new HttpsError('failed-precondition', 'Approve the estimate as a quote first.');
+  if (q.isTemplate) throw new HttpsError('failed-precondition', 'This is a template - it can\'t be sent.');
   const link = SITE_URL + '/quote?t=' + q.token;
   const mail = await sendQuoteLinkEmail(q, link);
 
@@ -5057,34 +5059,48 @@ exports.getPubTimes = onCall(async (request) => {
   };
 });
 
-/*  PUBLIC - the DJ confirms. Updates the booking and the pub's invoice. */
+/*  PUBLIC - the DJ confirms their times (Max, 21 Oct 2026):
+      - only 5pm to 2:30am can be picked; same start and finish is refused
+      - more than 8 hours is refused ("check with Max")
+      - 4 hours or less: the invoice goes to the customer straight away
+      - more than 4 hours: it waits for Max to check and send            */
 exports.submitPubTimes = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
   await limitIp(request, 'djtimes', 20, 60);
   const d = request.data || {};
-  const ok = (t) => /^\d{1,2}:\d{2}$/.test(String(t || ''));
-  if (!ok(d.start) || !ok(d.finish)) throw new HttpsError('invalid-argument', 'Please pick a start and a finish time.');
+  if (tradingMins(d.start) == null || tradingMins(d.finish) == null) throw new HttpsError('invalid-argument', 'Please pick times between 5pm and 2:30am.');
+  const hours = gigHours(d.start, d.finish);
+  if (!hours) throw new HttpsError('invalid-argument', 'The finish time has to be after the start time.');
+  if (hours > 8) throw new HttpsError('invalid-argument', 'That\'s more than 8 hours - please check with Max on 0422 393 022.');
   const doc = await bookingByTimesToken(d.token);
   const b = doc.data();
   await doc.ref.update({ actualStart: String(d.start), actualFinish: String(d.finish), timesConfirmedAt: FieldValue.serverTimestamp() });
-  const res = await pubSync(b.date, b.venue);
+  const res = await gigSync(doc.id);
+  let sent = false, why = '';
+  if (res.locked) why = 'The invoice had already been sent, so it was NOT changed - check it in the Sales Pipeline.';
+  else if (!res.id) why = 'No invoice was made (' + (res.skipped || 'no template') + ') - nothing was sent.';
+  else if (hours > 4) why = 'That\'s over 4 hours, so the invoice is WAITING for you to check and send it from the dashboard.';
+  else {
+    try { const m = await sendGigInvoice(res.id); sent = !!m.sent; why = sent ? 'The invoice (' + (m.invoiceNumber || '') + ') was sent to the customer automatically.' : 'The invoice did not send: ' + (m.error || m.reason || '') + ' - send it from the dashboard.'; }
+    catch (e) { why = 'The invoice did not send: ' + e.message + ' - send it from the dashboard.'; }
+  }
   const t = await db.collection('talent').doc(b.slug).get();
   const act = (t.exists && t.data().name) || b.slug;
   await sendMessageEmail({
-    subject: act + ' confirmed their times - ' + (b.venue || 'pub') + ' ' + prettyDay(b.date),
-    body: act + ' played ' + ampm(d.start) + ' to ' + ampm(d.finish) + ' (' + pubHours(d.start, d.finish) + ' hrs) at ' + (b.venue || 'the pub') + ' on ' + prettyDay(b.date) + '.\n\n'
-      + (res.locked ? 'The invoice had already been sent, so it was NOT changed - check it in the Sales Pipeline.' : 'The invoice has been updated and is waiting for you to send it from the dashboard.'),
+    subject: act + ' confirmed ' + hours + ' hrs - ' + String(b.venue || 'gig').split(',')[0] + ' ' + prettyDay(b.date),
+    body: act + ' played ' + ampm(d.start) + ' to ' + ampm(d.finish) + ' (' + hours + ' hrs) at ' + (b.venue || 'the gig') + ' on ' + prettyDay(b.date) + '.\n\n' + why,
   }, {}, { to: process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au' });
-  return { ok: true, hours: pubHours(d.start, d.finish), locked: !!res.locked };
+  return { ok: true, hours, sent, waiting: !sent && hours > 4 };
 });
 
-/*  ADMIN - Max's OK: make it a tax invoice and email it to the pub */
-exports.adminSendPubInvoice = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
-  requireAdmin(request);
-  const ref = db.collection('quotes').doc(String((request.data || {}).id || ''));
+/*  Make it a tax invoice and email it to the customer. Used by Max's Send
+    button and by the DJ confirming 4 hours or less (Max, 21 Oct 2026). */
+async function sendGigInvoice(id) {
+  const ref = db.collection('quotes').doc(String(id || ''));
   const snap = await ref.get();
   if (!snap.exists) throw new HttpsError('not-found', 'No such invoice.');
   const q = snap.data();
-  if (!(q.customer && q.customer.email)) throw new HttpsError('failed-precondition', 'The pub has no email on this invoice - add it to the invoice first.');
+  if (q.isTemplate) throw new HttpsError('failed-precondition', 'This is a template - it can\'t be sent.');
+  if (!(q.customer && q.customer.email)) throw new HttpsError('failed-precondition', 'The customer has no email on this invoice - add it first.');
   if (!['approved', 'sent', 'invoiced'].includes(q.status)) throw new HttpsError('failed-precondition', 'This one can\'t be sent.');
   const update = { kind: 'invoice', status: 'invoiced', updatedAt: FieldValue.serverTimestamp() };
   if (!q.invoiceNumber) { update.invoiceNumber = invoiceNo((await nextInvoiceNumber()).n); update.invoicedAt = FieldValue.serverTimestamp(); }
@@ -5098,4 +5114,117 @@ exports.adminSendPubInvoice = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async 
     });
   }
   return { ...mail, invoiceNumber: update.invoiceNumber || q.invoiceNumber };
+}
+exports.adminSendPubInvoice = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  requireAdmin(request);
+  return sendGigInvoice((request.data || {}).id);
+});
+
+/* =========================================================================
+   DJ GIG INVOICES - TEMPLATES  (Max, 21 Oct 2026 - replaces "copy the pub's
+   last invoice" and regular nights)
+
+   Sales Pipeline > Templates holds a generic DJ gig invoice (isTemplate).
+   A CONFIRMED booking in Entertainment with a customer (Customers) and a
+   template gets its own quote: the template's lines + "DJ performance:
+   hours x the DJ's rate" + the fixed travel fee. One quote per booking
+   (gigBookingId). The DJ then confirms the real times (5pm-2:30am only):
+   4 hours or less sends the invoice straight away; more waits for Max.
+   ========================================================================= */
+const TRADE_FROM = 17 * 60;      // 5pm
+const TRADE_TO = 2 * 60 + 30;    // 2:30am (next day)
+function tradingMins(t) {
+  const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || ''));
+  if (!r) return null;
+  const m = +r[1] * 60 + +r[2];
+  if (m >= TRADE_FROM) return m;
+  if (m <= TRADE_TO) return m + 1440;
+  return null;   // outside trading hours
+}
+function gigHours(start, finish) {
+  const a = tradingMins(start), b = tradingMins(finish);
+  if (a == null || b == null || b <= a) return 0;
+  return Math.round((b - a) / 15) / 4;
+}
+
+async function gigSync(bookingId) {
+  const id = String(bookingId || '');
+  const exSnap = await db.collection('quotes').where('gigBookingId', '==', id).limit(1).get();
+  const existing = exSnap.empty ? null : exSnap.docs[0];
+  const ex = existing ? existing.data() : null;
+  const bSnap = await db.collection('talentSchedule').doc(id).get();
+  const b = bSnap.exists ? bSnap.data() : null;
+  const live = b && (b.status || 'confirmed') === 'confirmed' && b.templateId && b.customerId;
+  if (ex && !['approved', 'cancelled'].includes(ex.status)) return { locked: true, id: existing.id };
+  if (!live) {
+    if (existing && ex.status === 'approved') await existing.ref.update({ status: 'cancelled', cancelledAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+    return { cancelled: !!existing, skipped: !b ? 'gone' : !b.templateId ? 'no template' : !b.customerId ? 'no customer' : 'not confirmed' };
+  }
+  const tSnap = await db.collection('quotes').doc(String(b.templateId)).get();
+  if (!tSnap.exists || !tSnap.data().isTemplate) return { needTemplate: true };
+  const tpl = tSnap.data();
+  const cSnap = await db.collection('customers').doc(String(b.customerId)).get();
+  const cust = cSnap.exists ? cSnap.data() : {};
+
+  const t = await db.collection('talent').doc(b.slug).get();
+  const name = (t.exists && t.data().name) || b.slug;
+  const r = await db.collection('actRates').doc(b.slug).get();
+  const rate = r.exists ? r.data() : {};
+  const start = b.actualStart || b.start || '';
+  const finish = b.actualFinish || b.finish || '';
+  const hours = gigHours(start, finish);
+  const perHour = Math.max(0, Math.round(rate.hourlyRateCents || 0));
+  const notes = [];
+  if (!perHour) notes.push(name);
+  const djLines = [{
+    type: 'custom', name: 'DJ performance - ' + name,
+    description: (hours ? hours + ' hrs' : 'Hours to confirm') + (perHour ? ' @ $' + (perHour / 100).toFixed(2).replace(/\.00$/, '') + '/hr' : '')
+      + (start && finish ? ' · ' + ampm(start) + '-' + ampm(finish) : '') + (b.timesConfirmedAt ? ' (confirmed)' : ''),
+    qty: 1, unitCents: Math.round(hours * perHour), days: 1, pubDj: true, noPick: true,
+  }];
+  const tr = await djTravel(rate.location, b.venue);
+  if (tr.cents) djLines.push({ type: 'custom', name: 'DJ travel - ' + name, description: tr.from + ' to ' + tr.to, qty: 1, unitCents: tr.cents, days: 1, pubDj: true, noPick: true });
+  if (tr.missing) notes.push(name + ' (no travel fee set for ' + tr.missing + ')');
+
+  let lines = (tpl.lines || []).filter((l) => !l.pubDj && l.type !== 'fee').concat(djLines);
+  if ((tpl.lines || []).some((l) => l.type === 'fee') && tpl.feeExcluded !== true) {
+    const pre = quoteMoney({ hire: { days: 1 }, lines, discountCents: tpl.discountCents || 0 });
+    const fee = Math.round(pre.netCents * 2 / 100 / 1000) * 1000;
+    if (fee > 0) lines.push({ type: 'fee', name: 'Booking & admin', qty: 1, unitCents: fee, days: 1 });
+  }
+  const tc = tpl.customer || {};
+  const clean = sanitizeQuote({
+    ...tpl, isTemplate: false, kind: 'quote', labourPackDate: '', lines,
+    customer: {
+      name: cust.name || '', business: cust.business || '', email: cust.email || '', ccEmail: cust.ccEmail || '',
+      phone: cust.phone || '', address: cust.address || '',
+      eventName: tc.eventName || ('DJ - ' + String(b.venue || '').split(',')[0]), eventType: tc.eventType || '',
+      eventVenue: b.venue || '', eventDate: prettyDay(b.date), eventStartTime: start,
+    },
+    hire: { startDate: b.date, endDate: b.date, days: 1 },
+  });
+  const money = quoteMoney(clean);
+  const meta = { gigBookingId: id, pubNight: true, pubKey: 'gig|' + id, pubVenue: b.venue || '', pubDate: b.date, pubBookings: [id], pubNoRate: notes, gigHours: hours, gigTemplateId: String(b.templateId) };
+  if (existing) {
+    await existing.ref.update({ ...clean, ...money, ...meta, status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+    return { updated: true, id: existing.id, totalCents: money.totalCents, hours, noRate: notes };
+  }
+  const counterRef = db.collection('config').doc('counters');
+  const seq = await db.runTransaction(async (tx) => {
+    const c = await tx.get(counterRef);
+    const n = ((c.exists && c.data().quoteSeq) || 0) + 1;
+    tx.set(counterRef, { quoteSeq: n }, { merge: true });
+    return n;
+  });
+  const ref = await db.collection('quotes').add({
+    number: 'SG-Q-' + String(seq).padStart(4, '0'), token: crypto.randomBytes(16).toString('hex'),
+    status: 'approved', approvedAt: FieldValue.serverTimestamp(), ...clean, ...money, ...meta,
+    createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(), createdBy: 'gig-auto',
+  });
+  return { created: true, id: ref.id, totalCents: money.totalCents, hours, noRate: notes };
+}
+
+exports.adminGigSync = onCall(async (request) => {
+  requireAdmin(request);
+  return gigSync((request.data || {}).bookingId);
 });

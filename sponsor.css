@@ -85,3 +85,4 @@
 #dj-form label{ display:block; }
 #dj-form label > select{ display:block; width:100%; box-sizing:border-box; margin-top:6px; background:#fff; }
 .dj-hours{ margin:0; font-weight:800; color:#ff6b00; font-size:16px; min-height:1.2em; }
+.dj-hours.is-bad{ color:#c5322b; }

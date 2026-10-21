@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=646';
+} from './firebase-config.js?v=647';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=646';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=646';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=646';
-import { messagesHtml, wireMessages } from './messages.js?v=646';
-import { dashboardHtml, dashboardData } from './dashboard.js?v=646';
-import { expandKit } from './kit.js?v=646';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=647';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=647';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=647';
+import { messagesHtml, wireMessages } from './messages.js?v=647';
+import { dashboardHtml, dashboardData } from './dashboard.js?v=647';
+import { expandKit } from './kit.js?v=647';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -334,6 +334,21 @@ async function pubSyncNights(pairs) {
   }
   return notes;
 }
+/*  DJ GIG INVOICES (Max, 21 Oct 2026): make / update / cancel the invoice for
+    each booking (template + customer + DJ hours x rate + travel).          */
+async function gigSyncBookings(ids) {
+  const notes = [];
+  for (const id of [...new Set(ids.filter(Boolean))]) {
+    try {
+      const r = await call('adminGigSync', { bookingId: id });
+      if (r.needTemplate) notes.push('That template is gone - pick another one on the booking.');
+      if (r.noRate && r.noRate.length) notes.push('Add a rate / travel fee for ' + r.noRate.join(', ') + ' (Entertainment > The roster).');
+      if (r.locked) notes.push('That gig\'s invoice was already sent, so it was not changed.');
+    } catch (e) { notes.push('Invoice not updated: ' + friendly(e)); }
+  }
+  return notes;
+}
+
 /*  Text the DJ the link to put in their real times (phone: sms, computer: copy) */
 async function textDjTimes(bookingId) {
   try {
@@ -506,6 +521,7 @@ function routeFromHash() {
     if (q === 'new') {
       if (state.openQuoteId !== '__new__') {   // a plain "+ New quote"
         quoteDraft = blankQuote(); quoteCustomerId = ''; state.quoteFromLeadId = '';
+        if (new URLSearchParams(qs || '').get('template')) quoteDraft.isTemplate = true;   // + New template
         state.openQuoteId = '__new__';
       }
     } else if (q && state.quoteLoadedId !== q) {
@@ -2604,6 +2620,21 @@ function bookingPanel(b) {
           <input type="text" id="ad-f-venue" value="${attr(draft.venue || 'Grand View Hotel, Bowen')}">
         </label>
 
+        ${(() => {
+          // DJ GIG INVOICE (Max, 21 Oct 2026): who it's billed to + which template it copies
+          const tpls = (state.quoteDocs || []).filter((q) => q.isTemplate && q.status !== 'cancelled');
+          const custs = (state.customers || []).slice().sort((a, b) => String(a.business || a.name || '').localeCompare(String(b.business || b.name || '')));
+          const lastAtVenue = (state.schedule || []).filter((x) => x.customerId && samePub(x.venue, draft.venue || 'Grand View Hotel, Bowen')).sort((a, b) => String(b.date).localeCompare(String(a.date)))[0] || {};
+          const custSel = draft.customerId != null ? draft.customerId : (draft.id ? '' : (lastAtVenue.customerId || ''));
+          const tplSel = draft.templateId != null ? draft.templateId : (draft.id ? '' : (lastAtVenue.templateId || (tpls.length === 1 ? tpls[0].id : '')));
+          return `
+        <label class="ad-field">Invoice to
+          <select id="ad-f-cust"><option value="">No invoice</option>${custs.map((c) => `<option value="${attr(c.id)}"${c.id === custSel ? ' selected' : ''}>${esc(c.business || c.name || c.email || 'Customer')}${c.business && c.name ? ' (' + esc(c.name) + ')' : ''}</option>`).join('')}</select>
+        </label>
+        <label class="ad-field">Template
+          <select id="ad-f-tpl">${tpls.length ? '' : '<option value="">No templates yet - make one in Sales Pipeline &gt; Templates</option>'}${tpls.map((q) => `<option value="${attr(q.id)}"${q.id === tplSel ? ' selected' : ''}>${esc((q.customer && q.customer.eventName) || q.number)}</option>`).join('')}</select>
+        </label>`; })()}
+
         ${(() => { const rn = regularNightFor(draft.venue || 'Grand View Hotel, Bowen'); const st = draft.start || (!draft.id && rn ? rn.start : '') || ''; const fi = draft.finish || (!draft.id && rn ? rn.finish : '') || ''; return `
         <div class="ad-book-times">
           <label class="ad-field">Start
@@ -2702,8 +2733,8 @@ function bookingPanel(b) {
             <button type="button" class="ad-btn ad-btn-danger" data-book-remove="${attr(b.id)}">
               Remove
             </button>
-            ${regularNightFor(b.venue) ? (() => {
-              const inv = (state.quoteDocs || []).find((q) => q.pubKey === pubCore(regularNightFor(b.venue).venue) + '|' + b.date);
+            ${b.templateId ? (() => {
+              const inv = (state.quoteDocs || []).find((q) => q.gigBookingId === b.id && q.status !== 'cancelled');
               return `<button type="button" class="ad-btn" data-pub-times="${attr(b.id)}">&#128241; Text DJ their times link</button>
               ${inv ? `<a class="ad-btn" href="#/quoteDocs?q=${attr(inv.id)}">Invoice ${esc(money(inv.totalCents))} &middot; ${esc(inv.status === 'approved' ? 'ready' : inv.status)}</a>` : ''}`;
             })() : ''}
@@ -2723,7 +2754,7 @@ function regularNightsPanel() {
   const daySel = (cur, id) => '<select ' + id + '>' + WEEKDAYS.map((d, i) => '<option value="' + i + '"' + (Number(cur) === i ? ' selected' : '') + '>' + d + '</option>').join('') + '</select>';
   return `
     <section class="ad-card ad-panel ad-regular">
-      <header class="ad-panel-head"><h2>Regular nights</h2></header>
+      <div hidden>
       <div class="ad-panel-intro">
         <p>Pubs you play every week. Booking a DJ there makes that night's invoice by copying the pub's last one,
            with the DJ's hours &times; their rate (roster above), plus a fixed travel fee when the DJ lives in a different
@@ -2749,9 +2780,8 @@ function regularNightsPanel() {
           </tr>
         </tbody>
       </table></div>
-      <p class="ad-action-msg" id="ad-rn-msg" hidden></p>
-
-      <header class="ad-panel-head" style="border-top:1px solid var(--ad-line)"><h2>DJ travel fees</h2></header>
+      </div>
+      <header class="ad-panel-head"><h2>DJ travel fees</h2></header>
       <div class="ad-panel-intro"><p>A fixed fee when a DJ lives in a different town to the gig (works both ways). Same town = no travel.</p></div>
       <div class="ad-table-wrap"><table class="ad-table">
         <thead><tr><th>From</th><th>To</th><th>Fee</th><th></th></tr></thead>
@@ -3145,6 +3175,8 @@ function wireEntertainment() {
         slug,
         venue: document.getElementById('ad-f-venue').value.trim(),
         start: startT, finish: finishT,   // pub invoices work the hours out from these (Max, 21 Oct 2026)
+        customerId: (document.getElementById('ad-f-cust') || {}).value || '',
+        templateId: (document.getElementById('ad-f-tpl') || {}).value || '',
         time: startT && finishT ? ampmT(startT).toUpperCase().replace(/(AM|PM)$/, ' $1') + ' – ' + ampmT(finishT).toUpperCase().replace(/(AM|PM)$/, ' $1')
           : document.getElementById('ad-f-time').value.trim(),
         status: document.getElementById('ad-f-status').value,
@@ -3184,7 +3216,7 @@ function wireEntertainment() {
           await fb.f.deleteDoc(fb.f.doc(fb.db, 'talentSchedule', old));
         }
         // the pub's invoice for each of those nights (and the night it moved from)
-        const pubNotes = await pubSyncNights(made.map((m) => [m.date, base.venue]).concat(oldB ? [[oldB.date, oldB.venue]] : []));
+        const pubNotes = await gigSyncBookings(made.map((m) => m.id).concat(oldB && !made.some((m) => m.id === oldB.id) ? [oldB.id] : []));
         if (pubNotes.length) window.alert(pubNotes.join('\n\n'));
         await loadSchedule();
         state.bookEditing = false;
@@ -3216,11 +3248,12 @@ function wireEntertainment() {
       try {
         await fb.f.setDoc(fb.f.doc(fb.db, 'talentSchedule', bookingId(date, b.slug)), {
           date, slug: b.slug, venue: b.venue || '', time: b.time || '', start: b.start || '', finish: b.finish || '',
+          customerId: b.customerId || '', templateId: b.templateId || '',
           status: b.status || 'confirmed', notes: b.notes || '',
           updatedAt: fb.f.serverTimestamp(),
         });
 
-        const pn = await pubSyncNights([[date, b.venue]]);
+        const pn = await gigSyncBookings([bookingId(date, b.slug)]);
         if (pn.length) window.alert(pn.join('\n\n'));
         await loadSchedule();
         state.bookingOpen = bookingId(date, b.slug);
@@ -3244,7 +3277,7 @@ function wireEntertainment() {
       try {
         const gone = (state.schedule || []).find((x) => x.id === id);
         await fb.f.deleteDoc(fb.f.doc(fb.db, 'talentSchedule', id));
-        if (gone) await pubSyncNights([[gone.date, gone.venue]]);   // cancels that night's invoice if nobody's left
+        if (gone) await gigSyncBookings([gone.id]);   // cancels that gig's invoice
         if (state.bookingOpen === id) state.bookingOpen = null;
         await loadSchedule();
         render();
@@ -3290,7 +3323,6 @@ function wireEntertainment() {
             updatedAt: fb.f.serverTimestamp(),
           });
         }
-        await pubSyncNights(waiting.map((w) => [w.date, 'Grand View Hotel, Bowen']));
 
         await loadSchedule();
         render();
@@ -3730,7 +3762,7 @@ VIEWS.dashboard = {
       reminders: state.reminders || [], weather: dashWeather,
       fyWeek: (() => { const t = new Date(); t.setHours(0, 0, 0, 0); t.setDate(t.getDate() - ((t.getDay() + 6) % 7)); return leadFyWeek(t); })(),
       schedule: state.scheduleLoaded ? state.schedule : null, talent: state.talent || [],
-      regularNights: state.regularNights || null,
+
       h: { esc, attr, money },
     });
   },
@@ -5578,6 +5610,7 @@ function quoteFromDoc(doc) {
     }),
     feeExcluded: doc.feeExcluded === true,
     autoSendOnDetails: doc.autoSendOnDetails === true,
+    isTemplate: doc.isTemplate === true,
     discountCents: Math.max(0, Math.round(doc.discountCents || 0)),
     labourExcluded: doc.labourExcluded === true,
     labourPH: { setup: !!(doc.labourPH && doc.labourPH.setup), pack: !!(doc.labourPH && doc.labourPH.pack) },
@@ -5670,9 +5703,11 @@ function quoteBuilderHtml() {
         ${link ? `<a class="ad-btn ad-btn-ghost" href="${attr(link)}" target="_blank" rel="noopener">Preview</a>` : ''}
         <span class="qb-auto" id="q-auto"></span>
         <button type="button" class="ad-btn${doc ? '' : ' ad-btn-primary'}" id="q-save">Save</button>
-        ${doc && status === 'draft' ? '<button type="button" class="ad-btn ad-btn-primary" id="q-approve">&#10003; Approve as quote</button>' : ''}
-        ${doc && status !== 'draft' ? `<button type="button" class="ad-btn ad-btn-primary" id="q-send">${status === 'approved' ? '&#9993; Send Quote' : '&#9993; Resend'}</button>` : ''}
+        <label class="qb-tpl" title="A template is copied for DJ gig invoices and can't be sent"><input type="checkbox" data-qtpl${quoteDraft.isTemplate ? ' checked' : ''}> Template</label>
+        ${!quoteDraft.isTemplate && doc && status === 'draft' ? '<button type="button" class="ad-btn ad-btn-primary" id="q-approve">&#10003; Approve as quote</button>' : ''}
+        ${!quoteDraft.isTemplate && doc && status !== 'draft' ? `<button type="button" class="ad-btn ad-btn-primary" id="q-send">${status === 'approved' ? '&#9993; Send Quote' : '&#9993; Resend'}</button>` : ''}
       </div>
+      ${quoteDraft.isTemplate ? '<div class="qb-tplbar">&#128203; <b>Template</b> &mdash; booking a DJ (Entertainment) with this template copies it into that gig&rsquo;s invoice, then adds the DJ&rsquo;s hours &times; rate and travel. A template is never sent. Leave the customer and dates blank.</div>' : ''}
 
       ${botCard}
 
@@ -5786,7 +5821,7 @@ function quoteBuilderHtml() {
       </div>
 
       <!-- lifecycle strip (not part of the paper) -->
-      ${doc ? `
+      ${doc && !quoteDraft.isTemplate ? `
       <section class="qb-lifecycle">
         <div class="qb-life-row">
           ${status === 'approved' || status === 'sent' ? '<button type="button" class="ad-btn" id="q-accept">Mark accepted</button>' : ''}
@@ -6614,6 +6649,7 @@ function wireQuoteBuilder() {
     if (t.dataset.qc) { quoteDraft.customer[t.dataset.qc] = t.value; return; }
     // event date calendar: saved as "Tue 20 Oct 2026" like before
     if (t.hasAttribute('data-qauto')) { quoteDraft.autoSendOnDetails = t.checked; scheduleQuoteAutosave(); return; }
+    if (t.hasAttribute('data-qtpl')) { quoteDraft.isTemplate = t.checked; scheduleQuoteAutosave(); render(); return; }
     if (t.hasAttribute('data-qevdate')) { quoteDraft.customer.eventDate = prettyEventDate(t.value); return; }
     if (t.dataset.qmeta) { quoteDraft[t.dataset.qmeta] = t.value; return; }
     if (t.hasAttribute('data-qdisc')) {
@@ -6924,6 +6960,7 @@ function quoteDraftForSave() {
     ...quoteDraft, lines,
     feeExcluded: quoteDraft.feeExcluded === true,
     autoSendOnDetails: quoteDraft.autoSendOnDetails === true,
+    isTemplate: quoteDraft.isTemplate === true,
     labourExcluded: quoteDraft.labourExcluded === true,
     labourOff: { setup: !!(quoteDraft.labourOff || {}).setup, pack: !!(quoteDraft.labourOff || {}).pack },
     labourPackDate: quoteDraft.labourPackDate || '',

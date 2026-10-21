@@ -10,7 +10,7 @@
    (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { isBooked, pickProgress } from './stock.js?v=646';
+import { isBooked, pickProgress } from './stock.js?v=647';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -65,6 +65,8 @@ export function lateFeeDue(q) {
 }
 
 export function stageOf(q) {
+  // TEMPLATES (Max, 21 Oct 2026): a DJ gig invoice to copy - never sent
+  if (q.isTemplate) return { step: 1, tab: 'templates', status: ['Template', 'grey'], next: ['doc', 'grey', 'Template', 'Copied for DJ gig invoices'] };
   /*  A vendor's tax invoice (Max, 19 Oct 2026): always paid, and has its own
       Vendors tab so it never counts as a job for the crew.               */
   if (q.vendor) {
@@ -89,7 +91,7 @@ export function stageOf(q) {
 
 /* the tabs along the top: [key, label, which jobs] */
 export const TABS = [
-  ['all', 'All', (q) => stageOf(q).tab !== 'archived'],
+  ['all', 'All', (q) => stageOf(q).tab !== 'archived' && !q.isTemplate],
   ['action', 'Needs action', (q) => q.status === 'draft' || q.status === 'approved'],
   ['estimates', 'Estimates', (q) => stageOf(q).tab === 'estimates'],
   ['quotes', 'Quotes', (q) => stageOf(q).tab === 'quotes'],
@@ -97,6 +99,7 @@ export const TABS = [
   ['confirmed', 'Jobs confirmed', (q) => stageOf(q).tab === 'confirmed'],
   ['vendors', 'Vendors', (q) => !!q.vendor],
   ['archived', 'Archived', (q) => stageOf(q).tab === 'archived'],
+  ['templates', 'Templates', (q) => !!q.isTemplate],
 ];
 
 /* small line icons for the "next step" pills and the stat cards */
@@ -198,7 +201,7 @@ export function pipelineHtml(jobs, f, h) {
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
           <input type="search" id="sp-search" placeholder="Search quotes, customers or events…" value="${h.attr(f.search || '')}">
         </label>
-        <button type="button" class="ad-btn ad-btn-primary sp-new" id="q-new">+ New quote</button>
+        ${f.tab === 'templates' ? '<button type="button" class="ad-btn sp-new" id="q-new-tpl">+ New template</button>' : ''}<button type="button" class="ad-btn ad-btn-primary sp-new" id="q-new">+ New quote</button>
       </div>
 
       <div class="sp-stats">
@@ -376,6 +379,7 @@ export function wirePipeline(getJobs, f, h, act) {
     }
     if (e.target.closest('[data-no-open]')) return;   // the ⌄ menu
     if (e.target.closest('#q-new')) { act.newQuote(); return; }
+    if (e.target.closest('#q-new-tpl')) { location.hash = '#/quoteDocs?q=new&template=1'; return; }   // Templates tab (Max, 21 Oct 2026)
     const row = e.target.closest('[data-open-q]');
     if (row) {
       const id = row.getAttribute('data-open-q');

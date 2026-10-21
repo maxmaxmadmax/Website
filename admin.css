@@ -4756,3 +4756,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ad-roster td.ad-cell-strong{ display:table-cell; }   /* was display:block - knocked the rows out of line */
 .ad-desk.is-bookings .ad-regular{ display:none; margin-top:14px; }
 .ad-desk.is-bookings.show-roster .ad-regular{ display:block; }
+/* templates (Max, 21 Oct 2026) */
+.qb-tpl{ display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--ad-muted); margin-right:6px; cursor:pointer; }
+.qb-tpl input{ accent-color:var(--ad-orange); width:16px; height:16px; }
+.qb-tplbar{ margin:0 0 12px; padding:10px 14px; border-radius:10px; background:#eef2ff; color:#3730a3; font-size:13px; }

@@ -8,7 +8,7 @@
    Uses the sponsor page styles (sponsor.css), like the details form.
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=646';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=647';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) => String(v == null ? '' : v)
@@ -19,28 +19,29 @@ let fns = null;
 const ampm = (t) => { const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); if (!r) return ''; const h = +r[1]; return (h % 12 || 12) + ':' + r[2] + (h < 12 ? 'am' : 'pm'); };
 const niceDay = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); return m ? new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' }) : ''; };
 
-/*  Every 15 minutes from midday round to 4am - DJs finish late */
+/*  TRADING HOURS ONLY (Max, 21 Oct 2026): every 15 minutes from 5pm to
+    2:30am. KEEP IN STEP with TRADE_FROM / TRADE_TO in functions/index.js. */
 function timeOptions(current) {
   let out = '<option value="">Choose a time</option>';
-  for (let m = 12 * 60; m < 28 * 60; m += 15) {
+  for (let m = 17 * 60; m <= 26 * 60 + 30; m += 15) {
     const hh = String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
     out += '<option value="' + hh + '"' + (hh === current ? ' selected' : '') + '>' + ampm(hh) + '</option>';
   }
   return out;
 }
+/*  5pm-midnight as is, after midnight counts as the next day. Same time,
+    or finishing before starting, is 0 (never "24 hours"). */
 function hoursOf(a, b) {
-  const m = (t) => { const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); return r ? +r[1] * 60 + +r[2] : null; };
+  const m = (t) => { const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); if (!r) return null; const v = +r[1] * 60 + +r[2]; return v < 17 * 60 ? v + 1440 : v; };
   const x = m(a), y = m(b);
-  if (x == null || y == null) return 0;
-  let mins = y - x;
-  if (mins <= 0) mins += 24 * 60;
-  return Math.round(mins / 15) / 4;
+  if (x == null || y == null || y <= x) return 0;
+  return Math.round((y - x) / 15) / 4;
 }
 
-function done(hours) {
+function done(hours, waiting) {
   document.getElementById('dj-root').innerHTML = `<section class="spn-sec spn-thanks-big">
     <h2>Thanks!</h2>
-    <p>Got it &mdash; <b>${esc(hours)} hours</b>. That&rsquo;s all we need.</p>
+    <p>Got it &mdash; <b>${esc(hours)} hours</b>. That&rsquo;s all we need.${waiting ? ' Max will check it over.' : ''}</p>
     <p class="spn-sub">Something wrong? Call Max on 0422 393 022.</p></section>`;
 }
 
@@ -63,19 +64,25 @@ function render(d) {
   const v = (n) => form.querySelector('[name="' + n + '"]').value;
   const show = () => {
     const h = hoursOf(v('start'), v('finish'));
-    document.getElementById('dj-hours').textContent = h ? 'That’s ' + h + ' hours.' : '';
-    form.querySelector('button').disabled = !h;
+    const out = document.getElementById('dj-hours');
+    const both = v('start') && v('finish');
+    out.className = 'dj-hours spn-wide' + (both && (!h || h > 8) ? ' is-bad' : '');
+    out.textContent = !both ? '' : !h ? 'The finish time has to be after the start time.' : h > 8 ? 'That’s more than 8 hours - please check with Max.' : 'That’s ' + h + ' hours.';
+    form.querySelector('button').disabled = !h || h > 8;
   };
   form.addEventListener('change', show);
   show();
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const h = hoursOf(v('start'), v('finish'));
+    // say it back before it counts
+    if (!window.confirm('You played ' + h + ' hours (' + ampm(v('start')) + ' to ' + ampm(v('finish')) + '). Is that right?')) return;
     const btn = form.querySelector('button');
     const msg = document.getElementById('dj-msg');
     btn.disabled = true;
     try {
       const res = await fns.httpsCallable(fns.fns, 'submitPubTimes')({ token: TOKEN, start: v('start'), finish: v('finish') });
-      done(res.data && res.data.hours);
+      done(res.data && res.data.hours, res.data && res.data.waiting);
     } catch (err) {
       btn.disabled = false;
       msg.hidden = false;

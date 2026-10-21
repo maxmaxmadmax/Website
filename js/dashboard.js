@@ -17,9 +17,9 @@
    acceptedAt). Close enough for a dashboard; the invoices are the record.
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=646';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=646';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=646';
+import { isBooked, pickLineProgress } from './stock.js?v=647';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=647';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=647';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -78,7 +78,7 @@ function monthStart(back) { const d = new Date(); return new Date(d.getFullYear(
 
 /* ---------- the numbers ---------- */
 export function dashboardData(ctx) {
-  const jobs = (ctx.quotes || []).filter((q) => !q.vendor && !q.archived);
+  const jobs = (ctx.quotes || []).filter((q) => !q.vendor && !q.archived && !q.isTemplate);
   const thisM = monthStart(0), nextM = monthStart(-1), lastM = monthStart(1);
   const inMonth = (t, from, to) => t >= from && t < to;
   const sum = (list, f) => list.reduce((t, q) => t + Math.max(0, Math.round(f(q) || 0)), 0);
@@ -136,7 +136,7 @@ export function dashboardData(ctx) {
 
 /* ---------- to-dos ---------- */
 export function todoGroups(ctx) {
-  const jobs = (ctx.quotes || []).filter((q) => !q.vendor && !q.archived);
+  const jobs = (ctx.quotes || []).filter((q) => !q.vendor && !q.archived && !q.isTemplate);
   const today = isoToday();
   const weekAgo = Date.now() - 7 * 86400000;
   const out = [];
@@ -145,12 +145,13 @@ export function todoGroups(ctx) {
   if (ctx.schedule) add('dj', 'Book a DJ', openRegularNights(ctx.schedule, ctx.regularNights, 30)
     .map((n) => ({ text: shortDate(n.iso) + ' · ' + String(n.venue).split(',')[0] + ' - nobody booked yet', href: '#/entertainment' })));
   // PUB INVOICES (Max, 21 Oct 2026): the night's been played - ready for Max's OK
-  add('pub', 'Pub invoices to send', jobs.filter((q) => q.pubNight && q.status === 'approved' && String(q.pubDate || '') <= today)
+  add('pub', 'DJ gig invoices to check & send', jobs.filter((q) => q.pubNight && q.status === 'approved' && String(q.pubDate || '') <= today)
     .map((q) => {
       const dj = (q.lines || []).filter((l) => l.pubDj && /^DJ performance/.test(l.name || '')).map((l) => String(l.name).replace(/^DJ performance - /, '') + ' ' + String(l.description || '').split(' @')[0]).join(', ');
       return {
         text: String(q.pubVenue || '').split(',')[0] + ' · ' + shortDate(q.pubDate) + ' · ' + ctx.h.money(q.totalCents) + (dj ? ' · ' + dj : '')
-          + ((q.pubNoRate || []).length ? ' · add a rate for ' + q.pubNoRate.join(', ') : ''),
+          + ((q.pubNoRate || []).length ? ' · add a rate for ' + q.pubNoRate.join(', ') : '')
+          + (q.gigHours > 4 ? ' · over 4 hrs - check it' : ''),
         href: '#/quoteDocs?q=' + q.id,
         btns: ((q.pubBookings || [])[0] ? '<button type="button" class="ad-btn db-mini" data-pub-times="' + ctx.h.attr(q.pubBookings[0]) + '">&#128241; DJ times</button>' : '')
           + '<button type="button" class="ad-btn ad-btn-primary db-mini" data-pub-send="' + ctx.h.attr(q.id) + '">Send</button>',

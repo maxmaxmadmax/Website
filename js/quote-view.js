@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=646';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=646';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=647';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=647';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
