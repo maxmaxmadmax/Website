@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=651';
+} from './firebase-config.js?v=652';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=651';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=651';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=651';
-import { messagesHtml, wireMessages } from './messages.js?v=651';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=651';
-import { expandKit } from './kit.js?v=651';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=652';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=652';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=652';
+import { messagesHtml, wireMessages } from './messages.js?v=652';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=652';
+import { expandKit } from './kit.js?v=652';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5875,7 +5875,7 @@ function quoteBuilderHtml() {
       <!-- toolbar (not part of the printed paper) -->
       <div class="qb-bar">
         <button type="button" class="qb-back" id="q-back">&larr; Sales Pipeline</button>
-        <div class="qb-bar-title"><h1>${quoteDraft.isTemplate ? 'Template: ' + esc(quoteDraft.templateName || 'Untitled') : esc(docWord) + ' #' + esc(num)}</h1>${doc ? qdocPill(status) : '<span class="ad-pill ad-pill-grey">New</span>'}</div>
+        <div class="qb-bar-title"><h1>${quoteDraft.isTemplate ? 'Template: ' + esc(quoteDraft.templateName || 'Untitled') : esc(docWord) + ' #' + esc(num)}</h1>${quoteDraft.isTemplate ? '<span class="ad-pill ad-pill-blue">Template</span>' : doc ? qdocPill(status) : '<span class="ad-pill ad-pill-grey">New</span>'}</div>
         <div class="qb-bar-spacer"></div>
         ${link ? `<a class="ad-btn ad-btn-ghost" href="${attr(link)}" target="_blank" rel="noopener">Preview</a>` : ''}
         <span class="qb-auto" id="q-auto"></span>
@@ -5907,8 +5907,8 @@ function quoteBuilderHtml() {
           <div class="qb-meta">
             <p class="qb-tagline">Good People<br>Great Events</p>
             <div class="qb-mgrid">
-              ${metaRow(docWord + ' number', `<strong>${esc(num)}</strong>`)}
-              ${metaRow('Status', doc ? qdocPill(status) : '<span class="ad-pill ad-pill-grey">Draft</span>')}
+              ${quoteDraft.isTemplate ? metaRow('Template', `<strong>${esc(quoteDraft.templateName || 'Untitled')}</strong>`) : metaRow(docWord + ' number', `<strong>${esc(num)}</strong>`)}
+              ${metaRow('Status', quoteDraft.isTemplate ? '<span class="ad-pill ad-pill-blue">Template</span>' : doc ? qdocPill(status) : '<span class="ad-pill ad-pill-grey">Draft</span>')}
               ${metaRow('Created', esc(created))}
               ${metaRow('Event / Job', `<input class="qb-min" data-qc="eventName" value="${attr(c.eventName)}" placeholder="Event name">`)}
               ${metaRow('Event type', `<select class="qb-min" data-qc="eventType">${Object.keys(EVENT_TYPES).map((k) => `<option value="${k}"${(c.eventType || guessEventType(c.eventName)) === k ? ' selected' : ''}>${EVENT_TYPES[k]}</option>`).join('')}</select>`)}

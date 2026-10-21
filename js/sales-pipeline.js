@@ -10,7 +10,7 @@
    (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { isBooked, pickProgress } from './stock.js?v=651';
+import { isBooked, pickProgress } from './stock.js?v=652';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -256,7 +256,7 @@ export function rowsHtml(rows, f, h) {
   return rows.map((q) => {
     const st = stageOf(q);
     const c = q.customer || {};
-    const num = q.kind === 'invoice' && q.invoiceNumber ? q.invoiceNumber : q.number;
+    const num = q.isTemplate ? '' : q.kind === 'invoice' && q.invoiceNumber ? q.invoiceNumber : q.number;   // templates show their name, not a number
     // only the website bot makes estimates - a quote Max made himself skips that step (Max, 21 Oct 2026)
     const fromBot = q.source === 'bot' || q.createdBy === 'bot';
     const progress = steps.map((label, i) => {
