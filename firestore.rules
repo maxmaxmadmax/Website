@@ -285,6 +285,10 @@ service cloud.firestore {
     match /regularNights/{nightId} {
       allow read, write: if isAdmin();
     }
+    // fixed DJ travel fees, town to town (Max, 21 Oct 2026)
+    match /travelFees/{feeId} {
+      allow read, write: if isAdmin();
+    }
 
     // Dashboard reminders (Max, 20 Oct 2026): Max's own to-do list, admins only
     match /reminders/{reminderId} {

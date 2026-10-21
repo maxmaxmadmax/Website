@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=645';
+} from './firebase-config.js?v=646';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=645';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=645';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=645';
-import { messagesHtml, wireMessages } from './messages.js?v=645';
-import { dashboardHtml, dashboardData } from './dashboard.js?v=645';
-import { expandKit } from './kit.js?v=645';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=646';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=646';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=646';
+import { messagesHtml, wireMessages } from './messages.js?v=646';
+import { dashboardHtml, dashboardData } from './dashboard.js?v=646';
+import { expandKit } from './kit.js?v=646';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -277,7 +277,17 @@ async function loadTalent() {
 async function loadPubSettings() {
   try {
     const { collection, getDocs } = fb.f;
-    const [rates, nights] = await Promise.all([getDocs(collection(fb.db, 'actRates')), getDocs(collection(fb.db, 'regularNights'))]);
+    const [rates, nights, fees] = await Promise.all([getDocs(collection(fb.db, 'actRates')), getDocs(collection(fb.db, 'regularNights')), getDocs(collection(fb.db, 'travelFees'))]);
+    state.travelFees = [];
+    fees.forEach((d) => state.travelFees.push({ id: d.id, ...d.data() }));
+    // first time: Max's fees (21 Oct 2026) - then they're his to change
+    if (!fees.size && !state.travelSeeded) {
+      state.travelSeeded = true;
+      const { doc, setDoc } = fb.f;
+      const seed = [['airlie-bowen', 'Airlie Beach', 'Bowen', 8000], ['mackay-bowen', 'Mackay', 'Bowen', 15000], ['townsville-bowen', 'Townsville', 'Bowen', 15000]];
+      await Promise.all(seed.map(([id, from, to, cents]) => setDoc(doc(fb.db, 'travelFees', id), { from, to, cents, createdAt: Date.now() })));
+      seed.forEach(([id, from, to, cents]) => state.travelFees.push({ id, from, to, cents }));
+    }
     state.actRates = {};
     rates.forEach((d) => { state.actRates[d.id] = d.data(); });
     state.regularNights = [];
@@ -2716,8 +2726,8 @@ function regularNightsPanel() {
       <header class="ad-panel-head"><h2>Regular nights</h2></header>
       <div class="ad-panel-intro">
         <p>Pubs you play every week. Booking a DJ there makes that night's invoice by copying the pub's last one,
-           with the DJ's hours &times; their rate (roster above). Travel is added only when the DJ lives in a different
-           town to the pub: km each way &times; 2 &times; $0.80. It waits for you to send it.</p>
+           with the DJ's hours &times; their rate (roster above), plus a fixed travel fee when the DJ lives in a different
+           town (table below). It waits for you to send it.</p>
       </div>
       <div class="ad-table-wrap"><table class="ad-table">
         <thead><tr><th>Pub</th><th>Night</th><th>Usual start</th><th>Usual finish</th><th></th></tr></thead>
@@ -2740,6 +2750,27 @@ function regularNightsPanel() {
         </tbody>
       </table></div>
       <p class="ad-action-msg" id="ad-rn-msg" hidden></p>
+
+      <header class="ad-panel-head" style="border-top:1px solid var(--ad-line)"><h2>DJ travel fees</h2></header>
+      <div class="ad-panel-intro"><p>A fixed fee when a DJ lives in a different town to the gig (works both ways). Same town = no travel.</p></div>
+      <div class="ad-table-wrap"><table class="ad-table">
+        <thead><tr><th>From</th><th>To</th><th>Fee</th><th></th></tr></thead>
+        <tbody>
+          ${(state.travelFees || []).map((f) => `<tr>
+            <td><input class="ad-rate-in ad-rate-mid" data-tfee="${attr(f.id)}" data-tff="from" value="${attr(f.from || '')}"></td>
+            <td><input class="ad-rate-in ad-rate-mid" data-tfee="${attr(f.id)}" data-tff="to" value="${attr(f.to || '')}"></td>
+            <td><input class="ad-rate-in" type="number" min="0" step="1" data-tfee="${attr(f.id)}" data-tff="fee" value="${attr(String((f.cents || 0) / 100))}"></td>
+            <td><button type="button" class="ad-btn" data-tfee-save="${attr(f.id)}">Save</button>
+                <button type="button" class="ad-btn ad-btn-danger" data-tfee-del="${attr(f.id)}">Remove</button></td>
+          </tr>`).join('')}
+          <tr class="ad-rn-new">
+            <td><input class="ad-rate-in ad-rate-mid" id="ad-tf-from" placeholder="e.g. Proserpine"></td>
+            <td><input class="ad-rate-in ad-rate-mid" id="ad-tf-to" placeholder="e.g. Bowen"></td>
+            <td><input class="ad-rate-in" type="number" min="0" step="1" id="ad-tf-fee" placeholder="$"></td>
+            <td><button type="button" class="ad-btn ad-btn-primary" id="ad-tf-add">Add</button></td>
+          </tr>
+        </tbody>
+      </table></div>
     </section>`;
 }
 
@@ -2786,6 +2817,26 @@ function wirePubBits() {
       });
       await loadPubSettings(); render();
     } catch (err) { window.alert(friendly(err)); }
+  });
+  // DJ travel fees
+  const tfVal = (id, f) => (document.querySelector('[data-tfee="' + cssEsc(id) + '"][data-tff="' + f + '"]') || {}).value || '';
+  const dollars = (v) => Math.max(0, Math.round((parseFloat(v) || 0) * 100));
+  document.querySelectorAll('[data-tfee-save]').forEach((btn) => btn.addEventListener('click', async () => {
+    const id = btn.getAttribute('data-tfee-save');
+    try { await setDoc(doc(fb.db, 'travelFees', id), { from: tfVal(id, 'from').trim(), to: tfVal(id, 'to').trim(), cents: dollars(tfVal(id, 'fee')), updatedAt: Date.now() }, { merge: true }); await loadPubSettings(); render(); }
+    catch (err) { window.alert(friendly(err)); }
+  }));
+  document.querySelectorAll('[data-tfee-del]').forEach((btn) => btn.addEventListener('click', async () => {
+    if (!window.confirm('Remove this travel fee?')) return;
+    try { await deleteDoc(doc(fb.db, 'travelFees', btn.getAttribute('data-tfee-del'))); await loadPubSettings(); render(); }
+    catch (err) { window.alert(friendly(err)); }
+  }));
+  const tfAdd = document.getElementById('ad-tf-add');
+  if (tfAdd) tfAdd.addEventListener('click', async () => {
+    const from = document.getElementById('ad-tf-from').value.trim(), to = document.getElementById('ad-tf-to').value.trim();
+    if (!from || !to) { window.alert('Fill in both towns.'); return; }
+    try { await addDoc(collection(fb.db, 'travelFees'), { from, to, cents: dollars(document.getElementById('ad-tf-fee').value), createdAt: Date.now() }); await loadPubSettings(); render(); }
+    catch (err) { window.alert(friendly(err)); }
   });
   // the booking form: picking a regular pub fills in its usual times
   const venueIn = document.getElementById('ad-f-venue');
