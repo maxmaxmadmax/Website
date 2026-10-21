@@ -4690,3 +4690,17 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .db-job.is-event .db-job-date b{ color:var(--ad-orange); }
 .db-pill-gig{ background:#efe9fd; color:#6d3fd1; }   /* entertainment gigs (Grand View etc.) */
 .db-copy{ padding:5px 10px; font-size:12px; margin-right:4px; }
+
+/* Next 30 days: weather in its own column so the cards line up; week separators (Max, 21 Oct 2026) */
+.db-job{ grid-template-columns:86px minmax(0, 1fr) 120px 230px; }
+.db-job-wx{ display:flex; justify-content:center; }
+.db-job-acts{ justify-content:flex-start; flex-wrap:wrap; }
+.db-sep{ list-style:none; display:flex; align-items:center; gap:8px; margin:14px 0 2px; padding:6px 10px; border-radius:8px;
+  background:var(--ad-grey-bg); font-size:12px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--ad-muted); }
+.db-sep:first-child{ margin-top:0; }
+.db-sep em{ font-style:normal; font-weight:700; background:#fff; border-radius:20px; padding:0 7px; color:var(--ad-text); }
+.db-sep.is-now{ background:var(--ad-orange); color:#fff; }
+.db-sep.is-now em{ color:var(--ad-orange); }
+.db-sep + .db-job{ border-top:0; }
+@media (max-width:1100px){ .db-job{ grid-template-columns:86px minmax(0, 1fr) 120px; } .db-job-acts{ grid-column:2 / -1; } }
+@media (max-width:640px){ .db-job{ grid-template-columns:1fr; } .db-job-acts{ grid-column:auto; } .db-job-wx{ justify-content:flex-start; } }

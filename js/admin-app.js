@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=638';
+} from './firebase-config.js?v=639';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=638';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=638';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=638';
-import { messagesHtml, wireMessages } from './messages.js?v=638';
-import { dashboardHtml, dashboardData } from './dashboard.js?v=638';
-import { expandKit } from './kit.js?v=638';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=639';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=639';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=639';
+import { messagesHtml, wireMessages } from './messages.js?v=639';
+import { dashboardHtml, dashboardData } from './dashboard.js?v=639';
+import { expandKit } from './kit.js?v=639';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -3375,9 +3375,11 @@ async function geocode(place) {
   if (key in geoCache) return geoCache[key];
   geoCache[key] = null;
   try {
-    const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&country_code=AU&name=' + encodeURIComponent(place));
+    const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?count=10&country_code=AU&name=' + encodeURIComponent(place));
     const d = await r.json();
-    const hit = d && d.results && d.results[0];
+    // only somewhere within ~250 km of Bowen - "Grand View" matched a cold town down south (Max, 21 Oct 2026)
+    const near = (x) => Math.hypot(x.latitude + 20.01, (x.longitude - 148.25) * 0.94) < 2.3;
+    const hit = d && d.results && d.results.find(near);
     if (hit) geoCache[key] = { lat: hit.latitude, lon: hit.longitude };
   } catch (e) { /* no place found */ }
   return geoCache[key];
@@ -3385,9 +3387,11 @@ async function geocode(place) {
 /*  where to forecast: the delivery town, else the venue, else Bowen */
 async function jobPlace(q) {
   const town = String((q.delivery && q.delivery.town) || '').replace(/\(.*?\)/g, '').trim();
-  const venue = String((q.customer && q.customer.eventVenue) || '')
-    .replace(/\b(resort|hotel|club|hall|showgrounds?|park|centre|center|tavern|pub|bowls|sports?|complex|beach house)\b/gi, '').split(',')[0].trim();
-  for (const p of [town, venue, 'Bowen']) {
+  // each part of the venue ("Grand View Hotel, Bowen" -> "Grand View", "Bowen"), building words taken out
+  const venueParts = String((q.customer && q.customer.eventVenue) || '').split(',')
+    .map((x) => x.replace(/\b(resort|hotel|club|hall|showgrounds?|park|centre|center|tavern|pub|bowls|sports?|complex|beach house|queensland|qld)\b/gi, '').replace(/\d+/g, '').trim())
+    .filter(Boolean);
+  for (const p of [town].concat(venueParts, ['Bowen'])) {
     if (p && p.toLowerCase() !== 'other') { const g = await geocode(p); if (g) return g; }
   }
   return null;

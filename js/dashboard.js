@@ -17,9 +17,9 @@
    acceptedAt). Close enough for a dashboard; the invoices are the record.
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=638';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=638';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=638';
+import { isBooked, pickLineProgress } from './stock.js?v=639';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=639';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=639';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -229,6 +229,25 @@ export function weatherBox(w, esc) {
     + '</div>';
 }
 
+/*  WEEK SEPARATORS (Max, 21 Oct 2026): "This week", "Next week", "Later",
+    so what's on this week stands out. Weeks run Monday to Sunday.        */
+function withWeeks(list, row) {
+  const d = new Date(); d.setHours(0, 0, 0, 0);
+  const toSun = (7 - d.getDay()) % 7;                       // days until Sunday (0 on a Sunday)
+  const iso = (x) => x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
+  const endThis = iso(new Date(d.getTime() + toSun * 86400000));
+  const endNext = iso(new Date(d.getTime() + (toSun + 7) * 86400000));
+  const groupOf = (q) => (q.hire.startDate <= endThis ? 'This week' : q.hire.startDate <= endNext ? 'Next week' : 'Later');
+  let last = '';
+  return list.map((q) => {
+    const g = groupOf(q);
+    const sep = g !== last ? '<li class="db-sep' + (g === 'This week' ? ' is-now' : '') + '"><span>' + g + '</span><em>'
+      + list.filter((x) => groupOf(x) === g).length + '</em></li>' : '';
+    last = g;
+    return sep + row(q);
+  }).join('');
+}
+
 /* ---------- the page ---------- */
 export function dashboardHtml(ctx) {
   const { esc, attr, money } = ctx.h;
@@ -264,8 +283,8 @@ export function dashboardHtml(ctx) {
               ${sitesNote ? `<span class="db-tag">${esc(sitesNote)}</span>` : ''}
             </p>
           </div>
+          <div class="db-job-wx">${weatherBox(ctx.weather && ctx.weather[q.id], esc)}</div>
           <div class="db-job-acts">
-            ${weatherBox(ctx.weather && ctx.weather[q.id], esc)}
             <a class="ad-btn" href="#/vendors">Vendors</a>
             <a class="ad-btn" href="#/map">Map</a>
           </div>
@@ -281,8 +300,8 @@ export function dashboardHtml(ctx) {
             ${c.eventVenue ? `<p class="db-job-sub">${esc(c.eventVenue)}</p>` : ''}
             <p class="db-job-tags">${q.noDj ? '<span class="ad-pill ad-pill-red">No DJ booked</span>' : '<span class="ad-pill db-pill-gig">Gig</span>'}</p>
           </div>
+          <div class="db-job-wx">${weatherBox(ctx.weather && ctx.weather[q.id], esc)}</div>
           <div class="db-job-acts">
-            ${weatherBox(ctx.weather && ctx.weather[q.id], esc)}
             <a class="ad-btn${q.noDj ? ' ad-btn-primary' : ''}" href="#/entertainment">${q.noDj ? 'Book a DJ' : 'Entertainment'}</a>
           </div>
         </li>`;
@@ -308,8 +327,8 @@ export function dashboardHtml(ctx) {
               ${crew.length ? `<span class="db-tag">${esc(crew.slice(0, 3).join(', '))}${crew.length > 3 ? ' +' + (crew.length - 3) : ''}</span>` : ''}
             </p>
           </div>
+          <div class="db-job-wx">${weatherBox(ctx.weather && ctx.weather[q.id], esc)}</div>
           <div class="db-job-acts">
-            ${weatherBox(ctx.weather && ctx.weather[q.id], esc)}
             <a class="ad-btn" href="#/quoteDocs?q=${attr(q.id)}">Quote</a>
             ${q.crewToken ? `<a class="ad-btn" href="/picklist?t=${attr(q.crewToken)}" target="_blank" rel="noopener">Pick list</a>` : ''}
             ${phone ? `<a class="ad-btn" href="tel:${attr(phone)}">Call</a>` : ''}
@@ -361,7 +380,7 @@ export function dashboardHtml(ctx) {
 
       <div class="ad-card db-panel">
         <h2>Next 30 days ${d.upcoming.length ? '<span class="db-count">' + d.upcoming.length + '</span>' : ''}</h2>
-        ${d.upcoming.length ? `<ul class="db-jobs">${d.upcoming.map(jobRow).join('')}</ul>` : '<p class="db-empty">No jobs in the next 30 days.</p>'}
+        ${d.upcoming.length ? `<ul class="db-jobs">${withWeeks(d.upcoming, jobRow)}</ul>` : '<p class="db-empty">No jobs in the next 30 days.</p>'}
       </div>
     </div>
 
