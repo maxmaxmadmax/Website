@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=641';
+} from './firebase-config.js?v=642';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=641';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=641';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=641';
-import { messagesHtml, wireMessages } from './messages.js?v=641';
-import { dashboardHtml, dashboardData } from './dashboard.js?v=641';
-import { expandKit } from './kit.js?v=641';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=642';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=642';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=642';
+import { messagesHtml, wireMessages } from './messages.js?v=642';
+import { dashboardHtml, dashboardData } from './dashboard.js?v=642';
+import { expandKit } from './kit.js?v=642';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -3363,6 +3363,45 @@ async function loadLog() {
 let dashLog = null;
 let dashLogAt = 0;
 
+/*  The crew picker: a small box over the dashboard with every active staff
+    member. Save -> confirm who'll be emailed -> adminAssignCrew.          */
+function openCrewPicker(jobId) {
+  const q = (state.quoteDocs || []).find((x) => x.id === jobId);
+  if (!q) return;
+  const staff = (state.resources || []).filter((r) => (r.type || 'staff') === 'staff' && r.active !== false);
+  const on = new Set((q.crewAssigned || []).map((x) => x.id));
+  const c = q.customer || {};
+  const box = document.createElement('div');
+  box.className = 'db-modal';
+  box.innerHTML = '<div class="db-modal-card" role="dialog" aria-label="Assign crew">'
+    + '<h3>Who\'s working this job?</h3><p class="db-modal-sub">' + esc((c.business || c.name || 'Job') + (c.eventName ? ' · ' + c.eventName : '') + ' · ' + ((q.hire && q.hire.startDate) || '')) + '</p>'
+    + (staff.length ? '<ul class="db-modal-list">' + staff.map((s) => '<li><label><input type="checkbox" value="' + attr(s.id) + '"' + (on.has(s.id) ? ' checked' : '') + '> <b>' + esc(s.name) + '</b>'
+        + (s.role ? ' <span>' + esc(s.role) + '</span>' : '') + (s.email ? '' : ' <em>no email</em>') + '</label></li>').join('') + '</ul>'
+      : '<p>No staff yet - add them in <a href="#/resources">Crew &amp; Vehicles</a>.</p>')
+    + '<p class="db-modal-note">Anyone newly ticked gets an email with the job details and their pick list.</p>'
+    + '<div class="db-modal-acts"><button type="button" class="ad-btn" data-x>Cancel</button><button type="button" class="ad-btn ad-btn-primary" data-save>Save</button></div></div>';
+  document.body.appendChild(box);
+  const close = () => box.remove();
+  box.addEventListener('click', (e) => { if (e.target === box || e.target.closest('[data-x]')) close(); });
+  box.querySelector('[data-save]').addEventListener('click', async () => {
+    const ids = [...box.querySelectorAll('input:checked')].map((i) => i.value);
+    const fresh = staff.filter((s) => ids.includes(s.id) && !on.has(s.id));
+    const mailable = fresh.filter((s) => s.email);
+    if (mailable.length && !window.confirm('Email the job details + pick list to:\n\n' + mailable.map((s) => s.name + ' (' + s.email + ')').join('\n') + '\n\nOK?')) return;
+    const btn = box.querySelector('[data-save]');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      const r = await call('adminAssignCrew', { id: jobId, staffIds: ids });
+      close();
+      const bits = [];
+      if (r.sent && r.sent.length) bits.push('Emailed: ' + r.sent.join(', '));
+      if (r.noEmail && r.noEmail.length) bits.push('No email on file (add it in Crew & Vehicles): ' + r.noEmail.join(', '));
+      if (r.failed && r.failed.length) bits.push('Could not email: ' + r.failed.join(', '));
+      if (bits.length) window.alert(bits.join('\n'));
+    } catch (err) { btn.disabled = false; btn.textContent = 'Save'; window.alert(friendly(err)); }
+  });
+}
+
 /*  EVENT-DAY WEATHER (Max, 20 Oct 2026): rain and wind for each job in the
     next 30 days, from Open-Meteo (free, no account, no key). Only the town
     and the date are sent - never a customer's details. Forecasts reach ~16
@@ -3436,6 +3475,8 @@ VIEWS.dashboard = {
   },
   wire() {
     const desk = document.getElementById('ad-desk');
+    // ASSIGN CREW (Max, 21 Oct 2026): tick who's working, they get emailed
+    desk.querySelectorAll('[data-crew]').forEach((b) => b.addEventListener('click', () => openCrewPicker(b.getAttribute('data-crew'))));
     // copy a share link (waitlist / vendor signup) - Max, 21 Oct 2026
     desk.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
       const url = b.getAttribute('data-copy');
@@ -7449,7 +7490,7 @@ const RES_TYPES = { staff: 'Staff', vehicle: 'Vehicle', trailer: 'Trailer' };
 const RES_GROUP = { staff: 'Staff', vehicle: 'Vehicles', trailer: 'Trailers' };
 
 function blankResource(type) {
-  return { type: type || 'staff', name: '', role: '', phone: '', rego: '', capacity: '', dayRateCents: 0, active: true, notes: '' };
+  return { type: type || 'staff', name: '', role: '', phone: '', email: '', rego: '', capacity: '', dayRateCents: 0, active: true, notes: '' };
 }
 
 let resourceDraft = blankResource();
@@ -7672,7 +7713,8 @@ function resourceDetailHtml() {
 
           ${isStaff ? `
           <label class="ad-field"><span>Role</span><input class="ad-input" data-rf="role" value="${attr(r.role)}" placeholder="e.g. Sound tech"></label>
-          <label class="ad-field"><span>Phone</span><input class="ad-input" data-rf="phone" value="${attr(r.phone)}" placeholder="Mobile"></label>`
+          <label class="ad-field"><span>Phone</span><input class="ad-input" data-rf="phone" value="${attr(r.phone)}" placeholder="Mobile"></label>
+          <label class="ad-field"><span>Email</span><input class="ad-input" type="email" data-rf="email" value="${attr(r.email || '')}" placeholder="For job details + pick lists"></label>`
           : `
           <label class="ad-field"><span>Rego</span><input class="ad-input" data-rf="rego" value="${attr(r.rego)}" placeholder="e.g. 123 ABC"></label>
           <label class="ad-field"><span>Capacity / size</span><input class="ad-input" data-rf="capacity" value="${attr(r.capacity)}" placeholder="e.g. 1 tonne"></label>`}
@@ -7738,6 +7780,7 @@ async function saveResource(btn) {
     name: String(r.name).trim().slice(0, 120),
     role: type === 'staff' ? String(r.role || '').trim().slice(0, 80) : '',
     phone: type === 'staff' ? String(r.phone || '').trim().slice(0, 40) : '',
+    email: type === 'staff' ? String(r.email || '').trim().toLowerCase().slice(0, 200) : '',   // job emails (Max, 21 Oct 2026)
     rego: type !== 'staff' ? String(r.rego || '').trim().slice(0, 40) : '',
     capacity: type !== 'staff' ? String(r.capacity || '').trim().slice(0, 80) : '',
     dayRateCents: Math.max(0, Math.round(r.dayRateCents || 0)),

@@ -17,9 +17,9 @@
    acceptedAt). Close enough for a dashboard; the invoices are the record.
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=641';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=641';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=641';
+import { isBooked, pickLineProgress } from './stock.js?v=642';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=642';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=642';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -328,11 +328,15 @@ export function dashboardHtml(ctx) {
             <p class="db-job-tags">
               <span class="ad-pill ad-pill-${st.status[1]}">${esc(owingOf(q) > 0 && isBooked(q) ? 'Deposit in · ' + money(owingOf(q)) + ' owing' : st.status[0])}</span>
               ${pp && pp.lines ? `<span class="db-tag">${pp.returned === pp.lines ? 'All gear back' : pp.packed + ' of ' + pp.lines + ' packed'}</span>` : ''}
+              ${(q.crewAssigned || []).length
+                ? `<span class="db-tag db-crewtag">&#128119; ${esc(q.crewAssigned.map((x) => x.name.split(' ')[0]).join(', '))}</span>`
+                : (isBooked(q) ? '<span class="db-tag db-nocrew">No crew yet</span>' : '')}
               ${crew.length ? `<span class="db-tag">${esc(crew.slice(0, 3).join(', '))}${crew.length > 3 ? ' +' + (crew.length - 3) : ''}</span>` : ''}
             </p>
           </div>
           <div class="db-job-wx">${weatherBox(ctx.weather && ctx.weather[q.id], esc)}</div>
           <div class="db-job-acts">
+            <button type="button" class="ad-btn" data-crew="${attr(q.id)}">&#128119; Crew</button>
             <a class="ad-btn" href="#/quoteDocs?q=${attr(q.id)}">Quote</a>
             ${q.crewToken ? `<a class="ad-btn" href="/picklist?t=${attr(q.crewToken)}" target="_blank" rel="noopener">Pick list</a>` : ''}
             ${phone ? `<a class="ad-btn" href="tel:${attr(phone)}">Call</a>` : ''}

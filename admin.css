@@ -4692,7 +4692,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .db-copy{ padding:5px 10px; font-size:12px; margin-right:4px; }
 
 /* Next 30 days: weather in its own column so the cards line up; week separators (Max, 21 Oct 2026) */
-.db-job{ grid-template-columns:86px minmax(0, 1fr) 120px 230px; }
+.db-job{ grid-template-columns:86px minmax(0, 1fr) 120px 300px; }
 .db-job-wx{ display:flex; justify-content:center; }
 .db-job-acts{ justify-content:flex-start; flex-wrap:wrap; }
 .db-sep{ list-style:none; display:flex; align-items:center; gap:8px; margin:14px 0 2px; padding:6px 10px; border-radius:8px;
@@ -4716,3 +4716,19 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .db-state.is-ok{ color:var(--ad-green); }
 .db-state.is-wait{ color:#8a919c; }
 .db-sep + .db-job{ margin-top:6px; }
+
+/* crew on a job + the crew picker (Max, 21 Oct 2026) */
+.db-crewtag{ background:#e3f6ea; color:var(--ad-green); font-weight:700; }
+.db-nocrew{ background:var(--ad-amber-bg); color:var(--ad-amber); font-weight:700; }
+.db-modal{ position:fixed; inset:0; z-index:1000; background:rgba(15,18,25,.45); display:flex; align-items:center; justify-content:center; padding:16px; }
+.db-modal-card{ background:#fff; border-radius:16px; padding:20px 22px; width:min(440px, 100%); max-height:85vh; overflow:auto; box-shadow:0 20px 50px rgba(0,0,0,.25); }
+.db-modal-card h3{ margin:0 0 2px; font-size:18px; }
+.db-modal-sub{ margin:0 0 12px; color:var(--ad-muted); font-size:13px; }
+.db-modal-list{ list-style:none; margin:0; padding:0; }
+.db-modal-list li{ border-top:1px solid var(--ad-line); }
+.db-modal-list label{ display:flex; align-items:center; gap:10px; padding:10px 2px; cursor:pointer; font-size:14px; }
+.db-modal-list input{ width:18px; height:18px; accent-color:var(--ad-orange); }
+.db-modal-list span{ color:var(--ad-muted); font-size:12px; }
+.db-modal-list em{ margin-left:auto; font-style:normal; font-size:11px; color:var(--ad-amber); background:var(--ad-amber-bg); padding:1px 7px; border-radius:20px; }
+.db-modal-note{ font-size:12px; color:var(--ad-muted); margin:12px 0; }
+.db-modal-acts{ display:flex; justify-content:flex-end; gap:8px; }

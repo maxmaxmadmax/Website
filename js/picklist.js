@@ -6,7 +6,7 @@
    admin and everyone on the crew link sees the same list. The list also
    refreshes itself every 20 seconds while it's open.
    ========================================================================== */
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=641';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=642';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -174,6 +174,7 @@ function render() {
         ${info('Getting there', esc(d.delivery))}
         ${info('Event day contact', d.dayContact ? esc(d.dayContact).replace(/(\+?\d[\d\s]{7,}\d)/, (n) => '<a href="tel:' + n.replace(/\s/g, '') + '">' + n + '</a>') : '')}
         ${info(d.dayContact ? 'Customer' : 'On-site contact', contact)}
+        ${info('Working it', (d.assigned || []).map((x) => esc(x.name) + (x.phone ? ' <small><a href="tel:' + esc(x.phone.replace(/[^\d+]/g, '')) + '">' + esc(x.phone) + '</a></small>' : '')).join('<br>'))}
         ${info('Crew', d.crew.map((x) => esc(x.name) + (x.note ? ' <small>' + esc(x.note) + '</small>' : '')).join('<br>'))}
       </dl>
       ${d.customerNotes ? `<p class="pl-notes"><b>From the customer:</b> ${esc(d.customerNotes)}</p>` : ''}

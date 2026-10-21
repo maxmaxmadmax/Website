@@ -2859,6 +2859,7 @@ exports.getPickList = onCall(async (request) => {
     times: { start: c.eventStartTime || q.botStart || '', finish: q.botFinish || '' },
     customerNotes: c.customerNotes || '',
     dayContact: c.dayContact || '',
+    assigned: (q.crewAssigned || []).map((x) => ({ name: x.name || '', phone: x.phone || '' })),   // staff on the job (Max, 21 Oct 2026)
     crew,
     notes: q.crewNotes || '',
     items,
@@ -4742,15 +4743,16 @@ async function sendGearListEmail(ref, q, reason, testTo) {
     });
     if (r.sent && !testTo) await ref.update({ gearListSentAt: FieldValue.serverTimestamp(), gearListSentTo: to });
   }
-  // staff copy - the full pick list with Packed / Returned ticks
+  // staff copy - the full pick list with Packed / Returned ticks (office + the crew on the job)
   if (reason !== 'manual') {
+    const crewTo = emailList((q.crewAssigned || []).map((x) => x.email).filter(Boolean).join(', '));
     await sendMessageEmail({
       subject: lead + 'Pick list - ' + ev + (when ? ' (' + when + ')' : '') + ' - ' + (q.invoiceNumber || q.number || ''),
       body: (reason === 'deposit' ? 'The deposit is in, so this job is booked. ' : '')
         + 'Here is the pick list for ' + ev + (when ? ' on ' + when : '') + '.'
         + (to ? '\n\nThe gear list (no prices) also went to: ' + to : '\n\nNo "Gear list to" emails on this job, so the band / crew were not sent anything.'),
     }, {}, {
-      to: testTo || process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au',
+      to: testTo || [process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au'].concat(crewTo ? [crewTo] : []).join(', '),
       actions: [{ label: 'Open the pick list', url: SITE_URL + '/picklist?t=' + token, primary: true }],
     });
   }
@@ -4792,3 +4794,55 @@ exports.gearListReminders = onSchedule(
     }
   }
 );
+
+/* =========================================================================
+   ASSIGN CREW TO A JOB  (Max, 21 Oct 2026)
+   From the dashboard: tick the staff (Crew & Vehicles) working a job. The
+   names go on the quote (crewAssigned) and anyone NEWLY added with an email
+   gets the job details + their pick list link. Staff are our own people -
+   Max asked for this, and the admin confirms before it sends.
+   ========================================================================= */
+exports.adminAssignCrew = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  requireAdmin(request);
+  const d = request.data || {};
+  const ref = db.collection('quotes').doc(String(d.id || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'No such job.');
+  const q = snap.data();
+  const ids = (Array.isArray(d.staffIds) ? d.staffIds : []).map(String).slice(0, 20);
+  const staff = [];
+  for (const sid of ids) {
+    const r = await db.collection('resources').doc(sid).get();
+    if (r.exists && (r.data().type || 'staff') === 'staff') {
+      const x = r.data();
+      staff.push({ id: sid, name: String(x.name || ''), email: String(x.email || '').trim(), phone: String(x.phone || '') });
+    }
+  }
+  let token = q.crewToken;
+  const update = { crewAssigned: staff, crewAssignedAt: FieldValue.serverTimestamp() };
+  if (!token) { token = crypto.randomBytes(16).toString('hex'); update.crewToken = token; }
+  await ref.update(update);
+
+  // email the people who are new on this job
+  const before = new Set((q.crewAssigned || []).map((x) => x.id));
+  const fresh = staff.filter((x) => !before.has(x.id));
+  const c = q.customer || {};
+  const ev = c.eventName || c.business || c.name || 'a job';
+  const when = c.eventDate || (q.hire && q.hire.startDate) || '';
+  const link = SITE_URL + '/picklist?t=' + token + (pickReady(q) ? '' : '&v=gear');
+  const sent = [], noEmail = [], failed = [];
+  for (const x of fresh) {
+    if (!DETAIL_EMAIL_RE.test(x.email)) { noEmail.push(x.name); continue; }
+    const r = await sendMessageEmail({
+      subject: "You're on: " + ev + (when ? ' (' + when + ')' : ''),
+      body: 'Hi ' + (x.name.split(' ')[0] || 'there') + ',\n\nYou are on this job:\n\n'
+        + ['Job: ' + ev, when && 'Date: ' + when, c.eventStartTime && 'Starts: ' + c.eventStartTime,
+          c.eventVenue && 'Venue: ' + c.eventVenue, c.dayContact && 'On the day: ' + c.dayContact,
+          'Crew: ' + staff.map((s) => s.name).join(', ')].filter(Boolean).map((t) => '- ' + t).join('\n')
+        + (pickReady(q) ? '\n\nThe pick list is below - tick things off as you pack and when they come back.' : '\n\nHere is the gear list. The full pick list unlocks once the deposit is in.')
+        + '\n\nThanks,\nMax\nSoundzGood Whitsundays - 0422 393 022',
+    }, {}, { to: x.email, actions: [{ label: pickReady(q) ? 'Open the pick list' : 'View the gear list', url: link, primary: true }] });
+    (r.sent ? sent : failed).push(x.name);
+  }
+  return { ok: true, assigned: staff.map((x) => x.name), sent, noEmail, failed };
+});
