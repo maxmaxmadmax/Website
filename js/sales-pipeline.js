@@ -10,7 +10,7 @@
    (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { isBooked, pickProgress } from './stock.js?v=649';
+import { isBooked, pickProgress } from './stock.js?v=650';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -261,7 +261,7 @@ export function rowsHtml(rows, f, h) {
     const fromBot = q.source === 'bot' || q.createdBy === 'bot';
     const progress = steps.map((label, i) => {
       const done = i < st.step;
-      const skipped = i === 0 && !fromBot;
+      const skipped = q.vendor || (i === 0 && !fromBot);   // vendors don't use these steps at all - all greyed (Max, 21 Oct 2026)
       const cls = skipped ? ' is-skip' : done ? (st.step === 4 ? ' is-done is-green' : ' is-done') : '';
       return `<span class="sp-step${cls}"${skipped ? ' title="Made as a quote - no estimate step"' : ''}><b>${done && !skipped ? '&#10003;' : ''}</b><em>${label}</em></span>`;
     }).join('');
