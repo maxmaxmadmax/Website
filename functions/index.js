@@ -2781,6 +2781,19 @@ exports.adminUndoPayment = onCall(async (request) => {
 });
 
 /* ADMIN - the crew link for a booked job (makes one the first time) */
+/*  ADMIN - the gear list link to text the band (Max, 21 Oct 2026) */
+exports.adminGearListLink = onCall(async (request) => {
+  requireAdmin(request);
+  const ref = db.collection('quotes').doc(String((request.data || {}).id || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'Save the quote first.');
+  const q = snap.data();
+  if (!gearReady(q)) throw new HttpsError('failed-precondition', 'Approve the quote first - then the gear list link works.');
+  let token = q.crewToken;
+  if (!token) { token = crypto.randomBytes(16).toString('hex'); await ref.update({ crewToken: token }); }
+  return { url: SITE_URL + '/picklist?t=' + token + '&v=gear' };
+});
+
 exports.adminPickListLink = onCall(async (request) => {
   requireAdmin(request);
   const { id } = request.data || {};
@@ -2795,10 +2808,16 @@ exports.adminPickListLink = onCall(async (request) => {
 });
 
 /* PUBLIC (crew link) - the pick list: job details and gear, NO prices */
+/*  GEAR LIST for the band (Max, 21 Oct 2026): ?v=gear asks with gear:true and
+    opens as soon as the quote is out (no prices, no ticks). The full pick
+    list with Packed / Returned ticks still waits for the deposit.          */
+const gearReady = (q) => !!q && ['approved', 'sent', 'accepted', 'invoiced', 'paid'].includes(q.status);
+
 exports.getPickList = onCall(async (request) => {
   const doc = await quoteByCrewToken((request.data || {}).token);
   const q = doc.data();
-  if (!pickReady(q)) throw new HttpsError('failed-precondition', 'This pick list is not available.');
+  const gear = (request.data || {}).gear === true;
+  if (!(pickReady(q) || (gear && gearReady(q)))) throw new HttpsError('failed-precondition', 'This list is not available yet.');
   // categories from inventory, so the gear can be grouped
   const inv = await loadQuoteInventory();
   const cat = {};

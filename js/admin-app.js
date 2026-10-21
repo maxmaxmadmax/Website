@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=636';
+} from './firebase-config.js?v=637';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=636';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=636';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=636';
-import { messagesHtml, wireMessages } from './messages.js?v=636';
-import { dashboardHtml, dashboardData } from './dashboard.js?v=636';
-import { expandKit } from './kit.js?v=636';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=637';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=637';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=637';
+import { messagesHtml, wireMessages } from './messages.js?v=637';
+import { dashboardHtml, dashboardData } from './dashboard.js?v=637';
+import { expandKit } from './kit.js?v=637';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5403,6 +5403,7 @@ function quoteBuilderHtml() {
             <label class="qb-fl"><span>Email</span><input class="qb-cin" type="email" data-qc="email" value="${attr(c.email)}" placeholder="Email"></label>
             <div class="qb-fl"><span>CC &middot; billing / accounts copy</span><div class="qb-cc" id="qb-cc">${ccChipsInner(c.ccEmail, 'Accounts email (optional) - press Enter')}</div></div>
             <div class="qb-fl"><span>Gear list to &middot; band / crew (no prices)</span><div class="qb-cc" id="qb-gear">${ccChipsInner(c.gearEmails, 'Band or crew email - press Enter')}</div></div>
+            <button type="button" class="qb-askbtn" id="q-gearlink">&#128241; Text the band the gear list (no prices)</button>
             <label class="qb-fl"><span>Event day contact</span><input class="qb-cin" data-qc="dayContact" value="${attr(c.dayContact || '')}" placeholder="Name &amp; phone on the day"></label>
             <label class="qb-fl"><span>Customer notes</span><textarea class="qb-cin qb-cnotes" rows="3" data-qc="customerNotes" placeholder="Anything the customer told us">${esc(c.customerNotes || '')}</textarea></label>
           </div>
@@ -6487,6 +6488,26 @@ function wireQuoteActions() {
       } else {
         try { await navigator.clipboard.writeText(text); window.alert('Copied - paste it into a text or email:\n\n' + text); }
         catch (e) { window.prompt('Copy this and text it to them:', text); }
+      }
+    } catch (err) { window.alert(err.message || 'Could not make the link.'); }
+  });
+
+  // TEXT THE BAND THE GEAR LIST (Max, 21 Oct 2026): a link to the gear only, no prices
+  const gearBtn = document.getElementById('q-gearlink');
+  if (gearBtn) gearBtn.addEventListener('click', async () => {
+    try {
+      if (!state.openQuoteId || state.openQuoteId === '__new__') { window.alert('Save the quote first, then press this.'); return; }
+      await flushQuoteAutosave().catch(() => {});
+      const res = await call('adminGearListLink', { id: state.openQuoteId });
+      const c = quoteDraft.customer || {};
+      const what = c.eventName || 'the gig';
+      const when = c.eventDate ? ' on ' + c.eventDate : '';
+      const text = "Hi, it's Max from SoundzGood - here's the gear we're supplying for " + what + when + ': ' + res.url;
+      if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+        location.href = 'sms:?&body=' + encodeURIComponent(text);
+      } else {
+        try { await navigator.clipboard.writeText(text); window.alert('Copied - paste it into a text to the band:\n\n' + text); }
+        catch (e) { window.prompt('Copy this and text it to the band:', text); }
       }
     } catch (err) { window.alert(err.message || 'Could not make the link.'); }
   });

@@ -6,7 +6,7 @@
    admin and everyone on the crew link sees the same list. The list also
    refreshes itself every 20 seconds while it's open.
    ========================================================================== */
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=636';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=637';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -229,7 +229,7 @@ async function onTick(e) {
 async function refresh() {
   if (busy || document.hidden) return;
   try {
-    const res = await callable.get({ token: token() });
+    const res = await callable.get({ token: token(), gear: GEAR_VIEW });
     if (busy) return;
     data = res.data;
     const y = window.scrollY;
@@ -247,7 +247,7 @@ async function load() {
   if (!isFirebaseConfigured) return fail('This link cannot be opened right now.');
   try {
     await initFns();
-    const res = await callable.get({ token: token() });
+    const res = await callable.get({ token: token(), gear: GEAR_VIEW });
     data = res.data;
     render();
     document.getElementById('pl-root').addEventListener('change', onTick);
