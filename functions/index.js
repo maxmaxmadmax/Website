@@ -2969,7 +2969,7 @@ exports.getQuote = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
     createdAt: secs(q.createdAt),
     paymentStatus: q.paymentStatus || '',      // '' | bank | deposit | paid
     bankPlan: q.bankPlan || '',                // bank payers: 'deposit' | 'full'
-    gigDj: q.gigDj || null,                    // DJ gig quotes: who played + their set (Max, 22 Oct 2026)
+    gigDj: q.gigDj || (q.gigBookingId ? await gigDjFor(q.gigBookingId) : null),   // DJ gig quotes: who played + their set (Max, 22 Oct 2026)
     paymentMethod: q.paymentMethod || '',
     amountPaidCents: q.amountPaidCents || 0,
     depositPct: QUOTE_DEPOSIT_PCT,
@@ -5345,3 +5345,17 @@ exports.onDjRatesChanged = require('firebase-functions/v2/firestore').onDocument
     try { await gigSync(d.id); } catch (e) { logger.error('onDjRatesChanged', { id: d.id, err: e && e.message }); }
   }
 });
+
+/*  The DJ on a gig, for quotes made before gigDj was stored (Max, 22 Oct 2026) */
+async function gigDjFor(bookingId) {
+  try {
+    const b = await db.collection('talentSchedule').doc(String(bookingId)).get();
+    if (!b.exists) return null;
+    const x = b.data();
+    const t = await db.collection('talent').doc(x.slug).get();
+    const slugName = String(x.slug || '').split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    const start = x.actualStart || '21:30', finish = x.actualFinish || '01:30';
+    return { name: (t.exists && t.data().name) || slugName, photo: (t.exists && t.data().photo) || ('images/talent/' + x.slug + '.jpg'),
+      start, finish, hours: gigHours(start, finish), confirmed: !!x.timesConfirmedAt, venue: x.venue || '' };
+  } catch (e) { return null; }
+}

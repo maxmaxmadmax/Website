@@ -703,3 +703,4 @@
 .qp-dj em{ display:inline-block; margin-top:6px; font-style:normal; font-size:12px; padding:2px 8px; border-radius:20px; background:rgba(255,255,255,.12); }
 .qp-dj em.is-ok{ background:#0f9d58; color:#fff; }
 @media print{ .qp-dj{ background:#fff4ec; border-color:#ffd2b0; } .qp-dj-face{ box-shadow:0 0 0 2px #ff6b00; } }
+.qp-hero-photo.is-dj{ background-position:center 25%; }   /* DJ photos are mostly faces - keep them in frame */
