@@ -5218,7 +5218,7 @@ async function gigSync(bookingId) {
   // the DJ's own deck goes on the pick list so setup staff bring the right cables (Max, 21 Oct 2026)
   if (rate.deck) clean.crewNotes = 'DJ deck (' + name + '): ' + String(rate.deck).slice(0, 300);
   // who played - shown on the entertainment-style quote / invoice (Max, 22 Oct 2026)
-  const gigDj = { name, photo: (t.exists && t.data().photo) || ('images/talent/' + b.slug + '.jpg'), start, finish, hours, confirmed: !!b.timesConfirmedAt, venue: b.venue || '' };
+  const gigDj = { name, photo: (t.exists && t.data().photo) || ('images/talent/' + b.slug + '.jpg'), start, finish, hours, confirmed: !!b.timesConfirmedAt, venue: b.venue || '', styles: Array.isArray(rate.styles) ? rate.styles.slice(0, 8) : [] };
   const meta = { gigDj, gigBookingId: id, pubNight: true, pubKey: 'gig|' + id, pubVenue: b.venue || '', pubDate: b.date, pubBookings: [id], pubNoRate: notes, gigHours: hours, gigTemplateId: String(b.templateId) };
   if (existing) {
     await existing.ref.update({ ...clean, ...money, ...meta, status: 'approved', updatedAt: FieldValue.serverTimestamp() });
@@ -5355,7 +5355,9 @@ async function gigDjFor(bookingId) {
     const t = await db.collection('talent').doc(x.slug).get();
     const slugName = String(x.slug || '').split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     const start = x.actualStart || '21:30', finish = x.actualFinish || '01:30';
+    const r = await db.collection('actRates').doc(x.slug).get();
     return { name: (t.exists && t.data().name) || slugName, photo: (t.exists && t.data().photo) || ('images/talent/' + x.slug + '.jpg'),
-      start, finish, hours: gigHours(start, finish), confirmed: !!x.timesConfirmedAt, venue: x.venue || '' };
+      start, finish, hours: gigHours(start, finish), confirmed: !!x.timesConfirmedAt, venue: x.venue || '',
+      styles: r.exists && Array.isArray(r.data().styles) ? r.data().styles.slice(0, 8) : [] };
   } catch (e) { return null; }
 }

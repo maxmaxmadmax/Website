@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=664';
+} from './firebase-config.js?v=665';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=664';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=664';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=664';
-import { messagesHtml, wireMessages } from './messages.js?v=664';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=664';
-import { expandKit } from './kit.js?v=664';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=665';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=665';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=665';
+import { messagesHtml, wireMessages } from './messages.js?v=665';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=665';
+import { expandKit } from './kit.js?v=665';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2622,6 +2622,9 @@ function djTownOptions(current) {
     + list.map((t) => '<option value="' + attr(t) + '"' + (t.toLowerCase() === cur.toLowerCase() ? ' selected' : '') + '>' + esc(t) + '</option>').join('');
 }
 
+/*  MUSIC STYLES - shown as tags on the DJ's gig quotes instead of a bio (Max, 22 Oct 2026) */
+const DJ_STYLES = ['Top 40 / Commercial', 'House', 'Throwbacks', 'RnB & Hip Hop', 'Country', 'Rock', 'Drum & Bass', 'Requests welcome'];
+
 function djDetailHtml() {
   const isNew = state.openDj === '__new__';
   const t = isNew ? {} : ((state.talent || []).find((x) => x.slug === state.openDj) || {});
@@ -2645,6 +2648,9 @@ function djDetailHtml() {
           <label class="ad-field"><span>Location (where they live)</span><select class="ad-select" id="dj-f-loc">${djTownOptions(r.location || '')}</select></label>
           <label class="ad-field"><span>Phone</span><input class="ad-input" type="tel" id="dj-f-phone" value="${attr(r.phone || '')}" placeholder="Mobile"></label>
           <label class="ad-field"><span>Email</span><input class="ad-input" type="email" id="dj-f-email" value="${attr(r.email || '')}" placeholder="For booking emails"></label>
+        </div>
+        <div class="ad-field"><span>Music styles (shown on their gig quotes)</span>
+          <div class="ent-styles">${DJ_STYLES.map((x) => `<label><input type="checkbox" data-dj-style value="${attr(x)}"${(r.styles || []).includes(x) ? ' checked' : ''}> ${esc(x)}</label>`).join('')}</div>
         </div>
         <label class="ad-field"><span>Their deck (what they bring - goes on the pick list)</span><input class="ad-input" id="dj-f-deck" value="${attr(r.deck || '')}" placeholder="e.g. Pioneer DDJ-1000 - needs 2x XLR. Or: none, uses ours"></label>
         <p class="ad-cell-muted ent-private">Rate, location, phone, email and deck are private - only the name, act and photo show on the website.</p>
@@ -2705,7 +2711,8 @@ function wireEntPage() {
       await setDoc(doc(fb.db, 'actRates', slug), {
         hourlyRateCents: Math.max(0, Math.round((parseFloat(v('dj-f-rate')) || 0) * 100)),
         location: v('dj-f-loc').slice(0, 80), phone: v('dj-f-phone').slice(0, 40),
-        email: v('dj-f-email').toLowerCase().slice(0, 200), deck: v('dj-f-deck').slice(0, 300), updatedAt: Date.now(),
+        email: v('dj-f-email').toLowerCase().slice(0, 200), deck: v('dj-f-deck').slice(0, 300),
+        styles: [...document.querySelectorAll('[data-dj-style]:checked')].map((x) => x.value).slice(0, 8), updatedAt: Date.now(),
       }, { merge: true });
       await Promise.all([loadTalent(), loadPubSettings()]);
       // their upcoming gig quotes pick up the new rate / location straight away (Max, 22 Oct 2026)

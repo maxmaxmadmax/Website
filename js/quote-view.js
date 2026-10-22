@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=664';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=664';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=665';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=665';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -468,11 +468,21 @@ function proposalTop(q, days) {
     : groups.map((g) => g.name).concat(lab.length || crewC ? ['Crew'] : [])
       .map((k) => '<div class="qp-tile">' + svgIcon(k) + '<b>' + esc(k) + '</b><span>' + esc(BLURB[k] || '') + '</span></div>').join('');
   const ampm = (t) => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); if (!m) return ''; const h = +m[1]; return (h % 12 || 12) + ':' + m[2] + (h < 12 ? 'am' : 'pm'); };
-  const djCard = dj ? '<div class="qp-dj">'
-    + '<span class="qp-dj-face" style="background-image:url(\'/' + esc(dj.photo || '') + '\')"></span>'
-    + '<div><p class="qp-mini">Your DJ</p><b>' + esc(dj.name) + '</b>'
-    + '<span>' + esc(ampm(dj.start)) + ' &ndash; ' + esc(ampm(dj.finish)) + (dj.hours ? ' &middot; ' + esc(dj.hours) + ' hrs' : '') + '</span>'
-    + '<em class="' + (dj.confirmed ? 'is-ok' : '') + '">' + (dj.confirmed ? '&#10003; Set times confirmed by the DJ' : 'Planned set &mdash; updated with the DJ&rsquo;s times after the night') + '</em></div></div>' : '';
+  /*  YOUR NIGHT (Max, 22 Oct 2026): no second DJ photo - the night as a
+      timeline (setup, DJ on, last song, pack-down) + the DJ's music styles. */
+  const addMins = (t, m) => { const x = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); if (!x) return ''; const v = ((+x[1] * 60 + +x[2] + m) % 1440 + 1440) % 1440; return String(Math.floor(v / 60)).padStart(2, '0') + ':' + String(v % 60).padStart(2, '0'); };
+  const djCard = dj ? '<div class="qp-night">'
+    + '<div class="qp-night-head"><p class="qp-mini">Your night</p>'
+    + '<em class="' + (dj.confirmed ? 'is-ok' : '') + '">' + (dj.confirmed ? '&#10003; Set times confirmed' : 'Planned set &middot; confirmed after the night') + '</em></div>'
+    + '<ol class="qp-tl">'
+    + [[addMins(dj.start, -120), 'Setup &amp; sound check', 'Our crew sets up the DJ booth, sound and lighting'],
+      [dj.start, esc(dj.name) + ' on the decks', (dj.hours ? esc(dj.hours) + ' hours of music' : 'Live DJ set')],
+      [dj.finish, 'Last song', 'The night wraps up'],
+      [addMins(dj.finish, 15), 'Pack-down', 'We pack everything away']]
+      .map(([t, h, sub]) => '<li><b>' + esc(ampm(t)) + '</b><span>' + h + '<small>' + sub + '</small></span></li>').join('')
+    + '</ol>'
+    + ((dj.styles || []).length ? '<p class="qp-styles">' + dj.styles.map((x) => '<span>' + esc(x) + '</span>').join('') + '</p>' : '')
+    + '</div>' : '';
 
   // investment summary: each group ex GST / GST / inc GST
   const rows = groups.map((g) => [isDj && g.name === 'Other' ? 'Entertainment (DJ)' : g.name, g.cents])   // AUDIO, LIGHTING, STAGING... (shown in capitals)
@@ -488,7 +498,14 @@ function proposalTop(q, days) {
   // total crew hours, read off each labour line ("2.5 hrs @ $80/hr ...")
   const labHrs = lab.reduce((t, l) => t + (parseFloat((/^([\d.]+) hrs?\b/.exec(l.description || '') || [])[1]) || 0), 0);
   const incl = groups.filter((g) => g.name !== 'Other').map((g) => g.name.toLowerCase());
-  const included = []
+  const included = isDj ? [
+    'Professional DJ' + (dj ? ' &mdash; ' + esc(dj.name) + (dj.hours ? ' (' + esc(dj.hours) + ' hrs)' : '') : ''),
+    'PA system &amp; lighting, set up for the venue',
+    'DJ equipment &amp; booth',
+    'Setup, sound check &amp; pack-down crew',
+    'Backup gear on site',
+    'GST included in the total',
+  ] : []
     .concat(dj ? ['Your DJ: ' + esc(dj.name) + (dj.hours ? ' (' + esc(dj.hours) + ' hrs)' : '')] : [])
     .concat(incl.length ? [(incl.length > 1 ? incl.slice(0, -1).join(', ') + ' & ' + incl[incl.length - 1] : incl[0]).replace(/^./, (x) => x.toUpperCase()) + ' equipment as itemised'] : [])
     .concat(['All cables, stands & accessories needed to run it'])
@@ -497,7 +514,7 @@ function proposalTop(q, days) {
     .concat(['GST included in the total']);
   const pct = q.depositPct || 50;
   const details = '<div class="qp-inv-extra">'
-    + '<div class="qp-incl"><p class="qp-mini">What&rsquo;s included</p><ul>' + included.map((t) => '<li>' + t + '</li>').join('') + '</ul></div>'
+    + '<div class="qp-incl' + (isDj ? ' is-premium' : '') + '"><p class="qp-mini">What&rsquo;s included</p><ul>' + included.map((t) => '<li>' + t + '</li>').join('') + '</ul></div>'
     + '<div class="qp-qd"><p class="qp-mini">Quote details</p><dl>'
     + '<div><dt>Quote</dt><dd>' + esc(q.number || '') + '</dd></div>'
     + (q.createdAt ? '<div><dt>Issued</dt><dd>' + esc(fmtDate(q.createdAt)) + '</dd></div>' : '')

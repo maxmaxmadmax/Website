@@ -4825,3 +4825,6 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .lead-cal-m.is-now .lead-wslot.is-today .lead-cdot,
 .lead-wslot.is-sel .lead-cdot{ box-shadow:0 0 0 1.5px #e6f7ec; }
 .lead-wslot.is-sel .lead-cdot.is-empty, .lead-wslot.is-today .lead-cdot.is-empty{ box-shadow:none; }
+.ent-styles{ display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:6px; }
+.ent-styles label{ display:inline-flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; }
+.ent-styles input{ accent-color:var(--ad-orange); }
