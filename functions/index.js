@@ -4983,7 +4983,7 @@ async function pubSync(date, venue) {
       qty: 1, unitCents: Math.round(hours * perHour), days: 1, pubDj: true, noPick: true,
     });
     const tr = await djTravel(rate.location, b.venue || night.venue);
-    if (tr.cents) djLines.push({ type: 'custom', name: 'DJ travel - ' + name, description: tr.from + ' to ' + tr.to, qty: 1, unitCents: tr.cents, days: 1, pubDj: true, noPick: true });
+    if (tr.cents) djLines.push({ type: 'custom', name: 'Travel Charge - ' + tr.from + ' to ' + tr.to + ' Return', description: '', qty: 1, unitCents: tr.cents, days: 1, pubDj: true, noPick: true });
     if (tr.missing) noRate.push(name + ' (no travel fee set for ' + tr.missing + ')');
   }
 
@@ -5201,7 +5201,7 @@ async function gigSync(bookingId) {
     qty: 1, unitCents: Math.round(hours * perHour), days: 1, pubDj: true, noPick: true,
   };
   const tr = await djTravel(rate.location, b.venue);
-  const travelLine = tr.cents ? { type: 'custom', name: 'DJ travel - ' + name, description: tr.from + ' to ' + tr.to, qty: 1, unitCents: tr.cents, days: 1, pubDj: true, noPick: true } : null;
+  const travelLine = tr.cents ? { type: 'custom', name: 'Travel Charge - ' + tr.from + ' to ' + tr.to + ' Return', description: '', qty: 1, unitCents: tr.cents, days: 1, pubDj: true, noPick: true } : null;
   if (tr.missing) notes.push(name + ' (no travel fee set for ' + tr.missing + ')');
   // THE BOOKING FEE, ex GST - a setting on Entertainment (Max, 22 Oct 2026):
   // a fixed $ or a % of the DJ's performance only.
