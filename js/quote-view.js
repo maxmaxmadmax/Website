@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=668';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=668';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=669';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=669';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -468,20 +468,6 @@ function proposalTop(q, days) {
     : groups.map((g) => g.name).concat(lab.length || crewC ? ['Crew'] : [])
       .map((k) => '<div class="qp-tile">' + svgIcon(k) + '<b>' + esc(k) + '</b><span>' + esc(BLURB[k] || '') + '</span></div>').join('');
   const ampm = (t) => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); if (!m) return ''; const h = +m[1]; return (h % 12 || 12) + ':' + m[2] + (h < 12 ? 'am' : 'pm'); };
-  /*  YOUR NIGHT (Max, 22 Oct 2026): no second DJ photo - the night as a
-      timeline (setup, DJ on, last song, pack-down) + the DJ's music styles. */
-  const addMins = (t, m) => { const x = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); if (!x) return ''; const v = ((+x[1] * 60 + +x[2] + m) % 1440 + 1440) % 1440; return String(Math.floor(v / 60)).padStart(2, '0') + ':' + String(v % 60).padStart(2, '0'); };
-  const djCard = dj ? '<div class="qp-night">'
-    + '<div class="qp-night-head"><p class="qp-mini">Your night</p>'
-    + '<em class="' + (dj.confirmed ? 'is-ok' : '') + '">' + (dj.confirmed ? '&#10003; Set times confirmed' : 'Planned set &middot; confirmed after the night') + '</em></div>'
-    + '<ol class="qp-tl">'
-    + [[addMins(dj.start, -120), 'Setup &amp; sound check', 'Our crew sets up the DJ booth, sound and lighting'],
-      [dj.start, esc(dj.name) + ' on the decks', (dj.hours ? esc(dj.hours) + ' hours of music' : 'Live DJ set')],
-      [dj.finish, 'Last song', 'The night wraps up'],
-      [addMins(dj.finish, 15), 'Pack-down', 'We pack everything away']]
-      .map(([t, h, sub]) => '<li><b>' + esc(ampm(t)) + '</b><span>' + h + '<small>' + sub + '</small></span></li>').join('')
-    + '</ol>'
-    + '</div>' : '';
   /*  THE DJ, under the first paragraph (Max, 22 Oct 2026): a big photo with
       their name, music styles and the song-requests promise beside it.   */
   const djFeature = dj ? '<div class="qp-djf">'
@@ -548,7 +534,7 @@ function proposalTop(q, days) {
       <div class="qp-hero-body">
         ${isDj
           ? `<p class="qp-intro">Thanks for having SoundzGood Entertainment${venueName ? ' at ' + esc(venueName) : ''}. Here&rsquo;s your entertainment for the night &mdash;
-          the DJ, the sound and lighting, and the setup and pack-down, all looked after. The full itemised breakdown is below.</p>${djFeature}${djCard}`
+          the DJ, the sound and lighting, and the setup and pack-down, all looked after. The full itemised breakdown is below.</p>${djFeature}`
           : `<p class="qp-intro">Thanks for the opportunity to provide event production for ${esc(event)}.
           We&rsquo;ve put together the following production plan based on what we&rsquo;ve discussed.
           Everything below covers the equipment, preparation and crew required to deliver a successful event.</p>`}

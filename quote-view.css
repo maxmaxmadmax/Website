@@ -719,25 +719,13 @@
 }
 .qp-hero-photo.is-dj h1{ font-size:clamp(30px, 4.4vw, 54px); overflow-wrap:normal; word-break:normal; }   /* "ENTERTAINMENT" on one line beside the bigger photo */
 
-/* YOUR NIGHT timeline + music styles + premium included list (Max, 22 Oct 2026) */
-.qp-night{ margin:18px 0 6px; padding:16px 18px; border-radius:14px; background:linear-gradient(135deg, rgba(255,107,0,.16), rgba(255,107,0,.04)); border:1px solid rgba(255,107,0,.35); }
-.qp-night-head{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
-.qp-night-head .qp-mini{ margin:0; }
-.qp-night-head em{ font-style:normal; font-size:12px; padding:3px 9px; border-radius:20px; background:rgba(255,255,255,.12); }
-.qp-night-head em.is-ok{ background:#0f9d58; color:#fff; }
-.qp-tl{ list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; position:relative; }
-.qp-tl li{ display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:10px; background:rgba(0,0,0,.25); border-top:3px solid #ff6b00; }
-.qp-tl li:nth-child(2){ background:rgba(255,107,0,.22); }
-.qp-tl b{ font-size:20px; color:#ff8a3d; }
-.qp-tl span{ font-weight:700; }
-.qp-tl small{ display:block; font-weight:400; font-size:12px; opacity:.75; margin-top:2px; }
+/* music styles + premium included list (Max, 22 Oct 2026) */
 .qp-styles{ margin:12px 0 0; display:flex; flex-wrap:wrap; gap:6px; }
 .qp-styles span{ font-size:12px; font-weight:700; padding:4px 10px; border-radius:20px; border:1px solid rgba(255,138,61,.6); color:#ffb27a; }
 .qp-incl.is-premium ul{ list-style:none; padding:0; }
 .qp-incl.is-premium li{ position:relative; padding-left:26px; margin:6px 0; }
 .qp-incl.is-premium li::before{ content:"\2713"; position:absolute; left:0; top:0; width:18px; height:18px; border-radius:50%; background:#0f9d58; color:#fff; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; }
-@media (max-width:760px){ .qp-tl{ grid-template-columns:1fr 1fr; } }
-@media print{ .qp-night{ background:#fff4ec; } .qp-tl li{ background:#fff; } .qp-tl b{ color:#ff6b00; } .qp-styles span{ color:#b45309; } }
+@media print{ .qp-styles span{ color:#b45309; } }
 .qp-requests{ margin:12px 0 0; font-size:14px; opacity:.92; }
 
 /* the DJ under the first paragraph; the banner is just the stage + heading (Max, 22 Oct 2026) */
