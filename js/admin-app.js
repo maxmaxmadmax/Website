@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=656';
+} from './firebase-config.js?v=657';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=656';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=656';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=656';
-import { messagesHtml, wireMessages } from './messages.js?v=656';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=656';
-import { expandKit } from './kit.js?v=656';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=657';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=657';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=657';
+import { messagesHtml, wireMessages } from './messages.js?v=657';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=657';
+import { expandKit } from './kit.js?v=657';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2656,6 +2656,14 @@ function wireEntPage() {
   const ds = document.getElementById('dj-search');
   if (ds) ds.addEventListener('input', () => { state.djSearch = ds.value; const pos = ds.selectionStart; render(); const n = document.getElementById('dj-search'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } });
   desk.querySelectorAll('[data-dj-open]').forEach((r) => r.addEventListener('click', () => { state.openDj = r.getAttribute('data-dj-open'); render(); }));
+  // UPDATE QUOTE (Max, 22 Oct 2026): rebuild this gig's quote with the DJ's current rate / location
+  desk.querySelectorAll('[data-gig-resync]').forEach((b) => b.addEventListener('click', async () => {
+    b.disabled = true; b.textContent = 'Updating…';
+    const notes = await gigSyncBookings([b.getAttribute('data-gig-resync')]);
+    b.textContent = notes.length ? 'Done - see note' : 'Updated ✓';
+    if (notes.length) window.alert(notes.join('\n\n'));
+    setTimeout(() => render(), 900);
+  }));
   desk.querySelectorAll('[data-book-night]').forEach((b) => b.addEventListener('click', () => {
     state.bookDraft = { date: b.getAttribute('data-book-night'), venue: b.getAttribute('data-book-venue') || 'Grand View Hotel, Bowen', slug: (state.talent[0] || {}).slug || '', status: 'confirmed' };
     state.bookEditing = true; state.entPanel = true; state.bookingOpen = null;
@@ -2915,6 +2923,7 @@ function bookingPanel(b) {
               const missing = [!b.customerId && 'Invoice to', !b.templateId && 'Template', (b.status || 'confirmed') !== 'confirmed' && 'Confirmed status'].filter(Boolean);
               const noInv = !inv && missing.length ? '<p class="ent-noinv">&#9888; No invoice yet - press <b>Edit</b> and set ' + missing.join(' + ') + ', then Save.</p>' : '';
               return `${noInv}${dk ? '<p class="ent-deck">&#127911; Their deck: <b>' + esc(dk) + '</b></p>' : ''}<button type="button" class="ad-btn" data-pub-times="${attr(b.id)}">&#128241; Text DJ their link</button>
+              ${b.templateId && b.customerId ? `<button type="button" class="ad-btn" data-gig-resync="${attr(b.id)}">&#8635; Update quote</button>` : ''}
               ${inv ? `<a class="ad-btn" href="#/quoteDocs?q=${attr(inv.id)}">Invoice ${esc(money(inv.totalCents))} &middot; ${esc(inv.status === 'approved' ? 'ready' : inv.status)}</a>` : ''}`;
             })()}
           </div>
