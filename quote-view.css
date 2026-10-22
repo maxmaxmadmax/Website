@@ -712,3 +712,13 @@
   .qp-hero-photo.is-dj .qp-hero-in{ max-width:none; }
 }
 @media print{ .qp-hero-djimg{ width:150px; } }
+/* DJ quotes: our stage behind, a bigger DJ photo (Max, 22 Oct 2026) */
+.qp-hero-photo.is-dj{ min-height:470px; background-position:center 60%; }
+.qp-hero-djimg{ width:300px; bottom:32px; }
+.qp-hero-photo.is-dj .qp-hero-in{ max-width:calc(100% - 380px); }
+@media (max-width:760px){
+  .qp-hero-photo.is-dj{ min-height:420px; }
+  .qp-hero-djimg{ width:130px; }
+  .qp-hero-photo.is-dj .qp-hero-in{ max-width:none; }
+}
+.qp-hero-photo.is-dj h1{ font-size:clamp(30px, 4.4vw, 54px); overflow-wrap:normal; word-break:normal; }   /* "ENTERTAINMENT" on one line beside the bigger photo */
