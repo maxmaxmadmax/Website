@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=670';
+} from './firebase-config.js?v=671';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=670';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=670';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=670';
-import { messagesHtml, wireMessages } from './messages.js?v=670';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=670';
-import { expandKit } from './kit.js?v=670';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=671';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=671';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=671';
+import { messagesHtml, wireMessages } from './messages.js?v=671';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=671';
+import { expandKit } from './kit.js?v=671';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2834,8 +2834,7 @@ function bookingPanel(b) {
         </label>
 
         <label class="ad-field">Venue
-          <input type="text" id="ad-f-venue" list="ad-venue-list" value="${attr(draft.venue || 'Grand View Hotel, Bowen')}">
-          <datalist id="ad-venue-list">${['Grand View Hotel, Bowen'].concat((state.venues || []).map(venueFull)).map((x) => `<option value="${attr(x)}"></option>`).join('')}</datalist>
+          <select id="ad-f-venue">${venueOptions(draft.venue || 'Grand View Hotel, Bowen')}</select>
         </label>
 
         ${(() => {
@@ -3093,7 +3092,14 @@ function wirePubBits() {
   });
   // the booking form: picking a regular pub fills in its usual times
   const venueIn = document.getElementById('ad-f-venue');
-  if (venueIn) venueIn.addEventListener('change', () => {
+  let venuePrev = venueIn ? venueIn.value : '';
+  if (venueIn) venueIn.addEventListener('change', async () => {
+    if (venueIn.value === '__new') {
+      const v = await promptNewVenue();
+      if (!v) { venueIn.value = venuePrev; return; }
+      venueIn.innerHTML = venueOptions(venueFull(v));
+    }
+    venuePrev = venueIn.value;
     const rn = regularNightFor(venueIn.value);
     const s = document.getElementById('ad-f-start'), f = document.getElementById('ad-f-finish');
     if (rn && s && !s.value) s.value = rn.start || '';
@@ -3295,6 +3301,33 @@ function bookTabs() {
   return BOOK_TABS.slice(0, 3).concat(saved, BOOK_TABS.slice(3));
 }
 const venueFull = (v) => v.name + (v.town ? ', ' + v.town : '');
+/*  The booking form's venue pick list: Grand View, the saved venues, and
+    "+ Add a new venue" at the bottom (Max, 22 Oct 2026). An old booking
+    at a venue that isn't saved keeps it, shown first.                 */
+function venueOptions(current) {
+  const list = ['Grand View Hotel, Bowen'].concat((state.venues || []).map(venueFull));
+  const cur = String(current || '').trim();
+  const opts = (cur && !list.includes(cur) ? [cur] : []).concat(list);
+  return opts.map((x) => '<option value="' + attr(x) + '"' + (x === cur ? ' selected' : '') + '>' + esc(x) + '</option>').join('')
+    + '<option value="__new">+ Add a new venue...</option>';
+}
+/*  Ask for a new venue's name + town and save it. Used by the "+ Add venue"
+    tab button and the booking form. Gives back the saved venue, or null. */
+async function promptNewVenue() {
+  const name = (window.prompt('Venue name (e.g. Arcadia Bar)') || '').trim().slice(0, 80);
+  if (!name) return null;
+  const town = (window.prompt('Town (e.g. Mackay)') || '').trim().slice(0, 60);
+  const id = (name + ' ' + town).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
+  const have = (state.venues || []).find((v) => v.id === id);
+  if (have) return have;
+  try {
+    const { doc, setDoc } = fb.f;
+    const v = { name, town, createdAt: Date.now() };
+    await setDoc(doc(fb.db, 'venues', id), v);
+    state.venues = (state.venues || []).concat({ id, ...v }).sort((a, b) => String(a.name).localeCompare(String(b.name)));
+    return { id, ...v };
+  } catch (err) { window.alert(friendly(err)); return null; }
+}
 
 function venuesKnown() {
   const seen = {};
@@ -3537,18 +3570,10 @@ function wireEntertainment() {
 
   const addVenue = document.getElementById('ad-add-venue');
   if (addVenue) addVenue.addEventListener('click', async () => {
-    const name = (window.prompt('Venue name (e.g. Arcadia Bar)') || '').trim().slice(0, 80);
-    if (!name) return;
-    const town = (window.prompt('Town (e.g. Mackay)') || '').trim().slice(0, 60);
-    const id = (name + ' ' + town).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
-    if ((state.venues || []).some((v) => v.id === id)) { window.alert(name + ' is already saved.'); return; }
-    try {
-      const { doc, setDoc } = fb.f;
-      await setDoc(doc(fb.db, 'venues', id), { name, town, createdAt: Date.now() });
-      await loadPubSettings();
-      state.bookFilter.tab = 'v:' + id;
-      render();
-    } catch (err) { window.alert(friendly(err)); }
+    const v = await promptNewVenue();
+    if (!v) return;
+    state.bookFilter.tab = 'v:' + v.id;
+    render();
   });
   document.querySelectorAll('[data-book-tab]').forEach((btn) => {
     btn.addEventListener('click', () => {
