@@ -5150,9 +5150,14 @@ function tradingMins(t) {
   if (m <= TRADE_TO) return m + 1440;
   return null;   // outside trading hours
 }
+/*  Hours played, across midnight ("22:00"-"03:00" = 5). Any venue - the
+    5pm-2:30am trading window only checks what DJs type in (Max, 22 Oct 2026). */
 function gigHours(start, finish) {
-  const a = tradingMins(start), b = tradingMins(finish);
-  if (a == null || b == null || b <= a) return 0;
+  const p = (t) => { const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); return r ? +r[1] * 60 + +r[2] : null; };
+  const a = p(start); let b = p(finish);
+  if (a == null || b == null) return 0;
+  if (b <= a) b += 1440;
+  if (b - a > 720) return 0;   // over 12 hours - a typo
   return Math.round((b - a) / 15) / 4;
 }
 
