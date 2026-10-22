@@ -5181,9 +5181,9 @@ async function gigSync(bookingId) {
   const name = (t.exists && t.data().name) || slugName;
   const r = await db.collection('actRates').doc(b.slug).get();
   const rate = r.exists ? r.data() : {};
-  // every gig quote starts at 4 hours, 9:30pm-1:30am; the DJ's real times replace it (Max, 21 Oct 2026)
-  const start = b.actualStart || '21:30';
-  const finish = b.actualFinish || '01:30';
+  // the DJ's real times, else the booked times, else 9:30pm + 4 hours (Max, 22 Oct 2026)
+  const start = b.actualStart || b.start || '21:30';
+  const finish = b.actualFinish || (b.actualStart ? '' : b.finish) || plus4h(start);
   const hours = gigHours(start, finish);
   const perHour = Math.max(0, Math.round(rate.hourlyRateCents || 0));
   const notes = [];
@@ -5377,7 +5377,7 @@ async function gigDjFor(bookingId) {
     const x = b.data();
     const t = await db.collection('talent').doc(x.slug).get();
     const slugName = String(x.slug || '').split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    const start = x.actualStart || '21:30', finish = x.actualFinish || '01:30';
+    const start = x.actualStart || x.start || '21:30', finish = x.actualFinish || (x.actualStart ? '' : x.finish) || plus4h(start);
     const r = await db.collection('actRates').doc(x.slug).get();
     return { name: (t.exists && t.data().name) || slugName, photo: (t.exists && t.data().photo) || ('images/talent/' + x.slug + '.jpg'),
       start, finish, hours: gigHours(start, finish), confirmed: !!x.timesConfirmedAt, venue: x.venue || '',
@@ -5434,3 +5434,12 @@ exports.onDjFeeChanged = require('firebase-functions/v2/firestore').onDocumentWr
     try { await gigSync(d.id); } catch (e) { logger.error('onDjFeeChanged', { id: d.id, err: e && e.message }); }
   }
 });
+
+/*  A start time + 4 hours ("21:30" -> "01:30") - a gig with no finish set
+    is quoted at the usual 4 hours (Max, 22 Oct 2026).                 */
+function plus4h(t) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(t || ''));
+  if (!m) return '01:30';
+  const v = ((+m[1] * 60 + +m[2] + 240) % 1440);
+  return String(Math.floor(v / 60)).padStart(2, '0') + ':' + String(v % 60).padStart(2, '0');
+}
