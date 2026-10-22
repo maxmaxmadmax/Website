@@ -2515,6 +2515,8 @@ function sanitizeQuote(q) {
     // PUB NIGHTS (Max, 21 Oct 2026): the DJ lines the pub invoice swaps each week - never gear
     if (l.pubDj === true) line.pubDj = true;
     if (l.noPick === true) line.noPick = true;
+    // a template's fill-in line: the DJ, their travel or the booking fee (Max, 22 Oct 2026)
+    if (['dj', 'travel', 'fee'].includes(l.djSlot)) line.djSlot = l.djSlot;
     // CREW & VEHICLES (from Crew & Vehicles): their own subtotal, never gear
     if (['staff', 'vehicle', 'trailer'].includes(l.resType)) {
       line.resType = l.resType;
@@ -5186,23 +5188,39 @@ async function gigSync(bookingId) {
   const perHour = Math.max(0, Math.round(rate.hourlyRateCents || 0));
   const notes = [];
   if (!perHour) notes.push(name);
-  const djLines = [{
+  const djLine = {
     type: 'custom', name: 'DJ performance - ' + name,
     description: (hours ? hours + ' hrs' : 'Hours to confirm') + (perHour ? ' @ $' + (perHour / 100).toFixed(2).replace(/\.00$/, '') + '/hr' : '')
       + (start && finish ? ' · ' + ampm(start) + '-' + ampm(finish) : '') + (b.timesConfirmedAt ? ' (confirmed)' : '')
       + (perHour ? '' : ' · NO RATE SET - add it on the DJs tab'),
     qty: 1, unitCents: Math.round(hours * perHour), days: 1, pubDj: true, noPick: true,
-  }];
+  };
   const tr = await djTravel(rate.location, b.venue);
-  if (tr.cents) djLines.push({ type: 'custom', name: 'DJ travel - ' + name, description: tr.from + ' to ' + tr.to, qty: 1, unitCents: tr.cents, days: 1, pubDj: true, noPick: true });
+  const travelLine = tr.cents ? { type: 'custom', name: 'DJ travel - ' + name, description: tr.from + ' to ' + tr.to, qty: 1, unitCents: tr.cents, days: 1, pubDj: true, noPick: true } : null;
   if (tr.missing) notes.push(name + ' (no travel fee set for ' + tr.missing + ')');
-  // THE BOOKING FEE on every DJ booking, ex GST - a setting on Entertainment
-  // (Max, 22 Oct 2026): a fixed $ or a % of the DJ's performance only.
+  // THE BOOKING FEE, ex GST - a setting on Entertainment (Max, 22 Oct 2026):
+  // a fixed $ or a % of the DJ's performance only.
   const fee = await djFeeSetting();
-  const feeCents = fee.mode === 'percent' ? Math.round(djLines[0].unitCents * fee.pct / 100) : fee.cents;
-  if (feeCents > 0) djLines.push({ type: 'custom', name: fee.name, description: fee.description, qty: 1, unitCents: feeCents, days: 1, pubDj: true, noPick: true });
+  const feeCents = fee.mode === 'percent' ? Math.round(djLine.unitCents * fee.pct / 100) : fee.cents;
+  const feeLine = feeCents > 0 ? { type: 'custom', name: fee.name, description: fee.description, qty: 1, unitCents: feeCents, days: 1, pubDj: true, noPick: true } : null;
 
-  let lines = djLines.concat((tpl.lines || []).filter((l) => !l.pubDj && l.type !== 'fee'));   // the DJ at the top (Max, 21 Oct 2026)
+  /*  BUILT FROM THE TEMPLATE (Max, 22 Oct 2026): the template's fill-in lines
+      are swapped in place - "DJ / Entertainer" becomes this DJ + price, "DJ
+      travel" their travel (dropped if local), the booking fee the setting.
+      No fee line in the template = no fee. No travel line = travel goes
+      under the DJ. No DJ line (older templates) = DJ + travel at the top.  */
+  const tplLines = tpl.lines || [];
+  const hasSlot = (k) => tplLines.some((l) => l.djSlot === k);
+  let lines = [];
+  tplLines.forEach((l) => {
+    if (l.type === 'fee') return;   // the 2% "Booking & admin" is worked out below
+    if (l.djSlot === 'dj') { lines.push(djLine); if (!hasSlot('travel') && travelLine) lines.push(travelLine); return; }
+    if (l.djSlot === 'travel') { if (travelLine) lines.push(travelLine); return; }
+    if (l.djSlot === 'fee') { if (feeLine) lines.push(feeLine); return; }
+    if (l.pubDj) return;   // old generated DJ lines
+    lines.push(l);
+  });
+  if (!hasSlot('dj')) lines = [djLine].concat(!hasSlot('travel') && travelLine ? [travelLine] : [], lines);
   if ((tpl.lines || []).some((l) => l.type === 'fee') && tpl.feeExcluded !== true) {
     const pre = quoteMoney({ hire: { days: 1 }, lines, discountCents: tpl.discountCents || 0 });
     const fee = Math.round(pre.netCents * 2 / 100 / 1000) * 1000;

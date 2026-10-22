@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=677';
+} from './firebase-config.js?v=678';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=677';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=677';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=677';
-import { messagesHtml, wireMessages } from './messages.js?v=677';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=677';
-import { expandKit } from './kit.js?v=677';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=678';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=678';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=678';
+import { messagesHtml, wireMessages } from './messages.js?v=678';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=678';
+import { expandKit } from './kit.js?v=678';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6799,8 +6799,15 @@ function quoteSearchMatches(term) {
     state.djFeeLoading = true;
     fb.f.getDocs(fb.f.collection(fb.db, 'djSettings')).then((s) => { state.djFee = {}; s.forEach((d) => { if (d.id === 'fee') state.djFee = d.data(); }); }).catch(() => { state.djFee = {}; });
   }
+  /*  FILL-IN LINES for DJ templates (Max, 22 Oct 2026): the booking swaps
+      them for the real DJ + price, their travel, and the fee.          */
   const fee = djFeeItem();
-  const feeHit = searchMatch(t, fee.name, 'dj booking fee management coordination backup') ? [fee] : [];
+  const slots = [
+    { id: '__djslot', kind: 'djfee', slot: 'dj', name: 'DJ / Entertainer', sub: 'Filled in per booking', priceCents: 0, pctLabel: 'DJ + their price', description: 'Filled in per booking: the DJ, their hours and price', words: 'dj entertainer entertainment act performance' },
+    { id: '__djtravel', kind: 'djfee', slot: 'travel', name: 'DJ travel', sub: 'Filled in per booking', priceCents: 0, pctLabel: 'Their travel fee', description: 'Filled in per booking: left off if the DJ is local', words: 'dj travel' },
+    { ...fee, slot: 'fee', words: 'dj booking fee management coordination backup' },
+  ];
+  const feeHit = slots.filter((x) => searchMatch(t, x.name, x.words));
   const hits = searchList(quoteAddSearchList(), t, (it) => it.name, (it) => [it.sub], 8 - feeHit.length);
   return feeHit.concat(hits.filter((x) => x.bundle === 'package').concat(hits.filter((x) => x.system && x.bundle !== 'package'), hits.filter((x) => !x.system)));   // systems first (Max, 17 Oct 2026)
 }
@@ -6820,8 +6827,8 @@ function renderInvResults(term) {
   box.hidden = false;
   box.innerHTML = matches.map((it, i) => `
     <div class="qb-res${i === invSearchActive ? ' is-active' : ''}" data-add="${attr(it.id)}" data-kind="${attr(it.kind)}">
-      <span class="qb-res-name">${it.kind === 'djfee' ? '<span class="qb-sys-tag is-pkg">DJ fee</span>' : ''}${it.system ? '<span class="qb-sys-tag' + (it.bundle === 'package' ? ' is-pkg' : '') + '">' + (it.bundle === 'package' ? 'Package' : 'Kit') + '</span>' : ''}${esc(it.name)}${it.kind === 'resource' ? ` <span class="qb-res-tag">${esc(it.sub)}</span>` : ''}</span>
-      <span class="qb-res-price">${it.kind === 'djfee' ? esc(it.pctLabel || money(it.priceCents)) + ' per booking' : esc(money(it.priceCents)) + '/day'}</span>
+      <span class="qb-res-name">${it.kind === 'djfee' ? '<span class="qb-sys-tag is-pkg">' + (it.slot === 'fee' ? 'DJ fee' : 'Fill-in') + '</span>' : ''}${it.system ? '<span class="qb-sys-tag' + (it.bundle === 'package' ? ' is-pkg' : '') + '">' + (it.bundle === 'package' ? 'Package' : 'Kit') + '</span>' : ''}${esc(it.name)}${it.kind === 'resource' ? ` <span class="qb-res-tag">${esc(it.sub)}</span>` : ''}</span>
+      <span class="qb-res-price">${it.kind === 'djfee' ? esc(it.slot === 'fee' ? (it.pctLabel || money(it.priceCents)) + ' per booking' : it.pctLabel) : esc(money(it.priceCents)) + '/day'}</span>
     </div>`).join('');
   return matches;
 }
@@ -6833,10 +6840,11 @@ function wireInvTypeahead() {
 
   const add = (id) => {
     if (!id) return;
-    const pick = id === '__djfee' ? djFeeItem() : quoteAddSearchList().find((x) => x.id === id);
+    const pick = String(id).indexOf('__dj') === 0 ? quoteSearchMatches(input.value).find((x) => x.id === id) : quoteAddSearchList().find((x) => x.id === id);
     if (pick && pick.kind === 'djfee') {
-      // a DJ line: on gig quotes the server works the amount out per booking (fixed or %)
-      quoteDraft.lines.push({ type: 'custom', name: pick.name, description: pick.pctLabel ? pick.pctLabel + "'s performance - worked out per booking" : pick.description, qty: 1, unitCents: pick.priceCents, days: 1, pubDj: true, noPick: true });
+      // a fill-in line: on gig quotes the server swaps it for the real thing per booking
+      const desc = pick.slot === 'fee' && pick.pctLabel ? pick.pctLabel + "'s performance - worked out per booking" : pick.description;
+      quoteDraft.lines.push({ type: 'custom', name: pick.name, description: desc, qty: 1, unitCents: pick.priceCents, days: 1, pubDj: true, noPick: true, djSlot: pick.slot });
       renderQuoteLines();
     } else if (pick && pick.kind === 'resource') addResourceLineToQuote(pick);
     else addInvLineToQuote(id);
