@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=672';
+} from './firebase-config.js?v=673';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=672';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=672';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=672';
-import { messagesHtml, wireMessages } from './messages.js?v=672';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=672';
-import { expandKit } from './kit.js?v=672';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=673';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=673';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=673';
+import { messagesHtml, wireMessages } from './messages.js?v=673';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=673';
+import { expandKit } from './kit.js?v=673';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2469,8 +2469,8 @@ function entHead(tab) {
           </div>
           <div class="inv-head-actions">
             <div class="ent-tabs" role="tablist">
-              <button type="button" class="ent-tab${tab === 'gigs' ? ' is-on' : ''}" data-ent-tab="gigs">Gigs</button>
-              <button type="button" class="ent-tab${tab === 'djs' ? ' is-on' : ''}" data-ent-tab="djs">DJs</button>
+              <button type="button" class="ent-tab${tab === 'gigs' ? ' is-on' : ''}" data-ent-tab="gigs">Bookings</button>
+              <button type="button" class="ent-tab${tab === 'djs' ? ' is-on' : ''}" data-ent-tab="djs">Entertainment Roster</button>
             </div>
             ${tab === 'gigs' ? '<button type="button" class="ad-btn ad-btn-primary" id="ad-book-new">+ New booking</button>' : '<button type="button" class="ad-btn ad-btn-primary" data-dj-new>+ New DJ</button>'}
           </div>
