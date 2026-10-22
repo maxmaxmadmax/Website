@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=676';
+} from './firebase-config.js?v=677';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=676';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=676';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=676';
-import { messagesHtml, wireMessages } from './messages.js?v=676';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=676';
-import { expandKit } from './kit.js?v=676';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=677';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=677';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=677';
+import { messagesHtml, wireMessages } from './messages.js?v=677';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=677';
+import { expandKit } from './kit.js?v=677';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6778,11 +6778,31 @@ function searchList(list, term, nameOf, moreOf, limit) {
 let invSearchActive = -1;   // keyboard-highlighted result
 
 /*  Matches for the quote add-search: inventory + active crew/vehicles. */
+/*  THE DJ BOOKING FEE in the add-search (Max, 22 Oct 2026): type "booking",
+    "fee", "coordination"... and it's there to drop into a template or quote.
+    Same name, wording and amount as the setting on Entertainment.        */
+function djFeeItem() {
+  const f = state.djFee || {};
+  const pct = f.mode === 'percent';
+  const name = f.name || 'Booking, coordination & backup cover';
+  return {
+    id: '__djfee', kind: 'djfee', name, sub: 'DJ booking fee',
+    priceCents: pct ? 0 : (Number.isFinite(f.cents) ? f.cents : 8000),
+    pctLabel: pct ? (Number.isFinite(f.pct) ? f.pct : 15) + '% of DJ' : '',
+    description: f.description == null ? 'DJ booking, scheduling, backup DJ if needed and support on the night' : f.description,
+  };
+}
 function quoteSearchMatches(term) {
   const t = String(term || '').trim().toLowerCase();
   if (!t) return [];
-  const hits = searchList(quoteAddSearchList(), t, (it) => it.name, (it) => [it.sub], 8);
-  return hits.filter((x) => x.bundle === 'package').concat(hits.filter((x) => x.system && x.bundle !== 'package'), hits.filter((x) => !x.system));   // systems first (Max, 17 Oct 2026)
+  if (state.djFee === undefined && !state.djFeeLoading) {   // not loaded yet (Entertainment not opened) - fetch once
+    state.djFeeLoading = true;
+    fb.f.getDocs(fb.f.collection(fb.db, 'djSettings')).then((s) => { state.djFee = {}; s.forEach((d) => { if (d.id === 'fee') state.djFee = d.data(); }); }).catch(() => { state.djFee = {}; });
+  }
+  const fee = djFeeItem();
+  const feeHit = searchMatch(t, fee.name, 'dj booking fee management coordination backup') ? [fee] : [];
+  const hits = searchList(quoteAddSearchList(), t, (it) => it.name, (it) => [it.sub], 8 - feeHit.length);
+  return feeHit.concat(hits.filter((x) => x.bundle === 'package').concat(hits.filter((x) => x.system && x.bundle !== 'package'), hits.filter((x) => !x.system)));   // systems first (Max, 17 Oct 2026)
 }
 
 function renderInvResults(term) {
@@ -6800,8 +6820,8 @@ function renderInvResults(term) {
   box.hidden = false;
   box.innerHTML = matches.map((it, i) => `
     <div class="qb-res${i === invSearchActive ? ' is-active' : ''}" data-add="${attr(it.id)}" data-kind="${attr(it.kind)}">
-      <span class="qb-res-name">${it.system ? '<span class="qb-sys-tag' + (it.bundle === 'package' ? ' is-pkg' : '') + '">' + (it.bundle === 'package' ? 'Package' : 'Kit') + '</span>' : ''}${esc(it.name)}${it.kind === 'resource' ? ` <span class="qb-res-tag">${esc(it.sub)}</span>` : ''}</span>
-      <span class="qb-res-price">${esc(money(it.priceCents))}/day</span>
+      <span class="qb-res-name">${it.kind === 'djfee' ? '<span class="qb-sys-tag is-pkg">DJ fee</span>' : ''}${it.system ? '<span class="qb-sys-tag' + (it.bundle === 'package' ? ' is-pkg' : '') + '">' + (it.bundle === 'package' ? 'Package' : 'Kit') + '</span>' : ''}${esc(it.name)}${it.kind === 'resource' ? ` <span class="qb-res-tag">${esc(it.sub)}</span>` : ''}</span>
+      <span class="qb-res-price">${it.kind === 'djfee' ? esc(it.pctLabel || money(it.priceCents)) + ' per booking' : esc(money(it.priceCents)) + '/day'}</span>
     </div>`).join('');
   return matches;
 }
@@ -6813,8 +6833,12 @@ function wireInvTypeahead() {
 
   const add = (id) => {
     if (!id) return;
-    const pick = quoteAddSearchList().find((x) => x.id === id);
-    if (pick && pick.kind === 'resource') addResourceLineToQuote(pick);
+    const pick = id === '__djfee' ? djFeeItem() : quoteAddSearchList().find((x) => x.id === id);
+    if (pick && pick.kind === 'djfee') {
+      // a DJ line: on gig quotes the server works the amount out per booking (fixed or %)
+      quoteDraft.lines.push({ type: 'custom', name: pick.name, description: pick.pctLabel ? pick.pctLabel + "'s performance - worked out per booking" : pick.description, qty: 1, unitCents: pick.priceCents, days: 1, pubDj: true, noPick: true });
+      renderQuoteLines();
+    } else if (pick && pick.kind === 'resource') addResourceLineToQuote(pick);
     else addInvLineToQuote(id);
     input.value = '';
     box.hidden = true; box.innerHTML = '';
