@@ -16,7 +16,7 @@
 
    Pure HTML + wiring; admin-app.js hands in the items and does the saving.
    ========================================================================== */
-import { expandKit, resolveTotals } from './kit.js?v=679';
+import { expandKit, resolveTotals } from './kit.js?v=680';
 
 /* the working copy of the system being built */
 export function sysDraftFrom(item, type) {

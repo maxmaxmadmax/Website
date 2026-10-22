@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=679';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=679';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=680';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=680';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -482,6 +482,8 @@ function proposalTop(q, days) {
     + (dj.photo ? '<img class="qp-djf-img" src="/' + esc(dj.photo) + '" alt="' + esc(dj.name) + '" onerror="this.remove()">' : '')
     + '<div class="qp-djf-text"><p class="qp-mini">Your DJ</p><h3>' + esc(dj.name) + '</h3>'
     + '<p class="qp-djf-set">' + esc(ampm(dj.start)) + ' &ndash; ' + esc(ampm(dj.finish)) + (dj.hours ? ' &middot; ' + esc(dj.hours) + ' hours' : '') + '</p>'
+    // their bio, paragraph by paragraph (Max, 22 Oct 2026)
+    + (dj.bio ? '<div class="qp-djf-bio">' + String(dj.bio).split(/\n\s*\n/).map((x) => '<p>' + esc(x.trim()).replace(/\n/g, '<br>') + '</p>').join('') + '</div>' : '')
     + ((dj.styles || []).length ? '<p class="qp-styles">' + dj.styles.map((x) => '<span>' + esc(x) + '</span>').join('') + '</p>' : '')
     + '<p class="qp-requests">&#127925; Our DJs take song requests from your patrons and work with your staff on any requests through the night.</p>'
     + '</div></div>' : '';

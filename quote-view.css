@@ -747,3 +747,9 @@
   background:#e8f4ec; color:#0f6e3d; border:1px solid #b9dfc6; vertical-align:2px; white-space:nowrap; }
 .qv-super .qv-sub{ font-style:italic; }
 @media print{ .qv-law{ background:#fff; } }
+
+/* the DJ's bio (Max, 22 Oct 2026) */
+.qp-djf-bio{ margin:8px 0 4px; max-width:560px; }
+.qp-djf-bio p{ margin:0 0 8px; font-size:15px; line-height:1.55; color:#e8e8e8; }
+.qp-djf-bio p:last-child{ color:#ffb27a; font-weight:700; font-size:14px; }
+@media print{ .qp-djf-bio p{ color:#222; } .qp-djf-bio p:last-child{ color:#b45309; } }

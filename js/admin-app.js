@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=679';
+} from './firebase-config.js?v=680';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=679';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=679';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=679';
-import { messagesHtml, wireMessages } from './messages.js?v=679';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=679';
-import { expandKit } from './kit.js?v=679';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=680';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=680';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=680';
+import { messagesHtml, wireMessages } from './messages.js?v=680';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=680';
+import { expandKit } from './kit.js?v=680';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -263,10 +263,18 @@ async function loadTalent() {
         name: t.name || slug,
         act: t.act || (bySlug[slug] || {}).act || 'dj',
         photo: t.photo || (bySlug[slug] || {}).photo || '',
+        bio: t.bio || '',   // shown on their gig quotes (Max, 22 Oct 2026)
       };
     });
 
     state.talent = Object.keys(bySlug).map((k) => bySlug[k]);
+    // LUCAS'S BIO, as Max sent it (22 Oct 2026) - put in once, his to edit after
+    const lucas = state.talent.find((x) => x.slug === 'lucas');
+    if (lucas && !lucas.bio && !(saved.lucas && saved.lucas.bioSeeded) && !state.lucasSeeded) {
+      state.lucasSeeded = true;
+      const bio = "Bringing international party energy, this New Caledonian DJ blends Reggaeton, Baile Funk, Moombahton, Dancehall, Hip-Hop and R&B into vibrant, feel-good sets.\n\nNow based in Australia, his open-format style is a natural fit for backpacker bars, beach parties and Latin-inspired nights—bringing travellers and locals together on the dance floor.\n\n🇳🇨 New Caledonia roots • 🇦🇺 Australia based";
+      fb.f.setDoc(fb.f.doc(fb.db, 'talent', 'lucas'), { bio, bioSeeded: true }, { merge: true }).then(() => { lucas.bio = bio; }).catch(() => {});
+    }
   } catch (err) {
     state.talent = (window.SG_ROSTER_BUILT_IN || []).slice();
   }
@@ -2669,6 +2677,7 @@ function djDetailHtml() {
         <div class="ad-field"><span>Music styles (shown on their gig quotes)</span>
           <div class="ent-styles">${DJ_STYLES.map((x) => `<label><input type="checkbox" data-dj-style value="${attr(x)}"${(r.styles || []).includes(x) ? ' checked' : ''}> ${esc(x)}</label>`).join('')}</div>
         </div>
+        <label class="ad-field"><span>Bio (shown on their gig quotes - leave a blank line between paragraphs)</span><textarea class="ad-input" id="dj-f-bio" rows="6" maxlength="1200" placeholder="Who they are, what they play, where they fit best">${esc(t.bio || '')}</textarea></label>
         <label class="ad-field"><span>Their deck (what they bring - goes on the pick list)</span><input class="ad-input" id="dj-f-deck" value="${attr(r.deck || '')}" placeholder="e.g. Pioneer DDJ-1000 - needs 2x XLR. Or: none, uses ours"></label>
         <p class="ad-cell-muted ent-private">Rate, location, phone, email and deck are private - only the name, act and photo show on the website.</p>
         ${gigs.length ? '<p class="ent-sub">Upcoming gigs</p><ul class="ent-gigs">' + gigs.map((b) => '<li><b>' + esc(prettyDate(b.date)) + '</b> ' + esc(String(b.venue || '').split(',')[0]) + ' ' + gigDots(b) + '</li>').join('') + '</ul>' : ''}
@@ -2724,7 +2733,7 @@ function wireEntPage() {
     save.disabled = true; msg.textContent = 'Saving…'; msg.className = 'ad-quote-msg';
     try {
       const { doc, setDoc, serverTimestamp } = fb.f;
-      await setDoc(doc(fb.db, 'talent', slug), { name, act: v('dj-f-act') || 'dj', photo: v('dj-f-photo'), hidden: false, updatedAt: serverTimestamp() }, { merge: true });
+      await setDoc(doc(fb.db, 'talent', slug), { name, act: v('dj-f-act') || 'dj', photo: v('dj-f-photo'), bio: v('dj-f-bio').slice(0, 1200), hidden: false, updatedAt: serverTimestamp() }, { merge: true });
       await setDoc(doc(fb.db, 'actRates', slug), {
         hourlyRateCents: Math.max(0, Math.round((parseFloat(v('dj-f-rate')) || 0) * 100)),
         location: v('dj-f-loc').slice(0, 80), phone: v('dj-f-phone').slice(0, 40),
