@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=657';
+} from './firebase-config.js?v=658';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=657';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=657';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=657';
-import { messagesHtml, wireMessages } from './messages.js?v=657';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=657';
-import { expandKit } from './kit.js?v=657';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=658';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=658';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=658';
+import { messagesHtml, wireMessages } from './messages.js?v=658';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=658';
+import { expandKit } from './kit.js?v=658';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2608,6 +2608,20 @@ function djMainHtml() {
         ${regularNightsPanel()}
       </div>`;
 }
+/*  LOCATION IS A PICK LIST (Max, 22 Oct 2026) - no more "Macjay". The towns
+    come from the DJ travel fees table (plus Bowen); add a town there to get
+    it here. A saved town that isn't in the list shows "(check spelling)". */
+function djTownOptions(current) {
+  const towns = new Set(['Bowen']);
+  (state.travelFees || []).forEach((f) => { if (f.from) towns.add(String(f.from).trim()); if (f.to) towns.add(String(f.to).trim()); });
+  const list = [...towns].filter(Boolean).sort((x, y) => x.localeCompare(y));
+  const cur = String(current || '').trim();
+  const known = list.some((t) => t.toLowerCase() === cur.toLowerCase());
+  return '<option value="">Choose a town</option>'
+    + (cur && !known ? '<option value="' + attr(cur) + '" selected>' + esc(cur) + ' (check spelling)</option>' : '')
+    + list.map((t) => '<option value="' + attr(t) + '"' + (t.toLowerCase() === cur.toLowerCase() ? ' selected' : '') + '>' + esc(t) + '</option>').join('');
+}
+
 function djDetailHtml() {
   const isNew = state.openDj === '__new__';
   const t = isNew ? {} : ((state.talent || []).find((x) => x.slug === state.openDj) || {});
@@ -2628,7 +2642,7 @@ function djDetailHtml() {
         <label class="ad-field"><span>Photo (on the website)</span><input class="ad-input" id="dj-f-photo" value="${attr(t.photo || '')}" placeholder="images/talent/name.jpg"></label>
         <div class="ent-2col">
           <label class="ad-field"><span>Rate per hour ($)</span><input class="ad-input" type="number" min="0" step="1" id="dj-f-rate" value="${attr(d(r.hourlyRateCents))}"></label>
-          <label class="ad-field"><span>Location (where they live)</span><input class="ad-input" id="dj-f-loc" value="${attr(r.location || '')}" placeholder="e.g. Mackay"></label>
+          <label class="ad-field"><span>Location (where they live)</span><select class="ad-select" id="dj-f-loc">${djTownOptions(r.location || '')}</select></label>
           <label class="ad-field"><span>Phone</span><input class="ad-input" type="tel" id="dj-f-phone" value="${attr(r.phone || '')}" placeholder="Mobile"></label>
           <label class="ad-field"><span>Email</span><input class="ad-input" type="email" id="dj-f-email" value="${attr(r.email || '')}" placeholder="For booking emails"></label>
         </div>
