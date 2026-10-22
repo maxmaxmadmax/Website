@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=691';
+} from './firebase-config.js?v=692';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=691';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=691';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=691';
-import { messagesHtml, wireMessages } from './messages.js?v=691';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=691';
-import { expandKit } from './kit.js?v=691';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=692';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=692';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=692';
+import { messagesHtml, wireMessages } from './messages.js?v=692';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=692';
+import { expandKit } from './kit.js?v=692';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -317,6 +317,14 @@ async function loadPubSettings() {
     }
     state.actRates = {};
     rates.forEach((d) => { state.actRates[d.id] = d.data(); });
+    // each DJ's town onto their public card, once a session (Max, 22 Oct 2026)
+    if (!state.locSynced) {
+      state.locSynced = true;
+      Object.keys(state.actRates).forEach((slug) => {
+        const loc = String(state.actRates[slug].location || '').trim();
+        if (loc) fb.f.setDoc(fb.f.doc(fb.db, 'talent', slug), { location: loc.slice(0, 80) }, { merge: true }).catch(() => {});
+      });
+    }
     try { const fs2 = await getDocs(collection(fb.db, 'djSettings')); state.djFee = {}; fs2.forEach((d) => { if (d.id === 'fee') state.djFee = d.data(); }); } catch (e) { state.djFee = {}; }
     // new wording (Max, 22 Oct 2026): a fee saved with the old wording is moved over once
     if (state.djFee && /^Booking, coordination/.test(state.djFee.name || '') && !state.feeRenamed) {
@@ -2755,7 +2763,7 @@ function wireEntPage() {
     save.disabled = true; msg.textContent = 'Saving…'; msg.className = 'ad-quote-msg';
     try {
       const { doc, setDoc, serverTimestamp } = fb.f;
-      await setDoc(doc(fb.db, 'talent', slug), { name, act: v('dj-f-act') || 'dj', photo: v('dj-f-photo'), bio: v('dj-f-bio').slice(0, 1200), hidden: false, updatedAt: serverTimestamp() }, { merge: true });
+      await setDoc(doc(fb.db, 'talent', slug), { name, act: v('dj-f-act') || 'dj', photo: v('dj-f-photo'), bio: v('dj-f-bio').slice(0, 1200), location: v('dj-f-loc').slice(0, 80), hidden: false, updatedAt: serverTimestamp() }, { merge: true });
       await setDoc(doc(fb.db, 'actRates', slug), {
         hourlyRateCents: Math.max(0, Math.round((parseFloat(v('dj-f-rate')) || 0) * 100)),
         location: v('dj-f-loc').slice(0, 80), phone: v('dj-f-phone').slice(0, 40),

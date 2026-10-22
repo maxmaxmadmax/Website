@@ -166,6 +166,10 @@ function start(ROSTER) {
           '<div class="ent-card-body">' +
             '<span class="ent-badge">' + esc(actLabel) + '</span>' +
             '<h3>' + esc(t.name) + '</h3>' +
+            // where they're based (Max, 22 Oct 2026)
+            (t.location
+              ? '<p class="ent-card-loc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>' + esc(t.location) + '</p>'
+              : '') +
 
             /*  Both lines are left out entirely when there is nothing to put
                 in them - an empty row of styling reads as a card that failed
@@ -251,6 +255,10 @@ function start(ROSTER) {
             '<div class="ent-panel-body">' +
               '<span class="ent-badge">' + esc(actLabel) + '</span>' +
               '<h3>' + esc(t.name) + '</h3>' +
+              // where they're based (Max, 22 Oct 2026)
+              (t.location
+                ? '<p class="ent-card-loc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>' + esc(t.location) + '</p>'
+                : '') +
 
               '<h4>Style</h4>' +
               '<p>' + (t.genres || []).map(esc).join(' &middot; ') + '</p>' +

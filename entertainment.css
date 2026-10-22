@@ -890,3 +890,7 @@
 }
 
 
+
+/* the DJ's home town on their card (Max, 22 Oct 2026) */
+.ent-card-loc{ display:flex; align-items:center; gap:5px; margin:4px 0 0; font-size:12px; letter-spacing:.04em; color:#e8e8e8; opacity:.85; }
+.ent-card-loc svg{ width:13px; height:13px; fill:none; stroke:#ff6b00; stroke-width:2; flex:none; }
