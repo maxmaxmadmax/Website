@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=662';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=662';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=663';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=663';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -510,7 +510,8 @@ function proposalTop(q, days) {
 
   return `
     <section class="qp-hero">
-      <div class="qp-hero-photo${isDj && dj && dj.photo ? ' is-dj' : ''}" style="--qp-photo:url('${isDj && dj && dj.photo ? '/' + esc(dj.photo) : '/images/services/' + HERO_PHOTO[type]}')">
+      <div class="qp-hero-photo${isDj && dj && dj.photo ? ' is-dj' : ''}" style="--qp-photo:url('/images/services/${HERO_PHOTO[type]}')">
+        ${isDj && dj && dj.photo ? '<img class="qp-hero-djimg" src="/' + esc(dj.photo) + '" alt="' + esc(dj.name) + '" onerror="this.remove()">' : ''}
         <div class="qp-hero-in">
           <p class="qp-eyebrow">${isDj ? esc(venueName || 'Entertainment booking') : 'Event production proposal'}</p>
           <h1>${isDj ? 'SoundzGood Entertainment' : esc(event)}</h1>

@@ -703,4 +703,12 @@
 .qp-dj em{ display:inline-block; margin-top:6px; font-style:normal; font-size:12px; padding:2px 8px; border-radius:20px; background:rgba(255,255,255,.12); }
 .qp-dj em.is-ok{ background:#0f9d58; color:#fff; }
 @media print{ .qp-dj{ background:#fff4ec; border-color:#ffd2b0; } .qp-dj-face{ box-shadow:0 0 0 2px #ff6b00; } }
-.qp-hero-photo.is-dj{ background-position:center 25%; }   /* DJ photos are mostly faces - keep them in frame */
+/* DJ quotes: the DJ's portrait as a sharp card on the right - the heading never covers the face (Max, 22 Oct 2026) */
+.qp-hero-djimg{ position:absolute; right:40px; bottom:28px; z-index:1; width:210px; aspect-ratio:4 / 5; object-fit:cover; object-position:center 20%;
+  border-radius:16px; box-shadow:0 0 0 3px #ff6b00, 0 18px 40px rgba(0,0,0,.55); }
+.qp-hero-photo.is-dj .qp-hero-in{ max-width:calc(100% - 300px); }
+@media (max-width:760px){
+  .qp-hero-djimg{ width:96px; right:16px; top:78px; bottom:auto; border-radius:12px; }   /* clear of the menu button */
+  .qp-hero-photo.is-dj .qp-hero-in{ max-width:none; }
+}
+@media print{ .qp-hero-djimg{ width:150px; } }
