@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=665';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=665';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=666';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=666';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -482,6 +482,7 @@ function proposalTop(q, days) {
       .map(([t, h, sub]) => '<li><b>' + esc(ampm(t)) + '</b><span>' + h + '<small>' + sub + '</small></span></li>').join('')
     + '</ol>'
     + ((dj.styles || []).length ? '<p class="qp-styles">' + dj.styles.map((x) => '<span>' + esc(x) + '</span>').join('') + '</p>' : '')
+    + '<p class="qp-requests">&#127925; Our DJs take song requests from your patrons and work with your staff on any requests through the night.</p>'
     + '</div>' : '';
 
   // investment summary: each group ex GST / GST / inc GST
@@ -504,6 +505,7 @@ function proposalTop(q, days) {
     'DJ equipment &amp; booth',
     'Setup, sound check &amp; pack-down crew',
     'Backup gear on site',
+    'Song requests from your patrons, and working with your staff on the night',
     'GST included in the total',
   ] : []
     .concat(dj ? ['Your DJ: ' + esc(dj.name) + (dj.hours ? ' (' + esc(dj.hours) + ' hrs)' : '')] : [])

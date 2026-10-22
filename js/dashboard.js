@@ -17,9 +17,9 @@
    acceptedAt). Close enough for a dashboard; the invoices are the record.
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=665';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=665';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=665';
+import { isBooked, pickLineProgress } from './stock.js?v=666';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=666';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=666';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
