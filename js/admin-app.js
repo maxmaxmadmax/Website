@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=685';
+} from './firebase-config.js?v=686';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=685';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=685';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=685';
-import { messagesHtml, wireMessages } from './messages.js?v=685';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=685';
-import { expandKit } from './kit.js?v=685';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=686';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=686';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=686';
+import { messagesHtml, wireMessages } from './messages.js?v=686';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=686';
+import { expandKit } from './kit.js?v=686';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -318,6 +318,12 @@ async function loadPubSettings() {
     state.actRates = {};
     rates.forEach((d) => { state.actRates[d.id] = d.data(); });
     try { const fs2 = await getDocs(collection(fb.db, 'djSettings')); state.djFee = {}; fs2.forEach((d) => { if (d.id === 'fee') state.djFee = d.data(); }); } catch (e) { state.djFee = {}; }
+    // new wording (Max, 22 Oct 2026): a fee saved with the old wording is moved over once
+    if (state.djFee && /^Booking, coordination/.test(state.djFee.name || '') && !state.feeRenamed) {
+      state.feeRenamed = true;
+      state.djFee = { ...state.djFee, name: 'Booking & management', description: 'Sourcing, scheduling and managing your DJ, with backup cover', updatedAt: Date.now() };
+      fb.f.setDoc(fb.f.doc(fb.db, 'djSettings', 'fee'), state.djFee).catch(() => {});
+    }
     state.regularNights = [];
     nights.forEach((d) => state.regularNights.push({ id: d.id, ...d.data() }));
     state.regularNights.sort((a, b) => (a.weekday - b.weekday) || String(a.venue).localeCompare(String(b.venue)));
@@ -3013,8 +3019,8 @@ function djFeePanel() {
   const mode = f.mode === 'percent' ? 'percent' : 'fixed';
   const cents = Number.isFinite(f.cents) ? f.cents : 8000;
   const pct = Number.isFinite(f.pct) ? f.pct : 15;
-  const name = f.name || 'Booking, coordination & backup cover';
-  const desc = f.description == null ? 'DJ booking, scheduling, backup DJ if needed and support on the night' : f.description;
+  const name = f.name || 'Booking & management';
+  const desc = f.description == null ? 'Sourcing, scheduling and managing your DJ, with backup cover' : f.description;
   return `
       <header class="ad-panel-head"><h2>DJ booking fee</h2></header>
       <div class="ad-panel-intro"><p>Its own line on every DJ booking quote. A % is worked out on the DJ's performance only (not gear or travel). Saving updates upcoming quotes that haven't been sent.</p></div>
@@ -3097,7 +3103,7 @@ function wirePubBits() {
       mode,
       cents: mode === 'fixed' ? Math.round(amt * 100) : (Number.isFinite(cur.cents) ? cur.cents : 8000),
       pct: mode === 'percent' ? Math.min(100, amt) : (Number.isFinite(cur.pct) ? cur.pct : 15),
-      name: document.getElementById('dj-fee-name').value.trim().slice(0, 120) || 'Booking, coordination & backup cover',
+      name: document.getElementById('dj-fee-name').value.trim().slice(0, 120) || 'Booking & management',
       description: document.getElementById('dj-fee-desc').value.trim().slice(0, 300),
       updatedAt: Date.now(),
     };
@@ -6971,12 +6977,12 @@ let invSearchActive = -1;   // keyboard-highlighted result
 function djFeeItem() {
   const f = state.djFee || {};
   const pct = f.mode === 'percent';
-  const name = f.name || 'Booking, coordination & backup cover';
+  const name = f.name || 'Booking & management';
   return {
     id: '__djfee', kind: 'djfee', name, sub: 'DJ booking fee',
     priceCents: pct ? 0 : (Number.isFinite(f.cents) ? f.cents : 8000),
     pctLabel: pct ? (Number.isFinite(f.pct) ? f.pct : 15) + '% of DJ' : '',
-    description: f.description == null ? 'DJ booking, scheduling, backup DJ if needed and support on the night' : f.description,
+    description: f.description == null ? 'Sourcing, scheduling and managing your DJ, with backup cover' : f.description,
   };
 }
 function quoteSearchMatches(term) {

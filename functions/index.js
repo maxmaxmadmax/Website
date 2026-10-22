@@ -5432,8 +5432,8 @@ async function djFeeSetting() {
     mode: x.mode === 'percent' ? 'percent' : 'fixed',
     cents: Number.isFinite(x.cents) ? Math.max(0, Math.round(x.cents)) : 8000,
     pct: Number.isFinite(x.pct) ? Math.max(0, Math.min(100, x.pct)) : 15,
-    name: String(x.name || 'Booking, coordination & backup cover').slice(0, 120),
-    description: String(x.description == null ? 'DJ booking, scheduling, backup DJ if needed and support on the night' : x.description).slice(0, 300),
+    name: String(x.name || 'Booking & management').slice(0, 120),
+    description: String(x.description == null ? 'Sourcing, scheduling and managing your DJ, with backup cover' : x.description).slice(0, 300),
   };
 }
 /*  The fee changed -> upcoming gig quotes that haven't gone out are rebuilt */
