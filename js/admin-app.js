@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=674';
+} from './firebase-config.js?v=675';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=674';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=674';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=674';
-import { messagesHtml, wireMessages } from './messages.js?v=674';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=674';
-import { expandKit } from './kit.js?v=674';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=675';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=675';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=675';
+import { messagesHtml, wireMessages } from './messages.js?v=675';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=675';
+import { expandKit } from './kit.js?v=675';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -3472,9 +3472,7 @@ function wireEntertainment() {
           if (clash) {
             const act = (state.talent || []).find((t) => t.slug === slug) || {};
             const what = clash.status === 'unconfirmed' ? 'held (unconfirmed)' : 'booked';
-            if (!window.confirm((act.name || slug) + ' is already ' + what + ' on ' + prettyDate(night) + ' at ' + (clash.venue || 'another venue') + '.
-
-Replace that booking with this one?')) return;
+            if (!window.confirm((act.name || slug) + ' is already ' + what + ' on ' + prettyDate(night) + ' at ' + (clash.venue || 'another venue') + '.\n\nReplace that booking with this one?')) return;
           }
         }
       }
