@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=669';
+} from './firebase-config.js?v=670';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=669';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=669';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=669';
-import { messagesHtml, wireMessages } from './messages.js?v=669';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=669';
-import { expandKit } from './kit.js?v=669';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=670';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=670';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=670';
+import { messagesHtml, wireMessages } from './messages.js?v=670';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=670';
+import { expandKit } from './kit.js?v=670';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -277,7 +277,19 @@ async function loadTalent() {
 async function loadPubSettings() {
   try {
     const { collection, getDocs } = fb.f;
-    const [rates, nights, fees] = await Promise.all([getDocs(collection(fb.db, 'actRates')), getDocs(collection(fb.db, 'regularNights')), getDocs(collection(fb.db, 'travelFees'))]);
+    const [rates, nights, fees, venues] = await Promise.all([getDocs(collection(fb.db, 'actRates')), getDocs(collection(fb.db, 'regularNights')), getDocs(collection(fb.db, 'travelFees')), getDocs(collection(fb.db, 'venues'))]);
+    /*  SAVED VENUES (Max, 22 Oct 2026): each one gets its own tab on Gigs and
+        shows in the booking form's venue list. First time: Arcadia Bar.  */
+    state.venues = [];
+    venues.forEach((d) => state.venues.push({ id: d.id, ...d.data() }));
+    if (!venues.size && !state.venuesSeeded) {
+      state.venuesSeeded = true;
+      const { doc, setDoc } = fb.f;
+      const v = { name: 'Arcadia Bar', town: 'Mackay', createdAt: Date.now() };
+      await setDoc(doc(fb.db, 'venues', 'arcadia-bar-mackay'), v);
+      state.venues.push({ id: 'arcadia-bar-mackay', ...v });
+    }
+    state.venues.sort((a, b) => String(a.name).localeCompare(String(b.name)));
     state.travelFees = [];
     fees.forEach((d) => state.travelFees.push({ id: d.id, ...d.data() }));
     // first time: Max's fees (21 Oct 2026) - then they're his to change
@@ -2523,7 +2535,8 @@ function gigsMainHtml() {
           <section class="ad-card ent-list">
             <div class="ad-book-tabs">
               <div class="ad-tabs" role="group" aria-label="Which bookings">
-                ${BOOK_TABS.map((t) => `<button type="button" class="ad-tab${state.bookFilter.tab === t.key ? ' is-on' : ''}" data-book-tab="${attr(t.key)}">${esc(t.label)}</button>`).join('')}
+                ${bookTabs().map((t) => `<button type="button" class="ad-tab${state.bookFilter.tab === t.key ? ' is-on' : ''}" data-book-tab="${attr(t.key)}">${esc(t.label)}</button>`).join('')}
+                <button type="button" class="ad-tab ent-add-venue" id="ad-add-venue" title="Save a new venue - it gets its own tab">+ Add venue</button>
               </div>
               <input type="search" id="ad-book-search" class="ad-search" placeholder="Search gigs..." value="${attr(state.bookFilter.text)}" aria-label="Search gigs">
             </div>
@@ -2821,7 +2834,8 @@ function bookingPanel(b) {
         </label>
 
         <label class="ad-field">Venue
-          <input type="text" id="ad-f-venue" value="${attr(draft.venue || 'Grand View Hotel, Bowen')}">
+          <input type="text" id="ad-f-venue" list="ad-venue-list" value="${attr(draft.venue || 'Grand View Hotel, Bowen')}">
+          <datalist id="ad-venue-list">${['Grand View Hotel, Bowen'].concat((state.venues || []).map(venueFull)).map((x) => `<option value="${attr(x)}"></option>`).join('')}</datalist>
         </label>
 
         ${(() => {
@@ -3274,6 +3288,14 @@ function importBanner() {
       </button>
     </div>`;
 }
+/*  The tabs: the fixed ones with a tab for each saved venue slotted in
+    before "Other Venues" (Max, 22 Oct 2026).                          */
+function bookTabs() {
+  const saved = (state.venues || []).map((v) => ({ key: 'v:' + v.id, label: v.name }));
+  return BOOK_TABS.slice(0, 3).concat(saved, BOOK_TABS.slice(3));
+}
+const venueFull = (v) => v.name + (v.town ? ', ' + v.town : '');
+
 function venuesKnown() {
   const seen = {};
   state.schedule.forEach((b) => { if (b.venue) seen[b.venue] = true; });
@@ -3290,7 +3312,9 @@ function filteredBookings() {
 
     if (f.tab === 'upcoming' && b.date < today) return false;
     if (f.tab === 'grand-view' && !atPub) return false;
-    if (f.tab === 'other' && atPub) return false;
+    const savedAt = (state.venues || []).find((v) => samePub(v.name, b.venue));
+    if (f.tab === 'other' && (atPub || savedAt)) return false;
+    if (String(f.tab || '').startsWith('v:') && !(savedAt && 'v:' + savedAt.id === f.tab)) return false;
 
     if (text) {
       const act = state.talent.find((t) => t.slug === b.slug) || {};
@@ -3511,6 +3535,21 @@ function wireEntertainment() {
     });
   }
 
+  const addVenue = document.getElementById('ad-add-venue');
+  if (addVenue) addVenue.addEventListener('click', async () => {
+    const name = (window.prompt('Venue name (e.g. Arcadia Bar)') || '').trim().slice(0, 80);
+    if (!name) return;
+    const town = (window.prompt('Town (e.g. Mackay)') || '').trim().slice(0, 60);
+    const id = (name + ' ' + town).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
+    if ((state.venues || []).some((v) => v.id === id)) { window.alert(name + ' is already saved.'); return; }
+    try {
+      const { doc, setDoc } = fb.f;
+      await setDoc(doc(fb.db, 'venues', id), { name, town, createdAt: Date.now() });
+      await loadPubSettings();
+      state.bookFilter.tab = 'v:' + id;
+      render();
+    } catch (err) { window.alert(friendly(err)); }
+  });
   document.querySelectorAll('[data-book-tab]').forEach((btn) => {
     btn.addEventListener('click', () => {
       state.bookFilter.tab = btn.getAttribute('data-book-tab');

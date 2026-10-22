@@ -4828,3 +4828,4 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ent-styles{ display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:6px; }
 .ent-styles label{ display:inline-flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; }
 .ent-styles input{ accent-color:var(--ad-orange); }
+.ent-add-venue{ border:1px dashed #c9ccd6; color:#5b6070; }   /* + Add venue (Max, 22 Oct 2026) */

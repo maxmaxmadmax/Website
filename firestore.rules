@@ -285,6 +285,10 @@ service cloud.firestore {
     match /regularNights/{nightId} {
       allow read, write: if isAdmin();
     }
+    // saved gig venues - each gets a tab on Entertainment (Max, 22 Oct 2026)
+    match /venues/{venueId} {
+      allow read, write: if isAdmin();
+    }
     // fixed DJ travel fees, town to town (Max, 21 Oct 2026)
     match /travelFees/{feeId} {
       allow read, write: if isAdmin();
