@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=683';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=683';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=684';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=684';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -469,9 +469,16 @@ function proposalTop(q, days) {
   const isDj = type === 'dj' || !!q.gigDj;
   const dj = q.gigDj || null;
   const venueName = String(c.eventVenue || '').split(',')[0];
-  const tiles = isDj
-    ? [['DJ equipment', 'Your DJ', dj ? dj.name + ' on the decks' : 'Live DJ for the night'], ['Audio', 'Sound', 'Clear sound right across the venue'],
-      ['Lighting', 'Lighting', 'Party lighting & effects'], ['Crew', 'Setup & pack-down', 'We set up, run and pack down']]
+  /*  DJ ONLY (Max, 22 Oct 2026): no gear or crew on the quote = no sound,
+      lighting or setup tiles, and the words don't promise them either.  */
+  const djGear = lines.some((l) => !l.pubDj && (l.itemId || l.type === 'kit'));
+  const djCrew = lab.length > 0 || crewC > 0;
+  const djOnly = isDj && !djGear && !djCrew;
+  const tiles = djOnly ? ''
+    : isDj
+    ? [['DJ equipment', 'Your DJ', dj ? dj.name + ' on the decks' : 'Live DJ for the night']]
+      .concat(djGear ? [['Audio', 'Sound', 'Clear sound right across the venue'], ['Lighting', 'Lighting', 'Party lighting & effects']] : [])
+      .concat(djGear || djCrew ? [['Crew', 'Setup & pack-down', 'We set up, run and pack down']] : [])
       .map(([ic, k, t]) => '<div class="qp-tile">' + svgIcon(ic) + '<b>' + esc(k) + '</b><span>' + esc(t) + '</span></div>').join('')
     : groups.map((g) => g.name).concat(lab.length || crewC ? ['Crew'] : [])
       .map((k) => '<div class="qp-tile">' + svgIcon(k) + '<b>' + esc(k) + '</b><span>' + esc(BLURB[k] || '') + '</span></div>').join('');
@@ -504,13 +511,11 @@ function proposalTop(q, days) {
   const incl = groups.filter((g) => g.name !== 'Other').map((g) => g.name.toLowerCase());
   const included = isDj ? [
     'Professional DJ' + (dj ? ' &mdash; ' + esc(dj.name) + (dj.hours ? ' (' + esc(dj.hours) + ' hrs)' : '') : ''),
-    'PA system &amp; lighting, set up for the venue',
-    'DJ equipment &amp; booth',
-    'Setup, sound check &amp; pack-down crew',
-    'Backup gear on site',
-    'Song requests from your patrons, and working with your staff on the night',
-    'GST included in the total',
-  ] : []
+  ].concat(djGear ? ['PA system &amp; lighting, set up for the venue', 'DJ equipment &amp; booth'] : [])
+    .concat(djGear || djCrew ? ['Setup, sound check &amp; pack-down crew'] : [])
+    .concat(djGear ? ['Backup gear on site'] : [])
+    .concat(['Song requests from your patrons, and working with your staff on the night', 'GST included in the total'])
+  : []
     .concat(dj ? ['Your DJ: ' + esc(dj.name) + (dj.hours ? ' (' + esc(dj.hours) + ' hrs)' : '')] : [])
     .concat(incl.length ? [(incl.length > 1 ? incl.slice(0, -1).join(', ') + ' & ' + incl[incl.length - 1] : incl[0]).replace(/^./, (x) => x.toUpperCase()) + ' equipment as itemised'] : [])
     .concat(['All cables, stands & accessories needed to run it'])
@@ -543,8 +548,9 @@ function proposalTop(q, days) {
       </div>
       <div class="qp-hero-body">
         ${isDj
-          ? `<p class="qp-intro">Thanks for having SoundzGood Entertainment${venueName ? ' at ' + esc(venueName) : ''}. Here&rsquo;s your entertainment for the night &mdash;
-          the DJ, the sound and lighting, and the setup and pack-down, all looked after. The full itemised breakdown is below.</p>${djFeature}`
+          ? `<p class="qp-intro">Thanks for having SoundzGood Entertainment${venueName ? ' at ' + esc(venueName) : ''}. ${djOnly
+            ? 'Here&rsquo;s your DJ for the night. The full itemised breakdown is below.'
+            : 'Here&rsquo;s your entertainment for the night &mdash; the DJ' + (djGear ? ', the sound and lighting,' : '') + ' and the setup and pack-down, all looked after. The full itemised breakdown is below.'}</p>${djFeature}`
           : `<p class="qp-intro">Thanks for the opportunity to provide event production for ${esc(event)}.
           We&rsquo;ve put together the following production plan based on what we&rsquo;ve discussed.
           Everything below covers the equipment, preparation and crew required to deliver a successful event.</p>`}
