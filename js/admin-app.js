@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=689';
+} from './firebase-config.js?v=690';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=689';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=689';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=689';
-import { messagesHtml, wireMessages } from './messages.js?v=689';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=689';
-import { expandKit } from './kit.js?v=689';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=690';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=690';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=690';
+import { messagesHtml, wireMessages } from './messages.js?v=690';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=690';
+import { expandKit } from './kit.js?v=690';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2999,7 +2999,7 @@ function bookingPanel(b) {
               const noInv = !inv && missing.length ? '<p class="ent-noinv">&#9888; No invoice yet - press <b>Edit</b> and set ' + missing.join(' + ') + ', then Save.</p>' : '';
               return `${noInv}${dk ? '<p class="ent-deck">&#127911; Their deck: <b>' + esc(dk) + '</b></p>' : ''}${b.djConfirmedAt
                 ? '<button type="button" class="ad-btn ent-djok is-on" data-dj-confirm="' + attr(b.id) + '" data-undo="1" title="Click to undo">&#10003; DJ confirmed</button>'
-                : '<button type="button" class="ad-btn ent-djok" data-dj-confirm="' + attr(b.id) + '">&#10003; Mark DJ confirmed</button>'}<button type="button" class="ad-btn" data-pub-times="${attr(b.id)}">&#128241; Text DJ their link</button>
+                : '<button type="button" class="ad-btn ent-djok" data-dj-confirm="' + attr(b.id) + '">&#10003; Mark DJ confirmed</button>'}<button type="button" class="ad-btn" data-pub-times="${attr(b.id)}">&#128241; Text DJ their link</button>${inv ? '<button type="button" class="ad-btn" data-dj-brief="' + attr(b.id) + '">&#128203; Text DJ the brief &amp; gear</button>' : ''}
               ${b.templateId && b.customerId ? `<button type="button" class="ad-btn" data-gig-resync="${attr(b.id)}">&#8635; Update quote</button>` : ''}
               ${inv ? `<a class="ad-btn" href="#/quoteDocs?q=${attr(inv.id)}">${inv.kind === 'invoice' ? 'Invoice' : 'Quote'} ${esc(money(inv.totalCents))} &middot; ${esc(({ approved: 'ready', sent: 'sent', accepted: 'accepted', invoiced: 'unpaid', paid: 'paid' })[inv.status] || inv.status)}</a>` : ''}`;
             })()}
@@ -3217,6 +3217,24 @@ function wirePubBits() {
       await loadSchedule();
       render();
     } catch (err) { btn.disabled = false; window.alert(friendly(err)); }
+  }));
+  /*  TEXT THE DJ THEIR BRIEF (Max, 22 Oct 2026): the gear list link, which
+      for a DJ gig opens with the brief - set times, notes, venue details. */
+  document.querySelectorAll('[data-dj-brief]').forEach((btn) => btn.addEventListener('click', async () => {
+    const b = (state.schedule || []).find((x) => x.id === btn.getAttribute('data-dj-brief'));
+    const inv = b ? gigInvoice(b) : null;
+    if (!inv) { window.alert('This gig has no quote yet - add a client and template first.'); return; }
+    try {
+      const res = await call('adminGearListLink', { id: inv.id });
+      const act = (state.talent || []).find((t) => t.slug === b.slug) || {};
+      const phone = String(djRate(b.slug).phone || '').replace(/[^0-9+]/g, '');
+      const text = 'Hi ' + String(act.name || '').split(' ')[0] + ", it's Max - here's the brief for " + String(b.venue || 'the gig').split(',')[0] + ' on ' + prettyDate(b.date) + ': ' + res.url;
+      if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) location.href = 'sms:' + phone + '?&body=' + encodeURIComponent(text);
+      else {
+        try { await navigator.clipboard.writeText(text); window.alert('Copied - paste it into a text to the DJ:\n\n' + text); }
+        catch (e) { window.prompt('Copy this and text it to the DJ:', text); }
+      }
+    } catch (err) { window.alert(err.message || 'Could not make the link.'); }
   }));
   // text the DJ their times link
   document.querySelectorAll('[data-pub-times]').forEach((b) => b.addEventListener('click', () => textDjTimes(b.getAttribute('data-pub-times'))));

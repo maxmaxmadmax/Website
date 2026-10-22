@@ -83,3 +83,6 @@ body{ margin:0; background:#f2f2f2; color:#111; font-family:Arial, Helvetica, sa
 .pl-arrow{ color:#aaa; margin-right:8px; }
 .pl-kit{ display:inline-block; margin-left:6px; padding:1px 6px; border-radius:4px; background:#ff6b00; color:#fff; font-size:10px; font-weight:800; text-transform:uppercase; vertical-align:middle; }
 .pl-subhead{ margin:8px 0 0 22px; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#888; }
+/* the DJ gig brief (Max, 22 Oct 2026) */
+.pl-brief{ border-top:3px solid #ff6b00; }
+.pl-brief h2{ margin-top:0; }

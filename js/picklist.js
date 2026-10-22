@@ -6,7 +6,7 @@
    admin and everyone on the crew link sees the same list. The list also
    refreshes itself every 20 seconds while it's open.
    ========================================================================== */
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=689';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=690';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -161,7 +161,7 @@ function render() {
   document.getElementById('pl-root').innerHTML = `
     <header class="pl-head">
       <img src="/images/logo-quote.png" alt="SoundzGood Whitsundays" class="pl-logo">
-      <div class="pl-head-r"><h1>${GEAR_VIEW ? 'Gear list' : 'Pick list'}</h1><p>${esc(d.number)}</p></div>
+      <div class="pl-head-r"><h1>${GEAR_VIEW ? (d.brief ? 'Gig brief' + (c.total ? ' &amp; gear' : '') : 'Gear list') : 'Pick list'}</h1><p>${esc(d.number)}</p></div>
     </header>
 
     <section class="pl-job">
@@ -182,9 +182,11 @@ function render() {
       ${GEAR_VIEW ? '<p class="pl-notes">This is the gear SoundzGood Whitsundays is supplying. Anything missing? Call Max on 0422 393 022.</p>' : d.paidInFull ? '' : '<p class="pl-flag">Balance still owing on this job &mdash; check with Max before handing over gear.</p>'}
     </section>
 
+    ${d.brief ? briefHtml(d.brief, c.total) : ''}
+
     ${GEAR_VIEW ? '' : `<section class="pl-progress" id="pl-progress">${progressHtml()}</section>`}
 
-    <section class="pl-list">
+    <section class="pl-list"${d.brief && !c.total ? ' hidden' : ''}>
       <p class="pl-count">${c.total} line${c.total === 1 ? '' : 's'} &middot; ${c.pieces} piece${c.pieces === 1 ? '' : 's'} in total</p>
       ${d.rows ? quoteStyleList() : oldList()}
     </section>
@@ -196,6 +198,29 @@ function render() {
     </footer>`;
 
   document.getElementById('pl-print').addEventListener('click', () => window.print());
+}
+
+/*  THE BRIEF for a DJ gig (Max, 22 Oct 2026): set times, the booking notes
+    and the venue's notes, address and contact. No SoundzGood gear on the
+    job = the venue supplies it, and that's said plainly.             */
+function briefHtml(b, gearLines) {
+  const tel = (t) => esc(t).replace(/(\+?\d[\d\s]{7,}\d)/, (n) => '<a href="tel:' + n.replace(/\s/g, '') + '">' + n + '</a>');
+  const set = b.start || b.finish ? esc([niceTime(b.start), niceTime(b.finish)].filter(Boolean).join(' – ')) : '';
+  const row = (k, v) => v ? '<div><dt>' + esc(k) + '</dt><dd>' + v + '</dd></div>' : '';
+  return `
+    <section class="pl-job pl-brief">
+      <h2>The brief</h2>
+      <dl class="pl-info">
+        ${row('DJ', esc(b.dj))}
+        ${row('Set times', set)}
+        ${row('Venue address', esc(b.address))}
+        ${row('Venue contact', b.venueContact ? tel(b.venueContact) : '')}
+        ${row('Your deck', esc(b.deck))}
+      </dl>
+      ${b.notes ? '<p class="pl-notes"><b>About the gig:</b>\n' + esc(b.notes) + '</p>' : ''}
+      ${b.venueNotes ? '<p class="pl-notes"><b>Venue notes:</b>\n' + esc(b.venueNotes) + '</p>' : ''}
+      ${gearLines ? '' : '<p class="pl-notes"><b>Gear:</b> the venue supplies the PA and decks (at least a Pioneer XDJ-RX3, or 2 × CDJ-3000 with a DJM-A9). Check with the venue before the night.</p>'}
+    </section>`;
 }
 
 /* a tick: show it straight away, save it, undo it if the save fails */

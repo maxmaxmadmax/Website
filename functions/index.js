@@ -2855,7 +2855,30 @@ exports.getPickList = onCall(async (request) => {
       sysOrder: l.sysOrder != null ? l.sysOrder : null,
     });
   });
+  /*  THE BRIEF (Max, 22 Oct 2026): a DJ gig's gear list also carries what
+      the DJ needs to know - set times, the booking notes (the venue's
+      message), the venue's own notes, address and contact.            */
+  let brief = null;
+  if (q.gigBookingId) {
+    const bs = await db.collection('talentSchedule').doc(String(q.gigBookingId)).get();
+    const b = bs.exists ? bs.data() : {};
+    const vs = await db.collection('venues').get();
+    const core = (x) => String(x || '').toLowerCase().split(',')[0].replace(/\b(hotel|bar|the|pub|tavern)\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+    const vd = vs.docs.map((d) => d.data()).find((v) => core(v.name) && (core(b.venue).includes(core(v.name)) || core(v.name).includes(core(b.venue)))) || {};
+    const r = b.slug ? await db.collection('actRates').doc(b.slug).get() : null;
+    const gd = q.gigDj || {};
+    brief = {
+      dj: gd.name || '',
+      start: b.actualStart || b.start || gd.start || '', finish: b.actualFinish || b.finish || gd.finish || '',
+      notes: String(b.notes || '').slice(0, 3000),
+      venueNotes: String(vd.notes || '').slice(0, 1000),
+      address: String(vd.address || '').slice(0, 200),
+      venueContact: [vd.contactName, vd.phone].filter(Boolean).join(' · ').slice(0, 160),
+      deck: String((r && r.exists && r.data().deck) || '').slice(0, 300),
+    };
+  }
   return {
+    brief,
     rows,
     number: q.invoiceNumber || q.number || '',
     eventName: c.eventName || '',
