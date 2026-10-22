@@ -691,3 +691,15 @@
 .pg-late p{ margin:8px 0 0; font-size:13px; line-height:1.5; }
 .qv-late span{ color:#b3261e; }
 [data-due][hidden]{ display:none !important; }   /* deposit vs pay-in-full summary (Max, 20 Oct 2026) */
+
+/* DJ / Entertainment quotes (Max, 22 Oct 2026) */
+.qp-dj-line{ margin:6px 0 0; font-size:18px; color:#ffd2b0; }
+.qp-dj-line b{ color:#fff; }
+.qp-dj{ display:flex; align-items:center; gap:16px; margin:18px 0 6px; padding:14px 16px; border-radius:14px;
+  background:linear-gradient(135deg, rgba(255,107,0,.18), rgba(255,107,0,.05)); border:1px solid rgba(255,107,0,.35); }
+.qp-dj-face{ width:72px; height:72px; flex:none; border-radius:50%; background:#222 center/cover; box-shadow:0 0 0 3px #ff6b00; }
+.qp-dj b{ display:block; font-size:20px; }
+.qp-dj span{ display:block; margin-top:2px; font-size:14px; opacity:.9; }
+.qp-dj em{ display:inline-block; margin-top:6px; font-style:normal; font-size:12px; padding:2px 8px; border-radius:20px; background:rgba(255,255,255,.12); }
+.qp-dj em.is-ok{ background:#0f9d58; color:#fff; }
+@media print{ .qp-dj{ background:#fff4ec; border-color:#ffd2b0; } .qp-dj-face{ box-shadow:0 0 0 2px #ff6b00; } }

@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=659';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=659';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=660';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=660';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -456,11 +456,26 @@ function proposalTop(q, days) {
 
   const crewC = lines.filter((l) => l.resType === 'staff').reduce((t, l) => t + lineAmount(l, days), 0);
   const vehC = lines.filter((l) => l.resType === 'vehicle' || l.resType === 'trailer').reduce((t, l) => t + lineAmount(l, days), 0);
-  const tiles = groups.map((g) => g.name).concat(lab.length || crewC ? ['Crew'] : [])
-    .map((k) => '<div class="qp-tile">' + svgIcon(k) + '<b>' + esc(k) + '</b><span>' + esc(BLURB[k] || '') + '</span></div>').join('');
+  /*  DJ / ENTERTAINMENT quotes (Max, 22 Oct 2026): the night, the DJ who
+      played and their set up top - the itemised quote stays below.        */
+  const isDj = type === 'dj' || !!q.gigDj;
+  const dj = q.gigDj || null;
+  const venueName = String(c.eventVenue || '').split(',')[0];
+  const tiles = isDj
+    ? [['DJ equipment', 'Your DJ', dj ? dj.name + ' on the decks' : 'Live DJ for the night'], ['Audio', 'Sound', 'Clear sound right across the venue'],
+      ['Lighting', 'Lighting', 'Party lighting & effects'], ['Crew', 'Setup & pack-down', 'We set up, run and pack down']]
+      .map(([ic, k, t]) => '<div class="qp-tile">' + svgIcon(ic) + '<b>' + esc(k) + '</b><span>' + esc(t) + '</span></div>').join('')
+    : groups.map((g) => g.name).concat(lab.length || crewC ? ['Crew'] : [])
+      .map((k) => '<div class="qp-tile">' + svgIcon(k) + '<b>' + esc(k) + '</b><span>' + esc(BLURB[k] || '') + '</span></div>').join('');
+  const ampm = (t) => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); if (!m) return ''; const h = +m[1]; return (h % 12 || 12) + ':' + m[2] + (h < 12 ? 'am' : 'pm'); };
+  const djCard = dj ? '<div class="qp-dj">'
+    + '<span class="qp-dj-face" style="background-image:url(\'/' + esc(dj.photo || '') + '\')"></span>'
+    + '<div><p class="qp-mini">Your DJ</p><b>' + esc(dj.name) + '</b>'
+    + '<span>' + esc(ampm(dj.start)) + ' &ndash; ' + esc(ampm(dj.finish)) + (dj.hours ? ' &middot; ' + esc(dj.hours) + ' hrs' : '') + '</span>'
+    + '<em class="' + (dj.confirmed ? 'is-ok' : '') + '">' + (dj.confirmed ? '&#10003; Set times confirmed by the DJ' : 'Planned set &mdash; updated with the DJ&rsquo;s times after the night') + '</em></div></div>' : '';
 
   // investment summary: each group ex GST / GST / inc GST
-  const rows = groups.map((g) => [g.name, g.cents])   // AUDIO, LIGHTING, STAGING... (shown in capitals)
+  const rows = groups.map((g) => [isDj && g.name === 'Other' ? 'Entertainment (DJ)' : g.name, g.cents])   // AUDIO, LIGHTING, STAGING... (shown in capitals)
     .concat(lab.length || crewC ? [['Labour', labCents + crewC]] : [])   // setup, pack-down & operators as one
     .concat(vehC ? [['Vehicles', vehC]] : [])
     .concat(del.length ? [[delCents ? 'Travel & transport' : 'Local delivery & pickup', delCents]] : [])
@@ -474,6 +489,7 @@ function proposalTop(q, days) {
   const labHrs = lab.reduce((t, l) => t + (parseFloat((/^([\d.]+) hrs?\b/.exec(l.description || '') || [])[1]) || 0), 0);
   const incl = groups.filter((g) => g.name !== 'Other').map((g) => g.name.toLowerCase());
   const included = []
+    .concat(dj ? ['Your DJ: ' + esc(dj.name) + (dj.hours ? ' (' + esc(dj.hours) + ' hrs)' : '')] : [])
     .concat(incl.length ? [(incl.length > 1 ? incl.slice(0, -1).join(', ') + ' & ' + incl[incl.length - 1] : incl[0]).replace(/^./, (x) => x.toUpperCase()) + ' equipment as itemised'] : [])
     .concat(['All cables, stands & accessories needed to run it'])
     .concat(del.length ? [delCents ? 'Travel &amp; transport' + (town ? ' &mdash; ' + esc(town) : '') : 'Local delivery &amp; pickup'] : [])
@@ -496,15 +512,19 @@ function proposalTop(q, days) {
     <section class="qp-hero">
       <div class="qp-hero-photo" style="--qp-photo:url('/images/services/${HERO_PHOTO[type]}')">
         <div class="qp-hero-in">
-          <p class="qp-eyebrow">Event production proposal</p>
-          <h1>${esc(event)}</h1>
+          <p class="qp-eyebrow">${isDj ? 'Entertainment booking' : 'Event production proposal'}</p>
+          <h1>${esc(isDj && venueName ? venueName : event)}</h1>
+          ${isDj && dj ? '<p class="qp-dj-line">Live: <b>' + esc(dj.name) + '</b></p>' : ''}
           <p class="qp-when">${when ? svgIcon('Date') + esc(when) : ''}${town ? '<br>' + svgIcon('Pin') + esc(town) : ''}</p>
         </div>
       </div>
       <div class="qp-hero-body">
-        <p class="qp-intro">Thanks for the opportunity to provide event production for ${esc(event)}.
+        ${isDj
+          ? `<p class="qp-intro">Thanks for having SoundzGood Entertainment${venueName ? ' at ' + esc(venueName) : ''}. Here&rsquo;s your entertainment for the night &mdash;
+          the DJ, the sound and lighting, and the setup and pack-down, all looked after. The full itemised breakdown is below.</p>${djCard}`
+          : `<p class="qp-intro">Thanks for the opportunity to provide event production for ${esc(event)}.
           We&rsquo;ve put together the following production plan based on what we&rsquo;ve discussed.
-          Everything below covers the equipment, preparation and crew required to deliver a successful event.</p>
+          Everything below covers the equipment, preparation and crew required to deliver a successful event.</p>`}
         ${tiles ? '<div class="qp-tiles">' + tiles + '</div>' : ''}
         <p class="qp-ref">Quote ${esc(q.number || '')}${c.name ? ' &middot; Prepared for ' + esc(c.name) : ''}</p>
       </div>
@@ -512,8 +532,8 @@ function proposalTop(q, days) {
 
     <section class="qp-sec qp-invest">
       <p class="qp-eyebrow">Investment summary</p>
-      <h2 class="qp-h2">Your production investment</h2>
-      <p class="qp-sub">Total inclusive of GST for ${esc(event)}${when ? ' on ' + esc(when) : ''}, itemised by category below.</p>
+      <h2 class="qp-h2">${isDj ? 'Your entertainment investment' : 'Your production investment'}</h2>
+      <p class="qp-sub">Total inclusive of GST for ${esc(isDj && venueName ? 'your night at ' + venueName : event)}${when ? ' on ' + esc(when) : ''}, itemised by category below.</p>
       <table class="qp-inv">
         <thead><tr><th>Description</th><th>Ex GST</th><th>GST (10%)</th><th>Inc GST</th></tr></thead>
         <tbody>${rows.map(([l, c2]) => r(l, c2)).join('')}${disc}</tbody>

@@ -2969,6 +2969,7 @@ exports.getQuote = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
     createdAt: secs(q.createdAt),
     paymentStatus: q.paymentStatus || '',      // '' | bank | deposit | paid
     bankPlan: q.bankPlan || '',                // bank payers: 'deposit' | 'full'
+    gigDj: q.gigDj || null,                    // DJ gig quotes: who played + their set (Max, 22 Oct 2026)
     paymentMethod: q.paymentMethod || '',
     amountPaidCents: q.amountPaidCents || 0,
     depositPct: QUOTE_DEPOSIT_PCT,
@@ -5208,7 +5209,7 @@ async function gigSync(bookingId) {
     customer: {
       name: cust.name || '', business: cust.business || '', email: cust.email || '', ccEmail: cust.ccEmail || '',
       phone: cust.phone || '', address: cust.address || '',
-      eventName: tc.eventName || ('DJ - ' + String(b.venue || '').split(',')[0]), eventType: tc.eventType || 'dj',
+      eventName: tc.eventName || ('DJ - ' + String(b.venue || '').split(',')[0]), eventType: 'dj',   // always DJ / Entertainment (Max, 22 Oct 2026)
       eventVenue: b.venue || '', eventDate: prettyDay(b.date), eventStartTime: start,
     },
     hire: { startDate: b.date, endDate: b.date, days: 1 },
@@ -5216,7 +5217,9 @@ async function gigSync(bookingId) {
   const money = quoteMoney(clean);
   // the DJ's own deck goes on the pick list so setup staff bring the right cables (Max, 21 Oct 2026)
   if (rate.deck) clean.crewNotes = 'DJ deck (' + name + '): ' + String(rate.deck).slice(0, 300);
-  const meta = { gigBookingId: id, pubNight: true, pubKey: 'gig|' + id, pubVenue: b.venue || '', pubDate: b.date, pubBookings: [id], pubNoRate: notes, gigHours: hours, gigTemplateId: String(b.templateId) };
+  // who played - shown on the entertainment-style quote / invoice (Max, 22 Oct 2026)
+  const gigDj = { name, photo: (t.exists && t.data().photo) || ('images/talent/' + b.slug + '.jpg'), start, finish, hours, confirmed: !!b.timesConfirmedAt, venue: b.venue || '' };
+  const meta = { gigDj, gigBookingId: id, pubNight: true, pubKey: 'gig|' + id, pubVenue: b.venue || '', pubDate: b.date, pubBookings: [id], pubNoRate: notes, gigHours: hours, gigTemplateId: String(b.templateId) };
   if (existing) {
     await existing.ref.update({ ...clean, ...money, ...meta, status: 'approved', updatedAt: FieldValue.serverTimestamp() });
     return { updated: true, id: existing.id, totalCents: money.totalCents, hours, noRate: notes };
