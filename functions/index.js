@@ -5269,6 +5269,11 @@ async function gigSync(bookingId) {
     customer: {
       name: cust.name || '', business: cust.business || '', email: cust.email || '', ccEmail: cust.ccEmail || '',
       phone: cust.phone || '', address: cust.address || '',
+      /*  ONCE THE QUOTE EXISTS, ITS OWN CONTACT DETAILS STAY (Max, 22 Oct 2026):
+          edits made on the quote, or by the customer on the details form, are
+          no longer overwritten from the Customers list when it's rebuilt. */
+      ...(ex && ex.customer ? ['name', 'business', 'email', 'ccEmail', 'phone', 'address', 'dayContact', 'customerNotes', 'gearEmails']
+        .reduce((o, k) => { if (ex.customer[k] != null) o[k] = ex.customer[k]; return o; }, {}) : {}),
       eventName: tc.eventName || ('DJ - ' + String(b.venue || '').split(',')[0]), eventType: 'dj',   // always DJ / Entertainment (Max, 22 Oct 2026)
       eventVenue: b.venue || '', eventDate: prettyDay(b.date), eventStartTime: start,
     },
