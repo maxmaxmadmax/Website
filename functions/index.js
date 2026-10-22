@@ -5326,3 +5326,19 @@ exports.djReminders = onSchedule(
     }
   }
 );
+
+/*  A DJ's rate / location / deck saved (DJs tab) -> their upcoming gig quotes
+    are rebuilt on the server, whatever the browser does (Max, 22 Oct 2026).
+    Only quotes that already exist and haven't gone out are touched.        */
+exports.onDjRatesChanged = require('firebase-functions/v2/firestore').onDocumentWritten('actRates/{slug}', async (event) => {
+  const slug = event.params.slug;
+  const today = brisbaneTodayISO();
+  const snap = await db.collection('talentSchedule').where('slug', '==', slug).get();
+  for (const d of snap.docs) {
+    const b = d.data();
+    if (b.date < today || !b.templateId || !b.customerId) continue;
+    const q = await db.collection('quotes').where('gigBookingId', '==', d.id).limit(1).get();
+    if (q.empty || q.docs[0].data().status !== 'approved') continue;
+    try { await gigSync(d.id); } catch (e) { logger.error('onDjRatesChanged', { id: d.id, err: e && e.message }); }
+  }
+});
