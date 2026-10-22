@@ -4859,3 +4859,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ent-trail > b{ min-width:4px; }
 .ent-djok{ border-color:#b9dfc6; color:#0f6e3d; }   /* Mark DJ confirmed (Max, 22 Oct 2026) */
 .ent-djok.is-on{ background:#e8f4ec; }
+/* Messages > Reminders (Max, 22 Oct 2026) */
+.ms-log-grid > div > .ms-card + .ms-card{ margin-top:14px; }
+.sp-remind{ margin-right:6px; padding:7px 12px; border-radius:8px; border:1px solid #ffd9b3; background:#fff7ef; color:#9a4a00; font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+.sp-remind:hover{ background:#ffefe0; }

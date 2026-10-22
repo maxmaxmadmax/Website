@@ -123,10 +123,83 @@ async function sendQuoteLinkEmail(q, link) {
   }
 }
 
+/* --------------------------------------------------------------------------
+   PAYMENT REMINDER (Max, 22 Oct 2026) - Messages > Reminders, or "Send
+   reminder" beside View in the Sales Pipeline. Only ever sent when Max
+   presses the button. info = { dueCents, dueLabel, isDeposit, balanceDue }
+   -------------------------------------------------------------------------- */
+function reminderHtml(q, link, info) {
+  const isInvoice = q.kind === 'invoice';
+  const ref = isInvoice ? (q.invoiceNumber || q.number) : q.number;
+  const who = String((q.customer && q.customer.name) || '').split(' ')[0] || 'there';
+  const what = q.customer && q.customer.eventName ? ' for ' + esc(q.customer.eventName) : '';
+  return `<!doctype html>
+<html><body style="margin:0;padding:24px;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
+  <div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;overflow:hidden;">
+    <div style="background:#111;padding:24px;">
+      <p style="margin:0;color:#ff6b00;font-size:12px;letter-spacing:2px;text-transform:uppercase;">SoundzGood Whitsundays</p>
+      <h1 style="margin:6px 0 0;color:#fff;font-size:22px;">A friendly payment reminder</h1>
+    </div>
+    <div style="padding:24px;">
+      <p style="margin:0 0 16px;font-size:15px;color:#111;line-height:1.6;">
+        Hi ${esc(who)}, just a quick reminder about your ${esc(docLabel(q))} <strong>${esc(ref)}</strong>${what}.
+        ${info.isDeposit ? 'Your date is held once the deposit is received.' : 'Payment is now due.'}
+      </p>
+      <div style="background:#fff7ef;border:1px solid #ffd9b3;border-radius:10px;padding:16px 20px;margin:0 0 20px;text-align:center;">
+        <p style="margin:0 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#b25b00;">${esc(info.dueLabel)}</p>
+        <p style="margin:0;font-size:28px;font-weight:bold;color:#111;">${esc(money(info.dueCents))}</p>
+        ${info.balanceDue ? '<p style="margin:6px 0 0;font-size:13px;color:#666;">Balance due ' + esc(info.balanceDue) + '</p>' : ''}
+      </div>
+      <p style="text-align:center;margin:0 0 22px;">
+        <a href="${esc(link)}" style="display:inline-block;background:#ff6b00;color:#fff;text-decoration:none;font-weight:bold;font-size:15px;padding:13px 26px;border-radius:10px;">View &amp; pay &rarr;</a>
+      </p>
+      <p style="margin:0 0 12px;font-size:13px;color:#666;line-height:1.6;">You can pay by bank transfer or card on that page. If you've already paid, thank you, and please ignore this email.</p>
+      <p style="margin:0;font-size:13px;color:#666;line-height:1.6;">
+        Questions? Just reply to this email or call Max on 0422 393 022.<br>
+        <a href="${esc(link)}" style="color:#ff6b00;word-break:break-all;">${esc(link)}</a>
+      </p>
+    </div>
+    <div style="padding:18px 24px;background:#fafafa;border-top:1px solid #eee;">
+      <p style="margin:0;font-size:12px;color:#777;">
+        ${esc(SELLER.name)}${SELLER.legal ? ' &middot; ' + esc(SELLER.legal) : ''}${SELLER.abn ? ' &middot; ABN ' + esc(SELLER.abn) : ''}<br>
+        34a Williams St, Bowen QLD 4805<br>
+        ${esc(SELLER.email)} &middot; ${esc(SELLER.site)}
+      </p>
+    </div>
+  </div>
+</body></html>`;
+}
+function reminderSubject(q) {
+  return 'Payment reminder - ' + (q.kind === 'invoice' ? (q.invoiceNumber || q.number) : q.number) + ' from SoundzGood';
+}
+async function sendPaymentReminderEmail(q, link, info) {
+  const tx = transport();
+  if (!tx) return { sent: false, reason: 'no-smtp' };
+  const to = q.customer && q.customer.email;
+  if (!to) return { sent: false, reason: 'no-address' };
+  const cc = String((q.customer && q.customer.ccEmail) || '').split(/[,;\s]+/).map((e) => e.trim()).filter((e) => e && e.toLowerCase() !== String(to).toLowerCase());
+  const who = String((q.customer && q.customer.name) || '').split(' ')[0] || 'there';
+  try {
+    await tx.sendMail({
+      from: `${SELLER.name} <${SELLER.email}>`, to, ...(cc.length ? { cc: cc.join(', ') } : {}), bcc: OFFICE, replyTo: OFFICE,
+      subject: reminderSubject(q),
+      text: ['Hi ' + who + ', just a quick reminder about your ' + docLabel(q) + '.', info.dueLabel + ': ' + money(info.dueCents), '', 'View & pay: ' + link, '', "If you've already paid, thank you - please ignore this.", SELLER.name + ' - 0422 393 022'].join('\n'),
+      html: reminderHtml(q, link, info),
+    });
+    return { sent: true };
+  } catch (err) {
+    logger.error('reminder email failed', { to, smtpError: err && err.message });
+    return { sent: false, reason: 'smtp-error', error: err && err.message };
+  }
+}
+function renderPaymentReminder(q, link, info) {
+  return { subject: reminderSubject(q), html: reminderHtml(q, link, info) };
+}
+
 /*  For the Messages page preview (Max, 20 Oct 2026). */
 function renderQuoteLinkEmail(q, link) {
   const ref = q.kind === 'invoice' ? (q.invoiceNumber || q.number) : q.number;
   return { subject: `Your ${docLabel(q)} ${ref} from SoundzGood`, html: html(q, link) };
 }
 
-module.exports = { sendQuoteLinkEmail, renderQuoteLinkEmail };
+module.exports = { sendQuoteLinkEmail, renderQuoteLinkEmail, sendPaymentReminderEmail, renderPaymentReminder };

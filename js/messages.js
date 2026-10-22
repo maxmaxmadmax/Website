@@ -17,7 +17,7 @@
    ctx = { state, h: { esc, attr }, call, render, money }
    ========================================================================== */
 
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=692';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=693';
 
 export const SEND_TIME = '9:35 am';
 
@@ -218,9 +218,10 @@ export function messagesHtml(ctx) {
       <button type="button" class="ms-tab${tab === 'clients' ? ' is-on' : ''}" role="tab" data-ms-tab="clients">Clients</button>
       <button type="button" class="ms-tab" disabled title="Coming soon">Crew &amp; performers</button>
       <button type="button" class="ms-tab${tab === 'sponsors' ? ' is-on' : ''}" role="tab" data-ms-tab="sponsors">Sponsors</button>
+      <button type="button" class="ms-tab${tab === 'reminders' ? ' is-on' : ''}" role="tab" data-ms-tab="reminders">Reminders</button>
       <button type="button" class="ms-tab ms-tab-log${tab === 'sent' ? ' is-on' : ''}" role="tab" data-ms-tab="sent">Sent emails</button>
     </div>
-    ${tab === 'sent' ? sentHtml(ctx) : tab === 'sponsors' ? sponsorsHtml(ctx) : tab === 'clients' ? clientsHtml(h, state) : `<div class="ad-card ms-card">
+    ${tab === 'sent' ? sentHtml(ctx) : tab === 'reminders' ? remindersHtml(h, state) : tab === 'sponsors' ? sponsorsHtml(ctx) : tab === 'clients' ? clientsHtml(h, state) : `<div class="ad-card ms-card">
       <table class="ms-table">
         <thead><tr><th>When</th><th>Message &amp; subject</th><th>Who</th><th>Status</th><th>Sent</th></tr></thead>
         <tbody>${rows || `<tr><td colspan="5" class="ad-cell-muted">${state.msgSeeding ? 'Adding the starter messages&hellip;' : 'No messages yet.'}</td></tr>`}</tbody>
@@ -385,6 +386,60 @@ function waitlistHtml(ctx) {
         <td><span class="ms-chip ms-${tone}">${h.esc(lab)}</span>${w.siteLabel && ['offered', 'claimed', 'booked'].includes(w.status) ? '<span class="ms-sub">site ' + h.esc(w.siteLabel) + '</span>' : ''}</td></tr>`;
     }).join('') || '<tr class="ms-fixed"><td colspan="5" class="ad-cell-muted">Nobody on the waitlist yet. The form appears on the vendor page when a type sells out.</td></tr>'}
     </tbody></table></div>`;
+}
+
+/*  REMINDERS (Max, 22 Oct 2026): the payment reminder email (click to see
+    it) and everyone who still owes money, each with a Send button. Nothing
+    goes until Max presses Send.                                          */
+export function owesMoney(q) {
+  if (!q || q.isTemplate || q.vendor) return false;
+  if (!['sent', 'accepted', 'invoiced'].includes(q.status) || q.paymentStatus === 'paid') return false;
+  return (q.totalCents || 0) + (q.lateFeeCents || 0) - (q.amountPaidCents || 0) > 0;
+}
+function remindersHtml(h, state) {
+  const p = state.clientPrev && state.clientPrev.key === 'reminder' ? state.clientPrev : null;
+  const money = (c) => '$' + (Math.round(c || 0) / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const when = (t) => { const ms = t && (t.toMillis ? t.toMillis() : t.seconds ? t.seconds * 1000 : +t); return ms ? new Date(ms).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : ''; };
+  const owed = (state.quoteDocs || []).filter(owesMoney)
+    .sort((a, b) => String((a.hire && a.hire.startDate) || '').localeCompare(String((b.hire && b.hire.startDate) || '')));
+  return `<div class="ms-log-grid${p ? ' has-open' : ''}"><div>
+    <div class="ad-card ms-card"><table class="ms-table">
+      <thead><tr><th>When</th><th>Message &amp; subject</th><th>Who</th><th>Status</th></tr></thead>
+      <tbody><tr data-ms-cprev="reminder"${p ? ' class="is-sel"' : ''}>
+        <td class="ms-when">When you press Send reminder</td>
+        <td><strong>Payment reminder</strong><span class="ms-sub">Payment reminder - SG-I-0000 from SoundzGood</span></td>
+        <td>That client (and their CC email)</td>
+        <td><span class="ms-chip ms-blue">You send it</span></td></tr></tbody>
+    </table></div>
+    <div class="ad-card ms-card"><table class="ms-table">
+      <thead><tr><th>Client</th><th>Event</th><th>Owing</th><th>Last reminder</th><th></th></tr></thead>
+      <tbody>${owed.length ? owed.map((q) => {
+        const c = q.customer || {};
+        const owing = (q.totalCents || 0) + (q.lateFeeCents || 0) - (q.amountPaidCents || 0);
+        return `<tr class="ms-fixed">
+          <td><strong>${h.esc(c.name || c.business || 'No name')}</strong><span class="ms-sub">${h.esc(q.invoiceNumber || q.number || '')}${c.email ? '' : ' &middot; no email'}</span></td>
+          <td>${h.esc(c.eventName || '')}<span class="ms-sub">${h.esc(c.eventDate || '')}</span></td>
+          <td><strong>${money(owing)}</strong>${q.amountPaidCents ? '<span class="ms-sub">' + money(q.amountPaidCents) + ' paid</span>' : ''}</td>
+          <td>${q.lastReminderAt ? h.esc(when(q.lastReminderAt)) + (q.reminderCount > 1 ? ' <span class="ms-sub">' + q.reminderCount + ' sent</span>' : '') : '<span class="ad-cell-muted">—</span>'}</td>
+          <td class="ad-cell-right">${c.email ? '<button type="button" class="ad-btn ad-btn-primary" data-ms-remind="' + h.attr(q.id) + '">Send reminder</button>' : ''}</td></tr>`;
+      }).join('') : '<tr class="ms-fixed"><td colspan="5" class="ad-cell-muted">Nobody owes you money right now.</td></tr>'}</tbody>
+    </table></div></div>
+    ${p ? `<aside class="ad-card ms-card ms-pad ms-log-view">
+        <button type="button" class="ms-back" data-ms-cclose>&times; Close</button>
+        <p class="ms-log-meta"><b>${h.esc(p.subject || '')}</b>${p.note ? '<br>' + h.esc(p.note) : ''}</p>
+        ${p.loading ? '<p class="ad-cell-muted">Loading&hellip;</p>' : '<iframe class="ms-log-frame" id="ms-cprev-frame" title="Email preview"></iframe>'}
+      </aside>` : ''}
+    </div>
+    <p class="ms-key">Only sent when you press Send. It asks for the deposit if nothing's paid yet, otherwise what's still owing, with the link to view &amp; pay.</p>`;
+}
+
+/*  Send one reminder - asks first, says who it went to. */
+export async function sendReminder(call, q) {
+  const c = (q && q.customer) || {};
+  const to = [c.email, c.ccEmail].filter(Boolean).join(', ');
+  if (!window.confirm('Email a payment reminder to ' + (c.name || c.business || 'this client') + '?\n\n' + to)) return false;
+  try { await call('adminSendPaymentReminder', { id: q.id }); window.alert('Reminder sent to ' + to + '.'); return true; }
+  catch (err) { window.alert(err.message || 'Could not send the reminder.'); return false; }
 }
 
 function clientsHtml(h, state) {
@@ -656,6 +711,12 @@ export function wireMessages(ctx) {
       return;
     }
     if (e.target.closest('[data-ms-cclose]')) { state.clientPrev = null; render(); return; }
+    const remBtn = e.target.closest('[data-ms-remind]');
+    if (remBtn) {
+      const q = (state.quoteDocs || []).find((x) => x.id === remBtn.getAttribute('data-ms-remind'));
+      if (q) { remBtn.disabled = true; sendReminder(call, q).then(() => { remBtn.disabled = false; }); }
+      return;
+    }
     const cRow = e.target.closest('[data-ms-cprev]');
     if (cRow) {
       const key = cRow.getAttribute('data-ms-cprev');

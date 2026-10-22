@@ -10,7 +10,8 @@
    (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { isBooked, pickProgress } from './stock.js?v=692';
+import { owesMoney } from './messages.js?v=693';   // who still owes money (Max, 22 Oct 2026)
+import { isBooked, pickProgress } from './stock.js?v=693';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -301,6 +302,7 @@ export function rowsHtml(rows, f, h) {
         <td><span class="sp-next sp-${tone}">${svg(ico)}<span><b>${h.esc(nTitle)}</b><em>${h.esc(nSub)}</em></span></span></td>
         <td class="sp-total">${h.esc(h.money((q.totalCents || 0) + (q.lateFeeCents || 0)))}${q.lateFeeCents ? '<span class="sp-late">incl. late fees</span>' : ''}</td>
         <td class="sp-act">
+          ${owesMoney(q) && (q.customer || {}).email ? `<button type="button" class="sp-remind" data-sp-act="remind" data-id="${h.attr(q.id)}" data-no-open title="Email them a payment reminder">Send reminder</button>` : ''}
           <button type="button" class="sp-view">View</button>
           <details class="sp-more" data-no-open>
             <summary aria-label="More"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
@@ -376,7 +378,7 @@ export function wirePipeline(getJobs, f, h, act) {
     if (vb) { act.vendorInvoice(vb.getAttribute('data-id'), vb.getAttribute('data-sp-vendor'), vb); return; }
     const a = e.target.closest('[data-sp-act]');
     if (a) {
-      const fn = { duplicate: act.duplicate, archive: act.archive, restore: act.restore, delete: act.del, paid: act.paid, deposit: act.deposit, picklist: act.picklist, undopay: act.undopay, latefee: act.latefee, unlatefee: act.unlatefee, gearlist: act.gearlist, geartest: act.geartest }[a.getAttribute('data-sp-act')];
+      const fn = { duplicate: act.duplicate, archive: act.archive, restore: act.restore, delete: act.del, paid: act.paid, deposit: act.deposit, picklist: act.picklist, undopay: act.undopay, latefee: act.latefee, unlatefee: act.unlatefee, gearlist: act.gearlist, geartest: act.geartest, remind: act.remind }[a.getAttribute('data-sp-act')];
       if (fn) fn(a.getAttribute('data-id'));
       return;
     }

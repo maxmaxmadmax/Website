@@ -4184,6 +4184,14 @@ exports.adminPreviewClientEmail = onCall(async (request) => {
     const { leadHtml } = require('./lib/lead-email');
     return { subject: '(you write the subject)', html: leadHtml('Hi there,\n\nThis is where your own message goes - you write it each time in the Lead Generator.\n\nCheers,\nMax'), note: 'You write these each time - this shows the letterhead it goes out in.' };
   }
+  if (kind === 'reminder') {   // payment reminder (Max, 22 Oct 2026)
+    const { renderPaymentReminder } = require('./lib/quote-doc-email');
+    const snap = await db.collection('quotes').orderBy('createdAt', 'desc').limit(60).get();
+    const doc = snap.docs.find((d) => owesMoney(d.data()));
+    const q = doc ? doc.data() : { kind: 'invoice', number: 'SG-Q-0000', invoiceNumber: 'SG-I-0000', customer: { name: 'Sam', eventName: 'Your event' }, totalCents: 100000, token: 'x' };
+    const out = renderPaymentReminder(q, SITE_URL + '/quote?t=' + (q.token || ''), reminderInfo(q));
+    return { ...out, note: doc ? 'As ' + ((q.customer && q.customer.name) || 'this client') + ' would get it (' + (q.invoiceNumber || q.number) + ').' : 'Sample details.' };
+  }
   if (kind === 'quote' || kind === 'invoice') {
     const { renderQuoteLinkEmail } = require('./lib/quote-doc-email');
     const snap = await db.collection('quotes').orderBy('createdAt', 'desc').limit(40).get();
@@ -5485,3 +5493,41 @@ function plus4h(t) {
   const v = ((+m[1] * 60 + +m[2] + 240) % 1440);
   return String(Math.floor(v / 60)).padStart(2, '0') + ':' + String(v % 60).padStart(2, '0');
 }
+
+/* =========================================================================
+   PAYMENT REMINDERS (Max, 22 Oct 2026) - sent only when Max presses Send.
+   ========================================================================= */
+function owesMoney(q) {
+  if (!q || q.isTemplate || q.vendor) return false;
+  if (!['sent', 'accepted', 'invoiced'].includes(q.status)) return false;
+  if (q.paymentStatus === 'paid') return false;
+  return quoteGrandTotal(q) - Math.round(q.amountPaidCents || 0) > 0;
+}
+/*  What's due now: the deposit if nothing's paid and it's more than 7 days
+    out (and not "pay in full"), otherwise everything still owing.        */
+function reminderInfo(q) {
+  const total = quoteGrandTotal(q);
+  const paid = Math.max(0, Math.round(q.amountPaidCents || 0));
+  const owing = Math.max(0, total - paid);
+  const dueDay = addDaysISO(q.hire && q.hire.startDate, -7);
+  const fullNow = q.payFull === true || (!!dueDay && dueDay <= brisbaneToday()) || q.bankPlan === 'full';
+  if (!paid && !fullNow) {
+    const pct = q.depositPct || QUOTE_DEPOSIT_PCT;
+    return { dueCents: Math.round(total * pct / 100), dueLabel: pct + '% deposit due now', isDeposit: true, balanceDue: dueDay ? prettyDay(dueDay) : '' };
+  }
+  return { dueCents: owing, dueLabel: paid ? 'Balance owing' : 'Amount due', isDeposit: false, balanceDue: '' };
+}
+exports.adminSendPaymentReminder = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  requireAdmin(request);
+  const { sendPaymentReminderEmail } = require('./lib/quote-doc-email');
+  const ref = db.collection('quotes').doc(String((request.data || {}).id || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'No such quote.');
+  const q = snap.data();
+  if (!owesMoney(q)) throw new HttpsError('failed-precondition', 'Nothing is owing on this one.');
+  if (!(q.customer && q.customer.email)) throw new HttpsError('failed-precondition', 'There is no email on this quote - add it first.');
+  const mail = await sendPaymentReminderEmail(q, SITE_URL + '/quote?t=' + q.token, reminderInfo(q));
+  if (!mail.sent) throw new HttpsError('internal', 'The email did not send (' + (mail.reason || 'error') + ').');
+  await ref.update({ lastReminderAt: FieldValue.serverTimestamp(), reminderCount: FieldValue.increment(1) });
+  return { sent: true, to: q.customer.email };
+});

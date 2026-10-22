@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=692';
+} from './firebase-config.js?v=693';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=692';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=692';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=692';
-import { messagesHtml, wireMessages } from './messages.js?v=692';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=692';
-import { expandKit } from './kit.js?v=692';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=693';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=693';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=693';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=693';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=693';
+import { expandKit } from './kit.js?v=693';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6144,6 +6144,7 @@ function wireQuoteList() {
       if (!window.confirm('Add a 2% late payment charge to ' + label(d) + '?\n\n' + money(Math.round(owing * 0.02)) + ' (2% of the ' + money(owing) + ' still owing).\n\nIt shows on their invoice as a separate line. You can remove it later.')) return;
       try { await call('adminAddLateFee', { id }); } catch (e) { window.alert(e.message || 'Could not add the late fee.'); }
     },
+    async remind(id) { await sendReminder(call, findDoc(id)); },   // payment reminder (Max, 22 Oct 2026)
     async unlatefee(id) {
       if (!window.confirm('Remove the last late fee from ' + label(findDoc(id)) + '?')) return;
       try { await call('adminRemoveLateFee', { id }); } catch (e) { window.alert(e.message || 'Could not remove it.'); }
