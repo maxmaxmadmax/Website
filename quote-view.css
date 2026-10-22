@@ -706,20 +706,16 @@
 /* DJ quotes: the DJ's portrait as a sharp card on the right - the heading never covers the face (Max, 22 Oct 2026) */
 .qp-hero-djimg{ position:absolute; right:40px; bottom:28px; z-index:1; width:210px; aspect-ratio:4 / 5; object-fit:cover; object-position:center 20%;
   border-radius:16px; box-shadow:0 0 0 3px #ff6b00, 0 18px 40px rgba(0,0,0,.55); }
-.qp-hero-photo.is-dj .qp-hero-in{ max-width:calc(100% - 300px); }
 @media (max-width:760px){
   .qp-hero-djimg{ width:96px; right:16px; top:78px; bottom:auto; border-radius:12px; }   /* clear of the menu button */
-  .qp-hero-photo.is-dj .qp-hero-in{ max-width:none; }
 }
 @media print{ .qp-hero-djimg{ width:150px; } }
 /* DJ quotes: our stage behind, a bigger DJ photo (Max, 22 Oct 2026) */
 .qp-hero-photo.is-dj{ min-height:470px; background-position:center 60%; }
 .qp-hero-djimg{ width:300px; bottom:32px; }
-.qp-hero-photo.is-dj .qp-hero-in{ max-width:calc(100% - 380px); }
 @media (max-width:760px){
   .qp-hero-photo.is-dj{ min-height:420px; }
   .qp-hero-djimg{ width:130px; }
-  .qp-hero-photo.is-dj .qp-hero-in{ max-width:none; }
 }
 .qp-hero-photo.is-dj h1{ font-size:clamp(30px, 4.4vw, 54px); overflow-wrap:normal; word-break:normal; }   /* "ENTERTAINMENT" on one line beside the bigger photo */
 
@@ -746,7 +742,6 @@
 
 /* the DJ under the first paragraph; the banner is just the stage + heading (Max, 22 Oct 2026) */
 .qp-hero-photo.is-stage{ min-height:380px; }
-.qp-hero-photo.is-stage .qp-hero-in{ max-width:680px; }
 .qp-djf{ display:grid; grid-template-columns:260px 1fr; gap:24px; align-items:center; margin:22px 0 8px; }
 .qp-djf-img{ width:100%; aspect-ratio:4 / 5; object-fit:cover; object-position:center 20%; border-radius:16px; box-shadow:0 0 0 3px #ff6b00, 0 18px 40px rgba(0,0,0,.5); }
 .qp-djf-text h3{ margin:2px 0 4px; font-family:"Arial Black", Arial, sans-serif; font-size:clamp(28px, 4vw, 44px); line-height:1.05; text-transform:uppercase; color:#fff; }
@@ -754,3 +749,6 @@
 .qp-djf-set{ margin:0 0 6px; font-size:16px; color:#ffb27a; font-weight:700; }
 @media (max-width:640px){ .qp-djf{ grid-template-columns:1fr; } .qp-djf-img{ max-width:280px; } }
 @media print{ .qp-djf-text h3{ color:#111; } .qp-djf-img{ width:180px; } .qp-djf{ grid-template-columns:180px 1fr; } }
+/* FIX (Max, 22 Oct 2026): the DJ banner text squeezed to one letter wide - the
+   photo isn't in the banner any more, so the text gets the full width again */
+.qp-hero-photo.is-dj .qp-hero-in p{ overflow-wrap:normal; word-break:normal; }
