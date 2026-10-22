@@ -289,6 +289,10 @@ service cloud.firestore {
     match /venues/{venueId} {
       allow read, write: if isAdmin();
     }
+    // the DJ booking fee setting (Max, 22 Oct 2026)
+    match /djSettings/{docId} {
+      allow read, write: if isAdmin();
+    }
     // fixed DJ travel fees, town to town (Max, 21 Oct 2026)
     match /travelFees/{feeId} {
       allow read, write: if isAdmin();

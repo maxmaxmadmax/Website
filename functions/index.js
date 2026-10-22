@@ -5196,8 +5196,11 @@ async function gigSync(bookingId) {
   const tr = await djTravel(rate.location, b.venue);
   if (tr.cents) djLines.push({ type: 'custom', name: 'DJ travel - ' + name, description: tr.from + ' to ' + tr.to, qty: 1, unitCents: tr.cents, days: 1, pubDj: true, noPick: true });
   if (tr.missing) notes.push(name + ' (no travel fee set for ' + tr.missing + ')');
-  // the management fee on every DJ booking, ex GST (Max, 21 Oct 2026)
-  djLines.push({ type: 'custom', name: 'DJ booking management fee', description: '', qty: 1, unitCents: 8000, days: 1, pubDj: true, noPick: true });
+  // THE BOOKING FEE on every DJ booking, ex GST - a setting on Entertainment
+  // (Max, 22 Oct 2026): a fixed $ or a % of the DJ's performance only.
+  const fee = await djFeeSetting();
+  const feeCents = fee.mode === 'percent' ? Math.round(djLines[0].unitCents * fee.pct / 100) : fee.cents;
+  if (feeCents > 0) djLines.push({ type: 'custom', name: fee.name, description: fee.description, qty: 1, unitCents: feeCents, days: 1, pubDj: true, noPick: true });
 
   let lines = djLines.concat((tpl.lines || []).filter((l) => !l.pubDj && l.type !== 'fee'));   // the DJ at the top (Max, 21 Oct 2026)
   if ((tpl.lines || []).some((l) => l.type === 'fee') && tpl.feeExcluded !== true) {
@@ -5387,3 +5390,29 @@ exports.onGigQuotePaid = require('firebase-functions/v2/firestore').onDocumentWr
       if (r.sent) await ref.update({ bookedEmailAt: FieldValue.serverTimestamp() });
     } catch (e) { logger.error('onGigQuotePaid', { id: snap.id, err: e && e.message }); }
   });
+
+/*  DJ BOOKING FEE SETTING (Max, 22 Oct 2026) - djSettings/fee, edited on
+    Admin > Entertainment. Until it's saved: $80 fixed, as before.       */
+async function djFeeSetting() {
+  const d = await db.collection('djSettings').doc('fee').get();
+  const x = d.exists ? d.data() : {};
+  return {
+    mode: x.mode === 'percent' ? 'percent' : 'fixed',
+    cents: Number.isFinite(x.cents) ? Math.max(0, Math.round(x.cents)) : 8000,
+    pct: Number.isFinite(x.pct) ? Math.max(0, Math.min(100, x.pct)) : 15,
+    name: String(x.name || 'Booking, coordination & backup cover').slice(0, 120),
+    description: String(x.description == null ? 'DJ booking, scheduling, backup DJ if needed and support on the night' : x.description).slice(0, 300),
+  };
+}
+/*  The fee changed -> upcoming gig quotes that haven't gone out are rebuilt */
+exports.onDjFeeChanged = require('firebase-functions/v2/firestore').onDocumentWritten('djSettings/{id}', async () => {
+  const today = brisbaneTodayISO();
+  const snap = await db.collection('talentSchedule').where('date', '>=', today).get();
+  for (const d of snap.docs) {
+    const b = d.data();
+    if (!b.templateId || !b.customerId) continue;
+    const q = await db.collection('quotes').where('gigBookingId', '==', d.id).limit(1).get();
+    if (q.empty || q.docs[0].data().status !== 'approved') continue;
+    try { await gigSync(d.id); } catch (e) { logger.error('onDjFeeChanged', { id: d.id, err: e && e.message }); }
+  }
+});

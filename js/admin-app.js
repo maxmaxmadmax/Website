@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=675';
+} from './firebase-config.js?v=676';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=675';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=675';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=675';
-import { messagesHtml, wireMessages } from './messages.js?v=675';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=675';
-import { expandKit } from './kit.js?v=675';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=676';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=676';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=676';
+import { messagesHtml, wireMessages } from './messages.js?v=676';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=676';
+import { expandKit } from './kit.js?v=676';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -302,6 +302,7 @@ async function loadPubSettings() {
     }
     state.actRates = {};
     rates.forEach((d) => { state.actRates[d.id] = d.data(); });
+    try { const fs2 = await getDocs(collection(fb.db, 'djSettings')); state.djFee = {}; fs2.forEach((d) => { if (d.id === 'fee') state.djFee = d.data(); }); } catch (e) { state.djFee = {}; }
     state.regularNights = [];
     nights.forEach((d) => state.regularNights.push({ id: d.id, ...d.data() }));
     state.regularNights.sort((a, b) => (a.weekday - b.weekday) || String(a.venue).localeCompare(String(b.venue)));
@@ -2979,6 +2980,30 @@ function bookingPanel(b) {
 /*  REGULAR NIGHTS (Max, 21 Oct 2026): pub + night + usual times. Booking a DJ
     there makes that night's invoice; nights with nobody booked are flagged
     on the dashboard.                                                      */
+/*  DJ BOOKING FEE (Max, 22 Oct 2026): its own line on every DJ booking
+    quote - a fixed $ or a % of the DJ's performance (not gear or travel).
+    Saving it updates upcoming quotes that haven't been sent.          */
+function djFeePanel() {
+  const f = state.djFee || {};
+  const mode = f.mode === 'percent' ? 'percent' : 'fixed';
+  const cents = Number.isFinite(f.cents) ? f.cents : 8000;
+  const pct = Number.isFinite(f.pct) ? f.pct : 15;
+  const name = f.name || 'Booking, coordination & backup cover';
+  const desc = f.description == null ? 'DJ booking, scheduling, backup DJ if needed and support on the night' : f.description;
+  return `
+      <header class="ad-panel-head"><h2>DJ booking fee</h2></header>
+      <div class="ad-panel-intro"><p>Its own line on every DJ booking quote. A % is worked out on the DJ's performance only (not gear or travel). Saving updates upcoming quotes that haven't been sent.</p></div>
+      <div class="ent-fee">
+        <label class="ad-field"><span>How it's worked out</span>
+          <select id="dj-fee-mode"><option value="fixed"${mode === 'fixed' ? ' selected' : ''}>Fixed amount ($)</option><option value="percent"${mode === 'percent' ? ' selected' : ''}>% of the DJ's performance</option></select></label>
+        <label class="ad-field"><span>Amount (ex GST)</span>
+          <input class="ad-rate-in" type="number" min="0" step="1" id="dj-fee-amt" value="${attr(String(mode === 'percent' ? pct : cents / 100))}"></label>
+        <label class="ad-field ent-fee-wide"><span>Name on the quote</span><input class="ad-input" id="dj-fee-name" maxlength="120" value="${attr(name)}"></label>
+        <label class="ad-field ent-fee-wide"><span>Small print under it</span><input class="ad-input" id="dj-fee-desc" maxlength="300" value="${attr(desc)}"></label>
+        <div><button type="button" class="ad-btn ad-btn-primary" id="dj-fee-save">Save fee</button> <span class="ad-cell-muted" id="dj-fee-msg"></span></div>
+      </div>`;
+}
+
 function regularNightsPanel() {
   const rows = state.regularNights || [];
   const daySel = (cur, id) => '<select ' + id + '>' + WEEKDAYS.map((d, i) => '<option value="' + i + '"' + (Number(cur) === i ? ' selected' : '') + '>' + d + '</option>').join('') + '</select>';
@@ -3011,6 +3036,7 @@ function regularNightsPanel() {
         </tbody>
       </table></div>
       </div>
+      ${djFeePanel()}
       <header class="ad-panel-head"><h2>DJ travel fees</h2></header>
       <div class="ad-panel-intro"><p>A fixed fee when a DJ lives in a different town to the gig (works both ways). Same town = no travel.</p></div>
       <div class="ad-table-wrap"><table class="ad-table">
@@ -3036,6 +3062,33 @@ function regularNightsPanel() {
 
 function wirePubBits() {
   const { doc, setDoc, deleteDoc, addDoc, collection } = fb.f;
+  // DJ booking fee setting (Max, 22 Oct 2026)
+  const feeSave = document.getElementById('dj-fee-save');
+  if (feeSave) feeSave.addEventListener('click', async () => {
+    const mode = document.getElementById('dj-fee-mode').value === 'percent' ? 'percent' : 'fixed';
+    const amt = Math.max(0, Number(document.getElementById('dj-fee-amt').value) || 0);
+    const cur = state.djFee || {};
+    const data = {
+      mode,
+      cents: mode === 'fixed' ? Math.round(amt * 100) : (Number.isFinite(cur.cents) ? cur.cents : 8000),
+      pct: mode === 'percent' ? Math.min(100, amt) : (Number.isFinite(cur.pct) ? cur.pct : 15),
+      name: document.getElementById('dj-fee-name').value.trim().slice(0, 120) || 'Booking, coordination & backup cover',
+      description: document.getElementById('dj-fee-desc').value.trim().slice(0, 300),
+      updatedAt: Date.now(),
+    };
+    feeSave.disabled = true;
+    try {
+      await setDoc(doc(fb.db, 'djSettings', 'fee'), data);
+      state.djFee = data;
+      const m = document.getElementById('dj-fee-msg'); if (m) m.textContent = 'Saved - upcoming unsent quotes update in a minute.';
+    } catch (err) { window.alert(friendly(err)); }
+    feeSave.disabled = false;
+  });
+  const feeMode = document.getElementById('dj-fee-mode');
+  if (feeMode) feeMode.addEventListener('change', () => {
+    const f = state.djFee || {};
+    document.getElementById('dj-fee-amt').value = feeMode.value === 'percent' ? (Number.isFinite(f.pct) ? f.pct : 15) : (Number.isFinite(f.cents) ? f.cents : 8000) / 100;
+  });
   // DJ rates (private)
   document.querySelectorAll('[data-rate-save]').forEach((btn) => btn.addEventListener('click', async () => {
     const slug = btn.getAttribute('data-rate-save');
