@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=658';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=658';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=659';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=659';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -405,10 +405,11 @@ async function acceptFlow(btn) {
 const HERO_PHOTO = {
   community: 'community-events.webp', corporate: 'corporate-functions.webp', festival: 'festivals.webp',
   wedding: 'weddings.webp', private: 'private-functions.webp', sporting: 'sporting-events.webp',
-  touring: 'touring-bands.webp',
+  touring: 'touring-bands.webp', dj: 'dj-entertainment.webp',
 };
 function guessType(name) {
   const n = String(name || '').toLowerCase();
+  if (/dj|entertainment/.test(n)) return 'dj';
   if (/wedding|bride|ceremony|reception/.test(n)) return 'wedding';
   if (/corporate|conference|awards|gala|dinner|launch|expo|ball/.test(n)) return 'corporate';
   if (/festival|concert|music|fest\b/.test(n)) return 'festival';

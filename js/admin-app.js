@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=658';
+} from './firebase-config.js?v=659';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=658';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=658';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=658';
-import { messagesHtml, wireMessages } from './messages.js?v=658';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=658';
-import { expandKit } from './kit.js?v=658';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=659';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=659';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=659';
+import { messagesHtml, wireMessages } from './messages.js?v=659';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=659';
+import { expandKit } from './kit.js?v=659';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5377,9 +5377,11 @@ function wireInvReqs() {
 const EVENT_TYPES = {
   community: 'Community event', corporate: 'Corporate function', festival: 'Festival / concert',
   wedding: 'Wedding', private: 'Private party', sporting: 'Sporting event', touring: 'Touring band / gig',
+  dj: 'DJ / Entertainment',   // pub nights + DJ gigs (Max, 22 Oct 2026)
 };
 function guessEventType(name) {
   const n = String(name || '').toLowerCase();
+  if (/dj|entertainment/.test(n)) return 'dj';
   if (/wedding|bride|ceremony|reception/.test(n)) return 'wedding';
   if (/corporate|conference|awards|gala|dinner|launch|expo|ball/.test(n)) return 'corporate';
   if (/festival|concert|music|fest\b/.test(n)) return 'festival';

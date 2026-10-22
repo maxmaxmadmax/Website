@@ -5208,7 +5208,7 @@ async function gigSync(bookingId) {
     customer: {
       name: cust.name || '', business: cust.business || '', email: cust.email || '', ccEmail: cust.ccEmail || '',
       phone: cust.phone || '', address: cust.address || '',
-      eventName: tc.eventName || ('DJ - ' + String(b.venue || '').split(',')[0]), eventType: tc.eventType || '',
+      eventName: tc.eventName || ('DJ - ' + String(b.venue || '').split(',')[0]), eventType: tc.eventType || 'dj',
       eventVenue: b.venue || '', eventDate: prettyDay(b.date), eventStartTime: start,
     },
     hire: { startDate: b.date, endDate: b.date, days: 1 },
