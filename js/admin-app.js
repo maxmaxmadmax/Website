@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=682';
+} from './firebase-config.js?v=683';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=682';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=682';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=682';
-import { messagesHtml, wireMessages } from './messages.js?v=682';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=682';
-import { expandKit } from './kit.js?v=682';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=683';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=683';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=683';
+import { messagesHtml, wireMessages } from './messages.js?v=683';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=683';
+import { expandKit } from './kit.js?v=683';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -296,6 +296,13 @@ async function loadPubSettings() {
       const v = { name: 'Arcadia Bar', town: 'Mackay', createdAt: Date.now() };
       await setDoc(doc(fb.db, 'venues', 'arcadia-bar-mackay'), v);
       state.venues.push({ id: 'arcadia-bar-mackay', ...v });
+    }
+    if (!state.venues.some((v) => /grand view/i.test(v.name || '')) && !state.gvSeeded) {
+      state.gvSeeded = true;
+      const { doc, setDoc } = fb.f;
+      const gv = { name: 'Grand View Hotel', town: 'Bowen', createdAt: Date.now() };
+      setDoc(doc(fb.db, 'venues', 'grand-view-hotel-bowen'), gv).catch(() => {});
+      state.venues.push({ id: 'grand-view-hotel-bowen', ...gv });
     }
     state.venues.sort((a, b) => String(a.name).localeCompare(String(b.name)));
     state.travelFees = [];
@@ -2447,6 +2454,10 @@ function wireEventForm() {
 VIEWS.entertainment = {
   html() {
     const tab = state.entTab || 'gigs';
+    if (tab === 'venues') {
+      const open = state.openVenue != null;
+      return `<div class="inv-wrap ent${open ? ' has-detail' : ''}">${venuesMainHtml()}${open ? venueDetailHtml() : ''}</div>`;
+    }
     if (tab === 'djs') {
       const open = state.openDj != null;
       return `<div class="inv-wrap ent${open ? ' has-detail' : ''}">${djMainHtml()}${open ? djDetailHtml() : ''}</div>`;
@@ -2480,8 +2491,11 @@ function entHead(tab) {
             <div class="ent-tabs" role="tablist">
               <button type="button" class="ent-tab${tab === 'gigs' ? ' is-on' : ''}" data-ent-tab="gigs">Bookings</button>
               <button type="button" class="ent-tab${tab === 'djs' ? ' is-on' : ''}" data-ent-tab="djs">Entertainment Roster</button>
+              <button type="button" class="ent-tab${tab === 'venues' ? ' is-on' : ''}" data-ent-tab="venues">Venues</button>
             </div>
-            ${tab === 'gigs' ? '<button type="button" class="ad-btn ad-btn-primary" id="ad-book-new">+ New booking</button>' : '<button type="button" class="ad-btn ad-btn-primary" data-dj-new>+ New DJ</button>'}
+            ${tab === 'gigs' ? '<button type="button" class="ad-btn ad-btn-primary" id="ad-book-new">+ New booking</button>'
+              : tab === 'venues' ? '<button type="button" class="ad-btn ad-btn-primary" data-venue-new>+ New venue</button>'
+              : '<button type="button" class="ad-btn ad-btn-primary" data-dj-new>+ New DJ</button>'}
           </div>
         </div>`;
 }
@@ -2693,11 +2707,12 @@ function djDetailHtml() {
 function wireEntPage() {
   const desk = document.getElementById('ad-desk');
   desk.querySelectorAll('[data-ent-tab]').forEach((b) => b.addEventListener('click', () => {
-    state.entTab = b.getAttribute('data-ent-tab'); state.entPanel = false; state.bookEditing = false; state.openDj = null; render();
+    state.entTab = b.getAttribute('data-ent-tab'); state.entPanel = false; state.bookEditing = false; state.openDj = null; state.openVenue = null; render();
   }));
   desk.querySelectorAll('[data-ent-close]').forEach((b) => b.addEventListener('click', () => {
-    state.entPanel = false; state.bookEditing = false; state.openDj = null; render();
+    state.entPanel = false; state.bookEditing = false; state.openDj = null; state.openVenue = null; render();
   }));
+  wireVenuesTab(desk);
   // DJs tab
   const ds = document.getElementById('dj-search');
   if (ds) ds.addEventListener('input', () => { state.djSearch = ds.value; const pos = ds.selectionStart; render(); const n = document.getElementById('dj-search'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } });
@@ -2855,8 +2870,9 @@ function bookingPanel(b) {
           const tpls = (state.quoteDocs || []).filter((q) => q.isTemplate && q.status !== 'cancelled');
           const custs = (state.customers || []).slice().sort((a, b) => String(a.business || a.name || '').localeCompare(String(b.business || b.name || '')));
           const lastAtVenue = (state.schedule || []).filter((x) => x.customerId && samePub(x.venue, draft.venue || 'Grand View Hotel, Bowen')).sort((a, b) => String(b.date).localeCompare(String(a.date)))[0] || {};
-          const custSel = draft.customerId != null ? draft.customerId : (draft.id ? '' : (lastAtVenue.customerId || ''));
-          const tplSel = draft.templateId != null ? draft.templateId : (draft.id ? '' : (lastAtVenue.templateId || (tpls.length === 1 ? tpls[0].id : '')));
+          const venRec = venueRecord(draft.venue || 'Grand View Hotel, Bowen') || {};   // set on the Venues tab (Max, 22 Oct 2026)
+          const custSel = draft.customerId != null ? draft.customerId : (draft.id ? '' : (venRec.customerId || lastAtVenue.customerId || ''));
+          const tplSel = draft.templateId != null ? draft.templateId : (draft.id ? '' : (venRec.templateId || lastAtVenue.templateId || (tpls.length === 1 ? tpls[0].id : '')));
           return `
         <label class="ad-field">Invoice to
           <select id="ad-f-cust"><option value="">No invoice</option>${custs.map((c) => `<option value="${attr(c.id)}"${c.id === custSel ? ' selected' : ''}>${esc(c.business || c.name || c.email || 'Customer')}${c.business && c.name ? ' (' + esc(c.name) + ')' : ''}</option>`).join('')}</select>
@@ -3170,6 +3186,11 @@ function wirePubBits() {
       venueIn.innerHTML = venueOptions(venueFull(v));
     }
     venuePrev = venueIn.value;
+    // the venue's client + template, if set on the Venues tab
+    const vr = venueRecord(venueIn.value);
+    const cs = document.getElementById('ad-f-cust'), ts = document.getElementById('ad-f-tpl');
+    if (vr && vr.customerId && cs) cs.value = vr.customerId;
+    if (vr && vr.templateId && ts) ts.value = vr.templateId;
     const rn = regularNightFor(venueIn.value);
     const s = document.getElementById('ad-f-start'), f = document.getElementById('ad-f-finish');
     if (rn && s && !s.value) s.value = rn.start || '';
@@ -3364,10 +3385,145 @@ function importBanner() {
       </button>
     </div>`;
 }
+/* =========================================================================
+   VENUES TAB (Max, 22 Oct 2026) - like Crew & Vehicles / the roster: one row
+   per venue, click to edit in the side panel. Each venue can carry who the
+   invoice goes to and which template it uses, so booking a DJ there fills
+   both in. Removing a venue never touches its bookings.
+   ========================================================================= */
+const venueRecord = (venue) => (state.venues || []).find((v) => samePub(v.name, venue)) || null;
+const venueGigs = (v) => (state.schedule || []).filter((b) => samePub(v.name, b.venue));
+function venuesMainHtml() {
+  const today = isoDay(new Date());
+  const vs = state.venues || [];
+  const needle = String(state.venueSearch || '').trim().toLowerCase();
+  const rows = vs.filter((v) => !needle || searchMatch(needle, v.name, v.town, v.contactName));
+  const custName = (id) => { const c = (state.customers || []).find((x) => x.id === id); return c ? (c.business || c.name || c.email) : ''; };
+  const tplName = (id) => { const q = (state.quoteDocs || []).find((x) => x.id === id); return q ? (q.templateName || q.number) : ''; };
+  const upcoming = (v) => venueGigs(v).filter((b) => b.date >= today).sort((x, y) => x.date.localeCompare(y.date));
+  return `
+      <div class="inv-main">
+        ${entHead('venues')}
+        <div class="inv-tiles">
+          ${invTile('&#127970;', 'inv-t-green', vs.length, 'Venues', '')}
+          ${invTile('&#129534;', 'inv-t-blue', vs.filter((v) => v.customerId).length, 'With a client', '')}
+          ${invTile('&#128197;', 'inv-t-slate', vs.reduce((n, v) => n + upcoming(v).length, 0), 'Upcoming gigs', '')}
+          ${invTile('&#9203;', 'inv-t-amber', (state.schedule || []).filter((b) => b.status === 'unconfirmed' && b.date >= today).length, 'Unconfirmed', '')}
+        </div>
+        <div class="inv-toolbar">
+          <input type="search" id="venue-search" class="ad-search" placeholder="Search venues..." value="${attr(state.venueSearch || '')}" aria-label="Search venues">
+        </div>
+        <div class="ad-table-wrap inv-table-wrap">
+          <table class="ad-table inv-table">
+            <thead><tr><th>Venue</th><th>Town</th><th>Invoice to</th><th>Template</th><th>Contact</th><th>Next gig</th><th></th></tr></thead>
+            <tbody>
+              ${rows.length ? rows.map((v) => {
+                const nx = upcoming(v)[0];
+                const act = nx ? (state.talent || []).find((t) => t.slug === nx.slug) || {} : {};
+                return `<tr class="inv-row${state.openVenue === v.id ? ' is-open' : ''}" data-venue-open="${attr(v.id)}">
+                  <td><span class="inv-item-name">${esc(v.name)}</span></td>
+                  <td>${v.town ? esc(v.town) : '<span class="ad-cell-muted">—</span>'}</td>
+                  <td>${v.customerId ? esc(custName(v.customerId) || '—') : '<span class="inv-pill inv-st-amber">Add client</span>'}</td>
+                  <td>${v.templateId ? esc(tplName(v.templateId) || '—') : '<span class="ad-cell-muted">—</span>'}</td>
+                  <td>${v.contactName || v.phone || v.email ? esc([v.contactName, v.phone].filter(Boolean).join(' · ') || v.email) : '<span class="ad-cell-muted">—</span>'}</td>
+                  <td>${nx ? esc(prettyDate(nx.date)) + ' <span class="ad-cell-muted">' + esc(act.name || nx.slug) + '</span>' + (nx.status === 'unconfirmed' ? ' <span class="ent-unconf-tag">Unconfirmed</span>' : '') : '<span class="ad-cell-muted">—</span>'}</td>
+                  <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-venue-open="${attr(v.id)}" aria-label="Edit">&#8250;</button></td>
+                </tr>`;
+              }).join('') : '<tr><td colspan="7" class="ad-cell-muted">No venues match. Try clearing the search, or add one above.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+}
+function venueDetailHtml() {
+  const isNew = state.openVenue === '__new__';
+  const v = isNew ? {} : ((state.venues || []).find((x) => x.id === state.openVenue) || {});
+  const today = isoDay(new Date());
+  const gigs = isNew ? [] : venueGigs(v).filter((b) => b.date >= today).sort((x, y) => x.date.localeCompare(y.date)).slice(0, 8);
+  const custs = (state.customers || []).slice().sort((x, y) => String(x.business || x.name || '').localeCompare(String(y.business || y.name || '')));
+  const tpls = (state.quoteDocs || []).filter((q) => q.isTemplate && q.status !== 'cancelled');
+  return `
+    <aside class="inv-detail ent-detail" aria-label="Venue">
+      <header class="inv-detail-head">
+        <div><h2>${isNew ? 'New venue' : esc(v.name || 'Venue')}</h2>${isNew ? '' : '<p class="inv-detail-sub">' + esc(v.town || '') + '</p>'}</div>
+        <button type="button" class="inv-detail-close" data-ent-close aria-label="Close">&times;</button>
+      </header>
+      <div class="inv-detail-body">
+        <label class="ad-field"><span>Venue name</span><input class="ad-input" id="vn-f-name" maxlength="80" value="${attr(v.name || '')}" placeholder="e.g. Arcadia Bar"></label>
+        <label class="ad-field"><span>Town</span><select class="ad-select" id="vn-f-town">${djTownOptions(v.town || '')}</select></label>
+        <label class="ad-field"><span>Address</span><input class="ad-input" id="vn-f-addr" maxlength="200" value="${attr(v.address || '')}"></label>
+        <div class="ent-2col">
+          <label class="ad-field"><span>Contact name</span><input class="ad-input" id="vn-f-contact" maxlength="80" value="${attr(v.contactName || '')}"></label>
+          <label class="ad-field"><span>Phone</span><input class="ad-input" id="vn-f-phone" maxlength="40" value="${attr(v.phone || '')}"></label>
+        </div>
+        <label class="ad-field"><span>Email</span><input class="ad-input" type="email" id="vn-f-email" maxlength="200" value="${attr(v.email || '')}"></label>
+        <label class="ad-field"><span>Invoice to (client) - filled in when you book here</span>
+          <select class="ad-select" id="vn-f-cust"><option value="">Not set</option>${custs.map((c) => `<option value="${attr(c.id)}"${c.id === v.customerId ? ' selected' : ''}>${esc(c.business || c.name || c.email || 'Customer')}</option>`).join('')}</select></label>
+        <label class="ad-field"><span>Template - filled in when you book here</span>
+          <select class="ad-select" id="vn-f-tpl"><option value="">Not set</option>${tpls.map((q) => `<option value="${attr(q.id)}"${q.id === v.templateId ? ' selected' : ''}>${esc(q.templateName || q.number)}</option>`).join('')}</select></label>
+        <label class="ad-field"><span>Notes (parking, load-in, who to ask for...)</span><textarea class="ad-input" id="vn-f-notes" rows="3" maxlength="1000">${esc(v.notes || '')}</textarea></label>
+        <div class="ent-actions">
+          <button type="button" class="ad-btn ad-btn-primary" id="vn-save">${isNew ? 'Add venue' : 'Save'}</button>
+          ${isNew ? '' : '<button type="button" class="ad-btn" data-venue-book="' + attr(v.id) + '">Book a DJ here</button><button type="button" class="ad-btn ad-btn-danger" id="vn-del">Remove</button>'}
+          <span class="ad-quote-msg" id="vn-msg"></span>
+        </div>
+        ${isNew ? '' : `<div class="inv-detail-section"><h3>Upcoming gigs here</h3>${gigs.length ? gigs.map((b) => {
+          const act = (state.talent || []).find((t) => t.slug === b.slug) || {};
+          return '<p class="ent-gigline">' + esc(prettyDate(b.date)) + ' &middot; ' + esc(act.name || b.slug) + (b.status === 'unconfirmed' ? ' <span class="ent-unconf-tag">Unconfirmed</span>' : '') + '</p>';
+        }).join('') : '<p class="ad-cell-muted">None booked.</p>'}</div>`}
+      </div>
+    </aside>`;
+}
+function wireVenuesTab(desk) {
+  const vs = document.getElementById('venue-search');
+  if (vs) vs.addEventListener('input', () => { state.venueSearch = vs.value; const pos = vs.selectionStart; render(); const n = document.getElementById('venue-search'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } });
+  desk.querySelectorAll('[data-venue-open]').forEach((r) => r.addEventListener('click', () => { state.openVenue = r.getAttribute('data-venue-open'); render(); }));
+  desk.querySelectorAll('[data-venue-new]').forEach((b) => b.addEventListener('click', () => { state.openVenue = '__new__'; render(); }));
+  desk.querySelectorAll('[data-venue-book]').forEach((b) => b.addEventListener('click', () => {
+    const v = (state.venues || []).find((x) => x.id === b.getAttribute('data-venue-book'));
+    if (!v) return;
+    state.entTab = 'gigs'; state.openVenue = null; state.entPanel = true; state.bookEditing = true; state.bookingOpen = null;
+    state.bookDraft = { date: '', venue: venueFull(v), slug: (state.talent[0] || {}).slug || '', status: 'confirmed' };
+    render();
+  }));
+  const save = document.getElementById('vn-save');
+  if (save) save.addEventListener('click', async () => {
+    const val = (id) => String((document.getElementById(id) || {}).value || '').trim();
+    const msg = document.getElementById('vn-msg');
+    const name = val('vn-f-name').slice(0, 80);
+    if (!name) { msg.textContent = 'Give the venue a name.'; msg.className = 'ad-quote-msg is-bad'; return; }
+    const town = val('vn-f-town').slice(0, 60);
+    const isNew = state.openVenue === '__new__';
+    const id = isNew ? (name + ' ' + town).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80) : state.openVenue;
+    if (isNew && (state.venues || []).some((x) => x.id === id)) { msg.textContent = name + ' is already saved.'; msg.className = 'ad-quote-msg is-bad'; return; }
+    save.disabled = true; msg.textContent = 'Saving…'; msg.className = 'ad-quote-msg';
+    try {
+      const { doc, setDoc } = fb.f;
+      await setDoc(doc(fb.db, 'venues', id), {
+        name, town, address: val('vn-f-addr').slice(0, 200), contactName: val('vn-f-contact').slice(0, 80),
+        phone: val('vn-f-phone').slice(0, 40), email: val('vn-f-email').toLowerCase().slice(0, 200),
+        customerId: val('vn-f-cust'), templateId: val('vn-f-tpl'), notes: val('vn-f-notes').slice(0, 1000),
+        updatedAt: Date.now(), ...(isNew ? { createdAt: Date.now() } : {}),
+      }, { merge: true });
+      await loadPubSettings();
+      state.openVenue = id;
+      render();
+      const m = document.getElementById('vn-msg'); if (m) { m.textContent = 'Saved.'; m.className = 'ad-quote-msg is-ok'; }
+    } catch (err) { save.disabled = false; msg.textContent = friendly(err); msg.className = 'ad-quote-msg is-bad'; }
+  });
+  const del = document.getElementById('vn-del');
+  if (del) del.addEventListener('click', async () => {
+    const v = (state.venues || []).find((x) => x.id === state.openVenue) || {};
+    if (!window.confirm('Remove ' + (v.name || 'this venue') + ' from your venues?\n\nIts bookings stay as they are.')) return;
+    try { await fb.f.deleteDoc(fb.f.doc(fb.db, 'venues', state.openVenue)); await loadPubSettings(); state.openVenue = null; if (String(state.bookFilter.tab || '').startsWith('v:')) state.bookFilter.tab = 'upcoming'; render(); }
+    catch (err) { window.alert(friendly(err)); }
+  });
+}
+
 /*  The tabs: the fixed ones with a tab for each saved venue slotted in
     before "Other Venues" (Max, 22 Oct 2026).                          */
 function bookTabs() {
-  const saved = (state.venues || []).map((v) => ({ key: 'v:' + v.id, label: v.name }));
+  const saved = (state.venues || []).filter((v) => !/grand view/i.test(v.name || '')).map((v) => ({ key: 'v:' + v.id, label: v.name }));
   return BOOK_TABS.slice(0, 3).concat(saved, BOOK_TABS.slice(3));
 }
 const venueFull = (v) => v.name + (v.town ? ', ' + v.town : '');
@@ -3375,7 +3531,7 @@ const venueFull = (v) => v.name + (v.town ? ', ' + v.town : '');
     "+ Add a new venue" at the bottom (Max, 22 Oct 2026). An old booking
     at a venue that isn't saved keeps it, shown first.                 */
 function venueOptions(current) {
-  const list = ['Grand View Hotel, Bowen'].concat((state.venues || []).map(venueFull));
+  const list = ['Grand View Hotel, Bowen'].concat((state.venues || []).filter((v) => !/grand view/i.test(v.name || '')).map(venueFull));
   const cur = String(current || '').trim();
   const opts = (cur && !list.includes(cur) ? [cur] : []).concat(list);
   return opts.map((x) => '<option value="' + attr(x) + '"' + (x === cur ? ' selected' : '') + '>' + esc(x) + '</option>').join('')

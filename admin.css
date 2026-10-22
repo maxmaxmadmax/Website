@@ -4849,3 +4849,6 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-askhead{ margin:8px 0 4px; font-size:13px; font-weight:700; color:#9a4a00; }
 .qb-askrow{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:4px; }
 .qb-askrow .qb-askbtn{ margin:0; text-align:center; }
+/* Venues tab (Max, 22 Oct 2026) */
+.ent-actions{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:6px; }
+.ent-gigline{ margin:0 0 6px; font-size:14px; }
