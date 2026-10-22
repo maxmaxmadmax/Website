@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=673';
+} from './firebase-config.js?v=674';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=673';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=673';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=673';
-import { messagesHtml, wireMessages } from './messages.js?v=673';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=673';
-import { expandKit } from './kit.js?v=673';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=674';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=674';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=674';
+import { messagesHtml, wireMessages } from './messages.js?v=674';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=674';
+import { expandKit } from './kit.js?v=674';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2559,12 +2559,12 @@ function gigsMainHtml(side) {
                     }
                     const b = row.b;
                     const act = (state.talent || []).find((t) => t.slug === b.slug) || {};
-                    return `<tr class="inv-row${state.bookingOpen === b.id && state.entPanel ? ' is-open' : ''}${b.date < today ? ' is-past' : ''}" data-book-open="${attr(b.id)}">
+                    return `<tr class="inv-row${state.bookingOpen === b.id && state.entPanel ? ' is-open' : ''}${b.date < today ? ' is-past' : ''}${b.status === 'unconfirmed' ? ' is-unconf' : ''}" data-book-open="${attr(b.id)}">
                       <td class="ent-date">${esc(prettyDate(b.date))}</td>
                       <td><span class="inv-item-cell"><span class="ad-act-face ent-face" style="${act.photo ? `background-image:url('/${attr(act.photo)}')` : ''}"></span><span class="inv-item-name">${esc(act.name || b.slug)}</span></span></td>
                       <td class="ad-cell-muted">${esc(String(b.venue || '—').split(',')[0])}</td>
                       <td class="ad-cell-muted">${esc(b.time || '—')}</td>
-                      <td>${gigDots(b)}</td>
+                      <td>${b.status === 'unconfirmed' ? '<span class="ent-unconf-tag">Unconfirmed &middot; unpaid</span>' : gigDots(b)}</td>
                       <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-book-open="${attr(b.id)}" aria-label="Open">&#8250;</button></td>
                     </tr>`;
                   }).join('') : '<tr><td colspan="6" class="ad-cell-muted">Nothing matches that.</td></tr>'}
@@ -2639,7 +2639,7 @@ function djTownOptions(current) {
 }
 
 /*  MUSIC STYLES - shown as tags on the DJ's gig quotes instead of a bio (Max, 22 Oct 2026) */
-const DJ_STYLES = ['Top 40 / Commercial', 'House', 'Throwbacks', 'RnB & Hip Hop', 'Country', 'Rock', 'Drum & Bass', 'Requests welcome'];
+const DJ_STYLES = ['Top 40 / Commercial', 'House', 'Throwbacks', 'RnB & Hip Hop', 'Latin', 'Country', 'Rock', 'Drum & Bass', 'Requests welcome'];
 
 function djDetailHtml() {
   const isNew = state.openDj === '__new__';
@@ -2769,12 +2769,12 @@ function calendarHtml() {
     const noDj = !on.length && openRegularNights(state.schedule, null, 56).some((n) => n.iso === iso);
 
     cells.push(`
-      <div class="ad-cal-day${iso === today ? ' is-today' : ''}${on.length ? ' has-booking' : ''}${noDj ? ' is-nodj' : ''}"
+      <div class="ad-cal-day${iso === today ? ' is-today' : ''}${on.length ? ' has-booking' : ''}${noDj ? ' is-nodj' : ''}${on.some((b) => b.status === 'unconfirmed') ? ' is-unconf' : ''}"
            ${on.length ? `data-book-open="${attr(on[0].id)}"` : noDj ? `data-book-night="${attr(iso)}" data-book-venue="Grand View Hotel, Bowen" title="No DJ booked - click to book"` : ''}>
         <span class="ad-cal-num">${d}</span>${noDj ? '<span class="ad-cal-nodj">No DJ</span>' : ''}
         ${on.map((b) => {
           const act = state.talent.find((t) => t.slug === b.slug) || {};
-          return `<span class="ad-cal-act ${(b.status || 'confirmed') === 'pending' ? 'is-pending' : ''}">${esc(act.name || b.slug)}</span>`;
+          return `<span class="ad-cal-act ${(b.status || 'confirmed') === 'pending' ? 'is-pending' : ''}${b.status === 'unconfirmed' ? 'is-unconf' : ''}">${b.status === 'unconfirmed' ? '? ' : ''}${esc(act.name || b.slug)}</span>`;
         }).join('')}
       </div>`);
   }
@@ -2870,10 +2870,15 @@ function bookingPanel(b) {
 
         <label class="ad-field">Status
           <select id="ad-f-status">
-            <option value="confirmed"${draft.status !== 'pending' ? ' selected' : ''}>Confirmed</option>
+            <option value="confirmed"${!['pending', 'unconfirmed'].includes(draft.status) ? ' selected' : ''}>Confirmed</option>
             <option value="pending"${draft.status === 'pending' ? ' selected' : ''}>Pending</option>
+            <option value="unconfirmed"${draft.status === 'unconfirmed' ? ' selected' : ''}>Unconfirmed (DJ held until paid)</option>
           </select>
         </label>
+        <!--  UNCONFIRMED + PAY IN FULL (Max, 22 Oct 2026): a new venue's night.
+              The DJ is held; the quote has no deposit option; once it's paid
+              the booking turns Confirmed and the DJ gets their email.   -->
+        <label class="ad-field ent-payfull"><input type="checkbox" id="ad-f-payfull"${draft.payFull ? ' checked' : ''}> Pay in full up front (no deposit)</label>
 
         <!--  A residency is the same act on the same night for weeks at a
               time, which is most of this diary. Booking it a week at a
@@ -2911,8 +2916,8 @@ function bookingPanel(b) {
         <div class="ad-book-head">
           <div>
             <h3>${esc(prettyDate(b.date))}</h3>
-            <span class="ad-pill ${status === 'pending' ? 'ad-pill-amber' : 'ad-pill-green'}">
-              ${status === 'pending' ? 'Pending' : 'Confirmed'}
+            <span class="ad-pill ${status === 'unconfirmed' ? 'ent-unconf-tag' : status === 'pending' ? 'ad-pill-amber' : 'ad-pill-green'}">
+              ${status === 'unconfirmed' ? 'Unconfirmed &middot; DJ held until paid' : status === 'pending' ? 'Pending' : 'Confirmed'}
             </span>
           </div>
 
@@ -3451,10 +3456,28 @@ function wireEntertainment() {
         time: startT && finishT ? ampmT(startT).toUpperCase().replace(/(AM|PM)$/, ' $1') + ' – ' + ampmT(finishT).toUpperCase().replace(/(AM|PM)$/, ' $1')
           : document.getElementById('ad-f-time').value.trim(),
         status: document.getElementById('ad-f-status').value,
+        payFull: !!(document.getElementById('ad-f-payfull') || {}).checked,
         notes: document.getElementById('ad-f-notes').value.trim(),
       };
 
       const weeks = parseInt(document.getElementById('ad-f-repeat').value, 10) || 1;
+
+      /*  THE DJ IS HELD (Max, 22 Oct 2026): one DJ, one night. If they're
+          already booked or held that night somewhere else, say so first. */
+      {
+        const p0 = date.split('-');
+        for (let i = 0; i < weeks; i++) {
+          const night = isoDay(new Date(+p0[0], +p0[1] - 1, +p0[2] + (i * 7)));
+          const clash = (state.schedule || []).find((x) => x.id === bookingId(night, slug) && x.id !== state.bookDraft.id);
+          if (clash) {
+            const act = (state.talent || []).find((t) => t.slug === slug) || {};
+            const what = clash.status === 'unconfirmed' ? 'held (unconfirmed)' : 'booked';
+            if (!window.confirm((act.name || slug) + ' is already ' + what + ' on ' + prettyDate(night) + ' at ' + (clash.venue || 'another venue') + '.
+
+Replace that booking with this one?')) return;
+          }
+        }
+      }
 
       save.disabled = true;
 

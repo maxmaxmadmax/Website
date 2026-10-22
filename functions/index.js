@@ -2969,6 +2969,7 @@ exports.getQuote = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
     createdAt: secs(q.createdAt),
     paymentStatus: q.paymentStatus || '',      // '' | bank | deposit | paid
     bankPlan: q.bankPlan || '',                // bank payers: 'deposit' | 'full'
+    payFull: q.payFull === true,               // "pay in full up front" - no deposit option (Max, 22 Oct 2026)
     gigDj: q.gigDj || (q.gigBookingId ? await gigDjFor(q.gigBookingId) : null),   // DJ gig quotes: who played + their set (Max, 22 Oct 2026)
     paymentMethod: q.paymentMethod || '',
     amountPaidCents: q.amountPaidCents || 0,
@@ -3006,7 +3007,7 @@ exports.acceptQuote = onCall(async (request) => {
     acceptedAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
     // BANK IN FULL (Max, 20 Oct 2026): a bank payer picks deposit or the whole amount
-    ...(bank ? { paymentMethod: 'bank', paymentStatus: 'bank', bankPlan: data.plan === 'full' ? 'full' : 'deposit' } : {}),
+    ...(bank ? { paymentMethod: 'bank', paymentStatus: 'bank', bankPlan: data.plan === 'full' || q.payFull === true ? 'full' : 'deposit' } : {}),
   });
   return { ok: true };
 });
@@ -3041,7 +3042,7 @@ exports.quoteCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request)
   // PAY IN FULL WITHIN 7 DAYS (Max, 20 Oct 2026): the balance is due 7 days
   // before the event, so from then on there is no deposit option.
   const dueDay = addDaysISO(q.hire && q.hire.startDate, -7);
-  const fullOnly = !!dueDay && dueDay <= brisbaneToday();
+  const fullOnly = (!!dueDay && dueDay <= brisbaneToday()) || q.payFull === true;   // or "pay in full up front" (Max, 22 Oct 2026)
   let amount = option === 'full' || paid > 0 || fullOnly ? owing : Math.round(total * QUOTE_DEPOSIT_PCT / 100);
   if (amount < 50) throw new HttpsError('failed-precondition', 'Nothing left to pay on this quote.');
   const label = paid > 0 ? 'balance' : (option === 'full' || fullOnly ? 'payment in full' : QUOTE_DEPOSIT_PCT + '% deposit');
@@ -5160,7 +5161,8 @@ async function gigSync(bookingId) {
   const ex = existing ? existing.data() : null;
   const bSnap = await db.collection('talentSchedule').doc(id).get();
   const b = bSnap.exists ? bSnap.data() : null;
-  const live = b && (b.status || 'confirmed') === 'confirmed' && b.templateId && b.customerId;
+  // UNCONFIRMED (Max, 22 Oct 2026): a new venue's night, DJ held - it gets its quote too
+  const live = b && ['confirmed', 'unconfirmed'].includes(b.status || 'confirmed') && b.templateId && b.customerId;
   if (ex && !['approved', 'cancelled'].includes(ex.status)) return { locked: true, id: existing.id };
   if (!live) {
     if (existing && ex.status === 'approved') await existing.ref.update({ status: 'cancelled', cancelledAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
@@ -5219,7 +5221,7 @@ async function gigSync(bookingId) {
   if (rate.deck) clean.crewNotes = 'DJ deck (' + name + '): ' + String(rate.deck).slice(0, 300);
   // who played - shown on the entertainment-style quote / invoice (Max, 22 Oct 2026)
   const gigDj = { name, photo: (t.exists && t.data().photo) || ('images/talent/' + b.slug + '.jpg'), start, finish, hours, confirmed: !!b.timesConfirmedAt, venue: b.venue || '', styles: Array.isArray(rate.styles) ? rate.styles.slice(0, 8) : [] };
-  const meta = { gigDj, gigBookingId: id, pubNight: true, pubKey: 'gig|' + id, pubVenue: b.venue || '', pubDate: b.date, pubBookings: [id], pubNoRate: notes, gigHours: hours, gigTemplateId: String(b.templateId) };
+  const meta = { gigDj, payFull: b.payFull === true, gigBookingId: id, pubNight: true, pubKey: 'gig|' + id, pubVenue: b.venue || '', pubDate: b.date, pubBookings: [id], pubNoRate: notes, gigHours: hours, gigTemplateId: String(b.templateId) };
   if (existing) {
     await existing.ref.update({ ...clean, ...money, ...meta, status: 'approved', updatedAt: FieldValue.serverTimestamp() });
     return { updated: true, id: existing.id, totalCents: money.totalCents, hours, noRate: notes };
@@ -5361,3 +5363,27 @@ async function gigDjFor(bookingId) {
       styles: r.exists && Array.isArray(r.data().styles) ? r.data().styles.slice(0, 8) : [] };
   } catch (e) { return null; }
 }
+
+/*  UNCONFIRMED -> CONFIRMED (Max, 22 Oct 2026): a new venue's gig quote paid
+    in full (card, or bank marked in admin) confirms the booking, and the DJ
+    gets the "you're booked" email. Before that the night just holds the DJ. */
+exports.onGigQuotePaid = require('firebase-functions/v2/firestore').onDocumentWritten(
+  { document: 'quotes/{id}', secrets: [SMTP_USER, SMTP_PASS] },
+  async (event) => {
+    const before = event.data.before.exists ? event.data.before.data() : {};
+    const after = event.data.after.exists ? event.data.after.data() : null;
+    if (!after || !after.gigBookingId) return;
+    const paidNow = after.paymentStatus === 'paid' || after.status === 'paid';
+    const paidBefore = before.paymentStatus === 'paid' || before.status === 'paid';
+    if (!paidNow || paidBefore) return;
+    const ref = db.collection('talentSchedule').doc(String(after.gigBookingId));
+    const snap = await ref.get();
+    if (!snap.exists || snap.data().status !== 'unconfirmed') return;
+    await ref.update({ status: 'confirmed', paidUpfrontAt: FieldValue.serverTimestamp() });
+    const b = { ...snap.data(), status: 'confirmed' };
+    if (b.bookedEmailAt || b.djConfirmedAt || b.date < brisbaneTodayISO()) return;
+    try {
+      const r = await emailDj(ref, b, 'booked');
+      if (r.sent) await ref.update({ bookedEmailAt: FieldValue.serverTimestamp() });
+    } catch (e) { logger.error('onGigQuotePaid', { id: snap.id, err: e && e.message }); }
+  });

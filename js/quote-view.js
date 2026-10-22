@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=673';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=673';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=674';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=674';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -567,6 +567,7 @@ function balanceDueDate(q) {
   return m ? new Date(+m[1], +m[2] - 1, +m[3] - 7) : null;
 }
 function fullOnly(q) {
+  if (q.payFull === true) return true;   // "pay in full up front" - new venues (Max, 22 Oct 2026)
   const due = balanceDueDate(q);
   if (!due) return false;
   const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -662,7 +663,9 @@ function proposalBottom(q, opts = {}) {
       + '<span class="pg-opt-body"><b>' + title + '</b><em>' + sub + '</em><strong>' + amt + '</strong>' + (extra || '') + '</span>'
       + (off ? '<span class="pg-badge">Not available</span>' : '') + '</label>';
     const refChip = '<span class="pg-ref"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/></svg>Use reference: <b>' + esc(ref) + '</b></span>';
-    const alert = full
+    const alert = q.payFull === true
+      ? '<div class="pg-alert pg-alert-amber"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><div><b>Payment in full to confirm</b><p>Your booking is confirmed once the full amount is received.</p><small>Pay by bank transfer or card below.</small></div></div>'
+      : full
       ? '<div class="pg-alert pg-alert-red"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20z"/><path d="M12 10v5M12 18h.01"/></svg><div><b>Payment due now</b><p>Your event is less than 7 days away, so the full amount is due now.</p><small>Please pay today to secure your booking.</small></div></div>'
       : '<div class="pg-alert pg-alert-amber"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><div><b>Secure your date</b><p>Your date is held once the ' + pct + '% deposit is received.</p><small>The balance is due ' + esc(balDue) + '.</small></div></div>';
     const trust = (p, t, d) => '<div class="pg-trust-row"><span class="pg-trust-ic" aria-hidden="true"><svg viewBox="0 0 24 24">' + p + '</svg></span><div><b>' + t + '</b><span>' + d + '</span></div></div>';
@@ -676,7 +679,7 @@ function proposalBottom(q, opts = {}) {
           // pay it all up front by bank (Max, 20 Oct 2026)
           + opt('bankfull', 'Bank transfer (Pay in full)', 'Pay the full amount now via bank transfer. Nothing more to pay later.', money(total), false, refChip))
       + (q.cardOn ? opt('full', 'Credit or debit card (Pay in full)', 'Fast, secure payment with Visa, Mastercard or Amex.', money(total), false) : '')
-      + (q.cardOn ? (full
+      + (q.cardOn && q.payFull !== true ? (full
         ? opt('deposit', 'Credit or debit card (' + pct + '% deposit)', 'A ' + pct + '% deposit is not available as your event is less than 7 days away.', money(deposit), false, '', true)
         : opt('deposit', 'Credit or debit card (' + pct + '% deposit)', 'Secure your date by card. Balance due ' + esc(balDue) + '.', money(deposit), false)) : '')
       + '<label class="qp-name">Your name / Business<input type="text" id="qp-name" autocomplete="name" value="' + esc((q.customer && q.customer.name) || '') + '"></label>'

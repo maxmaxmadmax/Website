@@ -257,6 +257,7 @@
     window.SGWeekend.loadCollection('talentSchedule').then(function (rows) {
         rows.forEach(function (row) {
             if (!row.date || !row.slug) return;
+            if (row.status === 'unconfirmed') return;   // held, not paid yet - not public (Max, 22 Oct 2026)
 
             /*  A night can hold more than one booking now - two acts, or
                 two venues. The Grand View wins for these cards, because

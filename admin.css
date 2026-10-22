@@ -4834,3 +4834,11 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ent-side{ margin:0; padding:0; overflow:hidden; position:sticky; top:0; }
 .ent-side .ad-book-panel{ border:none; box-shadow:none; margin:0; }
 @media (max-width:1100px){ .ent-split{ grid-template-columns:1fr; } }
+/* UNCONFIRMED bookings - DJ held until paid (Max, 22 Oct 2026) */
+.inv-row.is-unconf td{ background:#fdf3e1; }
+.inv-row.is-unconf td:first-child{ box-shadow:inset 4px 0 0 #ba7517; }
+.ent-unconf-tag{ display:inline-block; font-size:12px; font-weight:600; padding:3px 9px; border-radius:20px; border:1px dashed #854f0b; color:#633806; background:#faeeda; white-space:nowrap; }
+.ad-cal-day.is-unconf{ border:2px dashed #ba7517; background:#faeeda; }
+.ad-cal-act.is-unconf{ background:#faeeda; color:#633806; font-weight:600; }
+.ent-payfull{ display:flex !important; flex-direction:row !important; align-items:center; gap:8px; font-size:14px; }
+.ent-payfull input{ width:auto; }
