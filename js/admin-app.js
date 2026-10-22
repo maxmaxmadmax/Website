@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=671';
+} from './firebase-config.js?v=672';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=671';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=671';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=671';
-import { messagesHtml, wireMessages } from './messages.js?v=671';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=671';
-import { expandKit } from './kit.js?v=671';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=672';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=672';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=672';
+import { messagesHtml, wireMessages } from './messages.js?v=672';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=672';
+import { expandKit } from './kit.js?v=672';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2444,12 +2444,15 @@ VIEWS.entertainment = {
     }
     const picked = state.bookingOpen ? (state.schedule || []).find((x) => x.id === state.bookingOpen) : null;
     const open = state.entPanel && (state.bookEditing || picked);
-    return `<div class="inv-wrap ent${open ? ' has-detail' : ''}">${gigsMainHtml()}${open ? `
-      <aside class="inv-detail ent-detail" aria-label="Gig">
+    /*  The gig details open where the calendar sits, on the right, and the
+        calendar comes back when they close (Max, 22 Oct 2026).          */
+    const side = open ? `
+      <aside class="ad-card ent-detail ent-side" aria-label="Gig">
         <button type="button" class="inv-detail-close ent-x" data-ent-close aria-label="Close">&times;</button>
         ${!state.bookEditing && picked ? gigTrailHtml(picked) : ''}
         ${bookingPanel(picked)}
-      </aside>` : ''}</div>`;
+      </aside>` : calendarHtml();
+    return `<div class="inv-wrap ent">${gigsMainHtml(side)}</div>`;
   },
   wire() { wireEntertainment(); wirePubBits(); wireEntPage(); },
 };
@@ -2501,7 +2504,7 @@ function gigTrailHtml(b) {
     + (next ? '<p class="ent-next">Next: <b>' + esc(next[0]) + '</b>' + (next[0] === 'DJ confirmed' || next[0] === 'Times in' ? ' &mdash; text the DJ their link below.' : '') + '</p>' : '<p class="ent-next is-done">All done &#10003;</p>');
 }
 
-function gigsMainHtml() {
+function gigsMainHtml(side) {
   const today = isoDay(new Date());
   const all = state.schedule || [];
   const upcoming = all.filter((b) => b.date >= today);
@@ -2531,7 +2534,6 @@ function gigsMainHtml() {
         </div>
         ${importBanner()}
         <div class="ent-split">
-          ${calendarHtml()}
           <section class="ad-card ent-list">
             <div class="ad-book-tabs">
               <div class="ad-tabs" role="group" aria-label="Which bookings">
@@ -2570,6 +2572,7 @@ function gigsMainHtml() {
               </table>
             </div>
           </section>
+          ${side || calendarHtml()}
         </div>
       </div>`;
 }
