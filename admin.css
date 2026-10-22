@@ -4813,3 +4813,15 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-tplname{ display:flex; align-items:center; gap:8px; font-weight:700; }
 .qb-tplname input{ padding:7px 10px; border:1px solid #c7d2fe; border-radius:8px; font:inherit; font-size:14px; min-width:220px; background:#fff; }
 .ent-noinv{ margin:0 0 8px; font-size:13px; padding:8px 10px; background:var(--ad-amber-bg); color:var(--ad-amber); border-radius:8px; width:100%; }
+
+/* GIG OPPORTUNITIES calendar: selected / this week in light green, with room
+   at the bottom so the last (Skip) dot is never covered (Max, 22 Oct 2026) */
+.lead-wslot{ padding-bottom:5px; }
+.lead-wslot.is-today,
+.lead-wslot.is-sel,
+.lead-wslot.is-today.is-sel{ background:#e6f7ec; box-shadow:inset 0 0 0 1.5px #8fd4a8; }
+.lead-wslot.is-sel{ background:#d4f1de; box-shadow:inset 0 0 0 2px var(--ad-green); }
+.lead-wslot.is-today .lead-wslot-no{ color:var(--ad-green); }
+.lead-cal-m.is-now .lead-wslot.is-today .lead-cdot,
+.lead-wslot.is-sel .lead-cdot{ box-shadow:0 0 0 1.5px #e6f7ec; }
+.lead-wslot.is-sel .lead-cdot.is-empty, .lead-wslot.is-today .lead-cdot.is-empty{ box-shadow:none; }
