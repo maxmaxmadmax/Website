@@ -2517,6 +2517,8 @@ function sanitizeQuote(q) {
     if (l.noPick === true) line.noPick = true;
     // a template's fill-in line: the DJ, their travel or the booking fee (Max, 22 Oct 2026)
     if (['dj', 'travel', 'fee'].includes(l.djSlot)) line.djSlot = l.djSlot;
+    if (l.perf === true) line.perf = true;             // the DJ's performance fee (super is worked out on it)
+    if (l.superLine === true) line.superLine = true;   // the performer super line itself
     // CREW & VEHICLES (from Crew & Vehicles): their own subtotal, never gear
     if (['staff', 'vehicle', 'trailer'].includes(l.resType)) {
       line.resType = l.resType;
@@ -2532,6 +2534,7 @@ function sanitizeQuote(q) {
     discountCents: Math.max(0, Math.round(Number(q.discountCents) || 0)),
     labourExcluded: q.labourExcluded === true,
     feeExcluded: q.feeExcluded === true,
+    superExcluded: q.superExcluded === true,   // performer super off (Max, 22 Oct 2026)
     autoSendOnDetails: q.autoSendOnDetails === true,   // send the quote when the customer fills in their details (Max, 20 Oct 2026)
     isTemplate: q.isTemplate === true,   // Sales Pipeline > Templates: a DJ gig invoice to copy - never sent (Max, 21 Oct 2026)
     templateName: text(q.templateName, 80),   // its own name, e.g. "Grand View Friday"
@@ -5198,7 +5201,7 @@ async function gigSync(bookingId) {
     description: (hours ? hours + ' hrs' : 'Hours to confirm') + (perHour ? ' @ $' + (perHour / 100).toFixed(2).replace(/\.00$/, '') + '/hr' : '')
       + (start && finish ? ' · ' + ampm(start) + '-' + ampm(finish) : '') + (b.timesConfirmedAt ? ' (confirmed)' : '')
       + (perHour ? '' : ' · NO RATE SET - add it on the DJs tab'),
-    qty: 1, unitCents: Math.round(hours * perHour), days: 1, pubDj: true, noPick: true,
+    qty: 1, unitCents: Math.round(hours * perHour), days: 1, pubDj: true, noPick: true, perf: true,
   };
   const tr = await djTravel(rate.location, b.venue);
   const travelLine = tr.cents ? { type: 'custom', name: 'Travel Charge - ' + tr.from + ' to ' + tr.to + ' Return', description: '', qty: 1, unitCents: tr.cents, days: 1, pubDj: true, noPick: true } : null;
@@ -5222,7 +5225,7 @@ async function gigSync(bookingId) {
     if (l.djSlot === 'dj') { lines.push(djLine); if (!hasSlot('travel') && travelLine) lines.push(travelLine); return; }
     if (l.djSlot === 'travel') { if (travelLine) lines.push(travelLine); return; }
     if (l.djSlot === 'fee') { if (feeLine) lines.push(feeLine); return; }
-    if (l.pubDj) return;   // old generated DJ lines
+    if (l.pubDj || l.superLine) return;   // old generated DJ lines / super (added below)
     lines.push(l);
   });
   if (!hasSlot('dj')) lines = [djLine].concat(!hasSlot('travel') && travelLine ? [travelLine] : [], lines);
@@ -5230,6 +5233,12 @@ async function gigSync(bookingId) {
     const pre = quoteMoney({ hire: { days: 1 }, lines, discountCents: tpl.discountCents || 0 });
     const fee = Math.round(pre.netCents * 2 / 100 / 1000) * 1000;
     if (fee > 0) lines.push({ type: 'fee', name: 'Booking & admin', qty: 1, unitCents: fee, days: 1 });
+  }
+  // PERFORMER SUPER - 12% of the DJ's performance, unless the template has it off (Max, 22 Oct 2026)
+  const superCents = tpl.superExcluded === true ? 0 : Math.round(djLine.unitCents * 12 / 100);
+  if (superCents > 0) {
+    const at = lines.indexOf(djLine);
+    lines.splice(at >= 0 ? at + 1 : lines.length, 0, { type: 'custom', name: "Performer superannuation (12%)", description: "Australian law requires super to be paid for performers. We pay it into your DJ's super fund for you.", qty: 1, unitCents: superCents, days: 1, superLine: true, pubDj: true, noPick: true });
   }
   const tc = tpl.customer || {};
   const clean = sanitizeQuote({

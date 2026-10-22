@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=678';
+} from './firebase-config.js?v=679';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=678';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=678';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=678';
-import { messagesHtml, wireMessages } from './messages.js?v=678';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=678';
-import { expandKit } from './kit.js?v=678';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=679';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=679';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=679';
+import { messagesHtml, wireMessages } from './messages.js?v=679';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=679';
+import { expandKit } from './kit.js?v=679';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5746,6 +5746,13 @@ function qdocPill(s) { const [c, l] = QDOC_STATUS[s] || QDOC_STATUS.draft; retur
 /*  Totals - mirror of quoteMoney() in functions/index.js. Prices ex-GST,
     discounts off the net, GST 10% on top.                                 */
 const BOOKING_FEE_PCT = 2;
+/*  PERFORMER SUPER (Max, 22 Oct 2026): 12% of the DJ's performance fee, its
+    own line with an on/off tick. Performance = the DJ performance line (or
+    a template's DJ / Entertainer fill-in). Not counted in the 2% fee.      */
+const SUPER_PCT = 12;
+const SUPER_NAME = "Performer superannuation (12%)";
+const SUPER_DESC = "Australian law requires super to be paid for performers. We pay it into your DJ's super fund for you.";
+const isPerfLine = (l) => l.perf === true || l.djSlot === 'dj' || /^DJ performance/i.test(String(l.name || ''));
 
 function quoteDraftMoney(d) {
   const docDays = Math.max(1, Math.round((d.hire && d.hire.days) || 1));
@@ -5761,9 +5768,11 @@ function quoteDraftMoney(d) {
   // BOOKING & ADMIN FEE: 2% of everything before GST, on every quote (Max, 16 Oct 2026)
   // rounded to the nearest $10 so it reads cleanly (Max, 17 Oct 2026)
   const feeCents = d.feeExcluded === true ? 0 : Math.round(beforeFee * BOOKING_FEE_PCT / 100 / 1000) * 1000;
-  const net = beforeFee + feeCents;
+  const perfCents = (d.lines || []).filter((l) => !l.superLine && isPerfLine(l)).reduce((n, l) => n + quoteLineCents(l, docDays), 0);
+  const superCents = d.superExcluded === true ? 0 : Math.round(perfCents * SUPER_PCT / 100);
+  const net = beforeFee + feeCents + superCents;
   const gst = Math.round(net * 0.10);
-  return { subtotalCents: subtotal, labourCents, deliveryCents, feeCents, discountCents: discount, netCents: net, gstCents: gst, totalCents: net + gst };
+  return { subtotalCents: subtotal, labourCents, deliveryCents, feeCents, superCents, perfCents, discountCents: discount, netCents: net, gstCents: gst, totalCents: net + gst };
 }
 
 /*  A line's own total: quantity x day rate x number of days.
@@ -5955,7 +5964,7 @@ function quoteFromDoc(doc) {
     customer: { ...blankQuote().customer, ...(doc.customer || {}) },
     hire: { ...blankQuote().hire, ...(doc.hire || {}) },
     // Labour and delivery lines are recomputed live, so drop stored ones here.
-    lines: (doc.lines || []).filter((l) => l.type !== 'labour' && l.type !== 'delivery' && l.type !== 'fee').map((l) => {
+    lines: (doc.lines || []).filter((l) => l.type !== 'labour' && l.type !== 'delivery' && l.type !== 'fee' && !l.superLine).map((l) => {
       const c = { ...l };
       if (c.type === 'custom' && !c.resType) {
         const r = (state.resources || []).find((x) => x.name && String(x.name).trim().toLowerCase() === String(c.name || '').trim().toLowerCase());
@@ -5965,6 +5974,7 @@ function quoteFromDoc(doc) {
       return c;
     }),
     feeExcluded: doc.feeExcluded === true,
+    superExcluded: doc.superExcluded === true,
     autoSendOnDetails: doc.autoSendOnDetails === true,
     isTemplate: doc.isTemplate === true,
     templateName: doc.templateName || '',
@@ -6526,6 +6536,13 @@ function renderQuoteTotals() {
       <span><label class="qb-labtoggle"><input type="checkbox" data-qfee${quoteDraft.feeExcluded ? '' : ' checked'}> Booking &amp; admin fee</label></span>
       <span class="${quoteDraft.feeExcluded ? 'qb-laboff' : ''}">${quoteDraft.feeExcluded ? 'off' : esc(money(m.feeCents))}</span>
     </div>`;
+  // performer super row, with an on/off tick (Max, 22 Oct 2026)
+  const superRow = m.perfCents > 0 ? `
+    <div class="qb-sumrow">
+      <span><label class="qb-labtoggle"><input type="checkbox" data-qsuper${quoteDraft.superExcluded ? '' : ' checked'}> Performer super (${SUPER_PCT}%)</label>
+        <em class="qb-labnote" style="margin-left:0">Of the DJ's performance fee - required by law for performers</em></span>
+      <span class="${quoteDraft.superExcluded ? 'qb-laboff' : ''}">${quoteDraft.superExcluded ? 'off' : esc(money(m.superCents))}</span>
+    </div>` : '';
   host.innerHTML = `
     ${(() => {
       const cats = {}; (typeof invItems === 'function' ? invItems() : []).forEach((it) => { cats[it.id] = it.category; });
@@ -6539,6 +6556,7 @@ function renderQuoteTotals() {
     ${crewSum('vehicle') + crewSum('trailer') ? '<div class="qb-sumrow"><span>Vehicles</span><span>' + esc(money(crewSum('vehicle') + crewSum('trailer'))) + '</span></div>' : ''}
     ${deliveryRow}
     ${feeRow}
+    ${superRow}
     <div class="qb-sumrow qb-sumdisc"><span>Discount</span>
       <span class="qb-discinput">&minus;<span class="qb-inline-dollar">$</span><input class="qb-num qb-num-total" type="number" min="0" step="1" data-qdisc value="${attr(discVal)}" placeholder="0"></span></div>
     <div class="qb-sumrow"><span>GST (10%)</span><span id="qsum-gst">${esc(money(m.gstCents))}</span></div>
@@ -7055,6 +7073,11 @@ function wireQuoteBuilder() {
       renderQuoteTotals();
       return;
     }
+    if (t.hasAttribute('data-qsuper')) {   // performer super on / off (Max, 22 Oct 2026)
+      quoteDraft.superExcluded = !t.checked;
+      renderQuoteTotals();
+      return;
+    }
     if (t.hasAttribute('data-qlaboff')) {   // setup / pack-down on or off
       quoteDraft.labourOff = { ...(quoteDraft.labourOff || {}), [t.getAttribute('data-qlaboff')]: !t.checked };
       renderQuoteTotals();
@@ -7349,9 +7372,14 @@ function quoteDraftForSave() {
   if (feeCents > 0) {
     lines.push({ type: 'fee', name: 'Booking & admin', qty: 1, unitCents: feeCents, days: 1 });
   }
+  const superCents = quoteDraftMoney(quoteDraft).superCents;
+  if (superCents > 0) {
+    lines.push({ type: 'custom', name: SUPER_NAME, description: SUPER_DESC, qty: 1, unitCents: superCents, days: 1, superLine: true, pubDj: true, noPick: true });
+  }
   return {
     ...quoteDraft, lines,
     feeExcluded: quoteDraft.feeExcluded === true,
+    superExcluded: quoteDraft.superExcluded === true,
     autoSendOnDetails: quoteDraft.autoSendOnDetails === true,
     isTemplate: quoteDraft.isTemplate === true,
     templateName: String(quoteDraft.templateName || '').slice(0, 80),

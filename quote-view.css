@@ -740,3 +740,10 @@
 /* FIX (Max, 22 Oct 2026): the DJ banner text squeezed to one letter wide - the
    photo isn't in the banner any more, so the text gets the full width again */
 .qp-hero-photo.is-dj .qp-hero-in p{ overflow-wrap:normal; word-break:normal; }
+
+/* performer super line (Max, 22 Oct 2026) */
+.qv-super .qv-desc{ position:relative; }
+.qv-law{ display:inline-block; margin-left:6px; padding:1px 8px; border-radius:20px; font-size:11px; font-weight:700; letter-spacing:.02em;
+  background:#e8f4ec; color:#0f6e3d; border:1px solid #b9dfc6; vertical-align:2px; white-space:nowrap; }
+.qv-super .qv-sub{ font-style:italic; }
+@media print{ .qv-law{ background:#fff; } }

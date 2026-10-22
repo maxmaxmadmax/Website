@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=678';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=678';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=679';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=679';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -277,6 +277,14 @@ function render(q) {
         + '<span class="qv-sub">' + esc(crewDesc(l)) + '</span></td><td class="qv-num">' + esc(l.qty)
         + '</td><td class="qv-num">' + money(l.unitCents) + '</td><td class="qv-num">' + esc(lineDays)
         + '</td><td class="qv-num">' + money(amt) + '</td></tr>';
+    }
+    if (l.superLine) {
+      /*  PERFORMER SUPER (Max, 22 Oct 2026): a "Required by law" tag and the
+          plain-English reason, so it reads as what it is - not a markup. */
+      return '<tr class="qv-super"><td class="qv-desc">' + esc(l.name || '') + ' <span class="qv-law">Required by law</span>'
+        + (l.description ? '<span class="qv-sub">' + esc(l.description) + '</span>' : '')
+        + '</td><td class="qv-num">' + esc(l.qty) + '</td><td class="qv-num">' + money(l.unitCents)
+        + '</td><td class="qv-num">1</td><td class="qv-num">' + money(amt) + '</td></tr>';
     }
     const isDisc = l.type === 'discount';
     const lineDays = Math.max(1, Math.round(l.days || days));
