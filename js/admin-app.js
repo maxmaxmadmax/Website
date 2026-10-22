@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=686';
+} from './firebase-config.js?v=687';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=686';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=686';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=686';
-import { messagesHtml, wireMessages } from './messages.js?v=686';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=686';
-import { expandKit } from './kit.js?v=686';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=687';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=687';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=687';
+import { messagesHtml, wireMessages } from './messages.js?v=687';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=687';
+import { expandKit } from './kit.js?v=687';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2508,20 +2508,21 @@ function entHead(tab) {
 
 /* the gig's invoice (made from a template), if it has one */
 const gigInvoice = (b) => (state.quoteDocs || []).find((q) => q.gigBookingId === b.id && q.status !== 'cancelled') || null;
+/*  THE GIG CHECKLIST (Max, 22 Oct 2026): Enquiry > DJ confirmed > Quote
+    accepted > Deposit > Set times in > Invoice sent > Paid. Every step is
+    read from the booking and its quote - nothing to tick by hand.      */
 function gigTrail(b) {
   const inv = gigInvoice(b);
-  const played = b.date < isoDay(new Date());
-  const steps = [
-    ['Booked', true],
+  const paid = !!inv && (inv.status === 'paid' || inv.paymentStatus === 'paid');
+  return [
+    ['Enquiry', true],
     ['DJ confirmed', !!b.djConfirmedAt],
-    ['Played', played],
-    ['Times in', !!b.timesConfirmedAt],
+    ['Quote accepted', !!inv && (!!inv.acceptedAt || ['accepted', 'invoiced', 'paid'].includes(inv.status) || ['bank', 'deposit', 'paid'].includes(inv.paymentStatus))],
+    ['Deposit', paid || (!!inv && (inv.paymentStatus === 'deposit' || (inv.amountPaidCents || 0) > 0))],
+    ['Set times in', !!b.timesConfirmedAt],
+    ['Invoice sent', !!inv && (inv.kind === 'invoice' || ['invoiced', 'paid'].includes(inv.status))],
+    ['Paid', paid],
   ];
-  if (b.templateId || inv) {
-    steps.push(['Invoice sent', !!inv && (inv.kind === 'invoice' || ['invoiced', 'paid'].includes(inv.status))]);
-    steps.push(['Paid', !!inv && (inv.status === 'paid' || inv.paymentStatus === 'paid')]);
-  }
-  return steps;
 }
 function gigDots(b) {
   return '<span class="ent-dots">' + gigTrail(b).map(([l, ok]) => '<i class="' + (ok ? 'is-on' : '') + '" title="' + attr(l) + (ok ? ' ✓' : '') + '"></i>').join('') + '</span>';
@@ -2530,7 +2531,7 @@ function gigTrailHtml(b) {
   const steps = gigTrail(b);
   const next = steps.find(([, ok]) => !ok);
   return '<div class="ent-trail">' + steps.map(([l, ok]) => '<div class="ent-step' + (ok ? ' is-on' : '') + '"><span>' + (ok ? '&#10003;' : '') + '</span><em>' + esc(l) + '</em></div>').join('<b></b>') + '</div>'
-    + (next ? '<p class="ent-next">Next: <b>' + esc(next[0]) + '</b>' + (next[0] === 'DJ confirmed' || next[0] === 'Times in' ? ' &mdash; text the DJ their link below.' : '') + '</p>' : '<p class="ent-next is-done">All done &#10003;</p>');
+    + (next ? '<p class="ent-next">Next: <b>' + esc(next[0]) + '</b>' + (next[0] === 'DJ confirmed' || next[0] === 'Set times in' ? ' &mdash; text the DJ their link below.' : next[0] === 'Quote accepted' ? ' &mdash; open the quote below and send it to the venue.' : '') + '</p>' : '<p class="ent-next is-done">All done &#10003;</p>');
 }
 
 function gigsMainHtml(side) {

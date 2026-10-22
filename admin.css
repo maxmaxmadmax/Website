@@ -4852,3 +4852,8 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 /* Venues tab (Max, 22 Oct 2026) */
 .ent-actions{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:6px; }
 .ent-gigline{ margin:0 0 6px; font-size:14px; }
+/* 7-step gig checklist fits the side panel (Max, 22 Oct 2026) */
+.ent-trail{ padding:16px 10px 4px; }
+.ent-step{ width:50px; }
+.ent-step em{ font-size:10.5px; line-height:1.2; }
+.ent-trail > b{ min-width:4px; }
