@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=681';
+} from './firebase-config.js?v=682';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=681';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=681';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=681';
-import { messagesHtml, wireMessages } from './messages.js?v=681';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=681';
-import { expandKit } from './kit.js?v=681';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=682';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=682';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=682';
+import { messagesHtml, wireMessages } from './messages.js?v=682';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=682';
+import { expandKit } from './kit.js?v=682';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6128,7 +6128,7 @@ function quoteBuilderHtml() {
             <p class="qb-askhead">Send ${esc(String(c.name || '').trim().split(' ')[0] || 'them')} a link to fill in their own details</p>
             <div class="qb-askrow">
               <button type="button" class="qb-askbtn" id="q-askdetails">&#128241; Text the link</button>
-              <button type="button" class="qb-askbtn" id="q-askemail">&#9993;&#65039; Email the link</button>
+              <button type="button" class="qb-askbtn" id="q-askemail">&#128203; Copy the link</button>
             </div>`}
             <label class="qb-fl"><span>Name</span><input class="qb-cin qb-cin-strong" data-qc="name" value="${attr(c.name)}" placeholder="Customer name"></label>
             <label class="qb-fl"><span>Business</span><input class="qb-cin" data-qc="business" value="${attr(c.business)}" placeholder="Business (optional)"></label>
@@ -7268,9 +7268,9 @@ function wireQuoteActions() {
     try {
       const l = await detailsLink();
       if (!l) return;
-      const to = String(quoteDraft.customer.email || '').trim();
-      const body = 'Hi' + (l.first ? ' ' + l.first : '') + ',\n\nThanks for getting in touch. Can you pop your details in at the link below so I can send your quote?\n\n' + l.url + '\n\nThanks,\nMax\nSoundzGood Whitsundays - 0422 393 022';
-      location.href = 'mailto:' + encodeURIComponent(to) + '?subject=' + encodeURIComponent('Your SoundzGood quote - your details') + '&body=' + encodeURIComponent(body);
+      // just the link, ready to paste into an email (Max, 22 Oct 2026)
+      try { await navigator.clipboard.writeText(l.url); const was = askEmail.innerHTML; askEmail.innerHTML = '&#10003; Link copied'; setTimeout(() => { askEmail.innerHTML = was; }, 2500); }
+      catch (e) { window.prompt('Copy this link:', l.url); }
     } catch (err) { window.alert(err.message || 'Could not make the link.'); }
   });
   const askBtn = document.getElementById('q-askdetails');
