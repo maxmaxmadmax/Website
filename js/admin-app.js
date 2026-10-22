@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=687';
+} from './firebase-config.js?v=688';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=687';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=687';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=687';
-import { messagesHtml, wireMessages } from './messages.js?v=687';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=687';
-import { expandKit } from './kit.js?v=687';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=688';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=688';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=688';
+import { messagesHtml, wireMessages } from './messages.js?v=688';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=688';
+import { expandKit } from './kit.js?v=688';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2999,7 +2999,7 @@ function bookingPanel(b) {
               const noInv = !inv && missing.length ? '<p class="ent-noinv">&#9888; No invoice yet - press <b>Edit</b> and set ' + missing.join(' + ') + ', then Save.</p>' : '';
               return `${noInv}${dk ? '<p class="ent-deck">&#127911; Their deck: <b>' + esc(dk) + '</b></p>' : ''}<button type="button" class="ad-btn" data-pub-times="${attr(b.id)}">&#128241; Text DJ their link</button>
               ${b.templateId && b.customerId ? `<button type="button" class="ad-btn" data-gig-resync="${attr(b.id)}">&#8635; Update quote</button>` : ''}
-              ${inv ? `<a class="ad-btn" href="#/quoteDocs?q=${attr(inv.id)}">Invoice ${esc(money(inv.totalCents))} &middot; ${esc(inv.status === 'approved' ? 'ready' : inv.status)}</a>` : ''}`;
+              ${inv ? `<a class="ad-btn" href="#/quoteDocs?q=${attr(inv.id)}">${inv.kind === 'invoice' ? 'Invoice' : 'Quote'} ${esc(money(inv.totalCents))} &middot; ${esc(({ approved: 'ready', sent: 'sent', accepted: 'accepted', invoiced: 'unpaid', paid: 'paid' })[inv.status] || inv.status)}</a>` : ''}`;
             })()}
           </div>
         </div>
