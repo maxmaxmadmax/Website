@@ -5172,7 +5172,8 @@ async function gigSync(bookingId) {
   const cust = cSnap.exists ? cSnap.data() : {};
 
   const t = await db.collection('talent').doc(b.slug).get();
-  const name = (t.exists && t.data().name) || b.slug;
+  const slugName = String(b.slug || '').split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  const name = (t.exists && t.data().name) || slugName;
   const r = await db.collection('actRates').doc(b.slug).get();
   const rate = r.exists ? r.data() : {};
   // every gig quote starts at 4 hours, 9:30pm-1:30am; the DJ's real times replace it (Max, 21 Oct 2026)
@@ -5185,7 +5186,8 @@ async function gigSync(bookingId) {
   const djLines = [{
     type: 'custom', name: 'DJ performance - ' + name,
     description: (hours ? hours + ' hrs' : 'Hours to confirm') + (perHour ? ' @ $' + (perHour / 100).toFixed(2).replace(/\.00$/, '') + '/hr' : '')
-      + (start && finish ? ' · ' + ampm(start) + '-' + ampm(finish) : '') + (b.timesConfirmedAt ? ' (confirmed)' : ''),
+      + (start && finish ? ' · ' + ampm(start) + '-' + ampm(finish) : '') + (b.timesConfirmedAt ? ' (confirmed)' : '')
+      + (perHour ? '' : ' · NO RATE SET - add it on the DJs tab'),
     qty: 1, unitCents: Math.round(hours * perHour), days: 1, pubDj: true, noPick: true,
   }];
   const tr = await djTravel(rate.location, b.venue);

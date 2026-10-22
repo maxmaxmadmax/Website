@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=655';
+} from './firebase-config.js?v=656';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=655';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=655';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=655';
-import { messagesHtml, wireMessages } from './messages.js?v=655';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=655';
-import { expandKit } from './kit.js?v=655';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=656';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=656';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=656';
+import { messagesHtml, wireMessages } from './messages.js?v=656';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=656';
+import { expandKit } from './kit.js?v=656';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2686,6 +2686,10 @@ function wireEntPage() {
         email: v('dj-f-email').toLowerCase().slice(0, 200), deck: v('dj-f-deck').slice(0, 300), updatedAt: Date.now(),
       }, { merge: true });
       await Promise.all([loadTalent(), loadPubSettings()]);
+      // their upcoming gig quotes pick up the new rate / location straight away (Max, 22 Oct 2026)
+      const today = isoDay(new Date());
+      const ids = (state.schedule || []).filter((b) => b.slug === slug && b.date >= today && b.templateId).map((b) => b.id);
+      if (ids.length) { const notes = await gigSyncBookings(ids); if (notes.length) window.alert(notes.join('\n\n')); }
       state.openDj = slug;
       render();
       const m = document.getElementById('dj-msg'); if (m) { m.textContent = 'Saved.'; m.className = 'ad-quote-msg is-ok'; }
