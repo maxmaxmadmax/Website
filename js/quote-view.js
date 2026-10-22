@@ -7,8 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=684';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=684';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=685';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=685';   // DJ / entertainment quotes (Max, 22 Oct 2026)
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=685';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -615,9 +616,12 @@ function proposalBottom(q, opts = {}) {
   const justPaid = /[?&]paid=1/.test(location.search);
 
   // ONE dropdown with every clause inside - deliberately looks like serious small print (Max, 16 Oct 2026)
-  const terms = '<details class="qp-term qp-legal"><summary><span class="qp-legal-warn">&#9888;</span><span><b>Terms &amp; Conditions &mdash; read before booking</b><em>' + TERMS.length + ' clauses &middot; binding once you accept or pay &middot; tap to read</em></span></summary>'
-    + '<div class="qp-legal-body">' + TERMS_INTRO.map((t) => '<p>' + esc(t) + '</p>').join('')
-    + TERMS.map(([h, lines], i) => '<div class="qp-legal-clause"><h4>' + (i + 1) + '. ' + esc(h) + '</h4>' + termBodyHtml(lines, esc) + '</div>').join('')
+  // DJ / entertainment quotes get the DJ booking terms (Max, 22 Oct 2026)
+  const djQuote = (q.customer && q.customer.eventType === 'dj') || !!q.gigDj;
+  const T = djQuote ? DJ_TERMS : TERMS, TI = djQuote ? DJ_TERMS_INTRO : TERMS_INTRO;
+  const terms = '<details class="qp-term qp-legal"><summary><span class="qp-legal-warn">&#9888;</span><span><b>' + (djQuote ? 'DJ Booking ' : '') + 'Terms &amp; Conditions &mdash; read before booking</b><em>' + T.length + ' clauses &middot; binding once you accept or pay &middot; tap to read</em></span></summary>'
+    + '<div class="qp-legal-body">' + TI.map((t) => '<p>' + esc(t) + '</p>').join('')
+    + T.map(([h, lines], i) => '<div class="qp-legal-clause"><h4>' + (i + 1) + '. ' + esc(h) + '</h4>' + termBodyHtml(lines, esc) + '</div>').join('')
     + '</div></details>';
 
   /*  1 Accept quote -> 2 Get your invoice -> 3 Pay   (Max, 20 Oct 2026) */
@@ -724,7 +728,7 @@ function proposalBottom(q, opts = {}) {
   const termsSec = opts.terms === false ? '' : `
     <section class="qp-sec qp-terms">
       ${terms}
-      <p class="qp-terms-link">Also at <a href="/terms" target="_blank" rel="noopener">soundzgood.com.au/terms</a></p>
+      <p class="qp-terms-link">Also at <a href="/${djQuote ? 'dj-terms' : 'terms'}" target="_blank" rel="noopener">soundzgood.com.au/${djQuote ? 'dj-terms' : 'terms'}</a></p>
     </section>`;
   return termsSec + `
     <section class="qp-sec qp-book" id="qp-book">
