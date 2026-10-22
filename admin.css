@@ -4857,3 +4857,5 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ent-step{ width:50px; }
 .ent-step em{ font-size:10.5px; line-height:1.2; }
 .ent-trail > b{ min-width:4px; }
+.ent-djok{ border-color:#b9dfc6; color:#0f6e3d; }   /* Mark DJ confirmed (Max, 22 Oct 2026) */
+.ent-djok.is-on{ background:#e8f4ec; }

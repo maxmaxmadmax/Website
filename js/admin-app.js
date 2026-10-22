@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=688';
+} from './firebase-config.js?v=689';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=688';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=688';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=688';
-import { messagesHtml, wireMessages } from './messages.js?v=688';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=688';
-import { expandKit } from './kit.js?v=688';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=689';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=689';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=689';
+import { messagesHtml, wireMessages } from './messages.js?v=689';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=689';
+import { expandKit } from './kit.js?v=689';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2997,7 +2997,9 @@ function bookingPanel(b) {
               // no invoice yet? say what's missing (Max, 21 Oct 2026)
               const missing = [!b.customerId && 'Invoice to', !b.templateId && 'Template', (b.status || 'confirmed') !== 'confirmed' && 'Confirmed status'].filter(Boolean);
               const noInv = !inv && missing.length ? '<p class="ent-noinv">&#9888; No invoice yet - press <b>Edit</b> and set ' + missing.join(' + ') + ', then Save.</p>' : '';
-              return `${noInv}${dk ? '<p class="ent-deck">&#127911; Their deck: <b>' + esc(dk) + '</b></p>' : ''}<button type="button" class="ad-btn" data-pub-times="${attr(b.id)}">&#128241; Text DJ their link</button>
+              return `${noInv}${dk ? '<p class="ent-deck">&#127911; Their deck: <b>' + esc(dk) + '</b></p>' : ''}${b.djConfirmedAt
+                ? '<button type="button" class="ad-btn ent-djok is-on" data-dj-confirm="' + attr(b.id) + '" data-undo="1" title="Click to undo">&#10003; DJ confirmed</button>'
+                : '<button type="button" class="ad-btn ent-djok" data-dj-confirm="' + attr(b.id) + '">&#10003; Mark DJ confirmed</button>'}<button type="button" class="ad-btn" data-pub-times="${attr(b.id)}">&#128241; Text DJ their link</button>
               ${b.templateId && b.customerId ? `<button type="button" class="ad-btn" data-gig-resync="${attr(b.id)}">&#8635; Update quote</button>` : ''}
               ${inv ? `<a class="ad-btn" href="#/quoteDocs?q=${attr(inv.id)}">${inv.kind === 'invoice' ? 'Invoice' : 'Quote'} ${esc(money(inv.totalCents))} &middot; ${esc(({ approved: 'ready', sent: 'sent', accepted: 'accepted', invoiced: 'unpaid', paid: 'paid' })[inv.status] || inv.status)}</a>` : ''}`;
             })()}
@@ -3203,6 +3205,19 @@ function wirePubBits() {
     if (rn && s && !s.value) s.value = rn.start || '';
     if (rn && f && !f.value) f.value = rn.finish || '';
   });
+  /*  CONFIRM THE DJ BY HAND (Max, 22 Oct 2026) - when they've said yes by
+      phone or message instead of tapping their link. Click again to undo. */
+  document.querySelectorAll('[data-dj-confirm]').forEach((btn) => btn.addEventListener('click', async () => {
+    const id = btn.getAttribute('data-dj-confirm');
+    const undo = btn.hasAttribute('data-undo');
+    if (undo && !window.confirm('Mark the DJ as NOT confirmed?')) return;
+    btn.disabled = true;
+    try {
+      await fb.f.setDoc(fb.f.doc(fb.db, 'talentSchedule', id), { djConfirmedAt: undo ? null : fb.f.serverTimestamp(), djConfirmedBy: undo ? '' : 'admin' }, { merge: true });
+      await loadSchedule();
+      render();
+    } catch (err) { btn.disabled = false; window.alert(friendly(err)); }
+  }));
   // text the DJ their times link
   document.querySelectorAll('[data-pub-times]').forEach((b) => b.addEventListener('click', () => textDjTimes(b.getAttribute('data-pub-times'))));
 }
@@ -3721,8 +3736,7 @@ function wireEntertainment() {
             ...base,
             date: night,
             updatedAt: fb.f.serverTimestamp(),
-          });
-
+          }, { merge: true });   // keeps DJ confirmed / times / links when a booking is edited (Max, 22 Oct 2026)
           made.push({ id, date: night });
         }
 
