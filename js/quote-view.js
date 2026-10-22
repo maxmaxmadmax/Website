@@ -7,8 +7,8 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=666';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=666';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=667';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=667';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -481,9 +481,16 @@ function proposalTop(q, days) {
       [addMins(dj.finish, 15), 'Pack-down', 'We pack everything away']]
       .map(([t, h, sub]) => '<li><b>' + esc(ampm(t)) + '</b><span>' + h + '<small>' + sub + '</small></span></li>').join('')
     + '</ol>'
+    + '</div>' : '';
+  /*  THE DJ, under the first paragraph (Max, 22 Oct 2026): a big photo with
+      their name, music styles and the song-requests promise beside it.   */
+  const djFeature = dj ? '<div class="qp-djf">'
+    + (dj.photo ? '<img class="qp-djf-img" src="/' + esc(dj.photo) + '" alt="' + esc(dj.name) + '" onerror="this.remove()">' : '')
+    + '<div class="qp-djf-text"><p class="qp-mini">Your DJ</p><h3>' + esc(dj.name) + '</h3>'
+    + '<p class="qp-djf-set">' + esc(ampm(dj.start)) + ' &ndash; ' + esc(ampm(dj.finish)) + (dj.hours ? ' &middot; ' + esc(dj.hours) + ' hours' : '') + '</p>'
     + ((dj.styles || []).length ? '<p class="qp-styles">' + dj.styles.map((x) => '<span>' + esc(x) + '</span>').join('') + '</p>' : '')
     + '<p class="qp-requests">&#127925; Our DJs take song requests from your patrons and work with your staff on any requests through the night.</p>'
-    + '</div>' : '';
+    + '</div></div>' : '';
 
   // investment summary: each group ex GST / GST / inc GST
   const rows = groups.map((g) => [isDj && g.name === 'Other' ? 'Entertainment (DJ)' : g.name, g.cents])   // AUDIO, LIGHTING, STAGING... (shown in capitals)
@@ -529,8 +536,8 @@ function proposalTop(q, days) {
 
   return `
     <section class="qp-hero">
-      <div class="qp-hero-photo${isDj && dj && dj.photo ? ' is-dj' : ''}" style="--qp-photo:url('/images/services/${isDj && dj && dj.photo ? 'trailer-stage.webp' : HERO_PHOTO[type]}')">
-        ${isDj && dj && dj.photo ? '<img class="qp-hero-djimg" src="/' + esc(dj.photo) + '" alt="' + esc(dj.name) + '" onerror="this.remove()">' : ''}
+      <div class="qp-hero-photo${isDj ? ' is-dj is-stage' : ''}" style="--qp-photo:url('/images/services/${isDj && dj && dj.photo ? 'trailer-stage.webp' : HERO_PHOTO[type]}')">
+
         <div class="qp-hero-in">
           <p class="qp-eyebrow">${isDj ? esc(venueName || 'Entertainment booking') : 'Event production proposal'}</p>
           <h1>${isDj ? 'SoundzGood Entertainment' : esc(event)}</h1>
@@ -541,7 +548,7 @@ function proposalTop(q, days) {
       <div class="qp-hero-body">
         ${isDj
           ? `<p class="qp-intro">Thanks for having SoundzGood Entertainment${venueName ? ' at ' + esc(venueName) : ''}. Here&rsquo;s your entertainment for the night &mdash;
-          the DJ, the sound and lighting, and the setup and pack-down, all looked after. The full itemised breakdown is below.</p>${djCard}`
+          the DJ, the sound and lighting, and the setup and pack-down, all looked after. The full itemised breakdown is below.</p>${djFeature}${djCard}`
           : `<p class="qp-intro">Thanks for the opportunity to provide event production for ${esc(event)}.
           We&rsquo;ve put together the following production plan based on what we&rsquo;ve discussed.
           Everything below covers the equipment, preparation and crew required to deliver a successful event.</p>`}

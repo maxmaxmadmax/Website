@@ -743,3 +743,14 @@
 @media (max-width:760px){ .qp-tl{ grid-template-columns:1fr 1fr; } }
 @media print{ .qp-night{ background:#fff4ec; } .qp-tl li{ background:#fff; } .qp-tl b{ color:#ff6b00; } .qp-styles span{ color:#b45309; } }
 .qp-requests{ margin:12px 0 0; font-size:14px; opacity:.92; }
+
+/* the DJ under the first paragraph; the banner is just the stage + heading (Max, 22 Oct 2026) */
+.qp-hero-photo.is-stage{ min-height:380px; }
+.qp-hero-photo.is-stage .qp-hero-in{ max-width:680px; }
+.qp-djf{ display:grid; grid-template-columns:260px 1fr; gap:24px; align-items:center; margin:22px 0 8px; }
+.qp-djf-img{ width:100%; aspect-ratio:4 / 5; object-fit:cover; object-position:center 20%; border-radius:16px; box-shadow:0 0 0 3px #ff6b00, 0 18px 40px rgba(0,0,0,.5); }
+.qp-djf-text h3{ margin:2px 0 4px; font-family:"Arial Black", Arial, sans-serif; font-size:clamp(28px, 4vw, 44px); line-height:1.05; text-transform:uppercase; color:#fff; }
+.qp-djf-text .qp-mini{ margin:0; }
+.qp-djf-set{ margin:0 0 6px; font-size:16px; color:#ffb27a; font-weight:700; }
+@media (max-width:640px){ .qp-djf{ grid-template-columns:1fr; } .qp-djf-img{ max-width:280px; } }
+@media print{ .qp-djf-text h3{ color:#111; } .qp-djf-img{ width:180px; } .qp-djf{ grid-template-columns:180px 1fr; } }
