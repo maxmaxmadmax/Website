@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=680';
+} from './firebase-config.js?v=681';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=680';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=680';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=680';
-import { messagesHtml, wireMessages } from './messages.js?v=680';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=680';
-import { expandKit } from './kit.js?v=680';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=681';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=681';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=681';
+import { messagesHtml, wireMessages } from './messages.js?v=681';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=681';
+import { expandKit } from './kit.js?v=681';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6125,7 +6125,11 @@ function quoteBuilderHtml() {
             <p class="qb-block-h">${isInvoice ? 'Bill to' : 'Quote to'}</p>
             ${quoteCustSearchHtml()}
             ${quoteDraft.isTemplate ? '' : `<label class="qb-autosend"><input type="checkbox" data-qauto${quoteDraft.autoSendOnDetails ? ' checked' : ''}> Send them the quote automatically when they fill it in</label>
-            <button type="button" class="qb-askbtn" id="q-askdetails">&#128241; Text ${attr(String(c.name || 'the customer').split(' ')[0])} a link to fill in their own details</button>`}
+            <p class="qb-askhead">Send ${esc(String(c.name || '').trim().split(' ')[0] || 'them')} a link to fill in their own details</p>
+            <div class="qb-askrow">
+              <button type="button" class="qb-askbtn" id="q-askdetails">&#128241; Text the link</button>
+              <button type="button" class="qb-askbtn" id="q-askemail">&#9993;&#65039; Email the link</button>
+            </div>`}
             <label class="qb-fl"><span>Name</span><input class="qb-cin qb-cin-strong" data-qc="name" value="${attr(c.name)}" placeholder="Customer name"></label>
             <label class="qb-fl"><span>Business</span><input class="qb-cin" data-qc="business" value="${attr(c.business)}" placeholder="Business (optional)"></label>
             <label class="qb-fl"><span>Address</span><input class="qb-cin" data-qc="address" value="${attr(c.address)}" placeholder="Address"></label>
@@ -7248,16 +7252,34 @@ function wireQuoteActions() {
   });
 
   // ASK FOR DETAILS (Max, 20 Oct 2026): text the customer a link to fill in their own details
+  // - or email it (Max, 22 Oct 2026). Both open on Max's own phone / mail app; nothing sends by itself.
+  const detailsLink = async () => {
+    if (!state.openQuoteId || state.openQuoteId === '__new__') {
+      if (!String(quoteDraft.customer.name || '').trim()) { window.alert('Type their name first, then press this.'); return null; }
+      await saveQuoteDoc(null, true);
+    }
+    if (!state.openQuoteId || state.openQuoteId === '__new__') return null;
+    const res = await call('adminDetailsLink', { id: state.openQuoteId });
+    const first = String(quoteDraft.customer.name || '').split(' ')[0];
+    return { url: res.url, first };
+  };
+  const askEmail = document.getElementById('q-askemail');
+  if (askEmail) askEmail.addEventListener('click', async () => {
+    try {
+      const l = await detailsLink();
+      if (!l) return;
+      const to = String(quoteDraft.customer.email || '').trim();
+      const body = 'Hi' + (l.first ? ' ' + l.first : '') + ',\n\nThanks for getting in touch. Can you pop your details in at the link below so I can send your quote?\n\n' + l.url + '\n\nThanks,\nMax\nSoundzGood Whitsundays - 0422 393 022';
+      location.href = 'mailto:' + encodeURIComponent(to) + '?subject=' + encodeURIComponent('Your SoundzGood quote - your details') + '&body=' + encodeURIComponent(body);
+    } catch (err) { window.alert(err.message || 'Could not make the link.'); }
+  });
   const askBtn = document.getElementById('q-askdetails');
   if (askBtn) askBtn.addEventListener('click', async () => {
     try {
-      if (!state.openQuoteId || state.openQuoteId === '__new__') {
-        if (!String(quoteDraft.customer.name || '').trim()) { window.alert('Type their name first, then press this.'); return; }
-        await saveQuoteDoc(null, true);
-      }
-      if (!state.openQuoteId || state.openQuoteId === '__new__') return;
-      const res = await call('adminDetailsLink', { id: state.openQuoteId });
-      const first = String(quoteDraft.customer.name || '').split(' ')[0];
+      const l = await detailsLink();
+      if (!l) return;
+      const first = l.first;
+      const res = { url: l.url };
       const text = 'Hi' + (first ? ' ' + first : '') + ", it's Max from SoundzGood - can you pop your details in here so I can send your quote? " + res.url;
       const phone = String(quoteDraft.customer.phone || '').replace(/[^0-9+]/g, '');
       if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
