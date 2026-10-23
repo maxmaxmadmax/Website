@@ -4875,3 +4875,76 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ent-styles{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px 14px; }
 .ent-styles label{ display:flex !important; flex-direction:row !important; align-items:center; gap:8px; margin:0; white-space:nowrap; font-size:13px; }
 .ent-styles input[type=checkbox]{ width:16px !important; height:16px; margin:0; flex:none; }
+
+/* =========================================================================
+   PHONE LAYOUT - QUOTE BUILDER (Max, 23 Oct 2026). Desktop untouched: all
+   of this only applies at phone width. Each line becomes a small card -
+   the name across the top, then Qty / Amount / Days / Total underneath,
+   each with its own little label (the column headings are hidden).
+   ========================================================================= */
+@media (max-width:640px){
+  .qb-paper{ padding:16px 12px; }
+  .qb-thead{ display:none; }
+  .qb-row{
+    grid-template-columns:20px repeat(4, minmax(0, 1fr)) 26px;
+    grid-template-areas:"grip desc desc desc desc x" "grip qty rate days total x";
+    row-gap:8px; column-gap:6px; padding:12px 6px; align-items:end;
+  }
+  .qb-row > .qb-c-grip{ grid-area:grip; align-self:center; }
+  .qb-row > .qb-c-desc{ grid-area:desc; }
+  .qb-row > .qb-c-qty{ grid-area:qty; }
+  .qb-row > .qb-c-rate{ grid-area:rate; }
+  .qb-row > .qb-c-days{ grid-area:days; }
+  .qb-row > .qb-c-total{ grid-area:total; }
+  .qb-row > .qb-c-x{ grid-area:x; align-self:start; }
+  .qb-row > .qb-c-qty::before, .qb-row > .qb-c-rate::before, .qb-row > .qb-c-days::before, .qb-row > .qb-c-total::before{
+    display:block; flex-basis:100%; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ad-faint); margin-bottom:2px; text-align:left;
+  }
+  .qb-row > .qb-c-qty::before{ content:"Qty"; }
+  .qb-row > .qb-c-rate::before{ content:"Amount"; }
+  .qb-row > .qb-c-days::before{ content:"Days"; }
+  .qb-row > .qb-c-total::before{ content:"Total"; text-align:right; }
+  .qb-row > .qb-c-rate{ flex-wrap:wrap; justify-content:flex-start; }
+  .qb-c-qty .qb-num, .qb-c-days .qb-num{ max-width:none; width:100%; margin:0; }
+  .qb-c-rate .qb-num{ flex:1; min-width:0; width:auto; }
+  .qb-row > .qb-c-qty, .qb-row > .qb-c-days{ text-align:left; }
+  .qb-row > .qb-c-total{ align-self:end; padding-bottom:8px; }
+  .qb-row-sub .qb-c-desc{ padding-left:0; }
+  .qb-addrow{ grid-template-columns:1fr; padding:10px 8px; }
+  .qb-adder{ grid-column:1 / -1; }
+  .qb-searchwrap{ min-width:0; flex-basis:100%; }
+  .qb-mrow{ grid-template-columns:96px minmax(0, 1fr); }
+  .qb-askrow{ grid-template-columns:1fr; }
+}
+
+/* =========================================================================
+   PHONE LAYOUT - ENTERTAINMENT + LISTS (Max, 23 Oct 2026). Desktop untouched.
+   ========================================================================= */
+@media (max-width:1100px){
+  .ent-split{ grid-template-columns:minmax(0, 1fr); }
+  .ent-split > *{ min-width:0; }
+  /* an open gig slides over the page, like every other detail panel */
+  .ent-split .ent-side{ position:fixed; top:0; right:0; bottom:0; z-index:60; width:min(440px, 100vw); max-height:none;
+    overflow-y:auto; border-radius:0; box-shadow:-12px 0 40px rgba(0,0,0,.25); margin:0; }
+}
+@media (max-width:760px){
+  .inv-head{ flex-wrap:wrap; gap:12px; }
+  .inv-head-actions{ width:100%; flex-wrap:wrap; gap:8px; }
+  .ent-tabs{ max-width:100%; overflow-x:auto; flex-wrap:nowrap; }
+  .ent-tab{ white-space:nowrap; }
+  .ad-book-tabs{ flex-wrap:wrap; gap:8px; }
+  .ad-book-tabs .ad-tabs{ flex-wrap:nowrap; overflow-x:auto; max-width:100%; padding-bottom:2px; }
+  .ad-book-tabs .ad-tab{ white-space:nowrap; flex:none; }
+  .ent-list .ad-search{ max-width:none; width:100%; }
+  .ent-split .ent-side{ width:100vw; }
+  /* list tables become one card per row */
+  .inv-table thead{ display:none; }
+  .inv-table, .inv-table tbody{ display:block; width:100%; }
+  .inv-table tr{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; padding:12px 14px; border-bottom:1px solid var(--ad-line); }
+  .inv-table td{ display:block; padding:0 !important; border:0 !important; background:none !important; box-shadow:none !important; }
+  .inv-table td:first-child{ flex-basis:100%; font-weight:700; }
+  .inv-table td.ad-cell-right{ margin-left:auto; }
+  .inv-table td:empty{ display:none; }
+  .inv-table tr.is-unconf{ background:#fdf3e1; box-shadow:inset 4px 0 0 #ba7517; }
+  .ent-trail{ overflow-x:auto; }
+}
