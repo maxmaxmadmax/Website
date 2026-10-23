@@ -2452,11 +2452,11 @@ function quoteMoney(quote) {
   let discount = Math.max(0, Math.round(quote.discountCents || 0));   // discount off the whole total
   (quote.lines || []).forEach((l) => {
     if (l.type === 'discount') { discount += Math.max(0, Math.round(l.amountCents || 0)); return; }
-    const qty = Math.max(0, Math.round(l.qty || 0));
+    const qty = Math.max(0, (l.perf ? Math.round(Number(l.qty || 0) * 4) / 4 : Math.round(Number(l.qty) || 0)));   // DJ hours can be 4.5 etc (Max, 23 Oct 2026)
     const unit = Math.max(0, Math.round(l.unitCents || 0));
     const lineDays = Math.max(1, Math.round(l.days || days));
     // quantity x day rate x number of days
-    subtotal += qty * unit * lineDays;
+    subtotal += Math.round(qty * unit * lineDays);
   });
   const net = Math.max(0, subtotal - discount);
   const gst = Math.round(net * 0.10);
@@ -2500,7 +2500,7 @@ function sanitizeQuote(q) {
       itemId: text(l.itemId, 60),
       name: text(l.name, 200),
       description: text(l.description, 500),
-      qty: type === 'discount' ? 1 : Math.max(0, Math.round(Number(l.qty) || 0)),
+      qty: type === 'discount' ? 1 : Math.max(0, (l.perf ? Math.round(Number(l.qty || 0) * 4) / 4 : Math.round(Number(l.qty) || 0))),
       unitCents: type === 'discount' ? 0 : Math.max(0, Math.round(Number(l.unitCents) || 0)),
       extraDayCents: Math.max(0, Math.round(Number(l.extraDayCents) || 0)),
       days: Math.max(1, Math.round(Number(l.days) || days)),
@@ -5229,10 +5229,9 @@ async function gigSync(bookingId) {
   if (!perHour) notes.push(name);
   const djLine = {
     type: 'custom', name: 'DJ performance - ' + name,
-    description: (hours ? hours + ' hrs' : 'Hours to confirm') + (perHour ? ' @ $' + (perHour / 100).toFixed(2).replace(/\.00$/, '') + '/hr' : '')
-      + (start && finish ? ' · ' + ampm(start) + '-' + ampm(finish) : '') + (b.timesConfirmedAt ? ' (confirmed)' : '')
-      + (perHour ? '' : ' · NO RATE SET - add it on the DJs tab'),
-    qty: 1, unitCents: Math.round(hours * perHour), days: 1, pubDj: true, noPick: true, perf: true,
+    description: 'Hourly' + (start && finish ? ' · ' + ampm(start) + '-' + ampm(finish) : '') + (b.timesConfirmedAt ? ' (confirmed)' : '')
+      + (hours ? '' : ' · hours to confirm') + (perHour ? '' : ' · NO RATE SET - add it on the DJs tab'),
+    qty: hours || 0, unitCents: perHour, days: 1, pubDj: true, noPick: true, perf: true,   // qty = hours, amount = hourly rate (Max, 23 Oct 2026)
   };
   const tr = await djTravel(rate.location, b.venue);
   const travelLine = tr.cents ? { type: 'custom', name: 'Travel Charge - ' + tr.from + ' to ' + tr.to + ' Return', description: '', qty: 1, unitCents: tr.cents, days: 1, pubDj: true, noPick: true } : null;
@@ -5240,7 +5239,8 @@ async function gigSync(bookingId) {
   // THE BOOKING FEE, ex GST - a setting on Entertainment (Max, 22 Oct 2026):
   // a fixed $ or a % of the DJ's performance only.
   const fee = await djFeeSetting();
-  const feeCents = fee.mode === 'percent' ? Math.round(djLine.unitCents * fee.pct / 100) : fee.cents;
+  const perfCents = Math.round((djLine.qty || 0) * djLine.unitCents);
+  const feeCents = fee.mode === 'percent' ? Math.round(perfCents * fee.pct / 100) : fee.cents;
   const feeLine = feeCents > 0 ? { type: 'custom', name: fee.name, description: fee.description, qty: 1, unitCents: feeCents, days: 1, pubDj: true, noPick: true } : null;
 
   /*  BUILT FROM THE TEMPLATE (Max, 22 Oct 2026): the template's fill-in lines
@@ -5266,7 +5266,7 @@ async function gigSync(bookingId) {
     if (fee > 0) lines.push({ type: 'fee', name: 'Booking & admin', qty: 1, unitCents: fee, days: 1 });
   }
   // PERFORMER SUPER - 12% of the DJ's performance, unless the template has it off (Max, 22 Oct 2026)
-  const superCents = tpl.superExcluded === true ? 0 : Math.round(djLine.unitCents * 12 / 100);
+  const superCents = tpl.superExcluded === true ? 0 : Math.round(perfCents * 12 / 100);
   if (superCents > 0) {
     const at = lines.indexOf(djLine);
     lines.splice(at >= 0 ? at + 1 : lines.length, 0, { type: 'custom', name: "Performer superannuation (12%)", description: "Australian law requires super to be paid for performers. We pay it into your DJ's super fund for you.", qty: 1, unitCents: superCents, days: 1, superLine: true, pubDj: true, noPick: true });

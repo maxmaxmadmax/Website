@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=693';
+} from './firebase-config.js?v=694';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=693';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=693';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=693';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=693';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=693';
-import { expandKit } from './kit.js?v=693';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=694';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=694';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=694';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=694';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=694';
+import { expandKit } from './kit.js?v=694';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5992,10 +5992,10 @@ function quoteDraftMoney(d) {
     Discounts are handled once against the whole total, not per line.     */
 function quoteLineCents(l, docDays) {
   if (l.type === 'discount') return -Math.max(0, Math.round(l.amountCents || 0));
-  const qty = Math.max(0, Math.round(l.qty || 0));
+  const qty = Math.max(0, (l.perf ? Math.round(Number(l.qty || 0) * 4) / 4 : Math.round(Number(l.qty) || 0)));   // DJ hours can be 4.5 (Max, 23 Oct 2026)
   const unit = Math.max(0, Math.round(l.unitCents || 0));
   const days = Math.max(1, Math.round(l.days || docDays || 1));
-  return qty * unit * days;
+  return Math.round(qty * unit * days);
 }
 
 VIEWS.quoteDocs = {
@@ -6370,7 +6370,7 @@ function quoteBuilderHtml() {
             <span class="qb-c-grip"></span>
             <span class="qb-c-desc">Item / Description</span>
             <span class="qb-c-qty">Qty</span>
-            <span class="qb-c-rate">Day rate (ex GST)</span>
+            <span class="qb-c-rate">Amount (ex GST)</span>
             <span class="qb-c-days">Days</span>
             <span class="qb-c-total">Total (ex GST)</span>
             <span class="qb-c-x"></span>
@@ -6634,7 +6634,7 @@ function renderQuoteLines() {
           ${isSystemId(l.itemId) ? (() => { const b = (invItems().find((x) => x.id === l.itemId) || {}).bundleType; return '<span class="qb-sys-tag qb-sys-line' + (b === 'package' ? ' is-pkg' : '') + '">' + (b === 'package' ? 'Package' : 'Kit') + '</span>'; })() : ''}
           ${l.description ? `<span class="qb-sub">${esc(l.description)}</span>` : ''}${stockWarn(l)}
         </div>
-        <div class="qb-cell qb-c-qty"><input class="qb-num" type="number" min="0" step="1" data-lf="qty" value="${attr(l.qty)}"></div>
+        <div class="qb-cell qb-c-qty"><input class="qb-num" type="number" min="0" step="${l.perf ? '0.25' : '1'}" data-lf="qty" value="${attr(l.qty)}"${l.perf ? ' title="Hours"' : ''}></div>
         <div class="qb-cell qb-c-rate"><span class="qb-inline-dollar">$</span><input class="qb-num" type="number" min="0" step="1" data-lf="unitCents" value="${attr(rate)}"></div>
         <div class="qb-cell qb-c-days"><input class="qb-num" type="number" min="1" step="1" data-lf="days" value="${attr(Math.max(1, Math.round(l.days || days)))}"></div>
         <div class="qb-cell qb-c-total qb-total"><span class="q-line-total">${esc(money(quoteLineCents(l, days)))}</span></div>
@@ -7360,7 +7360,7 @@ function wireQuoteBuilder() {
       const f = t.dataset.lf;
       if (f === 'unitCents' && l.resType === 'staff') { l.baseCents = Math.max(0, Math.round(Number(t.value || 0) * 100)); syncCrewRates(); }   // crew: their own rate, surcharges added on top
       else if (f === 'amountCents' || f === 'unitCents' || f === 'extraDayCents') l[f] = Math.max(0, Math.round(Number(t.value || 0) * 100));
-      else if (f === 'qty') l.qty = Math.max(0, Math.round(Number(t.value || 0)));
+      else if (f === 'qty') l.qty = Math.max(0, l.perf ? Math.round(Number(t.value || 0) * 4) / 4 : Math.round(Number(t.value || 0)));
       else if (f === 'days') l.days = Math.max(1, Math.round(Number(t.value || 1)));
       else l[f] = t.value;
       // update just this line's total + the grand totals, without a full re-render

@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=693';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=693';   // DJ / entertainment quotes (Max, 22 Oct 2026)
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=693';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=694';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=694';   // DJ / entertainment quotes (Max, 22 Oct 2026)
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=694';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -64,10 +64,10 @@ async function initFns() {
 
 function lineAmount(l, days) {
   if (l.type === 'discount') return -Math.max(0, Math.round(l.amountCents || 0));
-  const qty = Math.max(0, Math.round(l.qty || 0));
+  const qty = Math.max(0, (l.perf ? Math.round(Number(l.qty || 0) * 4) / 4 : Math.round(Number(l.qty) || 0)));   // DJ hours can be 4.5 (Max, 23 Oct 2026)
   const unit = Math.max(0, Math.round(l.unitCents || 0));
   const d = Math.max(1, Math.round(l.days || days));
-  return qty * unit * d;   // quantity x day rate x number of days
+  return Math.round(qty * unit * d);   // quantity x day rate x number of days
 }
 
 /*  "2026-10-20" -> "Tue 20 Oct 2026"; one day shows once, a range "a – b". */
