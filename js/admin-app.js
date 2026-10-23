@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=696';
+} from './firebase-config.js?v=697';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=696';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=696';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=696';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=696';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=696';
-import { expandKit } from './kit.js?v=696';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=697';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=697';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=697';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=697';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=697';
+import { expandKit } from './kit.js?v=697';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2718,7 +2718,7 @@ function djDetailHtml() {
       </header>
       <div class="inv-detail-body">
         ${t.photo ? `<div class="ent-djphoto" style="background-image:url('/${attr(t.photo)}')"></div>` : ''}
-        <label class="ad-field"><span>Name</span><input class="ad-input" id="dj-f-name" value="${attr(t.name || '')}" ${isNew ? '' : 'readonly'} placeholder="e.g. DJ Lucas"></label>
+        <label class="ad-field"><span>Name</span><input class="ad-input" id="dj-f-name" value="${attr(t.name || '')}" maxlength="60" placeholder="e.g. DJ Lucas"></label>
         <label class="ad-field"><span>Act</span><select class="ad-select" id="dj-f-act">${Object.keys(ACT_LABELS).map((k) => `<option value="${attr(k)}"${(t.act || 'dj') === k ? ' selected' : ''}>${esc(ACT_LABELS[k])}</option>`).join('')}</select></label>
         <label class="ad-field"><span>Photo (on the website)</span><input class="ad-input" id="dj-f-photo" value="${attr(t.photo || '')}" placeholder="images/talent/name.jpg"></label>
         <div class="ent-2col">

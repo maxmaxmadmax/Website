@@ -4871,3 +4871,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ad-spin{ display:inline-block; width:14px; height:14px; margin-right:8px; vertical-align:-2px; border:2px solid #e3e5ea; border-top-color:#ff6b00; border-radius:50%; animation:ad-spin .7s linear infinite; }
 @keyframes ad-spin{ to{ transform:rotate(360deg); } }
 .ent-loading{ padding:22px 16px !important; }
+/* music style tick boxes: box and words side by side (Max, 23 Oct 2026) */
+.ent-styles{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px 14px; }
+.ent-styles label{ display:flex !important; flex-direction:row !important; align-items:center; gap:8px; margin:0; white-space:nowrap; font-size:13px; }
+.ent-styles input[type=checkbox]{ width:16px !important; height:16px; margin:0; flex:none; }
