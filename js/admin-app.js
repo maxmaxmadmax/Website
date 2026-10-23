@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=700';
+} from './firebase-config.js?v=701';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=700';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=700';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=700';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=700';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=700';
-import { expandKit } from './kit.js?v=700';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=701';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=701';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=701';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=701';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=701';
+import { expandKit } from './kit.js?v=701';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2702,7 +2702,7 @@ function djTownOptions(current) {
 }
 
 /*  MUSIC STYLES - shown as tags on the DJ's gig quotes instead of a bio (Max, 22 Oct 2026) */
-const DJ_STYLES = ['Top 40 / Commercial', 'House', 'Throwbacks', 'RnB & Hip Hop', 'Hip-Hop', 'R&B', 'Latin', 'Reggaeton', 'Baile Funk', 'Moombahton', 'Dancehall', 'Country', 'Rock', 'Drum & Bass', 'Requests welcome'];   // + Latin / Caribbean styles (Max, 23 Oct 2026)
+const DJ_STYLES = ['Open Format', 'Top 40 / Commercial', 'House', 'Throwbacks', 'RnB & Hip Hop', 'Hip-Hop', 'R&B', 'Latin', 'Reggaeton', 'Baile Funk', 'Moombahton', 'Dancehall', 'Country', 'Rock', 'Drum & Bass', 'Requests welcome'];   // + Latin / Caribbean styles (Max, 23 Oct 2026)
 
 /*  What a DJ plays, for their public card (Max, 23 Oct 2026) - the ticked
     music styles minus "Requests welcome", which isn't a style.        */

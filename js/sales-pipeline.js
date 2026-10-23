@@ -10,8 +10,8 @@
    (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=700';   // who still owes money (Max, 22 Oct 2026)
-import { isBooked, pickProgress } from './stock.js?v=700';
+import { owesMoney } from './messages.js?v=701';   // who still owes money (Max, 22 Oct 2026)
+import { isBooked, pickProgress } from './stock.js?v=701';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
