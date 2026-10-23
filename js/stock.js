@@ -15,7 +15,8 @@
 /* deposit in (card or marked received) or paid in full */
 export function isBooked(q) {
   if (!q || q.status === 'cancelled' || q.status === 'declined') return false;
-  return q.status === 'paid' || q.paymentStatus === 'deposit' || q.paymentStatus === 'paid';
+  return q.status === 'paid' || q.paymentStatus === 'deposit' || q.paymentStatus === 'paid'
+    || !!q.jobConfirmedAt;   // confirmed by Max, paying later (Max, 24 Oct 2026)
 }
 
 /* on its way but no money yet */

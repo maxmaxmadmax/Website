@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=703';
+} from './firebase-config.js?v=704';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=703';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=703';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=703';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=703';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=703';
-import { expandKit } from './kit.js?v=703';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=704';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=704';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=704';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=704';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=704';
+import { expandKit } from './kit.js?v=704';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6144,6 +6144,15 @@ function wireQuoteList() {
       try { await call('adminSetQuoteStatus', { id, status: 'paid' }); } catch (e) { window.alert(e.message || 'Could not mark paid.'); }
     },
     // a bank-transfer deposit arrived: books the job (becomes an invoice) and unlocks the pick list
+    async confirmjob(id) {   // job goes ahead, customer pays later (Max, 24 Oct 2026)
+      const d = findDoc(id);
+      if (!window.confirm('Confirm ' + label(d) + ' without payment?\n\nIt becomes an unpaid invoice, the pick list unlocks and goes to the office + crew (and the gear list to the band). Payment reminders still work.')) return;
+      try { await call('adminConfirmJob', { id }); } catch (e) { window.alert(e.message || 'Could not confirm the job.'); }
+    },
+    async unconfirmjob(id) {
+      if (!window.confirm('Undo the job confirmation for ' + label(findDoc(id)) + '?')) return;
+      try { await call('adminConfirmJob', { id, undo: true }); } catch (e) { window.alert(e.message || 'Could not undo it.'); }
+    },
     async deposit(id) {
       const d = findDoc(id);
       if (!window.confirm('Deposit received for ' + label(d) + '?\n\nThis books the job, makes it a tax invoice and unlocks the pick list.')) return;

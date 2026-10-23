@@ -10,8 +10,8 @@
    (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=703';   // who still owes money (Max, 22 Oct 2026)
-import { isBooked, pickProgress } from './stock.js?v=703';
+import { owesMoney } from './messages.js?v=704';   // who still owes money (Max, 22 Oct 2026)
+import { isBooked, pickProgress } from './stock.js?v=704';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -79,6 +79,9 @@ export function stageOf(q) {
   const pp = isBooked(q) && q.crewToken ? pickProgress(q) : null;
   const packing = pp && pp.lines ? (pp.returned === pp.lines ? 'All gear back in' : pp.packed ? pp.packed + ' of ' + pp.lines + ' packed' : 'Pick list ready') : '';
   if (s.step === 4) return packing ? { ...s, next: [s.next[0], s.next[1], s.next[2], packing] } : s;
+  if (s.step === 3 && q.jobConfirmedAt && !q.paymentStatus) {
+    return { ...s, next: ['cal', 'green', 'Job confirmed', 'Paying later' + (packing ? ' · ' + packing : '')] };
+  }
   if (s.step === 3) {
     let sub = 'Deposit outstanding';
     if (q.paymentStatus === 'deposit') sub = 'Final payment due' + (packing ? ' · ' + packing : '');
@@ -319,9 +322,10 @@ export function rowsHtml(rows, f, h) {
                   : `<button type="button" data-sp-act="picklist" data-id="${h.attr(q.id)}">Make pick list</button>`)
                 + `<button type="button" data-sp-act="gearlist" data-id="${h.attr(q.id)}">Email gear list (no prices)</button>`
                 + `<button type="button" data-sp-act="geartest" data-id="${h.attr(q.id)}">Test gear + pick list emails to me</button>`
-                : (['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) ? `<button type="button" data-sp-act="deposit" data-id="${h.attr(q.id)}">Deposit received</button>` : '')}
+                : (['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) ? `<button type="button" data-sp-act="deposit" data-id="${h.attr(q.id)}">Deposit received</button><button type="button" data-sp-act="confirmjob" data-id="${h.attr(q.id)}">Confirm job &ndash; pay later</button>` : '')}
+              ${q.jobConfirmedAt && q.status !== 'paid' && !q.paymentStatus ? `<button type="button" data-sp-act="unconfirmjob" data-id="${h.attr(q.id)}">Undo job confirmation</button>` : ''}
               ${['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) ? `<button type="button" data-sp-act="paid" data-id="${h.attr(q.id)}">Mark paid</button>` : ''}
-              ${(isBooked(q) || q.paymentStatus) && q.paymentMethod !== 'card' && !(q.stripeSessions && q.stripeSessions.length) ? `<button type="button" data-sp-act="undopay" data-id="${h.attr(q.id)}">Undo deposit / payment</button>` : ''}
+              ${(q.paymentStatus || q.status === 'paid') && q.paymentMethod !== 'card' && !(q.stripeSessions && q.stripeSessions.length) ? `<button type="button" data-sp-act="undopay" data-id="${h.attr(q.id)}">Undo deposit / payment</button>` : ''}
               <button type="button" data-sp-act="duplicate" data-id="${h.attr(q.id)}">Duplicate</button>
               ${st.tab === 'archived'
                 ? `<button type="button" data-sp-act="restore" data-id="${h.attr(q.id)}">Restore</button>`
@@ -378,7 +382,7 @@ export function wirePipeline(getJobs, f, h, act) {
     if (vb) { act.vendorInvoice(vb.getAttribute('data-id'), vb.getAttribute('data-sp-vendor'), vb); return; }
     const a = e.target.closest('[data-sp-act]');
     if (a) {
-      const fn = { duplicate: act.duplicate, archive: act.archive, restore: act.restore, delete: act.del, paid: act.paid, deposit: act.deposit, picklist: act.picklist, undopay: act.undopay, latefee: act.latefee, unlatefee: act.unlatefee, gearlist: act.gearlist, geartest: act.geartest, remind: act.remind }[a.getAttribute('data-sp-act')];
+      const fn = { duplicate: act.duplicate, archive: act.archive, restore: act.restore, delete: act.del, paid: act.paid, deposit: act.deposit, picklist: act.picklist, undopay: act.undopay, latefee: act.latefee, unlatefee: act.unlatefee, gearlist: act.gearlist, geartest: act.geartest, remind: act.remind, confirmjob: act.confirmjob, unconfirmjob: act.unconfirmjob }[a.getAttribute('data-sp-act')];
       if (fn) fn(a.getAttribute('data-id'));
       return;
     }

@@ -2707,7 +2707,8 @@ exports.adminDeleteQuote = onCall(async (request) => {
 /* deposit in, or paid - the booking is confirmed (same rule as js/stock.js) */
 function pickReady(q) {
   if (!q || q.status === 'cancelled' || q.status === 'declined') return false;
-  return q.status === 'paid' || q.paymentStatus === 'deposit' || q.paymentStatus === 'paid';
+  return q.status === 'paid' || q.paymentStatus === 'deposit' || q.paymentStatus === 'paid'
+    || !!q.jobConfirmedAt;   // confirmed by Max, paying later (Max, 24 Oct 2026)
 }
 
 /* the gear on a job, one entry per item (items + included kit added up).
@@ -2762,6 +2763,30 @@ exports.adminDepositReceived = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async
   if (!q.crewToken) update.crewToken = crypto.randomBytes(16).toString('hex');
   await ref.update(update);
   await autoGearOnDeposit(ref.id);   // gear list out once the deposit is in
+  return { ok: true };
+});
+
+/* ADMIN - CONFIRM A JOB, PAY LATER (Max, 24 Oct 2026): the job goes ahead
+   before any money - it becomes an unpaid invoice, the pick list unlocks
+   and goes to the office + crew (and the gear list to the band) like a
+   deposit would. Payment reminders still work. undo: true takes it back. */
+exports.adminConfirmJob = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  requireAdmin(request);
+  const { id, undo } = request.data || {};
+  const ref = db.collection('quotes').doc(String(id || ''));
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'No such quote.');
+  const q = snap.data();
+  if (undo === true) {
+    await ref.update({ jobConfirmedAt: FieldValue.delete(), updatedAt: FieldValue.serverTimestamp() });
+    return { ok: true };
+  }
+  if (!['approved', 'sent', 'accepted', 'invoiced'].includes(q.status)) throw new HttpsError('failed-precondition', 'Only quotes and unpaid invoices can be confirmed this way.');
+  const update = { jobConfirmedAt: FieldValue.serverTimestamp(), status: 'invoiced', kind: 'invoice', updatedAt: FieldValue.serverTimestamp() };
+  if (!q.invoiceNumber) { update.invoiceNumber = invoiceNo((await nextInvoiceNumber()).n); update.invoicedAt = FieldValue.serverTimestamp(); }
+  if (!q.crewToken) update.crewToken = crypto.randomBytes(16).toString('hex');
+  await ref.update(update);
+  await autoGearOnDeposit(ref.id);   // pick list out now, same as a deposit
   return { ok: true };
 });
 
