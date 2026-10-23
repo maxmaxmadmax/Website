@@ -5295,7 +5295,7 @@ async function gigSync(bookingId, opts = {}) {
   // the DJ's own deck goes on the pick list so setup staff bring the right cables (Max, 21 Oct 2026)
   if (rate.deck) clean.crewNotes = 'DJ deck (' + name + '): ' + String(rate.deck).slice(0, 300);
   // who played - shown on the entertainment-style quote / invoice (Max, 22 Oct 2026)
-  const gigDj = { name, photo: (t.exists && t.data().photo) || ('images/talent/' + b.slug + '.jpg'), start, finish, hours, confirmed: !!b.timesConfirmedAt, venue: b.venue || '', bio: String((t.exists && t.data().bio) || '').slice(0, 1200), styles: Array.isArray(rate.styles) ? rate.styles.slice(0, 8) : [] };
+  const gigDj = { name, photo: (t.exists && t.data().photo) || ('images/talent/' + b.slug + '.jpg'), start, finish, hours, confirmed: !!b.timesConfirmedAt, venue: b.venue || '', bio: String((t.exists && t.data().bio) || '').slice(0, 1200), styles: Array.isArray(rate.styles) ? rate.styles.slice(0, 16) : [] };
   const meta = { gigDj, payFull: b.payFull === true, gigBookingId: id, pubNight: true, pubKey: 'gig|' + id, pubVenue: b.venue || '', pubDate: b.date, pubBookings: [id], pubNoRate: notes, gigHours: hours, gigTemplateId: String(b.templateId) };
   if (existing) {
     await existing.ref.update({ ...clean, ...money, ...meta, status: sentOk ? 'sent' : 'approved', updatedAt: FieldValue.serverTimestamp() });
@@ -5435,7 +5435,7 @@ async function gigDjFor(bookingId) {
     const r = await db.collection('actRates').doc(x.slug).get();
     return { name: (t.exists && t.data().name) || slugName, photo: (t.exists && t.data().photo) || ('images/talent/' + x.slug + '.jpg'),
       start, finish, hours: gigHours(start, finish), confirmed: !!x.timesConfirmedAt, venue: x.venue || '', bio: String((t.exists && t.data().bio) || '').slice(0, 1200),
-      styles: r.exists && Array.isArray(r.data().styles) ? r.data().styles.slice(0, 8) : [] };
+      styles: r.exists && Array.isArray(r.data().styles) ? r.data().styles.slice(0, 16) : [] };
   } catch (e) { return null; }
 }
 

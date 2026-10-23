@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=699';
+} from './firebase-config.js?v=700';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=699';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=699';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=699';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=699';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=699';
-import { expandKit } from './kit.js?v=699';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=700';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=700';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=700';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=700';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=700';
+import { expandKit } from './kit.js?v=700';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -322,7 +322,8 @@ async function loadPubSettings() {
       state.locSynced = true;
       Object.keys(state.actRates).forEach((slug) => {
         const loc = String(state.actRates[slug].location || '').trim();
-        if (loc) fb.f.setDoc(fb.f.doc(fb.db, 'talent', slug), { location: loc.slice(0, 80) }, { merge: true }).catch(() => {});
+        const g = publicStyles(state.actRates[slug].styles);
+        if (loc || g.length) fb.f.setDoc(fb.f.doc(fb.db, 'talent', slug), { ...(loc ? { location: loc.slice(0, 80) } : {}), ...(g.length ? { genres: g } : {}) }, { merge: true }).catch(() => {});
       });
     }
     try { const fs2 = await getDocs(collection(fb.db, 'djSettings')); state.djFee = {}; fs2.forEach((d) => { if (d.id === 'fee') state.djFee = d.data(); }); } catch (e) { state.djFee = {}; }
@@ -2701,7 +2702,11 @@ function djTownOptions(current) {
 }
 
 /*  MUSIC STYLES - shown as tags on the DJ's gig quotes instead of a bio (Max, 22 Oct 2026) */
-const DJ_STYLES = ['Top 40 / Commercial', 'House', 'Throwbacks', 'RnB & Hip Hop', 'Latin', 'Country', 'Rock', 'Drum & Bass', 'Requests welcome'];
+const DJ_STYLES = ['Top 40 / Commercial', 'House', 'Throwbacks', 'RnB & Hip Hop', 'Hip-Hop', 'R&B', 'Latin', 'Reggaeton', 'Baile Funk', 'Moombahton', 'Dancehall', 'Country', 'Rock', 'Drum & Bass', 'Requests welcome'];   // + Latin / Caribbean styles (Max, 23 Oct 2026)
+
+/*  What a DJ plays, for their public card (Max, 23 Oct 2026) - the ticked
+    music styles minus "Requests welcome", which isn't a style.        */
+const publicStyles = (list) => (Array.isArray(list) ? list : []).filter((x) => x && x !== 'Requests welcome').slice(0, 16);
 
 function djDetailHtml() {
   const isNew = state.openDj === '__new__';
@@ -2787,12 +2792,12 @@ function wireEntPage() {
     save.disabled = true; msg.textContent = 'Saving…'; msg.className = 'ad-quote-msg';
     try {
       const { doc, setDoc, serverTimestamp } = fb.f;
-      await setDoc(doc(fb.db, 'talent', slug), { name, act: v('dj-f-act') || 'dj', photo: v('dj-f-photo'), bio: v('dj-f-bio').slice(0, 1200), location: v('dj-f-loc').slice(0, 80), hidden: false, updatedAt: serverTimestamp() }, { merge: true });
+      await setDoc(doc(fb.db, 'talent', slug), { name, act: v('dj-f-act') || 'dj', photo: v('dj-f-photo'), bio: v('dj-f-bio').slice(0, 1200), location: v('dj-f-loc').slice(0, 80), genres: publicStyles([...document.querySelectorAll('[data-dj-style]:checked')].map((x) => x.value)), hidden: false, updatedAt: serverTimestamp() }, { merge: true });
       await setDoc(doc(fb.db, 'actRates', slug), {
         hourlyRateCents: Math.max(0, Math.round((parseFloat(v('dj-f-rate')) || 0) * 100)),
         location: v('dj-f-loc').slice(0, 80), phone: v('dj-f-phone').slice(0, 40),
         email: v('dj-f-email').toLowerCase().slice(0, 200), deck: v('dj-f-deck').slice(0, 300),
-        styles: [...document.querySelectorAll('[data-dj-style]:checked')].map((x) => x.value).slice(0, 8), updatedAt: Date.now(),
+        styles: [...document.querySelectorAll('[data-dj-style]:checked')].map((x) => x.value).slice(0, 16), updatedAt: Date.now(),
       }, { merge: true });
       await Promise.all([loadTalent(), loadPubSettings()]);
       // their upcoming gig quotes pick up the new rate / location straight away (Max, 22 Oct 2026)
