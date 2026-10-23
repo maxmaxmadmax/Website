@@ -4766,7 +4766,7 @@ const brisbaneTodayISO = () => new Intl.DateTimeFormat('en-CA', { timeZone: MSG_
 
 /*  Sends the gear list to "Gear list to" and (for automatic sends) the pick
     list link to the office. reason: 'manual' | 'deposit' | '3days' | 'today'. */
-async function sendGearListEmail(ref, q, reason, testTo) {
+async function sendGearListEmail(ref, q, reason, testTo, parts = { gear: true, staff: true }) {
   let token = q.crewToken;
   if (!token) { token = crypto.randomBytes(16).toString('hex'); await ref.update({ crewToken: token }); }
   const c = q.customer || {};
@@ -4775,7 +4775,7 @@ async function sendGearListEmail(ref, q, reason, testTo) {
   const lead = (testTo ? '[TEST] ' : '') + (reason === '3days' ? '3 days to go - ' : reason === 'today' ? 'Today - ' : '');
   const to = testTo || emailList(c.gearEmails);
   let r = { sent: false, reason: 'no gear list emails' };
-  if (to) {
+  if (to && parts.gear !== false) {
     r = await sendMessageEmail({
       subject: lead + 'Gear list - ' + ev + (when ? ' (' + when + ')' : ''),
       body: 'Hi,\n\n'
@@ -4788,7 +4788,7 @@ async function sendGearListEmail(ref, q, reason, testTo) {
     if (r.sent && !testTo) await ref.update({ gearListSentAt: FieldValue.serverTimestamp(), gearListSentTo: to });
   }
   // staff copy - the full pick list with Packed / Returned ticks (office + the crew on the job)
-  if (reason !== 'manual') {
+  if (reason !== 'manual' && parts.staff !== false) {
     const crewTo = emailList((q.crewAssigned || []).map((x) => x.email).filter(Boolean).join(', '));
     await sendMessageEmail({
       subject: lead + 'Pick list - ' + ev + (when ? ' (' + when + ')' : '') + ' - ' + (q.invoiceNumber || q.number || ''),
@@ -4817,26 +4817,45 @@ async function autoGearOnDeposit(id) {
 }
 
 /*  Every morning at 9:35: jobs 3 days out, and jobs on today. */
+/*  GEAR + PICK LIST REMINDERS (Max, 24 Oct 2026): staff get the pick list
+    at 6am so they have it early; the customer / band gear list goes at
+    9:35am. Each part is marked once sent ("staff_" / "gear_" + reason +
+    date), and the 9:35 run also sends any staff list the 6am run missed.
+    Jobs already reminded the old way (one key for both) count as done.  */
+async function runGearReminders(which) {
+  const today = brisbaneTodayISO();
+  const snap = await db.collection('quotes').where('status', 'in', ['invoiced', 'paid']).get();
+  for (const doc of snap.docs) {
+    const q = doc.data();
+    if (!pickReady(q) || q.archived) continue;
+    const ev = quoteEventISO(q);
+    if (!ev) continue;
+    const reason = addDaysISO(ev, -3) === today ? '3days' : ev === today ? 'today' : '';
+    if (!reason) continue;
+    const key = reason + '_' + ev;   // a new date = new reminders
+    const done = q.gearReminders || {};
+    const old = !!done[key];
+    const needStaff = !old && !done['staff_' + key];
+    const needGear = which === 'customers' && !old && !done['gear_' + key];
+    if (!needStaff && !needGear) continue;
+    try {
+      await doc.ref.update({
+        ...(needStaff ? { ['gearReminders.staff_' + key]: FieldValue.serverTimestamp() } : {}),
+        ...(needGear ? { ['gearReminders.gear_' + key]: FieldValue.serverTimestamp() } : {}),
+      });
+      await sendGearListEmail(doc.ref, q, reason, undefined, { staff: needStaff, gear: needGear });
+    } catch (err) { logger.error('gear list reminder', { id: doc.id, which, err: err && err.message }); }
+  }
+}
+// 6am: the staff pick lists (office + the crew on the job)
+exports.staffPickLists = onSchedule(
+  { schedule: '0 6 * * *', timeZone: MSG_TZ, secrets: [SMTP_USER, SMTP_PASS], timeoutSeconds: 300 },
+  async () => runGearReminders('staff')
+);
+// 9:35am: the customer / band gear lists, plus any staff list not sent yet
 exports.gearListReminders = onSchedule(
   { schedule: '35 9 * * *', timeZone: MSG_TZ, secrets: [SMTP_USER, SMTP_PASS], timeoutSeconds: 300 },
-  async () => {
-    const today = brisbaneTodayISO();
-    const snap = await db.collection('quotes').where('status', 'in', ['invoiced', 'paid']).get();
-    for (const doc of snap.docs) {
-      const q = doc.data();
-      if (!pickReady(q) || q.archived) continue;
-      const ev = quoteEventISO(q);
-      if (!ev) continue;
-      const reason = addDaysISO(ev, -3) === today ? '3days' : ev === today ? 'today' : '';
-      if (!reason) continue;
-      const key = reason + '_' + ev;   // a new date = new reminders
-      if (q.gearReminders && q.gearReminders[key]) continue;
-      try {
-        await doc.ref.update({ ['gearReminders.' + key]: FieldValue.serverTimestamp() });
-        await sendGearListEmail(doc.ref, q, reason);
-      } catch (err) { logger.error('gear list reminder', { id: doc.id, err: err && err.message }); }
-    }
-  }
+  async () => runGearReminders('customers')
 );
 
 /* =========================================================================
