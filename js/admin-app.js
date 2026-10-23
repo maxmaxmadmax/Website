@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=702';
+} from './firebase-config.js?v=703';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=702';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=702';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=702';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=702';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=702';
-import { expandKit } from './kit.js?v=702';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=703';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=703';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=703';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=703';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=703';
+import { expandKit } from './kit.js?v=703';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -391,6 +391,7 @@ async function gigSyncBookings(ids) {
       }
       if (r.needTemplate) notes.push('That template is gone - pick another one on the booking.');
       if (r.noRate && r.noRate.length) notes.push('Add a rate / travel fee for ' + r.noRate.join(', ') + ' (Entertainment > The roster).');
+      if (r.askPrice && r.askPrice.length) notes.push(r.askPrice.join(', ') + ' is price on request - ask them for their fee, then open the quote and type it in (Amount = per hour).');
       if (r.locked) notes.push(r.status === 'sent' ? 'The quote was left as it was.' : 'That gig\'s quote has been accepted or paid, so it was not changed.');
     } catch (e) { notes.push('Invoice not updated: ' + friendly(e)); }
   }
@@ -2676,7 +2677,7 @@ function djMainHtml() {
                   <td><span class="inv-item-cell"><span class="ad-act-face ent-face" style="${t.photo ? `background-image:url('/${attr(t.photo)}')` : ''}"></span><span class="inv-item-name">${esc(t.name)}</span></span></td>
                   <td><span class="inv-pill inv-st-blue">${esc(ACT_LABELS[t.act] || t.act || 'DJ')}</span></td>
                   <td>${r.location ? esc(r.location) : '<span class="ad-cell-muted">—</span>'}</td>
-                  <td class="inv-num">${r.hourlyRateCents ? esc(money(r.hourlyRateCents)) + '<span class="inv-perday">/hr</span>' : '<span class="ad-cell-muted">—</span>'}</td>
+                  <td class="inv-num">${r.onRequest ? '<span class="inv-pill inv-st-blue">On request</span>' : r.hourlyRateCents ? esc(money(r.hourlyRateCents)) + '<span class="inv-perday">/hr</span>' : '<span class="ad-cell-muted">—</span>'}</td>
                   <td>${r.phone || r.email ? esc([r.phone, r.email].filter(Boolean).join(' · ')) : '<span class="inv-pill inv-st-amber">Add contact</span>'}</td>
                   <td>${nx ? esc(prettyDate(nx.date)) + ' <span class="ad-cell-muted">' + esc(String(nx.venue || '').split(',')[0]) + '</span>' : '<span class="ad-cell-muted">—</span>'}</td>
                   <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-dj-open="${attr(t.slug)}" aria-label="Edit">&#8250;</button></td>
@@ -2728,11 +2729,12 @@ function djDetailHtml() {
         <label class="ad-field"><span>Act</span><select class="ad-select" id="dj-f-act">${Object.keys(ACT_LABELS).map((k) => `<option value="${attr(k)}"${(t.act || 'dj') === k ? ' selected' : ''}>${esc(ACT_LABELS[k])}</option>`).join('')}</select></label>
         <label class="ad-field"><span>Photo (on the website)</span><input class="ad-input" id="dj-f-photo" value="${attr(t.photo || '')}" placeholder="images/talent/name.jpg"></label>
         <div class="ent-2col">
-          <label class="ad-field"><span>Rate per hour ($)</span><input class="ad-input" type="number" min="0" step="1" id="dj-f-rate" value="${attr(d(r.hourlyRateCents))}"></label>
+          <label class="ad-field"><span>Rate per hour ($)</span><input class="ad-input" type="number" min="0" step="1" id="dj-f-rate" value="${attr(d(r.hourlyRateCents))}"${r.onRequest ? ' placeholder="On request"' : ''}></label>
           <label class="ad-field"><span>Location (where they live)</span><select class="ad-select" id="dj-f-loc">${djTownOptions(r.location || '')}</select></label>
           <label class="ad-field"><span>Phone</span><input class="ad-input" type="tel" id="dj-f-phone" value="${attr(r.phone || '')}" placeholder="Mobile"></label>
           <label class="ad-field"><span>Email</span><input class="ad-input" type="email" id="dj-f-email" value="${attr(r.email || '')}" placeholder="For booking emails"></label>
         </div>
+        <label class="ad-field ent-payfull"><input type="checkbox" id="dj-f-onreq"${r.onRequest ? ' checked' : ''}> Price on request (bigger DJ - ask them each time, then type their price on the quote)</label>
         <label class="ad-field ent-payfull"><input type="checkbox" id="dj-f-female"${t.female ? ' checked' : ''}> Female DJ (shows under "Female DJs" in the website's genre filter)</label>
         <div class="ad-field"><span>Music styles (shown on their gig quotes)</span>
           <div class="ent-styles">${DJ_STYLES.map((x) => `<label><input type="checkbox" data-dj-style value="${attr(x)}"${(r.styles || []).includes(x) ? ' checked' : ''}> ${esc(x)}</label>`).join('')}</div>
@@ -2799,7 +2801,8 @@ function wireEntPage() {
         hourlyRateCents: Math.max(0, Math.round((parseFloat(v('dj-f-rate')) || 0) * 100)),
         location: v('dj-f-loc').slice(0, 80), phone: v('dj-f-phone').slice(0, 40),
         email: v('dj-f-email').toLowerCase().slice(0, 200), deck: v('dj-f-deck').slice(0, 300),
-        styles: [...document.querySelectorAll('[data-dj-style]:checked')].map((x) => x.value).slice(0, 16), updatedAt: Date.now(),
+        styles: [...document.querySelectorAll('[data-dj-style]:checked')].map((x) => x.value).slice(0, 16),
+        onRequest: !!(document.getElementById('dj-f-onreq') || {}).checked, updatedAt: Date.now(),
       }, { merge: true });
       await Promise.all([loadTalent(), loadPubSettings()]);
       // their upcoming gig quotes pick up the new rate / location straight away (Max, 22 Oct 2026)

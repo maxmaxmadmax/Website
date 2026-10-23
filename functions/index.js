@@ -5228,13 +5228,19 @@ async function gigSync(bookingId, opts = {}) {
   const start = b.actualStart || b.start || '21:30';
   const finish = b.actualFinish || (b.actualStart ? '' : b.finish) || plus4h(start);
   const hours = gigHours(start, finish);
-  const perHour = Math.max(0, Math.round(rate.hourlyRateCents || 0));
+  /*  PRICE ON REQUEST (Max, 23 Oct 2026): bigger DJs have no set rate - Max
+      asks them each time and types their price on the quote. That typed
+      price is kept whenever the quote is rebuilt.                      */
+  const onRequest = rate.onRequest === true;
+  const exPerf = onRequest && ex ? (ex.lines || []).find((l) => l.perf) : null;
+  const perHour = onRequest ? Math.max(0, Math.round((exPerf && exPerf.unitCents) || 0)) : Math.max(0, Math.round(rate.hourlyRateCents || 0));
   const notes = [];
-  if (!perHour) notes.push(name);
+  const askPrice = onRequest && !perHour ? [name] : [];
+  if (!perHour && !onRequest) notes.push(name);
   const djLine = {
     type: 'custom', name: 'DJ performance - ' + name,
     description: 'Hourly' + (start && finish ? ' · ' + ampm(start) + '-' + ampm(finish) : '') + (b.timesConfirmedAt ? ' (confirmed)' : '')
-      + (hours ? '' : ' · hours to confirm') + (perHour ? '' : ' · NO RATE SET - add it on the DJs tab'),
+      + (hours ? '' : ' · hours to confirm') + (perHour ? '' : onRequest ? ' · PRICE ON REQUEST - ask the DJ, then type their hourly price here' : ' · NO RATE SET - add it on the DJs tab'),
     qty: hours || 0, unitCents: perHour, days: 1, pubDj: true, noPick: true, perf: true,   // qty = hours, amount = hourly rate (Max, 23 Oct 2026)
   };
   const tr = await djTravel(rate.location, b.venue);
@@ -5299,7 +5305,7 @@ async function gigSync(bookingId, opts = {}) {
   const meta = { gigDj, payFull: b.payFull === true, gigBookingId: id, pubNight: true, pubKey: 'gig|' + id, pubVenue: b.venue || '', pubDate: b.date, pubBookings: [id], pubNoRate: notes, gigHours: hours, gigTemplateId: String(b.templateId) };
   if (existing) {
     await existing.ref.update({ ...clean, ...money, ...meta, status: sentOk ? 'sent' : 'approved', updatedAt: FieldValue.serverTimestamp() });
-    return { updated: true, id: existing.id, totalCents: money.totalCents, hours, noRate: notes };
+    return { updated: true, id: existing.id, totalCents: money.totalCents, hours, noRate: notes, askPrice };
   }
   const counterRef = db.collection('config').doc('counters');
   const seq = await db.runTransaction(async (tx) => {
@@ -5313,7 +5319,7 @@ async function gigSync(bookingId, opts = {}) {
     status: 'approved', approvedAt: FieldValue.serverTimestamp(), ...clean, ...money, ...meta,
     createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(), createdBy: 'gig-auto',
   });
-  return { created: true, id: ref.id, totalCents: money.totalCents, hours, noRate: notes };
+  return { created: true, id: ref.id, totalCents: money.totalCents, hours, noRate: notes, askPrice };
 }
 
 exports.adminGigSync = onCall(async (request) => {
