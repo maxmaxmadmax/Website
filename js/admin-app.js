@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=694';
+} from './firebase-config.js?v=695';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=694';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=694';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=694';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=694';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=694';
-import { expandKit } from './kit.js?v=694';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=695';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=695';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=695';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=695';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=695';
+import { expandKit } from './kit.js?v=695';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -382,10 +382,14 @@ async function gigSyncBookings(ids) {
   const notes = [];
   for (const id of [...new Set(ids.filter(Boolean))]) {
     try {
-      const r = await call('adminGigSync', { bookingId: id });
+      let r = await call('adminGigSync', { bookingId: id });
+      // SENT BUT NOT ACCEPTED (Max, 23 Oct 2026): ask, then update it - the venue's link shows the new version
+      if (r.locked && r.status === 'sent' && window.confirm('This quote was already sent to the venue.\n\nUpdate it anyway? Their link will show the new times and price straight away (it is not emailed again).')) {
+        r = await call('adminGigSync', { bookingId: id, force: true });
+      }
       if (r.needTemplate) notes.push('That template is gone - pick another one on the booking.');
       if (r.noRate && r.noRate.length) notes.push('Add a rate / travel fee for ' + r.noRate.join(', ') + ' (Entertainment > The roster).');
-      if (r.locked) notes.push('That gig\'s invoice was already sent, so it was not changed.');
+      if (r.locked) notes.push(r.status === 'sent' ? 'The quote was left as it was.' : 'That gig\'s quote has been accepted or paid, so it was not changed.');
     } catch (e) { notes.push('Invoice not updated: ' + friendly(e)); }
   }
   return notes;

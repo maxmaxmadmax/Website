@@ -5195,7 +5195,7 @@ function gigHours(start, finish) {
   return Math.round((b - a) / 15) / 4;
 }
 
-async function gigSync(bookingId) {
+async function gigSync(bookingId, opts = {}) {
   const id = String(bookingId || '');
   const exSnap = await db.collection('quotes').where('gigBookingId', '==', id).limit(1).get();
   const existing = exSnap.empty ? null : exSnap.docs[0];
@@ -5204,7 +5204,11 @@ async function gigSync(bookingId) {
   const b = bSnap.exists ? bSnap.data() : null;
   // UNCONFIRMED (Max, 22 Oct 2026): a new venue's night, DJ held - it gets its quote too
   const live = b && ['confirmed', 'unconfirmed'].includes(b.status || 'confirmed') && b.templateId && b.customerId;
-  if (ex && !['approved', 'cancelled'].includes(ex.status)) return { locked: true, id: existing.id };
+  /*  A SENT quote nobody has accepted or paid can be updated when Max says
+      so (Max, 23 Oct 2026) - the venue's link shows the new version and it
+      stays "sent". Accepted / invoiced / paid ones never change.        */
+  const sentOk = ex && ex.status === 'sent' && opts.force === true && !ex.acceptedAt && !(ex.amountPaidCents > 0) && !['bank', 'deposit', 'paid'].includes(ex.paymentStatus);
+  if (ex && !['approved', 'cancelled'].includes(ex.status) && !sentOk) return { locked: true, id: existing.id, status: ex.status };
   if (!live) {
     if (existing && ex.status === 'approved') await existing.ref.update({ status: 'cancelled', cancelledAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
     return { cancelled: !!existing, skipped: !b ? 'gone' : !b.templateId ? 'no template' : !b.customerId ? 'no customer' : 'not confirmed' };
@@ -5294,7 +5298,7 @@ async function gigSync(bookingId) {
   const gigDj = { name, photo: (t.exists && t.data().photo) || ('images/talent/' + b.slug + '.jpg'), start, finish, hours, confirmed: !!b.timesConfirmedAt, venue: b.venue || '', bio: String((t.exists && t.data().bio) || '').slice(0, 1200), styles: Array.isArray(rate.styles) ? rate.styles.slice(0, 8) : [] };
   const meta = { gigDj, payFull: b.payFull === true, gigBookingId: id, pubNight: true, pubKey: 'gig|' + id, pubVenue: b.venue || '', pubDate: b.date, pubBookings: [id], pubNoRate: notes, gigHours: hours, gigTemplateId: String(b.templateId) };
   if (existing) {
-    await existing.ref.update({ ...clean, ...money, ...meta, status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+    await existing.ref.update({ ...clean, ...money, ...meta, status: sentOk ? 'sent' : 'approved', updatedAt: FieldValue.serverTimestamp() });
     return { updated: true, id: existing.id, totalCents: money.totalCents, hours, noRate: notes };
   }
   const counterRef = db.collection('config').doc('counters');
@@ -5314,7 +5318,7 @@ async function gigSync(bookingId) {
 
 exports.adminGigSync = onCall(async (request) => {
   requireAdmin(request);
-  return gigSync((request.data || {}).bookingId);
+  return gigSync((request.data || {}).bookingId, { force: (request.data || {}).force === true });
 });
 
 /* =========================================================================
