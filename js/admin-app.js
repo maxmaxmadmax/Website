@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=701';
+} from './firebase-config.js?v=702';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=701';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=701';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=701';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=701';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=701';
-import { expandKit } from './kit.js?v=701';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=702';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=702';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=702';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=702';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=702';
+import { expandKit } from './kit.js?v=702';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -264,6 +264,7 @@ async function loadTalent() {
         act: t.act || (bySlug[slug] || {}).act || 'dj',
         photo: t.photo || (bySlug[slug] || {}).photo || '',
         bio: t.bio || '',   // shown on their gig quotes (Max, 22 Oct 2026)
+        female: t.female === true,   // Female DJs filter on the website (Max, 23 Oct 2026)
       };
     });
 
@@ -2732,6 +2733,7 @@ function djDetailHtml() {
           <label class="ad-field"><span>Phone</span><input class="ad-input" type="tel" id="dj-f-phone" value="${attr(r.phone || '')}" placeholder="Mobile"></label>
           <label class="ad-field"><span>Email</span><input class="ad-input" type="email" id="dj-f-email" value="${attr(r.email || '')}" placeholder="For booking emails"></label>
         </div>
+        <label class="ad-field ent-payfull"><input type="checkbox" id="dj-f-female"${t.female ? ' checked' : ''}> Female DJ (shows under "Female DJs" in the website's genre filter)</label>
         <div class="ad-field"><span>Music styles (shown on their gig quotes)</span>
           <div class="ent-styles">${DJ_STYLES.map((x) => `<label><input type="checkbox" data-dj-style value="${attr(x)}"${(r.styles || []).includes(x) ? ' checked' : ''}> ${esc(x)}</label>`).join('')}</div>
         </div>
@@ -2792,7 +2794,7 @@ function wireEntPage() {
     save.disabled = true; msg.textContent = 'Saving…'; msg.className = 'ad-quote-msg';
     try {
       const { doc, setDoc, serverTimestamp } = fb.f;
-      await setDoc(doc(fb.db, 'talent', slug), { name, act: v('dj-f-act') || 'dj', photo: v('dj-f-photo'), bio: v('dj-f-bio').slice(0, 1200), location: v('dj-f-loc').slice(0, 80), genres: publicStyles([...document.querySelectorAll('[data-dj-style]:checked')].map((x) => x.value)), hidden: false, updatedAt: serverTimestamp() }, { merge: true });
+      await setDoc(doc(fb.db, 'talent', slug), { name, act: v('dj-f-act') || 'dj', photo: v('dj-f-photo'), bio: v('dj-f-bio').slice(0, 1200), location: v('dj-f-loc').slice(0, 80), female: !!(document.getElementById('dj-f-female') || {}).checked, genres: publicStyles([...document.querySelectorAll('[data-dj-style]:checked')].map((x) => x.value)), hidden: false, updatedAt: serverTimestamp() }, { merge: true });
       await setDoc(doc(fb.db, 'actRates', slug), {
         hourlyRateCents: Math.max(0, Math.round((parseFloat(v('dj-f-rate')) || 0) * 100)),
         location: v('dj-f-loc').slice(0, 80), phone: v('dj-f-phone').slice(0, 40),

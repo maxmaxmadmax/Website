@@ -106,6 +106,7 @@ function start(ROSTER) {
     }
 
     /* Every distinct value of one field across the roster, sorted. */
+    var FEMALE = 'Female DJs';
     function optionsFrom(field) {
         var seen = {};
         TALENT.forEach(function (t) {
@@ -124,7 +125,8 @@ function start(ROSTER) {
 
     function matches(t) {
         if (state.act !== 'all' && t.act !== state.act) return false;
-        if (state.genre !== 'all' && (t.genres || []).indexOf(state.genre) < 0) return false;
+        if (state.genre === FEMALE) { if (!t.female) return false; }
+        else if (state.genre !== 'all' && (t.genres || []).indexOf(state.genre) < 0) return false;
         if (state.event !== 'all' && (t.events || []).indexOf(state.event) < 0) return false;
 
         if (state.q) {
@@ -342,6 +344,8 @@ function start(ROSTER) {
         in there is nothing to choose between, so the dropdown is taken out
         rather than left offering only "All".                            */
     var genres = optionsFrom('genres');
+    // FEMALE DJs (Max, 23 Oct 2026): its own choice at the top of the list
+    if (TALENT.some(function (t) { return t.female; })) genres.unshift(FEMALE);
     var events = optionsFrom('events');
 
     if (genres.length) fillSelect(selGen, genres, 'All Genres');

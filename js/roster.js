@@ -191,6 +191,7 @@
                     genres: (t.genres && t.genres.length) ? t.genres : (was.genres || []),
                     events: (t.events && t.events.length) ? t.events : (was.events || []),
                     location: t.location || was.location || '',   // home town, on the card (Max, 22 Oct 2026)
+                    female: t.female === true,   // "Female DJs" in the genre filter (Max, 23 Oct 2026)
                     order: t.order
                 };
             });
