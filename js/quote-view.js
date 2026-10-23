@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=695';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=695';   // DJ / entertainment quotes (Max, 22 Oct 2026)
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=695';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=696';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=696';   // DJ / entertainment quotes (Max, 22 Oct 2026)
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=696';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 

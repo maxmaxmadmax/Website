@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=695';
+} from './firebase-config.js?v=696';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=695';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=695';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=695';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=695';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=695';
-import { expandKit } from './kit.js?v=695';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=696';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=696';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=696';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=696';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=696';
+import { expandKit } from './kit.js?v=696';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -447,10 +447,29 @@ async function loadSchedule() {
   }
 }
 
+/*  LOADING BAR (Max, 23 Oct 2026): a thin orange bar slides across the top
+    whenever admin is waiting on the server - shown after a moment so quick
+    things don't flicker.                                                */
+let busyCount = 0, busyTimer = null;
+function busyStart() {
+  busyCount++;
+  if (busyCount === 1) busyTimer = setTimeout(() => { const b = document.getElementById('ad-busy') || Object.assign(document.body.appendChild(document.createElement('div')), { id: 'ad-busy' }); b.className = 'is-on'; }, 150);
+}
+function busyEnd() {
+  busyCount = Math.max(0, busyCount - 1);
+  if (busyCount) return;
+  clearTimeout(busyTimer);
+  const b = document.getElementById('ad-busy'); if (b) b.className = '';
+}
+async function busy(p) { busyStart(); try { return await p; } finally { busyEnd(); } }
+
 /* Call an admin Cloud Function. */
 async function call(name, data) {
-  const res = await fb.fn.httpsCallable(fb.fns, name)(data || {});
-  return res.data;
+  busyStart();
+  try {
+    const res = await fb.fn.httpsCallable(fb.fns, name)(data || {});
+    return res.data;
+  } finally { busyEnd(); }
 }
 
 /* -------------------------------------------------------------------------
@@ -599,7 +618,7 @@ function routeFromHash() {
       again once it lands - the panel is already on screen by then, with
       its dropdowns unset for the half second it takes.                */
   if (want === 'entertainment') {
-    Promise.all([loadTalent(), loadSchedule(), loadPubSettings()])
+    busy(Promise.all([loadTalent(), loadSchedule(), loadPubSettings()]))
       .then(() => { if (state.view === 'entertainment') render(); });
   }
   // the dashboard's "Next 30 days" shows the gigs too (Max, 20 Oct 2026) - fetched at most every 5 min
@@ -2559,7 +2578,8 @@ function gigsMainHtml(side) {
   /*  NIGHTS WITH NO DJ (Max, 21 Oct 2026): every Grand View Friday in the next
       8 weeks with nobody booked shows in the list (and on the calendar) with a
       "Book a DJ" button - same rule as the dashboard.                      */
-  const openNights = openRegularNights(all, null, 56);
+  const loading = !state.scheduleLoaded;   // bookings not in yet (Max, 23 Oct 2026)
+  const openNights = loading ? [] : openRegularNights(all, null, 56);
   const showOpen = !String(state.bookFilter.text || '').trim() && ['upcoming', 'all', 'grandview', 'grand-view'].includes(state.bookFilter.tab || 'upcoming');
   const rowsAll = shown.map((b) => ({ kind: 'gig', date: b.date, b }))
     .concat(showOpen ? openNights.map((n) => ({ kind: 'open', date: n.iso, n })) : [])
@@ -2609,7 +2629,7 @@ function gigsMainHtml(side) {
                       <td>${b.status === 'unconfirmed' ? '<span class="ent-unconf-tag">Unconfirmed &middot; unpaid</span>' : gigDots(b)}</td>
                       <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-book-open="${attr(b.id)}" aria-label="Open">&#8250;</button></td>
                     </tr>`;
-                  }).join('') : '<tr><td colspan="6" class="ad-cell-muted">Nothing matches that.</td></tr>'}
+                  }).join('') : loading ? '<tr><td colspan="6" class="ad-cell-muted ent-loading"><span class="ad-spin"></span> Loading bookings&hellip;</td></tr>' : '<tr><td colspan="6" class="ad-cell-muted">Nothing matches that.</td></tr>'}
                 </tbody>
               </table>
             </div>
@@ -2810,7 +2830,7 @@ function calendarHtml() {
   for (let d = 1; d <= days; d++) {
     const iso = isoDay(new Date(cursor.getFullYear(), cursor.getMonth(), d));
     const on = state.schedule.filter((b) => b.date === iso);
-    const noDj = !on.length && openRegularNights(state.schedule, null, 56).some((n) => n.iso === iso);
+    const noDj = !on.length && state.scheduleLoaded && openRegularNights(state.schedule, null, 56).some((n) => n.iso === iso);
 
     cells.push(`
       <div class="ad-cal-day${iso === today ? ' is-today' : ''}${on.length ? ' has-booking' : ''}${noDj ? ' is-nodj' : ''}${on.some((b) => b.status === 'unconfirmed') ? ' is-unconf' : ''}"

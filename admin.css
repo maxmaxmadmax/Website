@@ -4863,3 +4863,11 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ms-log-grid > div > .ms-card + .ms-card{ margin-top:14px; }
 .sp-remind{ margin-right:6px; padding:7px 12px; border-radius:8px; border:1px solid #ffd9b3; background:#fff7ef; color:#9a4a00; font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
 .sp-remind:hover{ background:#ffefe0; }
+/* loading bar + spinner (Max, 23 Oct 2026) */
+#ad-busy{ position:fixed; top:0; left:0; right:0; height:3px; z-index:9999; pointer-events:none; overflow:hidden; opacity:0; transition:opacity .2s; }
+#ad-busy.is-on{ opacity:1; }
+#ad-busy::before{ content:""; position:absolute; top:0; bottom:0; left:-40%; width:40%; background:linear-gradient(90deg, transparent, #ff6b00, transparent); animation:ad-busy 1s ease-in-out infinite; }
+@keyframes ad-busy{ to{ left:100%; } }
+.ad-spin{ display:inline-block; width:14px; height:14px; margin-right:8px; vertical-align:-2px; border:2px solid #e3e5ea; border-top-color:#ff6b00; border-radius:50%; animation:ad-spin .7s linear infinite; }
+@keyframes ad-spin{ to{ transform:rotate(360deg); } }
+.ent-loading{ padding:22px 16px !important; }
