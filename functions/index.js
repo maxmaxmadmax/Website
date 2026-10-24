@@ -2859,6 +2859,9 @@ exports.getPickList = onCall(async (request) => {
   const inv = await loadQuoteInventory();
   const cat = {};
   inv.forEach((it) => { cat[it.id] = it.isSystem ? (it.bundleType === 'package' ? 'Packages' : 'Kits') : (it.category || ''); });   // kits & packages get their own groups
+  // each item's photo from Inventory - crew tap the item to see what it looks like (Max, 24 Oct 2026)
+  const photo = {};
+  inv.forEach((it) => { if (it.photoUrl) photo[it.id] = String(it.photoUrl); });
   const c = q.customer || {};
   const items = pickItems(q.lines).map((p) => ({ key: pickKey(p), name: p.name, qty: p.qty, category: cat[p.itemId] || p.category || 'Other' }));
   const crew = (q.lines || []).filter((l) => l.type === 'labour').map((l) => ({ name: l.name || '', note: String(l.description || '').replace(/@.*$/, '').trim() }))
@@ -2876,7 +2879,7 @@ exports.getPickList = onCall(async (request) => {
     const name = String(l.name || '').replace(/ \(included\)$/i, '').trim();
     const itemKey = pickKey({ itemId: l.itemId || '', name });
     rows.push({
-      key: itemKey.slice(0, 110) + '_L' + idx, itemKey, name, qty,
+      key: itemKey.slice(0, 110) + '_L' + idx, itemKey, name, qty, photo: photo[l.itemId] || '',
       sub: l.type === 'kit', custom: !l.itemId,
       category: l.category || cat[l.itemId] || '',
       sysOrder: l.sysOrder != null ? l.sysOrder : null,

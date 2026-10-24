@@ -6,7 +6,7 @@
    admin and everyone on the crew link sees the same list. The list also
    refreshes itself every 20 seconds while it's open.
    ========================================================================== */
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=705';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=706';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -122,7 +122,7 @@ function render() {
   const row = (i, sub, kit) => `
             <div class="pl-row${sub ? ' pl-sub' : ''}${ticksOf(i).packed ? ' is-packed' : ''}">
               <span class="pl-qty">${esc(i.qty)}&times;</span>
-              <span class="pl-name">${sub ? '<span class="pl-arrow">&#9492;</span>' : ''}${esc(i.name)}${kit ? ' <span class="pl-kit">Kit</span>' : ''}</span>
+              <span class="pl-name">${sub ? '<span class="pl-arrow">&#9492;</span>' : ''}${i.photo ? `<button type="button" class="pl-pic" data-photo="${esc(i.photo)}" data-name="${esc(i.name)}" aria-label="See a photo of ${esc(i.name)}"><img src="${esc(i.photo)}" alt="" loading="lazy"></button>` : ''}${i.photo ? `<button type="button" class="pl-picname" data-photo="${esc(i.photo)}" data-name="${esc(i.name)}">${esc(i.name)}</button>` : esc(i.name)}${kit ? ' <span class="pl-kit">Kit</span>' : ''}</span>
               ${GEAR_VIEW ? '' : `<span class="pl-ticks">${box(i, 'packed', 'Packed')}${box(i, 'returned', 'Returned')}</span>`}
             </div>`;
 
@@ -222,6 +222,21 @@ function briefHtml(b, gearLines) {
       ${gearLines ? '' : '<p class="pl-notes"><b>Gear:</b> the venue supplies the PA and decks (at least a Pioneer XDJ-RX3, or 2 × CDJ-3000 with a DJM-A9). Check with the venue before the night.</p>'}
     </section>`;
 }
+
+/*  ITEM PHOTOS (Max, 24 Oct 2026): crew who don't know our gear tap an item
+    (or its little picture) to see the photo from Inventory, big. Tap
+    anywhere to close.                                                  */
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-photo]');
+  const open = document.querySelector('.pl-lightbox');
+  if (open && (!b || open.contains(e.target))) { open.remove(); return; }
+  if (!b) return;
+  const box = document.createElement('div');
+  box.className = 'pl-lightbox';
+  box.innerHTML = '<figure><img src="' + esc(b.getAttribute('data-photo')) + '" alt=""><figcaption>' + esc(b.getAttribute('data-name') || '') + '<small>Tap anywhere to close</small></figcaption></figure>';
+  document.body.appendChild(box);
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { const o = document.querySelector('.pl-lightbox'); if (o) o.remove(); } });
 
 /* a tick: show it straight away, save it, undo it if the save fails */
 async function onTick(e) {
