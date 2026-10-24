@@ -2852,7 +2852,9 @@ exports.getPickList = onCall(async (request) => {
   const doc = await quoteByCrewToken((request.data || {}).token);
   const q = doc.data();
   const gear = (request.data || {}).gear === true;
-  if (!(pickReady(q) || (gear && gearReady(q)))) throw new HttpsError('failed-precondition', 'This list is not available yet.');
+  // crew already on the job get the full pick list even before payment (Max, 24 Oct 2026)
+  const crewOn = Array.isArray(q.crewAssigned) && q.crewAssigned.length > 0 && gearReady(q);
+  if (!(pickReady(q) || crewOn || (gear && gearReady(q)))) throw new HttpsError('failed-precondition', 'This list is not available yet.');
   // categories from inventory, so the gear can be grouped
   const inv = await loadQuoteInventory();
   const cat = {};
@@ -2933,7 +2935,8 @@ exports.setPickTick = onCall(async (request) => {
   const key = String(d.key || '');
   if (!field || !/^[a-zA-Z0-9_-]{1,120}$/.test(key)) throw new HttpsError('invalid-argument', 'Bad tick.');
   const doc = await quoteByCrewToken(d.token);
-  if (!pickReady(doc.data())) throw new HttpsError('failed-precondition', 'This pick list is not available.');
+  const tq = doc.data();
+  if (!(pickReady(tq) || (Array.isArray(tq.crewAssigned) && tq.crewAssigned.length > 0 && gearReady(tq)))) throw new HttpsError('failed-precondition', 'This pick list is not available.');
   await doc.ref.update({
     ['pickTicks.' + key + '.' + field]: d.value === true,
     pickUpdatedAt: FieldValue.serverTimestamp(),
@@ -4917,7 +4920,7 @@ exports.adminAssignCrew = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (req
   const c = q.customer || {};
   const ev = c.eventName || c.business || c.name || 'a job';
   const when = c.eventDate || (q.hire && q.hire.startDate) || '';
-  const link = SITE_URL + '/picklist?t=' + token + (pickReady(q) ? '' : '&v=gear');
+  const link = SITE_URL + '/picklist?t=' + token;   // staff always get the pick list, not the gear list (Max, 24 Oct 2026)
   const sent = [], noEmail = [], failed = [];
   for (const x of fresh) {
     if (!DETAIL_EMAIL_RE.test(x.email)) { noEmail.push(x.name); continue; }
@@ -4927,9 +4930,9 @@ exports.adminAssignCrew = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (req
         + ['Job: ' + ev, when && 'Date: ' + when, c.eventStartTime && 'Starts: ' + c.eventStartTime,
           c.eventVenue && 'Venue: ' + c.eventVenue, c.dayContact && 'On the day: ' + c.dayContact,
           'Crew: ' + staff.map((s) => s.name).join(', ')].filter(Boolean).map((t) => '- ' + t).join('\n')
-        + (pickReady(q) ? '\n\nThe pick list is below - tick things off as you pack and when they come back.' : '\n\nHere is the gear list. The full pick list unlocks once the deposit is in.')
+        + '\n\nThe pick list is below - tick things off as you pack and when they come back.'
         + '\n\nThanks,\nMax\nSoundzGood Whitsundays - 0422 393 022',
-    }, {}, { to: x.email, actions: [{ label: pickReady(q) ? 'Open the pick list' : 'View the gear list', url: link, primary: true }] });
+    }, {}, { to: x.email, actions: [{ label: 'Open the pick list', url: link, primary: true }] });
     (r.sent ? sent : failed).push(x.name);
   }
   return { ok: true, assigned: staff.map((x) => x.name), sent, noEmail, failed };

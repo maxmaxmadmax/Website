@@ -17,9 +17,9 @@
    acceptedAt). Close enough for a dashboard; the invoices are the record.
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=704';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=704';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=704';
+import { isBooked, pickLineProgress } from './stock.js?v=705';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=705';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=705';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -355,7 +355,7 @@ export function dashboardHtml(ctx) {
             <p class="db-job-who">${esc(who(q))}${c.eventName ? ' &middot; <span>' + esc(c.eventName) + '</span>' : ''}</p>
             ${c.eventVenue ? `<p class="db-job-sub">${esc(c.eventVenue)}</p>` : ''}
             <p class="db-job-tags">
-              <span class="ad-pill ad-pill-${st.status[1]}">${esc(owingOf(q) > 0 && isBooked(q) ? 'Deposit in · ' + money(owingOf(q)) + ' owing' : st.status[0])}</span>
+              <span class="ad-pill ad-pill-${st.status[1]}">${esc(owingOf(q) > 0 && isBooked(q) ? (q.jobConfirmedAt && !q.paymentStatus ? 'Confirmed · pay later · ' : 'Deposit in · ') + money(owingOf(q)) + ' owing' : st.status[0])}</span>
               ${pp && pp.lines ? `<span class="db-tag">${pp.returned === pp.lines ? 'All gear back' : pp.packed + ' of ' + pp.lines + ' packed'}</span>` : ''}
               ${(q.crewAssigned || []).length
                 ? `<span class="db-tag db-crewtag">&#128119; ${esc(q.crewAssigned.map((x) => x.name.split(' ')[0]).join(', '))}</span>`
