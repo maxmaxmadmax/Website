@@ -6,7 +6,7 @@
    admin and everyone on the crew link sees the same list. The list also
    refreshes itself every 20 seconds while it's open.
    ========================================================================== */
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=706';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=707';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -31,6 +31,8 @@ async function initFns() {
   callable = {
     get: functions.httpsCallable(fns, 'getPickList'),
     tick: functions.httpsCallable(fns, 'setPickTick'),
+    addExtra: functions.httpsCallable(fns, 'addPickExtra'),
+    removeExtra: functions.httpsCallable(fns, 'removePickExtra'),
   };
 }
 
@@ -61,7 +63,7 @@ const sectionOf = (r) => (r.custom ? 'Other' : (COST_GROUP[String(r.category || 
 const catLabel = (r) => { const c = String(r.category || '').trim(); return c ? c.charAt(0).toUpperCase() + c.slice(1) : 'Other'; };
 
 /*  The lines that get ticks: the quote-style rows, or (older jobs) the totals. */
-const tickLines = () => data.rows || data.items || [];
+const tickLines = () => (data.rows || data.items || []).concat(GEAR_VIEW ? [] : (data.extras || []));   // + extra gear (Max, 24 Oct 2026)
 /*  A line's ticks - its own, or the ones saved before per item. */
 const ticksOf = (r) => { const t = data.ticks || {}; return t[r.key] || (r.itemKey && t[r.itemKey]) || {}; };
 
@@ -191,6 +193,8 @@ function render() {
       ${d.rows ? quoteStyleList() : oldList()}
     </section>
 
+    ${GEAR_VIEW ? '' : extrasHtml(row)}
+
     <footer class="pl-foot">
       <button type="button" class="pl-btn" id="pl-print">Print</button>
       <span id="pl-msg" class="pl-msg"></span>
@@ -222,6 +226,90 @@ function briefHtml(b, gearLines) {
       ${gearLines ? '' : '<p class="pl-notes"><b>Gear:</b> the venue supplies the PA and decks (at least a Pioneer XDJ-RX3, or 2 × CDJ-3000 with a DJM-A9). Check with the venue before the night.</p>'}
     </section>`;
 }
+
+/*  EXTRA GEAR (Max, 24 Oct 2026): gear going out that isn't on the quote -
+    the crew add it here so it gets ticked out and back. No prices, and it
+    never changes the quote. Pick from our inventory or type anything.  */
+/* the × to take an extra off, at the end of its row (after the ticks) */
+function withDel(html, x) {
+  const btn = '<button type="button" class="pl-xdel" data-x-del="' + esc(x.key) + '" aria-label="Remove ' + esc(x.name) + '">&times;</button>';
+  const at = html.lastIndexOf('</span>');
+  return at < 0 ? html + btn : html.slice(0, at) + btn + html.slice(at);   // inside the ticks, at the end
+}
+/*  Inventory matches as you type (every word has to match), best first. */
+function invMatches(q) {
+  const words = String(q || '').toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  return (data.inventory || []).filter((it) => words.every((w) => it.name.toLowerCase().includes(w)))
+    .sort((a, b) => (a.name.toLowerCase().startsWith(words[0]) ? 0 : 1) - (b.name.toLowerCase().startsWith(words[0]) ? 0 : 1) || a.name.length - b.name.length)
+    .slice(0, 6);
+}
+document.addEventListener('input', (e) => {
+  if (e.target.id !== 'pl-x-name') return;
+  e.target.removeAttribute('data-item');
+  const box = document.getElementById('pl-x-results');
+  const m = invMatches(e.target.value);
+  box.hidden = !m.length;
+  box.innerHTML = m.map((it) => '<button type="button" class="pl-x-res" data-pick-id="' + esc(it.id) + '" data-pick-name="' + esc(it.name) + '">'
+    + (it.photo ? '<img src="' + esc(it.photo) + '" alt="">' : '<span class="pl-x-noimg"></span>') + '<span>' + esc(it.name) + '</span></button>').join('');
+});
+document.addEventListener('click', (e) => {
+  const pick = e.target.closest('[data-pick-id]');
+  const box = document.getElementById('pl-x-results');
+  if (pick) {
+    const inp = document.getElementById('pl-x-name');
+    inp.value = pick.getAttribute('data-pick-name');
+    inp.setAttribute('data-item', pick.getAttribute('data-pick-id'));
+    box.hidden = true;
+    document.getElementById('pl-x-qty').focus();
+    return;
+  }
+  if (box && !e.target.closest('.pl-x-search')) box.hidden = true;
+});
+function extrasHtml(row) {
+  const list = data.extras || [];
+  return `
+    <section class="pl-list pl-extras">
+      <h3 class="pl-extras-h">Extra gear <small>not on the quote &middot; added by the crew</small></h3>
+      ${list.map((x) => withDel(row(x, false, false), x)).join('')}
+      <div class="pl-addx">
+        <div class="pl-x-search">
+          <input type="text" id="pl-x-name" maxlength="120" placeholder="Add gear - start typing, e.g. lead" autocomplete="off">
+          <div class="pl-x-results" id="pl-x-results" hidden></div>
+        </div>
+        <input type="number" id="pl-x-qty" min="1" max="99" value="1" aria-label="How many">
+        <button type="button" class="pl-btn" id="pl-x-add">Add</button>
+      </div>
+    </section>`;
+}
+document.addEventListener('click', async (e) => {
+  const add = e.target.closest('#pl-x-add');
+  const del = e.target.closest('[data-x-del]');
+  if (!add && !del) return;
+  const msg = document.getElementById('pl-msg');
+  busy++;
+  try {
+    if (add) {
+      const nameEl = document.getElementById('pl-x-name');
+      const name = String(nameEl.value || '').trim();
+      if (!name) { nameEl.focus(); return; }
+      const picked = nameEl.getAttribute('data-item');
+      const inv = (data.inventory || []).find((it) => (picked && it.id === picked) || it.name.toLowerCase() === name.toLowerCase());
+      add.disabled = true;
+      await callable.addExtra({ token: token(), name, qty: Number(document.getElementById('pl-x-qty').value) || 1, itemId: inv ? inv.id : '' });
+      if (msg) msg.textContent = 'Added ' + name;
+    } else {
+      const x = (data.extras || []).find((r) => r.key === del.getAttribute('data-x-del'));
+      if (!window.confirm('Remove ' + ((x && x.name) || 'this') + ' from the extra gear?')) return;
+      await callable.removeExtra({ token: token(), key: del.getAttribute('data-x-del') });
+    }
+  } catch (err) {
+    if (msg) msg.textContent = (err && err.message) || 'Could not save that - check your signal and try again.';
+  } finally {
+    busy--;
+  }
+  await refresh();
+});
 
 /*  ITEM PHOTOS (Max, 24 Oct 2026): crew who don't know our gear tap an item
     (or its little picture) to see the photo from Inventory, big. Tap

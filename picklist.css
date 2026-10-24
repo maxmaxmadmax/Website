@@ -96,3 +96,19 @@ body{ margin:0; background:#f2f2f2; color:#111; font-family:Arial, Helvetica, sa
 .pl-lightbox figcaption{ margin-top:12px; color:#fff; font-size:17px; font-weight:700; }
 .pl-lightbox small{ display:block; margin-top:4px; font-size:12px; font-weight:400; opacity:.7; }
 @media print{ .pl-pic{ display:none; } .pl-picname{ text-decoration:none; } }
+/* extra gear (Max, 24 Oct 2026) */
+.pl-extras{ margin-top:18px; }
+.pl-extras-h{ margin:0 0 8px; font-size:15px; }
+.pl-extras-h small{ font-weight:400; color:#777; font-size:12px; margin-left:6px; }
+.pl-addx{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.pl-addx #pl-x-name{ flex:1 1 220px; min-width:0; padding:10px 12px; border:1px solid #ccc; border-radius:8px; font:inherit; font-size:15px; }
+.pl-addx #pl-x-qty{ width:70px; padding:10px 8px; border:1px solid #ccc; border-radius:8px; font:inherit; font-size:15px; text-align:center; }
+.pl-xdel{ border:0; background:none; color:#b42318; font-size:20px; line-height:1; padding:0 6px; cursor:pointer; }
+@media print{ .pl-addx, .pl-xdel{ display:none; } }
+.pl-x-search{ position:relative; flex:1 1 220px; min-width:0; }
+.pl-x-search #pl-x-name{ width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid #ccc; border-radius:8px; font:inherit; font-size:15px; }
+.pl-x-results{ position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:20; background:#fff; border:1px solid #ddd; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,.15); overflow:hidden; }
+.pl-x-res{ display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; border:0; border-top:1px solid #eee; background:#fff; font:inherit; font-size:14px; text-align:left; cursor:pointer; }
+.pl-x-res:first-child{ border-top:0; }
+.pl-x-res:hover{ background:#fff4ec; }
+.pl-x-res img, .pl-x-noimg{ width:30px; height:30px; object-fit:contain; border-radius:4px; background:#f4f4f4; flex:none; }

@@ -2910,6 +2910,11 @@ exports.getPickList = onCall(async (request) => {
   return {
     brief,
     rows,
+    // EXTRA GEAR added by the crew on the pick list - not on the quote, no price (Max, 24 Oct 2026)
+    extras: gear ? [] : (q.pickExtras || []).map((x) => ({ key: x.key, name: x.name, qty: x.qty, photo: x.photo || '' })),
+    inventory: gear ? [] : inv.filter((it) => it.name && it.active !== false && !it.isSystem)
+      .map((it) => ({ id: it.id, name: String(it.name).slice(0, 120), photo: it.photoUrl || '' }))
+      .sort((a, b) => a.name.localeCompare(b.name)).slice(0, 800),
     number: q.invoiceNumber || q.number || '',
     eventName: c.eventName || '',
     eventDate: c.eventDate || '',
@@ -5590,4 +5595,48 @@ exports.adminSendPaymentReminder = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, a
   if (!mail.sent) throw new HttpsError('internal', 'The email did not send (' + (mail.reason || 'error') + ').');
   await ref.update({ lastReminderAt: FieldValue.serverTimestamp(), reminderCount: FieldValue.increment(1) });
   return { sent: true, to: q.customer.email };
+});
+
+/* =========================================================================
+   EXTRA GEAR ON THE PICK LIST (Max, 24 Oct 2026) - the crew add gear that
+   isn't on the quote so it gets ticked out and back. Crew link only (not
+   the band's gear list); never changes the quote or the price.
+   ========================================================================= */
+function crewCanPick(q) {
+  return pickReady(q) || (Array.isArray(q.crewAssigned) && q.crewAssigned.length > 0 && gearReady(q));
+}
+exports.addPickExtra = onCall(async (request) => {
+  await limitIp(request, 'pickextra', 60, 60);
+  const d = request.data || {};
+  const doc = await quoteByCrewToken(d.token);
+  if (!crewCanPick(doc.data())) throw new HttpsError('failed-precondition', 'This pick list is not available.');
+  const name = String(d.name || '').trim().slice(0, 120);
+  if (!name) throw new HttpsError('invalid-argument', 'Type what you are adding.');
+  const qty = Math.max(1, Math.min(99, Math.round(Number(d.qty) || 1)));
+  let photo = '', itemId = '';
+  if (d.itemId) {
+    const it = await db.collection('inventory').doc(String(d.itemId).slice(0, 60)).get();
+    if (it.exists) { itemId = it.id; photo = String(it.data().photoUrl || ''); }
+  }
+  const key = 'x' + crypto.randomBytes(6).toString('hex');
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(doc.ref);
+    const list = (snap.data().pickExtras || []).slice(0, 59);
+    list.push({ key, name, qty, itemId, photo, addedAt: Date.now() });
+    tx.update(doc.ref, { pickExtras: list, pickUpdatedAt: FieldValue.serverTimestamp() });
+  });
+  return { ok: true, key };
+});
+exports.removePickExtra = onCall(async (request) => {
+  await limitIp(request, 'pickextra', 60, 60);
+  const d = request.data || {};
+  const doc = await quoteByCrewToken(d.token);
+  if (!crewCanPick(doc.data())) throw new HttpsError('failed-precondition', 'This pick list is not available.');
+  const key = String(d.key || '');
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(doc.ref);
+    const list = (snap.data().pickExtras || []).filter((x) => x.key !== key);
+    tx.update(doc.ref, { pickExtras: list, ['pickTicks.' + key]: FieldValue.delete(), pickUpdatedAt: FieldValue.serverTimestamp() });
+  });
+  return { ok: true };
 });
