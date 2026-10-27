@@ -33,14 +33,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=707';
+} from './firebase-config.js?v=708';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=707';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=707';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=707';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=707';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=707';
-import { expandKit } from './kit.js?v=707';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=708';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=708';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=708';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=708';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=708';
+import { expandKit } from './kit.js?v=708';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -4632,6 +4632,7 @@ VIEWS.inventory = {
             <div class="inv-head-actions">
               <button type="button" class="ad-btn" id="inv-add-pkg" title="Kits and single items together, e.g. 4-Piece Band Backline">+ New package</button>
               <button type="button" class="ad-btn" id="inv-add-sys" title="A rig made of other gear, e.g. FOH Kit">+ New kit</button>
+              <button type="button" class="ad-btn" id="inv-shrink" title="Make every photo smaller and name it after the product">Shrink photos</button>
               <button type="button" class="ad-btn ad-btn-primary" id="inv-add">+ Add Item</button>
             </div>
           </div>
@@ -4840,7 +4841,7 @@ async function saveSystem(data) {
     state.openSysId = ref.id;
     sysDraft.id = ref.id;
     if (pendingPhoto) {   // a photo added before the first save
-      try { const up = await doUploadPhoto(ref.id, pendingPhoto); sysDraft.photoUrl = up.url; } catch (e) { /* system saved; photo can be re-added */ }
+      try { const up = await doUploadPhoto(ref.id, pendingPhoto, data.name); sysDraft.photoUrl = up.url; } catch (e) { /* system saved; photo can be re-added */ }
       clearPendingPhoto();
     }
   }
@@ -5136,6 +5137,17 @@ function wireInventory() {
     clearPendingPhoto(); initInvReqDraft(null); state.openSysId = null; state.openInvId = '__new__'; render();
   });
 
+  // one-off: shrink + rename the photos already uploaded (Max, 27 Oct 2026)
+  const shrinkBtn = document.getElementById('inv-shrink');
+  if (shrinkBtn) shrinkBtn.addEventListener('click', async () => {
+    if (!window.confirm('Shrink every inventory photo and name it after the product?\n\nThe old big files are kept for now, so nothing breaks.')) return;
+    shrinkBtn.disabled = true; shrinkBtn.textContent = 'Shrinking…';
+    try {
+      const r = await call('adminOptimisePhotos', {});
+      window.alert('Done: ' + r.done + ' photos shrunk (' + r.beforeKB + ' KB -> ' + r.afterKB + ' KB).' + (r.failed ? '\n' + r.failed + ' could not be done.' : ''));
+    } catch (e) { window.alert(e.message || 'Could not shrink the photos.'); }
+    shrinkBtn.disabled = false; shrinkBtn.textContent = 'Shrink photos';
+  });
   const search = document.getElementById('inv-search');
   if (search) {
     search.addEventListener('input', () => {
@@ -5328,14 +5340,34 @@ function onRemovePhoto() {
 /*  Push one image to Storage under inventory/<id> and record its URL on the
     doc. Shared by the immediate upload (saved item) and the save-time upload
     of a photo added to a brand-new item.                                   */
-async function doUploadPhoto(id, file) {
-  const { ref, uploadBytes, getDownloadURL } = fb.st;
+/*  PHOTO SIZE + NAME (Max, 27 Oct 2026): photos are shrunk to 800px WebP in
+    the browser before upload (a 700KB PNG becomes ~40KB) and saved under the
+    product's name, e.g. inventory/allen-heath-ab168-14w97n8h.webp.        */
+const photoSlug = (name, id) => (String(name || 'item').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'item') + '-' + String(id).slice(0, 8);
+async function shrinkPhoto(file) {
+  try {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, 800 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    const blob = await new Promise((r) => c.toBlob(r, 'image/webp', 0.82));
+    return blob && blob.size < file.size ? blob : file;
+  } catch (e) { return file; }   // odd format - upload it as it is
+}
+async function doUploadPhoto(id, file, name) {
+  const { ref, uploadBytes, getDownloadURL, deleteObject } = fb.st;
   const { doc, setDoc } = fb.f;
-  const path = `inventory/${id}`;                    // one photo per item, overwritten
-  await uploadBytes(ref(fb.storage, path), file, { contentType: file.type });
-  const url = await getDownloadURL(ref(fb.storage, path));
-  await setDoc(doc(fb.db, 'inventory', id), { photoUrl: url, photoPath: path }, { merge: true });
   const item = (state.inventory || []).find((x) => x.id === id);
+  const small = await shrinkPhoto(file);
+  const ext = small.type === 'image/webp' ? '.webp' : '';
+  const path = 'inventory/' + photoSlug(name || (item && item.name) || (sysDraft && sysDraft.name), id) + ext;
+  await uploadBytes(ref(fb.storage, path), small, { contentType: small.type || file.type });
+  const url = await getDownloadURL(ref(fb.storage, path));
+  const oldPath = item && item.photoPath;
+  await setDoc(doc(fb.db, 'inventory', id), { photoUrl: url, photoPath: path }, { merge: true });
+  // the photo it replaces is no longer used by anything - tidy it away
+  if (oldPath && oldPath !== path && deleteObject) { try { await deleteObject(ref(fb.storage, oldPath)); } catch (e) { /* already gone */ } }
   if (item) { item.photoUrl = url; item.photoPath = path; }
   return { url, path };
 }
@@ -5474,7 +5506,7 @@ async function saveInvItem(btn) {
       state.inventory.push({ id: ref.id, ...data });
       // A photo added before saving goes up now that the item has an id.
       if (pendingPhoto) {
-        try { await doUploadPhoto(ref.id, pendingPhoto); } catch (e) { /* item saved; photo can be retried */ }
+        try { await doUploadPhoto(ref.id, pendingPhoto, data.name); } catch (e) { /* item saved; photo can be retried */ }
         clearPendingPhoto();
       }
     } else {
