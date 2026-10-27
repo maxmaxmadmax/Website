@@ -21,7 +21,6 @@ Disallow: /vendor-invoice
 # behind-the-scenes folders
 Disallow: /functions/
 Disallow: /firebase/
-Disallow: /docs/
 Disallow: /tools/
 Disallow: /components/
 
