@@ -123,7 +123,7 @@ function start(ROSTER) {
         /*  Photo set as a CSS property, not an <img>, so a missing file just
             leaves the gradient instead of a broken image icon. */
         var media = t.photo
-            ? ' style="--ent-img:url(\'' + esc(t.photo) + '\')"'
+            ? ' style="--ent-img:url(\'' + esc((/^(https?:|\/|data:)/.test(t.photo) ? t.photo : '/' + t.photo)) + '\')"'
             : '';
 
         return '' +
@@ -212,7 +212,7 @@ function start(ROSTER) {
         if (!t) return;
 
         var actLabel = ACT_TYPES[t.act] || '';
-        var media = t.photo ? ' style="--ent-img:url(\'' + esc(t.photo) + '\')"' : '';
+        var media = t.photo ? ' style="--ent-img:url(\'' + esc((/^(https?:|\/|data:)/.test(t.photo) ? t.photo : '/' + t.photo)) + '\')"' : '';
 
         panelBody.innerHTML = '' +
             '<div class="ent-panel-media"' + media + '>' +

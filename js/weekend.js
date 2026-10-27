@@ -168,7 +168,7 @@
     }
 
     function card(ev) {
-        var art = ev.img ? ' style="--gg-art:url(\'' + esc(ev.img) + '\')"' : '';
+        var art = ev.img ? ' style="--gg-art:url(\'' + esc((/^(https?:|\/|data:)/.test(ev.img) ? ev.img : '/' + ev.img)) + '\')"' : '';
 
         return '' +
             '<article class="gg-card"' + art + '>' +

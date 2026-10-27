@@ -19,13 +19,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=714';
+} from './firebase-config.js?v=715';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=714';
-import { termBodyHtml } from './terms-data.js?v=714';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=715';
+import { termBodyHtml } from './terms-data.js?v=715';
 import {
   VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION,
-} from './vendor-terms-data.js?v=714';
+} from './vendor-terms-data.js?v=715';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -469,7 +469,7 @@ function eventSticker(ev) {
   return t ? '<span class="vs-event-sticker">' + TYPE_WORD[t] + '<br>sold out</span>' : '';
 }
 function eventArt(ev) {
-  if (ev && ev.image) return ' style="--vs-ev-art:url(\'' + escapeHtml(ev.image) + '\')"';
+  if (ev && ev.image) return ' style="--vs-ev-art:url(\'' + escapeHtml((/^(https?:|\/|data:)/.test(ev.image) ? ev.image : '/' + ev.image)) + '\')"';
   const p = ev && EVENT_POSTERS.find((x) => x.match(ev));
   if (p) return ' data-poster style="--vs-ev-art:url(\'' + escapeHtml(p.url) + '\')"';
   return ' data-noart';

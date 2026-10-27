@@ -179,7 +179,7 @@
         var act = booked && roster[booked.slug];
         var name = (act && act.name) || (booked && booked.name) || 'DJ To Be Announced';
         var art = act && act.photo
-            ? ' style="--ev-art:url(\'' + esc(act.photo) + '\')"'
+            ? ' style="--ev-art:url(\'' + esc((/^(https?:|\/|data:)/.test(act.photo) ? act.photo : '/' + act.photo)) + '\')"'
             : '';
 
         return '' +
