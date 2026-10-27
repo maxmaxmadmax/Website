@@ -324,7 +324,7 @@ p, h1, h2, h3, h4, h5, li, a{
 /*  ARTIST CUT-OUTS
     Save a transparent PNG/WebP in the images folder and add this inside an
     act, just above the <h3>:
-        <img src="images/rossco.webp" alt="Rossco" class="artist-photo">
+        <img src="images/events/soundzgood-2-0/rossco.webp" alt="Rossco" class="artist-photo">
     The act becomes a two-column row automatically.                        */
 /* Odd acts: cut-out on the left, name on the right */
 .act:has(.artist-photo){
