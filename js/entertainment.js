@@ -10,7 +10,7 @@
 
    PHOTOS
    No `photo` = the card shows its gradient and the act-type glyph.
-   Resize photos with tools/fit-logo.ps1 (about 480px wide is plenty).
+   Resize photos with 3_sg-hod/tools/fit-logo.ps1 (about 480px wide is plenty).
    Cards crop portraits from 18% down, so frame the face in the upper third.
    ========================================================================== */
 (function () {

@@ -721,7 +721,7 @@
 
 /*  THE BOX EVERY LOGO IS DRAWN IN - fixed size with object-fit:contain,
     so any shape fits without stretching. Shrink oversized files with
-    tools/fit-logo.ps1.                                                  */
+    3_sg-hod/tools/fit-logo.ps1.                                                  */
 /*  max-width:100% (not a fixed width) so a wide logo never spills into
     the next cell.                                                       */
 #sg-services-page .sgs-logo img{

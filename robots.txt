@@ -21,7 +21,6 @@ Disallow: /vendor-invoice
 # behind-the-scenes folders
 Disallow: /functions/
 Disallow: /firebase/
-Disallow: /tools/
 Disallow: /components/
 
 Sitemap: https://www.soundzgood.com.au/sitemap.xml

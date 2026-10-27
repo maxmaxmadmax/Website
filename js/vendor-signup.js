@@ -19,13 +19,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=715';
+} from './firebase-config.js?v=716';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=715';
-import { termBodyHtml } from './terms-data.js?v=715';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=716';
+import { termBodyHtml } from './terms-data.js?v=716';
 import {
   VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION,
-} from './vendor-terms-data.js?v=715';
+} from './vendor-terms-data.js?v=716';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 

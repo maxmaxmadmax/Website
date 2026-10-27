@@ -26,7 +26,7 @@ so a missing one reads as a name rather than a broken image.
 
 SIZE IT FIRST
 
-    powershell -ExecutionPolicy Bypass -File tools/fit-logo.ps1 `
+    powershell -ExecutionPolicy Bypass -File 3_sg-hod/tools/fit-logo.ps1 `
                -In "C:\path\to\whatever.png" -Name grand-view-hotel -Trim
 
 The -ExecutionPolicy Bypass is needed on this machine; PowerShell refuses
