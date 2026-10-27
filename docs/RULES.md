@@ -1,13 +1,13 @@
 # SoundzGood website: house rules
 
-Keep the project clean. Every change follows these rules. (Max, 27 Oct 2026)
+Keep the project clean. Every change follows these rules.
 
 ## 1. Where things go
 
 | What | Where | Why |
 |---|---|---|
 | Web pages (`.html`) | `pages/site/` (public), `pages/event-stories/`, `pages/customer/` (quote, pick list...), `pages/admin/` | The web address comes from the `permalink:` lines at the top of each page (`permalink: /hire.html` = soundzgood.com.au/hire). **Never change a permalink.** A new page needs one. |
-| Styles (`.css`) | `css/` | One file per page, named the same as the page (`pages/site/hire.html` → `css/hire.css`). Shared styles go in `css/style.css`. |
+| Styles (`.css`) | `css/` | One file per page, named the same as the page (`pages/site/hire.html` → `css/hire.css`). Styles shared by a group of pages are named for the group (`css/event-story.css`); styles for every page go in `css/style.css`. |
 | Scripts (`.js`) | `js/` | Named after the page or job (`js/picklist.js`). |
 | Photos, logos | `images/<topic>/` | e.g. `images/services/`, `images/venues/`. |
 | Videos | `videos/` | |
@@ -18,7 +18,7 @@ Keep the project clean. Every change follows these rules. (Max, 27 Oct 2026)
 | Helper scripts | `tools/` | |
 | Old or unused things | `3_sg-hod/archive/` | Archive, don't delete. |
 
-Only these stay at the top: `CNAME`, `robots.txt`, `sitemap.xml`, `version.json`, `firebase.json`, `.firebaserc`, plus the folders.
+Only these stay at the top: `CNAME`, `robots.txt`, `sitemap.xml`, `version.json`, `firebase.json`, `.firebaserc`, `.gitignore`, `.gitattributes`, plus the folders.
 
 ## 2. Naming
 
@@ -46,4 +46,4 @@ Only these stay at the top: `CNAME`, `robots.txt`, `sitemap.xml`, `version.json`
 1. Check scripts: `node --input-type=module --check < js/<file>.js`.
 2. Run `node tools/bump-assets.js` after changing any CSS, JS or HTML. This makes every browser load the new version.
 3. Make sure every link still works before pushing.
-4. Leave a short plain note in the code saying what it does and why (with the date).
+4. Notes in the code are short and plain: what it does, and any warning. No dates, names or history - that goes in the git commit message.
