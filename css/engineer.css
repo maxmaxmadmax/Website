@@ -19,7 +19,7 @@
     color:#fff;
     background:
         linear-gradient(90deg, rgba(0,0,0,.92) 0%, rgba(0,0,0,.75) 55%, rgba(0,0,0,.45) 100%),
-        url('images/services/festivals.webp') center 40% / cover no-repeat #000;
+        url('../images/services/festivals.webp') center 40% / cover no-repeat #000;
     padding:calc(var(--sg-nav-height, 88px) + 40px) 0 34px;
     border-bottom:6px solid var(--eng-orange);
 }
@@ -257,7 +257,7 @@
 }
 
 /* header: photo + a solid dark layer (prints reliably, unlike a gradient) */
-.eng-hero{ position:relative; background:#000 url('images/services/festivals.webp') center 40% / cover no-repeat; }
+.eng-hero{ position:relative; background:#000 url('../images/services/festivals.webp') center 40% / cover no-repeat; }
 .eng-hero::before{ content:""; position:absolute; inset:0; background:rgba(0,0,0,.72); }
 .eng-hero > *{ position:relative; }
 

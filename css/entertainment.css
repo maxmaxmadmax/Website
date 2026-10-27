@@ -139,11 +139,11 @@
 }
 
 #sg-ent-page .ent-recommend .ent-band-media{
-    --ent-img:url('images/entertainment/recommend.webp');
+    --ent-img:url('../images/entertainment/recommend.webp');
 }
 
 #sg-ent-page .ent-production .ent-band-media{
-    --ent-img:url('images/entertainment/production.webp');
+    --ent-img:url('../images/entertainment/production.webp');
 }
 
 #sg-ent-page .ent-band-inner{

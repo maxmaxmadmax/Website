@@ -1021,7 +1021,7 @@ textarea:focus-visible{
     background-color:#000;
     background-image:
         linear-gradient(rgba(0,0,0,.74), rgba(0,0,0,.86)),
-        url("images/services/trailer-stage.webp");
+        url("../images/services/trailer-stage.webp");
     background-size:cover;
     background-position:center;
 

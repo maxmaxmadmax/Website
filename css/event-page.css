@@ -948,7 +948,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
         -webkit-print-color-adjust:exact;
         print-color-adjust:exact;
         /* a ready-made gradient picture, not a CSS gradient - prints the same on every printer */
-        background:#f39243 url('images/events/print-bg-orange.jpg') center / 100% 100% no-repeat;
+        background:#f39243 url('../images/events/print-bg-orange.jpg') center / 100% 100% no-repeat;
     }
     .ep-title{ font-size:90pt; }
 }

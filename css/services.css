@@ -548,7 +548,7 @@
 #sg-services-page .sgs-cta-media{
     position:absolute;
     inset:0;
-    --sgs-cta-img:url('images/services/cta.webp');
+    --sgs-cta-img:url('../images/services/cta.webp');
     background:
         linear-gradient(90deg, rgba(8,8,8,.95) 26%, rgba(8,8,8,.55) 70%, rgba(8,8,8,.8) 100%),
         var(--sgs-cta-img, none),
@@ -953,8 +953,8 @@
 }
 
 #sg-services-page .sgs-region{
-    --sgs-coast:url('images/services/region-coast.jpg');
-    --sgs-outback:url('images/services/region-outback.jpg');
+    --sgs-coast:url('../images/services/region-coast.jpg');
+    --sgs-outback:url('../images/services/region-outback.jpg');
 }
 
 #sg-services-page .sgs-region-inner{
