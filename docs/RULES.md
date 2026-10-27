@@ -6,8 +6,8 @@ Keep the project clean. Every change follows these rules. (Max, 27 Oct 2026)
 
 | What | Where | Why |
 |---|---|---|
-| Web pages (`.html`) | top level | The file name **is** the web address (`hire.html` = soundzgood.com.au/hire). Never move or rename a page without leaving a redirect. |
-| Styles (`.css`) | `css/` | One file per page, named the same as the page (`hire.html` → `css/hire.css`). Shared styles go in `css/style.css`. |
+| Web pages (`.html`) | `pages/site/` (public), `pages/event-stories/`, `pages/customer/` (quote, pick list...), `pages/admin/` | The web address comes from the `permalink:` lines at the top of each page (`permalink: /hire.html` = soundzgood.com.au/hire). **Never change a permalink.** A new page needs one. |
+| Styles (`.css`) | `css/` | One file per page, named the same as the page (`pages/site/hire.html` → `css/hire.css`). Shared styles go in `css/style.css`. |
 | Scripts (`.js`) | `js/` | Named after the page or job (`js/picklist.js`). |
 | Photos, logos | `images/<topic>/` | e.g. `images/services/`, `images/venues/`. |
 | Videos | `videos/` | |
@@ -18,7 +18,7 @@ Keep the project clean. Every change follows these rules. (Max, 27 Oct 2026)
 | Helper scripts | `tools/` | |
 | Old or unused things | `3_sg-hod/archive/` | Archive, don't delete. |
 
-Only these stay at the top as well as the pages: `CNAME`, `robots.txt`, `sitemap.xml`, `version.json`, `firebase.json`, `.firebaserc`, `RULES.md`.
+Only these stay at the top: `CNAME`, `robots.txt`, `sitemap.xml`, `version.json`, `firebase.json`, `.firebaserc`, plus the folders.
 
 ## 2. Naming
 

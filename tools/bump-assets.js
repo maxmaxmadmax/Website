@@ -51,7 +51,8 @@ function currentVersions(files) {
 }
 
 function main() {
-  const html = fs.readdirSync(ROOT).filter((f) => f.endsWith('.html'));
+  // pages live in pages/<group>/ since 27 Oct 2026 (their web address comes from 'permalink' at the top of each)
+  const html = fs.readdirSync(path.join(ROOT, 'pages'), { recursive: true }).filter((f) => f.endsWith('.html')).map((f) => path.join('pages', f));
   const js = fs.readdirSync(path.join(ROOT, 'js'))
     .filter((f) => f.endsWith('.js'))
     .map((f) => path.join('js', f));
