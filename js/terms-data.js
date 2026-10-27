@@ -1,5 +1,5 @@
 // SOUNDZGOOD TERMS & CONDITIONS
-// Max's wording (Oct 2026). One place for the words - used by the
+// One place for the words - used by the
 // proposal page (js/quote-view.js) and the /terms page (terms.html).
 //
 // How to edit:

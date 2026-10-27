@@ -1,25 +1,18 @@
 /* ==========================================================================
-   DASHBOARD  -  the first thing you see in /admin  (Max, 20 Oct 2026)
+   DASHBOARD  -  the first thing you see in /admin
+   Money cards, to-dos, the next 30 days of jobs, the next event card,
+   sales per month and quick buttons. No leads (those are on Gig Opportunities).
 
-   Max's answers to 10 questions (see memory: soundzgood dashboard):
-     1. Money cards across the top, with up / down vs last month
-     2. To-dos and the next 30 days of jobs, side by side
-     3. One card for the next event (countdown, sites, vendor money, sponsors)
-     4. Sales per month this year, as a bar chart, at the bottom
-     5. Quick buttons: New quote, New event, Send message
-   No leads - those stay on Gig Opportunities.
+   Pure functions: admin-app.js passes in the live data (ctx) and the helpers
+   (esc, attr, money). Nothing here reads Firebase.
 
-   Pure functions like js/sales-pipeline.js: admin-app.js passes in the live
-   data (ctx) and the helpers (esc, attr, money). Nothing here reads Firebase.
-
-   NOTE ON "MONEY IN": a quote keeps the total paid, not a list of payments,
-   so a payment counts in the month it was last paid (lastPaidAt / paidAt /
-   acceptedAt). Close enough for a dashboard; the invoices are the record.
+   "MONEY IN": a quote keeps the total paid, not each payment, so a payment
+   counts in the month it was last paid (lastPaidAt / paidAt / acceptedAt).
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=710';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=710';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=710';
+import { isBooked, pickLineProgress } from './stock.js?v=711';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=711';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=711';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -46,9 +39,8 @@ const paidAt = (q) => ms(q.lastPaidAt) || ms(q.paidAt) || ms(q.acceptedAt);
 const who = (q) => { const c = q.customer || {}; return c.business || c.name || 'No name yet'; };
 const shortDate = (iso) => { const t = Date.parse(iso + 'T00:00:00'); return t ? new Date(t).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : ''; };
 
-/*  GRAND VIEW FRIDAYS (Max, 20 Oct 2026): we play the Grand View Hotel every
-    Friday. Any Friday in the window with nobody booked there is flagged, so
-    Max remembers to book a DJ.                                            */
+/*  GRAND VIEW FRIDAYS: any Friday in the window with nobody booked at the
+    Grand View Hotel is flagged, so a DJ gets booked.                      */
 /*  KEEP IN STEP with pubCore() in js/admin-app.js + functions/index.js */
 const PUB_WORDS = /\b(hotel|tavern|pub|bar|club|the|inn|bowen|qld|queensland)\b/g;
 export function pubCore(v) {
@@ -56,8 +48,8 @@ export function pubCore(v) {
     .replace(PUB_WORDS, ' ').replace(/\s+/g, ' ').trim();
 }
 const samePub = (a, b) => { const x = pubCore(a), y = pubCore(b); return !!x && !!y && (x.includes(y) || y.includes(x)); };
-/*  REGULAR NIGHTS (Max, 21 Oct 2026): every pub night in the window with
-    nobody booked. No list saved yet = the Grand View every Friday.        */
+/*  REGULAR NIGHTS: every pub night in the window with nobody booked.
+    No list saved yet = the Grand View every Friday.                       */
 export function openRegularNights(schedule, nights, days) {
   const list = nights && nights.length ? nights : [{ venue: 'Grand View Hotel, Bowen', weekday: 5 }];
   const out = [];
@@ -95,8 +87,8 @@ export function dashboardData(ctx) {
     .sort((a, b) => owingOf(b) - owingOf(a));
 
   const today = isoToday(), until = isoAdd(today, 30);
-  /*  Next 30 days (Max, 20 Oct 2026): booked jobs, accepted jobs, quotes
-      that are out (approved / sent), AND our own events like Eatz & Beatz. */
+  /*  Next 30 days: booked jobs, accepted jobs, quotes that are out
+      (approved / sent), and our own events like Eatz & Beatz.          */
   const inWindow = (d) => d && d >= today && d <= until;
   const events = (ctx.events || [])
     .filter((ev) => inWindow(ev.dateISO) && !['archived', 'cancelled', 'draft'].includes(ev.status))
@@ -104,7 +96,7 @@ export function dashboardData(ctx) {
       id: 'ev:' + ev.id, isEvent: true, ev, hire: { startDate: ev.dateISO },
       customer: { name: ev.name || 'Our event', eventName: ev.subtitle || '', eventVenue: [ev.venue, ev.location].filter(Boolean).join(', ') },
     }));
-  // entertainment gigs - the Grand View and everywhere else (Max, 20 Oct 2026)
+  // entertainment gigs - the Grand View and everywhere else
   const actName = (slug) => ((ctx.talent || []).find((t) => t.slug === slug) || {}).name || slug || 'Act';
   const gigs = (ctx.schedule || []).filter((b) => inWindow(b.date)).map((b) => ({
     id: 'gig:' + b.id, isGig: true, bookingId: b.id, hire: { startDate: b.date },
@@ -144,7 +136,7 @@ export function todoGroups(ctx) {
 
   if (ctx.schedule) add('dj', 'Book a DJ', openRegularNights(ctx.schedule, ctx.regularNights, 30)
     .map((n) => ({ text: shortDate(n.iso) + ' · ' + String(n.venue).split(',')[0] + ' - nobody booked yet', href: '#/entertainment' })));
-  // PUB INVOICES (Max, 21 Oct 2026): the night's been played - ready for Max's OK
+  // PUB INVOICES: the night's been played - ready for Max's OK
   add('pub', 'DJ gig invoices to check & send', jobs.filter((q) => q.pubNight && q.status === 'approved' && String(q.pubDate || '') <= today)
     .map((q) => {
       const dj = (q.lines || []).filter((l) => l.pubDj && /^DJ performance/.test(l.name || '')).map((l) => String(l.name).replace(/^DJ performance - /, '') + ' ' + String(l.description || '').split(' @')[0]).join(', ');
@@ -169,7 +161,6 @@ export function todoGroups(ctx) {
     .map((m) => ({ text: m.name || m.subject || 'A message', href: '#/vendorEmail' })));
   add('failed', 'Emails that failed', (ctx.emailLog || []).filter((e) => e.ok === false && !e.test && ms(e.at) > weekAgo)
     .map((e) => ({ text: (e.subject || 'Email') + ' → ' + (e.to || ''), href: '#/vendorEmail' })));
-  // (vendor applications removed 20 Oct 2026 - vendors book and pay themselves, nothing to review)
   add('waitlist', 'Waitlist offers out', (ctx.waitlist || []).filter((w) => w.status === 'offered')
     .map((w) => ({ text: (w.name || 'A vendor') + ' has been offered a spot', href: '#/vendorEmail' })));
   return out;
@@ -190,7 +181,7 @@ export function eventCard(ctx) {
   return { ev, days, sold, total: sites.length, vendorCents, sponsorCents, goal: SPONSOR_GOAL_CENTS };
 }
 
-/* ---------- event-day weather (Max, 20 Oct 2026) ---------- */
+/* ---------- event-day weather ---------- */
 function wxIcon(code) {
   if (code == null) return '';
   if (code === 0) return '&#9728;&#65039;';                 // sun
@@ -212,9 +203,8 @@ export function weatherTag(w, esc) {
     + (w.gust != null ? ' (gusts ' + Math.round(w.gust) + ')' : '') + '</span>';
 }
 
-/*  The forecast as a small card, left of the Quote button (Max, 20 Oct 2026).
-    Line icons (not emoji) on a sky gradient - amber when wet or windy, red
-    for heavy rain, strong gusts or storms.                                */
+/*  The forecast as a small card, left of the Quote button. Amber when wet
+    or windy, red for heavy rain, strong gusts or storms.                  */
 const WX_SVG = {
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   part: '<path d="M8 3v1.5M3.5 7.5H5M4.8 4.3l1 1M11.2 4.3l-1 1"/><path d="M5.5 10a3 3 0 0 1 5.6-1.6"/><path d="M8 19h9a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.6 1.4A2.8 2.8 0 0 0 8 19z"/>',
@@ -253,8 +243,8 @@ export function weatherBox(w, esc) {
     + '</div>';
 }
 
-/*  WEEK SEPARATORS (Max, 21 Oct 2026): "This week", "Next week", "Later",
-    so what's on this week stands out. Weeks run Monday to Sunday.        */
+/*  WEEK SEPARATORS: "This week", "Next week", "Later".
+    Weeks run Monday to Sunday.                                           */
 function withWeeks(list, row) {
   const d = new Date(); d.setHours(0, 0, 0, 0);
   const toSun = (7 - d.getDay()) % 7;                       // days until Sunday (0 on a Sunday)
@@ -272,8 +262,8 @@ function withWeeks(list, row) {
   }).join('');
 }
 
-/*  CONFIRMED vs WAITING (Max, 21 Oct 2026): confirmed rows get a green glow,
-    waiting rows grey diagonal stripes, and a word under the date.        */
+/*  CONFIRMED vs WAITING: confirmed rows get a green glow, waiting rows
+    grey diagonal stripes, and a word under the date.                     */
 const stateTag = (ok) => ok ? '<span class="db-state is-ok">&#10003; Confirmed</span>' : '<span class="db-state is-wait">Waiting</span>';
 
 /* ---------- the page ---------- */

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   MESSAGES - turning a saved message into an email  (Max, 19 Oct 2026)
+   MESSAGES - turning a saved message into an email
 
    A message is written in the admin Messages page as plain text with
    {{fields}} in it. This file fills the fields for one vendor, turns the
@@ -136,7 +136,7 @@ async function sendMessageEmail(msg, values, opts) {
       kind: 'message',
       from: `${SELLER.name} <${SELLER.email}>`,
       to: opts.to,
-      // a copy of every email goes to the office (Max, 20 Oct 2026)
+      // a copy of every email goes to the office
       ...(opts.test ? {} : { bcc: OFFICE }),
       replyTo: OFFICE,
       subject: (opts.test ? '[TEST] ' : '') + fill(msg.subject, values, (v) => String(v)),

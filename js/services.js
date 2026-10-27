@@ -1,28 +1,13 @@
 /* --------------------------------------------------------------------------
    SERVICES PAGE - slider behaviour
 
-   Everything here is looked up inside #sg-services-page and the whole file
-   stops immediately if that element is not on the page, so this script can
-   never touch another page even though it sits in the shared js folder.
+   Only runs inside #sg-services-page, so it never touches another page.
 
-   The slider is a horizontally scrolling element that the visitor cannot
-   scroll themselves - it is overflow:hidden, and it moves only when this
-   file animates its scrollLeft. A trackpad reading a little sideways drift
-   in a downward swipe used to feed it to the track, and scrolling down the
-   page over the banner stuttered and fought back. It is driven by its
-   arrows, its labels and the keyboard now, and scrolling past it does
-   nothing at all.
+   The slider is overflow:hidden: it moves only when this file animates it
+   (auto-step, arrows, labels, keyboard). Page scrolling is left alone.
 
-   What this file does:
-
-     - stepping the banner along on its own every couple of seconds
-     - arrows, and disabling them at either end
-     - the active label, the compact "03 / 09" line and the progress bar
-     - the hero video, given a source only on a big screen
-
-   The page scrolls normally. Nothing here touches the vertical wheel or
-   pins anything - the banner is an ordinary block at the top of the page
-   and you scroll straight past it.
+   Also: the active label, the "03 / 09" counter, the progress bar, and
+   the hero video (big screens only).
    -------------------------------------------------------------------------- */
 (function () {
     'use strict';
@@ -57,24 +42,14 @@
     /* ---------------------------------------------------------------------
        Moving between slides
        --------------------------------------------------------------------- */
-    /*  The glide is done here rather than by the browser.
-
-        scrollTo's own behavior:'smooth' is ignored on a box the visitor
-        cannot scroll, and the track is overflow:hidden precisely so they
-        cannot. Setting scrollLeft directly does work, so the movement is
-        animated frame by frame instead.
-
-        Any move cancels the one before it, so pressing an arrow twice
-        quickly goes to the second slide rather than having two animations
-        fighting over the same property. */
+    /*  Animated frame by frame: smooth scrollTo is ignored on an
+        overflow:hidden box. Each move cancels the one before it. */
     var SLIDE_MS = 420;
     var gliding = null;
     var glideTo = null;
 
-    /*  requestAnimationFrame does not run while the tab is in the
-        background, so a glide that started just before the visitor switched
-        away would be frozen part-way when they came back - half a slide
-        showing, which looks broken. Landing it immediately instead. */
+    /*  No animation frames in a background tab, so land the move at once
+        rather than freezing half-way. */
     document.addEventListener('visibilitychange', function () {
         if (document.hidden && gliding !== null) {
             window.cancelAnimationFrame(gliding);
@@ -122,15 +97,8 @@
                 track.scrollLeft = to;   /* land exactly, not a fraction off */
             }
 
-            /*  Repainted here rather than left to the track's scroll event.
-
-                The labels, the counter and the two arrows used to be updated
-                only when that event fired, which made them depend on the
-                browser choosing to dispatch it. It does not always: a
-                background tab has no rendering step, so no scroll event, and
-                the arrows would still be showing the state from before the
-                move. Since this code is the thing doing the scrolling, it can
-                simply say so. */
+            /*  Repaint here, not on the scroll event - a background tab may never
+                fire it. */
             paint();
         });
     }
@@ -175,17 +143,8 @@
                 ' &mdash; ' + (names[i] || '');
         }
 
-        /*  The bar sits under the label it belongs to.
-
-            Even eighths look wrong here: the labels are different widths, so
-            a fixed slice drifts away from the word it is meant to be marking
-            - far enough by the sixth slide that the bar sits under the next
-            label along. Measured against the bar's own box rather than using
-            offsetLeft, which is relative to a different element.
-
-            When the labels are hidden and the compact "06 / 08" line is
-            showing instead, there is nothing to line up with, so it goes
-            back to even slices as a plain progress meter.                 */
+        /*  Line the bar up under its label (labels differ in width). When the
+            labels are hidden, fall back to even slices. */
         if (progress) {
             var active = navButtons[i];
             /* offsetParent is null when an element is display:none, so this
@@ -213,10 +172,8 @@
         return (n < 10 ? '0' : '') + n;
     }
 
-    /*  Scroll fires in bursts, and paint measures elements, so it is held to
-        one run per frame. Doing it on a timer instead meant the labels
-        lagged behind the picture; doing it on every event meant measuring
-        the page dozens of times a second while it was moving. */
+    /*  Held to one run per frame - scroll fires in bursts and paint
+        measures elements. */
     var painting = false;
     track.addEventListener('scroll', function () {
         if (painting) { return; }
@@ -282,22 +239,10 @@
     /* ---------------------------------------------------------------------
        Moving along on its own
 
-       The banner steps to the right every 2.5 seconds and starts again from
-       the first slide after the last.
-
-       It stops when it should:
-         - while the pointer is over it, or something inside it has keyboard
-           focus, so it never moves out from under someone reading it or
-           about to click a button;
-         - for a spell after any manual move, so pressing an arrow does not
-           get overruled a moment later;
-         - while the tab is in the background, or the banner is scrolled off
-           screen, so it is not animating to nobody;
-         - entirely, if the visitor has asked for reduced motion.
-
-       The wrap back to the first slide is instant rather than a smooth
-       sweep. Gliding back across eight slides reads as a glitch, and it is
-       over in a frame.
+       Steps right every 2.5 seconds, wrapping instantly to the first slide.
+       Pauses while it has keyboard focus, for 5 seconds after a manual move,
+       while the tab is hidden or the banner is off screen, and entirely for
+       reduced motion.
        --------------------------------------------------------------------- */
     var timer = null;
     var paused = false;
@@ -324,10 +269,8 @@
         timer = null;
     }
 
-    /*  Called whenever the visitor moves the banner themselves - an arrow, a
-        label, the keyboard. Five seconds is long enough to read the slide
-        you asked for without the banner overruling you, and short enough
-        that it picks itself back up rather than sitting there. */
+    /*  Called when the visitor moves the banner themselves. Pauses
+        auto-step for five seconds. */
     var HOLD = 5000;
 
     function holdAuto() {
@@ -337,15 +280,8 @@
     if (!reduceMotion) {
         var stageEl = page.querySelector('#sgs-stage');
 
-        /*  Keyboard focus still parks it, because somebody tabbing through
-            the labels needs it to hold still while they read.
-
-            Hovering no longer does. It used to, and it meant a mouse left
-            resting anywhere over the banner stopped it for good - which
-            reads as broken rather than considerate now the banner is driven
-            entirely by its buttons. Pressing one holds it for five seconds
-            and then it carries on, which is the pause that was actually
-            wanted.                                                       */
+        /*  Keyboard focus parks it so people tabbing through can read.
+            Hover does not. */
         stageEl.addEventListener('focusin', function () { paused = true; });
         stageEl.addEventListener('focusout', function () { paused = false; });
 
@@ -366,12 +302,8 @@
     /* ---------------------------------------------------------------------
        The hero video
 
-       Real event footage, and a large file, so it is only fetched on a wide
-       screen and never when the visitor has asked for less motion. Every
-       slide still reads correctly without it.
-
-       Checked again on resize rather than only at startup, because a window
-       that begins narrow and is widened should still end up with it.
+       Large file: only loaded on a wide screen and not for reduced motion.
+       Re-checked on resize so a widened window still gets it.
        --------------------------------------------------------------------- */
     var video = page.querySelector('#sgs-hero-video');
 
@@ -398,10 +330,8 @@
         page.classList.toggle('is-scrolled', window.scrollY > 40);
     }, { passive: true });
 
-    /* First run. Painted again once everything has loaded, because the very
-       first measurement can happen before the track has been laid out - and
-       a track that has no width yet looks like it is already at its end,
-       which would leave the next arrow greyed out on arrival. */
+    /* First run. Painted again after load - the track may have no width
+       yet, which would grey out the next arrow. */
     paint();
     setUpVideo();
 
@@ -414,32 +344,11 @@
 /* --------------------------------------------------------------------------
    THE REGION SPLIT
 
-   Two photographs in one band - the coast on the left, the outback on the
-   right - joined at --sgs-split. The coast layer is clipped to that, so
-   moving the split wipes between them.
-
-   It does two things:
-
-     1. Introduces itself. The first time the band scrolls into view the
-        split sweeps slowly left to right, which is the only way somebody
-        learns there are two pictures rather than one. It runs once.
-
-     2. Follows the cursor afterwards, easing toward it rather than
-        snapping - a wipe that jumps to wherever the mouse is reads as a
-        glitch; one that chases it reads as a material. Taking the pointer
-        away leaves it where it was put.
-
-   Its own block rather than part of the slider above, which bails out
-   early when there is no slider on the page and would take this with it.
-
-   WHAT IT DOES NOT DO
-   Nothing at all for anyone who has asked for less motion - the band sits
-   at 50% and reads perfectly well cut down the middle. On a touch screen
-   the intro still runs, because it is the only way those visitors see both
-   pictures, but there is no cursor to follow afterwards.
-
-   The split is decoration either way: the two labels underneath name both
-   places, so nobody has to move a mouse to find out what they are seeing.
+   Two photos in one band (coast left, outback right) joined at
+   --sgs-split. The first time the band is seen the split sweeps across
+   once; after that it eases toward the cursor. Does nothing for reduced
+   motion. Kept separate from the slider, which exits early when there is
+   no slider on the page.
    -------------------------------------------------------------------------- */
 (function () {
     'use strict';
@@ -513,9 +422,7 @@
         run();
     }
 
-    /*  The intro waits until the band is actually on screen. Running it on
-        page load means it has been and gone long before anybody scrolls
-        this far down, which is the same as not having one.               */
+    /*  The intro waits until the band is on screen, or nobody would see it. */
     function startIntro() {
         current = INTRO_FROM;
         target = INTRO_TO;
@@ -555,24 +462,12 @@
 /* --------------------------------------------------------------------------
    THE ANNUAL EVENTS ROW
 
-   Pages the row of annual events four at a time. All it does is count the
-   cards, work out how many pages that makes, and set a number on the track
-   - the CSS turns that number into the movement. Nothing is measured, so
-   nothing here depends on the row having been laid out or painted yet.
+   Pages the row of annual events. Counts the cards and sets a page number
+   on the track; the CSS does the movement.
 
-   HOW MANY FIT is not a number in here: it is --sgs-an-per in events.css,
-   which the media queries change with the window. Reading it back means the
-   arrows agree with what is actually on screen at any width, and adding a
-   breakpoint to the stylesheet needs no change to this file.
-
-   The dashes are built here rather than sat in the markup because how many
-   there are depends on how many fit, which depends on the window. Eleven
-   cards is three pages on a desktop and eleven on a phone.
-
-   WITHOUT JAVASCRIPT the row shows its first four cards, the arrows do
-   nothing and there are no dashes. That is a smaller version of this
-   section rather than a broken one, which is the right way round for
-   something this far down the page.
+   How many fit per page comes from --sgs-an-per in events.css (set by its
+   media queries), so new breakpoints need no change here. Without JS the
+   row shows its first four cards.
    -------------------------------------------------------------------------- */
 (function () {
     'use strict';

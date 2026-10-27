@@ -1,15 +1,11 @@
 /* ==========================================================================
    EVENT PAGE (for punters) - /eatz-beatz-halloween-2026
 
-   Three small jobs:
-     1. The Share button - the phone's share sheet, or copy the link.
-     2. The Print A4 button - the browser's print, which uses the
-        @media print styles in event-page.css (a mini magazine).
+     1. Share button - the phone's share sheet, or copy the link.
+     2. Print A4 button - uses the @media print styles in event-page.css.
      3. Food vendors + market stalls - asks the eventLineup function for the
-        confirmed, PAID vendors (name, category, first line of their
-        description, their link) and draws them. Fetched fresh on every
-        visit, so new paid vendors appear on their own (the function caches
-        for 5 minutes). No vendors, or the call fails -> sections stay hidden.
+        confirmed, PAID vendors and draws them (the function caches for
+        5 minutes). No vendors, or the call fails -> sections stay hidden.
    ========================================================================== */
 (function () {
     'use strict';
@@ -57,38 +53,36 @@
         'mexican-tacos', 'pizza-italian',
         'asian-noodles', 'bbq-smoked-meats', 'seafood', 'coffee', 'donuts-churros',
         'healthy-salads-acai', 'vegetarian-vegan', 'other-food'
-    ];   // every food category now has a picture
+    ];
 
     /*  THE WORDS ON EACH CARD
         tag   = the small orange label (kind of food)
-        line  = one tidy line, written from what the vendor told us
+        line  = one tidy line about the vendor
         cat   = a better category, where theirs didn't fit
         label = the market tile name for that better category
         name  = how to show their name, if it differs from how they typed it
-        photo = the vendor's OWN photo (images/vendors/<file>), used instead
-                of the generic picture for their kind of food
-        link  = their page, when Max gives us a better one than they typed
+        photo = the vendor's OWN photo (images/vendors/<file>)
+        link  = a better link than the one they typed
         logo  = true when that photo is a logo: shown whole on white, not cropped
-        Keyed by the business name exactly as they typed it. A NEW vendor
-        doesn't need a line here - they get the first sentence of their
-        own description automatically.                                */
+        Keyed by the business name exactly as they typed it. A vendor with
+        no line here gets the first sentence of their own description.  */
     var WORDS = {
         'Airlie Waffle':        { tag: 'Waffles',       line: 'Bubble waffles and bubble iced tea.', name: 'Airlie Waffles' },
         'Amazing wieners':      { tag: 'Hot dogs',      line: 'German bratwurst, cheesy kransky and kids’ hot dogs.' },
         'Ammos Shak':           { tag: 'Indian',        line: 'Indian food and curries.', name: 'Ammo’s Shak' },
         'Cheeky Chicky':        { tag: 'Fried chicken', line: 'Pork belly bites, crispy wings, loaded fries and chicken burgers.', cat: 'chicken-wings' },
-        'Grumpy Mas':           { tag: 'Burgers',       line: 'Hearty food.'   /* their own words - Max, 15 Oct 2026 */, photo: 'images/vendors/grumpy-mas.webp' },   // photo from Max, 14 Oct 2026
+        'Grumpy Mas':           { tag: 'Burgers',       line: 'Hearty food.'   /* their own words */, photo: 'images/vendors/grumpy-mas.webp' },
         'Loopy Scoops':         { tag: 'Ice cream',     line: 'Soft serve, premium scooped ice cream and snow cones.',
-                                  link: 'https://www.facebook.com/p/Loopy-Scoops-61575237328097/' },   // Max, 15 Oct 2026
-        'Sweet Wheels':         { tag: 'Sweet treats',  line: 'Sweet treats from the red food van.', cat: 'lollies-fairy-floss', photo: 'images/vendors/sweet-wheels.webp', top: true },   // sketch from Max, 19 Oct 2026 (top: keeps the face in the card)
-        'Tropical Blendz':      { tag: 'Drinks',        line: 'Fresh drinks and smoothies.', cat: 'drinks-juice-smoothies', photo: 'images/vendors/tropical-blendz.webp', logo: true },   // their logo - Max, 14 Oct 2026
-        'Tropical Pizza':       { tag: 'Pizza',         line: 'Pizza, wings and soft drinks.', photo: 'images/vendors/tropical-pizza.webp' },   // from their truck - Max, 14 Oct 2026
+                                  link: 'https://www.facebook.com/p/Loopy-Scoops-61575237328097/' },
+        'Sweet Wheels':         { tag: 'Sweet treats',  line: 'Sweet treats from the red food van.', cat: 'lollies-fairy-floss', photo: 'images/vendors/sweet-wheels.webp', top: true },   // top: keeps the face in the card
+        'Tropical Blendz':      { tag: 'Drinks',        line: 'Fresh drinks and smoothies.', cat: 'drinks-juice-smoothies', photo: 'images/vendors/tropical-blendz.webp', logo: true },   // their logo
+        'Tropical Pizza':       { tag: 'Pizza',         line: 'Pizza, wings and soft drinks.', photo: 'images/vendors/tropical-pizza.webp' },   // photo from their truck
         'Vandito Viesta':       { tag: 'Mexican',       line: 'Nachos and tacos - beef, chicken, pulled pork and beans.',
                                   photo: 'images/vendors/vandito-viesta.webp',
-                                  link: 'https://www.facebook.com/p/Vandito-Viesta-61586241928820/' },   // Max, 15 Oct 2026
+                                  link: 'https://www.facebook.com/p/Vandito-Viesta-61586241928820/' },
 
         'Pretty Girl Ave':      { cat: 'gifts-novelty',   // booked as Other
-                                  link: 'https://pretty-girl-ave.deed.page/' },   // their page - Max, 21 Oct 2026
+                                  link: 'https://pretty-girl-ave.deed.page/' },   // their page
 
         // booked under Plants / Garden, but they sell sweets
         'Sian\'s Sugar Shack':  { cat: 'local-produce-packaged', label: 'Sweets & Treats' }
@@ -147,8 +141,8 @@
             : '<div class="ep-fv">' + inner + '</div>';
     }
 
-    /*  MARKET STALLS: ONE TILE PER KIND OF STALL (Max, 14 Oct 2026),
-        with every vendor of that kind listed on it.                  */
+    /*  MARKET STALLS: one tile per kind of stall, with every vendor of that
+        kind listed on it.                                             */
     function marketTiles(rows) {
         var groups = [], byCat = {};
         rows.forEach(function (r) {
@@ -174,7 +168,7 @@
         }).join('');
     }
 
-    /*  HOW CROWDED IS IT? (Max, 14 Oct 2026 - 50 sites for sale)
+    /*  HOW CROWDED IS IT?
         The A4 print has to stay 4 pages however many vendors pay, so the
         food and market sections are tagged with a size and the print
         styles add columns / shrink text to match:

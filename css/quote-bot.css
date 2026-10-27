@@ -1,11 +1,7 @@
 /* ==========================================================================
    ESTIMATE BOT  -  styling for the services-page quote assistant
-
-   Matches the house dark theme and the mockup: a phone-sized chat card, an
-   orange-ringed SG avatar, an "Online now" dot, dark bot bubbles on the
-   left, orange visitor bubbles on the right, and outlined orange chips for
-   the choices. Everything is scoped under .sgq so it cannot touch the rest
-   of the services page.
+   A phone-sized chat card in the house dark theme. Everything is scoped
+   under .sgq so it cannot touch the rest of the services page.
    ========================================================================== */
 
 .sgq {

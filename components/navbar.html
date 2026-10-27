@@ -2,10 +2,7 @@
   SHARED MENU - used by every page.
   Edit this one file to change the menu everywhere.
   The current page is highlighted automatically by js/main.js
-
-  There is no Home item. The logo is the way back, which is what people
-  reach for anyway, and it buys the three real destinations the room to be
-  named properly rather than abbreviated.
+  No Home item - the logo is the way back.
 -->
 <nav>
     <div class="Nav">
@@ -14,9 +11,7 @@
         </a>
     </div>
 
-    <!--  The phone menu button. Hidden on a computer, where the menu is
-          simply the bar itself. Three lines rather than an icon font, so
-          it cannot arrive late or fail to load.                      -->
+    <!-- The phone menu button. Hidden on a computer. Plain lines, no icon font. -->
     <button type="button" class="nav-burger" id="nav-burger"
             aria-expanded="false" aria-controls="nav-menu" aria-label="Menu">
         <span aria-hidden="true"></span>
@@ -25,10 +20,8 @@
     </button>
 
     <ul id="nav-menu">
-        <!--  Attend Events carries a submenu. It opens on hover on a
-              computer, and the little arrow opens it on a touch screen,
-              where there is no hover to speak of. Add another <li> inside
-              .subnav to put more under it - js/main.js needs no changes. -->
+        <!-- Attend Events submenu: opens on hover on a computer, or the arrow on a touch screen.
+             Add another <li> inside .subnav to add more - js/main.js needs no changes. -->
         <li class="has-sub">
             <a href="/events">Attend Events</a>
 
@@ -38,10 +31,7 @@
             </button>
 
             <ul class="subnav">
-                <!--  What's on first: far more people want to know what is
-                      happening this weekend than want to book a stall. -->
-                <!--  Our next event at the top (Max, 17 Oct 2026) - swap the
-                      link when the next Eatz & Beatz page is up. -->
+                <!-- Our next event at the top - swap the link when the next Eatz & Beatz page is up. -->
                 <li><a href="/eatz-beatz-halloween-2026">Eatz &amp; Beatz &ndash; Halloween</a></li>
                 <li><a href="/gig-guide">What&rsquo;s On Gig Guide</a></li>
                 <li><a href="/vendor-signup">Become a Vendor</a></li>
@@ -61,20 +51,10 @@
                 <li><a href="/island-av-hire">Island AV Hire</a></li>
             </ul>
         </li>
-        <!--  The full name everywhere now. It used to be trimmed to
-              "Entertainment" on a phone to keep the bar on two rows; the
-              phone menu is a panel with room to spell it out.          -->
         <li><a href="/entertainment"><span class="nav-long">SoundzGood </span>Entertainment</a></li>
 
-        <!--  The one coloured button in the menu. It used to sell tickets,
-              and the services page rewrote it into a quote request; now it
-              is Contact on every page, which is where both of those were
-              trying to send people anyway.
-
-              The class is on the list item as well as the link so the whole
-              item can be styled or hidden together - hiding only the link
-              once left an empty item that still wrapped onto a second row
-              and made the menu taller than it looked.                   -->
+        <!-- The one coloured button: Contact. The class is on the <li> as well as the link so
+             the whole item hides together (hiding only the link leaves an empty item that wraps). -->
         <li class="nav-cta-item">
             <a class="nav-cta" href="/contact">Contact</a>
         </li>

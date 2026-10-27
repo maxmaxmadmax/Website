@@ -1,13 +1,8 @@
 /* ==========================================================================
    SERVICES PAGE
-
-   Loaded on top of style.css by services.html only, and every rule is
-   scoped inside #sg-services-page. That scope is deliberate: the slider
-   restyles headings, buttons and layout heavily, and without it those
-   rules would follow the visitor to every other page.
-
-   The page is a full-screen horizontal slider that advances itself, with
-   ordinary scrolling content underneath it.
+   Loaded on top of style.css by services.html only. Every rule is scoped
+   inside #sg-services-page so the heavy slider styles cannot reach other
+   pages. A full-screen self-advancing slider, normal content underneath.
    ========================================================================== */
 
 /*  WHAT IS IN HERE
@@ -22,20 +17,11 @@
       RESPONSIVE
       FOOTER TWEAK
 
-    Sections run alphabetically apart from the pinned ones.
-    STAGE AND TRACK is pinned first because every other section styles
-    something inside it. RESPONSIVE and the footer tweak are pinned last
-    because they override what is above them.
-
-    Rules inside a section stay in the order they were written. Sorting
-    those would change which rule wins when two carry the same weight.   */
+    STAGE AND TRACK comes first and RESPONSIVE / footer last, because order
+    decides which rule wins. Do not re-sort rules inside a section.      */
 
 /* ==========================================================================
-   STAGE AND TRACK
-
-   The slider frame: the fixed-height stage, the scrolling track inside
-   it and the slides themselves. Pinned first because everything else
-   sits inside this.
+   STAGE AND TRACK - the slider frame, the track inside it and the slides.
    ========================================================================== */
 #sg-services-page{
     /* Local tokens. Scoped to this element, so they cannot leak either. */
@@ -56,35 +42,20 @@
     background:#000;
 }
 
-/*  A horizontally scrolling element with snap points, moved only by the
-    script. The visitor cannot scroll it themselves - see the note on
-    overflow below - so the arrows, the labels and the keyboard are the way
-    through it, and scrolling down the page over it does nothing.          */
+/*  A sideways-scrolling track moved only by the script (arrows, labels,
+    keyboard). Visitors cannot scroll it themselves.                       */
 #sg-services-page .sgs-track{
     display:flex;
 
-    /*  hidden, not auto. The track still scrolls - scrollTo() from the
-        arrows, the labels and the keyboard works exactly as before - but
-        the visitor cannot scroll it themselves.
-
-        auto meant a trackpad reading a fraction of sideways movement in a
-        downward swipe fed it to the track, and snap then pulled the slide
-        back into place. Scrolling down the page over the banner stuttered
-        and fought back. The banner is driven by its buttons now, so
-        scrolling past it does nothing at all.                           */
+    /*  hidden, not auto: scrollTo() still works, but a trackpad swipe down
+        the page cannot grab the track and make it stutter.              */
     overflow-x:hidden;
     overflow-y:hidden;
 
-    /*  No scroll snapping. Snap exists to catch a user's swipe and tidy it
-        onto a slide - and there are no swipes to catch any more. Worse, it
-        is mandatory: it rejects any scroll position that is not a snap
-        point, so it would undo every intermediate frame of the animation in
-        services.js and the banner would never move at all.               */
+    /*  No scroll snapping: it would undo every frame of the animation in
+        services.js and the banner would never move.                      */
 
-    /*  No scroll-behavior:smooth either, and scrollTo's own smooth option
-        does nothing on a box the user cannot scroll - the browser simply
-        ignores it. services.js animates scrollLeft frame by frame instead,
-        which it has to do anyway to keep control of the timing.          */
+    /*  No scroll-behavior:smooth - services.js animates scrollLeft itself. */
 
     /* the scrollbar would cut across the photography */
     scrollbar-width:none;
@@ -102,18 +73,12 @@
     position:relative;
     flex:0 0 100%;
     width:100%;
-    /*  No scroll-snap-align. The track no longer snaps - see the note on
-        it above.                                                         */
 
     display:flex;
     align-items:center;
 
-    /*  Full height. The menu floats over the top of it rather than pushing
-        it down, so this fills the screen exactly.
-
-        svh rather than vh so the address bar appearing on a phone does not
-        leave the bottom of the slide cut off. The page scrolls past it
-        normally - nothing is pinned and nothing is held.                */
+    /*  Full height; the menu floats over the top. svh so a phone's address
+        bar does not cut off the bottom.                                 */
     height:100vh;
     height:100svh;
 
@@ -121,8 +86,7 @@
     background-color:#0a0a0a;
 }
 
-/*  The photograph. A separate layer rather than a background on the slide
-    itself, so the gradient underneath still shows if the file is missing. */
+/*  The photo is its own layer, so the gradient shows if the file is missing. */
 #sg-services-page .sgs-slide::before{
     content:"";
     position:absolute;
@@ -133,15 +97,10 @@
     z-index:0;
 }
 
-/*  A different gradient per slide, so the page has some variety while the
-    photography is still being collected - and so a photo dropped on top has
-    something warm underneath it rather than flat black.                   */
+/*  A different gradient per slide, warm underneath any photo. */
 
 /* ==========================================================================
-   ARROWS AND NAV
-
-   Moving between slides: the arrows, the list of slide names, the
-   compact counter on narrow screens and the progress bar.
+   ARROWS AND NAV - arrows, slide names, phone counter, progress bar.
    ========================================================================== */
 #sg-services-page .sgs-arrow{
     position:absolute;
@@ -209,13 +168,8 @@
     padding:0 6%;
 }
 
-/*  nowrap, deliberately.
-
-    The yellow marker underneath measures the active label and sits under
-    it, which only works while they are all on one line. A tenth slide
-    pushed Trailer Stage onto a second row and left the marker under
-    nothing. Below 1080px the compact "04 / 10" line takes over instead of
-    letting it wrap.                                                     */
+/*  nowrap on purpose: the yellow marker sits under the active label, which
+    only works on one line. Below 1080px the "04 / 10" counter takes over. */
 #sg-services-page .sgs-nav-list{
     display:flex;
     flex-wrap:nowrap;
@@ -285,9 +239,7 @@
 }
 
 /* ==========================================================================
-   BLOCKS BELOW
-
-   The ordinary scrolling content under the slider.
+   BLOCKS BELOW - the normal scrolling content under the slider.
    ========================================================================== */
 #sg-services-page .sgs-block{
     padding:92px 6%;
@@ -320,10 +272,7 @@
 }
 
 /* ==========================================================================
-   BUTTONS
-
-   The slide buttons. Their own treatment rather than the site buttons,
-   because they sit on photographs.
+   BUTTONS - slide buttons, styled to sit on photographs.
    ========================================================================== */
 #sg-services-page .sgs-actions{
     display:flex;
@@ -382,10 +331,7 @@
 }
 
 /* ==========================================================================
-   CAPABILITY BAND
-
-   The what-we-bring band, with its script accent and the list of
-   capabilities.
+   CAPABILITY BAND - the what-we-bring band and its list.
    ========================================================================== */
 #sg-services-page .sgs-band{
     border-bottom:1px solid var(--sg-border, #222);
@@ -414,17 +360,13 @@
     margin:0 0 14px;
 }
 
-/*  The last one carries no gap, so the block still sits flush against
-    whatever follows it however many paragraphs it grows to. */
+/*  The last one has no gap, so the block sits flush against what follows. */
 #sg-services-page .sgs-band-lead:last-of-type{ margin-bottom:0; }
 
-/*  The full stops are the accent. Two short sentences with a coloured beat
-    between them reads as a statement; the same words in one flat colour
-    read as a sentence that happens to be large.                        */
+/*  The full stops are in the accent colour. */
 #sg-services-page .sgs-band-copy h2 span{ color:var(--sg-gold); }
 
-/*  Outlined rather than filled, so the yellow reads as a line of type on a
-    dark band instead of a second solid block competing with the slider. */
+/*  Outlined, not filled, so it does not compete with the slider. */
 #sg-services-page .sgs-btn-outline{
     background:transparent;
     border-color:var(--sgs-yellow);
@@ -441,9 +383,8 @@
     margin-left:10px;
 }
 
-/*  The handwritten mark. Uses the script face already in style.css, tilted
-    slightly and given a hand drawn underline, so it reads as something
-    written on the page rather than another heading.                      */
+/*  The handwritten mark: script face from style.css, slight tilt, hand
+    drawn underline.                                                      */
 #sg-services-page .sgs-script{
     font-family:var(--sg-font-script);
     font-size:clamp(1.7rem, 3.2vw, 2.7rem);
@@ -521,18 +462,10 @@
 }
 
 /* ==========================================================================
-   CLOSING CTA
-
-   The area-served line and the closing call to action.
+   CLOSING CTA - the area-served line and the closing call to action.
    ========================================================================== */
-/*  THE CLOSING CALL TO ACTION
-
-    It was centred, on a flat gradient, with the copy and the button stacked
-    down the middle of a lot of empty black. It read as a full stop rather
-    than an invitation.
-
-    Now it is a band: the ask on the left over a photograph, and the three
-    things somebody wants to know before they get in touch on the right.  */
+/*  THE CLOSING CALL TO ACTION - a band: the ask on the left over a photo,
+    three key facts on the right.                                         */
 #sg-services-page .sgs-cta{
     position:relative;
     overflow:hidden;
@@ -542,9 +475,8 @@
     padding-bottom:52px;
 }
 
-/*  The photograph, behind everything. A background rather than an <img>,
-    so a file that is not there yet leaves the gradient showing instead of
-    a broken image.                                                      */
+/*  The photo behind everything, as a background so a missing file shows
+    the gradient instead of a broken image.                              */
 #sg-services-page .sgs-cta-media{
     position:absolute;
     inset:0;
@@ -571,18 +503,14 @@
     max-width:560px;
 }
 
-/*  Smaller than the headings above it, and deliberately. At the page's
-    normal h2 size this one ran to two lines and the band grew to 424px -
-    a closing invitation should be a band you pass through, not another
-    full screen.                                                        */
+/*  Smaller than other headings on purpose, so it stays on one line. */
 #sg-services-page .sgs-cta h2{
     text-align:left;
     font-size:clamp(1.5rem, 3vw, 2rem);
     margin-bottom:10px;
 }
 
-/*  One word in the accent. The heading is a question, and colouring the
-    noun it turns on makes it read as one rather than as a banner.      */
+/*  One word in the accent colour. */
 #sg-services-page .sgs-cta h2 span{ color:var(--sg-orange, #ff6b00); }
 
 #sg-services-page .sgs-cta-lead{
@@ -593,8 +521,7 @@
     margin:0 0 24px;
 }
 
-/*  The three assurances. A column on a wide screen, beside the ask rather
-    than under it, so the band stays one line of thought.               */
+/*  The three assurances: a column beside the ask on a wide screen. */
 #sg-services-page .sgs-assurances{
     display:grid;
     gap:16px;
@@ -636,10 +563,7 @@
 }
 
 /* ==========================================================================
-   SLIDE BACKGROUNDS
-
-   One photograph per slide, plus the scrim that keeps the type readable
-   over it.
+   SLIDE BACKGROUNDS - one photo per slide, plus the scrim for the text.
    ========================================================================== */
 #sg-services-page .sgs-intro    { background-image:linear-gradient(135deg, #2a1403 0%, #0a0a0a 62%); }
 #sg-services-page .sgs-weddings { background-image:linear-gradient(135deg, #241528 0%, #0a0a0a 62%); }
@@ -662,13 +586,8 @@
     z-index:0;
 }
 
-/*  Just enough wash to hold the words, and no more - the photography is
-    what sells this page, so most of the frame is left alone.
-
-    It only really darkens the left third, where the text sits. Across the
-    middle and right the picture is close to untouched. The two faint bands
-    top and bottom are only there so the menu and the slide labels stay
-    legible over a bright photo.                                          */
+/*  A light wash: darkens mainly the left third where the text sits, plus
+    faint bands top and bottom for the menu and slide labels.             */
 #sg-services-page .sgs-scrim{
     position:absolute;
     inset:0;
@@ -687,9 +606,7 @@
 }
 
 /* ==========================================================================
-   SLIDE CONTENT
-
-   The wording on a slide: eyebrow, title, description and place line.
+   SLIDE CONTENT - eyebrow, title, description and place line.
    ========================================================================== */
 #sg-services-page .sgs-content{
     position:relative;
@@ -723,24 +640,14 @@
     margin:0 0 22px;
     text-shadow:0 6px 40px rgba(0,0,0,.6);
 
-    /*  Wide enough for the longest single word on any slide.
-        ENTERTAINMENT is 13 characters and was breaking across two lines at
-        14ch, which put a lone T underneath it. Every title sets its own
-        line breaks with <br>, so this only ever acts as a safety net.   */
+    /*  Wide enough for ENTERTAINMENT (longest word). Titles set their own
+        line breaks with <br>, so this is only a safety net.             */
     max-width:16ch;
     overflow-wrap:normal;
     word-break:normal;
 }
 
-/*  The smaller lines carry their own shadow rather than leaning on the
-    scrim. That is what lets the wash stay light: the text holds up on its
-    own over a bright patch of photo, instead of the whole frame being
-    darkened to protect it.
-
-    The sentence of description that used to sit above this line is gone -
-    a heading, a sentence, a list and a button was four things competing on
-    one photograph, and the list says what the sentence said in a quarter
-    of the space.                                                         */
+/*  The small lines carry their own shadow, so the wash can stay light. */
 #sg-services-page .sgs-line{
     font-family:var(--sg-font-accent);
     font-size:clamp(.72rem, 1.6vw, .86rem);
@@ -766,11 +673,8 @@
 }
 
 /* ==========================================================================
-   TRUSTED BY
-
-   A pale band, deliberately. Partner logos are drawn to sit on white and
-   most arrive as dark marks on a transparent background - on the black
-   page they would simply disappear.
+   TRUSTED BY - a pale band, because most partner logos are dark marks
+   that would vanish on black.
    ========================================================================== */
 #sg-services-page .sgs-trusted{
     background:#fff;
@@ -796,18 +700,11 @@
     margin:0 0 40px;
 }
 
-/*  The strip. auto-fit rather than a fixed seven, so the row stays even
-    whether there are four logos or nine.
-
-    No rules between them any more. Seven marks of different shapes, each
-    boxed off, read as a table of contents rather than a row of partners -
-    and the dividers drew more attention than the logos did. Space does the
-    separating instead, which is also what lets each one breathe.        */
+/*  auto-fit, so the row stays even with any number of logos. Space, not
+    divider lines, separates them.                                        */
 #sg-services-page .sgs-logos{
     display:grid;
-    /*  120px, not 140. auto-fit fits as many columns as the minimum
-        allows, and at 140 with a 34px gap the seventh logo did not make it
-        onto the row - seven marks became six and a lonely one underneath. */
+    /*  120px so all seven logos fit on one row. */
     grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
     gap:18px 24px;
     align-items:center;
@@ -822,21 +719,11 @@
     padding:6px;
 }
 
-/*  THE BOX EVERY LOGO IS DRAWN IN
-
-    Fixed on both edges and object-fit:contain, so a mark of any shape or
-    size lands inside the same space without stretching and without pushing
-    the row about. A tall crest and a long wordmark both sit correctly.
-
-    It also means a logo that arrives far too large is still drawn at the
-    right size - it just costs the visitor the whole file to do it, which is
-    what tools/fit-logo.ps1 is for.                                      */
-/*  max-width:100%, not a fixed 180px.
-
-    The columns are 1fr and can end up narrower than 180 once seven of them
-    share the row, and a wide mark then drew past its own cell and over the
-    one beside it - the council logo was sitting on top of Grand View.
-    Tying it to the cell means it can never do that, whatever the width. */
+/*  THE BOX EVERY LOGO IS DRAWN IN - fixed size with object-fit:contain,
+    so any shape fits without stretching. Shrink oversized files with
+    tools/fit-logo.ps1.                                                  */
+/*  max-width:100% (not a fixed width) so a wide logo never spills into
+    the next cell.                                                       */
 #sg-services-page .sgs-logo img{
     display:block;
     max-width:100%;
@@ -847,8 +734,7 @@
 }
 
 /*  The fallback name, hidden while there is a picture. The onerror in the
-    markup removes the image and adds .is-missing, so a logo that has not
-    been supplied yet reads as a name rather than a broken image icon.  */
+    markup adds .is-missing, so a missing logo shows as a name.          */
 #sg-services-page .sgs-logo span{ display:none; }
 
 #sg-services-page .sgs-logo.is-missing span{
@@ -865,10 +751,8 @@
 
 
 /* ==========================================================================
-   OUR REGION
-
-   The truck band. A photograph with the words over the left of it and the
-   places we travel to across the bottom.
+   OUR REGION - the truck band: photo, words on the left, places along
+   the bottom.
    ========================================================================== */
 #sg-services-page .sgs-region{
     position:relative;
@@ -878,12 +762,8 @@
     border-top:1px solid var(--sg-border, #222);
 }
 
-/*  THE SPLIT
-
-    Where the cursor is, as a percentage across the band. 50% until the
-    mouse arrives, and 50% is where it stays on a touch screen or for
-    anyone who has asked for less motion - the band reads perfectly well
-    cut down the middle.                                                 */
+/*  THE SPLIT - where the cursor is, as a % across the band. Stays at 50%
+    on touch screens and for reduced motion.                             */
 #sg-services-page .sgs-region{
     --sgs-split:50%;
 }
@@ -901,10 +781,8 @@
     background-position:center;
 }
 
-/*  The outback fills the whole width. The coast is laid over it and clipped
-    to the split, so the cursor wipes between the two rather than fading
-    one into the other - a hard edge reads as two places, a fade reads as
-    a mistake.                                                           */
+/*  The outback fills the width; the coast is clipped to the split on top,
+    so the cursor wipes between them with a hard edge.                   */
 #sg-services-page .sgs-region-half.is-outback{
     background-image:
         var(--sgs-outback, none),
@@ -918,8 +796,7 @@
     clip-path:inset(0 calc(100% - var(--sgs-split)) 0 0);
 }
 
-/*  The seam. A hairline rather than a bar - it marks the join without
-    turning into a piece of furniture.                                   */
+/*  The seam: a hairline marking the join. */
 #sg-services-page .sgs-region-seam{
     position:absolute;
     top:0;
@@ -930,23 +807,14 @@
     transform:translateX(-0.5px);
 }
 
-/*  THE OVERLAY
-
-    Above both halves, not on them, so the words are equally readable
-    whichever picture happens to be underneath at the time. Heavier on the
-    left where the headline sits, and it keeps a floor across the whole
-    band so the right-hand label stays legible over bright sky.         */
+/*  THE OVERLAY - above both halves so the words read over either picture.
+    Heavier on the left, with a light floor across the whole band.      */
 #sg-services-page .sgs-region-media::after{
     content:"";
     position:absolute;
     inset:0;
-    /*  Two gradients stacked, so they compound - .55 over .85 is not .85,
-        it is .93. The first pass was dark enough to lose the picture
-        entirely, which defeats putting one there.
-
-        Heavy only where the headline actually sits, light across the
-        middle where the photograph is the point, and a low wash along the
-        bottom so the two labels stay readable over bright sand.        */
+    /*  Two stacked gradients (they add up). Heavy behind the headline, light
+        in the middle, a low wash along the bottom for the labels.      */
     background:
         linear-gradient(90deg, rgba(5,5,5,.88) 12%, rgba(5,5,5,.34) 52%, rgba(5,5,5,.28) 100%),
         linear-gradient(to top, rgba(5,5,5,.62), rgba(5,5,5,0) 46%);
@@ -975,9 +843,7 @@
     margin:0;
 }
 
-/*  The places, across the foot of the picture. A flex row with dots between
-    rather than a list with bullets, so it reads as one line of travel
-    rather than eight separate facts.                                    */
+/*  The places, as one flex row with dots between. */
 #sg-services-page .sgs-places{
     position:relative;
     display:flex;
@@ -988,10 +854,7 @@
     list-style:none;
     margin:0;
 
-    /*  No side padding of its own. The section around it already carries
-        6%, and adding a second helping pushed this row in past the
-        headline above it - visibly out of line with everything else in
-        the band.                                                        */
+    /*  No side padding: the section around it already has 6%. */
     padding:0 0 44px;
 
     max-width:var(--sg-max-width, 1200px);
@@ -1006,9 +869,7 @@
     color:#fff;
 }
 
-/*  One label per half, pushed to opposite ends so each sits under the
-    picture it names. No dots between them any more - there are two things
-    now, not a list of eight.                                            */
+/*  One label per half, at opposite ends under the picture it names. */
 #sg-services-page .sgs-places li{
     display:flex;
     align-items:center;
@@ -1044,8 +905,7 @@
         padding:70px 6%;
     }
 
-    /*  Six across is too tight once the band narrows, so it becomes two
-        rows of three and the hairlines move with them.                  */
+    /*  Six across becomes two rows of three. */
     #sg-services-page .sgs-caps{
         grid-template-columns:repeat(3, 1fr);
         row-gap:34px;
@@ -1055,8 +915,7 @@
         border-left:0;
     }
 
-    /*  The pitch, the button and the handwritten mark stop sitting in a
-        row - there is not the width for all three.                      */
+    /*  The pitch, button and handwritten mark stop sitting in a row. */
     #sg-services-page .sgs-band-top{
         grid-template-columns:1fr;
         gap:26px;
@@ -1073,15 +932,8 @@
 
 }
 
-/*  TEN LABELS NEED THE ROOM
-
-    They fit one row down to about 1080px and no further. Below that the
-    compact "04 / 10" line takes over, which is what it is for - a row that
-    wrapped, or one scrolled sideways, is worse than a counter. The arrows
-    stay either way.
-
-    This used to be 900px, which was right for eight labels and half a
-    slide too optimistic for ten.                                        */
+/*  The ten labels fit one row down to about 1080px; below that the
+        compact "04 / 10" counter takes over. Arrows stay either way.    */
 @media (max-width:1080px){
     #sg-services-page .sgs-nav-list{ display:none; }
     #sg-services-page .sgs-nav-compact{ display:block; }
@@ -1094,13 +946,10 @@
         bottom:44px;
     }
 
-    /*  Arrows are dropped on touch screens - swiping is the natural gesture
-        and the arrows sit right on top of the photography.                */
+    /*  No arrows on touch screens - swiping is natural and they cover the photo. */
     #sg-services-page .sgs-arrow{ display:none; }
 
-    /*  The scrim leans to the bottom rather than the left, because the text
-        now sits over the bottom of the picture rather than beside it. The
-        top two thirds of the photo are left nearly clear.                 */
+    /*  The scrim leans to the bottom, where the text sits on a phone. */
     #sg-services-page .sgs-scrim{
         background:linear-gradient(
             180deg,
@@ -1121,9 +970,7 @@
         align-items:flex-end;
     }
 
-    /*  Sized so the longest single word on the page - ENTERTAINMENT, at 13
-        characters - still fits across a 375px screen. Any larger and it
-        runs off the edge and gets clipped by the slide.                  */
+    /*  Sized so ENTERTAINMENT still fits across a 375px screen. */
     #sg-services-page .sgs-title{
         font-size:clamp(1.9rem, 8.4vw, 3.2rem);
         letter-spacing:-1px;
@@ -1147,8 +994,7 @@
         padding:58px 7%;
     }
 
-    /*  Two rows of three would leave the labels cramped on a phone, so it
-        goes to two across - the icons stay big enough to read.          */
+    /*  Two across on a phone. */
     #sg-services-page .sgs-caps{
         grid-template-columns:repeat(2, 1fr);
         row-gap:30px;
@@ -1159,7 +1005,7 @@
         gap:12px;
     }
 
-    /* the hairline now belongs to every second one */
+    /* the hairline belongs to every second one */
     #sg-services-page .sgs-caps li:nth-child(3n+1){
         border-left:1px solid var(--sg-border, #222);
     }
@@ -1183,8 +1029,7 @@
         padding-bottom:52px;
     }
 
-    /*  The assurances drop under the ask and lie flat, rather than keeping
-        a tall thin column beside it that would squeeze the heading. */
+    /*  The assurances drop under the ask and lie flat. */
     #sg-services-page .sgs-assurances{
         grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
         gap:12px 22px;
@@ -1211,31 +1056,17 @@
 
 /* ==========================================================================
    ANNUAL EVENTS ROW
-
-   The band at the foot of the page: a headline on the left, four words on
-   the right, and a row of tall cards underneath that pages four at a time.
-
-   Not a grid of eleven. The point of the row is that it is a row - a glance
-   says "these people have us back every year" without eleven tiles
-   competing with the events we are actually selling further up.
-
-   HOW IT MOVES WITHOUT MEASURING ANYTHING
-   The track is a grid of columns sized against the window it sits in, so
-   the track itself is exactly one window wide however many cards hang out
-   of it. That makes translateX(-100%) exactly one page, and it means the
-   script never reads a width - it sets a number and the browser does the
-   arithmetic. Which is why it is right before the first paint, and why
-   nothing breaks when a card is added or removed.
-
-   --sgs-an-per is the only thing the media queries at the bottom change,
-   and the script reads it back to know how many pages there are.
+   Headline left, four words right, and a row of tall cards that pages four
+   at a time.
+   The track is exactly one window wide, so translateX(-100%) is one page and
+   the script never measures a width. --sgs-an-per is the only thing the
+   media queries change; the script reads it to count the pages.
    ========================================================================== */
 #sg-services-page .sgs-annual{
     --sgs-an-per:4;
     --sgs-an-gap:20px;
     padding:clamp(60px, 9vw, 110px) 0 clamp(50px, 7vw, 90px);
-    /*  Its own ground, a shade off the page, so the band reads as a place
-        the page arrives at rather than more of the same scroll.          */
+    /*  Its own background, a shade off the page. */
     background:linear-gradient(180deg, #0d0d0d 0%, #0a0a0a 100%);
     border-top:1px solid var(--sg-border);
 }
@@ -1247,10 +1078,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   HEAD
-   Headline left, the four words and the arrows right. They stack below
-   900px, where there is no room for two columns and the headline should
-   have the width.
+   HEAD - headline left, the four words and arrows right. Stacks below 900px.
    -------------------------------------------------------------------------- */
 #sg-services-page .sgs-annual-head{
     display:flex;
@@ -1279,8 +1107,7 @@
     margin:0;
 }
 
-/*  The second line in gold. One word, so it can carry the colour without
-    the headline turning into a paint chart.                              */
+/*  The second line in gold. */
 #sg-services-page .sgs-annual-intro h2 span{
     color:var(--sg-gold);
 }
@@ -1300,9 +1127,7 @@
     flex-shrink:0;
 }
 
-/*  Four words under a short rule. aria-hidden in the markup: it is a mood,
-    not information, and read aloud between the headline and the cards it
-    would only be four nouns in the way.                                  */
+/*  Four words under a short rule. Mood only, so aria-hidden in the markup. */
 #sg-services-page .sgs-an-words{
     list-style:none;
     margin:0;
@@ -1341,8 +1166,7 @@
     color:#0a0a0a;
 }
 
-/*  Dimmed rather than hidden at the ends. A control that disappears makes
-    the row jump, and it stops telling you the row has ends.              */
+/*  Dimmed (not hidden) at the ends so the row does not jump. */
 #sg-services-page .sgs-an-arrow:disabled{
     opacity:.28;
     cursor:default;
@@ -1353,9 +1177,7 @@
    -------------------------------------------------------------------------- */
 #sg-services-page .sgs-an-view{
     overflow:hidden;
-    /*  The cards lift on hover, so the window needs room above them or the
-        lift is clipped. Pulled back in underneath so the row still lines up
-        with the foot of the band.                                        */
+    /*  Room for the hover lift so it is not clipped; pulled back in below. */
     padding:10px 0;
     margin:-10px 0;
 }
@@ -1376,16 +1198,8 @@
 }
 
 /* --------------------------------------------------------------------------
-   A CARD
-
-   The photograph is the card. Everything else sits on top of it at the
-   bottom, over a gradient that exists only to keep the type readable -
-   which is why the picture still reads as a picture rather than as a
-   header for a box of text.
-
-   Nothing here links anywhere: these are other people's events, not ours
-   to send anybody to, so the card is not a button and does not pretend to
-   be one.
+   A CARD - the photo is the card, text at the bottom over a gradient.
+   Not a link: these are other people's events.
    -------------------------------------------------------------------------- */
 #sg-services-page .sgs-an-card{
     position:relative;
@@ -1418,8 +1232,7 @@
     transform:scale(1.05);
 }
 
-/*  The gradient is on the body rather than a layer of its own, so it can
-    never end up stacked over the type it is there to support.            */
+/*  The gradient is on the body so it can never cover the text. */
 #sg-services-page .sgs-an-body{
     position:absolute;
     inset:auto 0 0 0;
@@ -1451,9 +1264,7 @@
     margin:0;
 }
 
-/*  The pin is drawn here rather than sat in the markup eleven times over.
-    A mask rather than an image, so it takes its colour from the text and
-    changes with it.                                                      */
+/*  The pin icon is a mask, so it takes the text colour. */
 #sg-services-page .sgs-an-place{
     display:flex;
     align-items:center;
@@ -1476,9 +1287,7 @@
     mask:var(--ev-pin) center / contain no-repeat;
 }
 
-/*  What we supplied. Small, quiet, and allowed to wrap onto a second line -
-    the cards are all the same height, so a card with four tags and a card
-    with none still line up.                                              */
+/*  What we supplied. Allowed to wrap; cards are all the same height. */
 #sg-services-page .sgs-an-tags{
     display:flex;
     flex-wrap:wrap;
@@ -1501,9 +1310,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   FOOT
-   One dash per page, and the same thing in words for anybody who cannot
-   see which dash is lit.
+   FOOT - one dash per page, plus the same in words for screen readers.
    -------------------------------------------------------------------------- */
 #sg-services-page .sgs-an-foot{
     display:flex;
@@ -1555,9 +1362,7 @@
         gap:26px;
     }
 
-    /*  The words have done their job on a wide screen. On a narrow one they
-        are four lines between the headline and the cards, so they go and
-        the arrows come back to the left.                                 */
+    /*  On a narrow screen the four words go and the arrows move left. */
     #sg-services-page .sgs-an-words{ display:none; }
 
     #sg-services-page .sgs-annual-side{
@@ -1573,8 +1378,7 @@
 @media (max-width:560px){
     #sg-services-page .sgs-annual{ --sgs-an-per:1; --sgs-an-gap:16px; }
 
-    /*  One card across is a lot of height for a 3:4 picture, so it squares
-        off rather than filling the screen.                               */
+    /*  One card across: squared off instead of 3:4. */
     #sg-services-page .sgs-an-card{ aspect-ratio:4 / 3; }
 }
 
@@ -1588,7 +1392,7 @@
     #sg-services-page .sgs-an-card:hover .sgs-an-art{ transform:none; }
 }
 
-/* job story link on an event card (Max, 20 Oct 2026) - stretched so the whole card clicks */
+/* job story link on an event card - stretched so the whole card clicks */
 .sgs-an-card{ position:relative; }
 .sgs-an-read{ display:inline-block; margin-top:12px; color:var(--sg-gold, #ffb700); font-size:12px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; text-decoration:none; }
 .sgs-an-read::after{ content:""; position:absolute; inset:0; }

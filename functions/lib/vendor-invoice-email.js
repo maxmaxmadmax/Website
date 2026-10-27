@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VENDOR TAX INVOICE EMAIL  (Max, 19 Oct 2026)
+   VENDOR TAX INVOICE EMAIL
 
    A short, friendly email with one big button. The invoice itself, the
    thank-you, the event details and the vendor instructions all live on the
@@ -58,8 +58,8 @@ function invoiceValues(d) {
 
 function html(d) {
   const who = d.contactName || d.businessName || 'there';
-  // WORDING FROM THE MESSAGES PAGE (Max, 19 Oct 2026): the text Max approved,
-  // then the total box and the guide button. Without it, the built-in wording below.
+  // WORDING FROM THE MESSAGES PAGE: the approved text, then the total box and
+  // the guide button. Without it, the built-in wording below.
   if (d.bodyTpl) return htmlFromTemplate(d);
   return `<!doctype html>
 <html><body style="margin:0;padding:24px;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
@@ -166,7 +166,7 @@ async function sendVendorInvoiceEmail(d) {
       kind: 'vendor-invoice',
       from: `${SELLER.name} <${SELLER.email}>`,
       to: d.to,
-      // a copy of every email goes to the office (Max, 20 Oct 2026)
+      // a copy of every email goes to the office
       ...(d.test ? {} : { bcc: OFFICE }),
       replyTo: OFFICE,
       subject: (d.test ? '[TEST] ' : '') + (d.subjectTpl ? fill(d.subjectTpl, invoiceValues(d), (v) => String(v)) : `Your tax invoice & event guide - ${d.eventName || 'Eatz & Beatz'}`),

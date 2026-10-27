@@ -1,12 +1,8 @@
 /* ==========================================================================
-   VENDOR SIGNUP - page specific styles
+   VENDOR SIGNUP - page styles
 
-   Loaded after style.css, so everything here sits on top of the existing
-   SoundzGood look. Fonts, buttons, colours, page width and the responsive
-   rules all come from style.css - this file only adds what the booking
-   flow needs, plus a light Halloween accent for this one event.
-
-   Everything is prefixed .vs- so nothing here can leak into another page.
+   Loaded after style.css. Everything is prefixed .vs- so it cannot leak
+   into other pages.
    ========================================================================== */
 
 .vendor-signup{
@@ -23,24 +19,16 @@
     --vs-mine:var(--sg-orange);
 }
 
-/*  The flow hides steps with the hidden attribute, and several of them are
-    also given a display by a rule in here. Any author display beats the
-    browser's own [hidden] rule, so without this a hidden step or the
-    confirmation panel renders anyway and stacks under the live one.
-
-    Same trap as admin.css. Keep this above everything that sets display. */
+/* [hidden] must beat any display set below. KEEP THIS ABOVE everything
+   that sets display. */
 .vendor-signup [hidden]{ display:none !important; }
 
 
 /* --------------------------------------------------------------------------
    HERO
    -------------------------------------------------------------------------- */
-/*  Our own stage at dusk, behind the wash that was already here.
-
-    The gradients are listed before the photograph on purpose: a
-    background stacks first-on-top, so the image has to come last or it
-    covers them and the headline goes unreadable over it. That is how
-    three heroes on this site have broken.                             */
+/* Gradients must be listed BEFORE the photo, or the photo covers them
+   and the headline becomes unreadable. */
 .vs-hero{
     position:relative;
     overflow:hidden;
@@ -119,28 +107,6 @@
     stroke:#fff;
     stroke-width:1.4;
 }
-
-/*  WHAT IS IN HERE
-      DOCUMENTS
-      EVENT INFO AND FAQS
-      FOOD CATEGORIES
-      ONE STEP, ONE SCREEN
-      PREVIEW BANNER
-      REVIEW AND CONFIRMATION
-      REVIEW - THE CHECKOUT
-      STEP PANELS
-      PROGRESS HEADER
-      THE MAP
-      VENDOR TYPE CHOICES
-      MOBILE
-      FOOTER TWEAK FOR THESE PAGES
-
-    Sections run alphabetically apart from the pinned ones.
-    MOBILE is pinned last because it overrides everything above it, and
-    the footer tweak sits after it so it wins on small screens too.
-
-    Rules inside a section stay in the order they were written. Sorting
-    those would change which rule wins when two carry the same weight.   */
 
 /* --------------------------------------------------------------------------
    DOCUMENTS
@@ -240,8 +206,7 @@
     font-size:.95rem;
 }
 
-/*  Native <details> accordions - no script, and they still open if the
-    JavaScript on this page ever fails to load.                            */
+/* Native <details> accordions - they work even without JavaScript. */
 .vs-faqs{
     display:flex;
     flex-direction:column;
@@ -395,12 +360,6 @@
 
 /* --------------------------------------------------------------------------
    ONE PAGE
-
-   This used to pin the flow to the height of the viewport so that exactly
-   one step was on screen and the page itself never scrolled. That shape is
-   gone: the form is five sections, stacked, and you scroll it like any
-   other page. The summary down the side is what now answers "how much is
-   left", which is the job the fixed frame and its progress bar were doing.
    -------------------------------------------------------------------------- */
 .vs-confirming,
 .vs-confirmed{
@@ -544,24 +503,17 @@
 /* ==========================================================================
    REVIEW - THE CHECKOUT
 
-   One column of small cards, one idea each: what you are buying, what it
-   costs, and who takes the money. Same layout at every width, because a
-   checkout is read top to bottom and most vendors fill this in on a phone.
-
-   This replaced a five column table beside a sidebar. The table had to be
-   rebuilt into labelled blocks below 768px to be readable at all, so the
-   desktop and the phone were really two designs to keep in step.
+   One column of small cards, same layout at every width.
    ========================================================================== */
 
-/*  The checkout brings its own cards, so the step panel underneath steps
-    back - otherwise every card is a box inside another box.             */
+/* The checkout has its own cards, so the step panel drops its box. */
 .vs-sec.is-checkout{
     background:none;
     border:0;
     padding:0;
 }
 
-/*  The heading sits over the cards, so it is held to the same column. */
+/* Heading held to the same column as the cards. */
 .vs-sec.is-checkout > h2,
 .vs-sec.is-checkout > .vs-sec-intro,
 .vs-sec.is-checkout > .vs-busy,
@@ -572,12 +524,7 @@
 }
 
 .vs-checkout{
-    /*  White cards on the page's off-white. These two were the last dark
-        values left in the file: the text inside had already been turned to
-        ink for the white page, but the cards it sits on had not, so the
-        whole receipt was near-black type on near-black card. It is the one
-        screen nobody reached in the first pass, because getting to it
-        needs a held site.                                              */
+    /* White cards on the page's off-white. */
     --vs-card:#fff;
     --vs-line:#e3e6ec;
 
@@ -609,9 +556,7 @@
     gap:14px;
 }
 
-/*  The event line sits under the whole header rather than inside it. Beside
-    the Edit button it only had half the card to wrap in, and a long event
-    name and date ran to three lines.                                     */
+/* Event line sits under the whole header so long names wrap less. */
 .vs-card-sub{
     margin:8px 0 0;
     color:var(--sg-muted);
@@ -663,9 +608,7 @@
 .vs-lineitem-txt strong{ color:#12141a; font-size:1rem; }
 .vs-lineitem-txt > span{ color:var(--sg-muted); font-size:.85rem; }
 
-/*  PRICE / QTY / TOTAL across the foot of the booking card. Equal thirds
-    under a rule, which reads as a receipt line without needing a table
-    and its five columns to say it.                                     */
+/* Price / qty / total across the foot of the booking card, in equal thirds. */
 .vs-figures{
     display:grid;
     grid-template-columns:repeat(3, 1fr);
@@ -715,8 +658,7 @@
 
 .vs-sum dd{ margin:0; color:#12141a; font-size:.92rem; }
 
-/*  A tooltip would be unreachable on a phone, so the (i) opens a line of
-    text under the list instead of hovering over it.                    */
+/* The (i) opens a line of text below - hover tooltips don't work on phones. */
 .vs-info{
     width:16px;
     height:16px;
@@ -744,8 +686,7 @@
     line-height:1.6;
 }
 
-/*  The total, ruled off from the lines it sums. Orange on both halves -
-    it is the one number anybody actually checks.                       */
+/* The total, ruled off from the lines it adds up. */
 .vs-sum-total{
     display:flex;
     align-items:baseline;
@@ -860,16 +801,7 @@
     cursor:pointer;
 }
 
-/*  THE PAY BAR
-
-    Pinned to the foot of the viewport so the amount and the button stay
-    on screen however far down the cards somebody has scrolled. Sticky
-    rather than fixed, so it comes to rest at the end of the step instead
-    of hovering over the site footer for the rest of the page.          */
-/*  The pay button sat stuck to the bottom of the screen, which made
-    sense when the checkout was a screen of its own and the page could not
-    scroll. On one page it floated over the review cards on the way past.
-    It is the last thing on the page now, so it simply sits there.      */
+/* THE PAY BAR - sits at the end of the page, not pinned. */
 .vs-paybar{
     display:block;
     max-width:560px;
@@ -971,8 +903,7 @@
     margin-bottom:26px;
 }
 
-/*  Business, category and setup share one step, so each gets a subheading
-    with a rule above it to break the page into obvious sections.          */
+/* Subheading with a rule above, to split a shared step into parts. */
 .vs-sub{
     font-family:var(--sg-font-display);
     font-size:1.15rem;
@@ -999,20 +930,14 @@
     border-radius:14px;
     padding:14px;
 
-    /*  The site plan is portrait and tall. Drawn at full width it would be
-        around 1500px high, so it scrolls inside this box instead - never
-        on the page itself.                                              */
+    /* The tall site plan scrolls inside this box, never the page. */
     max-height:min(70vh, 780px);
     overflow:auto;
     overscroll-behavior:contain;
 }
 
 .vs-map{
-    /*  Sized so a market bay stays a 44px tap target. A bay is 56 units
-        tall in a 760 unit plan, so the plan has to be drawn at least
-        760 x 44 / 56 = 597px wide. Below that the bays get too small to
-        hit on a phone, and the numbers too small to read. The box above
-        scrolls, so this costs nothing but a swipe.                     */
+    /* Min width keeps each bay a 44px tap target (760 x 44 / 56 = 597px). */
     min-width:620px;
 }
 
@@ -1100,9 +1025,8 @@
 
 .vmap-site.is-locked .vmap-site-label{ fill:rgba(255,255,255,.5); }
 
-/*  Free, but not released yet - the bays in front of it have to go first.
-    Deliberately flatter than "booked" so it reads as "not now" rather than
-    "gone", and it goes back to green on its own once its wave opens.       */
+/* Free but not released yet. Flatter than "booked" so it reads "not now",
+   not "gone". */
 .vmap-site.is-not-open rect{
     fill:#101010;
     stroke:#2c2c2c;
@@ -1161,8 +1085,7 @@
 .vs-swatch.is-mine{      background:#3a1e00; border-color:var(--vs-mine); }
 .vs-swatch.is-not-open{  background:#101010; border-color:#2c2c2c; }
 
-/*  Instructions above the plan. Worth spelling out, because tapping several
-    bays to build a shape is not something people expect from a map.        */
+/* Instructions above the plan. */
 .vs-map-intro{
     margin:14px 0 0;
     color:var(--sg-muted);
@@ -1188,10 +1111,7 @@
     color:var(--sg-dim);
 }
 
-/*  The panel that appears once a site is picked. Its chosen state was
-    white type - fine on the old black panel, invisible on the white one,
-    and only ever on screen after you tap a bay, which is why the first
-    contrast sweep did not catch it. Found by clicking through.        */
+/* The panel that appears once a site is picked. */
 .vs-site-choice.is-chosen{
     border-color:var(--sg-orange);
     background:#fff7f0;
@@ -1245,8 +1165,7 @@
         gap:4px;
     }
 
-    /*  The checkout is already one column, so a phone only needs it
-        tighter - there is no second layout to switch to.               */
+    /* Phone: a tighter checkout. */
     .vs-checkout{ gap:12px; }
 
     .vs-card{
@@ -1254,9 +1173,7 @@
         border-radius:14px;
     }
 
-    /*  The Edit button stays beside the heading rather than stacking under
-        it - the card title is short and the pill is small, so a phone has
-        room for both, and dropping it pushed the line item down the page. */
+    /* Phone: the Edit button stays beside the heading. */
     .vs-card-head{ gap:10px; }
 
     .vs-pill{
@@ -1276,8 +1193,7 @@
 
         .vs-sec-intro{ margin-bottom:18px; }
 
-    /*  Steps get their air back on a phone, where the panel scrolls anyway
-        and cramping it only makes the form harder to fill in.          */
+    /* Phone: more padding on the steps. */
     #vs-flow{ padding:20px 5%; }
 }
 
@@ -1289,8 +1205,7 @@
 /* ==========================================================================
    CHOOSING AN EVENT
 
-   The first step. Cards built by js/vendor-signup.js from the events
-   collection, so the list changes without anybody editing markup.
+   Cards built by js/vendor-signup.js from the events collection.
    ========================================================================== */
 .vs-events{
     display:grid;
@@ -1320,15 +1235,13 @@
     box-shadow:0 16px 34px rgba(0,0,0,.45);
 }
 
-/*  The one being applied for. A border alone was not enough to see at a
-    glance on a dark page, so it also lifts and warms.                   */
+/* The chosen event lifts and warms, not just a border. */
 .vs-event.is-chosen{
     border-color:var(--sg-orange);
     box-shadow:0 0 0 1px var(--sg-orange), 0 16px 34px rgba(0,0,0,.45);
 }
 
-/*  Closed or not yet open. Still listed - "we run this every year and it
-    opens in March" is worth knowing - but visibly not an option today. */
+/* Closed or not yet open: still listed, but visibly not an option. */
 .vs-event.is-shut{ opacity:.72; }
 .vs-event.is-shut:hover{ transform:none; box-shadow:none; border-color:var(--sg-border); }
 
@@ -1341,8 +1254,7 @@
     background-position:center;
 }
 
-/*  The status, over the picture rather than under the name, because it is
-    the thing that decides whether the rest of the card matters.         */
+/* Status badge sits over the picture. */
 .vs-event-status{
     position:absolute;
     left:10px;
@@ -1398,8 +1310,7 @@
     line-height:1.6;
 }
 
-/*  Pushed to the bottom so the buttons line up across cards whose text
-    runs to different lengths.                                          */
+/* Pushed to the bottom so the buttons line up across cards. */
 .vs-event-go{
     margin-top:auto;
     padding-top:10px;
@@ -1419,14 +1330,7 @@
 /* ==========================================================================
    CHOOSING AN EVENT - THE LIGHT STAGE
 
-   The one light part of this page, and it is a stage rather than a stripe:
-   it is on screen while you choose and gone once you have, so the page
-   never shows light and dark at the same time. A page that changes colour
-   halfway down looks like a mistake; one that changes when you move on
-   looks like progress.
-
-   Its own small palette, because none of the site's tokens are meant for
-   dark type on white.
+   Its own small palette for dark type on white.
    ========================================================================== */
 .vs-apply{
     --pk-ink:#12141a;
@@ -1454,8 +1358,7 @@
     font-size:.95rem;
 }
 
-/*  The numbered step label. A circle and a word, so the page says where
-    you are without a progress bar - the bar lives in the dark half.    */
+/* The numbered step label. */
 .vs-secnum{
     display:flex;
     align-items:center;
@@ -1569,8 +1472,7 @@
     margin:0 0 2px;
 }
 
-/*  Date and place carry their own small icons, drawn here rather than in
-    the markup - there is one of each per card and they never change.  */
+/* Date and place icons, drawn in CSS. */
 .vs-sec .vs-event-when,
 .vs-sec .vs-event-where{
     display:flex;
@@ -1608,8 +1510,7 @@
     line-height:1.6;
 }
 
-/*  Black, full width, like the design. The orange button is the site's
-    "buy" button and this is a choice, not a purchase.                 */
+/* Black full-width choose button (orange is kept for "buy"). */
 .vs-sec .vs-event-go{
     margin-top:14px;
     width:100%;
@@ -1630,10 +1531,7 @@
 
 .vs-sec .vs-event-go:hover{ background:#000; }
 
-/*  The one you have chosen wears the accent, the rest stay black. In the
-    design it is the other way up only because the accent there is lime;
-    what it is saying is "this is the one", and on our palette that is
-    the orange.                                                       */
+/* The chosen card's button wears the orange accent. */
 .vs-sec .vs-event.is-chosen .vs-event-go{
     background:var(--sg-orange);
     color:#12141a;
@@ -1670,23 +1568,8 @@
 /* ==========================================================================
    THE PAGE IS WHITE
 
-   Everywhere else on this site is dark. This page is a form - seven
-   steps, a map, uploads and a payment - and a long form is easier to
-   fill in on white. It is also the only page whose sibling, the admin
-   desk, is already light.
-
-   Done by redefining the tokens rather than by rewriting the rules:
-   style.css paints the body from --sg-black and --sg-text, and most of
-   the surfaces in this file come from --sg-panel and --sg-border. Set
-   those here and the page turns over with them.
-
-   WHAT STAYS DARK, AND WHY
-     the hero          it is a photograph with words on it
-     the vendor type   the same - two photo cards
-     the site map      it is a canvas, and the colours on it mean
-                       something to a vendor choosing a site. Flipping
-                       it risks the one part of this page where a
-                       wrong colour costs somebody a booking.
+   Done by redefining the colour tokens, so the rules need no change.
+   The hero stays dark.
    ========================================================================== */
 .vendor-signup{
     --sg-black:#f6f7f9;
@@ -1697,21 +1580,19 @@
     --sg-muted:#4b5262;
     --sg-dim:#6b7280;
 
-    /*  The grain overlay is a light film meant for a dark page; on
-        white it reads as dirt.                                     */
+    /* The grain overlay is hidden on white (it looks like dirt). */
     --sg-grain:none;
 }
 
-/*  The flow band. .section has no colour of its own, so this is the
-    page showing through - which is now the light one.             */
+/* The flow band shows the light page through. */
 .vendor-signup .vs-apply{ color:var(--sg-text); }
 
-/*  Headings come from style.css white. On white they need the ink.  */
+/* Headings: ink on white. */
 .vendor-signup h2,
 .vendor-signup h3,
 .vendor-signup .vs-sec h2{ color:var(--sg-text); }
 
-/*  Inputs: white boxes with a visible edge rather than dark wells.  */
+/* Inputs: white boxes with a visible edge. */
 .vendor-signup input,
 .vendor-signup select,
 .vendor-signup textarea{
@@ -1723,8 +1604,7 @@
 .vendor-signup input::placeholder,
 .vendor-signup textarea::placeholder{ color:#9aa1ad; }
 
-/*  The hero keeps its own dark world - photograph, white type, cobwebs
-    and all - so nothing above resets it.                          */
+/* The hero keeps its dark look. */
 .vendor-signup .vs-hero,
 .vendor-signup .vs-hero h1,
 .vendor-signup .vs-hero p{ color:#fff; }
@@ -1733,23 +1613,11 @@
 /* ==========================================================================
    COLOURS THAT ONLY WORKED ON BLACK
 
-   Turning the page over left three of the site's colours sitting on white
-   at contrast a person cannot read. Found by walking every visible element
-   on every step and measuring foreground against its real background - not
-   by looking, because the worst of them, white on white, is invisible
-   rather than ugly and would have been missed.
-
-       gold #ffb700 on white      1.75 : 1   - 22 labels and values
-       .btn white text on white   1.00 : 1   - 10 Back and next buttons
-       orange #ff6b00 as a link   2.9  : 1
-
-   Each is fixed by darkening it for the light part of the page only. The
-   hero, the two vendor type cards and the map keep the originals, because
-   they are still dark and the colours still work there.
+   Darker gold, button text and link orange so they read on white.
+   Dark areas keep the originals.
    ========================================================================== */
 .vendor-signup{
-    /*  A gold dark enough to read on white and still recognisably ours.
-        4.9 : 1 against white, where 4.5 is the readable threshold.    */
+    /* Darker gold, readable on white (4.9 : 1). */
     --sg-gold:#8a5f00;
 }
 
@@ -1758,14 +1626,8 @@
     --sg-gold:#ffb700;
 }
 
-/*  The outline button. style.css gives it white text for a black page,
-    which on white was invisible. The only one left in the form is on the
-    confirmation card - the Back buttons it was written for went with the
-    wizard.
-
-    Scoped to .btn-outline and not to every button that is not the ticket
-    one: widened that far it catches Continue as well and turns the whole
-    form's buttons into outlines.                                      */
+/* Outline button: dark text on white. Scoped to .btn-outline only -
+   any wider and it catches Continue too. */
 .vendor-signup .vs-apply .btn-outline{
     color:#12141a;
     border-color:#c9ced7;
@@ -1778,9 +1640,7 @@
     color:#fff;
 }
 
-/*  Orange as a text link. The button keeps the brand orange - white on
-    it is the same as everywhere else on the site - but orange type on
-    white is too pale to read, so links get a darker one.              */
+/* Darker orange for text links on white. */
 .vendor-signup .vs-apply a:not(.btn){
     color:#b34700;
 }
@@ -1793,14 +1653,8 @@
 /* ==========================================================================
    THE ONE-PAGE LAYOUT
 
-   Five numbered sections down the middle and a summary stuck to the side.
-   The summary is the whole reason this works: a long form with no sense of
-   how far through you are is worse than a wizard, and it is the one thing
-   the wizard did give you.
-
-   On a phone the summary comes first and stops sticking - a fixed panel on
-   a small screen eats the room the form needs, and at the top of the page
-   it still does its job, which is to say what this is going to involve.
+   Five numbered sections down the middle, a sticky summary at the side.
+   On a phone the summary comes first and stops sticking.
    ========================================================================== */
 .vs-apply-inner{
     display:grid;
@@ -1818,28 +1672,18 @@
     min-width:0;
 }
 
-/*  Each section is a card. The padding comes from the old step panel, so a
-    section reads the same as a step did - it is the arrangement that has
-    changed, not the furniture.                                          */
+/* Each section is a card. */
 .vs-sec{
-    /*  Clears the sticky rail. Without it a section scrolled to sits with
-        its number and heading under the rail, so it looks like the page
-        landed one line too far down.                                  */
+    /* Clears the sticky rail when a section is jumped to. */
     scroll-margin-top:66px;
 }
 
-/*  A locked section shows its number and the reason, and nothing else.
-    Locked rather than hidden, so somebody landing here can see what the
-    whole thing is going to ask before committing to any of it.        */
-/*  h2 stays: the number is inside the heading now rather than a line
-    above it, so hiding everything but .vs-secnum would have taken the
-    section's name down with its contents and left a numbered box that
-    does not say what it is for.                                      */
+/* A locked section shows only its number and the reason. */
+/* h2 stays visible - the section number lives inside it. */
 .vs-sec.is-locked > *:not(h2):not(.vs-lock){ display:none; }
 .vs-sec:not(.is-locked) > .vs-lock{ display:none; }
 
-/*  The note under a subheading. The subheadings carry a rule above them,
-    so an intro paragraph belongs to the one it sits under.            */
+/* The intro note under a subheading. */
 .vs-sub-note{
     margin:-10px 0 18px;
     color:var(--sg-muted);
@@ -1847,29 +1691,16 @@
     line-height:1.65;
 }
 
-/*  Continue. One button, not a Back and a Continue - going back is a
-    scroll now, or a click on the summary.                             */
+/* The Continue button. */
 .vs-sec-actions{ margin-top:26px; }
 
 /* ---- the summary ------------------------------------------------------- */
-/*  align-self:stretch, not the grid's own align-items:start.
-
-    A sticky box can only travel inside its own container, and a grid item
-    aligned to the start is exactly as tall as its contents - so it had
-    nowhere to go and scrolled off the top with everything else. Stretched,
-    the column is as tall as the form beside it and the panel rides down
-    it.                                                                 */
+/* align-self:stretch (not start) gives the sticky summary room to travel. */
 /* ==========================================================================
-   WHAT THE WHITE PAGE BROKE, MEASURED RATHER THAN LOOKED AT
-
-   Every one of these was found by walking the page and comparing each piece
-   of text against the colour actually behind it. The first three matter:
-   they are unreadable, not merely unlovely.
+   CONTRAST FIXES FOR THE WHITE PAGE
    ========================================================================== */
 
-/*  Orange as type on white. The buttons keep the brand orange - white on
-    it is what the rest of the site does - but the total, which is the one
-    number on this page a vendor actually checks, was 2.9 : 1.          */
+/* Darker orange for type on white. */
 .vs-sum-total,
 .vs-sum-total span,
 .vs-sum-total strong,
@@ -1877,38 +1708,20 @@
     color:#b34700;
 }
 
-/*  Accepting Vendors, and the tick beside a finished section - white on
-    a green that was a shade too light to carry it.                    */
+/* Darker green so white text reads on it. */
 .vs-sec .vs-event-status.is-open{ background:#15803d; }
 
 /* ==========================================================================
-   THE DESIGN MAX SENT THROUGH
+   THE FORM DESIGN
 
-   A rail of five steps across the top, a card per section, and the booking
-   itself down the side. Three things changed from what was here before:
-
-     the type       Poppins for the headings and Inter for the rest, which
-                    is what the design uses. Everywhere else on this site
-                    is Arial Black over Arial - right for a page shouting
-                    about a party, wrong for a form somebody is filling in
-                    with their insurance certificate open in another tab.
-                    This page is the exception and the only one.
-
-     no dark panels the vendor type cards were photographs with white type
-                    over them, and the chosen category chip went near
-                    black. On a white page both read as holes in it.
-
-     orange         the design came through in lime. Max asked for our
-                    orange, so the lime is orange and the black button in
-                    the design is our black.
+   Step rail across the top, a card per section, the booking down the side.
+   Poppins headings and Inter text - on this page only.
    ========================================================================== */
 .vendor-signup{
     --sg-font:"Inter", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
     --sg-font-display:"Poppins", "Inter", -apple-system, "Segoe UI", Arial, sans-serif;
 
-    /*  The accent face was Courier, which is what gives the rest of the
-        site its backstage-pass look. On a form it turned every field
-        label into a typewriter caption.                               */
+    /* Plain accent font for labels. */
     --sg-font-accent:"Inter", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 
     --vs-ink:#12141a;
@@ -1916,7 +1729,7 @@
     --vs-soft:#f6f7f9;
 }
 
-/*  Headings lose the uppercase and the black weight along with the face. */
+/* Headings: no uppercase, lighter weight. */
 .vendor-signup .vs-apply h2,
 .vendor-signup .vs-apply h3,
 .vendor-signup .vs-rail{
@@ -1948,9 +1761,7 @@
 
 .vs-rail-list::-webkit-scrollbar{ display:none; }
 
-/*  The hairline between one step and the next. Drawn on the item rather
-    than as an element of its own so it cannot wrap onto a line by
-    itself when the rail runs out of room.                            */
+/* The line between steps, drawn on the item so it cannot wrap alone. */
 .vs-rail-list li{
     display:flex;
     align-items:center;
@@ -2037,8 +1848,7 @@
     margin-bottom:6px;
 }
 
-/*  The number is part of the heading now rather than a line above it, so
-    a section says what it is in one line instead of two.             */
+/* The number sits inside the heading. */
 .vs-secnum{
     display:grid;
     place-items:center;
@@ -2048,10 +1858,7 @@
     border-radius:50%;
     background:var(--sg-orange);
 
-    /*  Ink on the orange, not white on it. White on our orange is 2.9 : 1,
-        which is fine on a button the size of a thumb and not fine on a
-        30px disc with a single digit in it. Ink is 6.3 : 1 and it is what
-        the design does anyway - a dark number on the accent.          */
+    /* Dark number on orange - white on orange is too faint at this size. */
     color:#12141a;
     font-family:var(--sg-font);
     font-size:.95rem;
@@ -2147,7 +1954,7 @@
     font-weight:bold;
     letter-spacing:.14em;
     text-transform:uppercase;
-    color:#6f6152;      /* 5.4 : 1 on the strip, where #8b7a68 was 4.0 */
+    color:#6f6152;      /* 5.4 : 1 contrast on the strip */
 }
 
 .vs-picked-more-btn{
@@ -2252,10 +2059,7 @@
     color:var(--sg-muted);
 }
 
-/*  Booking fee and GST. Quiet, because it is a qualifier on the price
-    rather than a second price - but present, because a vendor comparing
-    $100 against the $115.49 that leaves their account should have been
-    told here rather than at the checkout.                            */
+/* Booking fee and GST note - quiet, but shown before the checkout. */
 .vs-type-fees{
     margin-top:2px;
     color:var(--sg-dim);
@@ -2268,8 +2072,7 @@
     line-height:1.5;
 }
 
-/*  The tick only exists on the chosen card. A tick that is merely faint
-    reads as one you could turn on, which is not what it means.      */
+/* The tick shows only on the chosen card. */
 .vs-type-tick{
     position:absolute;
     top:14px;
@@ -2287,9 +2090,8 @@
 .vs-type.is-selected .vs-type-tick{ display:grid; }
 
 /* ---- fields ------------------------------------------------------------ */
-/*  Sentence case, and the same face as everything else. The asterisk comes
-    off the input's own required attribute, so a field cannot look optional
-    while the form insists on it.                                     */
+/* Labels in sentence case. The asterisk comes from the input's required
+   attribute. */
 .vendor-signup .vs-field label{
     font-family:var(--sg-font);
     font-size:.84rem;
@@ -2318,9 +2120,7 @@
     font-size:.78rem;
 }
 
-/*  The chosen category went near-black with near-black type on it - the
-    same dark-state-on-a-white-page problem as the vendor cards, and it
-    only showed once somebody actually picked one.                  */
+/* The chosen category chip, on white. */
 .vs-category.is-selected{
     border-color:var(--sg-orange);
     background:#fff9f4;
@@ -2449,10 +2249,7 @@
 }
 
 /* ---- what the total is made of ----------------------------------------- */
-/*  Three lines above the total rather than a note under it saying fees are
-    in there somewhere. Somebody looking at a $100 site and a $115.49 charge
-    should be able to see which line is ours, which is the payment
-    processor's and which is the tax, without opening the checkout.     */
+/* Site, processing fee and GST lines above the total. */
 .vs-side-sum{
     display:grid;
     gap:8px;
@@ -2476,16 +2273,14 @@
     color:var(--vs-ink);
 }
 
-/*  The rate, beside the name of the charge. Small and grey, because it
-    explains the figure rather than competing with it.                */
+/* The rate, small and grey, beside the charge name. */
 .vs-side-sum em{
     font-style:normal;
     color:var(--sg-dim);
     font-size:.92em;
 }
 
-/*  The total sits directly under the three lines it adds up, so it does
-    not need a rule of its own above it as well.                      */
+/* The total sits right under its lines, so no extra rule. */
 .vs-side-sum + .vs-side-total{
     margin-top:12px;
     padding-top:12px;
@@ -2535,9 +2330,7 @@
 @media (max-width:980px){
     .vs-apply-inner{ grid-template-columns:1fr; }
 
-    /*  The booking comes first and stops sticking. A sticky panel on a
-        phone is a panel permanently covering part of the form, and at the
-        top of the page it still says what this is going to involve.   */
+    /* Phone: the booking summary comes first and stops sticking. */
     .vs-side{ order:-1; }
     .vs-side-inner{ position:static; }
 }
@@ -2545,9 +2338,7 @@
 @media (max-width:768px){
     .vs-rail-list{ padding:10px 5%; }
 
-    /*  The words go and the numbers stay. Five labels will not fit a phone
-        without shrinking past readable, and the rail is still saying which
-        of five you are on.                                           */
+    /* Phone: the rail shows numbers only. */
     .vs-rail-label{ display:none; }
     .vs-rail-list li{ justify-content:center; }
 
@@ -2565,20 +2356,14 @@
 /* ==========================================================================
    THE SITE PLAN, ON WHITE
 
-   The last dark panel in the form. It was left alone when the page turned
-   over because the colours on it mean something to a vendor choosing a
-   site, and getting one wrong there costs somebody a booking - so it is
-   turned over deliberately, state by state, keeping every meaning:
-
-     available   green        take it
-     held by you orange       yours for the next ten minutes
-     on hold     amber        somebody else is mid-checkout
-     booked      red          gone
-     not available grey       never on offer
-     opens later dashed grey  free, but not released yet
-
-   Same six colours, same order of loudness. What changes is that they are
-   now inks on a light plan rather than glows on a black one.
+   Same six colours, as inks on a light plan:
+   
+     available     green        take it
+     held by you   orange       yours for the next ten minutes
+     on hold       amber        somebody else is mid-checkout
+     booked        red          gone
+     not available grey         never on offer
+     opens later   dashed grey  free, but not released yet
    ========================================================================== */
 .vendor-signup .vs-map-wrap{
     background:#fbfcfd;
@@ -2633,9 +2418,7 @@
     fill:rgba(18,20,26,.3);
 }
 
-/*  The legend is a set of samples of the plan, so it has to move with it -
-    a swatch that does not match the bay it stands for is worse than no
-    legend at all.                                                      */
+/* KEEP IN STEP: legend swatches must match the bays on the plan. */
 .vendor-signup .vs-swatch.is-available{ background:#e7f6ea; border-color:#15803d; }
 .vendor-signup .vs-swatch.is-held{      background:#fdf3d9; border-color:#a16207; }
 .vendor-signup .vs-swatch.is-booked{    background:#fdeaea; border-color:#b91c1c; }
@@ -2643,20 +2426,13 @@
 .vendor-signup .vs-swatch.is-mine{      background:#fff1e4; border-color:#c2410c; }
 .vendor-signup .vs-swatch.is-not-open{  background:#f7f8fa; border-color:#c9ced7; }
 
-/*  The bold bit in "up to 8 bays" was gold, which the white page had
-    already darkened - on the plan's own panel it can be the orange.  */
+/* The bold bit in "up to 8 bays" is orange on the plan. */
 .vendor-signup .vs-map-intro strong{ color:#b34700; }
 
 /* ==========================================================================
    WAITING FOR THE EVENTS
 
-   The list is read from Firestore, which takes about a second on a cold
-   load, and until it answers the page cannot tell "none yet" from "none at
-   all" - so it used to say "no events are taking vendor applications" and
-   then contradict itself.
-
-   Grey cards the shape of real ones, in their place, so the real cards land
-   where the grey was instead of shoving the page around.
+   Grey placeholder cards while Firestore loads.
    ========================================================================== */
 .vs-event.is-loading{
     border-color:var(--pk-line);
@@ -2668,8 +2444,7 @@
 
 .vs-event.is-loading .vs-event-art{ background-image:none; }
 
-/*  One animation on the whole card rather than one per bar, so the bars
-    pulse together and it reads as a single thing loading.             */
+/* One animation on the whole card so the bars pulse together. */
 .vs-event.is-loading .vs-event-art,
 .vs-skel{
     background:#e9ecf1;
@@ -2703,15 +2478,13 @@
     50%{ opacity:.45; }
 }
 
-/*  Anybody who has asked for less movement gets the grey without the
-    pulse. It still says "something is coming here".                 */
+/* Reduced motion: no pulse. */
 @media (prefers-reduced-motion:reduce){
     .vs-event.is-loading .vs-event-art,
     .vs-skel{ animation:none; }
 }
 
-/*  For a screen reader, which cannot see grey boxes. role="status" on it
-    means the wait is announced without stealing focus.               */
+/* Screen-reader text; role="status" announces the wait. */
 .vs-sr-only{
     position:absolute;
     width:1px;
@@ -2725,14 +2498,10 @@
 }
 
 
-/*  [hidden] loses to .vs-field's own display:flex, so the two size fields
-    would stay on screen for a market stall without this. Same trap as the
-    one on the admin desk.                                            */
+/* [hidden] must beat .vs-field's display:flex. */
 .vendor-signup .vs-field[hidden]{ display:none !important; }
 
-/*  A link that lives inside a label. It has to be a button so that
-    clicking it does not tick the box it sits in, but it should read as a
-    link - so it borrows the type around it and keeps the underline.   */
+/* A button inside a label (so clicking won't tick the box), styled as a link. */
 .vs-inline-link{
     padding:0;
     border:0;
@@ -2748,17 +2517,9 @@
 /* ==========================================================================
    AN EVENT WITH NO PICTURE
 
-   Not a grey box. The mark on the house gradient, so an event nobody has
-   uploaded a photograph for still looks like ours - and so the card does
-   not read as a picture that failed to load, which is what an empty grey
-   rectangle looks like to everybody.
-
-   The logo is the file the menu already loads, so this costs no request.
-   First layer is on top: the mark sits over the gradient.
+   The logo on the house gradient, so it doesn't look like a broken image.
    ========================================================================== */
-/*  Two shapes to catch. The strip and the summary put the marker on the
-    picture itself; a card puts it on the <article>, because that is where
-    the custom property lives for the picture to inherit.            */
+/* Matches both the picture itself and a card's <article>. */
 .vs-event[data-noart] .vs-event-art,
 .vs-picked-art[data-noart],
 .vs-side-art[data-noart]{
@@ -2768,16 +2529,14 @@
     background-repeat:no-repeat;
     background-position:center;
 
-    /*  Percentage on the mark so it holds its proportion across the three
-        sizes these are drawn at - 320px on a card, 96px on the strip,
-        72px in the summary - and cover on the gradient underneath.  */
+    /* Percentage size keeps the logo in proportion at every size. */
     background-size:36% auto, cover;
 }
 
-/* an event POSTER (portrait) shows whole - the card grows taller (Max, 17 Oct 2026) */
+/* An event POSTER (portrait) shows whole - the card grows taller */
 .vs-event[data-poster] .vs-event-art{ aspect-ratio:900 / 1335; background-size:cover; background-position:center top; background-color:#f39243; }
 
-/* "Food vans sold out" sticker slapped over the poster (Max, 17 Oct 2026) */
+/* "Food vans sold out" sticker over the poster */
 .vs-event-sticker{
     position:absolute; top:38%; left:50%; transform:translate(-50%, -50%) rotate(-8deg);
     background:#e3141b; color:#fff; border:3px solid #fff;
@@ -2804,7 +2563,7 @@
 .vs-type-soldout{ top:-10px !important; right:-6px !important; font-size:.85rem !important; padding:6px 12px !important; box-shadow:0 3px 8px rgba(0,0,0,.25); z-index:2; }
 .vs-type-soldout{ top:auto !important; bottom:16px !important; right:16px !important; }
 
-/* Vendor Terms & Conditions (Max, 19 Oct 2026) */
+/* Vendor Terms & Conditions */
 .vs-terms{ max-height:420px; overflow-y:auto; padding:4px 4px 4px 0; }
 .vs-terms h4{ margin:14px 0 4px; font-size:15px; }
 .vs-terms p, .vs-terms li{ font-size:14px; line-height:1.5; margin:0 0 6px; }
@@ -2817,14 +2576,14 @@
 .vs-terms-read .vs-terms{ margin-top:10px; }
 .vs-terms-line{ margin:0 0 12px; font-size:14px; }
 
-/* WAITLIST (Max, 20 Oct 2026) */
+/* WAITLIST */
 .vs-waitlist{ display:grid; gap:12px; margin:16px 0 0; }
 .vs-wl-card{ border:1px solid rgba(255,107,0,.45); background:rgba(255,107,0,.08); border-radius:14px; padding:16px 18px; }
 .vs-wl-card > b{ display:block; font-size:16px; margin-bottom:4px; }
 .vs-wl-card > p{ margin:0 0 12px; font-size:14px; opacity:.85; }
 .vs-wl-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; margin-bottom:12px; }
 .vs-wl-grid label{ display:grid; gap:4px; font-size:13px; font-weight:600; }
-.vs-wl-grid input{ font:inherit; font-size:15px; padding:10px 12px; border-radius:8px; border:1px solid #e3c7b0; background:#fff; color:#111; }   /* white, not grey (Max, 21 Oct 2026) */
+.vs-wl-grid input{ font:inherit; font-size:15px; padding:10px 12px; border-radius:8px; border:1px solid #e3c7b0; background:#fff; color:#111; }   /* white, not grey */
 .vs-wl-grid input:focus{ outline:2px solid #ff6b00; outline-offset:1px; border-color:#ff6b00; }
 .vs-wl-wide{ grid-column:1 / -1; }
 .vs-wl-msg{ margin:8px 0 0; color:#ff8a80; font-size:14px; }

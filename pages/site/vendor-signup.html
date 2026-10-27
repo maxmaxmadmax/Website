@@ -7,8 +7,7 @@ permalink: /vendor-signup.html
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!--  Generic, like the hero: the page takes applications for every
-          event we run, not one of them.                             -->
+    <!-- Generic: the page takes applications for every event we run. -->
     <title>Become a Vendor | Food Vans &amp; Market Stalls | SoundzGood Events</title>
     <meta name="description" content="Apply to be a vendor at SoundzGood events in Bowen and the Whitsundays. Food vans, market stalls, drinks and activations - pick your event, then choose your site on the interactive map.">
 
@@ -24,14 +23,7 @@ permalink: /vendor-signup.html
     <meta property="og:image:alt" content="Eatz &amp; Beatz poster - food vans sold out, market stalls apply now">
     <meta name="twitter:card" content="summary_large_image">
 
-    <!--  The only webfonts on this site, and only on this page.
-
-          Everywhere else is Arial Black over Arial, which is right for a
-          page shouting about a party and wrong for a form somebody fills
-          in with their insurance certificate open in another tab. These
-          are the faces from the design Max sent through. Both have a real
-          fallback stack, so the page reads properly if Google is slow or
-          blocked.                                                     -->
+    <!-- Webfonts for this page only, with real fallbacks. -->
     <!-- speed: start talking to the event list + Firebase servers straight away -->
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
@@ -41,15 +33,15 @@ permalink: /vendor-signup.html
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap">
 
     <link rel="icon" href="images/logo.png">
-    <link rel="stylesheet" href="css/style.css?v=710">
-    <link rel="stylesheet" href="css/vendor-signup.css?v=710">
-    <script src="js/main.js?v=710" defer></script>
+    <link rel="stylesheet" href="css/style.css?v=711">
+    <link rel="stylesheet" href="css/vendor-signup.css?v=711">
+    <script src="js/main.js?v=711" defer></script>
     <!-- speed: fetch the page's helper files at the same time as the main script -->
-    <link rel="modulepreload" href="js/firebase-config.js?v=710">
-    <link rel="modulepreload" href="js/vendor-map.js?v=710">
-    <link rel="modulepreload" href="js/terms-data.js?v=710">
-    <link rel="modulepreload" href="js/vendor-terms-data.js?v=710">
-    <script type="module" src="js/vendor-signup.js?v=710"></script>
+    <link rel="modulepreload" href="js/firebase-config.js?v=711">
+    <link rel="modulepreload" href="js/vendor-map.js?v=711">
+    <link rel="modulepreload" href="js/terms-data.js?v=711">
+    <link rel="modulepreload" href="js/vendor-terms-data.js?v=711">
+    <script type="module" src="js/vendor-signup.js?v=711"></script>
 </head>
 
 <body class="vendor-signup">
@@ -80,13 +72,7 @@ permalink: /vendor-signup.html
 
     <div class="vs-hero-inner">
 
-        <!--  GENERIC ON PURPOSE.
-
-              This page used to be the Eatz & Beatz signup and said so, with
-              a pumpkin over it. It now takes applications for every event
-              we are running, so the headline cannot belong to one of them.
-              The event a vendor picks is named on the step below and again
-              at the top of the form.                                    -->
+        <!-- Generic on purpose: this page takes applications for every event. The chosen event is named on the step below. -->
         <p class="vs-hero-kicker">Vendors</p>
 
         <h1>Be part of<br>what&rsquo;s next.</h1>
@@ -103,22 +89,13 @@ permalink: /vendor-signup.html
 
 </header>
 
-<!-- THE STEP RAIL --------------------------------------------------------
-
-     Five steps across the top, sticky, filled in by renderRail() as the
-     page is filled in and following whichever section is on screen. It is
-     the one dark band in the form - a rail, not a panel, so it reads as
-     furniture rather than as somewhere to fill something in.
-     -------------------------------------------------------------------- -->
+<!-- THE STEP RAIL -------------------------------------------------------
+     Five steps, sticky, filled in by renderRail(). -->
 <nav class="vs-rail" id="vs-rail" aria-label="Application progress"></nav>
 
 
 <!-- THE APPLICATION ------------------------------------------------------
-
-     One page, five sections, and you scroll. The side column is the
-     booking itself - event, vendor type, site, total - rather than a
-     second copy of the rail above.
-     -------------------------------------------------------------------- -->
+     One page, five sections. The side column is the booking itself. -->
 <section class="vs-apply" id="vs-flow">
     <div class="vs-apply-inner">
 
@@ -137,15 +114,9 @@ permalink: /vendor-signup.html
                     <a class="vs-sec-aside" href="/contact">Can&rsquo;t find the event you&rsquo;re looking for?</a>
                 </div>
 
-                <!--  Built by js/vendor-signup.js from the events collection,
-                      so the list changes without anybody editing this file.
-                      An event only appears if its status is one a vendor
-                      should see - draft and archived are ours, not theirs. -->
+                <!-- Built by js/vendor-signup.js from the events collection. Draft and archived events are hidden. -->
                 <div class="vs-events" id="vs-events">
-                    <!--  The same grey cards renderEvents() draws while it waits,
-                          written out here so they are on screen from the first
-                          paint rather than after the module has loaded and run.
-                          They are replaced the moment the real list arrives. -->
+                    <!-- Grey placeholder cards so something shows at first paint; replaced when the real list arrives. -->
                     <p class="vs-sr-only" role="status">Loading events&hellip;</p>
 
                     <article class="vs-event is-loading" aria-hidden="true">
@@ -189,16 +160,8 @@ permalink: /vendor-signup.html
                     minutes before you fill anything in.
                 </p>
 
-                <!--  WHAT YOU PICKED, AND WHAT IT COSTS
-
-                      The prices and the power situation used to be a screen
-                      of their own that everybody walked past on the way to
-                      the form. They belong here: the moment you choose an
-                      event is the moment they mean anything.
-
-                      The head of the strip is written by renderPicked();
-                      the facts and FAQs underneath are the same markup as
-                      before, folded away behind the button.             -->
+                <!-- WHAT YOU PICKED, AND WHAT IT COSTS
+                     Head written by renderPicked(); facts and FAQs are folded behind the button. -->
                 <div class="vs-picked" id="vs-picked" hidden>
                     <div class="vs-picked-head" id="vs-picked-head"></div>
 
@@ -333,10 +296,6 @@ permalink: /vendor-signup.html
                     which sites you can choose from.
                 </p>
 
-                <!--  These were two photographs with the words over them. Max
-                      did not want the black, and a photo of somebody else's
-                      food van was never telling a vendor anything they did
-                      not know - so they are cards with the price on them.  -->
                 <div class="vs-type-grid is-two">
                     <button type="button" class="vs-type" data-vendor-type="food">
                         <span class="vs-type-tick" aria-hidden="true">&#10003;</span>
@@ -380,7 +339,7 @@ permalink: /vendor-signup.html
                     </button>
                 </div>
 
-                <!-- WAITLIST (Max, 20 Oct 2026): shows under a sold-out type -->
+                <!-- WAITLIST: shows under a sold-out type -->
                 <div class="vs-waitlist" id="vs-waitlist" hidden></div>
 
                 <p class="vs-error" data-error="type" hidden></p>
@@ -444,11 +403,7 @@ permalink: /vendor-signup.html
                     </div>
                 </div>
 
-                <!--  The business fields' error line. It was lost when this
-                      section was rebuilt, and setStepError does nothing
-                      quietly when its slot is missing - so "please fill in
-                      business name, contact, email and phone" has been
-                      going nowhere.                                     -->
+                <!-- Error line for the business fields - setStepError needs this slot or errors go nowhere. -->
                 <p class="vs-error" data-error="details" hidden></p>
 
                 <h3 class="vs-sub" id="vs-category-heading">What do you sell?</h3>
@@ -527,11 +482,7 @@ permalink: /vendor-signup.html
                             and whatever water you need for the day.
                         </p>
 
-                        <!--  One tick, and it is a read receipt rather than a
-                              promise about power. The link goes back up to
-                              Event info and opens the questions, because a
-                              tick saying you have read something should be
-                              next to a way of reading it.             -->
+                        <!-- One tick to confirm they read the power info. The link opens the Event info questions. -->
                         <label class="vs-check">
                             <input type="checkbox" id="vs-setup-faqs" required>
                             <span>I have read the
@@ -697,14 +648,8 @@ permalink: /vendor-signup.html
 
 
         <!-- YOUR APPLICATION ----------------------------------------------
-             The booking as it stands - event, vendor type, site, total - and
-             the button on. It used to be a second list of the five steps,
-             which the rail above now does on its own.
-
-             Written by renderSide(). Sticky beside the form on a wide
-             screen; on a phone it comes first, where it says what this is
-             going to involve before anybody starts.
-             ---------------------------------------------------------- -->
+             The booking so far and the button on. Written by renderSide().
+             Sticky beside the form on a wide screen; first on a phone. -->
         <aside class="vs-side">
             <div class="vs-side-inner" id="vs-chosen"></div>
         </aside>

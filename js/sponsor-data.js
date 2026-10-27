@@ -1,12 +1,11 @@
 /* ==========================================================================
-   SPONSORSHIP - levels and past sponsors   (Max, 20 Oct 2026)
+   SPONSORSHIP - levels and past sponsors
 
    Used by the public sponsor page (sponsor.html) and the admin Messages >
    Sponsors tab. KEEP IN STEP with SPONSOR_LEVELS in functions/index.js
    (the server counts spots left from the same keys).
 
-   Prices are EX GST. Max: "lets go with that for now" - the event needs to
-   make $10k minimum to be run properly. Change a price or a perk here, run
+   Prices are EX GST. Change a price or a perk here, run
    node tools/bump-assets.js, and push.
    ========================================================================== */
 
@@ -56,9 +55,8 @@ export const EVENT_COSTS = [
   'Permits and insurance', 'Marketing and posters', 'Kids activities and prizes',
 ];
 
-/*  BIG BOWEN BUSINESSES to ask (researched 20 Oct 2026 - Max: "go after big
-    business in Bowen", not our vendors). Emails only where one was published
-    for community / sponsorship enquiries - the rest need an email added.  */
+/*  BIG BOWEN BUSINESSES to ask. Emails only where one was published for
+    community / sponsorship enquiries - the rest need an email added.   */
 export const SUGGESTED_SPONSORS = [
   { business: 'Abbot Point Operations (Bravus)', email: 'Abbotpoint.community@apt1.com.au', note: 'Runs the NQXT port near Bowen - one of the biggest local employers. Their Community Support Program email (07 4786 0300).' },
   { business: 'North Queensland Bulk Ports (NQBP)', email: 'AJulian@nqbp.com.au', note: 'Community Relationship Advisor Angela Julian (07 4969 0705). Their Community Fund is for non-profits - pitch this as a sponsorship.' },
@@ -69,8 +67,8 @@ export const SUGGESTED_SPONSORS = [
   { business: 'Hillery Group', email: 'info@hillerygroup.com.au', note: 'Bowen civil and mining contractor, 167 Richmond Rd (07 4786 5100).' },
 ];
 
-/*  WORTH ASKING, BUT NO PUBLIC EMAIL YET - shown at the bottom of the Sponsors
-    tab with an email box, so Max can find it and add them (20 Oct 2026).  */
+/*  WORTH ASKING, BUT NO PUBLIC EMAIL YET - shown at the bottom of the
+    Sponsors tab with an email box, so one can be added.                */
 export const NEEDS_EMAIL = [
   { business: 'Koorelah Farms', tip: 'Big Bowen tomato grower, Inveroona Rd. Call (07) 4785 1999 and ask who handles sponsorship.' },
   { business: "McDonald's Bowen", tip: 'Backs local community awards. Ask the store manager for the franchisee\'s email.' },

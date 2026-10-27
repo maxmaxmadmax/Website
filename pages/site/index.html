@@ -7,19 +7,7 @@ permalink: /index.html
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!--  HOW THIS LOOKS IN GOOGLE
-
-          Google builds the result from three things, and we control all
-          three: the site name, this title, and this description. What we
-          cannot control is the list of sitelinks underneath - those are
-          chosen by Google from the site's own structure, and there is no
-          markup that asks for them. The old demote tool is long gone.
-
-          What does decide them: a clear menu, a sitemap, and pages whose
-          titles say plainly what they are. So each page's title now leads
-          with its own label - Event Production, What's On, Book
-          Entertainment - because when Google does draw a sitelink, the
-          words it prints are taken from that page's title.              -->
+    <!-- Google result title and description. Each page's title leads with its own label, because Google uses it for sitelinks. -->
     <title>SoundzGood | Events &amp; Production</title>
     <meta name="description" content="Audio, lighting, staging, DJs and live events across the Whitsundays and North Queensland. Event production for festivals, weddings, sporting and community events.">
 
@@ -36,16 +24,10 @@ permalink: /index.html
     <meta name="twitter:card" content="summary_large_image">
 
     <link rel="icon" href="images/logo.png">
-    <link rel="stylesheet" href="css/style.css?v=710">
-    <script src="js/main.js?v=710" defer></script>
+    <link rel="stylesheet" href="css/style.css?v=711">
+    <script src="js/main.js?v=711" defer></script>
 
-    <!--  THE NAME GOOGLE PRINTS ABOVE THE RESULT
-
-          Left to itself Google guesses the site name from the domain and
-          the title, and has been showing "soundzgood.com.au". This is the
-          documented way to tell it otherwise: a WebSite block on the home
-          page with the name we actually use. It is the only part of the
-          name-and-sitelinks arrangement that is ours to set.            -->
+    <!-- Tells Google the site name to show (instead of "soundzgood.com.au"). -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -56,17 +38,8 @@ permalink: /index.html
     }
     </script>
 
-    <!--  WHO THIS BUSINESS IS, IN A FORM GOOGLE READS DIRECTLY
-
-          Everything below is taken from the site itself - the phone number
-          and email are the ones in the footer, the ABN is the one on the
-          tax invoices. Nothing here is invented, and nothing should be:
-          structured data that disagrees with the page is worse than none.
-
-          areaServed is the part that matters for search. It is a statement
-          of where the work is taken on, which is why the islands are named
-          individually rather than folded into "the Whitsundays" - somebody
-          searching for Hayman Island is not searching for a region.     -->
+    <!-- Business details for Google. Must match the site: phone and email in the footer,
+         ABN on the invoices. Islands named one by one on purpose. -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -120,22 +93,9 @@ permalink: /index.html
 <!-- HERO ---------------------------------------------------------------- -->
 <section class="hero">
 
-    <!--  TWO SIZES OF THE SAME CLIP
-
-          A phone gets the 720p one at 3.7 MB, a desktop the 1080p at
-          7.2 MB. The browser picks by the media query and only downloads
-          the one it picked.
-
-          The small one is listed FIRST on purpose. A browser that ignores
-          media on a video source takes whichever comes first, so the worst
-          case is everybody gets 720p - which is fine behind the overlay,
-          and far better than everybody getting the big file.
-
-          Both are silent and 30fps. The original was 120fps with an audio
-          track on a muted video, which is where most of the 17.7 MB went.
-
-          preload="none" keeps the video out of the way of first paint -
-          the poster shows immediately and the clip follows.              -->
+    <!-- Two sizes of the same clip: phone 720p, desktop 1080p.
+         The small one MUST stay first (browsers that ignore media take the first one).
+         preload="none" lets the poster show first. -->
     <video autoplay muted loop playsinline preload="none"
            class="hero-video" poster="images/bowen.jpeg">
         <source src="videos/hero-720.mp4" type="video/mp4" media="(max-width: 900px)">
@@ -166,7 +126,7 @@ permalink: /index.html
           replacing it here.                                              -->
     <div class="featured-event has-poster">
 
-        <!-- the event poster (Max, 17 Oct 2026) - swap the file for the next event -->
+        <!-- the event poster - swap the file for the next event -->
         <a class="fe-poster" href="/eatz-beatz-halloween-2026">
             <img src="/images/events/eatz-beatz-halloween-2026-v3.webp" width="900" height="1335" loading="lazy"
                  alt="Eatz &amp; Beatz Halloween Edition poster - Sat 31 Oct, Bowen Sports Complex, free entry">
@@ -185,9 +145,7 @@ permalink: /index.html
         </ul>
 
         <div class="buttons">
-            <!--  No Buy Tickets button yet: the only ticket link we have is
-                  the Humanitix page for SoundzGood 2.0, which has been and
-                  gone. Put one here once Eatz & Beatz tickets are on sale.  -->
+            <!-- No Buy Tickets button yet - add one here once Eatz & Beatz tickets are on sale. -->
             <a href="/eatz-beatz-halloween-2026" class="btn btn-ticket">Event Details</a>
             <a href="/vendor-signup" class="btn btn-outline">Vendor Applications</a>
         </div>

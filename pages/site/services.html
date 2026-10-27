@@ -23,12 +23,12 @@ permalink: /services.html
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="css/style.css?v=710">
-  <link rel="stylesheet" href="css/services.css?v=710">
-  <link rel="stylesheet" href="css/quote-bot.css?v=710">
-  <script src="js/main.js?v=710" defer></script>
-  <script src="js/services.js?v=710" defer></script>
-  <script type="module" src="js/quote-bot.js?v=710"></script>
+  <link rel="stylesheet" href="css/style.css?v=711">
+  <link rel="stylesheet" href="css/services.css?v=711">
+  <link rel="stylesheet" href="css/quote-bot.css?v=711">
+  <script src="js/main.js?v=711" defer></script>
+  <script src="js/services.js?v=711" defer></script>
+  <script type="module" src="js/quote-bot.js?v=711"></script>
 </head>
 
 <body>
@@ -37,30 +37,15 @@ permalink: /services.html
 
 <!-- ==========================================================================
      SERVICES PAGE
-
-     Everything below the shared menu lives inside #sg-services-page. Every
-     rule in services.css and every listener in js/services.js is scoped to
-     that id, so nothing here can reach another page.
-
-     SLIDE PHOTOGRAPHY
-     Each slide carries its own picture as a variable on the element:
-
-         style="--sgs-img:url('images/services/festivals.webp')"
-
-     Drop a photo at that path and the slide picks it up. Until then the
-     slide shows its gradient, which is why an empty slide still looks
-     finished rather than broken. Landscape, about 2000px wide, is plenty.
+     Everything below lives inside #sg-services-page; services.css and js/services.js
+     are scoped to that id.
+     SLIDE PHOTOS: style="--sgs-img:url('images/services/festivals.webp')" on the slide
+     (landscape, ~2000px wide). No photo yet shows a gradient.
      ========================================================================== -->
 <main id="sg-services-page">
 
-  <!-- ====================================================================
-       FULL SCREEN SLIDER
-
-       The track is a normal horizontally scrolling element with CSS scroll
-       snapping, so swiping, trackpad gestures and keyboard all work even if
-       js/services.js never loads. The script only adds the arrows, the wheel
-       handling and the progress bar on top of that.
-       ==================================================================== -->
+  <!-- FULL SCREEN SLIDER - CSS scroll snapping, so swiping and keyboard work without
+       js/services.js. The script adds the arrows, wheel handling and progress bar. -->
   <section class="sgs-stage" id="sgs-stage" aria-label="What we do">
 
     <div class="sgs-track" id="sgs-track" tabindex="0"
@@ -68,8 +53,7 @@ permalink: /services.html
 
       <!-- 1. INTRO ----------------------------------------------------- -->
       <article class="sgs-slide sgs-intro" id="sgs-slide-intro" aria-labelledby="sgs-h1">
-        <!-- Real SoundzGood footage. The script only gives this a source on
-             a large screen, so a phone never downloads it. -->
+        <!-- Real SoundzGood footage. Only given a source on a large screen, so phones never download it. -->
         <video class="sgs-video" id="sgs-hero-video"
                data-src="videos/hero-1080.mp4"
                muted loop playsinline preload="none" aria-hidden="true"></video>
@@ -132,9 +116,7 @@ permalink: /services.html
         <div class="sgs-content">
           <h2 class="sgs-title">DJ<br>Entertainment</h2>
           <p class="sgs-line">DJs &bull; MCs &bull; Sound &bull; Lighting</p>
-          <!--  The one slide with a real page behind it: the roster lives on
-                /entertainment, so this goes there rather than to the contact
-                form like the rest. -->
+          <!-- Goes to /entertainment rather than the contact form. -->
           <a href="/entertainment" class="sgs-btn sgs-btn-ghost">Explore DJ Entertainment</a>
         </div>
       </article>
@@ -213,8 +195,7 @@ permalink: /services.html
 
     </div>
 
-    <!-- Arrows. Added by the markup rather than the script so they are in
-         the tab order even before the script runs. -->
+    <!-- Arrows are in the markup so they are in the tab order before the script runs. -->
     <button type="button" class="sgs-arrow sgs-arrow-prev" id="sgs-prev"
             aria-controls="sgs-track" aria-label="Previous event type">
       <span aria-hidden="true">&#8249;</span>
@@ -225,14 +206,8 @@ permalink: /services.html
       <span aria-hidden="true">&#8250;</span>
     </button>
 
-    <!-- Slide navigation. The labels show on a wide screen; a phone gets the
-         short "03 / 07 - FESTIVALS" line instead, which is the same
-         information without seven tap targets crammed edge to edge. -->
-    <!--  A div rather than a <nav>: style.css styles the bare nav element
-          for the site menu (fixed to the top of the page, full width, with
-          its own background), and that would land on this as well. The role
-          gives assistive software the same meaning without inheriting any
-          of it, and no shared rule had to be changed.                    -->
+    <!-- Slide navigation. Labels show on a wide screen; a phone gets the short "03 / 07 - FESTIVALS" line. -->
+    <!-- A div rather than a <nav>: style.css styles the bare nav element for the site menu. -->
     <div class="sgs-nav" role="navigation" aria-label="Choose an event type">
       <p class="sgs-nav-compact" id="sgs-compact" aria-hidden="true"></p>
 
@@ -258,14 +233,8 @@ permalink: /services.html
   </section>
 
 
-  <!-- ====================================================================
-       BELOW THE SLIDER - ordinary vertical page
-
-       One compact band: the pitch on the left, the call to action beside
-       it, and a single row of what we bring underneath. To add or remove a
-       capability, copy an <li> in the row - the icons are drawn inline so
-       there is no image to find.
-       ==================================================================== -->
+  <!-- BELOW THE SLIDER
+       To add or remove a capability, copy an <li> in the row (icons are inline). -->
   <section class="sgs-block sgs-band">
     <div class="sgs-wrap">
 
@@ -274,13 +243,6 @@ permalink: /services.html
         <div class="sgs-band-copy">
           <p class="sgs-kicker">Events, All In One</p>
           <h2>Your Event<span>.</span> One Team<span>.</span></h2>
-          <!--  Max's wording, and just the two lines. The taglines that
-                were on the end of each - "from one team, on one invoice"
-                and "book the lot, or just the part you're missing" -
-                came off at his direction. The heading above already says
-                One Team, so the first was saying it twice.
-
-                Full stops added; everything else is his.            -->
           <p class="sgs-band-lead">
             Sound, lighting, staging, screens, entertainment and crew.
           </p>
@@ -294,9 +256,7 @@ permalink: /services.html
           Explore What We Do <span aria-hidden="true">&rarr;</span>
         </a>
 
-        <!--  SoundzGood's own line, set in the handwritten face the rest of
-              the site uses. Decorative, so it is hidden from screen
-              readers - the same words are said plainly above.          -->
+        <!-- Decorative handwritten line - hidden from screen readers (same words are said above). -->
         <p class="sgs-script" aria-hidden="true">
           Good<br>Music<br>Good<br>People
         </p>
@@ -370,20 +330,9 @@ permalink: /services.html
   </section>
 
   <!-- TRUSTED BY -------------------------------------------------------- -->
-  <!--  A pale band, on purpose. Partner logos are drawn to sit on white and
-        most arrive as dark marks on a transparent background; dropped onto
-        the black page they would be invisible.
-
-        ADDING OR CHANGING A LOGO
-        Copy one <li> and change the file name and the two bits of text. The
-        image is given a fixed box by the CSS and told to fit inside it, so a
-        logo that arrives far too large is still drawn at the right size -
-        it just costs more to download than it needed to. See
-        images/partners/README.txt for what to export.
-
-        The <span> is the fallback. It is hidden while the picture is there
-        and takes over if the file is missing, so a name that has not been
-        supplied yet reads as a name rather than a broken image.        -->
+  <!-- Pale band on purpose - partner logos are drawn for white.
+       ADDING A LOGO: copy one <li>, change the file name and the two bits of text.
+       See images/partners/README.txt. The <span> is the name shown if the image is missing. -->
   <section class="sgs-block sgs-trusted">
     <div class="sgs-wrap">
 
@@ -456,21 +405,10 @@ permalink: /services.html
   </section>
 
   <!-- OUR REGION -------------------------------------------------------- -->
-  <!--  The photo is a background rather than an <img>, so the band still
-        looks deliberate before the file exists - it falls back to a dark
-        gradient instead of a broken image. Save yours as
-        images/services/region.webp, landscape, around 2000px wide.      -->
+  <!-- Background photo: save as images/services/region.webp (landscape, ~2000px). Falls back to a dark gradient. -->
   <section class="sgs-block sgs-region">
-    <!--  TWO PLACES, ONE BAND
-
-          The outback fills the whole width and the coast is laid over it,
-          clipped to wherever the cursor is. Moving the mouse wipes between
-          them, which is the point: one business, two very different rooms
-          to work in.
-
-          Both halves are decorative - the words below name each place - so
-          the whole thing is aria-hidden and the effect is never the only
-          way the information is available.                              -->
+    <!-- TWO PLACES, ONE BAND - the coast is laid over the outback and wipes with the mouse.
+         Decorative (aria-hidden); the words below name each place. -->
     <div class="sgs-region-media" aria-hidden="true">
       <span class="sgs-region-half is-outback"></span>
       <span class="sgs-region-half is-coast"></span>
@@ -486,23 +424,15 @@ permalink: /services.html
       </p>
     </div>
 
-    <!--  One label under each half, so the words say which picture is
-          which rather than leaving it to be guessed.                    -->
+    <!-- One label under each half -->
     <ul class="sgs-places">
       <li>Whitsundays &amp; The Whitsunday Islands</li>
       <li>Regional &amp; Outback Queensland</li>
     </ul>
   </section>
 
-  <!--  FINAL CTA
-
-        The photograph is a background rather than an <img>, so the band
-        still looks deliberate before the file exists - it falls back to a
-        gradient rather than a broken image. Save yours as
-        images/services/cta.webp, landscape, around 2000px wide. Something
-        dark and wide works best: the words sit over the left of it.    -->
-  <!--  The instant-estimate bot lives in the floating bubble bottom-right
-        (built by js/quote-bot.js); no in-page band for it here.          -->
+  <!-- FINAL CTA - background photo: save as images/services/cta.webp
+       (dark, landscape, ~2000px). Falls back to a gradient. -->
 
   <section class="sgs-block sgs-cta">
     <div class="sgs-cta-media" aria-hidden="true"></div>
@@ -541,41 +471,11 @@ permalink: /services.html
 
 
   <!-- 6. ANNUAL EVENTS -------------------------------------------------------
-
-       The events SoundzGood works on every year, most recently completed
-       first. A different claim to Previous Events above: those are our own
-       shows, these are other people's events we turn up and work on.
-
-       THE ORDER
-       Newest at the front, so the front of the row is always the one we just
-       did. That means it wants nudging once a year - when Carols comes round
-       in December it moves from the back of the row to the front. The
-       data-when on each card is there to make that obvious: read down the
-       row and the dates should run backwards.
-
-       WHICH DATES ARE CONFIRMED
-       Don River Dash, NAIDOC, the Multicultural Festival and Carols are
-       checked against a public source and say their month. The rest say only
-       the year until they are confirmed - a wrong date on our own site is
-       worse than a vague one.
-
-       THE TAGS
-       What we actually supplied at that event. Four cards have them; the
-       rest are waiting on someone who was there. A card with no tags is
-       fine - it just ends after the place.
-
-       PHOTOGRAPHS
-       Each card takes its picture the same way the cards above do:
-
-           style="--sgs-an-art:url('images/annual/don-river-dash.jpg')"
-
-       Most cards still show the placeholder tile. Drop a photo at the path (or
-       point the card at one, like Don River Dash -> images/work/) and the card picks it up -
-       about 900px wide is plenty at this size.
-
-       ADDING OR REMOVING ONE
-       Copy a card, put it in date order, done. The arrows and the dashes
-       count the cards themselves - no number in here needs keeping in step. -->
+       Other people's events we work on every year, newest first
+       (read the data-when dates down the row - they should run backwards).
+       Only confirmed dates say their month.
+       PHOTOS: style="--sgs-an-art:url('images/annual/don-river-dash.jpg')" on the card (~900px wide).
+       TO ADD ONE: copy a card and put it in date order. The arrows and dashes count cards themselves. -->
   <section class="sgs-annual" aria-labelledby="sgs-annual-h">
 
     <div class="sgs-annual-inner">
@@ -592,8 +492,6 @@ permalink: /services.html
         </div>
 
         <div class="sgs-annual-side">
-          <!--  Four words rather than a paragraph. It is the one place on the
-                page that says what we are in it for, and it only works short. -->
           <ul class="sgs-an-words" aria-hidden="true">
             <li>People</li>
             <li>Production</li>
@@ -633,7 +531,7 @@ permalink: /services.html
               <li>Audio</li>
               <li>Event Production</li>
             </ul>
-            <!-- the job story (Max, 20 Oct 2026) - the whole card links to it -->
+            <!-- the job story - the whole card links to it -->
             <a class="sgs-an-read" href="/don-river-dash-event-sound-bowen">Read the story &rarr;</a>
           </div>
         </li>
@@ -748,10 +646,8 @@ permalink: /services.html
           </div>
         </li>
 
-        <!--  NEW - ANH DO -------------------------------------------------
-             The poster has no date on it, so this card says the show rather
-             than a year we do not know. Put the date in when max has it and
-             move the card up or down the row to match.                    -->
+        <!-- NEW - ANH DO -------------------------------------------------
+             No date on the poster yet - add it and move the card to match. -->
         <li class="sgs-an-card" data-when="2026-03"
             style="--sgs-an-art:url('images/annual/anh-do.jpg')">
           <div class="sgs-an-art" aria-hidden="true"></div>
@@ -794,9 +690,7 @@ permalink: /services.html
         </li>
 
         <!-- 11 ------------------------------------------------------------
-             The poster says Tue 14 Oct, and 14 October fell on a Tuesday in
-             2025, not 2026 - so this one is a year older than it looks and
-             sits at the back of the row.                                   -->
+             Poster says Tue 14 Oct, which was 2025, so this one sits at the back of the row. -->
         <li class="sgs-an-card" data-when="2025-10-14"
             style="--sgs-an-art:url('images/annual/tones-and-i.jpg')">
           <div class="sgs-an-art" aria-hidden="true"></div>
@@ -814,9 +708,7 @@ permalink: /services.html
       </div>
 
       <div class="sgs-an-foot">
-        <!--  The dashes are built by js/events.js, one per page, because the
-              number of pages changes with the width of the window. Empty
-              here on purpose.                                             -->
+        <!-- Dashes are built by js/events.js. Empty on purpose. -->
         <div class="sgs-an-dots" id="sgs-annual-dots" role="tablist"
              aria-label="Pages of events"></div>
 

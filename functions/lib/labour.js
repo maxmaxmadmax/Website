@@ -1,20 +1,19 @@
 /* =========================================================================
-   SETUP & PACK-DOWN LABOUR RATES (Max, 15 Oct 2026)
+   SETUP & PACK-DOWN LABOUR RATES
 
    KEEP IN STEP with the copy in js/admin-app.js (search "LABOUR RATES").
 
    - $80/hr base.  Saturday x1.25.  Sunday x1.5.  Public holiday x1.5.
    - Pack-down = 50% of setup time. Setup is charged on the FIRST hire day,
-     pack-down on the LAST hire day,
-     each at that day's rate.
+     pack-down on the LAST hire day, each at that day's rate.
    - Each part: minimum 1 hour, then rounded UP to the half hour.
-   - Public holidays: Queensland list below (from qld.gov.au, checked
-     15 Oct 2026), plus local show holidays, which only count in their own
-     district (matched on the delivery town; pickup = Bowen). Add each new
-     year's dates when the Government publishes them.
+   - Public holidays: Queensland list below (from qld.gov.au), plus local
+     show holidays, which only count in their own district (matched on the
+     delivery town; pickup = Bowen). Add each new year's dates when the
+     Government publishes them.
    ========================================================================= */
-const LABOUR_RATE_CENTS = 8000;   // $80/hr (Max, 20 Oct 2026 - was $75) - KEEP IN STEP with js/admin-app.js
-const PACKDOWN_PCT = 0.5;   // pack-down = 50% of setup time (Max, 15 Oct 2026)
+const LABOUR_RATE_CENTS = 8000;   // $80/hr - KEEP IN STEP with js/admin-app.js
+const PACKDOWN_PCT = 0.5;   // pack-down = 50% of setup time
 const LOADING = { saturday: 1.25, sunday: 1.5, holiday: 1.5 };
 
 const QLD_PUBLIC_HOLIDAYS = {

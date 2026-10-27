@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=710';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=710';   // DJ / entertainment quotes (Max, 22 Oct 2026)
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=710';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=711';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=711';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=711';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -26,11 +26,10 @@ const SELLER = {
   bankAcc: '815818305',
 };
 
-/*  ON / OFF SWITCH (Max, 17 Oct 2026): the customer's itemised quote grouped
-    into sections - AUDIO, LIGHTING, STAGING, BACKLINE ... then LABOUR, TRAVEL
-    & TRANSPORT, BOOKING & ADMIN, DISCOUNT. To go back to the plain list in the
-    order the lines were added: change true to false below, run
-    node tools/bump-assets.js, then push.                                    */
+/*  ON / OFF SWITCH: group the customer's itemised quote into sections -
+    AUDIO, LIGHTING, STAGING, BACKLINE ... then LABOUR, TRAVEL & TRANSPORT,
+    BOOKING & ADMIN, DISCOUNT. For the plain list (in the order lines were
+    added): change true to false below, run node tools/bump-assets.js, push. */
 const ITEMISE_BY_SECTION = true;
 
 const money = (c) => '$' + (Math.round(c || 0) / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -64,7 +63,7 @@ async function initFns() {
 
 function lineAmount(l, days) {
   if (l.type === 'discount') return -Math.max(0, Math.round(l.amountCents || 0));
-  const qty = Math.max(0, (l.perf ? Math.round(Number(l.qty || 0) * 4) / 4 : Math.round(Number(l.qty) || 0)));   // DJ hours can be 4.5 (Max, 23 Oct 2026)
+  const qty = Math.max(0, (l.perf ? Math.round(Number(l.qty || 0) * 4) / 4 : Math.round(Number(l.qty) || 0)));   // DJ hours can be 4.5
   const unit = Math.max(0, Math.round(l.unitCents || 0));
   const d = Math.max(1, Math.round(l.days || days));
   return Math.round(qty * unit * d);   // quantity x day rate x number of days
@@ -88,20 +87,20 @@ function fmtDate(secs) {
 }
 
 
-/*  COST BREAKDOWN GROUPS (Max, 15 Oct 2026) - KEEP IN STEP between
+/*  COST BREAKDOWN GROUPS - KEEP IN STEP between
     js/quote-view.js and js/admin-app.js. Inventory category -> group shown
     in the totals ("Audio $180, Staging $180, Lighting $60").            */
 const COST_GROUP = {
   audio: 'Audio', mixer: 'Audio', amp: 'Audio', microphone: 'Audio', iem: 'Audio', di: 'Audio',
   'studio monitor': 'Audio', cable: 'Audio', stands: 'Audio',
-  speaker: 'Audio', speakers: 'Audio', 'mic kit': 'Backline', drum: 'Backline', drums: 'Backline',   // Max's Inventory names (17 Oct 2026)
+  speaker: 'Audio', speakers: 'Audio', 'mic kit': 'Backline', drum: 'Backline', drums: 'Backline',   // Inventory category names
   lighting: 'Lighting', truss: 'Lighting',
   stage: 'Staging', furniture: 'Staging',
-  backline: 'Backline', 'dj mixer': 'DJ equipment', vision: 'Vision', power: 'Audio',   // power & cables count as Audio (Max, 17 Oct 2026)
+  backline: 'Backline', 'dj mixer': 'DJ equipment', vision: 'Vision', power: 'Audio',   // power & cables count as Audio
 };
-const COST_GROUP_ORDER = ['Audio', 'Backline', 'Lighting', 'Staging', 'DJ equipment', 'Vision', 'Other'];   // Max's order, 17 Oct 2026
+const COST_GROUP_ORDER = ['Audio', 'Backline', 'Lighting', 'Staging', 'DJ equipment', 'Vision', 'Other'];   // display order
 function costGroupOf(category) {
-  // gear in a category we don't know yet counts as Audio, not "Other" (Max, 17 Oct 2026)
+  // gear in a category we don't know yet counts as Audio, not "Other"
   return COST_GROUP[String(category || '').trim().toLowerCase()] || 'Audio';
 }
 /*  [{ name, cents }] in the order above, only groups with a cost. */
@@ -118,7 +117,7 @@ function costBreakdown(lines, centsOf, categoryOf) {
   return COST_GROUP_ORDER.filter((g) => sums[g]).map((g) => ({ name: g, cents: sums[g] }));
 }
 
-/*  CUSTOMER WORDING FOR LABOUR (Max, 17 Oct 2026). Setup / pack-down are
+/*  CUSTOMER WORDING FOR LABOUR. Setup / pack-down are
     "bump-in / bump-out" crew, counted in CREW HOURS (not a number of staff);
     operators are "show crew". Only how it reads here - saved lines unchanged. */
 function crewName(l) {
@@ -167,7 +166,7 @@ function sumBreakdown(q, days) {
     h += groups.map((g) => '<div class="qv-sumrow qv-sumsub"><span>' + esc(g.name) + '</span><span>' + money(g.cents) + '</span></div>').join('');
     h += '<div class="qv-sumrow qv-sumpart"><span>Hire subtotal</span><span>' + money(hire) + '</span></div>';
   }
-  // ONE labour total for the customer: setup, pack-down and operators together (Max, 17 Oct 2026)
+  // ONE labour total for the customer: setup, pack-down and operators together
   const crewC = lines.filter((l) => l.resType === 'staff').reduce((t, l) => t + lineAmount(l, days), 0);
   const vehC = lines.filter((l) => l.resType === 'vehicle' || l.resType === 'trailer').reduce((t, l) => t + lineAmount(l, days), 0);
   if (lab.length || crewC) {
@@ -192,8 +191,7 @@ function render(q) {
   const multiDay = days > 1;
 
   /*  Included / required items sit inside their item, under small category
-      headings (Cable, Stands...), A-Z - the same as the quote builder
-      (Max, 15 Oct 2026).                                                  */
+      headings (Cable, Stands...), A-Z - the same as the quote builder. */
   const catOf = (l) => { const c = String(l.category || '').trim(); return c ? c.charAt(0).toUpperCase() + c.slice(1) : 'Other'; };
   const L = (q.lines || []).slice();
   for (let i = 0; i < L.length; i++) {
@@ -207,7 +205,7 @@ function render(q) {
 
   /*  SECTIONS. A unit is a top line plus the included parts under it; each
       unit goes into one section, in this order.                          */
-  // the DJ (gig invoices) goes first, in its own section (Max, 21 Oct 2026)
+  // the DJ (gig invoices) goes first, in its own section
   const SECTION_ORDER = ['Entertainment'].concat(COST_GROUP_ORDER, ['Labour', 'Travel & transport', 'Booking & admin', 'Discount']);
   const sectionOf = (l) => {
     if (l.pubDj) return 'Entertainment';
@@ -247,7 +245,7 @@ function render(q) {
         + '</td><td class="qv-num"></td><td class="qv-num"></td><td class="qv-num"></td><td class="qv-num"><strong>Free</strong></td></tr>';
     }
     if (l.type === 'labour') {
-      // a heading over setup + pack-down with the total hours (Max, 15 Oct 2026)
+      // a heading over setup + pack-down with the total hours
       const first = i === 0 || L[i - 1].type !== 'labour';
       const head = first && labHrs
         ? '<tr class="qv-labhead"><td colspan="5">Bump-in &amp; bump-out crew &middot; ' + labHrs + ' crew hour' + (labHrs === 1 ? '' : 's') + ' total</td></tr>'
@@ -280,7 +278,7 @@ function render(q) {
         + '</td><td class="qv-num">' + money(amt) + '</td></tr>';
     }
     if (l.superLine) {
-      /*  PERFORMER SUPER (Max, 22 Oct 2026): a "Required by law" tag and the
+      /*  PERFORMER SUPER: a "Required by law" tag and the
           plain-English reason, so it reads as what it is - not a markup. */
       return '<tr class="qv-super"><td class="qv-desc">' + esc(l.name || '') + ' <span class="qv-law">Required by law</span>'
         + (l.description ? '<span class="qv-sub">' + esc(l.description) + '</span>' : '')
@@ -405,7 +403,7 @@ async function acceptFlow(btn) {
 }
 
 /* =========================================================================
-   THE PROPOSAL (Max, 16 Oct 2026, from his mock-up)
+   THE PROPOSAL
    One scrolling page for a QUOTE: photo + event, a short intro, what's
    included, the investment summary, the itemised quote (the paper above),
    booking terms, then "Secure your booking" - pay the 50% deposit or in
@@ -465,12 +463,12 @@ function proposalTop(q, days) {
 
   const crewC = lines.filter((l) => l.resType === 'staff').reduce((t, l) => t + lineAmount(l, days), 0);
   const vehC = lines.filter((l) => l.resType === 'vehicle' || l.resType === 'trailer').reduce((t, l) => t + lineAmount(l, days), 0);
-  /*  DJ / ENTERTAINMENT quotes (Max, 22 Oct 2026): the night, the DJ who
+  /*  DJ / ENTERTAINMENT quotes: the night, the DJ who
       played and their set up top - the itemised quote stays below.        */
   const isDj = type === 'dj' || !!q.gigDj;
   const dj = q.gigDj || null;
   const venueName = String(c.eventVenue || '').split(',')[0];
-  /*  DJ ONLY (Max, 22 Oct 2026): no gear or crew on the quote = no sound,
+  /*  DJ ONLY: no gear or crew on the quote = no sound,
       lighting or setup tiles, and the words don't promise them either.  */
   const djGear = lines.some((l) => !l.pubDj && (l.itemId || l.type === 'kit'));
   const djCrew = lab.length > 0 || crewC > 0;
@@ -484,13 +482,13 @@ function proposalTop(q, days) {
     : groups.map((g) => g.name).concat(lab.length || crewC ? ['Crew'] : [])
       .map((k) => '<div class="qp-tile">' + svgIcon(k) + '<b>' + esc(k) + '</b><span>' + esc(BLURB[k] || '') + '</span></div>').join('');
   const ampm = (t) => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); if (!m) return ''; const h = +m[1]; return (h % 12 || 12) + ':' + m[2] + (h < 12 ? 'am' : 'pm'); };
-  /*  THE DJ, under the first paragraph (Max, 22 Oct 2026): a big photo with
+  /*  THE DJ, under the first paragraph: a big photo with
       their name, music styles and the song-requests promise beside it.   */
   const djFeature = dj ? '<div class="qp-djf">'
     + (dj.photo ? '<img class="qp-djf-img" src="/' + esc(dj.photo) + '" alt="' + esc(dj.name) + '" onerror="this.remove()">' : '')
     + '<div class="qp-djf-text"><p class="qp-mini">Your DJ</p><h3>' + esc(dj.name) + '</h3>'
     + '<p class="qp-djf-set">' + esc(ampm(dj.start)) + ' &ndash; ' + esc(ampm(dj.finish)) + (dj.hours ? ' &middot; ' + esc(dj.hours) + ' hours' : '') + '</p>'
-    // their bio, paragraph by paragraph (Max, 22 Oct 2026)
+    // their bio, paragraph by paragraph
     + (dj.bio ? '<div class="qp-djf-bio">' + String(dj.bio).split(/\n\s*\n/).map((x) => '<p>' + esc(x.trim()).replace(/\n/g, '<br>') + '</p>').join('') + '</div>' : '')
     + ((dj.styles || []).length ? '<p class="qp-styles">' + dj.styles.map((x) => '<span>' + esc(x) + '</span>').join('') + '</p>' : '')
     + '<p class="qp-requests">&#127925; Our DJs take song requests from your patrons and work with your staff on any requests through the night.</p>'
@@ -503,7 +501,7 @@ function proposalTop(q, days) {
     .concat(del.length ? [[delCents ? 'Travel & transport' : 'Local delivery & pickup', delCents]] : [])
     .concat(lines.filter((l) => l.type === 'fee').map((l) => ['Booking & admin', lineAmount(l, days)]));
   const r = (label, ex) => '<tr><td>' + esc(label) + '</td><td>' + (ex ? money(ex) : 'Free') + '</td><td>' + (ex ? money(Math.round(ex * 0.1)) : '') + '</td><td>' + (ex ? money(Math.round(ex * 1.1)) : 'Free') + '</td></tr>';
-  // QUOTE DETAILS + WHAT'S INCLUDED under the table (Max, 16 Oct 2026).
+  // QUOTE DETAILS + WHAT'S INCLUDED under the table.
   // Valid for 30 days from the quote date; the list is built from what's on the quote.
   const VALID_DAYS = 30;
   const validUntil = q.createdAt ? fmtDate(q.createdAt + VALID_DAYS * 86400) : '';
@@ -576,7 +574,7 @@ function proposalTop(q, days) {
 
 // booking terms live in js/terms-data.js (also used by the /terms page)
 
-/*  PAY IN FULL WITHIN 7 DAYS (Max, 20 Oct 2026). The balance is due 7 days
+/*  PAY IN FULL WITHIN 7 DAYS. The balance is due 7 days
     before the event, so once that day arrives there is no deposit option -
     only payment in full. The server (quoteCheckout) enforces the same rule. */
 function balanceDueDate(q) {
@@ -584,7 +582,7 @@ function balanceDueDate(q) {
   return m ? new Date(+m[1], +m[2] - 1, +m[3] - 7) : null;
 }
 function fullOnly(q) {
-  if (q.payFull === true) return true;   // "pay in full up front" - new venues (Max, 22 Oct 2026)
+  if (q.payFull === true) return true;   // "pay in full up front" - new venues
   const due = balanceDueDate(q);
   if (!due) return false;
   const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -599,7 +597,7 @@ function proposalBottom(q, opts = {}) {
   const deposit = Math.round(total * pct / 100);
   const paid = Math.round(q.amountPaidCents || 0);
   const owing = Math.max(0, total + lateCents - paid);
-  /*  LATE PAYMENT CHARGES shown plainly (Max, 20 Oct 2026) */
+  /*  LATE PAYMENT CHARGES shown plainly */
   const lateBox = (q.lateFees || []).length
     ? '<div class="pg-late"><b>Late payment charges added</b>'
       + q.lateFees.map((x) => '<div><span>2% late payment charge' + (x.date ? ' &middot; ' + esc(x.date.split('-').reverse().join('/')) : '') + '</span><span>' + money(x.cents) + '</span></div>').join('')
@@ -615,8 +613,8 @@ function proposalBottom(q, opts = {}) {
   const bank = '<p class="qp-bank"><strong>Bank transfer</strong><br>' + esc(SELLER.bankName) + '<br>BSB <strong>' + esc(SELLER.bankBsb) + '</strong> &nbsp; Account <strong>' + esc(SELLER.bankAcc) + '</strong><br>Reference: <strong>' + esc(ref) + '</strong></p>';
   const justPaid = /[?&]paid=1/.test(location.search);
 
-  // ONE dropdown with every clause inside - deliberately looks like serious small print (Max, 16 Oct 2026)
-  // DJ / entertainment quotes get the DJ booking terms (Max, 22 Oct 2026)
+  // ONE dropdown with every clause inside - deliberately looks like serious small print
+  // DJ / entertainment quotes get the DJ booking terms
   const djQuote = (q.customer && q.customer.eventType === 'dj') || !!q.gigDj;
   const T = djQuote ? DJ_TERMS : TERMS, TI = djQuote ? DJ_TERMS_INTRO : TERMS_INTRO;
   const terms = '<details class="qp-term qp-legal"><summary><span class="qp-legal-warn">&#9888;</span><span><b>' + (djQuote ? 'DJ Booking ' : '') + 'Terms &amp; Conditions &mdash; read before booking</b><em>' + T.length + ' clauses &middot; binding once you accept or pay &middot; tap to read</em></span></summary>'
@@ -624,7 +622,7 @@ function proposalBottom(q, opts = {}) {
     + T.map(([h, lines], i) => '<div class="qp-legal-clause"><h4>' + (i + 1) + '. ' + esc(h) + '</h4>' + termBodyHtml(lines, esc) + '</div>').join('')
     + '</div></details>';
 
-  /*  1 Accept quote -> 2 Get your invoice -> 3 Pay   (Max, 20 Oct 2026) */
+  /*  1 Accept quote -> 2 Get your invoice -> 3 Pay */
   const steps = (at) => '<ol class="pg-steps">'
     + ['Accept quote', 'Get your invoice', 'Pay'].map((t, i) => '<li class="' + (i + 1 < at ? 'is-done' : (i + 1 === at ? 'is-on' : '')) + '"><span>' + (i + 1 < at ? '&#10003;' : i + 1) + '</span>' + t + '</li>').join('')
     + '</ol>';
@@ -652,7 +650,7 @@ function proposalBottom(q, opts = {}) {
       ? '<div class="qp-done">&#10003; Quote accepted' + (q.acceptedName ? ' by ' + esc(q.acceptedName) : '') + '.</div><p class="qp-full-note qp-overdue"><b>Payment due now.</b> Your event is less than 7 days away. Please transfer the full <strong>' + money(owing) + '</strong> today to keep your booking.</p>' + bank
         + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-ghost qp-go" data-pay="full">Or pay in full by card</button>' : '')
       : q.bankPlan === 'full'
-        // they chose bank transfer IN FULL (Max, 20 Oct 2026)
+        // they chose bank transfer IN FULL
         ? accepted + '<p class="qp-full-note">You chose to pay in full. Please transfer <strong>' + money(owing) + '</strong> by ' + esc(balDue) + '. Your date is held once the payment lands.</p>' + bank
           + (q.cardOn ? '<button type="button" class="qv-btn qv-btn-ghost qp-go" data-pay="full">Or pay in full by card</button>' : '')
         : '<div class="qp-done">&#10003; Quote accepted' + (q.acceptedName ? ' by ' + esc(q.acceptedName) : '') + '.</div><p class="qp-full-note">Your date is not held until the deposit lands. Please transfer the ' + pct + '% deposit of <strong>' + money(deposit) + '</strong> today.</p>' + bank
@@ -667,7 +665,7 @@ function proposalBottom(q, opts = {}) {
   } else if (q.status === 'accepted') {
     book = '<div class="qp-done">&#10003; Quote accepted. We&rsquo;ll be in touch about payment.</div>';
   } else {
-    /*  THE PAYMENT GATEWAY (Max's mock-up, 20 Oct 2026): bank transfer first,
+    /*  THE PAYMENT GATEWAY: bank transfer first,
         then card in full, then card deposit (greyed out within 7 days). An alert
         on top - "Payment due now" inside 7 days ("overdue" only once a balance is late), otherwise "deposit secures
         your date". Summary card on the right with what is due now.        */
@@ -696,7 +694,7 @@ function proposalBottom(q, opts = {}) {
       + (full
         ? opt('bank', 'Bank transfer (Pay in full)', 'Pay the full amount now via bank transfer.', money(total), true, refChip)
         : opt('bank', 'Bank transfer (' + pct + '% deposit)', 'Pay the deposit now via bank transfer.', money(deposit), true, refChip)
-          // pay it all up front by bank (Max, 20 Oct 2026)
+          // pay it all up front by bank
           + opt('bankfull', 'Bank transfer (Pay in full)', 'Pay the full amount now via bank transfer. Nothing more to pay later.', money(total), false, refChip))
       + (q.cardOn ? opt('full', 'Credit or debit card (Pay in full)', 'Fast, secure payment with Visa, Mastercard or Amex.', money(total), false) : '')
       + (q.cardOn && q.payFull !== true ? (full
@@ -708,7 +706,7 @@ function proposalBottom(q, opts = {}) {
       + '<p class="pg-note">Accepting turns this quote into your tax invoice.</p>'
       + '</div><aside class="qp-side pg-side">'
       + '<div class="pg-total"><span class="pg-total-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3h10v18H7z"/><path d="M10 8h4M10 12h4M10 16h2"/></svg></span><div><p class="qp-eyebrow">Quote summary</p><strong>' + money(total) + '</strong><span>Total (inc. GST)</span></div></div>'
-      // after any discount, so subtotal + GST = total (Max, 17 Oct 2026)
+      // after any discount, so subtotal + GST = total
       + '<div class="qv-sumrow"><span>Subtotal (ex GST)</span><span>' + money(Math.round(q.totalCents || 0) - Math.round(q.gstCents || 0)) + '</span></div>'
       + '<div class="qv-sumrow"><span>GST (10%)</span><span>' + money(q.gstCents) + '</span></div>'
       + '<div class="qv-sumrow qv-grand"><span>Total (inc. GST)</span><span>' + money(total) + '</span></div>'
@@ -716,7 +714,7 @@ function proposalBottom(q, opts = {}) {
         ? '<div class="pg-due pg-due-red"><span>Amount due now</span><span>' + money(total) + '</span></div>'
         : '<div class="pg-due pg-due-amber" data-due="deposit"><span>Deposit due now</span><span>' + money(deposit) + '</span></div>'
           + '<div class="qv-sumrow" data-due="deposit"><span>Balance due ' + esc(balDue) + '</span><span>' + money(total - deposit) + '</span></div>'
-          // shown instead when a pay-in-full option is picked (Max, 20 Oct 2026)
+          // shown instead when a pay-in-full option is picked
           + '<div class="pg-due pg-due-amber" data-due="full" hidden><span>Amount due now</span><span>' + money(total) + '</span></div>')
       + '<div class="pg-trust">'
       + trust('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>', 'Secure payments', 'Card payments are processed securely by Stripe.')

@@ -1,29 +1,18 @@
 /* ==========================================================================
    KEEPING THE GIG GUIDE UP TO DATE
 
-   Runs once a day: goes and finds what is on (lib/gig-sources.js), then
-   makes the database say exactly that. Adds the new ones, updates the ones
-   that moved, and removes anything that has been and gone or that the
-   source has taken down.
+   Runs once a day: finds what is on (lib/gig-sources.js), then makes the
+   database match. Adds new events, updates changed ones, and removes past
+   ones or ones the source has taken down.
 
-   WHAT THE BROWSER SEES
-   Three collections, all of them written only from here:
+   Three collections, all written only from here:
 
        gigs/{id}            one upcoming event. Public read.
        gigGuide/status      when it last ran and what it found. Public
-                            read, so the page can say how fresh it is -
-                            a guide that does not say when it was last
-                            looked at is asking to be trusted blindly.
+                            read, so the page can say how fresh it is.
        gigGuide/cache       what each source page looked like last time,
-                            so tomorrow's run only reads the handful that
-                            changed. Not public - it is working state, and
-                            it is 200KB of no interest to a browser.
-
-   WHY THE CACHE MATTERS
-   Without it every run reads eight hundred pages from a site that is doing
-   us a favour by publishing machine readable data at all. With it, a run
-   lists them (about ten requests), notices almost nothing has changed, and
-   reads only what has. Measured: five minutes cold, seven seconds warm.
+                            so the next run only reads pages that changed.
+                            Not public - it is working state.
    ========================================================================== */
 
 'use strict';
@@ -32,8 +21,7 @@ const logger = require('firebase-functions/logger');
 const { FieldValue } = require('firebase-admin/firestore');
 const sources = require('./gig-sources');
 
-/*  Firestore will not take more than 500 writes in one batch, and there is
-    no reason to go near it.                                               */
+/* Firestore allows at most 500 writes in one batch. */
 const BATCH_LIMIT = 400;
 
 async function syncGigs(db) {
@@ -64,10 +52,8 @@ async function syncGigs(db) {
     /* ------------------------------------------------------------------
        3. Make the database say that
 
-          Everything currently in gigs is read first, so that the run can
-          work out what to remove. It is a small collection - a few dozen
-          - because everything past is deleted rather than kept. The
-          history of what was on in Bowen is not this page's job.
+          Everything in gigs is read first to work out what to remove. It is
+          a small collection, because past events are deleted.
        ------------------------------------------------------------------ */
     const existing = await db.collection('gigs').get();
 
@@ -117,9 +103,8 @@ async function syncGigs(db) {
     /* ------------------------------------------------------------------
        4. Leave a note saying what happened
 
-          Logged as well as stored. A run that quietly finds nothing looks
-          exactly like a run that worked, and that is how a source goes
-          dead for a month without anybody noticing.
+          Logged as well as stored, so a source that quietly finds nothing
+          gets noticed.
        ------------------------------------------------------------------ */
     const status = {
         ranAt: FieldValue.serverTimestamp(),

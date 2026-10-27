@@ -1,5 +1,5 @@
 /* ==========================================================================
-   EMAIL LOG  (Max, 20 Oct 2026)
+   EMAIL LOG
 
    Every email the system sends - quotes, invoices, vendor invoices, the
    bot's estimate, lead emails, Messages, office copies - is written to the

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CREW PICK LIST (Max, 16 Oct 2026) - black & white, like the quote page.
+   CREW PICK LIST - black & white, like the quote page.
    Big tick boxes for phones; prints on A4 with empty boxes to tick by hand.
    ========================================================================== */
 *{ box-sizing:border-box; }
@@ -77,16 +77,16 @@ body{ margin:0; background:#f2f2f2; color:#111; font-family:Arial, Helvetica, sa
   .pl-box span{ width:22px; height:22px; font-size:14px; }
   .pl-sig{ display:block; margin-top:14mm; font-size:12px; }
 }
-/* laid out like the quote (Max, 20 Oct 2026): included parts sit under their item */
+/* laid out like the quote: included parts sit under their item */
 .pl-row.pl-sub{ padding-left:22px; }
 .pl-row.pl-sub .pl-name{ font-weight:500; color:#333; }
 .pl-arrow{ color:#aaa; margin-right:8px; }
 .pl-kit{ display:inline-block; margin-left:6px; padding:1px 6px; border-radius:4px; background:#ff6b00; color:#fff; font-size:10px; font-weight:800; text-transform:uppercase; vertical-align:middle; }
 .pl-subhead{ margin:8px 0 0 22px; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#888; }
-/* the DJ gig brief (Max, 22 Oct 2026) */
+/* the DJ gig brief */
 .pl-brief{ border-top:3px solid #ff6b00; }
 .pl-brief h2{ margin-top:0; }
-/* item photos (Max, 24 Oct 2026) */
+/* item photos */
 .pl-pic{ display:inline-block; width:34px; height:34px; margin:0 8px 0 0; padding:0; border:1px solid #ddd; border-radius:6px; overflow:hidden; background:#fff; vertical-align:middle; cursor:zoom-in; flex:none; }
 .pl-pic img{ width:100%; height:100%; object-fit:contain; display:block; }
 .pl-picname{ padding:0; border:0; background:none; font:inherit; color:inherit; text-align:left; cursor:zoom-in; text-decoration:underline dotted #bbb; text-underline-offset:3px; }
@@ -96,7 +96,7 @@ body{ margin:0; background:#f2f2f2; color:#111; font-family:Arial, Helvetica, sa
 .pl-lightbox figcaption{ margin-top:12px; color:#fff; font-size:17px; font-weight:700; }
 .pl-lightbox small{ display:block; margin-top:4px; font-size:12px; font-weight:400; opacity:.7; }
 @media print{ .pl-pic{ display:none; } .pl-picname{ text-decoration:none; } }
-/* extra gear (Max, 24 Oct 2026) */
+/* extra gear */
 .pl-extras{ margin-top:18px; }
 .pl-extras-h{ margin:0 0 8px; font-size:15px; }
 .pl-extras-h small{ font-weight:400; color:#777; font-size:12px; margin-left:6px; }

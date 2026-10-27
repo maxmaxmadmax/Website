@@ -108,15 +108,9 @@
     start();
 }());
 
-/*  The reel behind the Friday Nights banner.
-
-    Its own block rather than part of the countdown above - that one bails
-    out early when there is no countdown on the page, which would take this
-    with it.
-
-    Somebody who has asked their system for less motion should not get a
-    looping clip behind a headline. Pausing rather than hiding leaves the
-    poster frame showing, so the banner still has a picture in it.       */
+/*  The reel behind the Friday Nights banner. Separate from the countdown
+    block above, which stops early on pages without a countdown.
+    Respects "reduce motion": paused, so the poster frame still shows.   */
 (function () {
     'use strict';
 
@@ -134,17 +128,12 @@
 /* ==========================================================================
    THE FRIDAY NIGHTS LINE UP
 
-   Who is playing comes from Admin -> Entertainment. The short list in
-   js/roster.js (SG_FRIDAY_SEED) covers a Friday locked in before anybody
-   opened the desk, and anything booked in admin beats it.
+   Who is playing comes from Admin -> Entertainment, falling back to
+   SG_FRIDAY_SEED in js/roster.js. A Friday in neither says the DJ is still
+   to be announced.
 
-   A Friday named in neither says the DJ is still to be announced, which is
-   true, and the card still looks finished.
-
-   THE DATES ARE IN NEITHER. They are worked out from today, four Fridays
-   ahead, so the list rolls itself forward every week. It used to be four
-   dates typed into the HTML, which is why it sat there offering a Friday
-   that had already been.
+   The dates are worked out from today, four Fridays ahead, so the list
+   rolls itself forward every week.
    ========================================================================== */
 (function () {
     'use strict';
@@ -199,10 +188,7 @@
                 '<span class="ev-fri-date">' + esc(label(d)) + '</span>' +
               '</div>' +
               '<div class="ev-fri-body">' +
-                /*  The name and nothing else. Every card used to carry
-                    'SoundzGood DJs on rotation' underneath, which said
-                    the same thing four times and said it loudest on the
-                    cards that had a name on them.                    */
+                /*  The name and nothing else. */
                 '<h3>' + esc(name) + '</h3>' +
               '</div>' +
             '</article>';
@@ -216,20 +202,12 @@
         }).join('');
     }
 
-    /*  Drawn once from the list above so the dates are right immediately,
-        then again if Firestore has anything to say. A failed call leaves
-        the dates correct and the DJs unnamed, which is the honest state
-        rather than a broken one.                                        */
-    /*  THE TWO SOURCES, AND WHICH WINS
-
-        The booked map is what is drawn. It starts as SG_FRIDAY_SEED in
-        js/roster.js and is replaced, date by date, by anything set in
-        Admin -> Entertainment.
-
-        Kept here rather than passed about because two things arrive at
-        their own pace - the schedule and the roster - and whichever lands
-        second must not undo the first. Each of them updates what it knows
-        and asks for a redraw.                                          */
+    /*  Drawn once straight away so the dates are right, then again when
+        Firestore answers. A failed call leaves the DJs unnamed.         */
+    /*  Which wins: the booked map starts as SG_FRIDAY_SEED (js/roster.js)
+        and is replaced date by date by anything set in Admin ->
+        Entertainment. The schedule and the roster arrive separately; each
+        updates what it knows and asks for a redraw.                    */
     var booked = {};
     var seed = window.SG_FRIDAY_SEED || {};
     Object.keys(seed).forEach(function (k) {
@@ -257,12 +235,11 @@
     window.SGWeekend.loadCollection('talentSchedule').then(function (rows) {
         rows.forEach(function (row) {
             if (!row.date || !row.slug) return;
-            if (row.status === 'unconfirmed') return;   // held, not paid yet - not public (Max, 22 Oct 2026)
+            if (row.status === 'unconfirmed') return;   // held, not paid yet - not public
 
-            /*  A night can hold more than one booking now - two acts, or
-                two venues. The Grand View wins for these cards, because
-                that is what Friday Nights is; anything else only fills a
-                night nothing at the pub has claimed.                   */
+            /*  A night can hold more than one booking. The Grand View wins for
+                these cards; anything else only fills a night the pub
+                hasn't claimed.                                         */
             var mine = /grand view/i.test(row.venue || '');
             if (!mine && booked[row.date] && booked[row.date].fromVenue) return;
 
@@ -285,18 +262,10 @@
    The strip under Friday Nights: the next seven days of listings, four on
    screen with an arrow for the rest.
 
-   Seven days rather than the weekend. On a Sunday afternoon a weekend-only
-   strip is down to whatever is left of today, which is a thin thing to put
-   on the page - and somebody reading on Sunday is mostly wondering about
-   the week ahead anyway.
+   Listings and cards come from js/weekend.js, the same as /gig-guide.
 
-   The listings and the cards come from js/weekend.js, the same as
-   /gig-guide, so the two pages can never draw the same gig differently.
-
-   THE SECTION STARTS HIDDEN and only appears once there is something in
-   it. This is a bonus on the events page, not the point of it, and a
-   heading with an apology under it is worse than no heading. A failed
-   network call leaves the page exactly as it was.
+   The section starts hidden and only appears once there is something in
+   it. A failed network call leaves the page as it was.
    -------------------------------------------------------------------------- */
 (function () {
     'use strict';
@@ -344,8 +313,7 @@
     function paint(count) {
         var last = pages(count) - 1;
 
-        /*  A window that has just got wider can leave us past the end, on
-            a page that no longer exists.                                */
+        /*  A wider window can leave us past the last page. */
         if (page > last) page = last;
         if (page < 0) page = 0;
 
@@ -356,8 +324,7 @@
             btn.disabled = dir < 0 ? page === 0 : page === last;
         });
 
-        /*  Both arrows off means one page, and two dead controls say
-            nothing worth the space.                                     */
+        /*  Both arrows off means one page, so hide them. */
         arrows.forEach(function (btn) {
             btn.closest('.ev-wk-arrows').hidden = last === 0;
         });

@@ -1,18 +1,13 @@
 /* ==========================================================================
    SOUNDZGOOD ADMIN
 
-   The only stylesheet this page loads. style.css is deliberately left out:
-   the public site is dark, poster-styled marketing, and this is a working
-   tool - dark rail, light desk. Keeping them separate means nothing here
-   can reach the public pages and nothing there can reach this.
-
-   Everything is prefixed .ad- for the same reason.
+   The only stylesheet this page loads (style.css is left out on purpose).
+   Everything is prefixed .ad- so it cannot reach the public pages.
    ========================================================================== */
 
 *, *::before, *::after { box-sizing: border-box; }
 
-/*  The gate and the shell are both display:grid, which beats the browser's
-    own [hidden] rule - without this they stack instead of swapping. */
+/* [hidden] must beat the gate's and shell's display:grid, or they stack. */
 [hidden]{ display:none !important; }
 
 :root{
@@ -55,29 +50,7 @@ body{
     -webkit-font-smoothing:antialiased;
 }
 
-/*  WHAT IS IN HERE
-      SHELL
-      SHARED FURNITURE
-      COMING SOON
-      DETAIL DRAWER
-      DRAWER ACTIONS
-      EVENT CARDS
-      FILTER BAR
-      MODAL
-      PANELS AND TABLES
-      SIGN IN
-      STAT CARDS
-      THE MAP
-      RESPONSIVE
-
-    Sections run alphabetically apart from the pinned ones.
-    SHELL and SHARED FURNITURE are pinned above the rest: they hold
-    the frame and the shared buttons, pills and tables that the later
-    sections override. RESPONSIVE is pinned last for the same reason -
-    it overrides everything above it.
-
-    Rules inside a section stay in the order they were written. Sorting
-    those would change which rule wins when two carry the same weight.   */
+/* SHELL and SHARED FURNITURE must stay above the sections that override them. */
 
 /* --------------------------------------------------------------------------
    SHELL
@@ -1074,10 +1047,8 @@ body{
 /* ==========================================================================
    DJ BOOKINGS
 
-   Built to fit one screen. The counts, the month and the booking beside it
-   are fixed height; the table underneath takes whatever is left and scrolls
-   inside itself. That way the diary never pushes the month off the top of
-   the page, which is the thing you are actually looking at.
+   Built to fit one screen: the top is fixed height and the table
+   underneath scrolls inside itself.
    ========================================================================== */
 .ad-desk.is-bookings{
     display:flex;
@@ -1152,10 +1123,7 @@ body{
 }
 
 /* ---- month beside the booking ---- */
-/*  The month first at a fixed width, the booking taking whatever is left.
-    It used to be the other way round, which stretched seven columns across
-    most of the screen and made every day a wide letterbox. A calendar day
-    is a square - that is what makes a month readable as a shape.        */
+/* The month first at a fixed width (square days); the booking takes the rest. */
 .ad-book-split{
     display:grid;
     grid-template-columns:minmax(0, 452px) minmax(0, 1fr);
@@ -1166,9 +1134,7 @@ body{
 }
 
 @media (max-width:1000px){
-    /*  Stacked. The month keeps its width rather than spreading, because a
-        square day stretched across a laptop screen is a 90px square and a
-        month six hundred pixels tall.                                    */
+    /* Stacked. The month keeps its width so the days stay square. */
     .ad-book-split{ grid-template-columns:1fr; }
     .ad-cal{ max-width:452px; }
 }
@@ -1230,8 +1196,7 @@ body{
     margin-bottom:3px;
 }
 
-/*  The act's name, not a dot. A dot says something is on; the name says
-    whether you need to look.                                            */
+/* The act's name in the day, not just a dot. */
 .ad-cal-act{
     display:block;
     padding:1px 4px;
@@ -1251,8 +1216,7 @@ body{
 /* ---- the one being looked at ---- */
 .ad-book-panel{ overflow:hidden; }
 
-/*  The pub. It is what most of this diary is about, so the panel leads
-    with the place rather than with a line of text saying where it is.   */
+/* The pub leads the panel. */
 .ad-book-photo{
     height:104px;
     background-size:cover;
@@ -1311,8 +1275,7 @@ body{
 
 .ad-book-facts dd{ margin:0; font-size:.88rem; }
 
-/*  One under another rather than in a row: they are three different sizes
-    of thing to do, and a row makes them look like a set of three equals. */
+/* Actions stacked, not in a row. */
 .ad-book-actions{
     display:flex;
     flex-direction:column;
@@ -1326,8 +1289,7 @@ body{
     text-decoration:none;
 }
 
-/*  The editor. One field per line - the panel is narrow, and two columns
-    in 420px is two half-legible columns.                                */
+/* The editor: one field per line (the panel is narrow). */
 .ad-field{
     display:block;
     margin-bottom:9px;
@@ -1360,8 +1322,7 @@ body{
 }
 
 /* ---- the table underneath ---- */
-/*  Everything above this is fixed height, so this takes what is left and
-    scrolls inside itself rather than pushing the month off the screen.  */
+/* Takes the leftover height and scrolls inside itself. */
 .ad-book-list{
     display:flex;
     flex-direction:column;
@@ -1376,7 +1337,7 @@ body{
     overflow-y:auto;
 }
 
-/*  The heading row stays put while the rows move under it.              */
+/* The heading row stays put while the rows scroll. */
 .ad-book-list .ad-table th{
     position:sticky;
     top:0;
@@ -1431,8 +1392,7 @@ body{
 /* ---- an act, with its face ---- */
 .ad-act{ display:inline-flex; align-items:center; gap:9px; }
 
-/*  The photograph the site shows, at thumbnail size. No photo leaves a
-    grey disc rather than a broken image.                                */
+/* Act thumbnail; no photo shows a grey disc. */
 .ad-act-face{
     width:26px;
     height:26px;
@@ -1444,8 +1404,7 @@ body{
 }
 
 /* ---- the roster ----
-   Folded away behind a toggle. It is reference rather than the day's work,
-   and it is the thing standing between this page and fitting on a screen. */
+   Folded away behind a toggle. */
 .ad-roster{ margin-top:14px; }
 
 .ad-desk.is-bookings .ad-roster{ display:none; }
@@ -1455,17 +1414,9 @@ body{
 .ad-desk.is-bookings.show-roster .ad-book-list .ad-table-wrap{ overflow-y:visible; }
 .ad-desk.is-bookings.show-roster .ad-roster{ display:block; }
 
-/*  The height chain for the one-screen bookings view.
-
-    .ad-desk asks for height:100%, and a percentage height resolves to
-    nothing unless every box above it has a definite height. The shell is
-    min-height:100vh, which is not one. So when that view is showing, the
-    shell is pinned to the viewport and the column between them is told it
-    may shrink - without min-height:0 a flex child refuses to go below its
-    content, and the table would push the page down anyway.
-
-    Kept on the body rather than on the desk because it has to reach
-    upwards, and a class cannot.                                        */
+/* Height chain for one-screen views: every box from the shell down needs
+   a definite height and min-height:0, or the table pushes the page down.
+   Set on the body because it has to reach upwards. */
 body.ad-fit .ad-shell{
     height:100vh;
     height:100svh;
@@ -1476,17 +1427,10 @@ body.ad-fit .ad-shell{
 body.ad-fit .ad-main{ min-height:0; }
 
 /* --------------------------------------------------------------------------
-   BOOKINGS: the closer pass
-
-   Against max's design the first build read flat and loose - square-ish
-   cards with hairline borders, a calendar of big empty boxes, and a page
-   head the same weight as everything under it. These are the differences,
-   and they are all small.
+   BOOKINGS: finishing touches
    -------------------------------------------------------------------------- */
 
-/*  Softer, deeper cards. A hairline border alone leaves everything on one
-    plane; a light shadow is what makes the month and the panel read as
-    two things sitting on the page rather than two rectangles drawn on it. */
+/* Softer cards with a light shadow. */
 .ad-desk.is-bookings .ad-card,
 .ad-desk.is-bookings .ad-bstat{
     border-radius:14px;
@@ -1505,22 +1449,18 @@ body.ad-fit .ad-main{ min-height:0; }
 .ad-desk.is-bookings .ad-bstat-icon{ width:42px; height:42px; border-radius:11px; }
 .ad-desk.is-bookings .ad-bstat-icon svg{ width:21px; height:21px; }
 
-/*  The month was all air: tall cells with a number in the corner. Tighter
-    rows and a day name that sits over its own column read as a calendar
-    rather than as a grid of empty boxes.                                 */
+/* Tighter calendar rows. */
 .ad-desk.is-bookings .ad-cal-day{ padding:4px 6px; }
 .ad-desk.is-bookings .ad-cal-num{ font-size:.75rem; color:#3f4350; }
 .ad-desk.is-bookings .ad-cal-name{ font-size:.66rem; padding-bottom:4px; }
 
-/*  Days outside this month are drawn rather than left blank, so the first
-    week is a week and not a gap - which is what the design does.         */
+/* Days outside this month are drawn, not left blank. */
 .ad-desk.is-bookings .ad-cal-day.is-empty{
     border-color:#f2f3f6;
     background:#fbfbfc;
 }
 
-/*  The dot before the name. Small, and the only thing on a busy month you
-    can count at a glance.                                                */
+/* The dot before the name. */
 .ad-cal-act::before{
     content:"";
     display:inline-block;
@@ -1532,9 +1472,7 @@ body.ad-fit .ad-main{ min-height:0; }
     vertical-align:middle;
 }
 
-/*  Bookings set in the site file rather than in the diary. Stated plainly
-    with the way to fix it next to it, because the alternative is a page
-    that says nothing is booked while the site says two things are.      */
+/* Bookings set in the site file, shown with how to fix it. */
 .ad-import{
     display:flex;
     align-items:center;
@@ -1557,8 +1495,7 @@ body.ad-fit .ad-main{ min-height:0; }
 
 .ad-import strong{ color:#5c3800; }
 
-/*  The event an application belongs to, in the drawer under its status
-    pills. Quiet - it is context, not a heading.                       */
+/* The event an application belongs to, under its status pills. */
 .ad-drawer-event{
     margin-top:6px;
     color:var(--ad-muted);
@@ -1569,16 +1506,13 @@ body.ad-fit .ad-main{ min-height:0; }
 /* ==========================================================================
    THE RAIL, GROUPED
 
-   Vendors carries nearly everything, so it has its own set underneath it
-   and opens by default. Everything else is a single item, which is why
-   there is no general machinery here - one group is a group, not a system.
+   Vendors has its own sub-items and opens by default.
    ========================================================================== */
 .ad-nav-group{
     display:grid;
 }
 
-/*  The group's own button. It goes nowhere, so it never takes the active
-    treatment - the item inside it does.                               */
+/* The group's own button never takes the active look - the item inside does. */
 .ad-nav-head{
     display:flex;
     align-items:center;
@@ -1593,8 +1527,7 @@ body.ad-fit .ad-main{ min-height:0; }
     transition:transform .18s ease;
 }
 
-/*  Pointing down when shut, up when open - the caret glyph itself points
-    up, so the closed state is the rotated one.                        */
+/* The caret glyph points up, so the closed state is the rotated one. */
 .ad-nav-group:not(.is-open) .ad-nav-caret{ transform:rotate(180deg); }
 
 .ad-nav-sub{
@@ -1604,28 +1537,21 @@ body.ad-fit .ad-main{ min-height:0; }
 
 .ad-nav-group.is-open .ad-nav-sub{ display:grid; }
 
-/*  Sub-items line up under the group's WORD, not its icon, so the
-    indent reads as "inside this" rather than as a wobble.           */
+/* Sub-items line up under the group's word, not its icon. */
 .ad-nav-sub .ad-nav-item{
     padding-left:42px;
     font-size:.88rem;
 }
 
 /* ---- the panel at the foot -------------------------------------------- */
-/*  Max's drawing has a photograph here. A photograph is one more image to
-    ship and keep in step with the brand; the words do the same job for
-    nothing, and they are the words already on the trailer.          */
+/* Text here instead of a photo. */
 
 
 /* ==========================================================================
    VENDOR EMAILS
 
-   Editor on the left, preview on the right, and underneath them the list of
-   who has paid and whether their confirmation went out.
-
-   The placeholders are a strip under the body rather than a column of their
-   own. As a column they were ten cards tall and pushed the preview below
-   the fold, which is the thing Max objected to.
+   Editor on the left, preview on the right, the sent list underneath.
+   Placeholders sit in a strip under the body.
    ========================================================================== */
 .ad-mail-head-row{
     display:flex;
@@ -1811,8 +1737,8 @@ body.ad-fit .ad-main{ min-height:0; }
     box-shadow:0 1px 3px rgba(16,24,40,.1);
 }
 
-/*  The letterhead. Deliberately not var(--sg-orange): admin.css does not
-    load the marketing stylesheet, so that name does not exist here.   */
+/* Orange written out: var(--sg-orange) does not exist here (style.css is
+   not loaded). */
 .ad-mail-brand{
     display:grid;
     gap:3px;
@@ -1849,8 +1775,7 @@ body.ad-fit .ad-main{ min-height:0; }
 .ad-mail-inner a{ color:#b34700; }
 
 /* ---- who got one ----------------------------------------------------------- */
-/*  The who-got-one table sits under the two columns rather than beside
-    them: it is a different question from the one the editor answers.  */
+/* The sent table sits under the two columns. */
 .ad-mail-vendors{ margin-top:4px; }
 
 .ad-panel-sub{
@@ -1862,8 +1787,7 @@ body.ad-fit .ad-main{ min-height:0; }
 .ad-mail-table td{ vertical-align:middle; }
 .ad-cell-right{ text-align:right; }
 
-/*  The status dot. Grey by default, which is what "not sent" is - not a
-    failure, just nothing yet.                                          */
+/* Status dot: grey means not sent yet. */
 .ad-dot{
     display:inline-block;
     width:7px;
@@ -1882,7 +1806,7 @@ body.ad-fit .ad-main{ min-height:0; }
     font-size:.8rem;
 }
 
-/*  A message that is bad news should not look like one that is not.  */
+/* Error messages look like errors. */
 .ad-action-msg.is-bad{
     color:var(--ad-red);
     background:var(--ad-red-bg);
@@ -1890,8 +1814,7 @@ body.ad-fit .ad-main{ min-height:0; }
     border-radius:8px;
     padding:10px 12px;
 
-    /*  SMTP errors arrive as a paragraph of Google's prose with a URL in
-        it, so it wraps rather than running off the side.              */
+    /* Long SMTP errors wrap instead of running off the side. */
     white-space:pre-wrap;
     word-break:break-word;
 }
@@ -1905,8 +1828,7 @@ body.ad-fit .ad-main{ min-height:0; }
    ESTIMATE BOT  -  admin styling (Quote Leads + Quote Pricing)
    ========================================================================= */
 
-/*  Shared small controls the quote views lean on. Kept generic so other
-    views can use them later.                                              */
+/* Shared small controls for the quote views. */
 .ad-input,
 .ad-select{
     padding:8px 10px;
@@ -2070,8 +1992,7 @@ body.ad-fit .ad-main{ min-height:0; }
 .ad-inv-check input{ width:18px; height:18px; accent-color:var(--ad-orange); cursor:pointer; }
 
 @media (max-width:900px){
-    /*  On a phone the grid would crush, so each row becomes a little card
-        with its own labels via the column header hidden.                  */
+    /* Phone: each row becomes a small card with its own labels. */
     .ad-inv-cols{ display:none; }
     .ad-inv-row{
         grid-template-columns:1fr 1fr;
@@ -2090,7 +2011,7 @@ body.ad-fit .ad-main{ min-height:0; }
    INVENTORY MANAGER
    ========================================================================= */
 
-/* ---- rail section labels (replaces the collapsible groups) ---- */
+/* ---- rail section labels ---- */
 .ad-nav-label{
     margin:16px 0 4px;
     padding:0 14px;
@@ -2272,8 +2193,7 @@ body.ad-fit .ad-main{ min-height:0; }
 
 /* ---- inventory item photos ---- */
 .inv-thumb.inv-thumb-img{ padding:0; overflow:hidden; background:#fff; }
-/*  'contain' so the whole item shows at a uniform size instead of being
-    cropped/zoomed to fill. */
+/* 'contain' so the whole item shows at a uniform size, not cropped. */
 .inv-thumb-img img{ width:100%; height:100%; object-fit:contain; display:block; }
 
 .inv-photo{ display:flex; gap:14px; align-items:center; margin-bottom:16px; }
@@ -3045,7 +2965,7 @@ body.ad-fit .ad-main{ min-height:0; }
 .lead-ic:hover.is-youtube{ background:#e11d2a; color:#fff; }
 .lead-ev-crowd{ margin-left:4px; font-size:.76rem; color:var(--ad-muted); white-space:nowrap; }
 
-/* ---- lead side panel v2: compact header + tabs (no scrolling on Overview) ---- */
+/* ---- lead side panel: compact header + tabs ---- */
 .lead-hero{ height:92px; }
 .lead-hero-ico{ font-size:44px; }
 .lead-prio{ bottom:10px; }
@@ -3132,7 +3052,7 @@ body.ad-fit .ad-main{ min-height:0; }
 .lead-notes-src{ margin-top:10px; }
 .lead-detail .inv-detail-foot .ad-quote-msg{ margin-right:auto; }
 
-/* panel v2 tightening so the Overview fits a laptop screen without scrolling */
+/* panel tightening so the Overview fits a laptop screen */
 .lead-hero{ height:70px; }
 .lead-hero-ico{ font-size:34px; }
 .lead-prio{ bottom:8px; left:12px; padding:3px 8px; font-size:.66rem; }
@@ -3164,14 +3084,11 @@ body.ad-fit .ad-main{ min-height:0; }
 .lead-research-pill.is-slate{ background:var(--ad-grey-bg); color:var(--ad-muted); }
 
 /* ==========================================================================
-   LEADS: one-screen app layout
-   On a desktop-sized screen the Leads view is exactly one window tall: the
-   header, calendar, chips and filters stay put, the pager sits at the
-   bottom, the side panel runs full height, and ONLY the list of leads
-   scrolls (with its column headings stuck to the top of it). The height
-   chain is the same one the bookings view uses (body.ad-fit) - every box
-   from the shell down needs a definite height and min-height:0.
-   Phones keep ordinary page scrolling.
+   LEADS: one-screen layout
+
+   On a desktop the Leads view is one window tall and ONLY the list of
+   leads scrolls. Uses the same height chain as body.ad-fit.
+   Phones scroll normally.
    ========================================================================== */
 @media (min-width:900px){
   body.ad-fit-leads .ad-shell{ height:100vh; height:100svh; min-height:0; overflow:hidden; }
@@ -3254,8 +3171,9 @@ body.ad-fit .ad-main{ min-height:0; }
 }
 
 /* ==========================================================================
-   LEADS v3 — the second mockup: KPI tiles, compact week-dot calendar,
-   Fit bars, Next Action buttons, follow-ups, targets, contacts, history, files
+   LEADS - extras: KPI tiles, week-dot calendar, Fit bars, Next Action
+
+   buttons, follow-ups, targets, contacts, history, files
    ========================================================================== */
 
 /* Add Lead ▾ */
@@ -3411,7 +3329,7 @@ body.ad-fit .ad-main{ min-height:0; }
   .ad-desk.is-leads .lead-cal-v3 .lead-wslot{ min-height:0; }
 }
 
-/* v3 panel tightening: the Overview fits a laptop screen */
+/* panel tightening: the Overview fits a laptop screen */
 .lead-hero{ height:56px; }
 .lead-hero-ico{ font-size:28px; }
 .lead-prio{ bottom:7px; }
@@ -3435,7 +3353,7 @@ body.ad-fit .ad-main{ min-height:0; }
 .lead-supplier strong{ color:var(--ad-text); font-weight:700; }
 .lead-detail .inv-detail-foot{ padding:10px 16px; }
 
-/* v4 table: slim Event column (name over 2 lines), location + km, Fit 1-5 bars */
+/* table: slim Event column, location + km, Fit 1-5 bars */
 .lead-table .lead-evcol{ width:24%; }
 .lead-ev{ min-width:190px; max-width:290px; align-items:center; gap:9px; }
 .lead-tile{ width:38px; height:34px; font-size:17px; margin-top:0; }
@@ -3462,7 +3380,7 @@ body.ad-fit .ad-main{ min-height:0; }
 .lead-when{ white-space:nowrap; }
 .lead-km{ white-space:nowrap; }
 
-/* v5 table: organiser (light grey) + web/social icons under the event name; start times under the date */
+/* table: organiser + web/social icons under the event name; start times under the date */
 .lead-evcol .lead-ev{ align-items:flex-start; }
 .lead-evcol .lead-tile{ margin-top:2px; }
 .lead-evcol .lead-ev-text{ display:flex; flex-direction:column; min-width:0; }
@@ -3568,7 +3486,7 @@ body.ad-fit .ad-main{ min-height:0; }
 .lead-table td:nth-child(2), .lead-table td:nth-child(2) *{ white-space:normal; }
 
 /* =====================================================================
-   LEAD RATING — phone-sized card deck (dark, like the mockup)
+   LEAD RATING - phone-sized card deck
    ===================================================================== */
 .lead-verdict{ display:inline-block; margin:4px 0 0; padding:2px 7px; border-radius:6px; font-size:.68rem; font-weight:700; background:#eef0f4; color:#475569; }
 .lead-verdict.is-pass{ background:#fde8e8; color:#b91c1c; }
@@ -3706,7 +3624,7 @@ body.ad-rate-app .rt-wrap, body.ad-rate-app .rt-wrap *{ touch-action:pan-y; }
 .rt-chip.is-verdict{ background:#3a1d1d; color:#ffb4b4; }
 @media (max-width:760px){ .rt-act{ font-size:.62rem; padding:7px 0; } .rt-act i{ font-size:1.05rem; } }
 
-/* ===== Lead Rating — LIGHT card design (Max's mockup) ===== */
+/* ===== Lead Rating - light card design ===== */
 .rt-phone{ background:#f3f4f7; color:#111827; box-shadow:0 10px 30px rgba(15,23,42,.12); }
 body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .rt-exit, .rt-prev{ background:#fff; border-color:#e5e7eb; color:#111827; }
@@ -3788,7 +3706,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .rt-scout-btn:disabled{ opacity:.45; cursor:default; }
 .rt-scout p{ margin:0; font-size:.72rem; line-height:1.3; color:#6b7280; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
 .rt-tip-how{ margin:2px 0 0; font-size:.74rem; color:#6b7280; }
-/* five actions again: Won · Target · Locked · Pass · Next */
+/* five actions: Won · Target · Locked · Pass · Next */
 .rt-acts{ grid-template-columns:repeat(5,1fr); }
 .rt-scout-line{ flex:none; margin:0 2px 8px; font-size:.74rem; color:#4b5563; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 /* always-open Ask Scout box, pinned above the rating */
@@ -3813,7 +3731,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
   .lead-table td:nth-child(2), .lead-table td:nth-child(3){ font-size:.85rem; }
 }
 
-/* ===== Leads on a phone: fixed-format cards (Max's mockup) ===== */
+/* ===== Leads on a phone: fixed-format cards ===== */
 .lead-mcards{ display:none; }
 @media (max-width:760px){
   .lead-table-wrap{ display:none !important; }
@@ -3891,7 +3809,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .rt-menu .rt-scout-line{ margin:0; white-space:normal; }
 .rt-top + .rt-main{ margin-top:8px; }
 
-/* ===== Green = go (Max): high fit green, medium blue, low orange ===== */
+/* ===== Fit colours: high green, medium blue, low orange ===== */
 .lead-dot.is-high, .lead-cdot.is-high{ background:var(--ad-green); }
 .lead-dot.is-low, .lead-cdot.is-low{ background:var(--ad-orange); }
 .lead-heat.is-high{ background:var(--ad-green-bg); color:var(--ad-green); }
@@ -3910,7 +3828,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .lc-fest{ --lc1:#7c2d92; --lc2:#e0559c; }
 .lc-pub{ --lc1:#8a4b12; --lc2:#e7a33e; }
 
-/* ===== Lead sorting v2 (Pass / Save / Chase) ===== */
+/* ===== Lead sorting (Pass / Save / Chase) ===== */
 .rt-phone.r2{ position:relative; }
 .r2-h1{ margin:0 0 0 6px; font-size:1.35rem; font-weight:800; font-style:italic; color:#111827; }
 .r2-of{ font-size:.8rem; color:#6b7280; margin-right:8px; }
@@ -3986,7 +3904,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .r2-hist small{ color:#9ca3af; }
 .r2-ask{ display:flex; gap:8px; align-items:flex-start; }
 .r2-send{ padding:11px; border:0; border-radius:12px; background:#111827; color:#fff; font-weight:800; cursor:pointer; }
-/* the card is only as tall as its content; the old gradient fade is not needed */
+/* the card is only as tall as its content */
 .rt-main > .r2-card::after{ display:none; }
 .rt-main > .r2-card{ flex:0 1 auto; margin-top:auto; margin-bottom:auto; }
 /* Won lane - gold */
@@ -4002,7 +3920,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .r2-sheet{ position:fixed; left:0; right:0; bottom:var(--r2-kb, 0px); max-height:calc(100dvh - var(--r2-kb, 0px) - 20px); overflow-y:auto; transition:bottom .15s ease; }
 .r2-sheet-bg{ position:fixed; }
 @media (min-width:761px){ .r2-sheet{ left:50%; right:auto; width:min(430px, 100%); transform:translateX(-50%); } }
-/* Fit column retired: 7 columns - Event, Date, Location, Category, Est. Value, Next Action, More */
+/* 7 columns: Event, Date, Location, Category, Est. Value, Next Action, More */
 .lead-table{ min-width:1030px; }
 .lead-table thead th:nth-child(5){ width:100px; }
 .lead-table thead th:nth-child(6){ width:170px; }
@@ -4012,11 +3930,11 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .r2-ptag.is-when{ left:10px; }
 .r2-ptag.is-km{ right:10px; }
 
-/* "Version 369" under Settings - which update this page is running */
+/* version number under Settings - which update this page is running */
 .ad-version{ margin:6px 0 0 14px; font-size:.72rem; letter-spacing:.06em; color:#7d7d86; }
 
 /* ==========================================================================
-   CUSTOMERS (Max, 15 Oct 2026)
+   CUSTOMERS
    ========================================================================== */
 .cust-quotes{ margin-top:18px; display:grid; gap:6px; }
 .cust-quotes-h{ font-size:.72rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#8a8a94; margin:0 0 2px; }
@@ -4055,13 +3973,13 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 /* a printed / PDF quote never shows the search box */
 @media print{ .qb-cust-find{ display:none !important; } }
 
-/* quote auto-save status, next to Save (Max, 15 Oct 2026) */
+/* quote auto-save status, next to Save */
 .qb-auto{ font-size:.8rem; color:#8a8a94; margin-right:6px; white-space:nowrap; }
 .qb-auto.is-ok{ color:#2e9d5b; }
 .qb-auto.is-bad{ color:#d33; font-weight:600; }
 
 /* ==========================================================================
-   QUOTE LINES, CONDENSED (Max, 15 Oct 2026)
+   QUOTE LINES, CONDENSED
    ========================================================================== */
 .qb-row{ padding:5px 12px; }
 .qb-name{ padding:3px 6px; }
@@ -4084,14 +4002,14 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-thead .qb-c-rate{ padding-right:8px; }
 
 /* included gear sits INSIDE its item: no line above, category sub-headings
-   (Cable, Stands...) indented under the item name (Max, 15 Oct 2026) */
+   (Cable, Stands...) indented under the item name */
 .qb-row[data-top] + .qb-subhead{ border-top:none; }
 .qb-subhead{ padding:2px 12px 0 46px; font-size:.6rem; color:var(--ad-faint); }
 .qb-subhead-next{ border-top:none; padding-top:3px; }
 .qb-row-sub .qb-c-desc{ padding-left:22px; }
 .qb-row[data-top]:has(+ .qb-subhead){ padding-bottom:2px; }
 
-/* setup / pack-down breakdown under the labour total (Max, 15 Oct 2026):
+/* setup / pack-down breakdown under the labour total:
    name + amount on one line, the hours below, the holiday tick below that */
 .qb-labpart{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px;
              padding:4px 0 6px 26px; font-size:.82rem; color:var(--ad-text); }
@@ -4102,21 +4020,21 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-labph{ display:inline-flex; align-items:center; gap:5px; margin-top:2px;
            font-size:.72rem; color:var(--ad-muted); cursor:pointer; }
 .qb-labph input{ margin:0; }
-/* "Included" in light grey, not green (Max, 15 Oct 2026) */
+/* "Included" in light grey, not green */
 .qb-incl{ color:#aaa; }
 .qb-free{ font-weight:700; color:var(--ad-text); letter-spacing:.04em; }
-/* totals breakdown in the quote builder (Max, 15 Oct 2026) */
+/* totals breakdown in the quote builder */
 .qb-sumhead{ font-size:.66rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ad-faint); padding:2px 0; }
 .qb-sumsub{ padding:2px 0 2px 12px; font-size:.84rem; }
 .qb-sumsub span:first-child{ color:var(--ad-muted); }
 
 
-/* quote "emailed" record (Max, 16 Oct 2026) */
+/* quote "emailed" record */
 .q-emailed { margin: 10px 0 0; font-size: 13px; color: #555; }
 .q-mailed { display: block; margin-top: 4px; font-size: 11px; color: #2e7d32; white-space: nowrap; }
 
 /* ==========================================================================
-   SALES PIPELINE (Max's mock-up, 16 Oct 2026) - js/sales-pipeline.js
+   SALES PIPELINE - js/sales-pipeline.js
    ========================================================================== */
 .sp{ --sp-orange:#f2700d; --sp-orange-bg:#fff1e5; }
 .sp-top{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:18px; }
@@ -4205,7 +4123,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
   .sp-stat em{ display:none; }
   .sp-search{ flex:1 1 100%; order:3; }
 }
-/* progress v2: lines drawn behind the dots, no overlap */
+/* progress: lines drawn behind the dots */
 .sp-progress{ display:flex; }
 .sp-step{ position:relative; width:52px; }
 .sp-step b{ position:relative; z-index:1; }
@@ -4241,7 +4159,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
   .sp-table .sp-empty{ grid-column:1 / -1; }
 }
 
-/* pipeline v2 columns: 1 customer, 2 date, 3 progress, 4 next step, 5 total, 6 actions */
+/* pipeline columns: 1 customer, 2 date, 3 progress, 4 next step, 5 total, 6 actions */
 .sp-menu .sp-danger{ color:var(--ad-red); }
 .sp-menu .sp-danger:hover{ background:var(--ad-red-bg); }
 @media (max-width:600px){
@@ -4254,7 +4172,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
   .sp-table td:nth-child(6){ grid-column:1 / -1; display:flex; gap:6px; text-align:left; }
 }
 
-/* ---- STOCK: on hire / left for chosen dates + quote warnings (16 Oct 2026) ---- */
+/* ---- STOCK: on hire / left for chosen dates + quote warnings ---- */
 .inv-dates{ display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--ad-muted); }
 .inv-dates .ad-input{ width:auto; padding:6px 8px; }
 .inv-hire{ display:inline-block; position:relative; text-align:left; }
@@ -4316,7 +4234,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .sys-part.qb-drop-before{ box-shadow:inset 0 2px 0 var(--ad-orange); }
 .sys-part.qb-drop-after{ box-shadow:inset 0 -2px 0 var(--ad-orange); }
 
-/* SYSTEMS stand out (Max, 17 Oct 2026): orange edge in Inventory, orange tag in searches and on quotes */
+/* SYSTEMS stand out: orange edge in Inventory, orange tag in searches and on quotes */
 .inv-row-sys td:first-child{ box-shadow:inset 4px 0 0 var(--ad-orange); }
 .inv-row-sys{ background:#fffaf5; }
 .inv-sys-badge{ background:var(--ad-orange) !important; color:#fff !important; }
@@ -4324,7 +4242,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-sys-line{ margin:3px 0 0; }
 .sys-panel .inv-photo-ph{ background:var(--ad-orange-soft); color:var(--ad-orange); }
 
-/* KITS (orange) and PACKAGES (black) - Max, 17 Oct 2026 */
+/* KITS (orange) and PACKAGES (black) */
 .inv-sys-badge.is-pkg, .qb-sys-tag.is-pkg{ background:#111 !important; }
 .inv-row-pkg td:first-child{ box-shadow:inset 4px 0 0 #111 !important; }
 .inv-row-pkg{ background:#f6f6f6 !important; }
@@ -4337,7 +4255,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 
 .qb-sys-tag.is-crew{ background:var(--ad-blue) !important; }
 
-/* labour: setup & pack-down each on/off, pack-down day (Max, 17 Oct 2026) */
+/* labour: setup & pack-down each on/off, pack-down day */
 .qb-labpick{ display:inline-flex; align-items:center; gap:6px; cursor:pointer; }
 .qb-labpart.is-off b, .qb-labpart.is-off em{ color:var(--ad-faint); text-decoration:line-through; }
 .qb-labpart.is-off > span:last-child{ color:var(--ad-faint); }
@@ -4345,7 +4263,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-labday input{ font:inherit; font-size:12px; padding:2px 6px; border:1px solid var(--ad-line); border-radius:6px; }
 
 /* ==========================================================================
-   INVENTORY: one-screen layout (Max, 17 Oct 2026) - same idea as Leads.
+   INVENTORY: one-screen layout - same idea as Leads.
    Header, tiles and filters stay put, the page numbers sit at the bottom,
    the side panel runs full height, and ONLY the item list scrolls (column
    headings stuck to its top). Phones keep normal scrolling.
@@ -4368,7 +4286,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
   .ad-desk.is-inv .inv-toolbar{ margin-bottom:12px; }
 }
 
-/* the top bar only holds the phone menu button now (signup link removed, Max 17 Oct 2026) - hidden on computers */
+/* the top bar only holds the phone menu button - hidden on computers */
 @media (min-width:901px){ .ad-top{ display:none; } }
 
 .qb-sys-line{ display:inline-block !important; width:auto !important; align-self:flex-start; }
@@ -4383,7 +4301,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-pkg-head .qb-del:hover{ color:#fff; }
 .qb-pkg-body{ padding:0 0 0 10px; border-left:4px solid #111; margin-left:0; background:#fafafa; }
 .qb-pkg-body .qb-row{ background:transparent; }
-/* package box: grey (Max, 17 Oct 2026) */
+/* package box: grey */
 .qb-pkg{ border-color:#d3d7de !important; }
 .qb-pkg-head{ background:#eceef2 !important; color:var(--ad-text) !important; border-bottom:1px solid #d3d7de; }
 .qb-pkg-head .qb-sys-tag{ background:#111 !important; color:#fff !important; }
@@ -4391,7 +4309,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-pkg-head .qb-del:hover{ color:var(--ad-red) !important; }
 .qb-pkg-body{ border-left-color:#d3d7de !important; background:#f7f8fa !important; }
 
-/* item requirements: type-to-search for the required item (Max, 17 Oct 2026) */
+/* item requirements: type-to-search for the required item */
 .inv-req-pick{ position:relative; }
 .inv-req-pick .ad-input{ width:100%; }
 .inv-req-results{ position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:30; background:#fff; border:1px solid var(--ad-line); border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,.14); max-height:260px; overflow-y:auto; }
@@ -4401,16 +4319,16 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .inv-req-item > span{ display:block; }
 
 
-/* vendor rows: the quote progress bar is greyed out, it does not apply (Max, 19 Oct 2026) */
+/* vendor rows: the quote progress bar is greyed out, it does not apply */
 .sp-progress.sp-off{ filter:grayscale(1); opacity:.35; }
 
-/* Sales Pipeline: vendors not emailed their invoice yet (Max, 19 Oct 2026) */
+/* Sales Pipeline: vendors not emailed their invoice yet */
 .sp-vendor-send{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:0 0 12px; padding:12px 16px; border:1px solid #ffd9b3; background:#fff7ef; border-radius:12px; font-size:14px; }
 
 /* ==========================================================================
-   MESSAGES page (Max, 19 Oct 2026) - js/messages.js
+   MESSAGES page - js/messages.js
    ========================================================================== */
-.ms{ max-width:none; width:100%; }   /* fills the page (Max, 20 Oct 2026) */
+.ms{ max-width:none; width:100%; }   /* fills the page */
 .ms-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:14px; }
 .ms-head h1, .ms-title h1{ margin:0 0 4px; font-size:24px; }
 .ms-head p{ margin:0; color:var(--ad-muted); font-size:14px; }
@@ -4486,10 +4404,10 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ms-mail-total b{ display:block; font-size:22px; }
 .ms-mail-total span{ font-size:12px; color:#666; }
 
-/* late payment charges in the Sales Pipeline (Max, 20 Oct 2026) */
+/* late payment charges in the Sales Pipeline */
 .sp-late{ display:block; font-size:11px; font-weight:600; color:var(--ad-red); }
 
-/* CC emails as chips in the quote builder (Max, 20 Oct 2026) */
+/* CC emails as chips in the quote builder */
 .qb-cc{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:6px 8px; border:1px dashed var(--ad-line); border-radius:10px; background:#fafbfc; cursor:text; margin-top:4px; }
 .qb-cc:focus-within{ border-style:solid; border-color:var(--ad-orange); background:#fff; }
 .qb-cc-label{ font-size:11px; font-weight:800; letter-spacing:.08em; color:var(--ad-muted); padding:0 4px; }
@@ -4499,12 +4417,12 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-chip button:hover{ opacity:1; }
 .qb-cc-in{ flex:1; min-width:180px; border:0; outline:0; background:transparent; font:inherit; font-size:14px; padding:4px 2px; }
 .qb-cc-msg{ flex-basis:100%; margin:2px 4px; font-size:12px; color:#b3261e; }
-/* tiny labels on the quote's customer fields (Max, 20 Oct 2026) */
+/* tiny labels on the quote's customer fields */
 .qb-fl{ display:block; margin:0; }
 .qb-fl > span{ display:block; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#9aa0a8; margin:6px 0 0 2px; }
 .qb-fl .qb-cin{ margin-top:0; width:100%; box-sizing:border-box; }
 
-/* Messages > Sent emails (Max, 20 Oct 2026) */
+/* Messages > Sent emails */
 .ms-tab-log{ margin-left:auto; }
 .ms-red{ background:#fdecec; color:#b3261e; }
 .ms-log-bar{ display:flex; gap:8px; margin-bottom:10px; }
@@ -4515,12 +4433,12 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ms-table tbody tr.is-sel td{ background:#fff7ef; }
 .ms-log-meta{ font-size:13px; line-height:1.6; margin:4px 0 10px; color:#444; }
 .ms-log-frame{ width:100%; height:720px; border:1px solid var(--ad-line); border-radius:10px; background:#f4f4f5; }
-/* Messages fills the page: wider editor + preview, roomier table (Max, 20 Oct 2026) */
+/* Messages fills the page: wider editor + preview, roomier table */
 .ms .ms-grid{ grid-template-columns:minmax(0,1.1fr) minmax(420px,1fr); }
 .ms .ms-body{ min-height:340px; }
 .ms-table td:nth-child(1){ width:18%; } .ms-table td:nth-child(2){ width:38%; }
 
-/* Messages: waitlist card + waitlist email preview (Max, 20 Oct 2026) */
+/* Messages: waitlist card + waitlist email preview */
 .ms-wl{ margin-top:16px; }
 .ms-wl-head{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; padding:14px 16px 6px; }
 .ms-wl-head b{ font-size:16px; }
@@ -4530,12 +4448,12 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ms-mail-note{ text-align:center; font-size:12px; color:#777; }
 
 /* SIDEBAR: logo pinned at the top, your name + Log out pinned at the bottom,
-   only the menu scrolls in between (Max, 20 Oct 2026) */
+   only the menu scrolls in between */
 .ad-rail{ overflow:hidden; }
 .ad-rail .ad-brand, .ad-rail .ad-rail-foot{ flex:none; }
 .ad-rail .ad-nav{ flex:1 1 auto; min-height:0; overflow-y:auto; }
 
-/* Messages > Sponsors (Max, 20 Oct 2026) */
+/* Messages > Sponsors */
 .ms-sp-goal{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; padding:14px 18px; margin-bottom:14px; }
 .ms-sp-goal b{ font-size:18px; }
 .ms-sp-goal span{ color:#9a6200; font-weight:700; }
@@ -4562,7 +4480,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ms-sp-del{ border:0; background:none; font-size:18px; color:#c62828; cursor:pointer; opacity:.6; }
 .ms-sp-del:hover{ opacity:1; }
 
-/* Sites & Map: the whole map fits on the screen, no scrolling (Max, 20 Oct 2026) */
+/* Sites & Map: the whole map fits on the screen, no scrolling */
 @media (min-width:1081px){
   .ad-map-wrap{ max-height:none; height:calc(100vh - 210px); overflow:hidden; display:flex; justify-content:center; align-items:center; }
   .ad-map-wrap .ad-map{ width:auto; height:100%; max-width:100%; }
@@ -4571,7 +4489,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ms-mail-body a{ color:#ff6b00; font-weight:700; }
 .ms-sp-tip{ font-style:italic; max-width:420px; }
 .sp-details-tag{ background:#e3f5ea !important; color:#13733d !important; }
-/* Ask the customer for their details - in the Quote to box (Max, 20 Oct 2026) */
+/* Ask the customer for their details - in the Quote to box */
 .qb-askbtn{ display:block; width:100%; margin:8px 0 4px; padding:10px 12px; border:1px solid #ffd9b3; background:#fff7ef; color:#9a4a00; border-radius:10px; font:inherit; font-weight:700; font-size:14px; text-align:left; cursor:pointer; }
 .qb-askbtn:hover{ background:#ffefe0; }
 .qb-autosend{ display:flex; gap:8px; align-items:center; margin:8px 2px 0; font-size:13px; color:#444; cursor:pointer; }
@@ -4579,7 +4497,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-cnotes{ resize:vertical; min-height:60px; font:inherit; }
 
 /* ==========================================================================
-   DASHBOARD (Max, 20 Oct 2026) - js/dashboard.js
+   DASHBOARD - js/dashboard.js
    ========================================================================== */
 .db{ padding:22px; max-width:1400px; }
 .db h2{ font-size:15px; margin:0 0 12px; display:flex; align-items:center; gap:8px; }
@@ -4656,18 +4574,18 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
   .db-col-val{ display:none; }
 }
 
-/* dashboard reminders (Max, 20 Oct 2026) */
+/* dashboard reminders */
 .db-rem{ background:var(--ad-orange-soft); border-radius:10px; padding:10px 12px 12px !important; margin-bottom:8px; border-top:0 !important; }
 .db-rem li{ padding:4px 0; }
 .db-rem label{ display:flex; gap:8px; align-items:flex-start; cursor:pointer; font-size:13px; color:var(--ad-text); }
 .db-rem input[type="checkbox"]{ margin-top:2px; accent-color:var(--ad-orange); width:16px; height:16px; flex:none; }
 .db-rem li.is-done span{ text-decoration:line-through; color:var(--ad-faint); }
 .db-rem-add input{ width:100%; box-sizing:border-box; margin-top:8px; padding:8px 10px; border:1px solid var(--ad-line); border-radius:8px; font:inherit; font-size:13px; background:#fff; }
-/* event-day weather on dashboard jobs (Max, 20 Oct 2026) */
+/* event-day weather on dashboard jobs */
 .db-wx{ background:#e8f3fd; color:#0b4a7a; }
 .db-wx.is-warn{ background:var(--ad-amber-bg); color:var(--ad-amber); font-weight:700; }
 .db-wx.is-bad{ background:var(--ad-red-bg); color:var(--ad-red); font-weight:700; }
-/* the weather card beside the job buttons (Max, 20 Oct 2026) */
+/* the weather card beside the job buttons */
 .db-job-acts{ align-items:center; }
 .db-wxbox{ width:116px; box-sizing:border-box; padding:9px 10px; border-radius:14px; color:#fff;
   background:linear-gradient(155deg, #5ab8ff 0%, #2f80ed 100%); box-shadow:0 6px 16px rgba(47,128,237,.28); }
@@ -4685,13 +4603,13 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .db-wxbox .wx-later span{ font-weight:500; }
 .db-wxbox.is-later svg{ width:20px; height:20px; }
 @media (max-width:640px){ .db-job-acts{ flex-wrap:wrap; } }
-/* our own events in "Next 30 days" (Max, 20 Oct 2026) */
+/* our own events in "Next 30 days" */
 .db-pill-ours{ background:var(--ad-orange-soft); color:var(--ad-orange); }
 .db-job.is-event .db-job-date b{ color:var(--ad-orange); }
 .db-pill-gig{ background:#efe9fd; color:#6d3fd1; }   /* entertainment gigs (Grand View etc.) */
 .db-copy{ padding:5px 10px; font-size:12px; margin-right:4px; }
 
-/* Next 30 days: weather in its own column so the cards line up; week separators (Max, 21 Oct 2026) */
+/* Next 30 days: weather in its own column so the cards line up; week separators */
 .db-job{ grid-template-columns:86px minmax(0, 1fr) 120px 300px; }
 .db-job-wx{ display:flex; justify-content:center; }
 .db-job-acts{ justify-content:flex-start; flex-wrap:wrap; }
@@ -4704,10 +4622,10 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .db-sep + .db-job{ border-top:0; }
 @media (max-width:1100px){ .db-job{ grid-template-columns:86px minmax(0, 1fr) 120px; } .db-job-acts{ grid-column:2 / -1; } }
 @media (max-width:640px){ .db-job{ grid-template-columns:1fr; } .db-job-acts{ grid-column:auto; } .db-job-wx{ justify-content:flex-start; } }
-/* the financial-year week number, same as the Gig Opportunities calendar (Max, 21 Oct 2026) */
+/* the financial-year week number, same as the Gig Opportunities calendar */
 .db-week{ display:inline-block; margin-left:8px; padding:2px 9px; border-radius:20px; background:var(--ad-orange); color:#fff; font-size:12px; font-weight:800; }
 
-/* CONFIRMED vs WAITING rows in Next 30 days (Max, 21 Oct 2026) */
+/* CONFIRMED vs WAITING rows in Next 30 days */
 .db-jobs .db-job{ border-top:0; border-radius:12px; padding:12px 14px; margin-top:8px; }
 .db-job.is-confirmed{ background:linear-gradient(90deg, #e3f6ea 0%, #f3fbf6 45%, #fff 100%); box-shadow:inset 4px 0 0 var(--ad-green); }
 .db-job.is-pending{ background:repeating-linear-gradient(135deg, #f7f8fa 0 9px, #eceef2 9px 18px); box-shadow:inset 4px 0 0 #c4c9d2; }
@@ -4717,7 +4635,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .db-state.is-wait{ color:#8a919c; }
 .db-sep + .db-job{ margin-top:6px; }
 
-/* crew on a job + the crew picker (Max, 21 Oct 2026) */
+/* crew on a job + the crew picker */
 .db-crewtag{ background:#e3f6ea; color:var(--ad-green); font-weight:700; }
 .db-nocrew{ background:var(--ad-amber-bg); color:var(--ad-amber); font-weight:700; }
 .db-modal{ position:fixed; inset:0; z-index:1000; background:rgba(15,18,25,.45); display:flex; align-items:center; justify-content:center; padding:16px; }
@@ -4732,36 +4650,36 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .db-modal-list em{ margin-left:auto; font-style:normal; font-size:11px; color:var(--ad-amber); background:var(--ad-amber-bg); padding:1px 7px; border-radius:20px; }
 .db-modal-note{ font-size:12px; color:var(--ad-muted); margin:12px 0; }
 .db-modal-acts{ display:flex; justify-content:flex-end; gap:8px; }
-/* weather cards 25% smaller (Max, 21 Oct 2026) */
+/* weather cards 25% smaller */
 .db-wxbox{ zoom:.75; }
 .db-job{ grid-template-columns:86px minmax(0, 1fr) 92px 300px; }
 @media (max-width:1100px){ .db-job{ grid-template-columns:86px minmax(0, 1fr) 92px; } }
 @media (max-width:640px){ .db-job{ grid-template-columns:1fr; } }
 
-/* pub nights: rates on the roster, regular nights, start/finish (Max, 21 Oct 2026) */
+/* pub nights: rates on the roster, regular nights, start/finish */
 .ad-rate-in{ width:80px; padding:6px 8px; border:1px solid var(--ad-line); border-radius:8px; font:inherit; font-size:13px; }
 .ad-rate-wide{ width:170px; }
 .ad-regular select{ padding:6px 8px; border:1px solid var(--ad-line); border-radius:8px; font:inherit; font-size:13px; }
 .ad-rn-new{ background:var(--ad-orange-soft); }
 .ad-book-times{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-/* pub invoices on the dashboard (Max, 21 Oct 2026) */
+/* pub invoices on the dashboard */
 .db-todo li{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
 .db-todo-btns{ display:inline-flex; gap:5px; margin-left:auto; }
 .db-mini{ padding:3px 9px !important; font-size:11.5px !important; }
 .db-invtag{ background:#fff3e6; color:#b45309; font-weight:700; text-decoration:none; }
-/* roster rows line up; location box (Max, 21 Oct 2026) */
+/* roster rows line up; location box */
 .ad-roster .ad-table td{ vertical-align:middle; }
 .ad-roster .ad-act{ display:inline-flex; align-items:center; gap:10px; }
 .ad-rate-mid{ width:120px; }
-.ad-roster td.ad-cell-strong{ display:table-cell; }   /* was display:block - knocked the rows out of line */
+.ad-roster td.ad-cell-strong{ display:table-cell; }   /* must not be display:block - it knocks the rows out of line */
 .ad-desk.is-bookings .ad-regular{ display:none; margin-top:14px; }
 .ad-desk.is-bookings.show-roster .ad-regular{ display:block; }
-/* templates (Max, 21 Oct 2026) */
+/* templates */
 .qb-tpl{ display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--ad-muted); margin-right:6px; cursor:pointer; }
 .qb-tpl input{ accent-color:var(--ad-orange); width:16px; height:16px; }
 .qb-tplbar{ margin:0 0 12px; padding:10px 14px; border-radius:10px; background:#eef2ff; color:#3730a3; font-size:13px; }
 
-/* ENTERTAINMENT overhaul - looks like Crew & Vehicles (Max, 21 Oct 2026) */
+/* ENTERTAINMENT overhaul - looks like Crew & Vehicles */
 .ent-tabs{ display:inline-flex; background:var(--ad-grey-bg); border-radius:10px; padding:3px; margin-right:8px; }
 .ent-tab{ border:0; background:transparent; padding:7px 16px; border-radius:8px; font:inherit; font-size:13px; font-weight:700; color:var(--ad-muted); cursor:pointer; }
 .ent-tab.is-on{ background:#fff; color:var(--ad-text); box-shadow:0 1px 3px rgba(0,0,0,.12); }
@@ -4795,11 +4713,11 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ent-gigs li{ padding:6px 0; border-top:1px solid var(--ad-line); display:flex; gap:8px; align-items:center; }
 .ent .ad-regular{ margin-top:16px; }
 @media (max-width:1100px){ .ent-split{ grid-template-columns:1fr; } }
-/* quotes Max made himself skip the Estimate step - greyed out (Max, 21 Oct 2026) */
+/* quotes Max made himself skip the Estimate step - greyed out */
 .sp-step.is-skip b{ background:#eceef2; border-color:#d5d8de; }
 .sp-step.is-skip em{ color:#c0c4cc; }
 .sp-step.is-skip + .sp-step.is-done::before{ background:#d5d8de; }
-/* nights with no DJ (Max, 21 Oct 2026) */
+/* nights with no DJ */
 .ent-date{ font-weight:600; white-space:nowrap; }
 .ent-open td{ background:repeating-linear-gradient(135deg, #fff 0 9px, #fdf1f0 9px 18px); }
 .ent-book{ padding:6px 12px; font-size:12px; }
@@ -4815,7 +4733,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ent-noinv{ margin:0 0 8px; font-size:13px; padding:8px 10px; background:var(--ad-amber-bg); color:var(--ad-amber); border-radius:8px; width:100%; }
 
 /* GIG OPPORTUNITIES calendar: selected / this week in light green, with room
-   at the bottom so the last (Skip) dot is never covered (Max, 22 Oct 2026) */
+   at the bottom so the last (Skip) dot is never covered */
 .lead-wslot{ padding-bottom:5px; }
 .lead-wslot.is-today,
 .lead-wslot.is-sel,
@@ -4828,13 +4746,13 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ent-styles{ display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:6px; }
 .ent-styles label{ display:inline-flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; }
 .ent-styles input{ accent-color:var(--ad-orange); }
-.ent-add-venue{ border:1px dashed #c9ccd6; color:#5b6070; }   /* + Add venue (Max, 22 Oct 2026) */
-/* Gigs: list left, calendar / open gig right (Max, 22 Oct 2026) */
+.ent-add-venue{ border:1px dashed #c9ccd6; color:#5b6070; }   /* + Add venue */
+/* Gigs: list left, calendar / open gig right */
 .ent-split{ grid-template-columns:minmax(0, 1fr) minmax(320px, 420px); }
 .ent-side{ margin:0; padding:0; overflow:hidden; position:sticky; top:0; }
 .ent-side .ad-book-panel{ border:none; box-shadow:none; margin:0; }
 @media (max-width:1100px){ .ent-split{ grid-template-columns:1fr; } }
-/* UNCONFIRMED bookings - DJ held until paid (Max, 22 Oct 2026) */
+/* UNCONFIRMED bookings - DJ held until paid */
 .inv-row.is-unconf td{ background:#fdf3e1; }
 .inv-row.is-unconf td:first-child{ box-shadow:inset 4px 0 0 #ba7517; }
 .ent-unconf-tag{ display:inline-block; font-size:12px; font-weight:600; padding:3px 9px; border-radius:20px; border:1px dashed #854f0b; color:#633806; background:#faeeda; white-space:nowrap; }
@@ -4842,28 +4760,28 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ad-cal-act.is-unconf{ background:#faeeda; color:#633806; font-weight:600; }
 .ent-payfull{ display:flex !important; flex-direction:row !important; align-items:center; gap:8px; font-size:14px; }
 .ent-payfull input{ width:auto; }
-/* DJ booking fee setting (Max, 22 Oct 2026) */
+/* DJ booking fee setting */
 .ent-fee{ display:grid; grid-template-columns:repeat(2, minmax(0, 220px)); gap:10px 16px; padding:4px 18px 16px; align-items:end; }
 .ent-fee-wide{ grid-column:1 / -1; max-width:560px; }
-/* text or email the details link (Max, 22 Oct 2026) */
+/* text or email the details link */
 .qb-askhead{ margin:8px 0 4px; font-size:13px; font-weight:700; color:#9a4a00; }
 .qb-askrow{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:4px; }
 .qb-askrow .qb-askbtn{ margin:0; text-align:center; }
-/* Venues tab (Max, 22 Oct 2026) */
+/* Venues tab */
 .ent-actions{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:6px; }
 .ent-gigline{ margin:0 0 6px; font-size:14px; }
-/* 7-step gig checklist fits the side panel (Max, 22 Oct 2026) */
+/* 7-step gig checklist fits the side panel */
 .ent-trail{ padding:16px 10px 4px; }
 .ent-step{ width:50px; }
 .ent-step em{ font-size:10.5px; line-height:1.2; }
 .ent-trail > b{ min-width:4px; }
-.ent-djok{ border-color:#b9dfc6; color:#0f6e3d; }   /* Mark DJ confirmed (Max, 22 Oct 2026) */
+.ent-djok{ border-color:#b9dfc6; color:#0f6e3d; }   /* Mark DJ confirmed */
 .ent-djok.is-on{ background:#e8f4ec; }
-/* Messages > Reminders (Max, 22 Oct 2026) */
+/* Messages > Reminders */
 .ms-log-grid > div > .ms-card + .ms-card{ margin-top:14px; }
 .sp-remind{ margin-right:6px; padding:7px 12px; border-radius:8px; border:1px solid #ffd9b3; background:#fff7ef; color:#9a4a00; font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
 .sp-remind:hover{ background:#ffefe0; }
-/* loading bar + spinner (Max, 23 Oct 2026) */
+/* loading bar + spinner */
 #ad-busy{ position:fixed; top:0; left:0; right:0; height:3px; z-index:9999; pointer-events:none; overflow:hidden; opacity:0; transition:opacity .2s; }
 #ad-busy.is-on{ opacity:1; }
 #ad-busy::before{ content:""; position:absolute; top:0; bottom:0; left:-40%; width:40%; background:linear-gradient(90deg, transparent, #ff6b00, transparent); animation:ad-busy 1s ease-in-out infinite; }
@@ -4871,13 +4789,13 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ad-spin{ display:inline-block; width:14px; height:14px; margin-right:8px; vertical-align:-2px; border:2px solid #e3e5ea; border-top-color:#ff6b00; border-radius:50%; animation:ad-spin .7s linear infinite; }
 @keyframes ad-spin{ to{ transform:rotate(360deg); } }
 .ent-loading{ padding:22px 16px !important; }
-/* music style tick boxes: box and words side by side (Max, 23 Oct 2026) */
+/* music style tick boxes: box and words side by side */
 .ent-styles{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px 14px; }
 .ent-styles label{ display:flex !important; flex-direction:row !important; align-items:center; gap:8px; margin:0; white-space:nowrap; font-size:13px; }
 .ent-styles input[type=checkbox]{ width:16px !important; height:16px; margin:0; flex:none; }
 
 /* =========================================================================
-   PHONE LAYOUT - QUOTE BUILDER (Max, 23 Oct 2026). Desktop untouched: all
+   PHONE LAYOUT - QUOTE BUILDER. Desktop untouched: all
    of this only applies at phone width. Each line becomes a small card -
    the name across the top, then Qty / Amount / Days / Total underneath,
    each with its own little label (the column headings are hidden).
@@ -4918,7 +4836,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 }
 
 /* =========================================================================
-   PHONE LAYOUT - ENTERTAINMENT + LISTS (Max, 23 Oct 2026). Desktop untouched.
+   PHONE LAYOUT - ENTERTAINMENT + LISTS. Desktop untouched.
    ========================================================================= */
 @media (max-width:1100px){
   .ent-split{ grid-template-columns:minmax(0, 1fr); }

@@ -1,5 +1,5 @@
 // SOUNDZGOOD DJ BOOKING TERMS & CONDITIONS
-// From Max's answers (22 Oct 2026). Shown on DJ / entertainment quotes
+// Shown on DJ / entertainment quotes
 // (js/quote-view.js) and the /dj-terms page. Production quotes keep the
 // main terms in js/terms-data.js.
 //

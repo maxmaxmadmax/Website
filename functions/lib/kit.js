@@ -65,8 +65,8 @@ function expandKit(cart, itemsById) {
 
   const totals = resolveTotals(base, itemsById);
 
-  // SYSTEMS (Max, 16 Oct 2026): everything inside a system - its parts and the
-  // gear they bring along - is covered by the system's own price, so it is free.
+  // SYSTEMS: everything inside a system - its parts and the gear they bring
+  // along - is covered by the system's own price, so it is free.
   const inSys = new Set();
   const walk = (id) => {
     reqsOf(itemsById[id]).forEach((r) => {

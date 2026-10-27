@@ -1,21 +1,14 @@
 /* ==========================================================================
    AN EVENT CARD
-
-   Shared by two pages: the gig guide at /gig-guide and the What's On This
-   Weekend strip on /events. One definition, because two copies of a card
-   drift apart within a month and then the same event looks like two
-   different things depending on where you found it.
-
-   Deliberately NOT scoped to a page id, unlike the rest of both
-   stylesheets. That is the whole point of it - but it does mean the class
-   names have to stay distinctive. Everything here is gg- prefixed and
-   nothing else on the site uses that prefix.
+   Shared by the gig guide (/gig-guide) and the What's On This Weekend strip
+   on /events - keep it in one place so both look the same.
+   Not scoped to a page id, so every class here is gg- prefixed; nothing else
+   on the site may use that prefix.
    ========================================================================== */
 /* ---------------------------------------------------------------------
    THE CARD ITSELF
-   Photograph on top with the date over it, the words underneath on the
-   panel. A card with no photo shows its tile, which is why an unphotographed
-   listing still looks finished.
+   Photo on top with the date over it, words underneath. No photo = shows
+   its tile instead.
    ========================================================================== */
 .gg-card{
     position:relative;
@@ -76,8 +69,7 @@
     margin:3px 0 2px;
 }
 
-/*  An event with no date yet. The year goes in the chip on its own, so
-    the card still has the same shape as the ones around it.            */
+/* An event with no date yet: the chip shows just the year so the card keeps its shape. */
 .gg-chip.is-tba b{
     font-size:.95rem;
     margin:0;
@@ -102,9 +94,7 @@
     margin:0 0 2px;
 }
 
-/*  The pin and the clock are drawn here rather than sat in the markup on
-    every card. Masks rather than images, so they take the colour of the
-    text beside them.                                                    */
+/* Pin and clock icons drawn as masks, so they take the colour of the text beside them. */
 .gg-where,
 .gg-when{
     display:flex;
@@ -158,9 +148,7 @@
 }
 
 
-/*  The link back to wherever an event was found, and the line saying when
-    the guide last went looking. Both are quiet - they are the workings,
-    not the listing.                                                      */
+/* The source link and the "last checked" line - kept quiet on purpose. */
 .gg-via{
     margin-top:10px;
     color:var(--sg-dim);
@@ -184,8 +172,6 @@
     letter-spacing:.04em;
 }
 
-/*  Moved here with the card, so it travels with what it modifies rather
-    than being left behind on one page.                                  */
 @media (prefers-reduced-motion:reduce){
     .gg-card,
     .gg-card-art{ transition:none; }

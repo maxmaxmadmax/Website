@@ -1,22 +1,20 @@
 /* ==========================================================================
    KIT & PACKAGE BUILDER  -  Inventory > "+ New kit" / "+ New package"
-   (Max, 16-17 Oct 2026; kits were first called "systems")
 
    A KIT is an inventory item made of other gear, e.g.
      FOH Kit = 2 x tops + 4 x subs + 1 x 4-ch amp  (+ their cables)
    A PACKAGE is made of kits and single items, e.g.
      4-Piece Band Backline = Mic kit + Drum kit + bass rig + 2 guitar amps
    and can be offered on the website estimate bot (event type + guest size).
-   Both are saved with isSystem: true; bundleType says which ('kit' / 'package').
-   It is saved as a normal inventory item with isSystem: true and its parts
-   as INCLUDED required gear, so quotes show one line at one price with the
-   parts listed under it, the pick list shows every part, and stock is
-   counted on the real parts. Each part's own required gear (leads, stands)
-   still comes along automatically through the kit engine (js/kit.js).
+   Both are saved as normal inventory items with isSystem: true; bundleType
+   says which ('kit' / 'package'). The parts are saved as INCLUDED required
+   gear, so quotes show one line at one price with the parts listed under
+   it, the pick list shows every part, and stock is counted on the real
+   parts. Each part's own required gear still comes along through js/kit.js.
 
    Pure HTML + wiring; admin-app.js hands in the items and does the saving.
    ========================================================================== */
-import { expandKit, resolveTotals } from './kit.js?v=710';
+import { expandKit, resolveTotals } from './kit.js?v=711';
 
 /* the working copy of the system being built */
 export function sysDraftFrom(item, type) {
@@ -34,7 +32,7 @@ export function sysDraftFrom(item, type) {
     priceCents: it.priceCents || 0,
     photoUrl: it.photoUrl || '',
     priceTouched: !!it.id,   // an existing system keeps its price; a new one follows the parts
-    // what Max picked (systemParts); older saves only have the de-duplicated requirements
+    // what was picked (systemParts); older saves only have the de-duplicated requirements
     parts: (Array.isArray(it.systemParts) && it.systemParts.length ? it.systemParts : (it.requirements || []))
       .filter((r) => r && (r.itemId || r.resourceId)).map((r) => (r.resourceId
         ? { resourceId: r.resourceId, qty: Math.max(1, r.qty || 1) }      // crew (packages only)

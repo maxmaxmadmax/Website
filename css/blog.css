@@ -1,8 +1,7 @@
 /* ==========================================================================
-   JOB STORIES / BLOG POSTS  (Max, 20 Oct 2026)
-   One article per event we've worked on - e.g. don-river-dash-event-sound-bowen.html.
-   WHITE page (Max, 20 Oct 2026) - easier to read long text; the site menu
-   and footer stay dark. Orange accents from style.css.
+   JOB STORIES / BLOG POSTS
+   One article per event we've worked on. White page so long text is easy to
+   read; the site menu and footer stay dark. Orange accents from style.css.
    ========================================================================== */
 
 body:has(.bl-wrap){ background:#fff; }
@@ -69,7 +68,7 @@ body:has(.bl-wrap){ background:#fff; }
    page that turns grey, so blog pages get a solid black bar */
 body:has(.bl-wrap) #navbar > nav{ background:#000; }
 
-/* big numbers strip (Max, 20 Oct 2026) */
+/* big numbers strip */
 .bl-stats{ list-style:none; display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; padding:0 !important; margin:0 0 34px !important; }
 .bl-stats li{ margin:0; text-align:center; background:#fff7f0; border-radius:12px; padding:16px 8px; }
 .bl-stats b{ display:block; font-family:var(--sg-font-display); font-size:clamp(26px, 5vw, 38px); line-height:1; color:var(--sg-orange); }
@@ -81,7 +80,7 @@ body:has(.bl-wrap) #navbar > nav{ background:#000; }
   font-family:var(--sg-font-display); font-size:clamp(19px, 3vw, 23px); line-height:1.35; color:#111; }
 .bl-verdict cite{ display:block; margin-top:8px; font-family:var(--sg-font); font-style:normal; font-size:13px; font-weight:700; color:#777; }
 
-/* "See the live ..." link to a tool we built (Max, 20 Oct 2026) */
+/* "See the live ..." link to a tool we built */
 .bl-applink a{ display:inline-block; background:#111; color:#fff !important; text-decoration:none; font-weight:800; padding:12px 18px; border-radius:10px; }
 .bl-applink a:hover{ background:var(--sg-orange); }
 .bl-fig{ margin:6px 0 22px; }

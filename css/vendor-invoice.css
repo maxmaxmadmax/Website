@@ -1,10 +1,8 @@
 /* ==========================================================================
-   VENDOR INVOICE PAGE - spacing fixes on top of quote-view.css (Max, 19 Oct 2026)
-
-   quote-view.css stretches each quote "page" to a full screen / A4 sheet with
-   the content spread out, which suits a long quote but leaves a short vendor
-   invoice looking empty. These rules (all under body.vi-page, so quotes are
-   untouched) keep the same look but pack it neatly.
+   VENDOR INVOICE PAGE - spacing fixes on top of quote-view.css
+   quote-view.css spreads each "page" over a full screen / A4 sheet, which
+   leaves a short vendor invoice looking empty. These rules (all under
+   body.vi-page, so quotes are untouched) pack it neatly.
 
    Printed A4:  1 hero + investment   2 event guide + map + share
                 3 tax invoice + all set   4-5 vendor terms
@@ -29,7 +27,7 @@ body.vi-page .qp-legal{ font-family:Arial,Helvetica,sans-serif; }
 
 body.vi-page .qp-legal, body.vi-page .qp-legal *{ font-family:Arial,Helvetica,sans-serif !important; }
 
-/* EVENT GUIDE: bring cards, night rules, dress-up note (Max, 19 Oct 2026) */
+/* EVENT GUIDE: bring cards, night rules, dress-up note */
 .vi-guide-grid{ display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:36px; align-items:start; margin-top:20px; }
 .qp-guide .qp-incl li{ padding-bottom:10px; }
 .vi-cards{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }

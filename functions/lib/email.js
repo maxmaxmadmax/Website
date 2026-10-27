@@ -1,31 +1,21 @@
 /* ==========================================================================
    BOOKING EMAILS
 
-   Two go out the moment a booking is confirmed: a tax invoice to the
-   vendor, and a copy to the office so somebody knows without opening the
-   admin.
+   Sent when a booking is confirmed: a tax invoice to the vendor and a copy
+   to the office.
 
-   WHY IT IS A TAX INVOICE AND NOT JUST A RECEIPT
-   SoundzGood charges GST, and for a sale over $82.50 including GST the
-   buyer is entitled to a tax invoice on request. A food site comes to
-   $115.49, so most bookings clear that. A compliant one has to carry the
-   words "Tax invoice", the seller and their ABN, the date, what was sold,
-   and the GST shown on its own. All of that is below, so the confirmation
-   is the invoice and nobody has to ask for one later.
+   It is a tax invoice, not just a receipt, so it carries the words "Tax
+   invoice", the seller and ABN, the date, what was sold and the GST on its
+   own line.
 
-   SENDING IS NEVER ALLOWED TO BREAK A BOOKING
-   These are called after the booking is already confirmed and the money is
-   already taken. If the mail server is down, that is a nuisance; losing
-   the booking would be a disaster. So every failure here is caught and
-   logged, never thrown.
+   Sending must never break a booking: every failure is caught and logged,
+   never thrown.
    ========================================================================== */
 
 const nodemailer = require('nodemailer');
 const logger = require('firebase-functions/logger');
 
-/*  Who the invoice is from. The ABN is a legal requirement on a tax
-    invoice - without it the document does not count as one and a vendor
-    cannot claim the GST back. */
+/* Who the invoice is from. The ABN is required for a valid tax invoice. */
 const SELLER = {
   name: 'SoundzGood Whitsundays',
   abn: process.env.SG_ABN || '',
@@ -38,17 +28,12 @@ const OFFICE_COPY = process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au';
 function transport() {
   const user = (process.env.SMTP_USER || '').trim();
 
-  /*  Google shows an app password as four groups of four - "abcd efgh ijkl
-      mnop" - and that is what lands on the clipboard. SMTP wants the
-      sixteen characters on their own, so strip the spaces here rather
-      than relying on whoever stored the secret to have done it. */
+  /* Google app passwords come with spaces; SMTP wants the 16 characters only. */
   const pass = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
 
   if (!user || !pass) return null;
 
-  /*  Google Workspace SMTP. Port 465 with TLS from the start rather than
-      587 with STARTTLS - one less thing to negotiate, and Cloud Functions
-      egress is happier with it. */
+  /* Google Workspace SMTP, port 465 with TLS. */
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
@@ -67,8 +52,7 @@ function esc(value) {
     .replace(/"/g, '&quot;');
 }
 
-/*  The figures. Older bookings predate the fee, so fall back to the site
-    price rather than printing blanks on somebody's invoice. */
+/* Older bookings have no fee saved, so fall back to the site price. */
 function figures(booking) {
   const site = booking.amountCents || 0;
   const fee = booking.bookingFeeCents != null ? booking.bookingFeeCents : 0;
@@ -77,13 +61,8 @@ function figures(booking) {
   return { site, fee, gst, total, subtotal: site + fee };
 }
 
-/*  WHAT A TEMPLATE CAN SAY
-
-    The whole vocabulary, in one place, so the admin screen and the mailer
-    cannot drift apart: the screen lists these for Max to click, this fills
-    them in, and anything not on the list is left alone rather than quietly
-    blanked - a stray {{curly}} then shows up in the preview instead of
-    vanishing on its way to a vendor.                                    */
+/* Every {{field}} a template can use - the admin screen lists these.
+   Unknown {{fields}} are left as they are, so a typo shows in the preview. */
 function placeholders(booking, event) {
   const biz = booking.business || {};
   const f = figures(booking);
@@ -102,9 +81,8 @@ function placeholders(booking, event) {
   };
 }
 
-/*  Fill {{these}} in. Values are escaped, because they are somebody's
-    business name and not markup - a stall called "Ben & Jerry's" must not
-    be able to break the email it appears in.                          */
+/* Fill in {{fields}}. Values are HTML-escaped so a name like
+   "Ben & Jerry's" cannot break the email. */
 function fill(template, values, escapeValue) {
   const clean = escapeValue === undefined ? esc : escapeValue;
   return String(template || '').replace(/\{\{\s*([a-z_]+)\s*\}\}/gi,
@@ -114,13 +92,10 @@ function fill(template, values, escapeValue) {
     });
 }
 
-/*  Subjects are plain text, so values go in as they are. Escaping them
-    put "Eatz &amp; Beatz" in somebody's inbox.                       */
+/* Subjects are plain text, so values are not escaped. */
 const raw = (v) => String(v == null ? '' : v);
 
-/*  The template Max wrote for this event, if he wrote one. Both halves
-    have to be there: a subject with no body, or the other way round, is
-    a half-saved form rather than an intention.                        */
+/* The custom template for this event - only if both subject and body are set. */
 function customTemplate(event) {
   const t = (event && event.vendorEmail) || {};
   const subject = String(t.subject || '').trim();
@@ -128,12 +103,7 @@ function customTemplate(event) {
   return subject && body ? { subject: subject, body: body } : null;
 }
 
-/*  THE LETTERHEAD
-
-    The black bar, the white card and the footer, with somebody's words in
-    the middle. Pulled out so a template written in the admin desk arrives
-    looking like every other email we send: Max writes the letter, not the
-    stationery.                                                        */
+/* THE LETTERHEAD - black bar, white card and footer around the message. */
 function shell(inner) {
   return [
     '<!doctype html>',
@@ -164,7 +134,7 @@ function vendorSubject(booking, event) {
    The vendor's copy: confirmation and tax invoice in one
    ------------------------------------------------------------------------- */
 function vendorHtml(booking, bookingId, event) {
-  /*  Max's wording if there is any, in our letterhead.             */
+  /* Custom wording if there is any, inside the letterhead. */
   const custom = customTemplate(event);
   if (custom) return shell(fill(custom.body, placeholders(booking, event)));
 
@@ -238,9 +208,7 @@ function vendorHtml(booking, bookingId, event) {
 }
 
 function vendorText(booking, bookingId, event) {
-  /*  The same words with the markup taken out. An email client that
-      refuses HTML still gets the letter rather than the built-in one,
-      which would say something different from the copy beside it.   */
+  /* Plain-text version of the same letter, for mail apps that refuse HTML. */
   const custom = customTemplate(event);
   if (custom) {
     return fill(custom.body, placeholders(booking, event))
@@ -332,13 +300,11 @@ async function sendBookingEmails(booking, bookingId, event, opts = {}) {
 
   const from = `${SELLER.name} <${SELLER.email}>`;
   const to = (booking.business || {}).email;
-  /*  Failures are collected as well as logged. Cloud Logging can run a
-      couple of minutes behind, which is a long time to wait to find out
-      why an invoice did not go, and the caller may want to say. */
+  /* Failures are returned as well as logged, so the caller can show why. */
   const results = { vendor: false, office: false, errors: [] };
 
-  /*  officeOnly: the vendor gets the new invoice & event guide email instead
-      (functions/lib/vendor-invoice-email.js), so only the office copy goes. */
+  /* officeOnly: the vendor gets the invoice email from
+     vendor-invoice-email.js instead, so only the office copy goes. */
   if (to && !opts.officeOnly) {
     try {
       await tx.sendMail({
@@ -355,8 +321,7 @@ async function sendBookingEmails(booking, bookingId, event, opts = {}) {
       logger.error('vendor confirmation email failed', {
         bookingId,
         to,
-        /*  Not 'message' - the logger uses that key for the log line itself,
-            so the SMTP error was being overwritten by our own text. */
+        /* Not 'message' - the logger uses that key for its own text. */
         smtpError: err && err.message,
         smtpCode: err && (err.code || err.responseCode),
         smtpResponse: err && err.response,
@@ -390,8 +355,8 @@ async function sendBookingEmails(booking, bookingId, event, opts = {}) {
   return { sent: results.vendor || results.office, ...results };
 }
 
-/*  __test is the rendering, exposed so it can be checked without sending
-    anything. sendBookingEmails is still the only thing index.js calls. */
+/* __test exposes the rendering so it can be checked without sending.
+   sendBookingEmails is the only thing index.js calls. */
 module.exports = {
   sendBookingEmails,
   __test: { vendorSubject, vendorHtml, vendorText, fill, placeholders },

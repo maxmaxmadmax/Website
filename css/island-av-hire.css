@@ -18,9 +18,7 @@
     min-height:min(66vh, 580px);
     padding:calc(var(--sg-nav-height, 80px) + 44px) 20px 48px;
     overflow:hidden;
-    /*  The fallback sits behind the video, never over it. Stacked on top
-        it covers the clip completely, which is how three heroes on this
-        site have broken.                                                */
+    /*  The fallback sits behind the video, never over it, or it hides the clip. */
     background:linear-gradient(120deg, #05222c 0%, #0a0a0a 66%);
 }
 
@@ -86,11 +84,7 @@
 }
 
 /* ==========================================================================
-   THE BOAT AND THE BATTERY
-
-   The two claims no competitor can copy without owning a boat and doing
-   the work, so they are a band of their own above everything else rather
-   than bullets in a list further down.
+   THE BOAT AND THE BATTERY - the two main selling points, in their own band.
    ========================================================================== */
 #sg-island .isl-points{
     padding:clamp(50px, 7vw, 84px) 20px;
@@ -99,9 +93,8 @@
     background:linear-gradient(180deg, #0f1417 0%, #0a0a0a 100%);
 }
 
-/*  min() inside minmax, not a bare 300px. A bare minimum cannot shrink
-    below itself, so on a window narrower than one column the grid pushes
-    the page sideways. This caps the minimum at the width available.   */
+/*  min() inside minmax so the grid can shrink on very narrow windows
+    instead of pushing the page sideways.                              */
 #sg-island .isl-points-inner{
     display:grid;
     grid-template-columns:repeat(auto-fit, minmax(min(300px, 100%), 1fr));
@@ -256,11 +249,7 @@
 }
 
 /* ==========================================================================
-   THE UPSELL
-
-   Quieter than the closing call above it on purpose: somebody who came
-   here for AV is being offered a second thing, and an offer that shouts
-   louder than the thing they came for reads as a sales page.
+   THE UPSELL - kept quieter than the closing call above it on purpose.
    ========================================================================== */
 #sg-island .isl-upsell{
     padding:clamp(34px, 5vw, 56px) 20px;
@@ -297,11 +286,8 @@
 #sg-island .isl-upsell .btn{ flex-shrink:0; }
 
 /* ==========================================================================
-   THE SMALL LISTS
-
-   Two of them: what the battery setup suits, and the four things to send
-   with an enquiry. Both are short and both sit inside something else, so
-   neither gets card treatment.
+   THE SMALL LISTS - what the battery setup suits, and what to send with an
+   enquiry. Short, so no card styling.
    ========================================================================== */
 #sg-island .isl-ideal-label,
 #sg-island .isl-send-label{
@@ -329,8 +315,7 @@
     font-size:.95rem;
 }
 
-/*  A tick drawn in CSS rather than a bullet: the list is things the setup
-    is good for, and a bullet reads as an inventory.                     */
+/*  A tick drawn in CSS rather than a bullet. */
 #sg-island .isl-ideal li::before{
     content:"";
     width:7px;
@@ -371,8 +356,7 @@
     font-size:.95rem;
 }
 
-/*  The line under the areas. Quiet, and the one invitation on the page to
-    ask about somewhere we have not listed.                              */
+/*  The line under the areas, inviting people to ask about other places. */
 #sg-island .isl-anywhere{
     margin-top:22px;
     color:var(--sg-dim);

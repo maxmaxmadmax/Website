@@ -3,9 +3,7 @@
 
    A guided, button-led chat: the visitor taps their way through event type,
    location, size, what they need and how long, sees a live price RANGE, and
-   leaves their details. Nothing is typed except the contact fields, so there
-   is no free-text to misread - Max chose a fixed guided flow first, with a
-   mix to come later.
+   leaves their details. Nothing is typed except the contact fields.
 
    HOW THE PRICE STAYS HONEST
    The browser never prices anything. submitBotQuote (server) matches a
@@ -14,18 +12,17 @@
 
    NO FIREBASE, NO PROBLEM
    If the config placeholders are unfilled or the SDK fails to load, the bot
-   still runs on the built-in default prices and simply cannot send - it says
-   so and points at the contact page, rather than throwing at a visitor.
+   still runs but cannot send - it says so and points at the contact page.
    ========================================================================== */
 
 import {
   firebaseConfig, functionsRegion, isFirebaseConfigured,
-} from './firebase-config.js?v=710';
+} from './firebase-config.js?v=711';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
-/*  The bot no longer prices in the browser: all matching and pricing runs in
-    the submitBotQuote function, so the page ships only the little UI below.  */
+/*  All matching and pricing runs in the submitBotQuote function, so the
+    page ships only the little UI below.  */
 const dollars = (cents) => '$' + Math.round((cents || 0) / 100).toLocaleString('en-AU');
 
 /*  The date input hands back yyyy-mm-dd; store it as a friendly string so it
@@ -117,7 +114,7 @@ async function initFirebase() {
         const x = d.data() || {};
         if (x.active !== false && !x.migratedTo) rows.push({ name: x.name || '', eventType: x.eventType || '', maxGuests: x.maxGuests || 0 });
       });
-      // packages built in Inventory and ticked "offer on the instant estimate" (Max, 17 Oct 2026)
+      // packages built in Inventory and ticked "offer on the instant estimate"
       try {
         const inv = await firestore.getDocs(firestore.query(firestore.collection(db, 'inventory'), firestore.where('botOffer', '==', true)));
         inv.forEach((d) => {
@@ -387,10 +384,8 @@ async function askSupport() {
   });
 }
 
-/*  The contact form goes INSIDE the scrollable conversation, not in the
-    fixed dock at the foot: as a dock it was tall enough to cover the chat,
-    so you could not scroll back up to read your estimate. In the stream it
-    scrolls with everything else.                                          */
+/*  The contact form sits inside the scrolling chat, not the fixed dock,
+    so it never covers the estimate. */
 async function askContact() {
   clearDock();
   await botSay('Great — last step. Pop your details in and I’ll work out your estimate.');

@@ -1,19 +1,12 @@
 /* ==========================================================================
    SOUNDZGOOD WHITSUNDAYS - MAIN STYLESHEET
 
-   Loaded by every public page. Three pages then load a second sheet of
-   their own on top of this one:
+   Loaded by every public page. Some pages load a second sheet on top
+   (e.g. services.css, events.css, vendor-signup.css).
+   /admin does NOT load this - it uses admin.css alone.
 
-       services.html       services.css
-       events.html         events.css
-       vendor-signup.html  vendor-signup.css
-
-   /admin is deliberately not one of them - it loads admin.css alone, so
-   nothing in here can reach it and nothing there can reach the site.
-
-   TO RESTYLE THE WHOLE SITE, start in TOKENS. Every colour, font and
-   measurement is a custom property there, and changing one changes it
-   everywhere it is used.
+   TO RESTYLE THE WHOLE SITE, start in TOKENS: every colour, font and
+   measurement is set there once.
    ========================================================================== */
 
 /*  WHAT IS IN HERE
@@ -41,19 +34,13 @@
       WEEKEND
       RESPONSIVE
 
-    Sections run alphabetically, except TOKENS and BASE which have to come
-    first and RESPONSIVE which has to come last - the cascade depends on
-    those three staying where they are.
-
-    Rules inside a section are left in the order they were written. Sorting
-    those would change which rule wins when two have equal weight.        */
+    Sections run alphabetically, except TOKENS and BASE (must be first) and
+    RESPONSIVE (must be last). Do not re-sort rules inside a section -
+    order decides which rule wins.                                        */
 
 
 /* ==========================================================================
-   TOKENS
-
-   Every colour, font and measurement the site uses, in one place. Change
-   a value here and it changes everywhere.
+   TOKENS - every colour, font and measurement, in one place.
    ========================================================================== */
 :root{
     --sg-orange:#ff6b00;
@@ -89,10 +76,7 @@
 
 
 /* ==========================================================================
-   BASE
-
-   The reset and the raw element styles - what an h2 or a paragraph looks
-   like before any class touches it.
+   BASE - the reset and plain element styles.
    ========================================================================== */
 *{
     margin:0;
@@ -142,10 +126,7 @@ p, h1, h2, h3, h4, h5, li, a{
 
 
 /* ==========================================================================
-   LAYOUT
-
-   The section wrapper, page headers and the feature and call-to-action
-   rows. The primitives most pages are built from.
+   LAYOUT - section wrapper, page headers, feature and call-to-action rows.
    ========================================================================== */
 .section{
     padding:80px 6%;
@@ -233,10 +214,8 @@ p, h1, h2, h3, h4, h5, li, a{
 }
 
 /* ==========================================================================
-   ACTS
-
-   One block per artist: name, cut-out photo, biography and video,
-   alternating left and right down the page.
+   ACTS - one block per artist (name, cut-out, bio, video), alternating
+   left and right down the page.
    ========================================================================== */
 .acts{
     max-width:var(--sg-max-width);
@@ -284,9 +263,7 @@ p, h1, h2, h3, h4, h5, li, a{
     margin:0;
 }
 
-/*  ARTIST BIOGRAPHY AND VIDEO
-    Sits underneath each act and spans the full width of it, so the name
-    and cut-out above keep the layout they already had.                 */
+/*  ARTIST BIOGRAPHY AND VIDEO - under each act, full width.          */
 .act-bio{
     grid-column:1 / -1;
     max-width:70ch;
@@ -345,11 +322,10 @@ p, h1, h2, h3, h4, h5, li, a{
 }
 
 /*  ARTIST CUT-OUTS
-    When you have cut-out photos (PNG with a transparent background, like the
-    poster artwork), save them in the images folder and add this line inside
-    an act, just above the <h3>:
+    Save a transparent PNG/WebP in the images folder and add this inside an
+    act, just above the <h3>:
         <img src="images/rossco.webp" alt="Rossco" class="artist-photo">
-    The act will automatically become a two-column row.                    */
+    The act becomes a two-column row automatically.                        */
 /* Odd acts: cut-out on the left, name on the right */
 .act:has(.artist-photo){
     grid-template-columns:auto 1fr;
@@ -375,8 +351,7 @@ p, h1, h2, h3, h4, h5, li, a{
 .act:nth-of-type(even):has(.artist-photo) h3{ grid-column:1; }
 .act:nth-of-type(even):has(.artist-photo) p { grid-column:1; }
 
-/* Sized by height so every cut-out appears at the same scale, the way
-   the artwork does, even though the crops are all different shapes. */
+/* Sized by height so every cut-out appears at the same scale. */
 .artist-photo{
     grid-row:span 2;
     height:clamp(170px, 27vw, 290px);
@@ -398,19 +373,15 @@ p, h1, h2, h3, h4, h5, li, a{
 
 
 /*  SCRAPBOOK SCROLL ANIMATION
-    js/main.js puts .has-scroll-anim on <html>, then adds .is-visible to each
-    act as it scrolls into view. Without JavaScript everything just shows
-    normally, so the page never depends on the animation to be readable.   */
+    js/main.js puts .has-scroll-anim on <html>, then .is-visible on each act
+    as it scrolls into view. Without JavaScript everything just shows.     */
 
 /*  Each act flies in from its own side, tilted back in 3D and blurred,
     then slaps flat onto the page and settles slightly crooked.          */
 
 
 /* ==========================================================================
-   BUTTONS
-
-   One button, three treatments: solid, outline, and the ticket button
-   that carries the event accent.
+   BUTTONS - solid, outline, and the ticket button.
    ========================================================================== */
 .btn{
     display:inline-block;
@@ -481,9 +452,7 @@ textarea:focus-visible{
 
 
 /* ==========================================================================
-   CLOSING BANNER
-
-   The full-width image that closes an event page.
+   CLOSING BANNER - the full-width image that closes an event page.
    ========================================================================== */
 .closing-banner{
     background:#000;
@@ -498,16 +467,12 @@ textarea:focus-visible{
 }
 
 
-/*  THE EVENT FLOW
-    One continuous sunset running behind several sections at once, so the
-    page reads as a single scene instead of separate boxes. It starts warm
-    at the top and sinks into black at the bottom.                        */
+/*  THE EVENT FLOW - one sunset running behind several sections, warm at
+    the top, sinking into black at the bottom.                            */
 
 
 /* ==========================================================================
-   CONTACT
-
-   The contact page: details on one side, form on the other.
+   CONTACT - details on one side, form on the other.
    ========================================================================== */
 .header-content .buttons{
     margin-top:28px;
@@ -582,9 +547,7 @@ textarea:focus-visible{
 
 
 /* ==========================================================================
-   DETAIL CARDS
-
-   The grid of what-you-need-to-know cards under an event hero.
+   DETAIL CARDS - the what-you-need-to-know cards under an event hero.
    ========================================================================== */
 .detail-grid{
     display:grid;
@@ -620,9 +583,7 @@ textarea:focus-visible{
 
 
 /* ==========================================================================
-   EVENT COPY
-
-   Body copy on an event page, plus the scrolling announcement strip.
+   EVENT COPY - event page body copy and the scrolling announcement strip.
    ========================================================================== */
 .event-copy{
     max-width:760px;
@@ -669,10 +630,7 @@ textarea:focus-visible{
 
 
 /* ==========================================================================
-   EVENT FLOW
-
-   The sunset-coloured band near the foot of an event page, with its palm
-   silhouettes.
+   EVENT FLOW - the sunset band near the foot of an event page, with palms.
    ========================================================================== */
 .event-flow{
     position:relative;
@@ -705,7 +663,7 @@ textarea:focus-visible{
     background:transparent;
 }
 
-/* Tighter rhythm through the flow - it was leaving big empty gaps */
+/* Tighter spacing through the flow */
 .event-flow > .section{
     padding-top:44px;
     padding-bottom:44px;
@@ -718,8 +676,7 @@ textarea:focus-visible{
     color:#000;
 }
 
-/*  Detail bar: bold black type straight onto the sunset, poster style.
-    No boxes - they washed out against the orange.                       */
+/*  Detail bar: bold black type straight onto the sunset, no boxes. */
 .event-flow .detail-grid{
     display:flex;
     flex-wrap:wrap;
@@ -810,9 +767,7 @@ textarea:focus-visible{
 }
 
 
-/*  Poster tagline: LIVE MUSIC / FOOD / BAR / DJS
-    Set light and widely tracked, so it reads as a fine line against the
-    heavy display type above and below it.                              */
+/*  Poster tagline: LIVE MUSIC / FOOD / BAR / DJS - light and widely spaced. */
 .poster-tagline{
     font-family:var(--sg-font);
     font-weight:400;
@@ -829,18 +784,13 @@ textarea:focus-visible{
 }
 
 
-/*  SPONSOR WALL
-    The sponsor logos are mostly dark artwork on a white background, so they
-    sit on a white panel. On black they would show up as white boxes.       */
+/*  SPONSOR WALL - logos are mostly dark on white, so they sit on a white panel. */
 
 /* Orange sunset band, sitting between the weekend section and the checkout */
 
 
 /* ==========================================================================
-   EVENT HERO
-
-   The poster-style header on an event page. Heavier and louder than the
-   homepage hero on purpose.
+   EVENT HERO - the poster-style header on an event page.
    ========================================================================== */
 .event-hero{
     position:relative;
@@ -854,8 +804,7 @@ textarea:focus-visible{
     text-align:center;
 }
 
-/*  Poster-style hero: an orange sunset sky with the video showing through
-    underneath as a silhouette, exactly like the artwork.                 */
+/*  Poster-style hero: orange sunset sky with the video showing through. */
 .event-hero .overlay{
     position:absolute;
     inset:0;
@@ -884,10 +833,8 @@ textarea:focus-visible{
 .event-hero-content{
     position:relative;
     z-index:2;
-    /*  Everything in this hero is sized in vh so the whole poster always
-        fits the screen without scrolling, on any height of display.
-        The top clears the menu, whose real height js/main.js publishes as
-        --sg-nav-height - so adding a menu item cannot land on the logo. */
+    /*  Sized in vh so the whole poster fits the screen. The top clears the
+        menu using --sg-nav-height (set by js/main.js).                  */
     padding:calc(var(--sg-nav-height, 88px) + 8px) 20px 1.4vh;
 
     width:100%;
@@ -998,26 +945,15 @@ textarea:focus-visible{
 
 
 /* ==========================================================================
-   FEATURED EVENT
-
-   The next-event panel on the homepage, with its date and location
-   facts.
+   FEATURED EVENT - the next-event panel on the homepage.
    ========================================================================== */
 .featured-event{
     position:relative;
     overflow:hidden;
 
-    /*  The picture behind the next event. This was the SoundzGood 2.0
-        poster, which was right while 2.0 was the next event and wrong the
-        moment it was not - its lineup and sponsor logos were sitting
-        behind an Eatz & Beatz announcement.
-
-        A photograph rather than poster artwork now, so it keeps working
-        whatever the next event turns out to be. This one is our own
-        trailer stage, and at 1536px wide it is the sharpest of the set -
-        the box is over 1100px across, so a smaller picture goes soft.
-        Change the file below when there is artwork for the event being
-        promoted.                                                       */
+    /*  The picture behind the next event: our trailer stage photo (1536px
+        wide, sharp enough for this 1100px+ box). Change the file below
+        when there is artwork for the event being promoted.             */
     background-color:#000;
     background-image:
         linear-gradient(rgba(0,0,0,.74), rgba(0,0,0,.86)),
@@ -1049,9 +985,8 @@ textarea:focus-visible{
     letter-spacing:2px;
 }
 
-/*  The edition, on its own line under the event name. Together on one line
-    they ran to four lines on a phone, which broke the name across two of
-    them.                                                                */
+/*  The edition on its own line under the event name, so the name does
+    not break on a phone.                                                */
 .featured-event .event-subtitle{
     font-family:var(--sg-font-display);
     font-size:clamp(1.1rem, 3.2vw, 1.8rem);
@@ -1086,10 +1021,7 @@ textarea:focus-visible{
 
 
 /* ==========================================================================
-   FOOTER
-
-   Shared by every page. Injected from components/footer.html, so this
-   markup is not in any page source.
+   FOOTER - shared by every page, injected from components/footer.html.
    ========================================================================== */
 .footer{
     background:#0a0a0a;
@@ -1168,10 +1100,7 @@ textarea:focus-visible{
 
 
 /* ==========================================================================
-   HERO
-
-   The homepage hero: full-bleed video, dark overlay, logo and buttons on
-   top.
+   HERO - homepage hero: full-bleed video, dark overlay, logo and buttons.
    ========================================================================== */
 .hero{
     position:relative;
@@ -1226,15 +1155,11 @@ textarea:focus-visible{
 
 
 /* Featured event panel */
-/*  The event artwork sits behind this panel, under a dark wash so the
-    heading, details and buttons stay readable over it.                 */
+/*  The event artwork behind this panel, under a dark wash for readability. */
 
 
 /* ==========================================================================
-   LINEUP
-
-   The wall of artist names, sized to fill the width regardless of how
-   long the names are.
+   LINEUP - the wall of artist names.
    ========================================================================== */
 .lineup{
     position:relative;
@@ -1274,9 +1199,7 @@ textarea:focus-visible{
     margin-bottom:10px;
 }
 
-/*  THE LINEUP WALL
-    Festival-poster style: all the names in one centred typographic block,
-    separated by diamonds and wrapping naturally across lines.           */
+/*  THE LINEUP WALL - festival-poster style, names separated by diamonds. */
 
 .lineup-wall{
     max-width:920px;
@@ -1317,8 +1240,7 @@ textarea:focus-visible{
     letter-spacing:0;
 }
 
-/*  Separator: the SoundzGood sun, drawn in CSS so there is no image file.
-    Change the colour on background-color below.                         */
+/*  Separator: the SoundzGood sun, drawn in CSS. Colour is background-color below. */
 .lw-sep{
     --sun-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='%23000' stroke-width='2.1' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='4' fill='%23000'/%3E%3Cline x1='12' y1='1.8' x2='12' y2='4.2'/%3E%3Cline x1='12' y1='19.8' x2='12' y2='22.2'/%3E%3Cline x1='1.8' y1='12' x2='4.2' y2='12'/%3E%3Cline x1='19.8' y1='12' x2='22.2' y2='12'/%3E%3Cline x1='4.8' y1='4.8' x2='6.5' y2='6.5'/%3E%3Cline x1='17.5' y1='17.5' x2='19.2' y2='19.2'/%3E%3Cline x1='4.8' y1='19.2' x2='6.5' y2='17.5'/%3E%3Cline x1='17.5' y1='6.5' x2='19.2' y2='4.8'/%3E%3C/g%3E%3C/svg%3E");
 
@@ -1335,17 +1257,12 @@ textarea:focus-visible{
 }
 
 
-/*  THE LINEUP FLOW
-    No boxes - one continuous sunset that runs from one act straight into
-    the next, separated only by a hand-drawn wave.                        */
+/*  THE LINEUP FLOW - one continuous sunset, acts separated by a hand-drawn wave. */
 
 
 /* ==========================================================================
-   NAVIGATION
-
-   The bar, the hover dropdown under Events, and the tucking behaviour on
-   the homepage where the nav sits over the hero. The menu items
-   themselves live in components/navbar.html, not in any page.
+   NAVIGATION - the bar, the Events dropdown, and the homepage tucking.
+   Menu items live in components/navbar.html.
    ========================================================================== */
 nav{
     position:absolute;
@@ -1455,8 +1372,8 @@ nav .subnav{
     border-radius:12px;
     box-shadow:0 18px 40px rgba(0,0,0,.55);
 
-    /*  Kept in the page rather than display:none, so it can fade and so
-        the links stay reachable by keyboard while it is opening.      */
+    /*  Kept in the page (not display:none) so it can fade and stays reachable
+        by keyboard while opening.                                     */
     opacity:0;
     visibility:hidden;
     transform:translateY(-6px);
@@ -1490,8 +1407,7 @@ nav .subnav a:hover{
     color:var(--sg-gold);
 }
 
-/*  The parent is marked when the page you are on lives under it, so the
-    menu still shows where you are while the dropdown is shut.          */
+/*  The parent is marked when the current page lives under it. */
 nav .has-sub.has-active > a{
     color:var(--sg-orange);
     border-bottom-color:var(--sg-orange);
@@ -1518,12 +1434,8 @@ nav a.nav-cta.active{
 }
 
 
-/*  HOME PAGE MENU
-    The hero is left clean, then the menu slides in as a fixed bar once
-    you reach the next event section. It has to be fixed rather than
-    absolute, otherwise it would sit at the top of the document and be
-    out of sight by the time it is wanted.
-    js/main.js adds and removes .is-tucked.                             */
+/*  HOME PAGE MENU - hidden over the hero, then slides in as a fixed bar
+    at the next event section. js/main.js adds and removes .is-tucked.   */
 .home nav{
     position:fixed;
     background:rgba(10,10,10,.94);
@@ -1540,12 +1452,8 @@ nav a.nav-cta.active{
 }
 
 /* ==========================================================================
-   SCROLL ANIMATIONS
-
-   js/main.js puts .has-scroll-anim on <html> and .is-visible on each
-   block as it comes into view. Everything here is gated on that class,
-   so with JavaScript off the page simply renders, fully visible, with no
-   animation.
+   SCROLL ANIMATIONS - js/main.js adds .has-scroll-anim on <html> and
+   .is-visible on each block. With JavaScript off everything just shows.
    ========================================================================== */
 .has-scroll-anim .act{
     opacity:0;
@@ -1573,11 +1481,8 @@ nav a.nav-cta.active{
         scale(.55);
 }
 
-/*  Landed - flat.
-    The acts are tall now that each carries a biography, and a resting
-    tilt on a very tall block swings its top edge a long way sideways,
-    pushing the copy off a narrow screen. The crooked scrapbook look is
-    kept on the cut-out itself instead, further down.                   */
+/*  Landed - flat. Tilting a tall act would push copy off a narrow screen,
+    so only the cut-out keeps the crooked look.                         */
 .has-scroll-anim .act.is-visible,
 .has-scroll-anim .act:nth-of-type(even).is-visible{
     opacity:1;
@@ -1604,8 +1509,7 @@ nav a.nav-cta.active{
     transform:translateY(60px) rotate(11deg) scale(.72);
 }
 
-/* The cut-out keeps the pasted-crooked look. It is small, so tilting it
-   only moves it a few pixels - unlike tilting the whole act. */
+/* The cut-out keeps the pasted-crooked look (small, so the tilt is safe). */
 .has-scroll-anim .act.is-visible .artist-photo{
     opacity:1;
     transform:translateY(0) rotate(-2.5deg) scale(1);
@@ -1635,10 +1539,7 @@ nav a.nav-cta.active{
 
 
 /* ==========================================================================
-   SPONSOR FEATURE
-
-   The larger sponsor panel, with its own button treatments so the
-   buttons stay readable on the lighter background.
+   SPONSOR FEATURE - the larger sponsor panel with its own buttons.
    ========================================================================== */
 .sponsor-feature{
     position:relative;
@@ -1685,9 +1586,8 @@ nav a.nav-cta.active{
     gap:34px 28px;
 }
 
-/* Each logo sits on its own white tile. Some logos are dark art on a white
-   background and some are transparent - a white tile suits both, and stops
-   the white-background ones showing as pale boxes on the orange. */
+/* Each logo sits on its own white tile, which suits both dark-on-white
+   and transparent logos. */
 .sponsor-grid a{
     display:flex;
     align-items:center;
@@ -1729,9 +1629,8 @@ nav a.nav-cta.active{
 }
 
 
-/*  MAKE A WEEKEND OF IT
-    Travel-brochure treatment: the photography does the selling, with the
-    copy sitting over it. Aimed at people driving in from out of town.   */
+/*  MAKE A WEEKEND OF IT - photos do the selling, copy over the top.
+    Aimed at people driving in from out of town.                        */
 
 
 /*  Buttons sitting on the orange band go black, so they read against it  */
@@ -1760,10 +1659,7 @@ nav a.nav-cta.active{
 
 
 /* ==========================================================================
-   TICKET BAR
-
-   The sticky buy-tickets strip that appears once the hero has scrolled
-   past.
+   TICKET BAR - the sticky buy-tickets strip after the hero.
    ========================================================================== */
 .ticket-bar{
     position:sticky;
@@ -1813,10 +1709,7 @@ nav a.nav-cta.active{
 
 
 /* ==========================================================================
-   WEEKEND
-
-   The make-a-weekend-of-it cards - accommodation and things to do around
-   the event.
+   WEEKEND - accommodation and things-to-do cards around the event.
    ========================================================================== */
 .weekend-section{
     background:
@@ -1945,10 +1838,7 @@ nav a.nav-cta.active{
 
 
 /* ==========================================================================
-   RESPONSIVE
-
-   Kept last on purpose. These override what is above them, so moving
-   this block higher would stop it working.
+   RESPONSIVE - KEEP LAST. These override what is above them.
    ========================================================================== */
 @media (max-width:900px){
 
@@ -1978,22 +1868,16 @@ nav a.nav-cta.active{
         border-bottom:none;
     }
 
-    /*  The logo stays visible on a phone. It used to be hidden here, on the
-        grounds that the big hero logo sat directly beneath it - which is
-        true on the homepage and nowhere else. It is now the only way back
-        to the homepage from anywhere, since the menu has no Home item, so
-        hiding it would strand people.                                    */
+    /*  The logo stays visible on a phone - it is the only way back to the
+        homepage (the menu has no Home item).                             */
 
-    /*  The button used to be hidden here, because it sold tickets and the
-        sticky ticket bar below the hero was already doing that job. It is
-        Contact now and there is no sticky bar behind it, so hiding it would
-        leave no way to reach Contact from the menu at all. It stays.     */
+    /*  The Contact button stays visible on a phone. */
 
     .Nav img{
         height:28px;
     }
 
-    /* Hero no longer sits under an overlapping nav, so trim the top padding */
+    /* Trim the hero's top padding on a phone */
     .hero,
     .event-hero{
         min-height:auto;
@@ -2237,19 +2121,7 @@ nav a.nav-cta.active{
 
 
 /* ==========================================================================
-   THE MENU ON A PHONE
-
-   It used to be the desktop bar, shrunk: smaller type, tighter gaps, and
-   "SoundzGood" dropped from Entertainment to save a row. It still did not
-   fit. At 390px the bar wrapped onto three rows and stood 155px tall, so
-   every hero on the site began underneath it - the vendor page printed its
-   own headline through the word ENTERTAINMENT - and opening a dropdown
-   covered the Contact button.
-
-   A phone menu is a button and a panel. So it is one now.
-
-   The breakpoint is 900 rather than 768 because the bar was already
-   wrapping on a tablet at 820; nobody had looked at it there.
+   THE MENU ON A PHONE - a button and a drop-down panel, below 900px.
    ========================================================================== */
 .nav-burger{ display:none; }
 
@@ -2261,9 +2133,7 @@ nav a.nav-cta.active{
         gap:5px;
         flex:0 0 auto;
 
-        /*  44px square: the size a finger actually hits. Smaller targets
-            are the single most common reason a menu "does not work" on a
-            phone - it works, it is just being missed.                 */
+        /*  44px square, so it is easy to hit with a finger. */
         width:44px;
         height:44px;
         padding:10px;
@@ -2284,18 +2154,14 @@ nav a.nav-cta.active{
         transition:transform .2s ease, opacity .2s ease;
     }
 
-    /*  Into a cross while the panel is open, so the button says what
-        pressing it again will do.                                     */
+    /*  Turns into a cross while the panel is open. */
     nav.is-open .nav-burger span:nth-child(1){ transform:translateY(7px) rotate(45deg); }
     nav.is-open .nav-burger span:nth-child(2){ opacity:0; }
     nav.is-open .nav-burger span:nth-child(3){ transform:translateY(-7px) rotate(-45deg); }
 
-    /*  THE PANEL
-
-        Hidden until the button is pressed. Absolutely positioned under the
-        bar rather than inside it, so the bar keeps its own height - which
-        is what --sg-nav-height measures, and what every hero pads down
-        from. An open menu must not push the page around.              */
+    /*  THE PANEL - hidden until the button is pressed. Positioned under the
+        bar, not inside it, so the bar height (--sg-nav-height, which every
+        hero pads down from) stays the same. Opening it must not push the page. */
     nav ul{
         position:absolute;
         top:100%;
@@ -2310,8 +2176,7 @@ nav a.nav-cta.active{
         margin:0;
         padding:8px 16px 18px;
 
-        /*  Solid, not the bar's gradient: this sits over photographs and
-            has to be readable on all of them.                          */
+        /*  Solid, not the bar's gradient, so it reads over any photo. */
         background:#0b0b0b;
         border-top:1px solid rgba(255,255,255,.08);
         box-shadow:0 18px 40px rgba(0,0,0,.5);
@@ -2333,20 +2198,11 @@ nav a.nav-cta.active{
         text-align:left;
     }
 
-    /*  The name in full. It was trimmed to fit a row that no longer
-        exists.                                                        */
+    /*  The name in full. */
     nav .nav-long{ display:inline; }
 
-    /*  SUB-ITEMS
-
-        Shown, indented, rather than folded behind an arrow. There is room
-        in a panel, and it saves a tap on the one menu people came for -
-        the gig guide and the vendor form are the two busiest pages on the
-        site and both live down here.                                  */
-    /*  The parent stacks over its children. On a computer .has-sub is a
-        flex row - the link, the arrow, and the dropdown floating out of
-        it - which in a panel put the sub-items in a column BESIDE their
-        parent rather than underneath it.                              */
+    /*  SUB-ITEMS - shown indented, not folded away, to save a tap. */
+    /*  The parent stacks over its children (on a computer .has-sub is a row). */
     nav .has-sub{ display:block; }
 
     nav .sub-toggle{ display:none; }
@@ -2380,8 +2236,7 @@ nav a.nav-cta.active{
         border-left-color:var(--sg-orange);
     }
 
-    /*  Contact stays the one coloured thing, full width at the foot of
-        the panel where a thumb already is.                            */
+    /*  Contact stays the one coloured item, full width at the bottom. */
     nav .nav-cta-item{
         margin-top:12px;
         border-bottom:0;
@@ -2398,7 +2253,7 @@ nav a.nav-cta.active{
     }
 }
 
-/* NEXT EVENT with its POSTER (Max, 17 Oct 2026): poster on the left, the
+/* NEXT EVENT with its POSTER: poster on the left, the
    words and buttons on the right; on a phone the poster sits on top.    */
 .featured-event.has-poster{ display:grid; grid-template-columns:minmax(0, 340px) 1fr; gap:40px; align-items:center; text-align:center; }
 .fe-poster{ display:block; border-radius:12px; overflow:hidden; box-shadow:0 18px 40px rgba(0,0,0,.55); transform:rotate(-2deg); transition:transform .2s; }

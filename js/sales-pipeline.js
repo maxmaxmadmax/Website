@@ -1,17 +1,15 @@
 /* ==========================================================================
    SALES PIPELINE  -  the list of every job, from estimate to paid
-   (Max's mock-up, 16 Oct 2026 - replaces the old "Quotes & Invoices" list)
 
    One row per job. Each job is ONE document that moves through:
      Estimate (draft) -> Quote (approved / sent) -> Payment (invoiced) -> Job (paid)
 
-   Pure functions only - no Firebase, no page state - so this file can be
-   tested on its own. admin-app.js passes in the quotes and the helpers
-   (esc, attr, money) and wires the clicks.
+   Pure functions only - no Firebase, no page state. admin-app.js passes in
+   the quotes and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=710';   // who still owes money (Max, 22 Oct 2026)
-import { isBooked, pickProgress } from './stock.js?v=710';
+import { owesMoney } from './messages.js?v=711';   // who still owes money
+import { isBooked, pickProgress } from './stock.js?v=711';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -40,8 +38,8 @@ export function canDelete(q) {
     && !q.invoiceNumber && !(q.amountPaidCents > 0) && q.kind !== 'invoice';
 }
 
-/*  LATE PAYMENT CHARGE DUE? (Max, 20 Oct 2026) - same rule as lateFeeState()
-    in functions/index.js: unpaid more than 28 days after the due date (7 days
+/*  LATE PAYMENT CHARGE DUE? - same rule as lateFeeState() in
+    functions/index.js: unpaid more than 28 days after the due date (7 days
     before the event), then every further full month. Returns the next 2%
     amount in cents, or 0.                                                  */
 function isoAdd(iso, n) {
@@ -66,10 +64,10 @@ export function lateFeeDue(q) {
 }
 
 export function stageOf(q) {
-  // TEMPLATES (Max, 21 Oct 2026): a DJ gig invoice to copy - never sent
+  // TEMPLATES: a DJ gig invoice to copy - never sent
   if (q.isTemplate) return { step: 1, tab: 'templates', status: ['Template', 'grey'], next: ['doc', 'grey', 'Template', 'Copied for DJ gig invoices'] };
-  /*  A vendor's tax invoice (Max, 19 Oct 2026): always paid, and has its own
-      Vendors tab so it never counts as a job for the crew.               */
+  /*  A vendor's tax invoice: always paid, and has its own Vendors tab so
+      it never counts as a job for the crew.                             */
   if (q.vendor) {
     return { step: 4, tab: 'vendors', status: ['Paid', 'green'],
              next: ['doc', 'green', 'Invoice issued', q.emailedAt ? 'Emailed to vendor' : 'Not emailed yet'] };
@@ -241,8 +239,8 @@ export function pipelineHtml(jobs, f, h) {
     </div>`;
 }
 
-/*  VENDOR INVOICES NOT EMAILED YET (Max, 19 Oct 2026): one button sends
-    every paid vendor their invoice & event guide (asks first).          */
+/*  VENDOR INVOICES NOT EMAILED YET: one button sends every paid vendor
+    their invoice & event guide (asks first).                            */
 function vendorSendBar(jobs, h) {
   const unsent = jobs.filter((q) => q.vendor && !q.emailedAt).length;
   if (!unsent) return '';
@@ -261,11 +259,11 @@ export function rowsHtml(rows, f, h) {
     const st = stageOf(q);
     const c = q.customer || {};
     const num = q.isTemplate ? '' : q.kind === 'invoice' && q.invoiceNumber ? q.invoiceNumber : q.number;   // templates show their name, not a number
-    // only the website bot makes estimates - a quote Max made himself skips that step (Max, 21 Oct 2026)
+    // only the website bot makes estimates - a quote Max made himself skips that step
     const fromBot = q.source === 'bot' || q.createdBy === 'bot';
     const progress = steps.map((label, i) => {
       const done = i < st.step;
-      const skipped = q.vendor || (i === 0 && !fromBot);   // vendors don't use these steps at all - all greyed (Max, 21 Oct 2026)
+      const skipped = q.vendor || (i === 0 && !fromBot);   // vendors don't use these steps at all - all greyed
       const cls = skipped ? ' is-skip' : done ? (st.step === 4 ? ' is-done is-green' : ' is-done') : '';
       return `<span class="sp-step${cls}"${skipped ? ' title="Made as a quote - no estimate step"' : ''}><b>${done && !skipped ? '&#10003;' : ''}</b><em>${label}</em></span>`;
     }).join('');
@@ -388,7 +386,7 @@ export function wirePipeline(getJobs, f, h, act) {
     }
     if (e.target.closest('[data-no-open]')) return;   // the ⌄ menu
     if (e.target.closest('#q-new')) { act.newQuote(); return; }
-    if (e.target.closest('#q-new-tpl')) { location.hash = '#/quoteDocs?q=new&template=1'; return; }   // Templates tab (Max, 21 Oct 2026)
+    if (e.target.closest('#q-new-tpl')) { location.hash = '#/quoteDocs?q=new&template=1'; return; }   // Templates tab
     const row = e.target.closest('[data-open-q]');
     if (row) {
       const id = row.getAttribute('data-open-q');

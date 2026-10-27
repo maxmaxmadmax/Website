@@ -1,7 +1,7 @@
 /* ==========================================================================
    EVENT PAGE (for punters) - e.g. /eatz-beatz-halloween-2026
 
-   Styled like the Eatz & Beatz poster (Max's mock-up, 14 Oct 2026):
+   Styled like the Eatz & Beatz poster:
    orange sunset, cream cards, chunky poster lettering, a lime sticker.
    At the bottom: the PRINT styles - the page prints as an A4 mini magazine.
    ========================================================================== */
@@ -415,8 +415,8 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 }
 
 .ep-mt ul{ list-style:none; padding:0; margin:0; display:grid; gap:4px; }
-/* one business per line, bold capitals (Max, 14 Oct 2026). The FULL name always
-   shows - a long one wraps onto a second line (Max, 19 Oct 2026: it used to end in ...). */
+/* one business per line, bold capitals. The FULL name always
+   shows - a long one wraps onto a second line. */
 .ep-mt li{
     font-size:.78rem;
     font-weight:bold;
@@ -596,7 +596,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 /* the band card's photo runs edge to edge, on screen and on paper */
 .ep-ent-card.ep-ent-band{ padding:0; }
 
-/* ---- times with the poster beside them (Max, 14 Oct 2026) ---- */
+/* ---- times with the poster beside them ---- */
 .ep-times-poster{
     display:grid;
     grid-template-columns:minmax(0, 1fr) minmax(0, 320px);
@@ -623,7 +623,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 
 @media print{
     /* ======================================================================
-       THE A4 MINI MAGAZINE (Max, 14 Oct 2026 - for the local paper)
+       THE A4 MINI MAGAZINE
        Four full sheets, orange to the edge, 12mm inside margin.
        Page 1 cover | 2 food | 3 entertainment + times | 4 market, good to
        know, sponsors (bottom third). Every page is exactly one A4 tall, so
@@ -797,7 +797,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 }
 
 /* ==========================================================================
-   MORE VENDORS, SAME 4 PAGES (Max, 14 Oct 2026 - 50 sites for sale)
+   MORE VENDORS, SAME 4 PAGES
    js/event-page.js tags the food section and the page-4 wrapper with
    data-size (s / m / l / xl / xxl) from how many paid vendors there are.
    On paper the cards get more columns and smaller type as the list grows,
@@ -902,7 +902,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 }
 
 @media print{
-    /* page 3 now holds the full run sheet, so the entertainment block gives up a little height */
+    /* page 3 holds the full run sheet, so the entertainment block gives up a little height */
     .ep-page-3 > .ep-section:first-child{ flex:1; min-height:0; }
     .ep-ent{ min-height:0; }
     .ep-ent-photo{ flex:none !important; height:88mm !important; }
@@ -915,12 +915,12 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 }
 
 /* "COME" / "HUNGRY." - one word per line, and the full stop never drops
-   onto a line of its own (it showed as a little box). Sized to the column. */
+   onto a line of its own. Sized to the column. */
 .ep-title span{ display:block; white-space:nowrap; }
 .ep-title{ font-size:clamp(3rem, 7.2vw, 6.4rem); }
 
 /* website: the Eatz & Beatz logo sits top right of the cover, above the
-   skeleton (Max, 14 Oct 2026). Phones and the printout keep it at the top left. */
+   skeleton. Phones and the printout keep it at the top left. */
 @media screen and (min-width:901px){
     .ep-hero-inner{ position:relative; }
     .ep-logo{
@@ -941,7 +941,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-badge-round{ top:250px; }
 }
 
-/* PRINT: every A4 sheet gets the orange sunset gradient (Max, 14 Oct 2026) - also
+/* PRINT: every A4 sheet gets the orange sunset gradient - also
    keeps the cover title big (the screen size rule above would shrink it) */
 @media print{
     .ep-page{
@@ -953,7 +953,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-title{ font-size:90pt; }
 }
 
-/* "SOUNDZGOOD PRESENTS" centred across the top, like the poster (Max, 14 Oct 2026) */
+/* "SOUNDZGOOD PRESENTS" centred across the top, like the poster */
 .ep-presents{ text-align:center; font-size:.85rem; letter-spacing:.4em; }
 
 @media screen and (min-width:901px){
@@ -972,7 +972,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 }
 
 /* ==========================================================================
-   FAQ - "GOOD TO KNOW." (Max's mock-up, 14 Oct 2026)
+   FAQ - "GOOD TO KNOW."
    ========================================================================== */
 .ep-faq-head{ margin-bottom:18px; }
 
@@ -1050,7 +1050,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 }
 
 @media print{
-    /* page 4 now carries market + FAQ + sponsors (bottom third): tighten the top two */
+    /* page 4 carries market + FAQ + sponsors (bottom third): tighten the top two */
     .ep-page-4 .ep-big{ font-size:22pt !important; }
     .ep-page-4 .ep-market-panel{ gap:3.5mm !important; }
     .ep-page-4 .ep-market{ gap:2.5mm !important; }
@@ -1068,7 +1068,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 }
 
 /* ==========================================================================
-   SPONSORS: one tile per logo, evenly spaced (Max, 14 Oct 2026)
+   SPONSORS: one tile per logo, evenly spaced
    ========================================================================== */
 .ep-sponsor-grid{
     list-style:none;
@@ -1116,7 +1116,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-sponsor-grid img{ max-height:20mm; }
 }
 
-/* logo 50% bigger, skeleton 20% smaller (Max, 15 Oct 2026) */
+/* logo 50% bigger, skeleton 20% smaller */
 @media screen and (min-width:901px){
     .ep-logo{ width:345px; }
     .ep-hero-art{ padding-top:305px; }
@@ -1139,7 +1139,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-intro{ margin-top:2mm !important; font-size:11.5pt !important; }
 }
 
-/* ---- free jumping castle card (Max, 15 Oct 2026) ---- */
+/* ---- free jumping castle card ---- */
 .ep-ent{ grid-template-rows:auto auto auto auto; }
 .ep-ent-band{ grid-row:span 4; }
 .ep-ent-castle{
@@ -1174,8 +1174,8 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 @media print{ .ep-ent-castle .ep-kicker{ display:none; } .ep-castle-by{ margin-top:1mm; } }
 
 /* ==========================================================================
-   PRINT COVER, per Max's mock-up (15 Oct 2026): big logo, big title, no
-   gaps - words stacked down the left, skeleton tucked bottom right.
+   PRINT COVER: big logo, big title, no gaps - words stacked down the
+   left, skeleton tucked bottom right.
    ========================================================================== */
 @media print{
     .ep-hero-inner{ display:block !important; position:relative; height:100%; }
@@ -1205,7 +1205,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-badge-round{ top:-14mm !important; left:auto !important; right:52mm; }
 }
 @media print{
-    /* sponsors = a full third of the A4 (Max, 15 Oct 2026) */
+    /* sponsors = a full third of the A4 */
     .ep-sponsors{ height:99mm !important; padding:5mm 6mm !important; }
     .ep-sponsors .ep-h2{ font-size:24pt !important; margin-bottom:4mm !important; }
     .ep-sponsor-grid{ gap:3.5mm !important; }
@@ -1227,7 +1227,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-intro{ max-width:100mm !important; }
     .ep-badge-round{ top:-20mm !important; right:auto !important; left:30mm !important; }
 
-    /* page 4: the bottom third is one solid black band, edge to edge (Max, 15 Oct 2026) */
+    /* page 4: the bottom third is one solid black band, edge to edge */
     .ep-page-4{ padding-bottom:0 !important; }
     .ep-page-4 > .ep-section:has(.ep-sponsors){
         margin:auto -13mm 0 !important;
@@ -1283,7 +1283,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-times-poster{ margin-top:7mm !important; }
 }
 @media print{
-    /* FAQ readability (Max, 15 Oct 2026): bigger, darker type */
+    /* FAQ readability: bigger, darker type */
     .ep-faq{ gap:2.2mm !important; }
     .ep-faq-item{ padding:2.2mm 3.5mm !important; gap:3mm !important; align-items:center; }
     .ep-faq-ic{ width:8.5mm !important; height:8.5mm !important; }
@@ -1313,7 +1313,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-sponsor-grid img{ max-height:22mm !important; }
 }
 
-/* ---- HOSTS STRIP: the MCs, under the Entertainment heading (Max, 16 Oct 2026) ---- */
+/* ---- HOSTS STRIP: the MCs, under the Entertainment heading ---- */
 .ep-hosts{
     display:flex; align-items:center; justify-content:space-between; gap:10px 24px; flex-wrap:wrap;
     background:var(--ep-ink); color:var(--ep-cream);
@@ -1331,7 +1331,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-hosts-names{ font-size:16pt; }
 }
 
-/* page 3 with the hosts strip: win back the room it takes (Max, 16 Oct 2026) */
+/* page 3 with the hosts strip: win back the room it takes */
 @media print{
     .ep-hosts{ padding:2.2mm 5mm !important; margin:0 0 3mm !important; }
     .ep-hosts-names{ font-size:14pt !important; }
@@ -1342,7 +1342,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-times-poster{ margin-top:4mm !important; }
 }
 
-/* hosts strip with their photo on the left (Max, 16 Oct 2026) */
+/* hosts strip with their photo on the left */
 .ep-hosts{ display:grid; grid-template-columns:260px 1fr; align-items:center; gap:22px; padding:0 26px 0 0; overflow:hidden; }
 .ep-hosts-pic{ width:100%; height:180px; object-fit:cover; object-position:center 20%; display:block; }
 .ep-hosts .ep-kicker{ margin:0 0 6px; }
@@ -1373,7 +1373,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 
 
 
-/* ---- ENTERTAINMENT LAYOUT v3 (Max, 16 Oct 2026) ----
+/* ---- ENTERTAINMENT LAYOUT ----
    top row: trick or treat | best dressed
    grid:    Zed big on the left | hosts, Bottoms Bingo, jumping castle on the right */
 .ep-top2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:0 0 14px; }
@@ -1414,11 +1414,10 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-ent .ep-ent-hosts > div{ grid-column:2; grid-row:1; align-self:center; }
 }
 
-/* phones: the hero palm and long stall links poked past the screen edge (16 Oct 2026) */
+/* phones: keep the hero palm and long stall links inside the screen edge */
 @media screen{ .ep-hero, .ep-hero-art{ overflow-x:clip; } .ep-mt a{ overflow-wrap:anywhere; word-break:break-word; } }
 
-/* ---- CRICKET TILE: Chargers v Dregernauts, 6pm (Max, 17 Oct 2026) ----
-   right column is now: hosts, Bottoms Bingo, cricket, jumping castle      */
+/* ---- CRICKET TILE: Chargers v Dregernauts ---- */
 .ep-ent-band  { grid-row:1 / span 4 !important; }
 .ep-ent-hosts { grid-row:1 !important; }
 .ep-ent-bingo { grid-row:2 !important; }
@@ -1458,7 +1457,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-ent-cricket h3{ font-size:15pt !important; }
 }
 @media print{ .ep-ent-cricket h3{ font-size:12.5pt !important; } .ep-ent .ep-ent-card.ep-ent-cricket{ grid-template-columns:31mm 1fr; } }
-/* print, final: stacked - time, small logos with VS, title on one line */
+/* print: stacked - time, small logos with VS, title on one line */
 @media print{
     .ep-ent .ep-ent-card.ep-ent-cricket{ display:flex !important; flex-direction:column; justify-content:center; padding:3mm 5mm !important; }
     .ep-ent-cricket .ep-vs{ display:flex; justify-content:center; align-items:center; gap:4mm; margin:1mm 0 1.5mm; }
@@ -1469,7 +1468,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 }
 @media print{ .ep-ent .ep-ent-card.ep-ent-cricket h3{ font-size:11.5pt !important; white-space:nowrap; text-align:center; margin:0 !important; } }
 
-/* cricket tile, bigger - Max's mock-up (17 Oct 2026). Screen only; print keeps its compact version */
+/* cricket tile, bigger. Screen only; print keeps its compact version */
 @media screen{
     .ep-ent-cricket{ padding:28px 30px !important; }
     .ep-ent-cricket .ep-kicker{ text-align:left; }
@@ -1483,7 +1482,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-vs img{ height:110px; }
 }
 
-/* ==== ENTERTAINMENT TIDY (Max, 17 Oct 2026) ====
+/* ==== ENTERTAINMENT TIDY ====
    website: the 4 small tiles on the right are all the same height; Zed is the
    big one - his photo fills the top and his words sit at the bottom.
    print: cricket keeps its description (sideways layout so it fits). */
@@ -1510,7 +1509,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-ent .ep-ent-card.ep-ent-cricket h3{ grid-column:2; font-size:10.5pt !important; white-space:normal; text-align:left; margin:0 0 .8mm !important; }
     .ep-ent .ep-ent-card.ep-ent-cricket p:last-child{ grid-column:2; font-size:7.8pt !important; line-height:1.3; margin:0; }
 }
-/* tidy, round 2: compact cricket tile so all four right tiles stay a sensible height */
+/* compact cricket tile so all four right tiles stay a sensible height */
 @media screen and (min-width:861px){
     .ep-ent-cricket{ padding:20px 24px !important; }
     .ep-vs{ margin:4px 0 10px !important; }
@@ -1529,7 +1528,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 }
 @media print{ .ep-ent-cricket .ep-vs{ justify-content:flex-start !important; overflow:visible; } .ep-ent .ep-ent-card.ep-ent-cricket{ padding-left:5.5mm !important; } }
 
-/* ==== A4: cricket as a full-width FIXTURE BANNER (Max, 17 Oct 2026) ====
+/* ==== A4: cricket as a full-width FIXTURE BANNER ====
    Chargers big top-left, Dregernauts big bottom-right (breaking the edges
    like a football fixture), VS + title + words in the middle. The right
    column goes back to 3 roomy tiles: hosts, Bottoms Bingo, jumping castle. */
@@ -1569,7 +1568,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-times-poster .ep-h2{ font-size:20pt !important; margin-bottom:2mm !important; }
     .ep-ent-photo{ height:56mm !important; }
 }
-/* A4 banner per Max's final mock-up: both logos INSIDE, centred, big; slightly larger tile text */
+/* A4 banner: both logos inside, centred, big; slightly larger tile text */
 @media print{
     .ep-ent-cricket .ep-vs img:first-child{ align-self:center !important; margin:0 !important; height:24mm !important; }
     .ep-ent-cricket .ep-vs img:last-child{ align-self:center !important; margin:0 !important; height:24mm !important; }
@@ -1579,14 +1578,14 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-ent-band-text p:not(.ep-kicker){ font-size:10pt !important; }
     .ep-ent-card:not(.ep-ent-band):not(.ep-ent-cricket) p:last-child{ font-size:10pt !important; }
 }
-/* A4: keep a clear gap between the right-hand tiles (Bingo's words were touching the castle) */
+/* A4: keep a clear gap between the right-hand tiles */
 @media print{
     .ep-ent{ row-gap:3.5mm !important; column-gap:3.5mm !important; }
     .ep-ent .ep-ent-bingo p:last-child{ font-size:9.2pt !important; line-height:1.3; }
     .ep-ent .ep-ent-bingo h3{ margin-bottom:1mm !important; }
     .ep-ent .ep-ent-bingo{ padding-top:2.5mm !important; padding-bottom:2.5mm !important; }
 }
-/* A4 page 3: ONE spacing everywhere - 3.5mm between every tile, row and block (Max, 17 Oct 2026) */
+/* A4 page 3: ONE spacing everywhere - 3.5mm between every tile, row and block */
 @media print{
     .ep-page-3{ --g:3.5mm; }
     .ep-page-3 .ep-top2{ gap:var(--g) !important; margin:0 0 var(--g) !important; }
@@ -1599,8 +1598,8 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-page-3 .ep-times-poster .ep-h2{ margin-bottom:var(--g) !important; }
 }
 
-/* A4 page 3: the schedule now has 8 rows (cricket, Whitsunday Autos demo, event concludes),
-   so the rows are slimmer and Zed's photo a little shorter to keep everything on the page (Max, 19 Oct 2026) */
+/* A4 page 3: the schedule has 8 rows, so the rows are slimmer and Zed's
+   photo a little shorter to keep everything on the page */
 @media print{
     .ep-page-3 .ep-times{ gap:1.6mm !important; }
     .ep-page-3 .ep-times li{ padding:.9mm 4mm !important; font-size:9.6pt !important; line-height:1.15; }
@@ -1615,7 +1614,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 /* a portrait photo that should show from the top of the card (face first) */
 .ep-fv-pic-top{ background-position:center top !important; }
 
-/* schedule headings in CAPITALS, descriptions as written (Max, 19 Oct 2026) */
+/* schedule headings in CAPITALS, descriptions as written */
 .ep-times li > span{ text-transform:uppercase; letter-spacing:.02em; }
 .ep-times li > span small{ text-transform:none; letter-spacing:0; }
 .ep-times b{ white-space:nowrap; }

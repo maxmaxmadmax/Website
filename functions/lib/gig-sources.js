@@ -1,53 +1,23 @@
 /* ==========================================================================
    WHERE THE GIG GUIDE'S EVENTS COME FROM
 
-   One job: go and find what is on around Bowen and the Whitsundays, and
-   hand back a plain list. Nothing in here writes to the database or knows
-   the guide exists - that is index.js's half.
+   Finds what is on around Bowen and the Whitsundays and hands back a plain
+   list. Nothing here writes to the database - that is index.js's half.
 
-   ==========================================================================
-   THE RULES THIS FOLLOWS, AND WHY
-   ==========================================================================
+   RULES
+   1. Only schema.org Event markup - data a site publishes for machines, so
+      a restyle of their site does not break this.
+   2. Facts only: name, date, venue, link and a link to their picture.
+      Never their description text, and never a copy of the picture.
+   3. Every event keeps its source and a link back.
+   4. Never work around bot challenges (e.g. Cloudflare).
+   5. Gently: once a day, a few requests at a time, and a user agent that
+      says who we are.
 
-   1. ONLY DATA A SITE PUBLISHES FOR MACHINES.
-      Every source here is read through schema.org Event markup - the block
-      of JSON a site puts in its own pages so that Google can show the event
-      with a date on it. Reading that is reading something written to be
-      read by programs. It also means that when they restyle their site,
-      nothing here breaks.
-
-   2. FACTS, NOT WRITING.
-      What comes back is the name, the date, the venue, the link and the
-      address of the event's picture. Not their description. A date and a
-      venue are facts about the world; the paragraph somebody wrote about
-      their gig is theirs.
-
-      The picture is a link to where it already lives, never a copy on our
-      server - the difference between pointing at somebody's poster and
-      taking a copy of it. It also means an organiser who changes their
-      artwork changes it here.
-
-   3. EVERY EVENT KEEPS ITS SOURCE.
-      Each one carries where it came from and a link back, and the guide
-      shows both. A listing nobody can check is a rumour.
-
-   4. NO BOT CHALLENGES, EVER.
-      Bandsintown was the obvious second source - its Bowen page carries
-      sixteen MusicEvent blocks - but it is behind Cloudflare and answered
-      the second request with a challenge page. Working around that is not
-      something this will ever do, so it is not in here.
-
-   5. GENTLY.
-      One run a day, a handful of requests at a time, and a user agent that
-      says who we are and where to complain. If any of these sites would
-      rather we did not, they can see us in their logs and say so.
-
-   ==========================================================================
    ADDING A SOURCE
-   ==========================================================================
    Write a function that returns an array of the shape below, and add it to
-   SOURCES at the bottom. Everything else - the dates, the de-duplicating,
-   the writing - is handled for you.
+   SOURCES at the bottom. Dates, de-duplicating and writing are handled for
+   you.
 
        {
          name:   'Bowen Parkrun',
@@ -70,9 +40,7 @@ const USER_AGENT =
     cannot hold the whole run open.                                      */
 const TIMEOUT_MS = 15000;
 
-/*  How many pages are read at once. Six is brisk without being a load on
-    anybody's server - a full run is a few dozen requests spread over
-    about half a minute, once a day.                                     */
+/* How many pages are read at once - brisk without loading anybody's server. */
 const CONCURRENCY = 6;
 
 /*  Bump when the shape of what is taken off a page changes. See the note
@@ -83,10 +51,8 @@ const CACHE_VERSION = 2;
 /* --------------------------------------------------------------------------
    THE DATE
 
-   Queensland, always. At ten in the morning in Bowen it is still yesterday
-   in UTC, and a guide built on UTC drops tonight's gig off the front page
-   for the first ten hours of every day. This was a real bug in the first
-   version of this file, caught by the fact that the probe printed both.
+   Queensland time, always. Until 10am in Bowen it is still yesterday in
+   UTC, which would drop tonight's gigs off the guide.
    -------------------------------------------------------------------------- */
 function todayInQueensland() {
     /* en-CA formats as YYYY-MM-DD, which is what everything here compares */
@@ -117,9 +83,7 @@ async function fetchJson(url) {
     return JSON.parse(await fetchText(url));
 }
 
-/*  A small worker pool. Promise.all over everything at once would be a
-    burst of a hundred requests at one small site, which is rude and is
-    also how you get blocked.                                            */
+/* A small worker pool, so one small site never gets a burst of requests. */
 async function pool(items, size, work) {
     const out = [];
     let next = 0;
@@ -221,17 +185,9 @@ function normalise(node, source, url) {
     };
 }
 
-/*  THE EVENT'S OWN PICTURE.
-
-    Kept as a link to where it already lives rather than copied onto our
-    server. That is the difference between pointing at somebody's poster
-    and taking a copy of it, and it is also why an organiser who changes
-    their artwork changes it here too.
-
-    schema.org allows three shapes for this - a string, a list of strings,
-    or an ImageObject - so all three are unwrapped. Anything that is not a
-    plain https link is dropped: a card with no picture looks fine, and a
-    broken one does not.                                                 */
+/* THE EVENT'S OWN PICTURE - kept as a link to where it lives, never copied.
+   schema.org allows a string, a list of strings or an ImageObject, so all
+   three are unwrapped. Anything that is not a plain https link is dropped. */
 function pictureFrom(node) {
     let raw = node.image;
 
@@ -299,23 +255,14 @@ async function eventsOnTheHorizon(area, report, cache, nextCache) {
 
     report.listed += posts.length;
 
-    /*  THE CACHE IS THE WHOLE TRICK.
-
-        Listing the six areas costs about ten requests and tells us when
-        each event was last edited. Only the ones that have changed since
-        the last run need their page read. Without this the guide would
-        ask this site for eight hundred pages every single day to learn
-        that almost none of them had changed, which is a lot to take from
-        somebody who is doing us a favour by publishing the markup at
-        all. In the steady state a run reads a handful of pages.        */
+    /* THE CACHE IS THE WHOLE TRICK. Listing the areas (about ten requests)
+       shows when each event was last edited; only the changed ones have their
+       page read. */
     const stale = posts.filter((post) => {
         const had = cache[post.id];
 
-        /*  CACHE_VERSION is bumped whenever what we take off a page
-            changes - the pictures were added after the first run, and
-            without this every cached event would have kept the shape it
-            was read in and no picture would ever have appeared. Bumping
-            it costs one slow run and then it is warm again.           */
+        /* Bump CACHE_VERSION whenever what we take off a page changes, or cached
+           events keep their old shape. It costs one slow run. */
         if (had && had.m === post.modified && had.v === CACHE_VERSION) {
             nextCache[post.id] = had;
             if (had.e) report.cached++;
@@ -362,34 +309,16 @@ async function eventsOnTheHorizon(area, report, cache, nextCache) {
    THE RUN
    ========================================================================== */
 
-/*  Sources that are known to work, in the order they are asked. Adding one
-    is a line here and a function above.
+/* Sources that are known to work, in the order they are asked. Adding one
+   is a line here and a function above.
 
-    NOT IN THIS LIST, AND WHY - so nobody spends an afternoon rediscovering
-    it:
-
-      Bandsintown       Cloudflare. Answered the second request with a
-                        challenge page. Its city page does carry sixteen
-                        MusicEvent blocks, so if they ever allow a plain
-                        request it is worth ten minutes.
-      Eventbrite        Public event search was withdrawn from their API in
-                        2019, and their terms do not allow scraping the
-                        search pages that replaced it.
-      Facebook groups   There is no public API for group or page events any
-                        more, and reading them needs a logged in account,
-                        which is against their terms. The live music group
-                        is the best source in town and the only way to use
-                        it is a person reading it.
-      Tourism           Allowed, and says so in its robots.txt, but its
-      Whitsundays       event pages carry no Event markup - only WebPage.
-                        It would have to be parsed out of the HTML, which
-                        breaks every time they restyle. Worth revisiting
-                        if they ever add the markup.
-      Whitsunday        Fetches fine and has no Event markup either. Same
-      Regional Council  problem, same answer - but a council calendar is
-                        worth the parsing if you want it, because it is
-                        the one place the carols and the citizenship
-                        ceremonies turn up.                              */
+   NOT USED, AND WHY:
+     Bandsintown          behind Cloudflare bot challenges
+     Eventbrite           no public event search API; terms ban scraping
+     Facebook groups      no public API; needs a logged in account
+     Tourism Whitsundays  no Event markup on its pages
+     Whitsunday Regional  no Event markup either (its HTML could be parsed
+     Council              if council events are wanted) */
 const SOURCES = [
     { name: 'Events on the Horizon', areas: EOTH_AREAS, run: eventsOnTheHorizon },
 ];
@@ -409,10 +338,8 @@ function idFor(event) {
     return slug || null;
 }
 
-/*  Goes and gets everything. Returns the events plus a report of what
-    happened, which the caller logs - a run that quietly finds nothing is
-    indistinguishable from a run that worked, and that is how a broken
-    feed goes unnoticed for a month.                                     */
+/* Goes and gets everything. Returns the events plus a report the caller
+   logs, so a feed that quietly breaks gets noticed. */
 async function collect(cache) {
     const today = todayInQueensland();
     const report = {

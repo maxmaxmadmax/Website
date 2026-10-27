@@ -1,14 +1,14 @@
 /* ==========================================================================
-   YOUR DETAILS  -  /details?t=<detailsToken>   (Max, 20 Oct 2026)
+   YOUR DETAILS  -  /details?t=<detailsToken>
 
-   Max texts a customer this link from their quote. They fill in their own
-   details; it lands straight on the quote and in Customers, and Max gets an
-   email. If the quote is already out, they get a "View your quote" button.
+   A customer fills in their own details from a link on their quote. It
+   saves to the quote and Customers, and Max gets an email. If the quote is
+   already out, they get a "View your quote" button.
    Data: getDetailsForm / submitDetails (functions/index.js).
    Uses the sponsor page styles (sponsor.css).
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=710';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=711';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) => String(v == null ? '' : v)
@@ -55,7 +55,7 @@ function timeOptions(current) {
 function render(d) {
   const c = d.customer || {};
   const date = isoFromPretty(c.eventDate) || d.startDate || '';
-  // first / last name boxes (Max, 20 Oct 2026) - the quote still keeps one "name"
+  // first / last name boxes - the quote still keeps one "name"
   const nameParts = String(c.name || '').trim().split(/\s+/);
   const firstName = nameParts[0] || '';
   const lastName = nameParts.slice(1).join(' ');
@@ -91,7 +91,7 @@ function render(d) {
     </form>
   </section>`;
   /*  The button stays greyed out until full name, email, phone and event
-      name are filled in (Max, 20 Oct 2026). */
+      name are filled in. */
   const dtForm = document.getElementById('dt-form');
   const dtBtn = dtForm.querySelector('button[type="submit"]');
   // what is still missing, in plain words (empty list = good to go)

@@ -1,31 +1,19 @@
 /* --------------------------------------------------------------------------
    SOUNDZGOOD ADMIN
+   One page, one script, no framework. Views are plain functions that return
+   markup and then wire up their own listeners; the address bar hash
+   remembers which view is open.
 
-   The backend for the site. Vendors and their applications live here now;
-   quoting, leads and the rest will join them.
+   SECURITY: only accounts with the admin custom claim get past the gate,
+   and the Firestore rules and Cloud Functions check the same claim server
+   side.
 
-   WHAT PROTECTS THIS
-   Not the address. Every account can sign in, but only one carrying the
-   admin custom claim gets past the gate - and, more to the point, the
-   Firestore rules and the Cloud Functions check the same claim server
-   side. Someone who found this page and signed in as a vendor would be
-   shown the door here and refused by the database anyway.
-
-   HOW IT IS PUT TOGETHER
-   One page, one script, no framework. Views are plain functions that
-   return markup and then wire up their own listeners. The rail switches
-   between them and the address bar hash remembers where you were.
-
-   It reads the same collections the public signup page writes:
-
+   Collections read (the same ones the public signup page writes):
        events/{eventId}                    the event
        events/{eventId}/sites/{siteId}     the 50 sites
        events/{eventId}/categories/{id}    limits and live counts
        bookings/{bookingId}                one per vendor application
-
-   Nothing here writes to those directly except through the admin Cloud
-   Functions, for the same reason the public page does not: allocation and
-   money have to be decided server side.
+   Allocation and money only change through the admin Cloud Functions.
    -------------------------------------------------------------------------- */
 
 import {
@@ -33,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=710';
+} from './firebase-config.js?v=711';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=710';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=710';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=710';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=710';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=710';
-import { expandKit } from './kit.js?v=710';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=711';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=711';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=711';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=711';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=711';
+import { expandKit } from './kit.js?v=711';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -56,9 +44,7 @@ const state = {
   events: [],
   bookings: [],
 
-  /*  Which DJ is on which Friday, keyed by date. Filled in when the
-      settings view is opened - it is four lines of data and nothing
-      else on the desk needs it.                                     */
+  /*  Which DJ is on which Friday, keyed by date. Loaded when Settings opens. */
   /*  The roster and the schedule, for the Entertainment view. Loaded on
       arrival there rather than kept in sync everywhere.             */
   talent: [],
@@ -243,9 +229,7 @@ function prettyDate(iso) {
     about who is on the books.                                          */
 async function loadTalent() {
   try {
-    /*  SG_ROSTER_READY is a promise that has already resolved by now on a
-        second visit, so it is re-fetched rather than reused - an act
-        added a minute ago has to appear.                              */
+    /*  Re-fetched rather than reused, so an act added a minute ago appears. */
     const { collection, getDocs } = fb.f;
     const snap = await getDocs(collection(fb.db, 'talent'));
 
@@ -263,13 +247,13 @@ async function loadTalent() {
         name: t.name || slug,
         act: t.act || (bySlug[slug] || {}).act || 'dj',
         photo: t.photo || (bySlug[slug] || {}).photo || '',
-        bio: t.bio || '',   // shown on their gig quotes (Max, 22 Oct 2026)
-        female: t.female === true,   // Female DJs filter on the website (Max, 23 Oct 2026)
+        bio: t.bio || '',   // shown on their gig quotes
+        female: t.female === true,   // Female DJs filter on the website
       };
     });
 
     state.talent = Object.keys(bySlug).map((k) => bySlug[k]);
-    // LUCAS'S BIO, as Max sent it (22 Oct 2026) - put in once, his to edit after
+    // Lucas's bio - put in once, his to edit after
     const lucas = state.talent.find((x) => x.slug === 'lucas');
     if (lucas && !lucas.bio && !(saved.lucas && saved.lucas.bioSeeded) && !state.lucasSeeded) {
       state.lucasSeeded = true;
@@ -281,14 +265,14 @@ async function loadTalent() {
   }
 }
 
-/*  PUB NIGHTS (Max, 21 Oct 2026): DJ rates (private - talent/ is public) and
-    the regular nights. Loaded with the roster.                            */
+/*  PUB NIGHTS: DJ rates (private - talent/ is public) and the regular
+    nights. Loaded with the roster. */
 async function loadPubSettings() {
   try {
     const { collection, getDocs } = fb.f;
     const [rates, nights, fees, venues] = await Promise.all([getDocs(collection(fb.db, 'actRates')), getDocs(collection(fb.db, 'regularNights')), getDocs(collection(fb.db, 'travelFees')), getDocs(collection(fb.db, 'venues'))]);
-    /*  SAVED VENUES (Max, 22 Oct 2026): each one gets its own tab on Gigs and
-        shows in the booking form's venue list. First time: Arcadia Bar.  */
+    /*  SAVED VENUES: each one gets its own tab on Gigs and shows in the
+        booking form's venue list. Seeded with Arcadia Bar the first time. */
     state.venues = [];
     venues.forEach((d) => state.venues.push({ id: d.id, ...d.data() }));
     if (!venues.size && !state.venuesSeeded) {
@@ -308,7 +292,7 @@ async function loadPubSettings() {
     state.venues.sort((a, b) => String(a.name).localeCompare(String(b.name)));
     state.travelFees = [];
     fees.forEach((d) => state.travelFees.push({ id: d.id, ...d.data() }));
-    // first time: Max's fees (21 Oct 2026) - then they're his to change
+    // first-time default fees - then they're his to change
     if (!fees.size && !state.travelSeeded) {
       state.travelSeeded = true;
       const { doc, setDoc } = fb.f;
@@ -318,7 +302,7 @@ async function loadPubSettings() {
     }
     state.actRates = {};
     rates.forEach((d) => { state.actRates[d.id] = d.data(); });
-    // each DJ's town onto their public card, once a session (Max, 22 Oct 2026)
+    // each DJ's town onto their public card, once a session
     if (!state.locSynced) {
       state.locSynced = true;
       Object.keys(state.actRates).forEach((slug) => {
@@ -328,7 +312,7 @@ async function loadPubSettings() {
       });
     }
     try { const fs2 = await getDocs(collection(fb.db, 'djSettings')); state.djFee = {}; fs2.forEach((d) => { if (d.id === 'fee') state.djFee = d.data(); }); } catch (e) { state.djFee = {}; }
-    // new wording (Max, 22 Oct 2026): a fee saved with the old wording is moved over once
+    // a fee saved with the old wording is moved over once
     if (state.djFee && /^Booking, coordination/.test(state.djFee.name || '') && !state.feeRenamed) {
       state.feeRenamed = true;
       state.djFee = { ...state.djFee, name: 'Booking & management', description: 'Sourcing, scheduling and managing your DJ, with backup cover', updatedAt: Date.now() };
@@ -378,14 +362,14 @@ async function pubSyncNights(pairs) {
   }
   return notes;
 }
-/*  DJ GIG INVOICES (Max, 21 Oct 2026): make / update / cancel the invoice for
-    each booking (template + customer + DJ hours x rate + travel).          */
+/*  DJ GIG INVOICES: make / update / cancel the invoice for each booking
+    (template + customer + DJ hours x rate + travel). */
 async function gigSyncBookings(ids) {
   const notes = [];
   for (const id of [...new Set(ids.filter(Boolean))]) {
     try {
       let r = await call('adminGigSync', { bookingId: id });
-      // SENT BUT NOT ACCEPTED (Max, 23 Oct 2026): ask, then update it - the venue's link shows the new version
+      // SENT BUT NOT ACCEPTED: ask, then update it - the venue's link shows the new version
       if (r.locked && r.status === 'sent' && window.confirm('This quote was already sent to the venue.\n\nUpdate it anyway? Their link will show the new times and price straight away (it is not emailed again).')) {
         r = await call('adminGigSync', { bookingId: id, force: true });
       }
@@ -450,9 +434,8 @@ async function loadSchedule() {
   }
 }
 
-/*  LOADING BAR (Max, 23 Oct 2026): a thin orange bar slides across the top
-    whenever admin is waiting on the server - shown after a moment so quick
-    things don't flicker.                                                */
+/*  LOADING BAR: a thin orange bar across the top whenever admin is waiting
+    on the server - shown after a moment so quick things don't flicker. */
 let busyCount = 0, busyTimer = null;
 function busyStart() {
   busyCount++;
@@ -565,7 +548,7 @@ const BUILT = ['dashboard', 'events', 'vendors', 'applications', 'map', 'enterta
                'settings', 'vendorEmail', 'inventory',
                'quoteDocs', 'packages', 'resources', 'leads', 'leadRate', 'customers'];
 
-/*  The Dashboard is what you land on (Max, 20 Oct 2026). */
+/*  The Dashboard is what you land on. */
 const HOME = 'dashboard';
 
 function routeFromHash() {
@@ -575,8 +558,7 @@ function routeFromHash() {
   state.openBookingId = null;
 
   /*  SALES PIPELINE: an open quote lives at #/quoteDocs?q=<id> (or ?q=new),
-      so the phone / browser Back button goes back to the list instead of
-      jumping to whatever section was open before (Max, 16 Oct 2026).     */
+      so the phone / browser Back button goes back to the list. */
   if (want === 'quoteDocs') {
     const q = new URLSearchParams(qs || '').get('q');
     if (!q && state.openQuoteId) {
@@ -616,15 +598,13 @@ function routeFromHash() {
 
   render();
 
-  /*  Settings is the only view that needs the Friday line up, so it is
-      fetched on arrival rather than kept in sync all the time. Drawn
-      again once it lands - the panel is already on screen by then, with
-      its dropdowns unset for the half second it takes.                */
+  /*  Only Settings needs the Friday line up, so it is fetched on arrival
+      and the view is drawn again once it lands. */
   if (want === 'entertainment') {
     busy(Promise.all([loadTalent(), loadSchedule(), loadPubSettings()]))
       .then(() => { if (state.view === 'entertainment') render(); });
   }
-  // the dashboard's "Next 30 days" shows the gigs too (Max, 20 Oct 2026) - fetched at most every 5 min
+  // the dashboard's "Next 30 days" shows the gigs too - fetched at most every 5 min
   if (want === 'dashboard' && Date.now() - (state.gigsLoadedAt || 0) > 5 * 60000) {
     state.gigsLoadedAt = Date.now();
     Promise.all([loadTalent(), loadSchedule(), loadPubSettings()])
@@ -688,7 +668,7 @@ function subscribeToEvent() {
     (err) => console.error('sites', err)
   ));
 
-  // sponsorship outreach (Max, 20 Oct 2026)
+  // sponsorship outreach
   state.sponsors = [];
   unsubscribes.push(onSnapshot(
     query(collection(fb.db, 'sponsors'), where('eventId', '==', evId)),
@@ -700,7 +680,7 @@ function subscribeToEvent() {
     (err) => console.error('sponsors', err)
   ));
 
-  // vendor waitlist (Max, 20 Oct 2026)
+  // vendor waitlist
   state.waitlist = [];
   unsubscribes.push(onSnapshot(
     query(collection(fb.db, 'waitlist'), where('eventId', '==', evId)),
@@ -712,7 +692,7 @@ function subscribeToEvent() {
     (err) => console.error('waitlist', err)
   ));
 
-  // Messages page (Max, 19 Oct 2026)
+  // Messages page
   state.messages = [];
   state.messagesLoaded = false;
   state.msgOpen = null;
@@ -788,10 +768,8 @@ function updateBotBadge() {
 /*  Quotes / invoices, live. Only re-render the list when it is on screen;
     while the builder is open the draft is edited off to the side, so a
     snapshot must not repaint over it.                                     */
-/*  ONE-OFF TIDY (Max, 17 Oct 2026): quotes Max made himself are quotes, not
-    estimates - only the website bot makes estimates. Any still sitting as an
-    estimate (status draft, not from the bot) is turned into a quote. Runs
-    once per admin session; anything further along is left alone.        */
+/*  ONE-OFF TIDY: only the website bot makes estimates, so any draft
+    estimate not from the bot is turned into a quote. Once per session. */
 let promotedMine = false;
 function promoteMyEstimates() {
   if (promotedMine) return;
@@ -800,10 +778,8 @@ function promoteMyEstimates() {
   mine.forEach((q) => { call('adminSetQuoteStatus', { id: q.id, status: 'approved' }).catch((e) => console.warn('promote', q.number, e)); });
 }
 
-/*  DASHBOARD REMINDERS (Max, 20 Oct 2026) - Max's own to-do list, shown at
-    the top of the dashboard's To-dos. The first time it is empty it is
-    filled with the things flagged in the 20 Oct session; a marker doc
-    (_seeded) stops that happening again once he has ticked them off.     */
+/*  DASHBOARD REMINDERS - Max's own to-do list at the top of the dashboard's
+    To-dos. Seeded once when empty; the _seeded marker doc stops a re-seed. */
 const REMINDER_SEED = [
   "Phone-test the vendor page: pick an event, hold a site, upload a document, stop before paying, release the site",
   "Send yourself a test email from Messages (checks the email upgrade)",
@@ -880,7 +856,7 @@ function render() {
 
   /*  The bookings view lays itself out to the height of the desk rather
       than to its content, so the desk has to know it is showing it. */
-  desk.classList.toggle('is-bookings', false);   // Entertainment overhaul (21 Oct 2026): a normal page like Crew & Vehicles
+  desk.classList.toggle('is-bookings', false);   // Entertainment: a normal page like Crew & Vehicles
   desk.classList.toggle('show-roster',
     state.view === 'entertainment' && state.showRoster);
 
@@ -888,7 +864,7 @@ function render() {
       list scrolls (see "LEADS: one-screen app layout" in admin.css).  */
   desk.classList.toggle('is-leads', state.view === 'leads');
   document.body.classList.toggle('ad-fit-leads', state.view === 'leads');
-  // Inventory too: one screen tall, only the item list scrolls (Max, 17 Oct 2026)
+  // Inventory too: one screen tall, only the item list scrolls
   desk.classList.toggle('is-inv', state.view === 'inventory');
   document.body.classList.toggle('ad-fit-inv', state.view === 'inventory');
   // Lead Rating runs full-screen on a phone, like an app
@@ -930,18 +906,10 @@ function esc(value) {
   return d.innerHTML;
 }
 
-/*  A URL that came out of the database, checked before it is allowed to
-    become a link.
-
-    A vendor writes their own documents[] when they upload, so the url on
-    a document is theirs to choose. Dropping that straight into an href
-    lets them store javascript: and have it run in this page - which is
-    the one page in the site whose session carries the admin claim. One
-    click on an innocent looking "Public liability.pdf" and their code is
-    calling admin functions as you.
-
-    Only https to the project's own storage bucket gets to be a link.
-    Anything else is not a link at all, and says so. */
+/*  A URL from the database, checked before it becomes a link.
+    SECURITY: vendors write their own document urls, so a javascript: link
+    could run here with admin rights. Only https to our own storage bucket
+    becomes a link. */
 const DOC_HOSTS = [
   'firebasestorage.googleapis.com',
   'storage.googleapis.com',
@@ -986,7 +954,7 @@ function friendly(err) {
 function money(cents) {
   if (cents == null) return '—';
   const dp = cents % 100 ? 2 : 0;
-  return '$' + (cents / 100).toLocaleString('en-AU', { minimumFractionDigits: dp, maximumFractionDigits: dp });   // $1,095.60 (Max, 20 Oct 2026)
+  return '$' + (cents / 100).toLocaleString('en-AU', { minimumFractionDigits: dp, maximumFractionDigits: dp });   // e.g. $1,095.60
 }
 
 function dateShort(ts) {
@@ -1023,10 +991,8 @@ function typePill(type) {
   return `<span class="ad-pill ${cls}">${esc(label)}</span>`;
 }
 
-/*  Where an application is up to. reviewStatus is the admin's decision and
-    takes precedence when set; otherwise it falls back to where the booking
-    itself has got to, so applications made before review existed still read
-    sensibly. */
+/*  Where an application is up to: the admin's reviewStatus if set, else
+    where the booking itself has got to. */
 function statusPill(b) {
   const review = b.reviewStatus;
   if (review === 'declined')  return `<span class="ad-pill ad-pill-red">Declined</span>`;
@@ -1065,12 +1031,8 @@ function realApplications() {
 
 /* =========================================================================
    THE NUMBERS
-
-   Where the event stands: how many have applied, how many are in, who has
-   paid, how much ground is left. It sits above the vendor list rather than
-   on a page of its own, because every one of these numbers is a count of
-   the rows underneath it - reading them apart from the list they describe
-   meant holding two screens in your head.
+   Where the event stands: applied, in, paid, ground left. Sits above the
+   vendor list because every number is a count of the rows underneath.
    ========================================================================= */
 function statsStrip() {
   const apps = realApplications();
@@ -1147,11 +1109,9 @@ function pct(part, whole) {
 
 /* =========================================================================
    VENDOR AND APPLICATION LISTS
-
-   Two rail entries, one list. Applications is the working queue - everyone
-   still waiting on a decision or a payment. Vendors is the roster - who is
-   actually coming. They differ only in which rows they start with, so the
-   searching, filtering and detail panel below are shared.
+   Applications = still waiting on a decision or a payment. Vendors = who is
+   coming. Same list, search, filters and detail panel - only the starting
+   rows differ.
    ========================================================================= */
 
 /*  The bucket a row belongs in, worked out once so the filter, the pill and
@@ -1346,12 +1306,8 @@ function listView(title, blurb, pick, opts = {}) {
 }
 
 /* -------------------------------------------------------------------------
-   Adding a vendor by hand.
-
-   For the ones who ring up or get caught at a market rather than filling
-   in the form. It asks for the least that makes a usable record - who they
-   are and what kind of stall - and leaves seating and payment to the same
-   drawer everyone else goes through, so there is only one way to do those.
+   Adding a vendor by hand (phone or walk-up). Asks only who they are and
+   the kind of stall; seating and payment go through the normal drawer.
    ------------------------------------------------------------------------- */
 function addVendorForm() {
   if (!state.addingVendor) return '';
@@ -1476,14 +1432,9 @@ VIEWS.applications = listView(
 
 
 /* =========================================================================
-   DETAIL PANEL
-   Slides in over the list, so the list keeps its filters and its place.
-
-   Nothing in here writes to Firestore directly. Every button calls an
-   admin Cloud Function, for the same reason the public page does: a
-   decision that frees a site or takes money has to happen in one server
-   side transaction, or two people clicking at once can leave the sites and
-   the bookings disagreeing about who is where.
+   DETAIL PANEL - slides in over the list, so the list keeps its place.
+   Every button calls an admin Cloud Function (never Firestore directly) so
+   seating and money change in one server-side transaction.
    ========================================================================= */
 function row(label, value) {
   return `<div class="ad-kv"><dt>${esc(label)}</dt><dd>${value}</dd></div>`;
@@ -1622,11 +1573,8 @@ function detailPanel() {
 }
 
 /* -------------------------------------------------------------------------
-   The decision and payment buttons.
-
-   The current state is not offered back as a button - approving somebody
-   who is already approved does nothing, and a row of buttons where one is
-   pointless is a row you have to read twice.
+   The decision and payment buttons. The current state is not offered back
+   as a button.
    ------------------------------------------------------------------------- */
 function actionBar(b) {
   const now = bucket(b);
@@ -1811,16 +1759,10 @@ document.addEventListener('keydown', (e) => {
 
 /* =========================================================================
    MAP AND SITES
-
-   The ground, drawn from the same x/y/w/h the public map uses, coloured by
-   what is happening on each site. Clicking one opens it: who is on it, and
-   the three things you can do to it - free it, block it off, or put an
-   unseated vendor on it.
-
-   This draws its own SVG rather than borrowing js/vendor-map.js. That one
-   is built for a vendor choosing a stall and knows nothing about who is
-   booked where; keeping them apart means a change made for the public map
-   cannot quietly break this one, and the other way round.
+   The ground, drawn from the same x/y/w/h as the public map, coloured by
+   what is on each site. Click a site to free it, block it or seat someone.
+   It has its own SVG (not js/vendor-map.js) so a change to one can't break
+   the other.
    ========================================================================= */
 
 const SITE_FILL = {
@@ -1854,7 +1796,7 @@ VIEWS.map = {
   html() {
     const ev = state.events.find((e) => e.id === state.activeEventId) || {};
     const size = ev.map || { width: 760, height: 1420 };
-    // the ENTRY box sat on top of bays M20 / M30 - not drawn (Max, 19 Oct 2026)
+    // the ENTRY box would sit on top of bays M20 / M30 - not drawn
     const marks = (ev.landmarks || []).filter((m) => m.kind !== 'entry');
 
     const tally = { available: 0, held: 0, booked: 0, blocked: 0 };
@@ -1930,9 +1872,9 @@ VIEWS.map = {
   },
 };
 
-/*  VENDOR REPORT FOR THE NIGHT (Max, 20 Oct 2026): page 1 the map with each
-    business's name on its site, then a list by site - business, contact,
-    phone, type. Opens in its own tab and goes straight to print / PDF.    */
+/*  VENDOR REPORT FOR THE NIGHT: page 1 the map with each business's name
+    on its site, then a list by site - business, contact, phone, type.
+    Opens in its own tab and goes straight to print / PDF. */
 function printVendorReport() {
   const ev = state.events.find((e) => e.id === state.activeEventId) || {};
   const size = ev.map || { width: 760, height: 1420 };
@@ -2084,7 +2026,7 @@ function wireSitePanel() {
   const jump = document.querySelector('[data-open-booking]');
   if (jump) jump.addEventListener('click', () => {
     state.openBookingId = jump.getAttribute('data-open-booking');
-    location.hash = '#/vendors';   // Applications left the menu (20 Oct 2026)
+    location.hash = '#/vendors';   // Applications is not in the menu
   });
 
   const unseat = document.getElementById('ad-site-unseat');
@@ -2113,15 +2055,9 @@ function wireSitePanel() {
 
 /* =========================================================================
    EVENTS
-
-   Every event the site has run or is about to. One of them is the active
-   one, and everything else in here - the dashboard, the lists, the map -
-   is about whichever that is.
-
-   Opening and closing vendor signup lives here too, because it is a
-   property of the event. Closing one stops new bookings at the point that
-   matters: holdSite refuses to give out a site unless the event is open,
-   so it is not just a hidden button.
+   Every event the site has run or will run; everything else in admin is
+   about the active one. Signup open / closed lives here too - holdSite
+   refuses a site unless the event is open.
    ========================================================================= */
 
 /*  What the desk calls each status. The vendor signup page has its own
@@ -2450,39 +2386,22 @@ function wireEventForm() {
 
 /* =========================================================================
    SETTINGS
-
-   The two things the old /soundzgoodadminlogin page could do that nothing
-   else in here could: category limits, and laying out an event's ground.
-   Both are per-event and both are rare - you set them up once and mostly
-   leave them - so they live together away from the daily work.
+   Category limits and laying out an event's ground - per event, rarely
+   changed, so kept apart from the daily work.
    ========================================================================= */
 /* -------------------------------------------------------------------------
    ENTERTAINMENT - DJ BOOKINGS
-
-   Who is playing where, on a month at a glance, with the roster underneath
-   it.
-
-   WHAT IS REAL HERE
-   Every control on this page does something. There is no Send Details
-   button, because the mail path is still not working and a button that
-   silently does nothing is worse than no button; no Create Poster, because
-   there is nothing behind it. When either becomes true they go in.
+   Who is playing where, a month at a glance, with the roster underneath.
 
    WHERE IT IS KEPT
-     talent/{slug}                  an act. See the note on the roster
-                                    panel below for how it merges with the
-                                    built-in list in js/roster.js.
-     talentSchedule/{date__slug}    one booking. The id is made from the
-                                    two, so booking the same act on the
-                                    same night twice edits rather than
-                                    duplicates, while two different acts on
-                                    one night are still two bookings.
+     talent/{slug}                  an act (merged with js/roster.js)
+     talentSchedule/{date__slug}    one booking. Same act + same night =
+                                    same id, so it edits, not duplicates.
 
-   The events page reads the same schedule for its Friday Nights cards, so
-   a booking made here is on the site within the minute.
+   The events page reads the same schedule for its Friday Nights cards.
    ------------------------------------------------------------------------- */
 /* =========================================================================
-   ENTERTAINMENT  (overhaul, Max, 21 Oct 2026)
+   ENTERTAINMENT
    Two tabs that look and work like Crew & Vehicles:
      GIGS  calendar on the left, the list on the right, "+ New booking" and
            every gig open in the side panel - with its status trail
@@ -2505,7 +2424,7 @@ VIEWS.entertainment = {
     const picked = state.bookingOpen ? (state.schedule || []).find((x) => x.id === state.bookingOpen) : null;
     const open = state.entPanel && (state.bookEditing || picked);
     /*  The gig details open where the calendar sits, on the right, and the
-        calendar comes back when they close (Max, 22 Oct 2026).          */
+        calendar comes back when they close.          */
     const side = open ? `
       <aside class="ad-card ent-detail ent-side" aria-label="Gig">
         <button type="button" class="inv-detail-close ent-x" data-ent-close aria-label="Close">&times;</button>
@@ -2542,7 +2461,7 @@ function entHead(tab) {
 
 /* the gig's invoice (made from a template), if it has one */
 const gigInvoice = (b) => (state.quoteDocs || []).find((q) => q.gigBookingId === b.id && q.status !== 'cancelled') || null;
-/*  THE GIG CHECKLIST (Max, 22 Oct 2026): Enquiry > DJ confirmed > Quote
+/*  THE GIG CHECKLIST: Enquiry > DJ confirmed > Quote
     accepted > Deposit > Set times in > Invoice sent > Paid. Every step is
     read from the booking and its quote - nothing to tick by hand.      */
 function gigTrail(b) {
@@ -2578,10 +2497,10 @@ function gigsMainHtml(side) {
   const twoWeeksAgo = isoDay(new Date(Date.now() - 14 * 86400000));
   const timesDue = all.filter((b) => b.date < today && b.date >= twoWeeksAgo && !b.timesConfirmedAt && b.templateId);
   const shown = filteredBookings();
-  /*  NIGHTS WITH NO DJ (Max, 21 Oct 2026): every Grand View Friday in the next
+  /*  NIGHTS WITH NO DJ: every Grand View Friday in the next
       8 weeks with nobody booked shows in the list (and on the calendar) with a
       "Book a DJ" button - same rule as the dashboard.                      */
-  const loading = !state.scheduleLoaded;   // bookings not in yet (Max, 23 Oct 2026)
+  const loading = !state.scheduleLoaded;   // bookings not in yet
   const openNights = loading ? [] : openRegularNights(all, null, 56);
   const showOpen = !String(state.bookFilter.text || '').trim() && ['upcoming', 'all', 'grandview', 'grand-view'].includes(state.bookFilter.tab || 'upcoming');
   const rowsAll = shown.map((b) => ({ kind: 'gig', date: b.date, b }))
@@ -2689,9 +2608,9 @@ function djMainHtml() {
         ${regularNightsPanel()}
       </div>`;
 }
-/*  LOCATION IS A PICK LIST (Max, 22 Oct 2026) - no more "Macjay". The towns
-    come from the DJ travel fees table (plus Bowen); add a town there to get
-    it here. A saved town that isn't in the list shows "(check spelling)". */
+/*  LOCATION IS A PICK LIST. The towns come from the DJ travel fees table
+    (plus Bowen); add a town there to get it here. A saved town that isn't
+    in the list shows "(check spelling)". */
 function djTownOptions(current) {
   const towns = new Set(['Bowen']);
   (state.travelFees || []).forEach((f) => { if (f.from) towns.add(String(f.from).trim()); if (f.to) towns.add(String(f.to).trim()); });
@@ -2703,10 +2622,10 @@ function djTownOptions(current) {
     + list.map((t) => '<option value="' + attr(t) + '"' + (t.toLowerCase() === cur.toLowerCase() ? ' selected' : '') + '>' + esc(t) + '</option>').join('');
 }
 
-/*  MUSIC STYLES - shown as tags on the DJ's gig quotes instead of a bio (Max, 22 Oct 2026) */
-const DJ_STYLES = ['Open Format', 'Top 40 / Commercial', 'House', 'Throwbacks', 'RnB & Hip Hop', 'Hip-Hop', 'R&B', 'Latin', 'Reggaeton', 'Baile Funk', 'Moombahton', 'Dancehall', 'Country', 'Rock', 'Drum & Bass', 'Requests welcome'];   // + Latin / Caribbean styles (Max, 23 Oct 2026)
+/*  MUSIC STYLES - shown as tags on the DJ's gig quotes instead of a bio */
+const DJ_STYLES = ['Open Format', 'Top 40 / Commercial', 'House', 'Throwbacks', 'RnB & Hip Hop', 'Hip-Hop', 'R&B', 'Latin', 'Reggaeton', 'Baile Funk', 'Moombahton', 'Dancehall', 'Country', 'Rock', 'Drum & Bass', 'Requests welcome'];   // + Latin / Caribbean styles
 
-/*  What a DJ plays, for their public card (Max, 23 Oct 2026) - the ticked
+/*  What a DJ plays, for their public card - the ticked
     music styles minus "Requests welcome", which isn't a style.        */
 const publicStyles = (list) => (Array.isArray(list) ? list : []).filter((x) => x && x !== 'Requests welcome').slice(0, 16);
 
@@ -2765,7 +2684,7 @@ function wireEntPage() {
   const ds = document.getElementById('dj-search');
   if (ds) ds.addEventListener('input', () => { state.djSearch = ds.value; const pos = ds.selectionStart; render(); const n = document.getElementById('dj-search'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } });
   desk.querySelectorAll('[data-dj-open]').forEach((r) => r.addEventListener('click', () => { state.openDj = r.getAttribute('data-dj-open'); render(); }));
-  // UPDATE QUOTE (Max, 22 Oct 2026): rebuild this gig's quote with the DJ's current rate / location
+  // UPDATE QUOTE: rebuild this gig's quote with the DJ's current rate / location
   desk.querySelectorAll('[data-gig-resync]').forEach((b) => b.addEventListener('click', async () => {
     b.disabled = true; b.textContent = 'Updating…';
     const notes = await gigSyncBookings([b.getAttribute('data-gig-resync')]);
@@ -2805,7 +2724,7 @@ function wireEntPage() {
         onRequest: !!(document.getElementById('dj-f-onreq') || {}).checked, updatedAt: Date.now(),
       }, { merge: true });
       await Promise.all([loadTalent(), loadPubSettings()]);
-      // their upcoming gig quotes pick up the new rate / location straight away (Max, 22 Oct 2026)
+      // their upcoming gig quotes pick up the new rate / location straight away
       const today = isoDay(new Date());
       const ids = (state.schedule || []).filter((b) => b.slug === slug && b.date >= today && b.templateId).map((b) => b.id);
       if (ids.length) { const notes = await gigSyncBookings(ids); if (notes.length) window.alert(notes.join('\n\n')); }
@@ -2915,11 +2834,11 @@ function bookingPanel(b) {
         </label>
 
         ${(() => {
-          // DJ GIG INVOICE (Max, 21 Oct 2026): who it's billed to + which template it copies
+          // DJ GIG INVOICE: who it's billed to + which template it copies
           const tpls = (state.quoteDocs || []).filter((q) => q.isTemplate && q.status !== 'cancelled');
           const custs = (state.customers || []).slice().sort((a, b) => String(a.business || a.name || '').localeCompare(String(b.business || b.name || '')));
           const lastAtVenue = (state.schedule || []).filter((x) => x.customerId && samePub(x.venue, draft.venue || 'Grand View Hotel, Bowen')).sort((a, b) => String(b.date).localeCompare(String(a.date)))[0] || {};
-          const venRec = venueRecord(draft.venue || 'Grand View Hotel, Bowen') || {};   // set on the Venues tab (Max, 22 Oct 2026)
+          const venRec = venueRecord(draft.venue || 'Grand View Hotel, Bowen') || {};   // set on the Venues tab
           const custSel = draft.customerId != null ? draft.customerId : (draft.id ? '' : (venRec.customerId || lastAtVenue.customerId || ''));
           const tplSel = draft.templateId != null ? draft.templateId : (draft.id ? '' : (venRec.templateId || lastAtVenue.templateId || (tpls.length === 1 ? tpls[0].id : '')));
           return `
@@ -3036,7 +2955,7 @@ function bookingPanel(b) {
             ${(() => {
               const inv = (state.quoteDocs || []).find((q) => q.gigBookingId === b.id && q.status !== 'cancelled');
               const dk = ((state.actRates || {})[b.slug] || {}).deck;
-              // no invoice yet? say what's missing (Max, 21 Oct 2026)
+              // no invoice yet? say what's missing
               const missing = [!b.customerId && 'Invoice to', !b.templateId && 'Template', (b.status || 'confirmed') !== 'confirmed' && 'Confirmed status'].filter(Boolean);
               const noInv = !inv && missing.length ? '<p class="ent-noinv">&#9888; No invoice yet - press <b>Edit</b> and set ' + missing.join(' + ') + ', then Save.</p>' : '';
               return `${noInv}${dk ? '<p class="ent-deck">&#127911; Their deck: <b>' + esc(dk) + '</b></p>' : ''}${b.djConfirmedAt
@@ -3053,10 +2972,10 @@ function bookingPanel(b) {
     </section>`;
 }
 
-/*  REGULAR NIGHTS (Max, 21 Oct 2026): pub + night + usual times. Booking a DJ
+/*  REGULAR NIGHTS: pub + night + usual times. Booking a DJ
     there makes that night's invoice; nights with nobody booked are flagged
     on the dashboard.                                                      */
-/*  DJ BOOKING FEE (Max, 22 Oct 2026): its own line on every DJ booking
+/*  DJ BOOKING FEE: its own line on every DJ booking
     quote - a fixed $ or a % of the DJ's performance (not gear or travel).
     Saving it updates upcoming quotes that haven't been sent.          */
 function djFeePanel() {
@@ -3138,7 +3057,7 @@ function regularNightsPanel() {
 
 function wirePubBits() {
   const { doc, setDoc, deleteDoc, addDoc, collection } = fb.f;
-  // DJ booking fee setting (Max, 22 Oct 2026)
+  // DJ booking fee setting
   const feeSave = document.getElementById('dj-fee-save');
   if (feeSave) feeSave.addEventListener('click', async () => {
     const mode = document.getElementById('dj-fee-mode').value === 'percent' ? 'percent' : 'fixed';
@@ -3173,7 +3092,7 @@ function wirePubBits() {
     btn.disabled = true;
     try {
       await setDoc(doc(fb.db, 'actRates', slug), {
-        hourlyRateCents: cents(val('hourly')), location: val('location').slice(0, 80),   // travel is worked out from this (Max, 21 Oct 2026)
+        hourlyRateCents: cents(val('hourly')), location: val('location').slice(0, 80),   // travel is worked out from this
         phone: val('phone').slice(0, 40), email: val('email').toLowerCase().slice(0, 200), updatedAt: Date.now(),
       }, { merge: true });
       await loadPubSettings();
@@ -3247,7 +3166,7 @@ function wirePubBits() {
     if (rn && s && !s.value) s.value = rn.start || '';
     if (rn && f && !f.value) f.value = rn.finish || '';
   });
-  /*  CONFIRM THE DJ BY HAND (Max, 22 Oct 2026) - when they've said yes by
+  /*  CONFIRM THE DJ BY HAND - when they've said yes by
       phone or message instead of tapping their link. Click again to undo. */
   document.querySelectorAll('[data-dj-confirm]').forEach((btn) => btn.addEventListener('click', async () => {
     const id = btn.getAttribute('data-dj-confirm');
@@ -3260,7 +3179,7 @@ function wirePubBits() {
       render();
     } catch (err) { btn.disabled = false; window.alert(friendly(err)); }
   }));
-  /*  TEXT THE DJ THEIR BRIEF (Max, 22 Oct 2026): the gear list link, which
+  /*  TEXT THE DJ THEIR BRIEF: the gear list link, which
       for a DJ gig opens with the brief - set times, notes, venue details. */
   document.querySelectorAll('[data-dj-brief]').forEach((btn) => btn.addEventListener('click', async () => {
     const b = (state.schedule || []).find((x) => x.id === btn.getAttribute('data-dj-brief'));
@@ -3291,9 +3210,8 @@ const ICON = {
   note: '<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>',
 };
 
-/*  The booking, written out for whoever is playing it. mailto rather than
-    a send, because the mail path is not working yet - this opens their own
-    mail app with it all filled in, which needs nothing from us.        */
+/*  The booking, written out for whoever is playing it, as a mailto link
+    that opens their own mail app with it all filled in. */
 function mailtoFor(b, act) {
   const lines = [
     `Act: ${act.name || b.slug}`,
@@ -3379,9 +3297,7 @@ function rosterPanel(acts) {
     ${regularNightsPanel()}`;
 }
 
-/*  The four counts. An icon in a tinted square, the number, then what it
-    counts - read in that order at a glance, which is the only way a row of
-    numbers like this is ever read.                                      */
+/*  The four counts: icon, number, then what it counts. */
 function statTile(label, value, note, tone) {
   return `
     <div class="ad-bstat">
@@ -3400,9 +3316,7 @@ const STAT_ICONS = {
   grey: '<svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19c0-3 2.4-4.8 5.5-4.8s5.5 1.8 5.5 4.8"/><circle cx="17" cy="10" r="2.6"/><path d="M15 19c0-2.2 1.3-3.6 3.2-3.6S21.4 16.8 21.4 19"/></svg>',
 };
 
-/*  A photograph of the venue, where we have one. The pub is the whole
-    point of most of this diary, so the panel leads with it rather than
-    with a line of text saying where it is.                              */
+/*  A photograph of the venue, where we have one. */
 const VENUE_PHOTOS = {
   'grand view': 'images/venues/grand-view-hotel.jpg',
 };
@@ -3416,10 +3330,8 @@ function venuePhoto(venue) {
 /*  The four ways of looking at the diary, as the tabs across the top of
     the table. Venue tabs match loosely, so "Grand View Hotel, Bowen" and
     "Grand View" are the same pub.                                     */
-/*  How many weeks a booking can be laid down in one go. Twenty-six is
-    half a year, which is longer than any pub has ever committed to a
-    residency - and everything laid down is editable one night at a time
-    afterwards, so a long run costs nothing if it changes.             */
+/*  How many weeks a booking can be laid down in one go (half a year).
+    Each night stays editable on its own afterwards. */
 const REPEATS = [
   { weeks: 1, label: 'Just this night' },
   { weeks: 4, label: 'Weekly, 4 weeks' },
@@ -3468,7 +3380,7 @@ function importBanner() {
     </div>`;
 }
 /* =========================================================================
-   VENUES TAB (Max, 22 Oct 2026) - like Crew & Vehicles / the roster: one row
+   VENUES TAB - like Crew & Vehicles / the roster: one row
    per venue, click to edit in the side panel. Each venue can carry who the
    invoice goes to and which template it uses, so booking a DJ there fills
    both in. Removing a venue never touches its bookings.
@@ -3603,14 +3515,14 @@ function wireVenuesTab(desk) {
 }
 
 /*  The tabs: the fixed ones with a tab for each saved venue slotted in
-    before "Other Venues" (Max, 22 Oct 2026).                          */
+    before "Other Venues".                          */
 function bookTabs() {
   const saved = (state.venues || []).filter((v) => !/grand view/i.test(v.name || '')).map((v) => ({ key: 'v:' + v.id, label: v.name }));
   return BOOK_TABS.slice(0, 3).concat(saved, BOOK_TABS.slice(3));
 }
 const venueFull = (v) => v.name + (v.town ? ', ' + v.town : '');
 /*  The booking form's venue pick list: Grand View, the saved venues, and
-    "+ Add a new venue" at the bottom (Max, 22 Oct 2026). An old booking
+    "+ Add a new venue" at the bottom. An old booking
     at a venue that isn't saved keeps it, shown first.                 */
 function venueOptions(current) {
   const list = ['Grand View Hotel, Bowen'].concat((state.venues || []).filter((v) => !/grand view/i.test(v.name || '')).map(venueFull));
@@ -3750,7 +3662,7 @@ function wireEntertainment() {
       const base = {
         slug,
         venue: document.getElementById('ad-f-venue').value.trim(),
-        start: startT, finish: finishT,   // pub invoices work the hours out from these (Max, 21 Oct 2026)
+        start: startT, finish: finishT,   // pub invoices work the hours out from these
         customerId: (document.getElementById('ad-f-cust') || {}).value || '',
         templateId: (document.getElementById('ad-f-tpl') || {}).value || '',
         time: startT && finishT ? ampmT(startT).toUpperCase().replace(/(AM|PM)$/, ' $1') + ' – ' + ampmT(finishT).toUpperCase().replace(/(AM|PM)$/, ' $1')
@@ -3762,7 +3674,7 @@ function wireEntertainment() {
 
       const weeks = parseInt(document.getElementById('ad-f-repeat').value, 10) || 1;
 
-      /*  THE DJ IS HELD (Max, 22 Oct 2026): one DJ, one night. If they're
+      /*  THE DJ IS HELD: one DJ, one night. If they're
           already booked or held that night somewhere else, say so first. */
       {
         const p0 = date.split('-');
@@ -3783,10 +3695,8 @@ function wireEntertainment() {
         const old = state.bookDraft.id;
         const made = [];
 
-        /*  One write per night. A batch would be tidier, but this is at
-            most twenty-six of them once in a while, and doing them one at
-            a time means a failure halfway leaves the nights already
-            written standing rather than rolling the lot back.        */
+        /*  One write per night (not a batch), so a failure halfway keeps the
+            nights already written. */
         const p = date.split('-');
         for (let i = 0; i < weeks; i++) {
           const night = isoDay(new Date(+p[0], +p[1] - 1, +p[2] + (i * 7)));
@@ -3796,7 +3706,7 @@ function wireEntertainment() {
             ...base,
             date: night,
             updatedAt: fb.f.serverTimestamp(),
-          }, { merge: true });   // keeps DJ confirmed / times / links when a booking is edited (Max, 22 Oct 2026)
+          }, { merge: true });   // keeps DJ confirmed / times / links when a booking is edited
           made.push({ id, date: night });
         }
 
@@ -3807,7 +3717,7 @@ function wireEntertainment() {
           await fb.f.deleteDoc(fb.f.doc(fb.db, 'talentSchedule', old));
         }
         // the pub's invoice for each of those nights (and the night it moved from)
-        for (const m of made) call('adminDjBooked', { bookingId: m.id }).catch(() => {});   // "you're booked - please confirm" (Max, 21 Oct 2026)
+        for (const m of made) call('adminDjBooked', { bookingId: m.id }).catch(() => {});   // "you're booked - please confirm"
         const pubNotes = await gigSyncBookings(made.map((m) => m.id).concat(oldB && !made.some((m) => m.id === oldB.id) ? [oldB.id] : []));
         if (pubNotes.length) window.alert(pubNotes.join('\n\n'));
         await loadSchedule();
@@ -4153,9 +4063,8 @@ VIEWS.settings = {
       });
     });
 
-    /*  The gig guide run. Slow enough that the button has to say so - a
-        cold run is five minutes, and a button that looks stuck for five
-        minutes gets pressed again.                                      */
+    /*  A cold gig guide run takes about five minutes, so the button says so
+        rather than looking stuck. */
     const sync = document.getElementById('ad-sync-gigs');
     if (sync) {
       sync.addEventListener('click', async () => {
@@ -4213,16 +4122,13 @@ VIEWS.settings = {
 };
 
 
-/*  Handy when something looks wrong in here: __sgAdmin.state shows exactly
-    what the page thinks it has, and render() redraws from it. Everything it
-    touches is already on screen for a signed in admin, so it gives away
-    nothing that was not visible anyway. */
+/*  Debug helper: __sgAdmin.state shows what the page holds, render()
+    redraws. Exposes nothing a signed-in admin can't already see. */
 window.__sgAdmin = { state, VIEWS, call, render };
 
 /* =========================================================================
-   MESSAGES (Max, 19 Oct 2026) - replaced the old Vendor Email Template page.
-   The page itself lives in js/messages.js; the view key stays 'vendorEmail'
-   so old links still land here.
+   MESSAGES - the page lives in js/messages.js. The view key stays
+   'vendorEmail' so old links still land here.
    ========================================================================= */
 function msgCtx() { return { state, h: { esc, attr }, call, render, loadLog, sponsors: sponsorStore }; }
 /*  Sponsors tab: the list of businesses to ask (admins write it directly). */
@@ -4249,7 +4155,7 @@ async function loadLog() {
   snap.forEach((d) => out.push({ id: d.id, ...d.data() }));
   return out;
 }
-/*  DASHBOARD (Max, 20 Oct 2026) - the look lives in js/dashboard.js.
+/*  DASHBOARD - the look lives in js/dashboard.js.
     The email log is not live (it's 150 docs), so it is read once when the
     dashboard opens, for the "emails that failed" to-do.                   */
 let dashLog = null;
@@ -4294,7 +4200,7 @@ function openCrewPicker(jobId) {
   });
 }
 
-/*  EVENT-DAY WEATHER (Max, 20 Oct 2026): rain and wind for each job in the
+/*  EVENT-DAY WEATHER: rain and wind for each job in the
     next 30 days, from Open-Meteo (free, no account, no key). Only the town
     and the date are sent - never a customer's details. Forecasts reach ~16
     days ahead; further out the job just says when the forecast will show.
@@ -4308,7 +4214,7 @@ async function geocode(place) {
   try {
     const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?count=10&country_code=AU&name=' + encodeURIComponent(place));
     const d = await r.json();
-    // only somewhere within ~250 km of Bowen - "Grand View" matched a cold town down south (Max, 21 Oct 2026)
+    // only somewhere within ~250 km of Bowen, so a same-named town elsewhere isn't picked
     const near = (x) => Math.hypot(x.latitude + 20.01, (x.longitude - 148.25) * 0.94) < 2.3;
     const hit = d && d.results && d.results.find(near);
     if (hit) geoCache[key] = { lat: hit.latitude, lon: hit.longitude };
@@ -4368,12 +4274,12 @@ VIEWS.dashboard = {
   },
   wire() {
     const desk = document.getElementById('ad-desk');
-    // PUB INVOICES (Max, 21 Oct 2026): send with Max's OK; text the DJ their times link
+    // PUB INVOICES: send with Max's OK; text the DJ their times link
     desk.querySelectorAll('[data-pub-send]').forEach((b) => b.addEventListener('click', () => sendPubInvoice(b.getAttribute('data-pub-send'))));
     desk.querySelectorAll('[data-pub-times]').forEach((b) => b.addEventListener('click', () => textDjTimes(b.getAttribute('data-pub-times'))));
-    // ASSIGN CREW (Max, 21 Oct 2026): tick who's working, they get emailed
+    // ASSIGN CREW: tick who's working, they get emailed
     desk.querySelectorAll('[data-crew]').forEach((b) => b.addEventListener('click', () => openCrewPicker(b.getAttribute('data-crew'))));
-    // copy a share link (waitlist / vendor signup) - Max, 21 Oct 2026
+    // copy a share link (waitlist / vendor signup)
     desk.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
       const url = b.getAttribute('data-copy');
       try { await navigator.clipboard.writeText(url); const old = b.textContent; b.textContent = 'Copied!'; setTimeout(() => { b.textContent = old; }, 1500); }
@@ -4413,17 +4319,12 @@ function cssEsc(v) {
 /* =========================================================================
    INVENTORY  -  the equipment manager
 
-   Max's gear as a proper inventory: a table with thumbnails, category and
-   status pills, quantities and hire pricing, plus a detail panel on the
-   right for editing one item at a time. It is the source of truth - the
-   bot's extras and their prices come from the items flagged "Available for
-   quotes" here.
+   A table with thumbnails, category and status pills, quantities and hire
+   pricing, plus a detail panel for editing one item. It is the source of
+   truth - the bot's extras and prices come from items flagged "Available
+   for quotes". Quantities and status are set by hand.
 
-   CORE FIRST: photos, a per-item history and booking-driven availability are
-   deliberately left out for now; quantities and status are set by hand.
-
-   Items live in the `inventory` collection (rules allow admin writes), one
-   document each, saved on their own when you press Save Changes.
+   Items live in the `inventory` collection, one document each.
    ========================================================================= */
 
 /*  The real gear, live from Firestore (empty until it arrives). */
@@ -4549,8 +4450,8 @@ function invStatusPill(status) {
   return `<span class="inv-pill ${cls}">${esc(label)}</span>`;
 }
 
-/*  A little thumbnail stand-in until real photos land: a tinted tile with
-    the category's first letter.                                           */
+/*  A thumbnail stand-in when there is no photo: a tinted tile with the
+    category's first letter. */
 function invThumb(it) {
   if (it.photoUrl) {
     return `<span class="inv-thumb inv-thumb-img"><img src="${attr(it.photoUrl)}" alt="" loading="lazy"></span>`;
@@ -4600,7 +4501,7 @@ function invFiltered() {
   });
 }
 
-const INV_PER_PAGE = 50;   // the list scrolls inside the screen now, so more fit per page
+const INV_PER_PAGE = 50;   // the list scrolls inside the screen, so more fit per page
 
 /* -------------------------------------------------------------------------
    The view
@@ -4720,8 +4621,8 @@ const INV_NUM_KEYS = ['quantityTotal', 'quantityAvailable', 'priceCents', 'extra
 /*  Apply the chosen column sort. No sort chosen -> leave the default order
     (category, then name) the list already comes in.                        */
 function invSorted(list) {
-  // SYSTEMS FIRST, A-Z (Max, 17 Oct 2026), then the rest as chosen below
-  // PACKAGES first, then KITS, each A-Z, then single items (Max, 17 Oct 2026)
+  // SYSTEMS FIRST, A-Z, then the rest as chosen below
+  // PACKAGES first, then KITS, each A-Z, then single items
   const az = (a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true, sensitivity: 'base' });
   const pkgs = list.filter((it) => it.isSystem && it.bundleType === 'package').sort(az);
   const kits = list.filter((it) => it.isSystem && it.bundleType !== 'package').sort(az);
@@ -4780,9 +4681,8 @@ function botEventTypes() {
   return [...set].sort((a, b) => a.localeCompare(b));
 }
 
-/*  The old "Packages" section (website bot) - moved into Inventory as real
-    packages, one click (Max, 17 Oct 2026). The old record is kept, marked
-    moved and switched off, so the bot uses the new one.                   */
+/*  Moves an old website-bot "Packages" record into Inventory as a real
+    package. The old record is kept, marked moved and switched off. */
 function oldBotPackages() {
   return (state.packages || []).filter((p) => !p.migratedTo && Array.isArray(p.items) && p.items.length);
 }
@@ -4847,7 +4747,7 @@ async function saveSystem(data) {
   }
 }
 
-/*  STOCK FOR CHOSEN DATES (Max, 16 Oct 2026): booked jobs (deposit in) count
+/*  STOCK FOR CHOSEN DATES: booked jobs (deposit in) count
     against stock; quoted / accepted-but-unpaid jobs show as "pencilled".   */
 function todayIso() {
   const d = new Date();
@@ -5137,7 +5037,7 @@ function wireInventory() {
     clearPendingPhoto(); initInvReqDraft(null); state.openSysId = null; state.openInvId = '__new__'; render();
   });
 
-  // one-off: shrink + rename the photos already uploaded (Max, 27 Oct 2026)
+  // one-off: shrink + rename the photos already uploaded
   const shrinkBtn = document.getElementById('inv-shrink');
   if (shrinkBtn) shrinkBtn.addEventListener('click', async () => {
     if (!window.confirm('Shrink every inventory photo and name it after the product?\n\nThe old big files are kept for now, so nothing breaks.')) return;
@@ -5258,7 +5158,7 @@ function wireInvDetail() {
 }
 
 /*  The photo box (pick / drag / paste) - used by the item panel AND the
-    System builder, so both work the same way (Max, 17 Oct 2026).        */
+    System builder, so both work the same way.        */
 function wireInvPhoto() {
   const photoInput = document.getElementById('inv-photo-input');
   if (photoInput) {
@@ -5340,7 +5240,7 @@ function onRemovePhoto() {
 /*  Push one image to Storage under inventory/<id> and record its URL on the
     doc. Shared by the immediate upload (saved item) and the save-time upload
     of a photo added to a brand-new item.                                   */
-/*  PHOTO SIZE + NAME (Max, 27 Oct 2026): photos are shrunk to 800px WebP in
+/*  PHOTO SIZE + NAME: photos are shrunk to 800px WebP in
     the browser before upload (a 700KB PNG becomes ~40KB) and saved under the
     product's name, e.g. inventory/allen-heath-ab168-14w97n8h.webp.        */
 const photoSlug = (name, id) => (String(name || 'item').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'item') + '-' + String(id).slice(0, 8);
@@ -5599,10 +5499,9 @@ function reqRowHtml(r, i, options) {
     </div>`;
 }
 
-/*  Items added or renamed while a panel is open (e.g. new stage legs) show
-    up in the "Required item" dropdowns straight away. Only the option list
-    is swapped - each dropdown keeps its choice, and nothing typed in the
-    panel is touched. (Max, 15 Oct 2026: legs were missing until reopened.) */
+/*  Items added or renamed while a panel is open show up in the "Required
+    item" dropdowns straight away. Only the option list is swapped - each
+    dropdown keeps its choice, and nothing typed in the panel is touched. */
 function refreshInvReqOptions() {
   const options = invReqOptions(state.openInvId);
   document.querySelectorAll('#inv-reqs-list .inv-req').forEach((row) => {
@@ -5797,13 +5696,13 @@ function wireInvReqs() {
    save, email the link, accept, invoice and mark paid.
    ========================================================================= */
 
-/*  EVENT TYPE (Max, 16 Oct 2026) - picks the photo at the top of the
+/*  EVENT TYPE - picks the photo at the top of the
     customer's quote page (the Services page photos). Guessed from the
     event name until it's set by hand.                                    */
 const EVENT_TYPES = {
   community: 'Community event', corporate: 'Corporate function', festival: 'Festival / concert',
   wedding: 'Wedding', private: 'Private party', sporting: 'Sporting event', touring: 'Touring band / gig',
-  dj: 'DJ / Entertainment',   // pub nights + DJ gigs (Max, 22 Oct 2026)
+  dj: 'DJ / Entertainment',   // pub nights + DJ gigs
 };
 function guessEventType(name) {
   const n = String(name || '').toLowerCase();
@@ -5826,9 +5725,9 @@ function blankQuote() {
     discountCents: 0,
     labourExcluded: false,     // setup & pack-down labour is on by default (delivered jobs)
     labourPH: { setup: false, pack: false },   // "public holiday" ticks for setup / pack-down day
-    labourOff: { setup: false, pack: false },  // untick setup or pack-down on its own (Max, 17 Oct 2026)
+    labourOff: { setup: false, pack: false },  // untick setup or pack-down on its own
     labourPackDate: '',                        // pack-down on a different day from the last hire day
-    feeExcluded: false,        // 2% booking & admin fee is on by default (Max, 16 Oct 2026)
+    feeExcluded: false,        // 2% booking & admin fee is on by default
     deliveryTown: '',          // '' = pickup / no delivery
     deliveryKm: 0,             // one-way road km from Bowen
     notes: '',
@@ -5847,7 +5746,7 @@ const DELIVERY_ZONES = [
   { town: 'Proserpine', km: 64 },
   { town: 'Home Hill', km: 79 },
   { town: 'Cannonvale', km: 84 },
-  { town: 'Cape Gloucester Resort', km: 85 },   // by road (Max, 20 Oct 2026)
+  { town: 'Cape Gloucester Resort', km: 85 },   // by road
   { town: 'Collinsville', km: 86 },
   { town: 'Scottville', km: 88 },
   { town: 'Airlie Beach', km: 88 },
@@ -5880,14 +5779,14 @@ function quoteDeliveryCents(d) {
 }
 
 /* =========================================================================
-   LABOUR RATES (Max, 15 Oct 2026) - KEEP IN STEP with functions/lib/labour.js
+   LABOUR RATES - KEEP IN STEP with functions/lib/labour.js
    $80/hr. Saturday x1.25, Sunday x1.5, public holiday x1.5. Setup is charged
    on the first hire day, pack-down (50% of setup) on the last, each at its
    own day's rate; each part minimum 1 hr, then up to the half hour.
    Setup time is the man-minute figure on each inventory item.
    ========================================================================= */
-const LABOUR_RATE_CENTS = 8000;   // $80 / hour (Max, 20 Oct 2026 - was $75)
-const PACKDOWN_PCT = 0.5;   // pack-down = 50% of setup time (Max, 15 Oct 2026)
+const LABOUR_RATE_CENTS = 8000;   // $80 / hour
+const PACKDOWN_PCT = 0.5;   // pack-down = 50% of setup time
 const LOADING = { saturday: 1.25, sunday: 1.5, holiday: 1.5 };
 
 const QLD_PUBLIC_HOLIDAYS = {
@@ -6009,7 +5908,7 @@ function quoteLabour(d) {
 let quoteDraft = blankQuote();
 
 const QDOC_STATUS = {
-  // SALES PIPELINE: Estimate -> Quote -> Invoice -> Paid (Max, 16 Oct 2026)
+  // SALES PIPELINE: Estimate -> Quote -> Invoice -> Paid
   draft:     ['ad-pill-grey',  'Estimate'],
   approved:  ['ad-pill-blue',  'Quote - not sent'],
   sent:      ['ad-pill-blue',  'Quote sent'],
@@ -6024,7 +5923,7 @@ function qdocPill(s) { const [c, l] = QDOC_STATUS[s] || QDOC_STATUS.draft; retur
 /*  Totals - mirror of quoteMoney() in functions/index.js. Prices ex-GST,
     discounts off the net, GST 10% on top.                                 */
 const BOOKING_FEE_PCT = 2;
-/*  PERFORMER SUPER (Max, 22 Oct 2026): 12% of the DJ's performance fee, its
+/*  PERFORMER SUPER: 12% of the DJ's performance fee, its
     own line with an on/off tick. Performance = the DJ performance line (or
     a template's DJ / Entertainer fill-in). Not counted in the 2% fee.      */
 const SUPER_PCT = 12;
@@ -6043,8 +5942,8 @@ function quoteDraftMoney(d) {
   const labourCents = d.labourExcluded === true ? 0 : quoteLabour(d).cents;
   const deliveryCents = quoteDeliveryCents(d);
   const beforeFee = Math.max(0, subtotal + labourCents + deliveryCents - discount);
-  // BOOKING & ADMIN FEE: 2% of everything before GST, on every quote (Max, 16 Oct 2026)
-  // rounded to the nearest $10 so it reads cleanly (Max, 17 Oct 2026)
+  // BOOKING & ADMIN FEE: 2% of everything before GST, on every quote
+  // rounded to the nearest $10 so it reads cleanly
   const feeCents = d.feeExcluded === true ? 0 : Math.round(beforeFee * BOOKING_FEE_PCT / 100 / 1000) * 1000;
   const perfCents = (d.lines || []).filter((l) => !l.superLine && isPerfLine(l)).reduce((n, l) => n + quoteLineCents(l, docDays), 0);
   const superCents = d.superExcluded === true ? 0 : Math.round(perfCents * SUPER_PCT / 100);
@@ -6058,7 +5957,7 @@ function quoteDraftMoney(d) {
     Discounts are handled once against the whole total, not per line.     */
 function quoteLineCents(l, docDays) {
   if (l.type === 'discount') return -Math.max(0, Math.round(l.amountCents || 0));
-  const qty = Math.max(0, (l.perf ? Math.round(Number(l.qty || 0) * 4) / 4 : Math.round(Number(l.qty) || 0)));   // DJ hours can be 4.5 (Max, 23 Oct 2026)
+  const qty = Math.max(0, (l.perf ? Math.round(Number(l.qty || 0) * 4) / 4 : Math.round(Number(l.qty) || 0)));   // DJ hours can be 4.5
   const unit = Math.max(0, Math.round(l.unitCents || 0));
   const days = Math.max(1, Math.round(l.days || docDays || 1));
   return Math.round(qty * unit * days);
@@ -6072,14 +5971,14 @@ VIEWS.quoteDocs = {
 /* -------------------------------------------------------------------------
    List
    ------------------------------------------------------------------------- */
-/*  SALES PIPELINE - the list of every job (Max's mock-up, 16 Oct 2026).
+/*  SALES PIPELINE - the list of every job.
     The look and the filtering live in js/sales-pipeline.js; this just hands
     it the live quotes and opens a job when a row is clicked.               */
 const spHelpers = { esc, attr, money };
 
-/*  Paid vendor bookings shown as rows in the Sales Pipeline (Max, 19 Oct
-    2026). They carry vendor:true, so they get their own Vendors tab and
-    open the vendor's invoice page instead of the quote builder.        */
+/*  Paid vendor bookings shown as rows in the Sales Pipeline. They carry
+    vendor:true, so they get their own Vendors tab and open the vendor's
+    invoice page instead of the quote builder. */
 function vendorInvoiceJobs() {
   const evName = (id) => ((state.events || []).find((e) => e.id === id) || {}).name || 'Event';
   const evISO = (id) => ((state.events || []).find((e) => e.id === id) || {}).dateISO || '';
@@ -6176,7 +6075,7 @@ function wireQuoteList() {
       try { await call('adminSetQuoteStatus', { id, status: 'paid' }); } catch (e) { window.alert(e.message || 'Could not mark paid.'); }
     },
     // a bank-transfer deposit arrived: books the job (becomes an invoice) and unlocks the pick list
-    async confirmjob(id) {   // job goes ahead, customer pays later (Max, 24 Oct 2026)
+    async confirmjob(id) {   // job goes ahead, customer pays later
       const d = findDoc(id);
       if (!window.confirm('Confirm ' + label(d) + ' without payment?\n\nIt becomes an unpaid invoice, the pick list unlocks and goes to the office + crew (and the gear list to the band). Payment reminders still work.')) return;
       try { await call('adminConfirmJob', { id }); } catch (e) { window.alert(e.message || 'Could not confirm the job.'); }
@@ -6194,7 +6093,7 @@ function wireQuoteList() {
     async picklist(id) {
       try { await call('adminPickListLink', { id }); } catch (e) { window.alert(e.message || 'Could not make the pick list.'); }
     },
-    // GEAR LIST to the band / crew - no prices (Max, 20 Oct 2026)
+    // GEAR LIST to the band / crew - no prices
     // TEST: the gear list + pick list emails, to Max only (nothing recorded)
     async geartest(id) {
       try {
@@ -6212,14 +6111,14 @@ function wireQuoteList() {
         window.alert(r.sent ? 'Sent to ' + r.to + '.' : 'It did not send: ' + (r.error || r.reason || ''));
       } catch (e) { window.alert(e.message || 'Could not send.'); }
     },
-    // LATE PAYMENT CHARGE (Max, 20 Oct 2026): 2% of what is still owing - asks first
+    // LATE PAYMENT CHARGE: 2% of what is still owing - asks first
     async latefee(id) {
       const d = findDoc(id);
       const owing = ((d.totalCents || 0) + (d.lateFeeCents || 0) - (d.amountPaidCents || 0));
       if (!window.confirm('Add a 2% late payment charge to ' + label(d) + '?\n\n' + money(Math.round(owing * 0.02)) + ' (2% of the ' + money(owing) + ' still owing).\n\nIt shows on their invoice as a separate line. You can remove it later.')) return;
       try { await call('adminAddLateFee', { id }); } catch (e) { window.alert(e.message || 'Could not add the late fee.'); }
     },
-    async remind(id) { await sendReminder(call, findDoc(id)); },   // payment reminder (Max, 22 Oct 2026)
+    async remind(id) { await sendReminder(call, findDoc(id)); },   // payment reminder
     async unlatefee(id) {
       if (!window.confirm('Remove the last late fee from ' + label(findDoc(id)) + '?')) return;
       try { await call('adminRemoveLateFee', { id }); } catch (e) { window.alert(e.message || 'Could not remove it.'); }
@@ -6286,7 +6185,7 @@ function currentQuoteDoc() {
 }
 
 /*  "Emailed 16 Oct 2026, 3:12 pm to gm@... (2 times)" - or "Not emailed yet".
-    Written by adminSendQuote on every successful send (Max, 16 Oct 2026).   */
+    Written by adminSendQuote on every successful send.   */
 function quoteEmailedLine(doc) {
   const s = secs(doc && doc.lastEmailedAt);
   if (!s) return '&#9993; Not emailed to the customer yet.';
@@ -6298,7 +6197,7 @@ function quoteEmailedLine(doc) {
 function quoteBuilderHtml() {
   const isNew = state.openQuoteId === '__new__';
   const doc = currentQuoteDoc();
-  const status = doc ? doc.status : 'approved';   // a new one Max makes is a quote, not an estimate
+  const status = doc ? doc.status : 'approved';   // a new one made here is a quote, not an estimate
   const isInvoice = doc && doc.kind === 'invoice';
   const docWord = isInvoice ? 'Tax Invoice' : (status === 'draft' ? 'Estimate' : 'Quote');
   const num = doc ? (isInvoice && doc.invoiceNumber ? doc.invoiceNumber : doc.number) : 'New';
@@ -6504,11 +6403,11 @@ function quoteBuilderHtml() {
 
 /*  "2026-10-20" -> "Tue 20 Oct 2026" for the Event date box. */
 let quoteEventDateAuto = '';
-/*  "Tue 20 Oct 2026" -> "2026-10-20", for the event-date calendar (Max, 20 Oct 2026).
-    Older quotes typed without a year come back blank - just pick the date. */
-/*  CC EMAILS AS CHIPS (Max, 20 Oct 2026): type an address, press Enter or a
+/*  "Tue 20 Oct 2026" -> "2026-10-20", for the event-date calendar.
+    A date typed without a year comes back blank - just pick the date. */
+/*  CC EMAILS AS CHIPS: type an address, press Enter or a
     comma, and it becomes a tag; x removes it. Saved as "a@b.com, c@d.com"
-    in customer.ccEmail, the same as before - everyone listed gets a copy. */
+    in customer.ccEmail - everyone listed gets a copy. */
 const CC_RE = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
 function ccList(str) {
   return String(str || '').split(/[,;\s]+/).map((e) => e.trim()).filter(Boolean);
@@ -6537,7 +6436,7 @@ function prettyEventDate(iso) {
   return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).replace(/,/g, '');
 }
 
-/*  INCLUDED / REQUIRED ROWS, GROUPED (Max, 15 Oct 2026)
+/*  INCLUDED / REQUIRED ROWS, GROUPED
     Under each item, its included gear is shown by inventory category as
     small sub-headings - Cable, then Stands... - each A-Z, and sitting
     inside the item (no dividing line).                                  */
@@ -6567,7 +6466,7 @@ function sortKitGroups() {
   }
 }
 
-/*  PACKAGES STAY TOGETHER (Max, 17 Oct 2026). A "unit" is a top line plus the
+/*  PACKAGES STAY TOGETHER. A "unit" is a top line plus the
     included parts under it. Every unit of a package is pulled together where
     the package first appears, with its discount line last - so dragging
     something out of a package, or adding gear in between, can't split it. */
@@ -6620,7 +6519,7 @@ function renderQuoteLines() {
   syncPackageDiscounts();
   const kitCat = kitCategoryOf();
 
-  /*  SHORT ON STOCK? (Max, 16 Oct 2026) For this quote's hire dates: what
+  /*  SHORT ON STOCK? For this quote's hire dates: what
       other BOOKED jobs (deposit in) already have out, against what this
       quote needs. Pencilled jobs are mentioned but don't count.          */
   const stockWarn = (() => {
@@ -6645,7 +6544,7 @@ function renderQuoteLines() {
 
   const rowsHtml = quoteDraft.lines.map((l, i) => {
     if (l.type === 'discount' && l.pkgId) {
-      if (!(l.amountCents > 0) && !l.pkgUnpriced) return '';   // nothing off - no line (Max, 17 Oct 2026)
+      if (!(l.amountCents > 0) && !l.pkgUnpriced) return '';   // nothing off - no line
       return `
         <div class="qb-row qb-row-disc" data-ql="${i}" data-top>
           <div class="qb-cell qb-c-grip"><span class="qb-grip" title="Drag to reorder">&#10303;</span></div>
@@ -6753,20 +6652,20 @@ function renderQuoteLines() {
 }
 
 
-/*  COST BREAKDOWN GROUPS (Max, 15 Oct 2026) - KEEP IN STEP between
+/*  COST BREAKDOWN GROUPS - KEEP IN STEP between
     js/quote-view.js and js/admin-app.js. Inventory category -> group shown
     in the totals ("Audio $180, Staging $180, Lighting $60").            */
 const COST_GROUP = {
   audio: 'Audio', mixer: 'Audio', amp: 'Audio', microphone: 'Audio', iem: 'Audio', di: 'Audio',
   'studio monitor': 'Audio', cable: 'Audio', stands: 'Audio',
-  speaker: 'Audio', speakers: 'Audio', 'mic kit': 'Backline', drum: 'Backline', drums: 'Backline',   // Max's Inventory names (17 Oct 2026)
+  speaker: 'Audio', speakers: 'Audio', 'mic kit': 'Backline', drum: 'Backline', drums: 'Backline',   // Max's Inventory names
   lighting: 'Lighting', truss: 'Lighting',
   stage: 'Staging', furniture: 'Staging',
-  backline: 'Backline', 'dj mixer': 'DJ equipment', vision: 'Vision', power: 'Audio',   // power & cables count as Audio (Max, 17 Oct 2026)
+  backline: 'Backline', 'dj mixer': 'DJ equipment', vision: 'Vision', power: 'Audio',   // power & cables count as Audio
 };
-const COST_GROUP_ORDER = ['Audio', 'Backline', 'Lighting', 'Staging', 'DJ equipment', 'Vision', 'Other'];   // Max's order, 17 Oct 2026
+const COST_GROUP_ORDER = ['Audio', 'Backline', 'Lighting', 'Staging', 'DJ equipment', 'Vision', 'Other'];   // Max's order
 function costGroupOf(category) {
-  // gear in a category we don't know yet counts as Audio, not "Other" (Max, 17 Oct 2026)
+  // gear in a category we don't know yet counts as Audio, not "Other"
   return COST_GROUP[String(category || '').trim().toLowerCase()] || 'Audio';
 }
 /*  [{ name, cents }] in the order above, only groups with a cost. */
@@ -6806,11 +6705,11 @@ function renderQuoteTotals() {
         ${off[p.key] ? '' : `<label class="qb-labph"><input type="checkbox" data-qlabph="${p.key}"${ph[p.key] ? ' checked' : ''}> Public holiday</label>`}</span>
       <span>${off[p.key] ? 'off' : esc(money(p.cents))}</span>
     </div>`).join('')}` : '';
-  // crew & vehicles from Crew & Vehicles, totted up on their own (Max, 17 Oct 2026)
+  // crew & vehicles, totted up on their own
   const crewDays = Math.max(1, Math.round(quoteDraft.hire.days || 1));
   const crewSum = (t) => (quoteDraft.lines || []).filter((l) => l.resType === t).reduce((n, l) => n + quoteLineCents(l, crewDays), 0);
   const delCents = quoteDeliveryCents(quoteDraft);
-  // "Bowen (local)" is free, and says so (Max, 15 Oct 2026)
+  // "Bowen (local)" is free, and says so
   const isLocal = /local/i.test(quoteDraft.deliveryTown || '');
   const deliveryRow = isLocal ? `
     <div class="qb-sumrow">
@@ -6822,13 +6721,13 @@ function renderQuoteTotals() {
         <em class="qb-labnote" style="margin-left:0">Fuel and vehicle running costs · ${quoteDraft.deliveryKm} km each way (${quoteDraft.deliveryKm * 2} km return) @ $0.80/km</em></span>
       <span>${esc(money(delCents))}</span>
     </div>` : '';
-  // 2% booking & admin fee row, with an on/off tick (Max, 16 Oct 2026)
+  // 2% booking & admin fee row, with an on/off tick
   const feeRow = `
     <div class="qb-sumrow">
       <span><label class="qb-labtoggle"><input type="checkbox" data-qfee${quoteDraft.feeExcluded ? '' : ' checked'}> Booking &amp; admin fee</label></span>
       <span class="${quoteDraft.feeExcluded ? 'qb-laboff' : ''}">${quoteDraft.feeExcluded ? 'off' : esc(money(m.feeCents))}</span>
     </div>`;
-  // performer super row, with an on/off tick (Max, 22 Oct 2026)
+  // performer super row, with an on/off tick
   const superRow = m.perfCents > 0 ? `
     <div class="qb-sumrow">
       <span><label class="qb-labtoggle"><input type="checkbox" data-qsuper${quoteDraft.superExcluded ? '' : ' checked'}> Performer super (${SUPER_PCT}%)</label>
@@ -6885,7 +6784,7 @@ function addInvLineToQuote(itemId) {
   renderQuoteLines();
 }
 
-/*  A PACKAGE on a quote is ITEMISED (Max, 17 Oct 2026): each kit and single
+/*  A PACKAGE on a quote is ITEMISED: each kit and single
     item gets its own priced line (kit parts underneath as Included), in
     Max's order, then ONE "package discount" line takes the total down to the
     package price. Every line carries pkgId so the discount can follow along
@@ -6968,7 +6867,7 @@ function syncPackageDiscounts() {
     if (l.type !== 'discount' || !l.pkgId) return;
     const pkg = byId[l.pkgId];
     const base = Math.max(0, Math.round((pkg && pkg.priceCents) || 0)) * days;
-    // operator surcharges go ON TOP of the package price, never swallowed by the discount (Max, 17 Oct 2026)
+    // operator surcharges go ON TOP of the package price, never swallowed by the discount
     const target = base > 0 ? base + (extra[l.pkgId] || 0) : 0;
     l.amountCents = target > 0 ? Math.max(0, (full[l.pkgId] || 0) - target) : 0;
     l.pkgUnpriced = !(base > 0);
@@ -6980,7 +6879,7 @@ function kitLinesFor(itemId, qty, byId, days) {
   if (!qty) return [];
   const kit = expandKit({ [itemId]: qty }, byId);
   // A SYSTEM keeps the parts in the order Max set in the System builder;
-  // anything they bring along (leads, stands) follows, A-Z. (Max, 17 Oct 2026)
+  // anything they bring along (leads, stands) follows, A-Z.
   const parent = byId[itemId];
   const order = {};
   let n = 0;
@@ -6998,7 +6897,7 @@ function kitLinesFor(itemId, qty, byId, days) {
   return kit.required.map((r) => {
     const charged = r.charge === 'normal';
     const line = {
-      type: 'kit', itemId: r.itemId, name: r.name,   // no "(included)" - the Included column says it (Max, 15 Oct 2026)
+      type: 'kit', itemId: r.itemId, name: r.name,   // no "(included)" - the Included column says it
       qty: r.qty, unitCents: charged ? r.unitCents : 0, charge: r.charge,
       days: charged ? days : 1,
     };
@@ -7008,11 +6907,9 @@ function kitLinesFor(itemId, qty, byId, days) {
 }
 
 /*  An item's quantity changed: re-work its included / required lines so
-    3 Stage Decks bring 12 legs, not the 4 worked out when it was added
-    (Max, 15 Oct 2026). Replaces the kit rows directly under that item.  */
-/*  Opening a quote re-works every item's included gear from its current qty,
-    so quotes made before the qty fix (e.g. 3 decks / 4 legs) correct
-    themselves (Max, 15 Oct 2026).                                     */
+    3 Stage Decks bring 12 legs. Replaces the kit rows directly under it. */
+/*  Opening a quote re-works every item's included gear from its current
+    qty, so older quotes correct themselves. */
 function rebuildAllKits() {
   for (let i = 0; i < quoteDraft.lines.length; i++) {
     if (quoteDraft.lines[i].type === 'item') rebuildKitForLine(i);
@@ -7041,8 +6938,7 @@ function invSearchList() {
 }
 
 /* -------------------------------------------------------------------------
-   ONE SEARCH ENGINE for every search box in the admin (Max, 15 Oct 2026 -
-   "Stage Deck" was hidden behind the first three A-Z matches).
+   ONE SEARCH ENGINE for every search box in the admin.
    - Every word you type must appear somewhere, in any order:
      "deck stage" finds "Stage Deck".
    - Best matches first: the name starts with what you typed, then a word in
@@ -7088,7 +6984,7 @@ function searchList(list, term, nameOf, moreOf, limit) {
 let invSearchActive = -1;   // keyboard-highlighted result
 
 /*  Matches for the quote add-search: inventory + active crew/vehicles. */
-/*  THE DJ BOOKING FEE in the add-search (Max, 22 Oct 2026): type "booking",
+/*  THE DJ BOOKING FEE in the add-search: type "booking",
     "fee", "coordination"... and it's there to drop into a template or quote.
     Same name, wording and amount as the setting on Entertainment.        */
 function djFeeItem() {
@@ -7109,7 +7005,7 @@ function quoteSearchMatches(term) {
     state.djFeeLoading = true;
     fb.f.getDocs(fb.f.collection(fb.db, 'djSettings')).then((s) => { state.djFee = {}; s.forEach((d) => { if (d.id === 'fee') state.djFee = d.data(); }); }).catch(() => { state.djFee = {}; });
   }
-  /*  FILL-IN LINES for DJ templates (Max, 22 Oct 2026): the booking swaps
+  /*  FILL-IN LINES for DJ templates: the booking swaps
       them for the real DJ + price, their travel, and the fee.          */
   const fee = djFeeItem();
   const slots = [
@@ -7119,7 +7015,7 @@ function quoteSearchMatches(term) {
   ];
   const feeHit = slots.filter((x) => searchMatch(t, x.name, x.words));
   const hits = searchList(quoteAddSearchList(), t, (it) => it.name, (it) => [it.sub], 8 - feeHit.length);
-  return feeHit.concat(hits.filter((x) => x.bundle === 'package').concat(hits.filter((x) => x.system && x.bundle !== 'package'), hits.filter((x) => !x.system)));   // systems first (Max, 17 Oct 2026)
+  return feeHit.concat(hits.filter((x) => x.bundle === 'package').concat(hits.filter((x) => x.system && x.bundle !== 'package'), hits.filter((x) => !x.system)));   // systems first
 }
 
 function renderInvResults(term) {
@@ -7275,8 +7171,8 @@ function wireQuoteDrag(lines) {
 }
 
 function wireQuoteBuilder() {
-  // BACK TO ALL QUOTES - wired first so nothing below can stop it working, and
-  // it never waits more than 3s on the auto-save (Max couldn't get back, 16 Oct 2026)
+  // BACK TO ALL QUOTES - wired first so nothing below can stop it working,
+  // and it never waits more than 3s on the auto-save
   const back = document.getElementById('q-back');
   if (back) back.addEventListener('click', () => {
     back.disabled = true;
@@ -7349,7 +7245,7 @@ function wireQuoteBuilder() {
   wrap.addEventListener('input', (e) => {
     const t = e.target;
     if (t.dataset.qc) { quoteDraft.customer[t.dataset.qc] = t.value; return; }
-    // event date calendar: saved as "Tue 20 Oct 2026" like before
+    // event date calendar: saved as "Tue 20 Oct 2026"
     if (t.hasAttribute('data-qauto')) { quoteDraft.autoSendOnDetails = t.checked; scheduleQuoteAutosave(); return; }
     if (t.hasAttribute('data-qtpl')) { quoteDraft.isTemplate = t.checked; scheduleQuoteAutosave(); render(); return; }
     if (t.hasAttribute('data-qtplname')) { quoteDraft.templateName = t.value; scheduleQuoteAutosave(); return; }
@@ -7365,7 +7261,7 @@ function wireQuoteBuilder() {
       renderQuoteTotals();
       return;
     }
-    if (t.hasAttribute('data-qsuper')) {   // performer super on / off (Max, 22 Oct 2026)
+    if (t.hasAttribute('data-qsuper')) {   // performer super on / off
       quoteDraft.superExcluded = !t.checked;
       renderQuoteTotals();
       return;
@@ -7412,7 +7308,7 @@ function wireQuoteBuilder() {
       else {
         const oldStart = quoteDraft.hire.startDate;
         quoteDraft.hire[t.dataset.qh] = t.value;
-        // Event date follows the first hire day until you type your own (Max, 15 Oct 2026)
+        // Event date follows the first hire day until you type your own
         if (t.dataset.qh === 'startDate') {
           const cur = String(quoteDraft.customer.eventDate || '').trim();
           if (!cur || cur === quoteEventDateAuto || cur === prettyEventDate(oldStart)) {
@@ -7530,8 +7426,8 @@ function wireQuoteActions() {
     try { await run('adminSetQuoteStatus', { id: state.openQuoteId, status: 'approved' }, 'Approved - now a quote. Hit Send when ready.'); render(); } catch (e) { /* message shown */ }
   });
 
-  // ASK FOR DETAILS (Max, 20 Oct 2026): text the customer a link to fill in their own details
-  // - or email it (Max, 22 Oct 2026). Both open on Max's own phone / mail app; nothing sends by itself.
+  // ASK FOR DETAILS: text or email the customer a link to fill in their own
+  // details. Both open on Max's own phone / mail app; nothing sends by itself.
   const detailsLink = async () => {
     if (!state.openQuoteId || state.openQuoteId === '__new__') {
       if (!String(quoteDraft.customer.name || '').trim()) { window.alert('Type their name first, then press this.'); return null; }
@@ -7547,7 +7443,7 @@ function wireQuoteActions() {
     try {
       const l = await detailsLink();
       if (!l) return;
-      // just the link, ready to paste into an email (Max, 22 Oct 2026)
+      // just the link, ready to paste into an email
       try { await navigator.clipboard.writeText(l.url); const was = askEmail.innerHTML; askEmail.innerHTML = '&#10003; Link copied'; setTimeout(() => { askEmail.innerHTML = was; }, 2500); }
       catch (e) { window.prompt('Copy this link:', l.url); }
     } catch (err) { window.alert(err.message || 'Could not make the link.'); }
@@ -7570,7 +7466,7 @@ function wireQuoteActions() {
     } catch (err) { window.alert(err.message || 'Could not make the link.'); }
   });
 
-  // TEXT THE BAND THE GEAR LIST (Max, 21 Oct 2026): a link to the gear only, no prices
+  // TEXT THE BAND THE GEAR LIST: a link to the gear only, no prices
   const gearBtn = document.getElementById('q-gearlink');
   if (gearBtn) gearBtn.addEventListener('click', async () => {
     try {
@@ -7701,7 +7597,7 @@ function quoteDraftForSave() {
 }
 
 /* -------------------------------------------------------------------------
-   AUTO-SAVE (Max, 15 Oct 2026)
+   AUTO-SAVE
    Quotes and invoices save themselves 1.5 seconds after you stop typing or
    change a line. A brand-new quote waits until it has a customer name or a
    line item, so opening "New quote" and walking away doesn't use a number.
@@ -7714,7 +7610,7 @@ function quoteAutoMsg(text, cls) {
   if (m) { m.textContent = text; m.className = 'qb-auto' + (cls ? ' ' + cls : ''); }
 }
 
-/*  UNDO / REDO ON A QUOTE (Max, 17 Oct 2026). Ctrl+Z steps back, Ctrl+Y (or
+/*  UNDO / REDO ON A QUOTE. Ctrl+Z steps back, Ctrl+Y (or
     Ctrl+Shift+Z) steps forward. Every change to the quote goes through
     scheduleQuoteAutosave, so that is where a snapshot is taken; a burst of
     typing within 0.8s counts as one step. While you're typing in a box the
@@ -7832,7 +7728,7 @@ async function saveQuoteDoc(btn, quiet) {
   if (btn) btn.disabled = true;
   try {
     const id = state.openQuoteId === '__new__' ? null : state.openQuoteId;
-    // no event date picked: it is the first hire day (Max, 20 Oct 2026)
+    // no event date picked: it is the first hire day
     if (!String(quoteDraft.customer.eventDate || '').trim() && quoteDraft.hire && quoteDraft.hire.startDate) {
       quoteDraft.customer.eventDate = prettyEventDate(quoteDraft.hire.startDate);
     }
@@ -7880,8 +7776,7 @@ function daysBetween(a, b) {
    On top sit OPTIONAL EXTRAS the customer can tick on. The price is never
    typed - it is the sum of the items' day rates, run through the kit engine
    so required gear (amps, leads) is included automatically. Change a price
-   once in Inventory and every package follows. Built here for staff; the bot
-   will pick from these in Phase 2.
+   once in Inventory and every package follows.
    ========================================================================= */
 
 function blankPackage() {
@@ -8707,7 +8602,7 @@ function resourceFromDoc(doc) {
   const b = blankResource(doc.type);
   return {
     type: RES_TYPES[doc.type] ? doc.type : 'staff',
-    name: doc.name || '', role: doc.role || '', phone: doc.phone || '', email: doc.email || '',   // keep it on edit (Max, 21 Oct 2026)
+    name: doc.name || '', role: doc.role || '', phone: doc.phone || '', email: doc.email || '',   // keep it on edit
     rego: doc.rego || '', capacity: doc.capacity || '',
     dayRateCents: Math.max(0, Math.round(doc.dayRateCents || 0)),
     active: doc.active !== false,
@@ -8813,7 +8708,7 @@ async function saveResource(btn) {
     name: String(r.name).trim().slice(0, 120),
     role: type === 'staff' ? String(r.role || '').trim().slice(0, 80) : '',
     phone: type === 'staff' ? String(r.phone || '').trim().slice(0, 40) : '',
-    email: type === 'staff' ? String(r.email || '').trim().toLowerCase().slice(0, 200) : '',   // job emails (Max, 21 Oct 2026)
+    email: type === 'staff' ? String(r.email || '').trim().toLowerCase().slice(0, 200) : '',   // job emails
     rego: type !== 'staff' ? String(r.rego || '').trim().slice(0, 40) : '',
     capacity: type !== 'staff' ? String(r.capacity || '').trim().slice(0, 80) : '',
     dayRateCents: Math.max(0, Math.round(r.dayRateCents || 0)),
@@ -8866,7 +8761,7 @@ async function deleteResource(btn) {
 }
 
 /* =========================================================================
-   CUSTOMERS (Max, 15 Oct 2026)
+   CUSTOMERS
 
    One record per customer: name, business, type, address, phone, email and
    notes, plus every quote / invoice that matches them (by email, phone or
@@ -8877,7 +8772,7 @@ async function deleteResource(btn) {
      email or phone).
    - Quote builder: a search box above "Customer name" fills the details in.
      Saving the quote adds a new customer, or updates the picked one with any
-     changed details (Max's choice: update automatically).
+     changed details.
    ========================================================================= */
 const CUST_TYPES = { private: 'Private', business: 'Business', nfp: 'Not-for-profit', council: 'Council', school: 'School', club: 'Club' };
 const CUST_TYPE_PILL = { private: 'inv-st-slate', business: 'inv-st-blue', nfp: 'inv-st-green', council: 'inv-st-green', school: 'inv-st-amber', club: 'inv-st-amber' };
@@ -9566,7 +9461,7 @@ function leadFiltered(ignoreMonth) {
   const kf = state.leadContactFilter || 'all';
   const rf = state.leadRegionFilter || 'all';
   const sf = state.leadSizeFilter || 'all';
-  const ff = 'all';   // Fit filter retired (28 Sep 2026)
+  const ff = 'all';   // Fit filter no longer used
   const chip = state.leadChip || 'all';
   const needle = (state.leadSearch || '').trim().toLowerCase();
   return rows.filter((r) => {
@@ -9775,7 +9670,7 @@ function leadCalendarHtml() {
     if (!k) { undated++; return; }
     const wk = leadWeekKey(r);
     // only leads Max has rated get a dot - imported heat doesn't count
-    // calendar lanes follow Max's sorting (28 Sep 2026): Won / Chase / Maybe (saved) / Skip (passed)
+    // calendar lanes follow Max's sorting: Won / Chase / Maybe (saved) / Skip (passed)
     const p = r.stage === 'won' ? 'won' : r.verdict === 'chase' ? 'high' : r.verdict === 'save' ? 'medium' : r.verdict === 'pass' ? 'low' : '';
     if (p) {
       (byMonth[k] = byMonth[k] || []).push(p);
@@ -9783,7 +9678,7 @@ function leadCalendarHtml() {
     }
     if (wk && r.stage === 'won') wonWeek[wk] = (wonWeek[wk] || 0) + 1;
   });
-  /*  JOBS WON (Max, 21 Oct 2026): every booked job in the Sales Pipeline
+  /*  JOBS WON: every booked job in the Sales Pipeline
       (deposit in or paid) shows on this calendar as won - a gold dot and a
       trophy on its event week. A job already counted through a won lead
       that links to it isn't counted twice.                              */
@@ -10439,7 +10334,7 @@ function leadMainHtml() {
   const cf = state.leadCatFilter;
   const rf = state.leadRegionFilter || 'all';
   const sf = state.leadSizeFilter || 'all';
-  const ff = 'all';   // Fit filter retired
+  const ff = 'all';   // Fit filter no longer used
   const opt = (cur, v, l) => `<option value="${attr(v)}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`;
   const c = leadChipCounts();
   const ch = state.leadChip || 'all';
@@ -10586,7 +10481,7 @@ function leadKm(r) {
     if (re.test(text) && (!best || name.length > best.name.length)) best = { name, km };
   });
   if (best) return best.km;
-  // the imported travel note (e.g. "~0.5 hr / 40 km") only when the town isn't known - it was often wrong
+  // the imported travel note (e.g. "~0.5 hr / 40 km") only when the town isn't known - it is often wrong
   const haul = String(r.haul || '');
   const h = haul.match(/(\d[\d,]*)\s*km/i);
   if (h) return Number(h[1].replace(/,/g, ''));
@@ -10696,7 +10591,7 @@ function leadEventYear(r) {
 }
 /*  The intro SMS: Scout's draft if Max asked for one, otherwise written
     from what the lead holds - the event, the year, what they need.       */
-/*  Intro SMS - trained with Max, 28 Sep 2026:
+/*  Intro SMS rules:
     1. ONE simple question. No either/or, no package upsell, no extra pitch.
     2. Default: "Do you have your entertainment booked for this event?"
        (outdoor community events: "stage, sound and entertainment").
@@ -11777,7 +11672,7 @@ async function deleteLead(btn) {
 }
 
 /* ---- email composer: draft + send, never auto-send ---- */
-/*  Council / civic events: an introduction that lists what we do (Max, 28 Sep 2026). */
+/*  Council / civic events: an introduction that lists what we do. */
 function leadCouncilEmail(r, who, ev) {
   return [
     `Hi ${who === 'there' ? 'there' : who},`,
@@ -11939,7 +11834,7 @@ function rateState() {
   if (!state.rate) state.rate = { tab: 'review', pick: 0, skip: [], back: [], focus: '', busy: false };
   return state.rate;
 }
-/*  Deck order (Max, 28 Sep 2026): dominate our area first.
+/*  Deck order: dominate our area first.
     Distance band first - home turf (<=80 km), regional (80-300), far (300+), unknown -
     then soonest date within each band (an event that has already happened sits
     at its next edition; no date goes to the end of its band).           */
@@ -12445,13 +12340,12 @@ async function rateTipSave(form) {
 
 
 /* =========================================================================
-   LEAD SORTING v2 (Max's mockup, 28 Sep 2026) - simpler: Pass / Save / Chase.
+   LEAD SORTING v2 - Pass / Save / Chase.
      Pass  -> tagged "Not for us" (still visible everywhere)
      Save  -> maybe later - the Saved list
      Chase -> go after it - the Chasing list, and Scout starts on outreach
    After a decision an optional note (quick chips + text) goes to Scout.
    More info opens everything captured: Overview / Contacts / History / Notes.
-   No more 1-5 fit rating.
    ========================================================================= */
 const R2_ACTS = {
   pass: { label: 'Pass', ico: '✕', log: 'Pass — not for us' },
@@ -12460,7 +12354,7 @@ const R2_ACTS = {
 };
 const R2_CHIPS = ['Good potential', 'Contact after event', 'Look at 2027', 'Needs more info', 'Wedding / private', 'Send estimate'];
 function r2Decided(r) {
-  // only the new decisions count (Max, 28 Sep 2026): old 1-5 ratings and Target/Locked tags get re-sorted
+  // only the new decisions count: old 1-5 ratings and Target/Locked tags get re-sorted
   return ['pass', 'save', 'chase'].includes(r.verdict) || r.stage === 'won';
 }
 function r2List(kind) {

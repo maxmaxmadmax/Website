@@ -7,11 +7,10 @@
    computer turns the inbox into leads at 7am and 2pm, and queues replies in
    `tellOutbox`, which the second function sends back to Telegram.
 
-   Security: the bot token lives only in the TELEGRAM_TOKEN secret (Max set it
-   himself). Telegram signs every webhook call with a secret derived from the
-   token, so nobody else can post to this URL. Only ONE chat is ever served:
-   the first person to send /start (Max) becomes the owner; everyone else is
-   ignored.
+   Security: the bot token lives only in the TELEGRAM_TOKEN secret. Telegram
+   signs every webhook call with a secret derived from the token, so nobody
+   else can post to this URL. Only ONE chat is ever served: the first person
+   to send /start (Max) becomes the owner; everyone else is ignored.
    ========================================================================= */
 const crypto = require('crypto');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');

@@ -1,34 +1,24 @@
 /* ==========================================================================
    THE SOUNDZGOOD ROSTER
 
-   Who we have. One list, because three places need it now:
+   One list of acts, used by:
 
        js/entertainment.js   the roster page at /entertainment
        js/events.js          whose DJ is on which Friday Night
        js/admin-app.js       the dropdown for naming that DJ
 
-   A second copy of this list would mean adding an artist in one place and
-   wondering why they do not appear in another, so there is one of it and
-   it publishes itself as window.SG_ROSTER.
-
-   Plain script, not a module, like every other page script here.
+   Publishes itself as window.SG_ROSTER. Plain script, not a module.
    ========================================================================== */
 (function (global) {
     'use strict';
 
     /*  THE ROSTER
 
-        `genres` and `events` are deliberately empty. They are claims about
-        real people - what they play and what they suit - and guessing them
-        would put words in an artist's mouth on a live booking page. Fill
-        them in and the cards, the two dropdowns and the search all pick
-        them up with no other change:
+        Only fill in `genres` and `events` with what is true about the
+        artist. The cards, dropdowns and search pick them up on their own:
 
             genres: ['House', 'Dance', 'Open Format'],
-            events: ['Clubs', 'Festivals', 'Weddings'],
-
-        Until then a card shows the name and the act type, which are both
-        known to be true.                                                 */
+            events: ['Clubs', 'Festivals', 'Weddings'],              */
     var TALENT = [
         /* ---- DJs ---- */
         { slug:'maxzi',              name:'MAXZI',              act:'dj',   genres:[], events:[],
@@ -47,20 +37,13 @@
           photo:'images/talent/alex-emrik.jpg' },
         { slug:'dj-powerboi',        name:'DJ PowerBoi',        act:'dj',   genres:[], events:[],
           photo:'images/talent/dj-powerboi.jpg' },
-        { slug:'dougie',             name:'Dougie',             act:'dj',   genres:['R&B'], events:[],   // R&B per Max, 14 Oct 2026
+        { slug:'dougie',             name:'Dougie',             act:'dj',   genres:['R&B'], events:[],   // R&B
           photo:'images/talent/dougie.jpg' },
-        { slug:'mosh-mechanix',      name:'Mosh Mechanix',      act:'dj',   genres:['Drum & Bass', 'Commercial'], events:[],   // per Max, 14 Oct 2026
+        { slug:'mosh-mechanix',      name:'Mosh Mechanix',      act:'dj',   genres:['Drum & Bass', 'Commercial'], events:[],
           photo:'images/talent/mosh-mechanix.jpg' },
 
-        /*  THE SOLO ARTISTS AND BANDS ARE PARKED, NOT GONE
-
-            Showing the DJs on their own for now. These are kept here rather
-            than deleted so putting them back is uncommenting, not typing
-            seven names out again from memory.
-
-            Take the comment off and they reappear - and so do the Solo
-            Artists and Bands tabs, the act-type dropdown and the line under
-            the headline, all of which are built from this list.
+        /*  PARKED: solo artists and bands. Take the comment marks off and they
+            come back, along with their tabs and dropdown options.
 
         { slug:'sam-mckann',         name:'Sam McKann',         act:'solo', genres:[], events:[] },
         { slug:'samantha-roberts',   name:'Samantha Roberts',   act:'solo', genres:[], events:[] },
@@ -74,23 +57,17 @@
     ];
 
     /* ----------------------------------------------------------------------
-       THE LIST ABOVE IS THE STARTING POINT, NOT THE LAST WORD
+       THE LIST ABOVE IS THE FALLBACK
 
-       Acts are managed in Admin -> Entertainment, and those live in
-       Firestore. What the site actually shows is the two put together:
+       Acts are managed in Admin -> Entertainment (Firestore). The site
+       shows the two merged:
 
            an act in the database that is not above    is added
            an act in both                             the database wins
            an act marked hidden in the database       is dropped
 
-       So the eight above are what the site falls back to if the database
-       is unreachable, and everything after that is managed without a
-       deploy. Nobody has to choose between the two.
-
-       SG_ROSTER holds the built-in list immediately and the merged list
-       once it lands. SG_ROSTER_READY is the one to wait for - a page that
-       builds itself from the roster should build inside it, once, rather
-       than drawing the built-ins and then flinching.
+       SG_ROSTER holds the built-in list straight away and the merged list
+       once it lands. Pages should wait for SG_ROSTER_READY.
        ---------------------------------------------------------------------- */
     var PROJECT = 'soundzgood-8c86f';
     var WEB_KEY = 'AIzaSyCVWdD7fE24MuN-v5XQLObJbSHYRUbPlPY';
@@ -104,8 +81,8 @@
         }, {});
     }
 
-    /*  A to Z by name (Max, 14 Oct 2026). A leading "DJ " is skipped, so
-        DJ Karma files under K, not in a pile of DJs under D.          */
+    /*  A to Z by name. A leading "DJ " is skipped, so DJ Karma files
+        under K.                                                       */
     function sortKey(t) {
         return String(t.name || '').replace(/^dj\s+/i, '').toLowerCase();
     }
@@ -124,20 +101,16 @@
         file - those cannot be deleted, only hidden.                  */
 
     /* ----------------------------------------------------------------------
-       A FRIDAY OR TWO, LOCKED IN BEFORE THE DESK WAS OPENED
+       FRIDAY BOOKINGS ADDED BY HAND
 
-       Bookings belong in Admin -> Entertainment. This is only for a night
-       somebody wants on the site before anybody next signs in, and the desk
-       offers to take these over the moment it sees them - at which point
-       they can be deleted from here.
-
-       Here rather than in js/events.js because the admin page has to see
-       them too, to know they exist and to offer to import them.
+       Bookings belong in Admin -> Entertainment. Any here are offered for
+       import by the admin page, then can be deleted from here.
+       Kept here (not in js/events.js) so the admin page can see them too.
        ---------------------------------------------------------------------- */
     global.SG_FRIDAY_SEED = {
         '2026-09-18': 'kriss-kross',
         '2026-09-25': 'dj-charly-templar',
-        '2026-10-16': 'dougie',            // per Max, 14 Oct 2026
+        '2026-10-16': 'dougie',
         '2026-10-23': 'lucas'
     };
 
@@ -190,8 +163,8 @@
                         ? t.photo : (was.photo || ''),
                     genres: (t.genres && t.genres.length) ? t.genres : (was.genres || []),
                     events: (t.events && t.events.length) ? t.events : (was.events || []),
-                    location: t.location || was.location || '',   // home town, on the card (Max, 22 Oct 2026)
-                    female: t.female === true,   // "Female DJs" in the genre filter (Max, 23 Oct 2026)
+                    location: t.location || was.location || '',   // home town, on the card
+                    female: t.female === true,   // "Female DJs" in the genre filter
                     order: t.order
                 };
             });
@@ -199,8 +172,7 @@
             var merged = Object.keys(bySlug).map(function (k) { return bySlug[k]; });
 
             /*  Anything given an order in admin sorts by it; everything
-                else keeps the order it is written in above, which is the
-                order the DJs were signed.                              */
+                else keeps the order it is written in above.            */
             merged.sort(function (a, b) {
                 var ao = typeof a.order === 'number' ? a.order : 500;
                 var bo = typeof b.order === 'number' ? b.order : 500;
@@ -210,8 +182,7 @@
             return publish(merged);
         })
         .catch(function (err) {
-            /*  The built-in eight. A roster page showing the acts we had
-                last week is a great deal better than an empty one.     */
+            /*  The built-in eight. */
             if (global.console) console.warn('roster: using the built-in list', err);
             return publish(TALENT);
         });

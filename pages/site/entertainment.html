@@ -23,11 +23,11 @@ permalink: /entertainment.html
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="css/style.css?v=710">
-  <link rel="stylesheet" href="css/entertainment.css?v=710">
-  <script src="js/main.js?v=710" defer></script>
-  <script src="js/roster.js?v=710" defer></script>
-  <script src="js/entertainment.js?v=710" defer></script>
+  <link rel="stylesheet" href="css/style.css?v=711">
+  <link rel="stylesheet" href="css/entertainment.css?v=711">
+  <script src="js/main.js?v=711" defer></script>
+  <script src="js/roster.js?v=711" defer></script>
+  <script src="js/entertainment.js?v=711" defer></script>
 </head>
 
 <body>
@@ -36,43 +36,19 @@ permalink: /entertainment.html
 
 <!-- ==========================================================================
      SOUNDZGOOD ENTERTAINMENT
-
-     Everything below the shared menu lives inside #sg-ent-page. Every rule in
-     entertainment.css and every listener in js/entertainment.js is scoped to
-     that id, so nothing here can reach another page.
-
-     THE ROSTER
-     The talent is not written out below - it lives in one array at the top of
-     js/entertainment.js and the cards are built from it. Adding an act is one
-     object in that list; the filters, the search and the counts all pick it
-     up on their own.
-
-     ARTIST PHOTOGRAPHY
-     Each act names its own picture in that same list:
-
-         photo: 'images/talent/jake-smith.webp'
-
-     Drop a file at that path and the card uses it. Until then the card shows
-     its own gradient and the act-type glyph, so a roster with no photos yet
-     still looks finished rather than broken. Portrait-ish, about 900px wide,
-     is plenty.
+     Everything below lives inside #sg-ent-page; entertainment.css and
+     js/entertainment.js are scoped to that id.
+     THE ROSTER is one array at the top of js/entertainment.js - add an act there.
+     PHOTOS: set photo: 'images/talent/name.webp' on the act (portrait, ~900px wide).
+     No photo yet shows a gradient instead.
      ========================================================================== -->
 <main id="sg-ent-page">
 
   <!-- HERO ------------------------------------------------------------- -->
   <header class="ent-hero">
 
-    <!--  THE HERO REEL
-
-          Deliberately the same two files, the same breakpoint and the same
-          poster the homepage uses. Most visitors arrive there first, so by
-          the time they reach this page the browser already has the file and
-          this costs them nothing. Pointing at a different cut would have
-          thrown that away and made it a second download.
-
-          preload="none" keeps it out of the way of first paint - the poster
-          shows immediately and the clip follows. Both files are silent and
-          30fps.                                                          -->
+    <!-- Hero reel - same files, breakpoint and poster as the homepage, so it is already cached.
+         preload="none" lets the poster show first. -->
     <video class="ent-hero-video" id="ent-hero-video" aria-hidden="true"
            autoplay muted loop playsinline preload="none"
            poster="images/bowen.jpeg">
@@ -91,9 +67,7 @@ permalink: /entertainment.html
       <div class="ent-hero-actions">
         <a class="btn ent-btn" href="#ent-talent">Browse the Talent <span aria-hidden="true">&#8594;</span></a>
 
-        <!--  Plays videos/hero-720.mp4, the same reel the services page
-              uses. The 720 cut rather than the 1080 - it is half the file
-              for a clip that opens in a box, not full screen.          -->
+        <!-- Plays videos/hero-720.mp4 (the smaller cut, fine for a box). -->
         <button type="button" class="ent-play" id="ent-play">
           <span class="ent-play-ring" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M9 6.5v11l9-5.5z"/></svg>
@@ -106,22 +80,9 @@ permalink: /entertainment.html
     <p class="ent-hero-script" aria-hidden="true">Good Music<br>Brings People<br>Together</p>
   </header>
 
-  <!--  ACT TYPE BAR
-
-        Built by js/entertainment.js from the roster, so a tab only appears
-        for an act type that actually has somebody in it. Add a kids act and
-        the Kids Entertainment tab turns up on its own; take the last band
-        away and that tab goes.
-
-        It sets the same act-type filter the dropdown below does, and the two
-        are kept in step by the script - two controls that disagreed about
-        what was being shown would be worse than either on its own.
-
-        A div and not a <nav>. style.css styles the bare nav element for the
-        site menu - position:absolute, full width, its own padding and z-index
-        - and a second <nav> on the page picks all of that up and lands on top
-        of the hero. These are filter controls rather than navigation, so a
-        group is the more honest element anyway.                          -->
+  <!-- ACT TYPE BAR - built by js/entertainment.js; a tab only shows for act types on the roster.
+       Kept in step with the dropdown below by the script.
+       A div, not a <nav>: style.css styles bare nav for the site menu. -->
   <div class="ent-types" id="ent-types" role="group" aria-label="Filter by act type"></div>
 
   <!-- THE ROSTER ------------------------------------------------------- -->
@@ -247,11 +208,7 @@ permalink: /entertainment.html
     </div>
   </section>
 
-  <!--  ARTIST PANEL
-
-        Opened by "View profile" on a card. A native <dialog>, so Escape and
-        the backdrop close it without a line of script, and focus is trapped
-        for free.                                                          -->
+  <!-- ARTIST PANEL - opened by "View profile". A native <dialog>, so Escape and the backdrop close it. -->
   <dialog class="ent-panel" id="ent-panel" aria-label="Artist details">
     <button type="button" class="ent-panel-close" id="ent-panel-close" aria-label="Close">
       <span aria-hidden="true">&times;</span>
@@ -259,12 +216,7 @@ permalink: /entertainment.html
     <div id="ent-panel-body"></div>
   </dialog>
 
-  <!--  The reel, played properly and with sound rather than as wallpaper.
-
-        Same two sources and the same breakpoint as the hero above, so it is
-        the same file the browser already fetched for the background -
-        opening this costs nothing. A different cut here would have meant a
-        second download of the same footage.                             -->
+  <!-- The reel with sound. Same sources and breakpoint as the hero, so it is already cached. -->
   <dialog class="ent-panel ent-video" id="ent-video" aria-label="SoundzGood entertainment reel">
     <button type="button" class="ent-panel-close" id="ent-video-close" aria-label="Close">
       <span aria-hidden="true">&times;</span>

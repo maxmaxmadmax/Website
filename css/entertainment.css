@@ -1,23 +1,8 @@
 /* ==========================================================================
    SOUNDZGOOD ENTERTAINMENT - page specific styles
-
-   Loaded after style.css, so the fonts, colours and buttons all come from
-   there. Everything below is scoped to #sg-ent-page, so nothing here can
-   leak onto another page even where a class name is generic.
-
-   WHAT IS IN HERE
-     ACT TYPE BAR
-     BANDS - RECOMMEND AND PRODUCTION
-     FILTERS
-     HERO
-     PANEL
-     SECTION HEAD
-     TALENT CARDS
-     MOBILE
-     FOOTER TWEAK
-
-   Sections run alphabetically. MOBILE is pinned last because it overrides
-   everything above it.
+   Loaded after style.css (fonts, colours, buttons). Everything is scoped to
+   #sg-ent-page so nothing leaks onto another page.
+   Sections run alphabetically; MOBILE is last because it overrides the rest.
    ========================================================================== */
 
 #sg-ent-page{
@@ -26,19 +11,12 @@
     --ent-card:#141414;
 }
 
-/*  Several things on this page are hidden by setting the hidden attribute
-    from the script, and several of them are also given a display by a rule
-    below. Any author display beats the browser's own [hidden] rule, so
-    without this they stay on screen - the act-type bar is display:grid and
-    ignored being hidden outright.
-
-    Third time this has caught us out on this site, after admin.css and
-    vendor-signup.css. Keep it above everything that sets display.       */
+/*  [hidden] loses to any display rule below, so force it here.
+    Keep this above everything that sets display.                        */
 #sg-ent-page [hidden]{ display:none !important; }
 
-/*  Images are named by the markup as --ent-img and used as a background,
-    never as an <img>. A path that turns out to be missing then leaves the
-    gradient underneath showing rather than drawing a broken image icon. */
+/*  Images are set as a --ent-img background, never an <img>, so a missing
+    file shows the gradient instead of a broken image icon.             */
 #sg-ent-page .sr-only{
     position:absolute;
     width:1px; height:1px;
@@ -103,13 +81,8 @@
     background:rgba(255,255,255,.03);
 }
 
-/*  The chosen one is boxed rather than filled. An outline reads as "this
-    one" without turning the strip into a row of solid buttons, and it
-    survives on top of the dark bar where a tint alone is easy to miss.
-
-    The box is drawn with an inset shadow rather than a border, so the cell
-    does not change size when it is picked and the ones either side stay
-    where they were.                                                     */
+/*  The chosen one is outlined, not filled. The outline is an inset shadow,
+    not a border, so the cell does not change size when picked.          */
 #sg-ent-page .ent-type.is-on{
     color:var(--sg-gold);
     background:rgba(255,183,0,.06);
@@ -175,9 +148,7 @@
     max-width:44ch;
 }
 
-/*  The six occasions. A strip of equal cells with hairlines between them,
-    which is why they are a grid and not a flex row - flex would give the
-    long labels more room than the short ones and the rules would wander. */
+/*  The six occasions: a grid (not flex) so every cell is the same width. */
 #sg-ent-page .ent-occasions{
     display:grid;
     grid-template-columns:repeat(6, minmax(96px, 1fr));
@@ -300,8 +271,7 @@
 /* --------------------------------------------------------------------------
    HERO
    -------------------------------------------------------------------------- */
-/*  The gradient lives here, behind the video, not on the scrim above it.
-    It is opaque, and on the scrim it covered the clip completely.      */
+/*  The gradient sits behind the video, not on the scrim above it. */
 #sg-ent-page .ent-hero{
     position:relative;
     overflow:hidden;
@@ -311,9 +281,7 @@
     background:linear-gradient(120deg, #3a1a02, #0a0a0a 72%);
 }
 
-/*  The reel sits behind everything, cropped to fill whatever shape the hero
-    ends up. object-fit does the cropping, so the middle of the frame stays
-    in the middle at any width.                                          */
+/*  The reel fills the hero; object-fit keeps the middle of the frame centred. */
 #sg-ent-page .ent-hero-video{
     position:absolute;
     inset:0;
@@ -322,12 +290,8 @@
     object-fit:cover;
 }
 
-/*  The scrim over it. Heavy on the left where the words are, clearer on the
-    right so the footage still reads as footage.
-
-    No image of its own any more - the video is the picture. It kept a
-    gradient underneath so the hero still looks deliberate for the moment
-    before the clip starts, and for anyone whose browser will not play it. */
+/*  The scrim: dark on the left behind the words, clearer on the right.
+    The gradient also shows before the clip starts, or if it will not play. */
 #sg-ent-page .ent-hero-media{
     position:absolute;
     inset:0;
@@ -370,8 +334,8 @@
     margin-bottom:28px;
 }
 
-/*  The handwritten line in the corner. Decorative, so it is aria-hidden in
-    the markup and simply disappears when there is no room for it.      */
+/*  The handwritten line in the corner. Decorative (aria-hidden); hidden
+    when there is no room.                                              */
 #sg-ent-page .ent-hero-script{
     position:absolute;
     right:5%;
@@ -399,10 +363,8 @@
     gap:18px 26px;
 }
 
-/*  The play control. A ring and two lines of text rather than a second
-    solid button - there is one primary action on this hero and it is
-    "browse the talent"; the reel is an aside, and two filled buttons side
-    by side made them argue.                                             */
+/*  The play control: a ring and text, not a second solid button, so
+    "browse the talent" stays the one main action.                       */
 #sg-ent-page .ent-play{
     display:inline-flex;
     align-items:center;
@@ -496,8 +458,7 @@
 
 #sg-ent-page .ent-panel-close:hover{ border-color:var(--sg-orange); color:var(--sg-orange); }
 
-/*  Wider and shallower than the card, so it crops harder still - 12% keeps
-    the face in a band under a third of the photograph's height. */
+/*  Wider and shallower than the card, so 12% keeps the face in view. */
 #sg-ent-page .ent-panel-media{
     height:190px;
     background:
@@ -630,28 +591,15 @@
 /* --------------------------------------------------------------------------
    TALENT CARDS
    -------------------------------------------------------------------------- */
-/*  200px rather than 230: the reference sits four cards across a desktop,
-    and at 230 the fourth dropped to a second row on anything under about
-    1200px wide.                                                        */
+/*  200px so four cards fit across a desktop. */
 #sg-ent-page .ent-grid{
     display:grid;
     grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));
     gap:18px;
 }
 
-/*  THE PHOTOGRAPH IS THE CARD
-
-    It used to sit in a strip across the top with the name and the button in
-    a solid panel underneath. Now it fills the whole thing and the words sit
-    over it, which is what makes the card about the artist rather than about
-    the box the artist is in.
-
-    THE CROP
-    These are portraits and this is a tall box, but still a crop - centred,
-    MAXZI's card showed his chest and the decks with his face cut off
-    above the frame. 18% from the top is where a head is in a portrait. Set
-    once here, because it is true of every photograph of a person standing
-    up.                                                                   */
+/*  THE PHOTO IS THE CARD - the words sit over it.
+    18% from the top keeps the head in frame on a portrait.               */
 #sg-ent-page .ent-card{
     position:relative;
     display:flex;
@@ -676,12 +624,9 @@
     transform:translateY(-3px);
 }
 
-/*  Covers the whole card, under the words, so clicking anywhere on the
-    photograph opens the artist panel. It carries no picture of its own any
-    more - it is a hit area, and the holder of the stand-in glyph.
-
-    The padding pushes the glyph up out of the area the words cover, so it
-    is centred in the part of the card you can actually see.             */
+/*  Covers the whole card under the words, so clicking anywhere on the
+    photo opens the artist panel. Also holds the stand-in glyph; the
+    padding centres it in the visible part of the card.                  */
 #sg-ent-page .ent-card-media{
     position:absolute;
     inset:0;
@@ -700,12 +645,7 @@
     text-align:inherit;
 }
 
-/*  The stand-in for a photograph that is not there yet, and only that.
-
-    It used to stay on at low opacity once a photo loaded, on the theory
-    that a dark picture still wanted something in the middle of it. In
-    practice it was a headphone watermark sitting over somebody's face. A
-    card with a photograph has no need of a symbol for one.             */
+/*  The stand-in shown only when there is no photo yet. */
 #sg-ent-page .ent-card-glyph{
     width:46px;
     height:46px;
@@ -715,15 +655,8 @@
 
 #sg-ent-page .ent-card.has-photo .ent-card-glyph{ display:none; }
 
-/*  Outlined rather than filled. A solid orange block sat on top of the
-    photograph and was the first thing the eye landed on - louder than the
-    artist, which is the wrong way round on a card whose job is to sell the
-    artist.
-
-    It still needs to be readable over whatever is behind it, so there is a
-    dark wash under the outline rather than nothing at all. backdrop-filter
-    blurs what shows through where the browser supports it; where it does
-    not, the wash on its own is enough.                                   */
+/*  Outlined, not filled, so it does not outshine the artist. A dark wash
+    (blurred where supported) keeps it readable over any photo.          */
 #sg-ent-page .ent-badge{
     align-self:flex-start;
     margin-bottom:10px;
@@ -742,12 +675,8 @@
     text-transform:uppercase;
 }
 
-/*  Over the photograph rather than under it. The gradient fades up out of
-    the picture so the words have something solid behind them without the
-    card turning back into a panel with a lid on it.
-
-    Above the hit area in the stacking order, so the enquiry link is
-    clickable - the picture button covers the whole card underneath.     */
+/*  The words over the photo, with a gradient fading up behind them.
+    Sits above the hit area so the enquiry link is clickable.            */
 #sg-ent-page .ent-card-body{
     position:relative;
     z-index:2;
@@ -807,8 +736,7 @@
     outline-offset:-3px;
 }
 
-/*  A link now rather than a button, so it needs the link underline taken
-    off and the block shape put back on.                                */
+/*  A link, so remove the underline and make it a block. */
 #sg-ent-page .ent-view{
     text-decoration:none;
     display:flex;
@@ -891,6 +819,6 @@
 
 
 
-/* the DJ's home town on their card (Max, 22 Oct 2026) */
+/* the DJ's home town on their card */
 .ent-card-loc{ display:flex; align-items:center; gap:5px; margin:4px 0 0; font-size:12px; letter-spacing:.04em; color:#e8e8e8; opacity:.85; }
 .ent-card-loc svg{ width:13px; height:13px; fill:none; stroke:#ff6b00; stroke-width:2; flex:none; }

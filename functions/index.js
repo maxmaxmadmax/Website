@@ -28,15 +28,10 @@ const { sendQuoteEmail } = require('./lib/quote-email');
 const { sendQuoteLinkEmail } = require('./lib/quote-doc-email');
 const { sendLeadEmail } = require('./lib/lead-email');
 
-/*  SEND, AND WRITE DOWN WHAT HAPPENED
-
-    sendBookingEmails never throws - it hands back what worked and what
-    did not - so the only record of a failure was a log line. The booking
-    keeps the answer now, which is what the admin desk reads to say Sent,
-    Failed or Not sent beside each vendor.
-
-    The write is best effort: a booking that is paid and confirmed must not
-    come undone because we could not write a status onto it.           */
+/* Send the booking emails and save the result on the booking, so the admin
+   desk can show Sent, Failed or Not sent beside each vendor.
+   Best effort: a paid, confirmed booking must never come undone because
+   the status could not be written. */
 async function sendAndRecord(booking, bookingId, event, ref) {
   const result = await sendBookingEmails(booking, bookingId, event);
 
@@ -73,14 +68,12 @@ setGlobalOptions({ region: 'australia-southeast1', maxInstances: 10 });
 const STRIPE_SECRET_KEY = defineSecret('STRIPE_SECRET_KEY');
 const STRIPE_WEBHOOK_SECRET = defineSecret('STRIPE_WEBHOOK_SECRET');
 
-/*  Google Workspace SMTP, for the booking confirmations. SMTP_PASS is an
-    app password, not the account password - Google will not accept the
-    account password from a script with 2FA on. */
+/* Google Workspace SMTP. SMTP_PASS is an app password, not the account
+   password. */
 const SMTP_USER = defineSecret('SMTP_USER');
 const SMTP_PASS = defineSecret('SMTP_PASS');
 
-/* Where to send people back to after Stripe. Set with
-   `firebase functions:config` style env var, or leave the default. */
+/* Where Stripe sends people back to. Set by env var, or use the default. */
 const SITE_URL = process.env.SITE_URL || 'https://www.soundzgood.com.au';
 
 /* -------------------------------------------------------------------------
@@ -94,10 +87,10 @@ function requireAuth(request) {
   return request.auth.uid;
 }
 
-/*  RATE LIMIT (security audit, 20 Oct 2026). The public forms need no login,
-    so without this a script could flood the database or use the estimate
-    bot to email strangers. Counts per visitor (by IP, hashed - no IPs are
-    stored) per form, in a fixed window. rateLimits/ is closed to browsers. */
+/* RATE LIMIT. The public forms need no login, so this stops a script
+   flooding the database or using the estimate bot to email strangers.
+   Counts per visitor (by hashed IP - no IPs are stored) per form, in a
+   fixed window. rateLimits/ is closed to browsers. */
 function callerIp(request) {
   const r = request.rawRequest || {};
   const fwd = String((r.headers && r.headers['x-forwarded-for']) || '').split(',')[0].trim();
@@ -218,27 +211,19 @@ function priceFor(event, vendorType, bayCount) {
 /* -------------------------------------------------------------------------
    WHAT A VENDOR ACTUALLY PAYS
 
-   The site price is GST exclusive. On top of it go a booking fee, which
-   covers the card charges and the running costs of all this, and then GST
-   on the two of them together.
+   The site price is GST exclusive. On top of it go a booking fee (card
+   charges and running costs), then GST on the two together.
 
        fee   = 4% of the site price, plus 99c a transaction
        GST   = 10% of (site + fee)
        total = site + fee + GST
 
    A $100 food site therefore comes to $115.49, of which $10.50 is GST.
+   The percentage is taken off the site price only, never off the GST.
 
-   The percentage is taken off the site price only, never off the GST -
-   charging a percentage on top of tax is the sort of thing a vendor works
-   out with a calculator and remembers.
-
-   THIS IS THE ONLY PLACE THESE NUMBERS LIVE. The vendor page works out the
-   same figures to show people before they commit, but nothing it says is
-   trusted: the total is recomputed here when the checkout session is made,
-   so a tampered browser cannot change the price.
-
-   Defaults can be overridden per event, so a fee can change without a
-   deploy.
+   THIS IS THE ONLY PLACE THESE NUMBERS LIVE. The vendor page shows the same
+   figures, but the total is recomputed here at checkout, so a tampered
+   browser cannot change the price. Defaults can be overridden per event.
    ------------------------------------------------------------------------- */
 const FEE_PERCENT = 0.04;
 const FEE_FIXED_CENTS = 99;
@@ -247,8 +232,7 @@ const GST_RATE = 0.10;
 function feeBreakdown(event, siteCents) {
   const site = Math.max(0, Math.round(Number(siteCents) || 0));
 
-  /*  A free site stays free. Charging 99c and GST on a site given away
-      would make "free" a lie and is not worth the 99c. */
+  /* A free site stays free - no fee or GST on a site given away. */
   if (site === 0) {
     return { siteCents: 0, bookingFeeCents: 0, gstCents: 0, totalCents: 0 };
   }
@@ -279,20 +263,14 @@ function siteIsFree(site, uid, now) {
   return true;
 }
 
-/*  DO TWO BAYS TOUCH?
+/* DO TWO BAYS TOUCH?
+   Side by side or one above the other, with only a small gap. On the Bowen
+   plan bays are 12-16 units apart and every aisle is 120, so a threshold
+   of 20 joins bays that back on to each other but never across a walkway.
+   Market bays only - food vans never join anything.
 
-    Side by side or one above the other, with no more than a hairline
-    between them. On the Bowen plan the gap down a column is 12 units and
-    the two middle columns are 16 apart, while every aisle is 120 - so a
-    threshold of 20 joins the bays that really do back on to each other
-    and nothing across a walkway.
-
-    Market bays only. A food van takes one site and never joins anything,
-    and two of them sit on an angle where a rectangle would lie.
-
-    THIS RULE IS ALSO IN js/vendor-map.js, which decides what a vendor is
-    allowed to click. If it changes here it has to change there, or the
-    page will offer a shape this function then refuses to allocate.   */
+   KEEP IN STEP with js/vendor-map.js, or the page will offer a shape this
+   function then refuses to allocate. */
 const BAY_TOUCH_GAP = 20;
 
 function baysTouch(a, b) {
@@ -313,14 +291,10 @@ function baysTouch(a, b) {
   return false;
 }
 
-/* Every bay in a group must touch another bay in the same group, or the
-   stall is not one stall - it is bays scattered around the market. Walks
-   out from the first bay and checks it reaches all of them.
-
-   Two bays count as touching if the layout wrote them down as neighbours
-   (up and down a column) or if their rectangles back on to each other -
-   which is how a stall can straddle the two middle columns without the
-   forty bays already in Firestore having to be rewritten. */
+/* Every bay in a group must touch another bay in the group, so the stall
+   is one block. Walks out from the first bay and checks it reaches them all.
+   Touching = listed as neighbours in the layout (up and down a column), or
+   rectangles that back on to each other. */
 function isJoinedUp(sitesById) {
   const ids = Object.keys(sitesById);
   if (ids.length <= 1) return true;
@@ -372,7 +346,7 @@ exports.holdSite = onCall(async (request) => {
   const uid = requireAuth(request);
   const { eventId, siteId, siteIds, bookingId } = request.data || {};
 
-  // Older callers sent a single siteId; both shapes are accepted.
+  // Accepts one siteId or a list of siteIds.
   const requested = Array.isArray(siteIds) && siteIds.length
     ? siteIds
     : (siteId ? [siteId] : []);
@@ -460,21 +434,9 @@ exports.holdSite = onCall(async (request) => {
       );
     }
 
-    /*  HOW MUCH GROUND ONE PERSON MAY SIT ON AT ONCE.
-
-        Above, this booking gives back whatever it held before, so no single
-        booking can creep. Nothing stopped somebody making a second booking
-        and holding eight more bays with it, then a third, until they were
-        sitting on the whole field and no real vendor could get in. Holds
-        expire after ten minutes, so it heals itself - but a script that
-        re-takes them every ten minutes keeps the event shut indefinitely.
-
-        That was always possible; it just needed a fresh email address each
-        time. Now that signing in costs nothing at all, it needs nothing.
-
-        So the limit is per person, not per booking: everything this uid is
-        already holding on other bookings counts against the same ceiling a
-        single booking gets. One vendor with one stall never notices. */
+    /* PER-PERSON LIMIT. Bays this uid holds on other bookings count against
+       the same ceiling, so one person cannot make several bookings and hold
+       the whole field. */
     const others = await tx.get(
       db.collection('bookings').where('uid', '==', uid)
     );
@@ -532,11 +494,9 @@ exports.holdSite = onCall(async (request) => {
       }
     }
 
-    /* The category is picked after the site now, so a booking may not have
-       one yet. If it does, it is checked here as well - a vendor who goes
-       back and changes it should not be able to hold a site under a
-       category that has since filled up. The gate that actually matters is
-       in createCheckout, which is the last point before money moves. */
+    /* The category is picked after the site, so a booking may not have one
+       yet. If it does, it is checked here too; the check that really matters
+       is in createCheckout, the last point before money moves. */
     let categoryName = null;
     if (booking.categoryId) {
       const catSnap = await tx.get(categoryRef(eventId, booking.categoryId));
@@ -669,13 +629,9 @@ exports.releaseHold = onCall(async (request) => {
 
     if (!mine.length) return;
 
-    /*  The booking has to forget these sites too, not just the sites forget
-        the booking. Leaving siteIds behind on the booking leaves a vendor
-        looking like they are holding ground they gave back - which reads
-        wrong in the admin list, and counts against the per-person ceiling
-        in holdSite, locking them out of their own event.
-
-        Read the bookings before writing anything, as ever. */
+    /* Clear the sites off the booking too, or the vendor still looks like they
+       hold them (wrong in the admin list, and it counts against the per-person
+       limit in holdSite). Read the bookings before writing anything. */
     const bookingIds = [...new Set(mine.map((m) => m.bookingId).filter(Boolean))];
     const bookingRefs = bookingIds.map((id) => db.collection('bookings').doc(id));
     const bookingSnaps = await Promise.all(bookingRefs.map((r) => tx.get(r)));
@@ -719,11 +675,9 @@ exports.releaseHold = onCall(async (request) => {
 /* -------------------------------------------------------------------------
    createCheckout
 
-   A booking that costs nothing is confirmed here and never touches Stripe.
-   Nothing is free by default any more, but an admin can price something at
-   zero, and this keeps working if they do.
-   Paid bookings get a Stripe Checkout session; the booking is only marked
-   paid later by the webhook.
+   A booking that costs nothing (an admin priced it at zero) is confirmed
+   here and never touches Stripe. Paid bookings get a Stripe Checkout
+   session; the booking is only marked paid later by the webhook.
    ------------------------------------------------------------------------- */
 exports.createCheckout = onCall(
   { secrets: [STRIPE_SECRET_KEY, SMTP_USER, SMTP_PASS] },
@@ -763,12 +717,10 @@ exports.createCheckout = onCall(
     termsVersion: String(termsVersion || '').slice(0, 60),
   });
 
-  /* The category limit is checked here, right before money moves. The site
-     is chosen earlier in the flow than the category, so holdSite cannot be
-     the last word on it - and two vendors sitting on the last space in a
-     category would otherwise both be able to pay. Reading and stamping the
-     category name in one transaction means whoever gets here second is
-     turned away before Stripe is ever called. */
+  /* The category limit is checked here, right before money moves. The
+     category is chosen after the site, so holdSite cannot be the last word.
+     Reading and stamping it in one transaction turns away whoever gets here
+     second, before Stripe is called. */
   const categoryName = await db.runTransaction(async (tx) => {
     if (!booking.categoryId) {
       throw new HttpsError('failed-precondition', 'Choose a category first.');
@@ -806,17 +758,10 @@ exports.createCheckout = onCall(
   const eventSnapshot = await db.collection('events').doc(booking.eventId).get();
   const eventForBooking = eventSnapshot.exists ? eventSnapshot.data() : {};
 
-  /*  THE PRICE IS DERIVED HERE, NOT READ OFF THE BOOKING.
-
-      amountCents on the document is written by holdSite and the Firestore
-      rules stop a vendor changing it. That is worth having, but it should
-      not be the only thing between somebody and a one dollar stall: a
-      single mistake in those rules would otherwise be worth real money.
-
-      So the site price is worked out again from the event's own pricing
-      and the number of bays they are actually holding, and the fee and GST
-      from that. Editing amountCents in a browser now achieves nothing,
-      because nothing here reads it. */
+  /* THE PRICE IS DERIVED HERE, NOT READ OFF THE BOOKING.
+     The site price is worked out again from the event's pricing and the bays
+     actually held, then the fee and GST from that - so editing amountCents in
+     a browser achieves nothing. */
   const bayIds = Array.isArray(booking.siteIds) && booking.siteIds.length
     ? booking.siteIds
     : (booking.siteId ? [booking.siteId] : []);
@@ -825,17 +770,10 @@ exports.createCheckout = onCall(
     throw new HttpsError('failed-precondition', 'Choose a site first.');
   }
 
-  /*  VALIDATE AGAINST THE HELD SITES, NOT THE BOOKING.
-
-      vendorType and eventId are the two pricing inputs a vendor can
-      still edit on their own draft - the rules lock the money and the
-      site, but not these. So neither is trusted here: the sites they are
-      holding are read back, and they were validated by holdSite (right
-      type, right event, actually free) when they were held.
-
-      A booking whose event was flipped has no such site under the new
-      event; a booking whose type was flipped is holding sites of the
-      wrong type. Either way this refuses before Stripe is called.    */
+  /* VALIDATE AGAINST THE HELD SITES, NOT THE BOOKING.
+     A vendor can still edit vendorType and eventId on their own draft, so
+     neither is trusted: the sites they hold (checked by holdSite) are read
+     back instead. A flipped event or type is refused before Stripe is called. */
   const wantedType = siteTypeFor(booking.vendorType);
   const heldSnaps = await Promise.all(
     bayIds.map((id) => siteRef(booking.eventId, id).get())
@@ -879,20 +817,10 @@ exports.createCheckout = onCall(
 
   // ---- Paid: hand off to Stripe -----------------------------------------
 
-  /*  THE HOLD HAS TO OUTLIVE THE CHECKOUT SESSION.
-
-      The browsing hold is 10 minutes, which is right for somebody picking a
-      spot on the map. It is far too short once they are on Stripe's payment
-      page: Stripe will not accept an expires_at less than 30 minutes away,
-      so a 10 minute hold means expireHolds hands the site back while they
-      are still typing their card in. Somebody else takes it, the first
-      vendor pays anyway, and confirmBooking finds the site gone - money
-      taken, refund owed, and a vendor with nowhere to stand.
-
-      So the hold is pushed out past the session before the session is made.
-      Extending first means the site is never held for less time than the
-      vendor has to pay; if the Stripe call then fails, the site is simply
-      held a bit longer than needed and expireHolds tidies it up. */
+  /* THE HOLD HAS TO OUTLIVE THE CHECKOUT SESSION.
+     A Stripe session lasts at least 30 minutes, longer than the 10 minute
+     hold, so the hold is pushed out first. Otherwise expireHolds could hand
+     the site to someone else while the vendor is still paying. */
   const CHECKOUT_MINUTES = 30;             // Stripe's own minimum
   const HOLD_MARGIN_MINUTES = 5;           // webhook and clock-skew slack
 
@@ -921,10 +849,8 @@ exports.createCheckout = onCall(
       siteId: booking.siteId,
       uid,
     },
-    /*  Three lines, not one total. These vendors are businesses claiming
-        the GST back, so the receipt has to show the GST on its own to work
-        as a tax invoice - and a fee that turns up as part of one lump is
-        how you get an argument at the gate. */
+    /* Three lines, not one total: the GST must show on its own for the
+       receipt to work as a tax invoice. */
     line_items: [
       {
         quantity: 1,
@@ -958,10 +884,7 @@ exports.createCheckout = onCall(
           unit_amount: money.gstCents,
           product_data: {
             name: 'GST (10%)',
-            /*  Say what it is 10% OF. Stripe shows the three lines but no
-                subtotal, so on its own $5.30 is neither a tenth of the
-                $50 site nor of the $58.29 total, and it reads like an
-                error to anybody who checks it. */
+            /* Say what the GST is 10% OF - Stripe shows no subtotal. */
             description: 'Goods and services tax - 10% of '
               + `$${((money.siteCents + money.bookingFeeCents) / 100).toFixed(2)}`
               + ' (site fee plus booking fee)',
@@ -1009,22 +932,11 @@ function eventBlurb(event) {
    Safe to call twice: if the booking is already confirmed it does nothing,
    which matters because Stripe can deliver a webhook more than once.
    ------------------------------------------------------------------------- */
-/*  CONFIRM, THEN TELL PEOPLE.
-
-    Everything calls this rather than confirmBooking directly, so there is
-    one path from "the money arrived" to "the vendor has their invoice".
-
-    The email goes out after the transaction has committed, never inside
-    it. A transaction can be retried, and sending mail from something that
-    might run twice is how a vendor ends up with four receipts.
-
-    It also cannot fail the booking. By the time we are here the money is
-    taken and the site is theirs; a mail server having a bad afternoon is a
-    nuisance, losing that is not. Every failure is logged and swallowed.
-
-    Sent once: confirmationEmailAt is stamped on the booking, and Stripe
-    delivering the same webhook twice finds it already set.
-    ------------------------------------------------------------------------- */
+/* CONFIRM, THEN TELL PEOPLE.
+   Everything calls this rather than confirmBooking directly.
+   Emails go out only after the transaction commits (a transaction can run
+   twice), and can never fail the booking - failures are logged and
+   swallowed. Sent once: confirmationEmailAt is stamped on the booking. */
 async function confirmAndNotify(bookingId, extra = {}) {
   const result = await confirmBooking(bookingId, extra);
 
@@ -1032,7 +944,7 @@ async function confirmAndNotify(bookingId, extra = {}) {
   if (!result || result.ok === false || result.alreadyConfirmed) return result;
 
   // the vendor's tax invoice number + private link, ready for the Sales Pipeline.
-  // Only makes the invoice - it is NOT emailed (Max sends those himself, for now).
+  // This only makes the invoice; it is not emailed here.
   try { await ensureVendorInvoice(bookingId); }
   catch (err) { logger.warn('vendor invoice number failed', { bookingId, message: err && err.message }); }
 
@@ -1047,9 +959,9 @@ async function confirmAndNotify(bookingId, extra = {}) {
     const evSnap = await db.collection('events').doc(booking.eventId).get();
     const event = evSnap.exists ? evSnap.data() : {};
 
-    /*  AUTO-SEND (Max, 19 Oct 2026): the vendor gets the tax invoice & event
-        guide email (one email, not two); the office still gets its copy.
-        confirmationEmailAt is the "already told them" guard above.       */
+    /* AUTO-SEND: the vendor gets the tax invoice & event guide email (one
+       email, not two); the office still gets its copy. confirmationEmailAt is
+       the "already told them" guard above. */
     await sendBookingEmails(booking, bookingId, event, { officeOnly: true });
     // paused in the Messages page? then no vendor email (the office copy still went)
     if (await invoiceEmailPaused(booking.eventId)) return result;
@@ -1234,12 +1146,9 @@ exports.stripeWebhook = onRequest(
 
     try {
       switch (event.type) {
-        /*  A card pays straight away and arrives here already paid. A
-            delayed method - BECS direct debit, which is the common one in
-            Australia - arrives here unpaid and settles days later as
-            async_payment_succeeded. Both routes have to confirm, or the
-            money lands in the account and the vendor is never given their
-            site. */
+        /* Cards arrive here already paid. Delayed methods (BECS direct debit)
+           arrive unpaid and settle days later as async_payment_succeeded. Both
+           routes must confirm. */
         case 'checkout.session.completed':
         case 'checkout.session.async_payment_succeeded': {
           const session = event.data.object;
@@ -1373,12 +1282,8 @@ exports.expireHolds = onSchedule('every 1 minutes', async () => {
   for (const doc of stale.docs) {
     try {
       await db.runTransaction(async (tx) => {
-        /*  EVERY READ FIRST.
-
-            A Firestore transaction will not accept a read after a write, so
-            the booking has to be fetched up here even though it is written
-            last. Updating the site first and then reading the booking threw
-            on every single site, which is why nothing was ever released. */
+        /* EVERY READ FIRST - a Firestore transaction will not accept a read after
+           a write, so the booking is fetched here even though it is written last. */
         const fresh = await tx.get(doc.ref);
         if (!fresh.exists) return;
 
@@ -1414,8 +1319,7 @@ exports.expireHolds = onSchedule('every 1 minutes', async () => {
       });
       released++;
     } catch (err) {
-      /*  err on its own serialises to {} in structured logging, which is how
-          the read-after-write above stayed invisible. Log the message. */
+      /* Log err.message - err on its own serialises to {} in structured logging. */
       logger.error('Could not release hold', {
         site: doc.ref.path,
         message: err && err.message,
@@ -1438,20 +1342,10 @@ exports.seedEvent = onCall(async (request) => {
   const eventRef = db.collection('events').doc(eventId);
   const existing = await eventRef.get();
 
-  /*  FIRST RUN ONLY.
-
-      Seeding normally needs an admin. But the very first seed cannot: an
-      admin is granted to a signed-in account, an account is created on the
-      vendor page, and the vendor page cannot be got through until there
-      are categories to choose from - which is what seeding creates. A
-      circle with no way in.
-
-      So the first seed, and only the first, is allowed without a sign-in:
-      when the event does not exist yet and the id is the one this site is
-      built around. The moment that document exists this is an admin-only
-      function again, for good. Nothing here reads or returns data, and it
-      writes the same fixed layout every time, so the worst an anonymous
-      call can do is create the layout we were going to create anyway. */
+  /* FIRST RUN ONLY. The very first seed is allowed without a sign-in, because
+     no admin can exist until there are categories to sign up under. Only
+     when the event does not exist yet and the id is this site's; it always
+     writes the same fixed layout. After that it is admin-only. */
   const bootstrapping =
     !existing.exists && eventId === 'eatz-beatz-halloween-2026';
 
@@ -1505,11 +1399,8 @@ exports.setAdminRole = onCall(async (request) => {
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
 
-  /*  An anonymous token has no email, so callerEmail is '' - and '' must
-      never match its way onto the bootstrap list. filter(Boolean) above
-      already strips blank entries, so an empty list cannot include '';
-      this makes that a rule rather than a happy accident, because the
-      whole internet holds a valid token now that anonymous sign-in is on. */
+  /* An anonymous token has no email (''), and '' must never match the
+     bootstrap list - anyone can get an anonymous token. */
   const callerEmail = (request.auth?.token?.email || '').toLowerCase();
   const callerIsBootstrap = Boolean(callerEmail) && bootstrap.includes(callerEmail);
 
@@ -1583,9 +1474,8 @@ exports.adminCancelBooking = onCall(async (request) => {
 
     const bayRefs = bayIds.map((id) => siteRef(booking.eventId, id));
 
-    /*  Every read first - a transaction refuses a read that follows a write.
-        The category has to be fetched up here, before the bays are handed
-        back, or the whole cancel throws. */
+    /* Every read first - a transaction refuses a read after a write, so the
+       category is fetched before the bays are handed back. */
     const baySnaps = await Promise.all(bayRefs.map((r) => tx.get(r)));
 
     const catRef = booking.countedCategoryId
@@ -1626,16 +1516,14 @@ exports.adminCancelBooking = onCall(async (request) => {
    THE ADMIN BACKEND
 
    Everything below is driven by /admin. None of it can be reached without
-   the admin claim, and none of it is used by the public signup page - the
-   vendor flow is untouched.
+   the admin claim, and none of it is used by the public signup page.
 
    Two fields the public page never writes are added here:
 
      reviewStatus   pending | approved | waitlisted | declined
      notes[]        internal, staff only, never shown to the vendor
 
-   They are new rather than a change to status, so an application made
-   before any of this existed still reads correctly - it simply has no
+   They sit beside status, so a booking with no reviewStatus simply has no
    review decision yet.
    ========================================================================= */
 
@@ -1670,12 +1558,9 @@ async function freeBaysInTx(tx, bookingId, booking) {
   });
 }
 
-/*  Undo the category count when a booking stops being real.
-
-    Split in two on purpose. A Firestore transaction refuses a read that
-    follows a write, and freeing a vendor's bays is a write - so the read
-    has to be hoisted above it and only the write left behind. Callers do
-    the read first, then all their writes, then this. */
+/* Undo the category count when a booking stops being real.
+   Split in two because a transaction refuses a read after a write: callers
+   do the read first, then their writes, then this. */
 async function readCategoryForUncount(tx, booking) {
   if (!booking.countedCategoryId) return null;
   const ref = categoryRef(booking.eventId, booking.countedCategoryId);
@@ -1756,12 +1641,9 @@ exports.adminReviewBooking = onCall(async (request) => {
 /* -------------------------------------------------------------------------
    adminSetPayment - mark somebody paid, unpaid, or in for free.
 
-   Marking a booking paid or free when it is holding a site confirms it
-   properly, through the same confirmBooking the Stripe webhook uses. That
-   way a vendor paid by bank transfer or waved in for free ends up in
-   exactly the same state as one who paid by card - counted, sites booked,
-   reference issued - instead of a second half-confirmed shape nothing
-   else understands.
+   Marking a booking paid or free while it holds a site confirms it through
+   the same confirmBooking the Stripe webhook uses, so a bank transfer or
+   free entry ends up in exactly the same state as a card payment.
    ------------------------------------------------------------------------- */
 const PAYMENT_STATES = ['none', 'unpaid', 'paid', 'free'];
 
@@ -1785,10 +1667,8 @@ exports.adminSetPayment = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (req
   const holdsSite = (booking.siteIds && booking.siteIds.length) || booking.siteId;
 
   if (settled && booking.status !== 'confirmed' && holdsSite) {
-    /*  Default to the full total - fee and GST included - because that is
-        what would have landed in the account if they paid by transfer.
-        amountCents alone would quietly under-record every offline payment
-        and leave the GST owing invisible. */
+    /* Default to the full total (fee and GST included) - what would land in
+       the account by bank transfer. */
     const paid = amountPaidCents != null
       ? Number(amountPaidCents)
       : (paymentStatus === 'free'
@@ -2085,15 +1965,12 @@ exports.adminUpdateBooking = onCall(async (request) => {
     ['frontage', 'depth'].forEach((k) => {
       if (setup[k] !== undefined) update[`setup.${k}`] = Number(setup[k]) || null;
     });
-    /*  ownPower is a dropdown holding words - 'Silent generator' - and was
-        in this list of checkboxes, so !! turned it into true. An admin
-        editing a booking lost which generator the vendor was bringing,
-        which is the thing stages get placed around.                   */
+    /* ownPower holds words ('Silent generator'), so it is saved as text, not
+       as a tick. */
     if (setup.ownPower !== undefined) update['setup.ownPower'] = text(setup.ownPower, 120);
 
-    /*  readFaqs is the tick on the form now; selfSufficient and
-        vehicleOnSite are still accepted so a booking taken before the
-        form changed can still be edited.                             */
+    /* readFaqs is the current tick; selfSufficient and vehicleOnSite are
+       still accepted so older bookings can be edited. */
     ['readFaqs', 'selfSufficient', 'vehicleOnSite'].forEach((k) => {
       if (setup[k] !== undefined) update[`setup.${k}`] = !!setup[k];
     });
@@ -2107,14 +1984,11 @@ exports.adminUpdateBooking = onCall(async (request) => {
 /* -------------------------------------------------------------------------
    adminSaveEvent - create an event, or edit one.
 
-   Opening and closing vendor signup is this same function: status is what
-   holdSite already checks before it will give anybody a site, so closing
-   an event stops new bookings at the point that matters rather than only
-   hiding a button.
+   Opening and closing vendor signup is this same function: holdSite checks
+   status before it gives anybody a site.
 
-   Creating does not lay out the ground. seedEvent does that, and it is
-   left separate because a new event usually wants a different map, and
-   quietly stamping the Bowen layout on it would be a guess.
+   Creating does not lay out the ground - seedEvent does that, since a new
+   event usually wants a different map.
    ------------------------------------------------------------------------- */
 const EVENT_STATES = ['draft', 'open', 'closed', 'archived'];
 
@@ -2138,16 +2012,8 @@ exports.adminSaveEvent = onCall(async (request) => {
     if (f[k] !== undefined) update[k] = text(f[k]);
   });
 
-  /*  THE CONFIRMATION EMAIL
-
-      Subject and body, written in the admin desk. The body is HTML from a
-      rich text box, so it gets a lot more room than a name - but a cap all
-      the same, because a document pasted in wholesale has no business in a
-      field nobody meant to be a document.
-
-      Nothing is validated beyond length: this is our own admin writing our
-      own email, and the mailer escapes every value it substitutes, so a
-      vendor's business name cannot break out of it.                     */
+  /* THE CONFIRMATION EMAIL - subject and body (HTML) written in the admin
+     desk. Only the length is capped; the mailer escapes every value it fills in. */
   if (f.vendorEmail !== undefined) {
     const t = f.vendorEmail || {};
     if (t.subject !== undefined) update['vendorEmail.subject'] = text(t.subject, 300);
@@ -2229,19 +2095,12 @@ exports.adminSaveEvent = onCall(async (request) => {
 /* -------------------------------------------------------------------------
    THE GIG GUIDE
 
-   Goes and finds what is on around Bowen and the Whitsundays once a day and
-   writes it into Firestore, which is where /gig-guide reads it from. All of
-   the work is in lib/gig-sources.js (where the events come from, and the
-   rules it follows) and lib/gig-store.js (making the database match).
+   Once a day, finds what is on around Bowen and the Whitsundays and writes
+   it into Firestore for /gig-guide. The work is in lib/gig-sources.js
+   (where events come from) and lib/gig-store.js (making the database match).
 
-   FOUR IN THE MORNING, Queensland time. Nothing else runs then, the sites
-   being read are idle, and it means the guide is right before anybody is
-   awake to look at it.
-
-   NINE MINUTES, because the very first run has no cache and reads every
-   event page the sources list - about eight hundred of them, five minutes
-   measured. Every run after that reads only what changed, which took seven
-   seconds. The timeout is there for the cold start, not the daily cost.
+   Runs at 4am Queensland time. The nine minute timeout is for the first,
+   uncached run (about 800 pages); later runs only read what changed.
    ------------------------------------------------------------------------- */
 const { syncGigs } = require('./lib/gig-store');
 
@@ -2257,10 +2116,8 @@ exports.syncGigGuide = onSchedule(
   },
 );
 
-/*  The same thing on demand, for an admin who has just added a source and
-    does not want to wait until four in the morning to find out whether it
-    works. Admin only: it is a few hundred outbound requests, not something
-    a passer by should be able to set off.                                */
+/* The same thing on demand, for an admin testing a new source. Admin only -
+   it makes hundreds of outbound requests. */
 exports.syncGigGuideNow = onCall(
   { timeoutSeconds: 540, memory: '512MiB' },
   async (request) => {
@@ -2270,9 +2127,8 @@ exports.syncGigGuideNow = onCall(
 
     const status = await syncGigs(db);
 
-    /*  serverTimestamp() comes back as a sentinel rather than a time, so
-        it is dropped instead of being sent to the browser as an object
-        that looks like a date and is not.                              */
+    /* serverTimestamp() comes back as a placeholder, not a time, so it is
+       dropped before sending to the browser. */
     delete status.ranAt;
     return status;
   },
@@ -2281,13 +2137,9 @@ exports.syncGigGuideNow = onCall(
 /* -------------------------------------------------------------------------
    adminSendTestVendorEmail
 
-   Sends the confirmation email for an event to whoever asks for it, with
-   made-up booking details, so the wording and the settings can both be
-   checked without taking a payment to do it.
-
-   This replaced smtpSmokeTest, which did the same job through a public
-   URL with a token in it and a sample hard coded into this file. An
-   admin-only callable is the same test without the open door.
+   Sends the confirmation email for an event to whoever asks, with made-up
+   booking details, so the wording and settings can be checked without
+   taking a payment.
    ------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------
    adminResendVendorEmail
@@ -2392,8 +2244,8 @@ exports.adminSendTestVendorEmail = onCall(
    ESTIMATE BOT
 
    The public estimate bot is submitBotQuote (further down): it prices from
-   packages, emails the visitor a price guide and creates a draft quote in the
-   Sales Pipeline. The old Quote Leads page was removed on 20 Oct 2026.
+   packages, emails the visitor a price guide and creates a draft quote in
+   the Sales Pipeline.
    ========================================================================= */
 
 /*  The equipment inventory. The bot prices the extras a visitor picks from
@@ -2414,10 +2266,6 @@ async function loadQuoteInventory() {
   }
   return [];
 }
-
-/*  REMOVED 20 Oct 2026: the old Quote Leads page (adminUpdateQuoteLead,
-    adminResendQuoteEmail). The bot's estimates live in the Sales Pipeline;
-    old quoteLeads documents are left in the database untouched.          */
 
 
 /* =========================================================================
@@ -2440,8 +2288,8 @@ async function loadQuoteInventory() {
 
 const crypto = require('crypto');
 
-// draft = Estimate, approved = Quote (Max approved it), sent = Quote emailed,
-// invoiced = accepted -> Invoice, paid = Paid (Max, 16 Oct 2026)
+// draft = Estimate, approved = Quote, sent = Quote emailed,
+// invoiced = accepted -> Invoice, paid = Paid
 const QUOTE_DOC_STATES = ['draft', 'approved', 'sent', 'accepted', 'declined', 'invoiced', 'paid', 'cancelled'];
 
 /*  Totals from the stored lines. Prices are ex-GST; discounts come off the
@@ -2452,7 +2300,7 @@ function quoteMoney(quote) {
   let discount = Math.max(0, Math.round(quote.discountCents || 0));   // discount off the whole total
   (quote.lines || []).forEach((l) => {
     if (l.type === 'discount') { discount += Math.max(0, Math.round(l.amountCents || 0)); return; }
-    const qty = Math.max(0, (l.perf ? Math.round(Number(l.qty || 0) * 4) / 4 : Math.round(Number(l.qty) || 0)));   // DJ hours can be 4.5 etc (Max, 23 Oct 2026)
+    const qty = Math.max(0, (l.perf ? Math.round(Number(l.qty || 0) * 4) / 4 : Math.round(Number(l.qty) || 0)));   // DJ hours can be 4.5 etc
     const unit = Math.max(0, Math.round(l.unitCents || 0));
     const lineDays = Math.max(1, Math.round(l.days || days));
     // quantity x day rate x number of days
@@ -2471,8 +2319,8 @@ function sanitizeQuote(q) {
     name: text(q.customer && q.customer.name, 120),
     business: text(q.customer && q.customer.business, 120),
     email: text(q.customer && q.customer.email, 200),
-    // a second address that gets a copy of the quote / invoice email (accounts etc.)
-    // CC: one or more addresses separated by commas (Max, 20 Oct 2026) - only valid ones kept
+    // CC: one or more addresses (comma separated, e.g. accounts) that get a copy
+    // of the quote / invoice email - only valid ones kept
     ccEmail: String((q.customer && q.customer.ccEmail) || '').split(/[,;\s]+/).map((e) => e.trim())
       .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)).slice(0, 10).join(', ').slice(0, 600),
     phone: text(q.customer && q.customer.phone, 40),
@@ -2480,11 +2328,11 @@ function sanitizeQuote(q) {
     eventName: text(q.customer && q.customer.eventName, 160),
     eventType: text(q.customer && q.customer.eventType, 40),
     eventDate: text(q.customer && q.customer.eventDate, 60),
-    eventVenue: text(q.customer && q.customer.eventVenue, 200),   // venue (customer details form, 20 Oct 2026)
+    eventVenue: text(q.customer && q.customer.eventVenue, 200),   // venue (customer details form)
     eventStartTime: text(q.customer && q.customer.eventStartTime, 20),   // when the event starts - we work out bump-in from it
     customerNotes: text(q.customer && q.customer.customerNotes, 2000),   // "anything we should know" from the details form
     dayContact: text(q.customer && q.customer.dayContact, 200),   // event day contact - name & phone
-    // the band / crew who get the gear list with NO prices - not the billing CC (Max, 20 Oct 2026)
+    // the band / crew who get the gear list with NO prices - not the billing CC
     gearEmails: String((q.customer && q.customer.gearEmails) || '').split(/[,;\s]+/).map((e) => e.trim())
       .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)).slice(0, 10).join(', ').slice(0, 600),
   };
@@ -2507,15 +2355,15 @@ function sanitizeQuote(q) {
       amountCents: type === 'discount' ? Math.max(0, Math.round(Number(l.amountCents) || 0)) : 0,
     };
     if (['normal', 'discounted', 'free'].includes(l.charge)) line.charge = l.charge;
-    // a system part's place in Max's own order (System builder) - kept on quotes
+    // a system part's place in its order (System builder) - kept on quotes
     if (l.sysOrder != null && Number.isFinite(Number(l.sysOrder))) line.sysOrder = Math.max(0, Math.round(Number(l.sysOrder)));
     if (l.pkgId) line.pkgId = text(l.pkgId, 60);   // belongs to a package (itemised + package discount)
-    // parts Max removed from this kit on the quote - they stay off when it is rebuilt
+    // parts removed from this kit on the quote - they stay off when it is rebuilt
     if (Array.isArray(l.removedParts) && l.removedParts.length) line.removedParts = l.removedParts.slice(0, 100).map((x) => text(x, 60)).filter(Boolean);
-    // PUB NIGHTS (Max, 21 Oct 2026): the DJ lines the pub invoice swaps each week - never gear
+    // PUB NIGHTS: the DJ lines the pub invoice swaps each week - never gear
     if (l.pubDj === true) line.pubDj = true;
     if (l.noPick === true) line.noPick = true;
-    // a template's fill-in line: the DJ, their travel or the booking fee (Max, 22 Oct 2026)
+    // a template's fill-in line: the DJ, their travel or the booking fee
     if (['dj', 'travel', 'fee'].includes(l.djSlot)) line.djSlot = l.djSlot;
     if (l.perf === true) line.perf = true;             // the DJ's performance fee (super is worked out on it)
     if (l.superLine === true) line.superLine = true;   // the performer super line itself
@@ -2534,9 +2382,9 @@ function sanitizeQuote(q) {
     discountCents: Math.max(0, Math.round(Number(q.discountCents) || 0)),
     labourExcluded: q.labourExcluded === true,
     feeExcluded: q.feeExcluded === true,
-    superExcluded: q.superExcluded === true,   // performer super off (Max, 22 Oct 2026)
-    autoSendOnDetails: q.autoSendOnDetails === true,   // send the quote when the customer fills in their details (Max, 20 Oct 2026)
-    isTemplate: q.isTemplate === true,   // Sales Pipeline > Templates: a DJ gig invoice to copy - never sent (Max, 21 Oct 2026)
+    superExcluded: q.superExcluded === true,   // performer super off
+    autoSendOnDetails: q.autoSendOnDetails === true,   // send the quote when the customer fills in their details
+    isTemplate: q.isTemplate === true,   // Sales Pipeline > Templates: a DJ gig invoice to copy - never sent
     templateName: text(q.templateName, 80),   // its own name, e.g. "Grand View Friday"
     labourPH: { setup: !!(q.labourPH && q.labourPH.setup), pack: !!(q.labourPH && q.labourPH.pack) },
     labourOff: { setup: !!(q.labourOff && q.labourOff.setup), pack: !!(q.labourOff && q.labourOff.pack) },
@@ -2576,7 +2424,7 @@ exports.adminSaveQuote = onCall(async (request) => {
   const token = crypto.randomBytes(16).toString('hex');
 
   const ref = await db.collection('quotes').add({
-    // made by Max in admin = a QUOTE straight away; only the website bot makes estimates (Max, 17 Oct 2026)
+    // made in admin = a QUOTE straight away; only the website bot makes estimates
     number, token, status: 'approved', approvedAt: FieldValue.serverTimestamp(), ...clean, ...money,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
@@ -2610,7 +2458,7 @@ exports.adminSetQuoteStatus = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async 
 
   const update = { status, updatedAt: FieldValue.serverTimestamp() };
 
-  // UNDO ACCEPT (Max, 16 Oct 2026): back to "sent" and clear who accepted and
+  // UNDO ACCEPT: back to "sent" and clear who accepted and
   // how they chose to pay. Never when card money has been taken.
   if (request.data.undoAccept === true) {
     if (status !== 'sent') throw new HttpsError('invalid-argument', 'Undo accept goes back to sent.');
@@ -2641,7 +2489,7 @@ exports.adminSetQuoteStatus = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async 
     if (!snap.data().invoiceNumber) update.invoiceNumber = invoiceNo((await nextInvoiceNumber()).n);
   }
 
-  // MARK PAID (Max, 16 Oct 2026) - money came in another way (bank transfer, cash).
+  // MARK PAID - money came in another way (bank transfer, cash).
   // A paid job is always a tax invoice, and paid in full.
   if (update.status === 'paid') {
     const q = snap.data();
@@ -2657,7 +2505,7 @@ exports.adminSetQuoteStatus = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async 
   return { ok: true, invoiceNumber: update.invoiceNumber || snap.data().invoiceNumber || '' };
 });
 
-/*  ARCHIVE / RESTORE / DELETE a job from the Sales Pipeline (Max, 16 Oct 2026).
+/*  ARCHIVE / RESTORE / DELETE a job from the Sales Pipeline.
     Archive = status cancelled (link stops working), remembering where it was.
     Restore puts it back. Delete forever only for estimates / quotes with no
     money and no invoice number - tax invoices are kept (ATO: 5 years).      */
@@ -2685,8 +2533,8 @@ exports.adminDeleteQuote = onCall(async (request) => {
   const snap = await ref.get();
   if (!snap.exists) return { ok: true };
   const q = snap.data();
-  // ARCHIVED (cancelled / declined) jobs can be deleted even with an invoice or
-  // payment on them, when the admin typed DELETE to confirm (force) - Max, 19 Oct 2026
+  // ARCHIVED (cancelled / declined) jobs can be deleted even with an invoice
+  // or payment on them, when the admin typed DELETE to confirm (force)
   const archived = q.status === 'cancelled' || q.status === 'declined';
   const ok = (['draft', 'approved', 'sent', 'declined', 'cancelled'].includes(q.status)
     && !q.invoiceNumber && !((q.amountPaidCents || 0) > 0) && q.kind !== 'invoice')
@@ -2698,17 +2546,17 @@ exports.adminDeleteQuote = onCall(async (request) => {
 });
 
 /* =========================================================================
-   PICK LIST (Max, 16 Oct 2026)
+   PICK LIST
    Once the deposit is in, a job gets a private CREW link (crewToken) to a
    pick list: the gear with NO prices, plus Packed / Returned ticks that are
-   saved here so Max can see progress. Separate from the customer token.
+   saved here so the office can see progress. Separate from the customer token.
    ========================================================================= */
 
 /* deposit in, or paid - the booking is confirmed (same rule as js/stock.js) */
 function pickReady(q) {
   if (!q || q.status === 'cancelled' || q.status === 'declined') return false;
   return q.status === 'paid' || q.paymentStatus === 'deposit' || q.paymentStatus === 'paid'
-    || !!q.jobConfirmedAt;   // confirmed by Max, paying later (Max, 24 Oct 2026)
+    || !!q.jobConfirmedAt;   // confirmed, paying later
 }
 
 /* the gear on a job, one entry per item (items + included kit added up).
@@ -2766,7 +2614,7 @@ exports.adminDepositReceived = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async
   return { ok: true };
 });
 
-/* ADMIN - CONFIRM A JOB, PAY LATER (Max, 24 Oct 2026): the job goes ahead
+/* ADMIN - CONFIRM A JOB, PAY LATER: the job goes ahead
    before any money - it becomes an unpaid invoice, the pick list unlocks
    and goes to the office + crew (and the gear list to the band) like a
    deposit would. Payment reminders still work. undo: true takes it back. */
@@ -2790,7 +2638,7 @@ exports.adminConfirmJob = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (req
   return { ok: true };
 });
 
-/* ADMIN - UNDO A DEPOSIT / PAYMENT that was marked by hand (Max, 16 Oct 2026):
+/* ADMIN - UNDO A DEPOSIT / PAYMENT that was marked by hand:
    the job goes back to a sent quote, as if nothing was paid. Refused if any
    CARD money came through Stripe - refund that in Stripe instead.          */
 exports.adminUndoPayment = onCall(async (request) => {
@@ -2816,7 +2664,7 @@ exports.adminUndoPayment = onCall(async (request) => {
 });
 
 /* ADMIN - the crew link for a booked job (makes one the first time) */
-/*  ADMIN - the gear list link to text the band (Max, 21 Oct 2026) */
+/*  ADMIN - the gear list link to text the band */
 exports.adminGearListLink = onCall(async (request) => {
   requireAdmin(request);
   const ref = db.collection('quotes').doc(String((request.data || {}).id || ''));
@@ -2843,7 +2691,7 @@ exports.adminPickListLink = onCall(async (request) => {
 });
 
 /* PUBLIC (crew link) - the pick list: job details and gear, NO prices */
-/*  GEAR LIST for the band (Max, 21 Oct 2026): ?v=gear asks with gear:true and
+/*  GEAR LIST for the band: ?v=gear asks with gear:true and
     opens as soon as the quote is out (no prices, no ticks). The full pick
     list with Packed / Returned ticks still waits for the deposit.          */
 const gearReady = (q) => !!q && ['approved', 'sent', 'accepted', 'invoiced', 'paid'].includes(q.status);
@@ -2852,14 +2700,14 @@ exports.getPickList = onCall(async (request) => {
   const doc = await quoteByCrewToken((request.data || {}).token);
   const q = doc.data();
   const gear = (request.data || {}).gear === true;
-  // crew already on the job get the full pick list even before payment (Max, 24 Oct 2026)
+  // crew already on the job get the full pick list even before payment
   const crewOn = Array.isArray(q.crewAssigned) && q.crewAssigned.length > 0 && gearReady(q);
   if (!(pickReady(q) || crewOn || (gear && gearReady(q)))) throw new HttpsError('failed-precondition', 'This list is not available yet.');
   // categories from inventory, so the gear can be grouped
   const inv = await loadQuoteInventory();
   const cat = {};
   inv.forEach((it) => { cat[it.id] = it.isSystem ? (it.bundleType === 'package' ? 'Packages' : 'Kits') : (it.category || ''); });   // kits & packages get their own groups
-  // each item's photo from Inventory - crew tap the item to see what it looks like (Max, 24 Oct 2026)
+  // each item's photo from Inventory - crew tap the item to see what it looks like
   const photo = {};
   inv.forEach((it) => { if (it.photoUrl) photo[it.id] = String(it.photoUrl); });
   const c = q.customer || {};
@@ -2868,7 +2716,7 @@ exports.getPickList = onCall(async (request) => {
     // operators and vehicles booked on the job
     .concat((q.lines || []).filter((l) => l.resType).map((l) => ({ name: (l.qty > 1 ? l.qty + ' × ' : '') + (l.name || ''), note: l.resType === 'staff' ? ((l.days || 1) + ' day' + ((l.days || 1) === 1 ? '' : 's')) : 'vehicle' })));
   const del = (q.lines || []).find((l) => l.type === 'delivery');
-  /*  LAID OUT LIKE THE QUOTE (Max, 20 Oct 2026): every gear line in quote
+  /*  LAID OUT LIKE THE QUOTE: every gear line in quote
       order; "sub" = an included part that sits under the item above it.
       Each line has its own tick (key), itemKey reads ticks saved before. */
   const rows = [];
@@ -2885,7 +2733,7 @@ exports.getPickList = onCall(async (request) => {
       sysOrder: l.sysOrder != null ? l.sysOrder : null,
     });
   });
-  /*  THE BRIEF (Max, 22 Oct 2026): a DJ gig's gear list also carries what
+  /*  THE BRIEF: a DJ gig's gear list also carries what
       the DJ needs to know - set times, the booking notes (the venue's
       message), the venue's own notes, address and contact.            */
   let brief = null;
@@ -2910,7 +2758,7 @@ exports.getPickList = onCall(async (request) => {
   return {
     brief,
     rows,
-    // EXTRA GEAR added by the crew on the pick list - not on the quote, no price (Max, 24 Oct 2026)
+    // EXTRA GEAR added by the crew on the pick list - not on the quote, no price
     extras: gear ? [] : (q.pickExtras || []).map((x) => ({ key: x.key, name: x.name, qty: x.qty, photo: x.photo || '' })),
     inventory: gear ? [] : inv.filter((it) => it.name && it.active !== false && !it.isSystem)
       .map((it) => ({ id: it.id, name: String(it.name).slice(0, 120), photo: it.photoUrl || '' }))
@@ -2922,12 +2770,12 @@ exports.getPickList = onCall(async (request) => {
     town: (q.delivery && q.delivery.town) || '',
     delivery: del ? (del.name || 'Delivery & pickup') : 'Customer pickup',
     contact: { name: c.name || '', business: c.business || '', phone: c.phone || '', address: c.address || '' },
-    // from the customer details form (Max, 20 Oct 2026): where the gear goes, when it starts, what to know
+    // from the customer details form: where the gear goes, when it starts, what to know
     venue: c.eventVenue || '',
     times: { start: c.eventStartTime || q.botStart || '', finish: q.botFinish || '' },
     customerNotes: c.customerNotes || '',
     dayContact: c.dayContact || '',
-    assigned: (q.crewAssigned || []).map((x) => ({ name: x.name || '', phone: x.phone || '' })),   // staff on the job (Max, 21 Oct 2026)
+    assigned: (q.crewAssigned || []).map((x) => ({ name: x.name || '', phone: x.phone || '' })),   // staff on the job
     crew,
     notes: q.crewNotes || '',
     items,
@@ -2973,7 +2821,7 @@ exports.adminSendQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
     update.status = 'sent';
     update.sentAt = FieldValue.serverTimestamp();
   }
-  // EMAIL RECORD (Max, 16 Oct 2026): when it last went out, to whom, how many times
+  // EMAIL RECORD: when it last went out, to whom, how many times
   if (mail.sent) {
     update.lastEmailedAt = FieldValue.serverTimestamp();
     update.lastEmailedTo = String(q.customer.email || '') + (q.customer.ccEmail ? ' (cc ' + q.customer.ccEmail + ')' : '');
@@ -2985,7 +2833,7 @@ exports.adminSendQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
 
 /*  PUBLIC - fetch a quote by its token. Returns a customer-safe subset; the
     doc itself stays closed to browsers.                                    */
-const QUOTE_DEPOSIT_PCT = 50;   // deposit to secure a booking (Max, 16 Oct 2026)
+const QUOTE_DEPOSIT_PCT = 50;   // deposit to secure a booking
 
 exports.getQuote = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
   const token = String((request.data || {}).token || '').trim();
@@ -2999,7 +2847,7 @@ exports.getQuote = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
   const secs = (t) => (t && t.seconds != null ? t.seconds : null);
 
   // included / required items are grouped by category on the customer's copy,
-  // the same as in the quote builder (Max, 15 Oct 2026)
+  // the same as in the quote builder
   const lines = (q.lines || []).map((l) => ({ ...l }));
   const kitIds = [...new Set(lines.filter((l) => l.itemId).map((l) => l.itemId))];   // all gear lines: used for the Audio / Lighting / Staging breakdown too
   if (kitIds.length) {
@@ -3033,8 +2881,8 @@ exports.getQuote = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
     createdAt: secs(q.createdAt),
     paymentStatus: q.paymentStatus || '',      // '' | bank | deposit | paid
     bankPlan: q.bankPlan || '',                // bank payers: 'deposit' | 'full'
-    payFull: q.payFull === true,               // "pay in full up front" - no deposit option (Max, 22 Oct 2026)
-    gigDj: q.gigDj || (q.gigBookingId ? await gigDjFor(q.gigBookingId) : null),   // DJ gig quotes: who played + their set (Max, 22 Oct 2026)
+    payFull: q.payFull === true,               // "pay in full up front" - no deposit option
+    gigDj: q.gigDj || (q.gigBookingId ? await gigDjFor(q.gigBookingId) : null),   // DJ gig quotes: who played + their set
     paymentMethod: q.paymentMethod || '',
     amountPaidCents: q.amountPaidCents || 0,
     depositPct: QUOTE_DEPOSIT_PCT,
@@ -3060,7 +2908,7 @@ exports.acceptQuote = onCall(async (request) => {
   }
 
   const bank = data.method === 'bank';
-  // ACCEPT = INVOICE (Max, 16 Oct 2026): the quote becomes a tax invoice straight away
+  // ACCEPT = INVOICE: the quote becomes a tax invoice straight away
   const inv = q.invoiceNumber || invoiceNo((await nextInvoiceNumber()).n);
   await doc.ref.update({
     status: 'invoiced',
@@ -3070,14 +2918,14 @@ exports.acceptQuote = onCall(async (request) => {
     acceptedName: name,
     acceptedAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
-    // BANK IN FULL (Max, 20 Oct 2026): a bank payer picks deposit or the whole amount
+    // BANK IN FULL: a bank payer picks deposit or the whole amount
     ...(bank ? { paymentMethod: 'bank', paymentStatus: 'bank', bankPlan: data.plan === 'full' || q.payFull === true ? 'full' : 'deposit' } : {}),
   });
   return { ok: true };
 });
 
 /* -------------------------------------------------------------------------
-   quoteCheckout  PUBLIC (Max, 16 Oct 2026)
+   quoteCheckout  PUBLIC
    The customer accepts their quote and pays by card through Stripe -
    either the 50% deposit or the full amount (or the balance, once the
    deposit is in). The quote is only marked accepted / paid when Stripe's
@@ -3103,10 +2951,10 @@ exports.quoteCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request)
   const total = Math.max(0, Math.round(quoteGrandTotal(q)));   // + any late payment charges
   const paid = Math.max(0, Math.round(q.amountPaidCents || 0));
   const owing = total - paid;
-  // PAY IN FULL WITHIN 7 DAYS (Max, 20 Oct 2026): the balance is due 7 days
+  // PAY IN FULL WITHIN 7 DAYS: the balance is due 7 days
   // before the event, so from then on there is no deposit option.
   const dueDay = addDaysISO(q.hire && q.hire.startDate, -7);
-  const fullOnly = (!!dueDay && dueDay <= brisbaneToday()) || q.payFull === true;   // or "pay in full up front" (Max, 22 Oct 2026)
+  const fullOnly = (!!dueDay && dueDay <= brisbaneToday()) || q.payFull === true;   // or "pay in full up front"
   let amount = option === 'full' || paid > 0 || fullOnly ? owing : Math.round(total * QUOTE_DEPOSIT_PCT / 100);
   if (amount < 50) throw new HttpsError('failed-precondition', 'Nothing left to pay on this quote.');
   const label = paid > 0 ? 'balance' : (option === 'full' || fullOnly ? 'payment in full' : QUOTE_DEPOSIT_PCT + '% deposit');
@@ -3232,7 +3080,7 @@ function botFindItem(inv, kws) {
 }
 
 exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
-  await limitIp(request, 'bot', 10, 60);   // security audit: 10 estimates an hour per visitor
+  await limitIp(request, 'bot', 10, 60);   // 10 estimates an hour per visitor
   const d = request.data || {};
   if (String(d.website || d.company_url || '').trim()) return { ok: true };   // honeypot
 
@@ -3258,13 +3106,13 @@ exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
 
   if (!eventType) throw new HttpsError('invalid-argument', 'Please choose an event type.');
   if (!name || !(email || phone)) throw new HttpsError('invalid-argument', 'Please leave your name and a contact.');
-  if (email) await rateLimit('bot|to|' + email.toLowerCase(), 3, 24 * 60);   // security audit: never a spam cannon
+  if (email) await rateLimit('bot|to|' + email.toLowerCase(), 3, 24 * 60);   // at most 3 estimate emails a day to one address
 
   const inv = await loadQuoteInventory();
   const byId = {};
   inv.forEach((it) => { byId[it.id] = it; });
 
-  // PACKAGES (Max, 17 Oct 2026): packages built in Inventory (kits + items)
+  // PACKAGES: packages built in Inventory (kits + items)
   // that are ticked for the bot, plus any old-style ones not yet moved over.
   const pkgSnap = await db.collection('packages').get();
   const packages = [];
@@ -3285,7 +3133,7 @@ exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
   const lines = [];
   let discountCents = 0;
   if (pkg && pkg.invPackage) {
-    // ITEMISED (Max, 17 Oct 2026): each kit / item priced, parts Included, then the package discount
+    // ITEMISED: each kit / item priced, parts Included, then the package discount
     const P = pkg.invPackage;
     const eff = {};
     (P.requirements || []).forEach((r) => { if (r && r.itemId) eff[r.itemId] = (eff[r.itemId] || 0) + Math.max(0, Math.round(r.qty || 0)); });
@@ -3386,8 +3234,8 @@ exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
     lines.push({ type: 'custom', name: 'On-site AV technician', qty: 1, unitCents: Math.round(techTotal / days), baseCents: techRate, days, resType: 'staff' });
   }
 
-  // BOOKING & ADMIN FEE: 2% of everything before GST - same as the admin quote builder (Max, 16 Oct 2026)
-  // rounded to the nearest $10 so it reads cleanly (Max, 17 Oct 2026)
+  // BOOKING & ADMIN FEE: 2% of everything before GST, rounded to the nearest
+  // $10 - same as the admin quote builder
   const feeCents = Math.round(quoteMoney({ hire: { days }, lines, discountCents }).netCents * 2 / 100 / 1000) * 1000;
   if (feeCents > 0) lines.push({ type: 'fee', name: 'Booking & admin', qty: 1, unitCents: feeCents, days: 1 });
 
@@ -3436,10 +3284,8 @@ exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
     resp.custom = true;
   }
 
-  /*  Instant price-guide email to the visitor. Reuses the same estimate
-      template as the retired services bot (working as intended). It never
-      throws - the draft is already saved, so a mail hiccup can't lose the
-      enquiry; the send result is logged and folded back onto the draft.   */
+  /* Instant price-guide email to the visitor. Never throws - the draft is
+     already saved; the send result is logged and saved onto the draft. */
   if (email) {
     const extraLabels = chosenExtras.slice();
     if (needsGenerator) extraLabels.push('Generator');
@@ -3508,7 +3354,7 @@ exports.tellOutbox = onDocumentCreated({ document: 'tellOutbox/{id}', secrets: [
    Bookings are private (they hold contact details and money), so the page
    cannot read them itself. This hands out the business name and its
    category ONLY, and only for vendors who are confirmed AND paid (or
-   marked free) - Max, 14 Oct 2026. Nothing else ever leaves here.
+   marked free). Nothing else ever leaves here.
    ========================================================================= */
 /*  The vendor's own link, from the "Social media links" box they filled in
     (free text). Only a real web address is used - the first one found,
@@ -3575,7 +3421,7 @@ exports.eventLineup = onRequest({ cors: true }, async (req, res) => {
 });
 
 /* -------------------------------------------------------------------------
-   VENDOR TAX INVOICES  (Max, 19 Oct 2026)
+   VENDOR TAX INVOICES
 
    Each paid vendor booking gets an invoice number from the SAME sequence as
    the Sales Pipeline invoices (SG-I-0001 ...) and a private link to a
@@ -3673,8 +3519,7 @@ async function sendVendorInvoice(id, opts) {
   return { ...mail, to, test, invoiceNumber: inv.invoiceNumber };
 }
 
-/*  SEND TO EVERY PAID VENDOR of an event who has not had theirs yet
-    (Max said go, 19 Oct 2026). Pressed from the Sales Pipeline.        */
+/*  SEND TO EVERY PAID VENDOR of an event who has not had theirs yet. Pressed from the Sales Pipeline.        */
 exports.adminSendVendorInvoicesAll = onCall({ secrets: [SMTP_USER, SMTP_PASS], timeoutSeconds: 300 }, async (request) => {
   requireAdmin(request);
   const eventId = String((request.data || {}).eventId || '').trim();
@@ -3794,7 +3639,7 @@ exports.adminEnsureVendorInvoices = onCall(async (request) => {
 });
 
 /* =========================================================================
-   MESSAGES  (Max, 19 Oct 2026)  -  step 1: vendors
+   MESSAGES  -  step 1: vendors
 
    Emails written in the admin Messages page, stored in messages/{id}:
      eventId, audience ('vendors'), name, subject, body (plain text + {{fields}}),
@@ -3894,7 +3739,7 @@ async function invoiceEmailPaused(eventId) {
   return snap.docs.some((d) => d.data().system === 'invoice' && d.data().status === 'paused');
 }
 
-/*  The invoice email's wording, as Max approved it on 19 Oct 2026. */
+/* The invoice email's starter wording. */
 const INVOICE_SUBJECT = 'Your tax invoice & event guide - {{event_name}}';
 const INVOICE_BODY = "Hi {{vendor_name}}, thank you for being part of {{event_name}} on {{event_date}}. Your tax invoice, event details and vendor instructions are all in one place.\n\nHelp us promote the event! A bigger crowd means more sales for every stall. Your guide includes the event poster, the A4 program and share links - please post them on your socials, share them with your customers, pop the poster up and help us advertise.";
 
@@ -3914,18 +3759,18 @@ function starterMessages(eventId) {
     { ...base, name: 'Thank you', status: 'review',
       subject: 'Thank you for being part of {{event_name}}', trigger: { type: 'daysAfter', days: 1 },
       body: "Hi {{vendor_name}},\n\nThank you for joining us at {{event_name}} - we hope it was a great night for {{business_name}}.\n\nWe'd love your feedback. Just reply to this email and tell us what worked and what we can do better.\n\nFollow us on Instagram @soundzgood_events for our next events.\n\nThanks again,\nThe SoundzGood team" },
-    // WAITLIST OFFER (Max, 20 Oct 2026): sent by the waitlist the moment a spot opens
+    // WAITLIST OFFER: sent by the waitlist the moment a spot opens
     { ...base, system: 'waitlist', name: 'Waitlist - a spot opened', status: 'review', trigger: { type: 'waitlist' },
       subject: 'A spot just opened at {{event_name}} - claim it now',
       body: "Hi {{vendor_name}},\n\nGood news - a spot has just opened at {{event_name}} on {{event_date}}, and you're next on the waitlist.\n\nWe've reserved site {{site_number}} for {{business_name}} until {{expires_at}}. Press Accept below to book and pay - the spot is only yours once payment is received.\n\nCan't make it? Press Decline and we'll offer it to the next vendor.\n\nThanks,\nThe SoundzGood team" },
-    // SPONSORSHIP (Max, 20 Oct 2026): the ask (sent when Max presses Send) and a follow-up 7 days later
+    // SPONSORSHIP: the ask (sent when Max presses Send) and a follow-up 7 days later
     { ...base, audience: 'sponsors', system: 'sponsor-ask', name: 'Sponsorship - the ask', status: 'review', trigger: { type: 'manual' },
       subject: 'Partnering with {{event_name}} - keeping it free for local families',
       body: "Hi {{vendor_name}},\n\nI'm Max from SoundzGood - we run Eatz & Beatz, the free community night in Bowen with local food, markets and live music.\n\nWe're planning our next event and we'd love {{business_name}} to be part of it. Keeping the night free for families takes local businesses who believe in it, and in return we put your business in front of the whole community - on the posters, our socials, the event page and from the stage on the night.\n\nThere are a few ways to get involved, from a small supporter right up to presenting partner. Everything is on the page below - have a look and let me know if anything suits.\n\nThanks for considering it,\nMax\nSoundzGood Whitsundays - 0422 393 022" },
     { ...base, audience: 'sponsors', system: 'sponsor-followup', name: 'Sponsorship - follow-up', status: 'review', trigger: { type: 'sponsorFollowup', days: 7 },
       subject: 'Following up - {{event_name}}',
       body: "Hi {{vendor_name}},\n\nJust following up on my note last week about supporting {{event_name}}. No pressure at all - if it's not the right time, a quick reply is perfect and I won't chase again.\n\nIf you'd like to have a chat about it, I'm on 0422 393 022.\n\nThanks,\nMax" },
-    // GOOGLE REVIEW (Max, 20 Oct 2026): 3 days after - the Tuesday after a Saturday event
+    // GOOGLE REVIEW: 3 days after - the Tuesday after a Saturday event
     { ...base, name: 'Google review', status: 'review',
       subject: 'Could you leave us a quick review? - {{event_name}}', trigger: { type: 'daysAfter', days: 3 },
       body: "Hi {{vendor_name}},\n\nThanks again for being part of {{event_name}}. We hope it was a great night for {{business_name}}.\n\nCould you take 30 seconds to leave us a Google review? It really helps us grow community events like this one:\nhttps://g.page/r/CSUgRhfqGvdnEAI/review\n\nThank you!\nThe SoundzGood team" },
@@ -4135,7 +3980,7 @@ exports.vendorUnsubscribe = onRequest(async (req, res) => {
   if (!/^[a-f0-9]{20,40}$/.test(token)) return page('That link is not valid.');
   const snap = await db.collection('bookings').where('invoiceToken', '==', token).limit(1).get();
   if (snap.empty) return page('That link is not valid.');
-  // SECURITY AUDIT (20 Oct 2026): email scanners open links by themselves -
+  // email scanners open links by themselves -
   // opening the link only shows a button; pressing it does the unsubscribe.
   if (req.method !== 'POST') return page('Unsubscribe from event news?<form method="post" style="margin-top:18px"><button style="background:#ff6b00;color:#fff;border:0;padding:12px 22px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer">Yes, unsubscribe me</button></form>');
   await snap.docs[0].ref.update({ promoOptOut: true, promoOptOutAt: FieldValue.serverTimestamp() });
@@ -4144,7 +3989,7 @@ exports.vendorUnsubscribe = onRequest(async (req, res) => {
 
 
 /* =========================================================================
-   LATE PAYMENT CHARGES  (Max, 20 Oct 2026)
+   LATE PAYMENT CHARGES
    Terms "Overdue payments": an invoice still unpaid MORE THAN 28 DAYS after its
    due date (due = 7 days before the event) may get 2% of the outstanding
    balance, and another 2% for each further full month. NOTHING IS ADDED BY
@@ -4204,9 +4049,9 @@ exports.adminRemoveLateFee = onCall(async (request) => {
   return { ok: true };
 });
 
-/*  PREVIEW A CLIENT EMAIL (Messages > Clients, Max, 20 Oct 2026). Shows the
-    real layout: quote / invoice use your most recent one, the bot estimate
-    and lead email use sample words. Sends nothing.                         */
+/* PREVIEW A CLIENT EMAIL (Messages > Clients). Shows the real layout:
+   quote / invoice use your most recent one, the bot estimate and lead
+   email use sample words. Sends nothing. */
 exports.adminPreviewClientEmail = onCall(async (request) => {
   requireAdmin(request);
   const kind = String((request.data || {}).kind || '');
@@ -4220,7 +4065,7 @@ exports.adminPreviewClientEmail = onCall(async (request) => {
     const { leadHtml } = require('./lib/lead-email');
     return { subject: '(you write the subject)', html: leadHtml('Hi there,\n\nThis is where your own message goes - you write it each time in the Lead Generator.\n\nCheers,\nMax'), note: 'You write these each time - this shows the letterhead it goes out in.' };
   }
-  if (kind === 'reminder') {   // payment reminder (Max, 22 Oct 2026)
+  if (kind === 'reminder') {   // payment reminder
     const { renderPaymentReminder } = require('./lib/quote-doc-email');
     const snap = await db.collection('quotes').orderBy('createdAt', 'desc').limit(60).get();
     const doc = snap.docs.find((d) => owesMoney(d.data()));
@@ -4240,7 +4085,7 @@ exports.adminPreviewClientEmail = onCall(async (request) => {
 });
 
 /* =========================================================================
-   VENDOR WAITLIST  (Max, 20 Oct 2026)
+   VENDOR WAITLIST
 
    When a vendor type sells out, the vendor page offers "Join the waitlist".
    When a spot opens, the FIRST person waiting is emailed and that spot is
@@ -4264,7 +4109,7 @@ const WAITLIST_URL = process.env.WAITLIST_URL || 'https://waitlistrespond-4smug7
 
 /*  The vendor page: join. No account needed; one entry per email per type. */
 exports.joinWaitlist = onCall(async (request) => {
-  await limitIp(request, 'waitlist', 10, 60);   // security audit
+  await limitIp(request, 'waitlist', 10, 60);
   const d = request.data || {};
   const clean = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
   const eventId = clean(d.eventId, 100);
@@ -4458,7 +4303,7 @@ exports.waitlistRespond = onRequest(async (req, res) => {
   const d = snap.docs[0];
   const w = d.data();
   if (!['offered', 'claimed'].includes(w.status)) return page('All sorted.', 'This offer has already been answered.');
-  // SECURITY AUDIT (20 Oct 2026): email scanners open links by themselves -
+  // email scanners open links by themselves -
   // opening the link only asks; pressing the button gives the spot up.
   if (req.method !== 'POST') return page('Give up this spot?', 'If you can&rsquo;t make it, press the button and we&rsquo;ll offer the spot to the next vendor.<form method="post" style="margin-top:18px"><button style="background:#111;color:#fff;border:0;padding:12px 22px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer">Yes, decline the spot</button></form>');
   await d.ref.update({ status: 'declined', declinedAt: FieldValue.serverTimestamp() });
@@ -4467,7 +4312,7 @@ exports.waitlistRespond = onRequest(async (req, res) => {
 });
 
 /* =========================================================================
-   SPONSORSHIP OUTREACH  (Max, 20 Oct 2026)
+   SPONSORSHIP OUTREACH
 
    Messages > Sponsors: Max adds businesses (Lead Generator, typed in, past
    sponsors), ticks who to ask and presses Send. Each gets the approved
@@ -4529,7 +4374,7 @@ exports.getSponsorInfo = onCall(async (request) => {
 
 /*  PUBLIC: "I'm interested" from the sponsor page. */
 exports.sponsorInterest = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
-  await limitIp(request, 'sponsor', 10, 60);   // security audit
+  await limitIp(request, 'sponsor', 10, 60);
   const d = request.data || {};
   const clean = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
   const eventId = clean(d.eventId, 100);
@@ -4637,7 +4482,7 @@ exports.sponsorFollowups = onSchedule(
 );
 
 /* =========================================================================
-   CUSTOMER FILLS IN THEIR OWN DETAILS  (Max, 20 Oct 2026)
+   CUSTOMER FILLS IN THEIR OWN DETAILS
    From a quote, Max texts the customer a link (/details?t=<detailsToken>).
    They fill in name, business, email, billing CC, phone, address, event,
    date and venue. It lands straight on the quote and in Customers, and the
@@ -4689,7 +4534,7 @@ exports.getDetailsForm = onCall(async (request) => {
 
 /*  PUBLIC: they press Submit. */
 exports.submitDetails = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
-  await limitIp(request, 'details', 20, 60);   // security audit
+  await limitIp(request, 'details', 20, 60);
   const d = request.data || {};
   const doc = await quoteByDetailsToken(d.token);
   const q = doc.data();
@@ -4731,7 +4576,7 @@ exports.submitDetails = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (reque
       + '\n\nThey are already on the quote - open it in the Sales Pipeline.',
   }, {}, { to: process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au' });
 
-  /*  PRE-APPROVED (Max, 20 Oct 2026): "Send them the quote automatically when
+  /*  PRE-APPROVED: "Send them the quote automatically when
       they fill it in" was ticked - the quote goes to the email they just gave. */
   let autoSent = false;
   if (q.autoSendOnDetails && q.token && ['approved', 'sent'].includes(q.status) && !q.autoSentOnDetailsAt) {
@@ -4754,7 +4599,7 @@ exports.submitDetails = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (reque
 });
 
 /* =========================================================================
-   EMAIL THE GEAR LIST (no prices) to the band / crew  (Max, 20 Oct 2026)
+   EMAIL THE GEAR LIST (no prices) to the band / crew
    Goes to the quote's "Gear list to" emails (customer.gearEmails) - never
    the billing CC. Links to the pick list in read-only gear view.
    ========================================================================= */
@@ -4765,7 +4610,7 @@ exports.adminSendGearList = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (r
   if (!snap.exists) throw new HttpsError('not-found', 'No such quote.');
   const q = snap.data();
   if (!pickReady(q)) throw new HttpsError('failed-precondition', 'The gear list unlocks once the deposit is in.');
-  // TEST (Max, 20 Oct 2026): the gear list + the pick list email, both to the signed-in admin only
+  // TEST: the gear list + the pick list email, both to the signed-in admin only
   if ((request.data || {}).test === true) {
     const me = String(request.auth.token.email || '');
     if (!me) throw new HttpsError('failed-precondition', 'Your admin login has no email address.');
@@ -4779,12 +4624,11 @@ exports.adminSendGearList = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (r
 });
 
 /* =========================================================================
-   GEAR LIST - AUTOMATIC  (Max, 20 Oct 2026)
-   "make it automatic when deposit is paid ... and 3 days before the event
-   and again on the day". The band / crew in "Gear list to" get the gear
-   list (no prices); the office gets the pick list link (with ticks) for
-   staff. Nothing goes before the deposit is in. If the event date moves,
-   the reminders follow the new date.
+   GEAR LIST - AUTOMATIC
+   Sent when the deposit is paid, 3 days before the event and on the day.
+   The band / crew in "Gear list to" get the gear list (no prices); the
+   office gets the pick list link (with ticks) for staff. Nothing goes
+   before the deposit is in. If the event date moves, the reminders follow.
    ========================================================================= */
 
 /*  "Tue 20 Oct 2026" or "2026-10-20" -> "2026-10-20"; falls back to the hire start. */
@@ -4853,11 +4697,11 @@ async function autoGearOnDeposit(id) {
 }
 
 /*  Every morning at 9:35: jobs 3 days out, and jobs on today. */
-/*  GEAR + PICK LIST REMINDERS (Max, 24 Oct 2026): staff get the pick list
-    at 6am so they have it early; the customer / band gear list goes at
-    9:35am. Each part is marked once sent ("staff_" / "gear_" + reason +
-    date), and the 9:35 run also sends any staff list the 6am run missed.
-    Jobs already reminded the old way (one key for both) count as done.  */
+/* GEAR + PICK LIST REMINDERS: staff get the pick list at 6am; the
+   customer / band gear list goes at 9:35am. Each part is marked once sent
+   ("staff_" / "gear_" + reason + date), and the 9:35 run also sends any
+   staff list the 6am run missed. Older jobs with one shared key count as
+   done. */
 async function runGearReminders(which) {
   const today = brisbaneTodayISO();
   const snap = await db.collection('quotes').where('status', 'in', ['invoiced', 'paid']).get();
@@ -4895,11 +4739,11 @@ exports.gearListReminders = onSchedule(
 );
 
 /* =========================================================================
-   ASSIGN CREW TO A JOB  (Max, 21 Oct 2026)
+   ASSIGN CREW TO A JOB
    From the dashboard: tick the staff (Crew & Vehicles) working a job. The
    names go on the quote (crewAssigned) and anyone NEWLY added with an email
-   gets the job details + their pick list link. Staff are our own people -
-   Max asked for this, and the admin confirms before it sends.
+   gets the job details + their pick list link. The admin confirms before
+   it sends.
    ========================================================================= */
 exports.adminAssignCrew = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
   requireAdmin(request);
@@ -4928,7 +4772,7 @@ exports.adminAssignCrew = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (req
   const c = q.customer || {};
   const ev = c.eventName || c.business || c.name || 'a job';
   const when = c.eventDate || (q.hire && q.hire.startDate) || '';
-  const link = SITE_URL + '/picklist?t=' + token;   // staff always get the pick list, not the gear list (Max, 24 Oct 2026)
+  const link = SITE_URL + '/picklist?t=' + token;   // staff always get the pick list, not the gear list
   const sent = [], noEmail = [], failed = [];
   for (const x of fresh) {
     if (!DETAIL_EMAIL_RE.test(x.email)) { noEmail.push(x.name); continue; }
@@ -4947,7 +4791,7 @@ exports.adminAssignCrew = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (req
 });
 
 /* =========================================================================
-   PUB NIGHT INVOICES  (Max, 21 Oct 2026)
+   PUB NIGHT INVOICES
 
    Regular nights (regularNights/, e.g. Grand View Hotel every Friday) get an
    invoice per night that makes itself:
@@ -4981,7 +4825,7 @@ function pubHours(start, finish) {
 const ampm = (t) => { const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); if (!r) return ''; const h = +r[1]; return (h % 12 || 12) + (r[2] === '00' ? '' : ':' + r[2]) + (h < 12 ? 'am' : 'pm'); };
 const prettyDay = (iso) => { const [y, m, d] = String(iso).split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).replace(/,/g, ''); };
 
-/*  DJ TRAVEL (Max, 21 Oct 2026): a FIXED fee per pair of towns, set by Max
+/*  DJ TRAVEL: a FIXED fee per pair of towns, set by Max
     in Entertainment (travelFees/: e.g. Airlie Beach <-> Bowen $80, Mackay or
     Townsville <-> Bowen $150). The DJ's town is actRates.location; the gig's
     town is the last part of the venue ("Grand View Hotel, Bowen" -> Bowen).
@@ -5150,14 +4994,14 @@ exports.getPubTimes = onCall(async (request) => {
     act: (t.exists && t.data().name) || b.slug, date: b.date, venue: b.venue || '',
     start: b.actualStart || b.start || '', finish: b.actualFinish || b.finish || '',
     confirmed: !!b.timesConfirmedAt,
-    // before the gig the link asks "are you in?"; from 5pm on the night it asks for times (Max, 21 Oct 2026)
+    // before the gig the link asks "are you in?"; from 5pm on the night it asks for times
     mode: brisbaneTodayISO() < b.date || (brisbaneTodayISO() === b.date && brisbaneMinutesNow() < 17 * 60) ? 'confirm' : 'times',
     djConfirmed: !!b.djConfirmedAt,
     plannedStart: b.start || '', plannedFinish: b.finish || '',
   };
 });
 
-/*  PUBLIC - the DJ confirms their times (Max, 21 Oct 2026):
+/*  PUBLIC - the DJ confirms their times:
       - only 5pm to 2:30am can be picked; same start and finish is refused
       - more than 8 hours is refused ("check with Max")
       - 4 hours or less: the invoice goes to the customer straight away
@@ -5191,7 +5035,7 @@ exports.submitPubTimes = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
 });
 
 /*  Make it a tax invoice and email it to the customer. Used by Max's Send
-    button and by the DJ confirming 4 hours or less (Max, 21 Oct 2026). */
+    button and by the DJ confirming 4 hours or less. */
 async function sendGigInvoice(id) {
   const ref = db.collection('quotes').doc(String(id || ''));
   const snap = await ref.get();
@@ -5219,8 +5063,7 @@ exports.adminSendPubInvoice = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async 
 });
 
 /* =========================================================================
-   DJ GIG INVOICES - TEMPLATES  (Max, 21 Oct 2026 - replaces "copy the pub's
-   last invoice" and regular nights)
+   DJ GIG INVOICES - TEMPLATES
 
    Sales Pipeline > Templates holds a generic DJ gig invoice (isTemplate).
    A CONFIRMED booking in Entertainment with a customer (Customers) and a
@@ -5240,7 +5083,7 @@ function tradingMins(t) {
   return null;   // outside trading hours
 }
 /*  Hours played, across midnight ("22:00"-"03:00" = 5). Any venue - the
-    5pm-2:30am trading window only checks what DJs type in (Max, 22 Oct 2026). */
+    5pm-2:30am trading window only checks what DJs type in. */
 function gigHours(start, finish) {
   const p = (t) => { const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); return r ? +r[1] * 60 + +r[2] : null; };
   const a = p(start); let b = p(finish);
@@ -5257,10 +5100,10 @@ async function gigSync(bookingId, opts = {}) {
   const ex = existing ? existing.data() : null;
   const bSnap = await db.collection('talentSchedule').doc(id).get();
   const b = bSnap.exists ? bSnap.data() : null;
-  // UNCONFIRMED (Max, 22 Oct 2026): a new venue's night, DJ held - it gets its quote too
+  // UNCONFIRMED: a new venue's night, DJ held - it gets its quote too
   const live = b && ['confirmed', 'unconfirmed'].includes(b.status || 'confirmed') && b.templateId && b.customerId;
   /*  A SENT quote nobody has accepted or paid can be updated when Max says
-      so (Max, 23 Oct 2026) - the venue's link shows the new version and it
+      so - the venue's link shows the new version and it
       stays "sent". Accepted / invoiced / paid ones never change.        */
   const sentOk = ex && ex.status === 'sent' && opts.force === true && !ex.acceptedAt && !(ex.amountPaidCents > 0) && !['bank', 'deposit', 'paid'].includes(ex.paymentStatus);
   if (ex && !['approved', 'cancelled'].includes(ex.status) && !sentOk) return { locked: true, id: existing.id, status: ex.status };
@@ -5279,11 +5122,11 @@ async function gigSync(bookingId, opts = {}) {
   const name = (t.exists && t.data().name) || slugName;
   const r = await db.collection('actRates').doc(b.slug).get();
   const rate = r.exists ? r.data() : {};
-  // the DJ's real times, else the booked times, else 9:30pm + 4 hours (Max, 22 Oct 2026)
+  // the DJ's real times, else the booked times, else 9:30pm + 4 hours
   const start = b.actualStart || b.start || '21:30';
   const finish = b.actualFinish || (b.actualStart ? '' : b.finish) || plus4h(start);
   const hours = gigHours(start, finish);
-  /*  PRICE ON REQUEST (Max, 23 Oct 2026): bigger DJs have no set rate - Max
+  /*  PRICE ON REQUEST: bigger DJs have no set rate - Max
       asks them each time and types their price on the quote. That typed
       price is kept whenever the quote is rebuilt.                      */
   const onRequest = rate.onRequest === true;
@@ -5296,19 +5139,19 @@ async function gigSync(bookingId, opts = {}) {
     type: 'custom', name: 'DJ performance - ' + name,
     description: 'Hourly' + (start && finish ? ' · ' + ampm(start) + '-' + ampm(finish) : '') + (b.timesConfirmedAt ? ' (confirmed)' : '')
       + (hours ? '' : ' · hours to confirm') + (perHour ? '' : onRequest ? ' · PRICE ON REQUEST - ask the DJ, then type their hourly price here' : ' · NO RATE SET - add it on the DJs tab'),
-    qty: hours || 0, unitCents: perHour, days: 1, pubDj: true, noPick: true, perf: true,   // qty = hours, amount = hourly rate (Max, 23 Oct 2026)
+    qty: hours || 0, unitCents: perHour, days: 1, pubDj: true, noPick: true, perf: true,   // qty = hours, amount = hourly rate
   };
   const tr = await djTravel(rate.location, b.venue);
   const travelLine = tr.cents ? { type: 'custom', name: 'Travel Charge - ' + tr.from + ' to ' + tr.to + ' Return', description: '', qty: 1, unitCents: tr.cents, days: 1, pubDj: true, noPick: true } : null;
   if (tr.missing) notes.push(name + ' (no travel fee set for ' + tr.missing + ')');
-  // THE BOOKING FEE, ex GST - a setting on Entertainment (Max, 22 Oct 2026):
+  // THE BOOKING FEE, ex GST - a setting on Entertainment:
   // a fixed $ or a % of the DJ's performance only.
   const fee = await djFeeSetting();
   const perfCents = Math.round((djLine.qty || 0) * djLine.unitCents);
   const feeCents = fee.mode === 'percent' ? Math.round(perfCents * fee.pct / 100) : fee.cents;
   const feeLine = feeCents > 0 ? { type: 'custom', name: fee.name, description: fee.description, qty: 1, unitCents: feeCents, days: 1, pubDj: true, noPick: true } : null;
 
-  /*  BUILT FROM THE TEMPLATE (Max, 22 Oct 2026): the template's fill-in lines
+  /*  BUILT FROM THE TEMPLATE: the template's fill-in lines
       are swapped in place - "DJ / Entertainer" becomes this DJ + price, "DJ
       travel" their travel (dropped if local), the booking fee the setting.
       No fee line in the template = no fee. No travel line = travel goes
@@ -5330,7 +5173,7 @@ async function gigSync(bookingId, opts = {}) {
     const fee = Math.round(pre.netCents * 2 / 100 / 1000) * 1000;
     if (fee > 0) lines.push({ type: 'fee', name: 'Booking & admin', qty: 1, unitCents: fee, days: 1 });
   }
-  // PERFORMER SUPER - 12% of the DJ's performance, unless the template has it off (Max, 22 Oct 2026)
+  // PERFORMER SUPER - 12% of the DJ's performance, unless the template has it off
   const superCents = tpl.superExcluded === true ? 0 : Math.round(perfCents * 12 / 100);
   if (superCents > 0) {
     const at = lines.indexOf(djLine);
@@ -5342,20 +5185,20 @@ async function gigSync(bookingId, opts = {}) {
     customer: {
       name: cust.name || '', business: cust.business || '', email: cust.email || '', ccEmail: cust.ccEmail || '',
       phone: cust.phone || '', address: cust.address || '',
-      /*  ONCE THE QUOTE EXISTS, ITS OWN CONTACT DETAILS STAY (Max, 22 Oct 2026):
-          edits made on the quote, or by the customer on the details form, are
-          no longer overwritten from the Customers list when it's rebuilt. */
+      /* ONCE THE QUOTE EXISTS, ITS OWN CONTACT DETAILS STAY: edits made on the
+         quote, or by the customer on the details form, are not overwritten from
+         the Customers list when it is rebuilt. */
       ...(ex && ex.customer ? ['name', 'business', 'email', 'ccEmail', 'phone', 'address', 'dayContact', 'customerNotes', 'gearEmails']
         .reduce((o, k) => { if (ex.customer[k] != null) o[k] = ex.customer[k]; return o; }, {}) : {}),
-      eventName: tc.eventName || ('DJ - ' + String(b.venue || '').split(',')[0]), eventType: 'dj',   // always DJ / Entertainment (Max, 22 Oct 2026)
+      eventName: tc.eventName || ('DJ - ' + String(b.venue || '').split(',')[0]), eventType: 'dj',   // always DJ / Entertainment
       eventVenue: b.venue || '', eventDate: prettyDay(b.date), eventStartTime: start,
     },
     hire: { startDate: b.date, endDate: b.date, days: 1 },
   });
   const money = quoteMoney(clean);
-  // the DJ's own deck goes on the pick list so setup staff bring the right cables (Max, 21 Oct 2026)
+  // the DJ's own deck goes on the pick list so setup staff bring the right cables
   if (rate.deck) clean.crewNotes = 'DJ deck (' + name + '): ' + String(rate.deck).slice(0, 300);
-  // who played - shown on the entertainment-style quote / invoice (Max, 22 Oct 2026)
+  // who played - shown on the entertainment-style quote / invoice
   const gigDj = { name, photo: (t.exists && t.data().photo) || ('images/talent/' + b.slug + '.jpg'), start, finish, hours, confirmed: !!b.timesConfirmedAt, venue: b.venue || '', bio: String((t.exists && t.data().bio) || '').slice(0, 1200), styles: Array.isArray(rate.styles) ? rate.styles.slice(0, 16) : [] };
   const meta = { gigDj, payFull: b.payFull === true, gigBookingId: id, pubNight: true, pubKey: 'gig|' + id, pubVenue: b.venue || '', pubDate: b.date, pubBookings: [id], pubNoRate: notes, gigHours: hours, gigTemplateId: String(b.templateId) };
   if (existing) {
@@ -5383,11 +5226,10 @@ exports.adminGigSync = onCall(async (request) => {
 });
 
 /* =========================================================================
-   DJ CONFIRMS + DJ EMAILS  (Max, 21 Oct 2026 - Entertainment overhaul)
+   DJ CONFIRMS + DJ EMAILS
    One link per gig (/dj-times?t=). Before the gig the DJ taps "I'm in"
    (djConfirmedAt); after it, they put in their times. Emails go to the DJ's
-   email on the roster (actRates) - texts need a paid SMS service, which
-   Max will look at later:
+   email on the roster (actRates):
      - when Max books them: "You're booked - please confirm"
      - 9:35am the day before: a reminder
      - 9:35am the day after: "please put in your times" (if not in yet)
@@ -5469,7 +5311,7 @@ exports.djReminders = onSchedule(
 );
 
 /*  A DJ's rate / location / deck saved (DJs tab) -> their upcoming gig quotes
-    are rebuilt on the server, whatever the browser does (Max, 22 Oct 2026).
+    are rebuilt on the server, whatever the browser does.
     Only quotes that already exist and haven't gone out are touched.        */
 exports.onDjRatesChanged = require('firebase-functions/v2/firestore').onDocumentWritten('actRates/{slug}', async (event) => {
   const slug = event.params.slug;
@@ -5484,7 +5326,7 @@ exports.onDjRatesChanged = require('firebase-functions/v2/firestore').onDocument
   }
 });
 
-/*  The DJ on a gig, for quotes made before gigDj was stored (Max, 22 Oct 2026) */
+/*  The DJ on a gig, for quotes made before gigDj was stored */
 async function gigDjFor(bookingId) {
   try {
     const b = await db.collection('talentSchedule').doc(String(bookingId)).get();
@@ -5500,7 +5342,7 @@ async function gigDjFor(bookingId) {
   } catch (e) { return null; }
 }
 
-/*  UNCONFIRMED -> CONFIRMED (Max, 22 Oct 2026): a new venue's gig quote paid
+/*  UNCONFIRMED -> CONFIRMED: a new venue's gig quote paid
     in full (card, or bank marked in admin) confirms the booking, and the DJ
     gets the "you're booked" email. Before that the night just holds the DJ. */
 exports.onGigQuotePaid = require('firebase-functions/v2/firestore').onDocumentWritten(
@@ -5524,8 +5366,8 @@ exports.onGigQuotePaid = require('firebase-functions/v2/firestore').onDocumentWr
     } catch (e) { logger.error('onGigQuotePaid', { id: snap.id, err: e && e.message }); }
   });
 
-/*  DJ BOOKING FEE SETTING (Max, 22 Oct 2026) - djSettings/fee, edited on
-    Admin > Entertainment. Until it's saved: $80 fixed, as before.       */
+/* DJ BOOKING FEE SETTING - djSettings/fee, edited on Admin > Entertainment.
+   Until it is saved: $80 fixed. */
 async function djFeeSetting() {
   const d = await db.collection('djSettings').doc('fee').get();
   const x = d.exists ? d.data() : {};
@@ -5551,7 +5393,7 @@ exports.onDjFeeChanged = require('firebase-functions/v2/firestore').onDocumentWr
 });
 
 /*  A start time + 4 hours ("21:30" -> "01:30") - a gig with no finish set
-    is quoted at the usual 4 hours (Max, 22 Oct 2026).                 */
+    is quoted at the usual 4 hours.                 */
 function plus4h(t) {
   const m = /^(\d{1,2}):(\d{2})$/.exec(String(t || ''));
   if (!m) return '01:30';
@@ -5560,7 +5402,7 @@ function plus4h(t) {
 }
 
 /* =========================================================================
-   PAYMENT REMINDERS (Max, 22 Oct 2026) - sent only when Max presses Send.
+   PAYMENT REMINDERS - sent only when Max presses Send.
    ========================================================================= */
 function owesMoney(q) {
   if (!q || q.isTemplate || q.vendor) return false;
@@ -5598,7 +5440,7 @@ exports.adminSendPaymentReminder = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, a
 });
 
 /* =========================================================================
-   EXTRA GEAR ON THE PICK LIST (Max, 24 Oct 2026) - the crew add gear that
+   EXTRA GEAR ON THE PICK LIST - the crew add gear that
    isn't on the quote so it gets ticked out and back. Crew link only (not
    the band's gear list); never changes the quote or the price.
    ========================================================================= */
@@ -5642,7 +5484,7 @@ exports.removePickExtra = onCall(async (request) => {
 });
 
 /* =========================================================================
-   SHRINK + RENAME INVENTORY PHOTOS (Max, 27 Oct 2026) - one-off from the
+   SHRINK + RENAME INVENTORY PHOTOS - one-off from the
    Inventory page. Each photo becomes an 800px WebP named after the product
    (inventory/<product-name>-<id>.webp) and the item's link is updated. The
    old big files are KEPT until Max says to delete them.

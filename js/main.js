@@ -9,17 +9,9 @@
    To change the menu or footer, edit the files in the components folder.
    -------------------------------------------------------------------------- */
 
-/*  The asset version, read back off this script's own src.
-
-    Every page loads this as js/main.js?v=N (see tools/bump-assets.js), so
-    the number is already here and does not need writing down a second
-    time. The menu and footer are fetched by this file rather than linked
-    by the page, so they would otherwise keep their own stale copy for the
-    ten minutes GitHub Pages caches them - which is exactly the bug the
-    version is there to stop.
-
-    Empty when the script is loaded without one, in which case the two
-    fetches below behave as they always did. */
+/*  The asset version, read off this script's own src (js/main.js?v=N,
+    see tools/bump-assets.js). Used on the menu and footer fetches so they
+    don't stay cached after a deploy. Empty if there is no ?v=. */
 var SG_VERSION = (function () {
     var el = document.currentScript ||
              document.querySelector('script[src*="main.js"]');
@@ -27,16 +19,11 @@ var SG_VERSION = (function () {
     return found ? found[1] : '';
 }());
 
-/*  ALWAYS THE LATEST PAGE (Max, 20 Oct 2026)
-
-    GitHub Pages tells browsers to keep each page for ten minutes, and that
-    can't be changed there - so after a deploy people kept seeing the old
-    page until they hard-refreshed. Now every page asks version.json
-    (written by tools/bump-assets.js, never cached) whether there is a newer
-    version. If there is, it loads the page again under a new address
-    (?_v=N), which the browser has never saved, so it comes fresh. Then the
-    ?_v=N is tidied off the address bar. Once per version, so it can never
-    loop. Costs one tiny request per page. */
+/*  ALWAYS THE LATEST PAGE
+    GitHub Pages caches each page for ten minutes. Every page checks
+    version.json (written by tools/bump-assets.js, never cached); if it is
+    newer, the page reloads under ?_v=N so it comes fresh, then the ?_v=N is
+    tidied off the address bar. Once per version, so it can never loop. */
 (function freshPage() {
     try {
         var params = new URLSearchParams(location.search);
@@ -90,11 +77,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 /* Carries an artist's name from the entertainment page into the contact
-   form, so "Enquire about Cat 5" arrives as an enquiry that already says
-   who it is about instead of an empty box.
-
-   Does nothing anywhere else - it needs both the ?about= parameter and a
-   contact form on the page to do anything at all. */
+   form. Needs both the ?about= parameter and a contact form on the page. */
 function initEnquiryPrefill() {
     var form = document.querySelector('.contact-form');
     if (!form) return;
@@ -106,10 +89,9 @@ function initEnquiryPrefill() {
 
     var message = form.querySelector('[name="message"]');
 
-    /*  Two ways in. ?about= is the entertainment page sending an artist's
-        name; ?note= is a page that has already written the sentence -
-        the gig guide, where "booking a gig guide listing" would be the
-        wrong words. Only ever fills a box the visitor has not typed in. */
+    /*  ?about= is an artist's name from the entertainment page; ?note= is a
+        full sentence from another page (e.g. the gig guide). Only fills a
+        box the visitor has not typed in. */
     if (message && message.value.trim() === '') {
         if (note) {
             message.value = note;
@@ -126,11 +108,9 @@ function initEnquiryPrefill() {
 
 /* The phone menu.
 
-   Opens and closes the panel, and closes it again on a link, on Escape,
-   on a tap outside it, and when the window grows past the breakpoint -
-   that last one matters on a tablet turned sideways, where the panel
-   would otherwise stay open as a floating box beside a menu bar that has
-   come back on its own. */
+   Opens and closes the panel, and closes it on a link, on Escape, on a tap
+   outside it, and when the window grows past the breakpoint (e.g. a tablet
+   turned sideways). */
 function initBurger() {
     var navEl = document.querySelector('#navbar nav');
     var burger = document.getElementById('nav-burger');
@@ -165,13 +145,8 @@ function initBurger() {
     });
 }
 
-/* Publishes the real height of the menu as --sg-nav-height.
-
-   The menu sits over the top of each hero, so every hero needs to start
-   below it. Hard coding that number means the heroes break the next time a
-   menu item is added and the bar wraps onto a second row - which is exactly
-   what happened when Vendors was added. Measuring it instead keeps the
-   heroes correct whatever the menu ends up holding. */
+/* Publishes the real height of the menu as --sg-nav-height, so every hero
+   starts below the menu even when the bar wraps onto a second row. */
 function trackNavHeight() {
     var navEl = document.querySelector('#navbar nav');
     if (!navEl) return;
@@ -199,11 +174,9 @@ function trackNavHeight() {
 
 /* Menu dropdowns.
 
-   Hovering opens them on a computer and CSS does that on its own. This is
-   for a touch screen, where there is no hover: the little arrow beside the
-   menu item opens and closes it. The arrow is a button of its own rather
-   than the menu item, so tapping "Events" still goes to the events page
-   instead of being swallowed to open a menu. */
+   On a computer CSS opens them on hover. On a touch screen the little arrow
+   beside the menu item opens and closes it - a separate button, so tapping
+   "Events" still goes to the events page. */
 function initSubmenus() {
     var parents = document.querySelectorAll('#navbar .has-sub');
 
@@ -348,10 +321,8 @@ function initScrapbookAnimation() {
             }
         }
     }, {
-        /* threshold 0, not a percentage of the element. Each act is tall
-           now that it carries a biography, so asking for a percentage of
-           it meant scrolling a long way in before anything appeared. This
-           fires as soon as the top edge comes into view. */
+        /* threshold 0: fires as soon as the top edge of an act comes into
+           view (the acts are tall). */
         threshold: 0,
         rootMargin: '0px 0px -10% 0px'
     });
@@ -361,9 +332,7 @@ function initScrapbookAnimation() {
     }
 
     /* Safety net for a browser where the observer never runs at all.
-       If it has fired even once it is working, so we leave the animation
-       alone - otherwise this would reveal every act at the same time and
-       wreck the effect. */
+       If it has fired even once it is working, so leave it alone. */
     setTimeout(function () {
         if (observerHasFired) {
             return;

@@ -1,30 +1,23 @@
 /* ==========================================================================
    CACHE BUSTING
 
-   GitHub Pages serves the CSS and JS with a ten minute cache and the HTML
-   with none. So for ten minutes after a deploy the new page is asking for
-   the old stylesheet, and the site looks broken or unchanged - which has
-   cost us more than one "is this actually live?" already.
-
-   The fix is a version on every local asset:
+   GitHub Pages caches CSS and JS for ten minutes, so after a deploy a new
+   page can load an old stylesheet. This adds a version to every local
+   asset:
 
        <link rel="stylesheet" href="events.css?v=3">
 
-   A new number is a new URL, so the browser fetches it rather than reusing
-   what it has. Nothing else changes.
+   A new number is a new URL, so the browser fetches it fresh.
 
    USE IT
        node tools/bump-assets.js          bump every asset by one
        node tools/bump-assets.js 12       set them all to 12
 
    Run it whenever a .css or .js file changes, before committing. It is
-   safe to run twice - it rewrites the number rather than stacking another
-   one on the end.
+   safe to run twice - it rewrites the number rather than adding another.
 
-   WHAT IT DOES NOT TOUCH
-   Anything with a scheme (https://, //) - the Firebase SDK and the fonts
-   are somebody else's cache to worry about. Only paths relative to this
-   site are given a version.
+   Anything with a scheme (https://, //) is left alone - only paths on this
+   site get a version.
    ========================================================================== */
 'use strict';
 
@@ -51,7 +44,7 @@ function currentVersions(files) {
 }
 
 function main() {
-  // pages live in pages/<group>/ since 27 Oct 2026 (their web address comes from 'permalink' at the top of each)
+  // pages live in pages/<group>/ (their web address comes from 'permalink' at the top of each)
   const html = fs.readdirSync(path.join(ROOT, 'pages'), { recursive: true }).filter((f) => f.endsWith('.html')).map((f) => path.join('pages', f));
   const js = fs.readdirSync(path.join(ROOT, 'js'))
     .filter((f) => f.endsWith('.js'))
@@ -92,7 +85,7 @@ function main() {
   }
 
   // version.json - every page checks it (js/main.js) and loads itself fresh if
-  // it is older, so nobody has to hard-refresh after a deploy (Max, 20 Oct 2026)
+  // it is older, so nobody has to hard-refresh after a deploy
   fs.writeFileSync(path.join(ROOT, 'version.json'), JSON.stringify({ v: next }) + '\n');
 
   console.log(`\nv=${next} on ${refs} references across ${touched} files.`);

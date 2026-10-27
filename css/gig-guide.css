@@ -33,9 +33,7 @@
     min-height:min(62vh, 560px);
     padding:calc(var(--sg-nav-height, 80px) + 40px) 20px 44px;
     overflow:hidden;
-    /*  The fallback sits behind the video, never over it. Stack it on top
-        and the clip plays underneath an opaque gradient, which is exactly
-        how the other heroes on this site broke.                         */
+    /*  The fallback sits behind the video, never over it, or it hides the clip. */
     background:linear-gradient(120deg, #2a1403 0%, #0a0a0a 64%);
 }
 
@@ -96,8 +94,7 @@
     line-height:1.65;
 }
 
-/*  The handwritten line. Decoration, and marked aria-hidden in the markup
-    - read aloud it is four nouns in the middle of the headline.         */
+/*  The handwritten line. Decoration only, so aria-hidden in the markup. */
 #sg-gig-guide .gg-script{
     font-family:var(--sg-font-script);
     font-size:clamp(1.1rem, 2vw, 1.6rem);
@@ -323,37 +320,21 @@
 /* ==========================================================================
    CLOSING BAND
    ========================================================================== */
-/*  The trailer stage behind it - the same photograph the services page
-    uses for that slide, so it is already in the browser's cache for
-    anybody who has been there, and there is no second copy of it in the
-    repository.
-
-    Dark on the left where the words are and open on the right where the
-    stage is, rather than one flat wash over the whole thing: the point of
-    putting a photograph here is that you can see it.
-
-    The gradients are listed before the image on purpose. A background
-    stacks first-on-top, so the image has to come last or it covers the
-    scrim and the type goes unreadable over it - which is exactly how the
-    heroes on this site broke, twice.                                    */
+/*  The trailer stage photo behind it (same file the services page uses).
+    Dark on the left behind the words, open on the right.
+    KEEP the gradients listed BEFORE the image - backgrounds stack first-on-
+    top, so the image must come last or the words become unreadable.     */
 #sg-gig-guide .gg-cta{
     position:relative;
     padding:clamp(56px, 8vw, 96px) 20px;
     border-top:1px solid var(--sg-border);
     background:
-        /*  Only as dark as the words need. Heavy behind the headline on
-            the left, gone by the middle so the stage is a photograph
-            rather than a shape, and a touch back at the right edge to
-            stop the balloons fizzing against the page.                 */
+        /*  Dark behind the headline on the left, clear by the middle, a touch
+            darker at the right edge.                                   */
         linear-gradient(90deg, rgba(0,0,0,.82) 0%, rgba(0,0,0,.58) 40%,
                                rgba(0,0,0,.18) 70%, rgba(0,0,0,.3) 100%),
-        /*  75% down, not centred. The photograph is 1536x1024 and the
-            SoundzGood 2.0 banner sits about 64% of the way down it, so
-            centring the picture in a band this wide and shallow cuts the
-            banner off along the bottom edge. At 75% the band lands in the
-            middle of the strip: the visible slice works out at roughly
-            400-890 of the original's 1024, and the banner occupies
-            590-720 of that.                                             */
+        /*  75% down, not centred, so the SoundzGood 2.0 banner in the photo
+            stays inside this wide, shallow band.                       */
         url('../images/services/trailer-stage.webp') 50% 75% / cover no-repeat,
         linear-gradient(120deg, #2a1403 0%, #0a0a0a 64%);
 }
@@ -389,8 +370,7 @@
 }
 
 @media (max-width:900px){
-    /*  The handwriting is the first thing to go: beside a headline this
-        size on a narrow screen it is two columns fighting for the width. */
+    /*  The handwriting goes first on narrow screens. */
     #sg-gig-guide .gg-script{ display:none; }
 }
 

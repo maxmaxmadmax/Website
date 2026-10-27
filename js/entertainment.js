@@ -5,40 +5,19 @@
    scoped to #sg-ent-page, so nothing here can reach another page.
 
    ADDING AN ACT
-   Add one object to TALENT below. The act-type bar, all three dropdowns,
-   the search and the counts read from that list, so nothing else needs
-   touching. The only field that has to match something is `act` - it has
-   to be one of the keys in ACT_TYPES.
+   Add one object to TALENT. The act-type bar, the dropdowns, the search
+   and the counts all read from it. `act` must be one of the ACT_TYPES keys.
 
    PHOTOS
-   An act with no `photo` asks for no picture at all - the card falls back
-   to its own gradient and the act-type glyph, so a roster with none yet
-   still looks finished. Add the line when a file exists.
-
-   Size them on the way in rather than dropping the original in:
-
-       powershell -File tools/fit-logo.ps1 -In "...photo.png" -Name maxzi `
-                  -OutDir images	alent -MaxWidth 480 -MaxHeight 900 -Quality 76
-
-   480px wide is about twice the size a card ever draws one, which is what
-   a retina screen wants and no more. MAXZI's original was 1122x1402 and
-   1.8MB; that command made it 40KB.
-
-   THEY ARE CROPPED HARD
-   The card is landscape and these are portraits, so most of the picture is
-   thrown away. The CSS crops from 18% down rather than from the middle,
-   because that is where a head is - centred, MAXZI's card showed his
-   chest and the decks. Worth knowing when choosing a shot: frame the face
-   in the upper third and it will survive.
+   No `photo` = the card shows its gradient and the act-type glyph.
+   Resize photos with tools/fit-logo.ps1 (about 480px wide is plenty).
+   Cards crop portraits from 18% down, so frame the face in the upper third.
    ========================================================================== */
 (function () {
     'use strict';
 
-    /*  Built once the roster has settled rather than drawn from the
-        built-in list and then corrected. Acts are managed in Admin ->
-        Entertainment and arrive from Firestore; SG_ROSTER_READY resolves
-        either way, with the built-in eight if the database cannot be
-        reached, so this always runs.                                   */
+    /*  Runs once the roster is ready: acts come from Admin -> Entertainment
+        (Firestore), or the built-in list if the database can't be reached. */
     var ready = window.SG_ROSTER_READY ||
                 Promise.resolve(window.SG_ROSTER || []);
 
@@ -66,15 +45,13 @@ function start(ROSTER) {
     var TALENT = ROSTER;
 
 
-    /*  Paths are written out rather than derived from the slug. Deriving
-        them looked tidier but fired a 404 for every act without a file, on
-        every view - fourteen failed requests to end up showing the gradient
-        we would have shown anyway. */
+    /*  Paths are written out, not built from the slug, so an act with no
+        photo doesn't cause a 404 request. */
 
-    var PER_PAGE = 12;   // 12 a page, three rows of four (Max, 14 Oct 2026)
+    var PER_PAGE = 12;   // 12 a page, three rows of four
 
     /*  The little glyph on a card with no photo, and in the artist panel.
-        Drawn rather than loaded - six icons are not worth six requests. */
+        Drawn inline to save requests. */
     var GLYPHS = {
         dj:   '<path d="M4 14v-2a8 8 0 0116 0v2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="2.5" y="13" width="5" height="7" rx="2"/><rect x="16.5" y="13" width="5" height="7" rx="2"/>',
         solo: '<circle cx="9" cy="16" r="4.5"/><path d="M12.6 13.2 19 4l2 1.6-6.6 9z"/>',
@@ -143,9 +120,8 @@ function start(ROSTER) {
         var actLabel = ACT_TYPES[t.act] || '';
         var glyph = GLYPHS[t.act] || '';
 
-        /*  The photo goes on as a custom property rather than an <img>, so a
-            path that turns out to be missing simply leaves the gradient
-            showing instead of drawing a broken image icon. */
+        /*  Photo set as a CSS property, not an <img>, so a missing file just
+            leaves the gradient instead of a broken image icon. */
         var media = t.photo
             ? ' style="--ent-img:url(\'' + esc(t.photo) + '\')"'
             : '';
@@ -154,28 +130,23 @@ function start(ROSTER) {
         '<article class="ent-card' + (t.photo ? ' has-photo' : '') +
           '" data-act="' + esc(t.act) + '"' + media + '>' +
 
-          /*  The picture fills the card and this sits over all of it, so
-              clicking anywhere on the photograph opens the artist panel.
-              It holds the glyph shown when there is no photograph.      */
+          /*  Covers the whole card so a click anywhere opens the artist panel.
+              Holds the glyph shown when there is no photo.              */
           '<button type="button" class="ent-card-media" data-slug="' + esc(t.slug) + '"' +
             ' aria-label="More about ' + esc(t.name) + '">' +
             '<svg class="ent-card-glyph" viewBox="0 0 24 24" aria-hidden="true">' + glyph + '</svg>' +
           '</button>' +
 
-          /*  The words sit on the photograph rather than in a solid strip
-              underneath it, over a gradient that fades up out of the
-              picture.                                                   */
+          /*  The words sit on the photo, over a gradient. */
           '<div class="ent-card-body">' +
             '<span class="ent-badge">' + esc(actLabel) + '</span>' +
             '<h3>' + esc(t.name) + '</h3>' +
-            // where they're based (Max, 22 Oct 2026)
+            // where they're based
             (t.location
               ? '<p class="ent-card-loc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>' + esc(t.location) + '</p>'
               : '') +
 
-            /*  Both lines are left out entirely when there is nothing to put
-                in them - an empty row of styling reads as a card that failed
-                to load rather than one that simply has less to say. */
+            /*  Lines with nothing in them are left out entirely. */
             ((t.genres || []).length
               ? '<p class="ent-card-genres">' +
                   t.genres.map(esc).join(' <i aria-hidden="true">&middot;</i> ') +
@@ -191,10 +162,7 @@ function start(ROSTER) {
                 '</p>'
               : '') +
 
-            /*  A link, not a button, because it goes somewhere. It carries
-                the act's name, and js/main.js fills the contact form in
-                from it - so the enquiry arrives already saying who it is
-                about rather than as an empty box. */
+            /*  A link to the contact form; js/main.js fills in the act's name. */
             '<a class="ent-view" href="/contact?about=' +
               encodeURIComponent(t.name) + '">' +
               'Make Enquiry <span aria-hidden="true">&#8594;</span>' +
@@ -220,9 +188,8 @@ function start(ROSTER) {
               (list.length === 1 ? ' act' : ' acts')
             : '';
 
-        /*  Arrows only mean anything when there is more than one page. They
-            are disabled rather than hidden so the header does not reflow
-            every time a filter changes. */
+        /*  Arrows are disabled rather than hidden so the header doesn't reflow
+            when a filter changes. */
         prev.disabled = state.page === 0;
         next.disabled = state.page >= pages - 1;
     }
@@ -257,7 +224,7 @@ function start(ROSTER) {
             '<div class="ent-panel-body">' +
               '<span class="ent-badge">' + esc(actLabel) + '</span>' +
               '<h3>' + esc(t.name) + '</h3>' +
-              // where they're based (Max, 22 Oct 2026)
+              // where they're based
               (t.location
                 ? '<p class="ent-card-loc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>' + esc(t.location) + '</p>'
                 : '') +
@@ -288,9 +255,7 @@ function start(ROSTER) {
 
     /* ---- wiring ---- */
 
-    /*  Only the act types somebody is actually filed under. A tab that
-        always came back "nothing matches" would be a dead end dressed up
-        as a category. */
+    /*  Only the act types somebody is actually filed under. */
     var usedActs = Object.keys(ACT_TYPES).filter(function (key) {
         return TALENT.some(function (t) { return t.act === key; });
     });
@@ -299,10 +264,8 @@ function start(ROSTER) {
         '<path d="M3 19c0-3.3 2.7-5 6-5s6 1.7 6 5z"/>' +
         '<path d="M14.5 19c0-2.4 1.4-4 3.5-4s3.5 1.6 3.5 4z"/>';
 
-    /*  With only one kind of act on the roster there is nothing to filter
-        between: "All Talent" and "DJs" would be two controls showing the
-        same eight cards. The bar and the act dropdown both come off, and
-        both come back on their own the moment a second act type appears. */
+    /*  With only one act type there is nothing to filter, so the bar and
+        the act dropdown are hidden until a second type appears.          */
     var oneActTypeOnly = usedActs.length < 2;
 
     var typesBar = document.getElementById('ent-types');
@@ -320,8 +283,7 @@ function start(ROSTER) {
                    '</button>';
         }).join('');
 
-    /*  The line under the headline says what is on the roster, so it cannot
-        promise an act type nobody is signed to. */
+    /*  The line under the headline only names act types on the roster. */
     var heroTypes = document.getElementById('ent-hero-types');
     if (heroTypes) {
         heroTypes.innerHTML = usedActs.map(function (key) {
@@ -340,11 +302,10 @@ function start(ROSTER) {
         if (o.value !== 'all') o.textContent = ACT_TYPES[o.value];
     });
 
-    /*  Genres and event types are optional on an act. Until some are filled
-        in there is nothing to choose between, so the dropdown is taken out
-        rather than left offering only "All".                            */
+    /*  Genres and event types are optional. Until some are filled in the
+        dropdown is hidden rather than offering only "All".               */
     var genres = optionsFrom('genres');
-    // FEMALE DJs (Max, 23 Oct 2026): its own choice at the top of the list
+    // Female DJs: its own choice at the top of the list
     if (TALENT.some(function (t) { return t.female; })) genres.unshift(FEMALE);
     var events = optionsFrom('events');
 
@@ -377,9 +338,8 @@ function start(ROSTER) {
     prev.addEventListener('click', function () { state.page--; render(); });
     next.addEventListener('click', function () { state.page++; render(); });
 
-    /*  One listener on the grid rather than one per card - the cards are
-        rebuilt on every filter change, and listeners on them would go with
-        them. */
+    /*  One listener on the grid, because the cards are rebuilt on every
+        filter change. */
     grid.addEventListener('click', function (ev) {
         var media = ev.target.closest ? ev.target.closest('.ent-card-media') : null;
         if (media) openPanel(media.getAttribute('data-slug'));
@@ -387,9 +347,8 @@ function start(ROSTER) {
 
     panelClose.addEventListener('click', closePanel);
 
-    /*  Somebody who has asked their system for less motion should not get a
-        looping clip behind the headline. Pausing rather than hiding leaves
-        the poster frame showing, so the hero still has a picture in it. */
+    /*  Respect "reduce motion": pause the hero clip (the poster frame still
+        shows). */
     var heroVideo = document.getElementById('ent-hero-video');
     if (heroVideo &&
         window.matchMedia &&
@@ -398,8 +357,7 @@ function start(ROSTER) {
         heroVideo.pause();
     }
 
-    /*  The reel. Closing has to pause it as well as hide it - a dialog that
-        is shut carries on playing, so the sound follows you down the page. */
+    /*  The reel. Closing must pause it too, or the sound keeps playing. */
     var play      = document.getElementById('ent-play');
     var video     = document.getElementById('ent-video');
     var videoEl   = document.getElementById('ent-video-el');
@@ -426,8 +384,8 @@ function start(ROSTER) {
         video.addEventListener('close', function () { videoEl.pause(); });
     }
 
-    /* Clicking the backdrop closes it. The dialog fills its own box, so a
-       click that lands on the dialog itself came from outside the content. */
+    /* Clicking the backdrop closes it (a click on the dialog itself came
+       from outside the content). */
     panel.addEventListener('click', function (ev) {
         if (ev.target === panel) closePanel();
     });

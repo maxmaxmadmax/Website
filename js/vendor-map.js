@@ -158,15 +158,9 @@ export class VendorMap {
   }
 
   /* The bays touching this one. Food sites have none - they stand alone.
-
-     Two sources, unioned. adjacentIds is what the layout wrote down: the
-     bay above and the bay below, in the same column. Touching sideways is
-     worked out from the rectangles, because the middle two columns back
-     on to each other and a stall is allowed to straddle them.
-
-     Geometry rather than another list of ids, so the forty bays already
-     sitting in Firestore for the running event did not have to be
-     rewritten to gain a neighbour they always physically had. */
+     Two sources, unioned: adjacentIds from the layout (above / below in the
+     same column), plus sideways neighbours worked out from the rectangles,
+     because the middle two columns back on to each other. */
   neighboursOf(site) {
     const ids = site.adjacentIds || [];
     const listed = ids.map((id) => this.byId.get(id)).filter(Boolean);
@@ -181,12 +175,8 @@ export class VendorMap {
 
   /* ---- release waves ---------------------------------------------------
      Bays carry a tier: the first three of a column are tier 1, the next
-     three tier 2, and so on. Each COLUMN releases on its own: a column's
-     open tier is the lowest tier in THAT column that still has a free bay,
-     so once the front of a column fills, its next bay opens - regardless of
-     how the other columns are going. (This used to be one wave across the
-     whole market, which left a full column's back bays stuck behind other
-     columns that still had room.)
+     three tier 2, and so on. Each COLUMN releases on its own: its open tier
+     is the lowest tier in that column that still has a free bay.
 
      Sites with no tier (the food vans) are never gated. */
   openTierFor(column) {
@@ -328,9 +318,8 @@ export class VendorMap {
     svg.setAttribute('aria-label', 'Vendor site map');
 
     // ---- fixed furniture, drawn first so sites sit on top ----------------
-    /*  The ENTRY box sat on top of bays M20 and M30 (Max, 19 Oct 2026) - not drawn.
-        It is skipped here as well as removed from the default layout because
-        the live event still has it saved.                                   */
+    /*  The ENTRY box is not drawn (it covered bays M20 and M30); the live
+        event still has it saved. */
     for (const mark of this.landmarks.filter((m) => m.kind !== 'entry')) {
       const g = document.createElementNS(ns, 'g');
       g.setAttribute('class', `vmap-landmark vmap-landmark-${mark.kind || 'other'}`);

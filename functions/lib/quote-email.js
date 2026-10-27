@@ -2,17 +2,15 @@
    QUOTE LEAD EMAIL
 
    One email goes out when a visitor finishes the estimate bot on the
-   services page: a friendly auto-reply to THEM, with the range they were
-   shown and a summary of what they asked for. Max chose this ("Auto-reply
-   to them") - he watches the leads in the admin desk rather than getting a
-   copy of every one by email.
+   services page: an auto-reply to THEM, with the range they were shown and
+   a summary of what they asked for. No copy goes to the office - leads are
+   watched in the admin desk.
 
-   It reuses the same letterhead as the booking emails so an estimate and a
-   later invoice look like they came from the same business.
+   Same letterhead as the booking emails.
 
    SENDING NEVER THROWS
-   The lead is already saved before this runs. A mail server hiccup must not
-   lose the lead, so every failure here is caught and reported, never thrown.
+   The lead is already saved before this runs, so every failure here is
+   caught and reported, never thrown.
    ========================================================================== */
 
 const nodemailer = require('nodemailer');

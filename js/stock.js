@@ -1,5 +1,5 @@
 /* ==========================================================================
-   STOCK  -  what's out on hire, what's left (Max, 16 Oct 2026)
+   STOCK  -  what's out on hire, what's left
 
    Works off the jobs (quotes / invoices) and their hire dates:
      BOOKED     = deposit in, or paid      -> counts against stock
@@ -16,7 +16,7 @@
 export function isBooked(q) {
   if (!q || q.status === 'cancelled' || q.status === 'declined') return false;
   return q.status === 'paid' || q.paymentStatus === 'deposit' || q.paymentStatus === 'paid'
-    || !!q.jobConfirmedAt;   // confirmed by Max, paying later (Max, 24 Oct 2026)
+    || !!q.jobConfirmedAt;   // confirmed by Max, paying later
 }
 
 /* on its way but no money yet */
@@ -89,10 +89,9 @@ export function pickKey(p) {
 }
 
 /* { lines, packed, returned } for a job's pick list */
-/*  Since 20 Oct 2026 the pick list is laid out like the quote and saves a
-    tick per LINE (key = itemKey + '_L' + line index - KEEP IN STEP with the
-    rows in getPickList, functions/index.js). Ticks saved before that are per
-    item, so a line falls back to its item's tick.                        */
+/*  The pick list saves a tick per LINE (key = itemKey + '_L' + line
+    index - KEEP IN STEP with the rows in getPickList, functions/index.js).
+    Older ticks are per item, so a line falls back to its item's tick.  */
 export function pickLineProgress(q) {
   const t = (q && q.pickTicks) || {};
   let lines = 0, packed = 0, returned = 0;

@@ -2,12 +2,8 @@
    Vendor signup
 
    One page, five sections, and you scroll: select event -> vendor type ->
-   your details -> choose site -> review and pay. It was a seven screen
-   wizard, and the names of things still show it in places - a step error
-   is set with setStepError, because that is what the error lines are
-   still called in the markup.
-
-   Two things worth knowing if you come back to this later:
+   your details -> choose site -> review and pay. (The error lines are still
+   called "step" errors in the markup, hence setStepError.)
 
    1. Nothing here decides anything that matters. Holding a site, checking a
       food category is not full, and marking a booking paid all happen in
@@ -23,13 +19,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=710';
+} from './firebase-config.js?v=711';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=710';
-import { termBodyHtml } from './terms-data.js?v=710';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=711';
+import { termBodyHtml } from './terms-data.js?v=711';
 import {
   VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION,
-} from './vendor-terms-data.js?v=710';
+} from './vendor-terms-data.js?v=711';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -52,38 +48,19 @@ const PRICE = {
 
 const MAX_BAYS = 8;
 
-/*  HOW MANY BAYS - worked out, never stored.
-
-    This used to be state.bayCount: set from the map when bays were held,
-    written into the saved draft, and read back on the next visit. The
-    sites themselves are not restored that way, because a hold only lasts
-    ten minutes - so somebody returning to a part-finished application got
-    a page holding no site at all and quoting two bays.
-
-    createCheckout prices from booking.siteIds.length on the server, so the
-    charge was right and only the quote was wrong. The quote is the number
-    a vendor decides on, which is bad enough.
-
-    The floor of 1 is the indicative price before any bay is picked: a
-    market stall starts at one bay, and the line beside it says plainly
-    that no site is chosen yet.                                        */
+/*  HOW MANY BAYS - worked out from the sites, never stored (a hold only
+    lasts ten minutes, so a stored count goes stale). The server prices
+    from booking.siteIds.length. The floor of 1 is the indicative price
+    before any bay is picked. */
 function bayCount() {
   if (state.vendorType !== 'market') return 1;
 
-  /*  Held first, then picked-but-not-held. The map already prices what
-      is picked - it says "2 bays, $100 site fee" under the plan - so if
-      the side column counted only held bays the two would sit on the
-      same screen disagreeing.
-
-      Zero when neither, and zero is the truth: no bays, nothing owed.
-      There used to be a floor of one here, as an indicative price, and
-      it read as a charge for a stall nobody had chosen.            */
+  /*  Held first, then picked-but-not-held, so this agrees with the price
+      under the map. Zero when neither: no bays, nothing owed. */
   return state.siteIds.length || pendingSites().length;
 }
 
-/*  VENDOR_LABEL was used on the confirmation screen and never defined -
-    a ReferenceError that only fires after a real payment, which is why
-    it sat there. Defined here now, and the side column uses it too.  */
+/*  Used on the confirmation screen and in the side column. */
 const VENDOR_LABEL = {
   food: 'Food Vendor',
   market: 'Market Stall',
@@ -96,11 +73,8 @@ function hasSite() {
 }
 
 function priceCents() {
-  /*  Nothing is owed until a site is chosen. A food van's fee is a flat
-      $100 whichever site it takes, but quoting it before there is one
-      still puts a charge on screen for a booking that does not exist
-      yet - and the line beside it saying "not selected yet" does not
-      cancel out a dollar figure.                                     */
+  /*  Nothing is owed until a site is chosen - no price is shown before
+      then, even for a flat-fee food van. */
   if (!hasSite()) return 0;
 
   if (state.vendorType === 'food') return PRICE.foodCents;
@@ -111,11 +85,8 @@ function priceCents() {
 }
 
 /*  WHAT THEY ACTUALLY PAY - shown before they commit to anything.
-
-    Mirrors feeBreakdown() in functions/index.js. That one decides the
-    charge; this one only decides what the page says. If the two ever
-    disagree the vendor is quoted wrong, which is bad enough on its own,
-    so keep them in step.
+    KEEP IN STEP with feeBreakdown() in functions/index.js, which decides
+    the real charge; this only decides what the page says.
 
         fee   = 4% of the site price, plus 99c
         GST   = 10% of (site + fee)
@@ -152,9 +123,8 @@ function money(cents) {
     : `$${(cents / 100).toFixed(2)}`;
 }
 
-/*  Always two decimals, for the cost breakdown. A column reading $50,
-    $2.99, $5.30 looks like a mistake even when it is not - the figures
-    have to line up under each other to be checkable. */
+/*  Always two decimals, for the cost breakdown, so the figures line up
+    under each other. */
 function exact(cents) {
   return `$${((cents || 0) / 100).toFixed(2)}`;
 }
@@ -183,16 +153,12 @@ const EVENT_STATUS = {
    ------------------------------------------------------------------------- */
 const state = {
   /*  Set when a vendor picks an event. Everything that reads an event
-      reads this - there is no module level event id any more, because a
-      page that can apply to several must not have one.               */
+      reads this. */
   eventId: null,
   events: [],
 
-  /*  Whether the events have come back yet - not the same question as
-      whether there are any. Without it an empty list before the first
-      read looks exactly like a read that found nothing, and the page
-      said "no events are taking applications" for the second or so it
-      took Firestore to answer.                                      */
+  /*  Whether the events have come back yet - not the same as whether there
+      are any, so "no events" is not shown while the list is still loading. */
   eventsLoaded: false,
   preview: !isFirebaseConfigured,
 
@@ -239,9 +205,8 @@ async function init() {
     return;
   }
 
-  /*  SPEED (Max, 20 Oct 2026): the map and the event cards no longer wait
-      for Firebase. The events come straight from Firestore's web address
-      (they are public), so a vendor sees them in a second or two. */
+  /*  SPEED: the map and the event cards do not wait for Firebase. The
+      events come straight from Firestore's web address (they are public). */
   buildMap();
   loadEventsFast();
 
@@ -278,10 +243,8 @@ function subscribeToEvent() {
 /* -------------------------------------------------------------------------
    Choosing an event
 
-   The page used to be the signup for one event, named in a constant. It
-   now takes applications for all of them, so the event is the first thing
-   asked and everything after it - the sites, the categories, the prices,
-   the booking - belongs to whichever one was picked.
+   The event is the first thing asked; the sites, categories, prices and
+   booking all belong to whichever one was picked.
    ------------------------------------------------------------------------- */
 
 /*  Every event a vendor is allowed to see, soonest first. Read once rather
@@ -315,8 +278,8 @@ async function restList(path) {
   return (data.documents || []).map((d) => ({ id: d.name.split('/').pop(), ...restFields(d.fields || {}) }));
 }
 
-/*  The event cards without waiting for Firebase (Max, 20 Oct 2026). If this
-    fails for any reason, init() falls back to loadEvents() below. */
+/*  The event cards without waiting for Firebase. If this fails for any
+    reason, init() falls back to loadEvents() below. */
 async function loadEventsFast() {
   if (state.preview) return;
   try {
@@ -396,13 +359,8 @@ async function loadEvents() {
   }
 }
 
-/*  Three cards' worth of grey while we wait.
-
-    A skeleton rather than a spinner because the shape is already known:
-    the cards land where the grey was, so the page does not jump, and the
-    wait reads as this list arriving rather than as the page being stuck.
-    Three because that is what the row usually holds - it is a placeholder
-    for a list, not a promise about its length.                        */
+/*  Three cards' worth of grey while we wait, so the cards land where the
+    grey was and the page does not jump. */
 function eventSkeleton() {
   return (
     '<article class="vs-event is-loading" aria-hidden="true">' +
@@ -417,7 +375,7 @@ function eventSkeleton() {
   ).repeat(3);
 }
 
-/*  SHARE LINKS (Max, 21 Oct 2026):
+/*  SHARE LINKS:
       /vendor-signup?event=<id>             opens with that event picked
       /vendor-signup?event=<id>&waitlist=1  ...and jumps to the waitlist form
     so Max can text vendors who keep asking if they can come.             */
@@ -474,14 +432,14 @@ function renderEvents() {
     Its own if it has one, and a marker for the CSS to dress if it does
     not. A data attribute rather than a class so it cannot collide with
     the state classes these same elements carry.                    */
-/*  EVENT POSTERS (Max, 17 Oct 2026): an event with no card image set in
+/*  EVENT POSTERS: an event with no card image set in
     admin shows its poster instead, full height, when we have one here.  */
 const EVENT_POSTERS = [
   { match: (ev) => /eatz/i.test(ev.name || '') && String(ev.dateISO || '').startsWith('2026-10-31'),
     url: '/images/events/eatz-beatz-halloween-2026-v3.webp' },
 ];
 
-/*  SOLD OUT, AUTOMATICALLY (Max, 17 Oct 2026). A vendor type is sold out
+/*  SOLD OUT, AUTOMATICALLY. A vendor type is sold out
     when the event has sites of that type and none is free - every one is
     booked or closed. A site on a hold that has run out counts as free
     again. Holds still running don't make it "sold out" (they may let go). */
@@ -551,19 +509,14 @@ function eventCard(ev) {
           ? '<p class="vs-event-blurb">' + escapeHtml(ev.subtitle) + '</p>'
           : '') +
         action +
-        // SHARE (Max, 17 Oct 2026) - phone share sheet, or copy the link on a computer
+        // SHARE - phone share sheet, or copy the link on a computer
         (st.canApply ? '<button type="button" class="btn vs-event-share" data-share-event="' + escapeHtml(ev.id) + '">Share with other vendors</button>' : '') +
       '</div>' +
     '</article>';
 }
 
-/*  Picking one.
-
-    Changing event after starting throws the part-filled application away,
-    because a site number and a food category belong to the event they were
-    chosen at. Carrying them across would hold a site at an event nobody
-    applied to, which is the kind of thing that ends with two vendors on
-    one patch of grass.                                                  */
+/*  Picking one. Changing event after starting throws the part-filled
+    application away - a site and a food category belong to their event. */
 function chooseEvent(id) {
   const ev = state.events.find((e) => e.id === id);
   if (!ev) return;
@@ -584,9 +537,8 @@ function chooseEvent(id) {
 
   render();
 
-  /*  Straight to what was just chosen. This has now been wrong twice by
-      naming a section that moved, so: it is the step immediately after
-      the cards, whatever that is called.                            */
+  /*  Straight to the step immediately after the cards, whatever it is
+      called (do not name a section here - they move). */
   goToSection(SECTIONS[1].id);
 }
 
@@ -617,11 +569,9 @@ function startPreview() {
   render();
 }
 
-/*  SPEED (Max, 20 Oct 2026): only what the first screen needs (app, auth,
-    firestore) is loaded up front. Storage (the document upload) and
-    functions (holding a site, paying) follow in the background - every
-    place that uses them calls `await fbMore()` first, so they are always
-    there in time. This used to be ~800KB before anything could happen. */
+/*  SPEED: only what the first screen needs (app, auth, firestore) is
+    loaded up front. Storage and functions follow in the background - every
+    place that uses them calls `await fbMore()` first. */
 async function loadFirebase() {
   const [{ initializeApp }, auth, firestore] = await Promise.all([
     import(`${SDK}/firebase-app.js`),
@@ -674,21 +624,13 @@ function showPreviewBanner(message) {
    ------------------------------------------------------------------------- */
 /*  NOBODY MAKES AN ACCOUNT TO PAY.
 
-    A food truck filling in this form does not want a username and a
-    password, and asking for one before they can pick a site loses people
-    who were about to give us money.
+    The browser signs in anonymously and silently on load. Firebase still
+    issues a real uid, so Cloud Function auth, Firestore rules and site
+    holds all still work per person.
 
-    So the browser signs itself in anonymously, silently, the moment the
-    page loads. The vendor never sees it. Nothing behind the form changes:
-    Firebase still issues a real uid, so requireAuth in the Cloud Functions
-    still passes, the Firestore rules still match the booking to its owner,
-    and a site is still held against a specific person - two vendors cannot
-    grab the same bay. It is the sign-up screen that goes, not the identity.
-
-    The cost is that the identity lives in this browser. Clear the browser
-    and the booking cannot be found from the vendor's side any more - which
-    is why the reference number is put in front of them at the end, their
-    email is on the record, and staff can always find them in /admin. */
+    The catch: the identity lives in this browser. That is why the
+    reference number is shown at the end, the email is on the record, and
+    staff can always find bookings in /admin. */
 function watchAuth() {
   fb.a.onAuthStateChanged(fb.auth, (user) => {
     state.user = user;
@@ -753,10 +695,7 @@ function subscribeSites() {
       map.setLayout({ sites });
       renderMapMeta();
 
-      /*  Anything measured from the bays has to wait for the bays. The
-          review line and the side column are drawn before this lands, so
-          a held stall showed its name and not its size until something
-          else happened to redraw them.                              */
+      /*  Redraw anything measured from the bays once the bays land. */
       renderSiteChoice();
       renderSide();
       renderReview();
@@ -811,9 +750,7 @@ function buildMap() {
       renderSiteChoice();
       renderMapMeta();
 
-      /*  The price follows the bays as they are tapped. Without these two
-          the plan said one thing and the side column another until the
-          hold went through.                                          */
+      /*  The price follows the bays as they are tapped. */
       renderSide();
       renderReview();
 
@@ -845,13 +782,9 @@ function pendingSites() {
   return map ? map.selectedSites() : [];
 }
 
-/*  The bays this booking is for, whichever way they got here: lit up on
-    the plan, or held and restored from the booking. Held wins, because a
-    hold is the commitment and a selection is only an intention.
-
-    Used by everything that measures the stall rather than counts it - the
-    footprint on the review line, and the size written into the booking -
-    so that a vendor who reloads still sees how big their stall is.   */
+/*  The bays this booking is for: held (restored from the booking) wins,
+    otherwise what is lit up on the plan. Used to measure the stall, so a
+    vendor who reloads still sees its size. */
 function chosenSites() {
   if (state.siteIds.length && map) {
     const held = state.siteIds.map((id) => map.byId.get(id)).filter(Boolean);
@@ -861,18 +794,9 @@ function chosenSites() {
 }
 
 /*  HOW BIG THE STALL ACTUALLY IS
-
-    This used to be n x 3 m by 3 m, which was true while a stall could only
-    be a straight run down one column. Bays can now join sideways across
-    the middle pair, so three of them might be an L rather than a 9 m line,
-    and quoting a frontage for an L is just wrong.
-
-    So: the bays are measured. A shape that fills its bounding box is a
-    rectangle and gets its dimensions - frontage along the aisle first,
-    then depth. Anything else is described by the count alone, which is the
-    honest answer for a shape that has no single frontage.
-
-    3 m per bay, which is the bay size this plan is drawn in.           */
+    Bays are measured (3 m each). A shape that fills its bounding box is a
+    rectangle and gets frontage x depth; anything else (e.g. an L) is
+    described by the bay count alone. */
 /*  " · 6 m x 3 m", or nothing at all for a shape that has no size to
     quote. Kept apart from the size itself so the two callers can each
     punctuate their own line.                                          */
@@ -991,11 +915,8 @@ async function holdChosenSites() {
   const chosen = pendingSites();
   if (!chosen.length) return;
 
-  /*  Whatever is in the form, saved before the hold. saveDraft used to run
-      only from a Continue button, and on a page you scroll nobody has to
-      press one - somebody could fill in every field, take a site, close
-      the tab, and come back to a booking that had never heard of their
-      business.                                                        */
+  /*  Whatever is in the form, saved before the hold, so a vendor who
+      leaves after taking a site keeps their details. */
   collectForm();
 
   const ids = chosen.map((s) => s.id);
@@ -1008,10 +929,7 @@ async function holdChosenSites() {
     return;
   }
 
-  /*  Anonymous sign-in normally lands long before anybody has read this
-      far, so this is the rare case of it not having come back yet - or
-      having failed. Nudge it along rather than telling them to do
-      something the page no longer asks for. */
+  /*  Anonymous sign-in has not come back yet (or failed). Nudge it along. */
   if (!state.user) {
     setStepError('site', 'Still getting set up - give it a second and try again.');
     signInQuietly();
@@ -1092,9 +1010,8 @@ function stopHoldCountdown() {
   if (holdTimer) clearInterval(holdTimer);
   holdTimer = null;
 
-  /*  And clear the line it was writing. Stopping the interval used to
-      leave the last thing it said on screen, so a released bay still
-      claimed to be held for another nine minutes.                  */
+  /*  And clear the line it was writing, so a released bay does not still
+      claim to be held. */
   const el = document.getElementById('vs-hold-timer');
   if (el) {
     el.textContent = '';
@@ -1167,10 +1084,7 @@ async function loadExistingBooking() {
     state.bookingId = snap.id;
 
     /*  The event first, because everything else in the booking belongs to
-        it. Without this a returning vendor got their vendor type and
-        their held site back with no event chosen - so the rail showed
-        ticks against steps that were still locked, which is a page
-        arguing with itself.                                          */
+        it - otherwise the rail shows ticks against locked steps. */
     if (b.eventId && b.eventId !== state.eventId) {
       state.eventId = b.eventId;
       state.event = state.events.find((e) => e.id === b.eventId) || null;
@@ -1436,12 +1350,8 @@ async function payAndBook() {
 /* Stripe sends people back here. The redirect is only a hint - the booking
    is not treated as paid until the webhook has written it, so this polls
    the booking rather than believing the URL. */
-/*  Coming back from Stripe, paid or cancelled.
-
-    The booking knows which event it is for and this page no longer does,
-    so the event is read back off it before anything else happens. Without
-    that, a cancelled checkout returns to a review step with no sites and
-    no categories loaded, because nothing knows which event's to load.  */
+/*  Coming back from Stripe, paid or cancelled. The event is read back
+    off the booking first, so its sites and categories can load. */
 async function handleReturnFromStripe() {
   const params = new URLSearchParams(window.location.search);
   const bookingId = params.get('booking');
@@ -1584,14 +1494,11 @@ function showConfirmation() {
 /* -------------------------------------------------------------------------
    Sections
 
-   The form is one page now: five sections, stacked, and you scroll. There
-   is no current step any more - what used to be state.step is replaced by
-   asking each section whether it has what it needs, which is also what
-   the summary down the side reports.
+   The form is one page: five sections, stacked. Each section is asked
+   whether it has what it needs (the side summary reports the same).
 
-   The order still matters. What you sell comes before the map, because a
-   category that is already full should stop somebody before they get
-   attached to a site.
+   Order matters: what you sell comes before the map, so a full category
+   stops somebody before they get attached to a site.
    ------------------------------------------------------------------------- */
 const SECTIONS = [
   { id: 'event',   label: 'Select Event' },
@@ -1604,11 +1511,8 @@ const SECTIONS = [
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/*  Has this section got everything it needs?
-
-    Read live from the fields rather than from state, because state is only
-    filled in when somebody presses Continue and the rail has to keep up
-    with the typing.                                                      */
+/*  Has this section got everything it needs? Read live from the fields,
+    so the rail keeps up with the typing. */
 function sectionDone(id) {
   const ticked = (elId) => !!document.getElementById(elId)?.checked;
 
@@ -1616,10 +1520,7 @@ function sectionDone(id) {
     case 'event':
       return !!state.eventId;
 
-    /*  Nothing is asked here - it is the prices and the power situation to
-        read. So it is done as soon as there is an event to read them for,
-        and the rail says so rather than holding a tick back for a step
-        with nothing in it to finish.                                   */
+    /*  Nothing to fill in here, so it is done once an event is chosen. */
     case 'info':
       return !!state.eventId;
 
@@ -1645,17 +1546,10 @@ function sectionDone(id) {
   }
 }
 
-/*  Scrolls a section to just under the rail.
-
-    Not scrollIntoView with a scroll-margin: the rail is one line of steps
-    on a wide screen and can be taller on a narrow one, so any fixed margin
-    is wrong at some width and the heading ends up tucked underneath. This
-    measures it.                                                        */
-/*  Take somebody to the questions and open them.
-
-    Opening a panel that is off screen reads as nothing happening, so this
-    does both. Called from the tick in Your details and from the line at
-    the foot of the review.                                            */
+/*  Scrolls a section to just under the rail. Measures the rail, because
+    its height changes with screen width. */
+/*  Take somebody to the questions and open them. Called from the tick in
+    Your details and from the line at the foot of the review. */
 function openFaqs() {
   const panel = document.getElementById('vs-picked-more');
   const btn = document.querySelector('.vs-picked-more-btn');
@@ -1709,15 +1603,9 @@ function render() {
 }
 
 /*  THE STEP RAIL
-
-    Five steps across the top of the form, sticky. A step is done when its
-    section has everything it needs, and the one highlighted is whichever
-    section is on screen - not the next unfinished one, because on a page
-    you scroll those two are different things and the rail should say where
-    you are looking.
-
-    Clicking one scrolls to it. Nothing here gates anything: the rail
-    reports, it does not lock.                                          */
+    Five steps across the top, sticky. A step is ticked when its section
+    is complete; the highlighted one is whichever section is on screen.
+    Clicking one scrolls to it. The rail reports, it does not lock. */
 let railOn = 'event';
 
 function onFormChange() {
@@ -1778,12 +1666,8 @@ function watchScroll() {
   check();
 }
 
-/*  THE EVENT YOU PICKED
-
-    Sits under the cards the moment one is chosen, and carries the two
-    prices and the power situation. Those used to be a step of their own
-    that everybody walked past on the way to the form; here they arrive
-    at the only moment they mean anything.                              */
+/*  THE EVENT YOU PICKED - sits under the cards once one is chosen, with
+    the two prices and the power situation. */
 function renderPicked() {
   const wrap = document.getElementById('vs-picked');
   const head = document.getElementById('vs-picked-head');
@@ -1844,12 +1728,8 @@ function renderPicked() {
   }
 }
 
-/*  YOUR APPLICATION
-
-    The booking as it stands, down the side. It was a second list of the
-    five steps, which is what the rail across the top already does - so it
-    says what is actually being bought instead: which event, which kind of
-    vendor, which site, and what it comes to.                           */
+/*  YOUR APPLICATION - the booking as it stands, down the side: which
+    event, which kind of vendor, which site, and what it comes to. */
 function renderSide() {
   const host = document.getElementById('vs-chosen');
   if (!host) return;
@@ -1909,14 +1789,9 @@ function renderSide() {
       '<p class="vs-side-label">Site selection</p>' + siteRow +
     '</div>' +
 
-    /*  Itemised, not a total with a note under it saying fees are in
-        there somewhere. A vendor comparing our $100 site against the
-        $115.49 that leaves their account deserves to see which line is
-        ours, which is the payment processor's and which is the tax.
-
-        The bays line is spelled out for market stalls because the site
-        total moves with the map - two bays at $50 reads as a mistake
-        otherwise.                                                    */
+    /*  Itemised, so vendors see which line is ours, which is the payment
+        processor's and which is tax. The bays line is spelled out for market
+        stalls because the site total moves with the map. */
     (b.totalCents
       ? '<div class="vs-side-sum">' +
           '<div>' +
@@ -2077,24 +1952,15 @@ function renderSiteChoice() {
 
   out.classList.toggle('is-chosen', sameAsHeld || chosen.length > 0);
 
-  /*  The Hold button is gone - the selection is the hold. What is left
-      is saying which state we are in, which renderSiteChoice does
-      above.                                                        */
+  /*  The selection is the hold (no Hold button). renderSiteChoice above
+      says which state we are in. */
 }
 
-/*  The sign-in panel is gone - see watchAuth. This is kept as a no-op
-    rather than chased through every call site, and hides the panel if an
-    old cached copy of the page is still serving it. */
+/*  The sign-in panel is gone - see watchAuth. Kept as a no-op that
+    hides the panel if an old cached page still has it. */
 /*  THE REVIEW STEP
-
     A stack of small cards, one idea each: what you are buying, what it
-    costs, and who takes the money. Everything is one column at every
-    width, because a checkout is read top to bottom and most vendors fill
-    this in on a phone anyway.
-
-    This replaced a five column table beside a sidebar. The table had to
-    be rebuilt into labelled blocks below 768px to be readable at all, so
-    the desktop and phone layouts were really two designs to keep in step.
+    costs, and who takes the money. One column at every width.
     ------------------------------------------------------------------------- */
 
 /*  The little glyph in front of the line item. Drawn rather than loaded -
@@ -2147,8 +2013,7 @@ function renderReview() {
         .filter(Boolean).map(escapeHtml).join(' &middot; ')
     : 'No site chosen yet';
 
-  /*  The event line under the card title. It is the one thing the old
-      sidebar carried that is not repeated anywhere else on this step. */
+  /*  The event line under the card title. */
   const eventLine = [ev.name || 'Eatz & Beatz', ev.dateLabel]
     .filter(Boolean).map(escapeHtml).join(' &middot; ');
 
@@ -2294,7 +2159,7 @@ function renderReview() {
     payBtn.textContent = !hasSite()
       ? 'Pay and Book'
       : (b.totalCents === 0 ? 'Confirm booking' : `Pay ${exact(b.totalCents)} AUD`);
-    /*  Grey until the Vendor Terms are ticked (Max, 19 Oct 2026). After
+    /*  Grey until the Vendor Terms are ticked. After
         that it is live, and pressing it says what else is still needed. */
     payBtn.disabled = !termsAgreed();
   }
@@ -2328,7 +2193,7 @@ function renderSoldOut() {
   renderWaitlist(so);
 }
 
-/*  JOIN THE WAITLIST (Max, 20 Oct 2026): under each sold-out type. When a
+/*  JOIN THE WAITLIST: under each sold-out type. When a
     spot opens the first person is emailed and gets 4 hours to claim it. */
 const WL_WORD = { food: 'Food vans', market: 'Market stalls' };
 function renderWaitlist(so) {
@@ -2448,9 +2313,7 @@ function wireStaticControls() {
 
         setStepError('type', '');
 
-        /* Size is no longer asked for here. A market stall is however many
-           bays the vendor picks on the map, so the price follows from that
-           and the flow moves straight on. */
+        /* Size is not asked here - a market stall is the bays picked on the map. */
         if (map) map.setVendorType(state.vendorType);
 
         /*  No jump. The price and the map both follow from this, so the
@@ -2706,10 +2569,8 @@ function val(id) {
 function setStepError(step, message) {
   const el = document.querySelector(`[data-error="${step}"]`);
 
-  /*  Loudly, not quietly. This used to return and say nothing when the
-      slot was missing, which is how the business fields' error line went
-      missing in a rebuild and took its message with it - the form simply
-      refused to go on and explained nothing.                         */
+  /*  Warn in the console if the error slot is missing, so a lost message
+      gets noticed. */
   if (!el) {
     if (message) console.warn(`No [data-error="${step}"] to show: ${message}`);
     return;
@@ -2723,10 +2584,8 @@ function setBusy(step, busy) {
   const el = document.querySelector(`[data-busy="${step}"]`);
   if (el) el.hidden = !busy;
 
-  /*  The buttons in the section that is busy. It used to look for
-      [data-step], which nothing has carried since the steps became
-      sections - so nothing was ever disabled while an upload or a
-      checkout was in flight, and a second click could start it twice. */
+  /*  The buttons in the section that is busy, disabled so a second click
+      cannot start an upload or checkout twice. */
   const sec = document.querySelector(`.vs-sec[data-sec="${step}"]`);
   if (sec) sec.querySelectorAll('button').forEach((b) => { b.disabled = busy; });
 }
@@ -2739,9 +2598,8 @@ function friendlyError(err) {
   if (code.includes('invalid-email')) return 'That email address does not look right.';
   if (code.includes('permission-denied')) return 'You do not have permission to do that.';
 
-  /*  There is no sign-in screen to send anybody to any more, so these two
-      mean the silent anonymous sign-in has not landed - a refresh is the
-      honest advice, not "sign in". */
+  /*  These mean the silent anonymous sign-in has not landed - so the
+      advice is to refresh, not "sign in". */
   if (code.includes('unauthenticated') || code.includes('admin-restricted-operation')) {
     return 'Lost your place for a moment. Please refresh the page and try again.';
   }

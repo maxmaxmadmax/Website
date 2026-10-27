@@ -1,35 +1,22 @@
 /* ==========================================================================
    WHAT IS ON, SHARED
 
-   Two pages ask the same three questions: which events are there, which
-   weekend is "this weekend", and what does a card look like. This answers
-   all three, once, for both of them.
+   Which events there are, which weekend is "this weekend", and what a card
+   looks like - defined once here so the two pages can never disagree.
 
    Used by:
      js/gig-guide.js     the full guide at /gig-guide
      js/events.js        the This Weekend strip under the featured event
 
-   WHY THIS FILE EXISTS
-   Because "the current weekend" is exactly the kind of thing that gets
-   written twice and then quietly disagrees - one page counting Friday as
-   the start and the other counting it as the end, and nobody noticing
-   until somebody drives to a gig on the wrong day. It is defined here and
-   nowhere else.
-
-   Loaded before both of those scripts, and it publishes itself as
-   window.SGWeekend. No modules: the rest of the site's page scripts are
-   plain scripts with defer, and one file doing something different would
-   be a trap for whoever edits it next.
+   Loaded before both of those scripts, and publishes itself as
+   window.SGWeekend. A plain script with defer, like the other page scripts.
    ========================================================================== */
 (function (global) {
     'use strict';
 
-    /*  These two are public because the pages that read gigs also read the
-        status document next to them, and the key is the same either way.
-        A Firebase web key is an identifier, not a password - what protects
-        the data is firestore.rules, which let the world read gigs and
-        nobody write them. It is the same key that is already sitting in
-        js/firebase-config.js.                                            */
+    /*  Public on purpose: a Firebase web key is an identifier, not a
+        password. firestore.rules protect the data (anyone can read gigs,
+        nobody can write them). Same key as js/firebase-config.js.        */
     var PROJECT = 'soundzgood-8c86f';
     var WEB_KEY = 'AIzaSyCVWdD7fE24MuN-v5XQLObJbSHYRUbPlPY';
     var REST = 'https://firestore.googleapis.com/v1/projects/' + PROJECT +
@@ -58,9 +45,8 @@
     /* ----------------------------------------------------------------------
        THIS WEEKEND
 
-       Friday through Sunday, and on a Saturday or a Sunday that means the
-       weekend you are standing in, not the next one. Somebody reading this
-       on Saturday morning wants tonight, not six days away.
+       Friday through Sunday. On a Saturday or Sunday that means the
+       weekend you are in, not the next one.
        ---------------------------------------------------------------------- */
     function weekendRange(from) {
         var now = from ? midnight(from) : today();
@@ -86,9 +72,8 @@
     /* ----------------------------------------------------------------------
        READING THEM
 
-       Straight from Firestore's REST interface rather than by loading the
-       Firebase library - these pages only read one small public
-       collection, and the library is a hundred kilobytes to do that.
+       Straight from Firestore's REST interface - much lighter than loading
+       the Firebase library for one small public collection.
        ---------------------------------------------------------------------- */
     function plain(fields) {
         var out = {};

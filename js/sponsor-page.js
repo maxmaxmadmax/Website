@@ -1,5 +1,5 @@
 /* ==========================================================================
-   SPONSOR PAGE  -  /sponsor?e=<eventId>[&t=<token>]   (Max, 20 Oct 2026)
+   SPONSOR PAGE  -  /sponsor?e=<eventId>[&t=<token>]
 
    Community first, prices second: why the event matters, where the money
    goes, what a sponsor gets, then the levels and an "I'm interested" form.
@@ -8,8 +8,8 @@
    Data: getSponsorInfo / sponsorInterest (functions/index.js).
    ========================================================================== */
 
-import { SPONSOR_LEVELS, EVENT_COSTS } from './sponsor-data.js?v=710';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured, eventId as defaultEventId } from './firebase-config.js?v=710';
+import { SPONSOR_LEVELS, EVENT_COSTS } from './sponsor-data.js?v=711';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured, eventId as defaultEventId } from './firebase-config.js?v=711';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) => String(v == null ? '' : v)

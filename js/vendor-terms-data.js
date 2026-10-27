@@ -1,5 +1,5 @@
 /* ==========================================================================
-   EATZ & BEATZ - VENDOR TERMS & CONDITIONS   (Max's wording, 19 Oct 2026)
+   EATZ & BEATZ - VENDOR TERMS & CONDITIONS
 
    Shown on the vendor page under Event info, and agreed with a tick before
    a vendor can pay (or confirm a complimentary stall). The server refuses

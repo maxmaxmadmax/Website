@@ -14,20 +14,12 @@ permalink: /admin.html
 
 <link rel="icon" href="images/logo.png">
 
-<!--  admin.css only. The marketing stylesheet is deliberately NOT loaded
-      here: this is a different design language - dark rail, light desk -
-      and the two would fight each other. Keeping them apart also means
-      nothing done in here can reach the public site, and nothing done
-      there can reach this.                                             -->
-<link rel="stylesheet" href="css/admin.css?v=710">
-<!--  The DJ list for the Friday Nights panel. Same roster the
-        entertainment page shows.                                  -->
-  <script src="js/roster.js?v=710" defer></script>
-  <script type="module" src="js/admin-app.js?v=710"></script>
-  <!-- ADMIN AUTO-UPDATE: phones may keep this page for up to 10 min after a
-       change is published. On open (and when the tab comes back into view) we
-       ask for the live page, bypassing any cache; if its version is newer than
-       the one running, reload once with a fresh copy.                        -->
+<!-- admin.css only - the public site stylesheet is kept out on purpose so the two never clash. -->
+<link rel="stylesheet" href="css/admin.css?v=711">
+<!-- The DJ list for the Friday Nights panel (same roster as the entertainment page). -->
+  <script src="js/roster.js?v=711" defer></script>
+  <script type="module" src="js/admin-app.js?v=711"></script>
+  <!-- AUTO-UPDATE: on open (and when the tab comes back) check for a newer version and reload once. -->
   <script>
   (function () {
     var mine = (document.querySelector('script[src*="admin-app.js?v="]') || {}).src || '';
@@ -96,11 +88,7 @@ permalink: /admin.html
       </div>
     </div>
 
-    <!--  THE RAIL
-          Grouped under plain section labels (EVENTS, PRICING, ...) rather
-          than collapsible groups, matching the inventory-manager layout.
-          Every data-view is unchanged so the built views still route; the
-          data-soon items are the Coming Soon stubs.                       -->
+    <!-- THE RAIL - menu grouped under plain section labels. data-soon items are Coming Soon stubs. -->
     <nav class="ad-nav" aria-label="Admin sections">
 
       <button type="button" class="ad-nav-item" data-view="dashboard">
@@ -122,9 +110,7 @@ permalink: /admin.html
       <button type="button" class="ad-nav-item" data-view="events">
         <span class="ad-ico" aria-hidden="true">◈</span> Events
       </button>
-      <!-- Applications removed from the menu (Max, 20 Oct 2026): vendors book and pay
-           themselves now, so there is nothing to decide. Vendors > Unpaid shows the
-           same people. #/applications still opens if an old link points there. -->
+      <!-- Applications is off the menu on purpose - Vendors > Unpaid shows the same people. #/applications still opens for old links. -->
       <button type="button" class="ad-nav-item" data-view="vendors">
         <span class="ad-ico" aria-hidden="true">☺</span> Vendors
       </button>
@@ -163,8 +149,7 @@ permalink: /admin.html
       <button type="button" class="ad-nav-item" data-view="settings">
         <span class="ad-ico" aria-hidden="true">⚙</span> Settings
       </button>
-      <!-- the version this page is running, read off the admin-app.js?v= number
-           (bumped on every update) - compare with what Claude says went live -->
+      <!-- The version this page is running (read from the admin-app.js?v= number). -->
       <p class="ad-version" id="ad-version">Version &hellip;</p>
       <script>
         (function () {

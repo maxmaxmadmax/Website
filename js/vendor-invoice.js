@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VENDOR INVOICE & EVENT GUIDE  -  /vendor-invoice?t=<token>   (Max, 19 Oct 2026)
+   VENDOR INVOICE & EVENT GUIDE  -  /vendor-invoice?t=<token>
 
    Flows exactly like the customer quote page (quote.html / quote-view.js) and
    reuses its look (quote-view.css: qp-hero, qp-sec, qv-doc ...):
@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=710';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=710';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=710';
+import { termBodyHtml } from './terms-data.js?v=711';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=711';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=711';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -46,9 +46,9 @@ const KEY_TIMES = [
   ['Car', 'Vehicles move after 9:40 pm', 'Only when staff say the route is clear'],
 ];
 
-/*  THE EVENT GUIDE, from the Vendor Terms (Max, 19 Oct 2026): six cards of
+/*  THE EVENT GUIDE, from the Vendor Terms: six cards of
     [icon path, title, lines], then the hard rules for the night.        */
-/*  WHAT TO BRING - Max's list, 19 Oct 2026 */
+/*  WHAT TO BRING */
 const BRING = [
   'Set up and vehicle parked by 4:15 pm',
   'Stay inside your own site',

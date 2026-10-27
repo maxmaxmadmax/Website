@@ -1,9 +1,8 @@
 /* ==========================================================================
-   MESSAGES  -  admin page  (Max, 19 Oct 2026)        step 1: Vendors tab
+   MESSAGES  -  admin page        step 1: Vendors tab
 
-   Replaces the old "Vendor Email Template" page. Emails are sorted by WHO
-   they go to (tabs) and then by WHEN they go (rows). Each row shows
-   When | Subject | Who | Status | Sent.
+   Emails are sorted by WHO they go to (tabs) and then by WHEN they go
+   (rows). Each row shows When | Subject | Who | Status | Sent.
 
    Status:  Draft      still being written
             Your OK    complete - waiting for Max to approve
@@ -17,7 +16,7 @@
    ctx = { state, h: { esc, attr }, call, render, money }
    ========================================================================== */
 
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=710';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=711';
 
 export const SEND_TIME = '9:35 am';
 
@@ -234,7 +233,7 @@ export function messagesHtml(ctx) {
 }
 
 /*  SENT EMAILS: everything the system has sent, newest first. Click one to
-    see exactly what went (Max, 20 Oct 2026). Filled by functions/lib/mail-log.js. */
+    see exactly what went. Filled by functions/lib/mail-log.js. */
 const KIND = {
   quote: 'Quote / invoice', estimate: 'Bot estimate', 'vendor-invoice': 'Vendor invoice', message: 'Message',
   lead: 'Lead outreach', 'office-copy': 'Office copy', 'vendor-confirmation': 'Vendor confirmation', email: 'Email',
@@ -273,7 +272,7 @@ function sentHtml(ctx) {
     </div>`;
 }
 
-/*  SPONSORS (Max, 20 Oct 2026): the two sponsor emails, the $10k goal, and the
+/*  SPONSORS: the two sponsor emails, the $10k goal, and the
     list of businesses - add from the Lead Generator, by hand or past sponsors;
     tick and Send; track Asked / Interested / Yes / No.                    */
 const SP_STATUS = {
@@ -362,7 +361,7 @@ function needsEmailHtml(h, added) {
       <td class="ad-cell-right"><button type="button" class="ad-btn ad-btn-small" data-need-add="${h.attr(n.business)}">Add</button></td></tr>`).join('')}</tbody></table></div>`;
 }
 
-/*  THE WAITLIST for this event (Max, 20 Oct 2026). */
+/*  THE WAITLIST for this event. */
 const WL_STATUS = {
   waiting: ['Waiting', 'grey'], offered: ['Offered - 4 hrs', 'amber'], claimed: ['Booking now', 'blue'],
   booked: ['Booked', 'green'], declined: ['Declined', 'grey'], expired: ['Ran out of time', 'grey'],
@@ -388,7 +387,7 @@ function waitlistHtml(ctx) {
     </tbody></table></div>`;
 }
 
-/*  REMINDERS (Max, 22 Oct 2026): the payment reminder email (click to see
+/*  REMINDERS: the payment reminder email (click to see
     it) and everyone who still owes money, each with a Send button. Nothing
     goes until Max presses Send.                                          */
 export function owesMoney(q) {
@@ -474,7 +473,7 @@ function editorHtml(ctx, ev) {
   const saved = isNew ? null : draftFrom(m);
   const dirty = isNew || !sameDraft(saved, d);
   /*  who it goes to: vendors for vendor emails; for the sponsor emails, the
-      businesses on the Sponsors tab - NEVER the vendors (Max, 20 Oct 2026) */
+      businesses on the Sponsors tab - NEVER the vendors */
   const spons = m.audience === 'sponsors';
   const list = spons
     ? (state.sponsors || []).filter((p) => p.email && (m.system === 'sponsor-followup' ? p.status === 'asked' : p.status === 'todo'))
@@ -540,7 +539,7 @@ function editorHtml(ctx, ev) {
   </div>`;
 }
 
-/*  PREVIEW LINKS ARE REAL (Max, 20 Oct 2026): every button in a preview opens
+/*  PREVIEW LINKS ARE REAL: every button in a preview opens
     the page it goes to, in a new tab, so Max can test it.               */
 function guideLinkFor(state) {
   const b = paidVendors(state.bookings, state.activeEventId).find((x) => x.invoiceToken);

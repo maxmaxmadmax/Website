@@ -102,14 +102,14 @@ async function sendQuoteLinkEmail(q, link) {
       kind: 'quote',
       from: `${SELLER.name} <${SELLER.email}>`,
       to,
-      // the customer's CC address (e.g. their accounts team) gets a copy - Max, 15 Oct 2026
-      // several CC addresses allowed, comma separated (Max, 20 Oct 2026); never the main one twice
+      // the customer's CC addresses (comma separated, e.g. their accounts team)
+      // get a copy; never the main address twice
       ...(() => {
         const cc = String((q.customer && q.customer.ccEmail) || '').split(/[,;\s]+/).map((e) => e.trim())
           .filter((e) => e && e.toLowerCase() !== String(to).toLowerCase());
         return cc.length ? { cc: cc.join(', ') } : {};
       })(),
-      // a copy of every email goes to the office (Max, 20 Oct 2026)
+      // a copy of every email goes to the office
       bcc: OFFICE,
       replyTo: OFFICE,
       subject: `Your ${docLabel(q)} ${q.kind === 'invoice' ? (q.invoiceNumber || q.number) : q.number} from SoundzGood`,
@@ -124,9 +124,9 @@ async function sendQuoteLinkEmail(q, link) {
 }
 
 /* --------------------------------------------------------------------------
-   PAYMENT REMINDER (Max, 22 Oct 2026) - Messages > Reminders, or "Send
-   reminder" beside View in the Sales Pipeline. Only ever sent when Max
-   presses the button. info = { dueCents, dueLabel, isDeposit, balanceDue }
+   PAYMENT REMINDER - Messages > Reminders, or "Send reminder" beside View
+   in the Sales Pipeline. Only sent when an admin presses the button.
+   info = { dueCents, dueLabel, isDeposit, balanceDue }
    -------------------------------------------------------------------------- */
 function reminderHtml(q, link, info) {
   const isInvoice = q.kind === 'invoice';
@@ -196,7 +196,7 @@ function renderPaymentReminder(q, link, info) {
   return { subject: reminderSubject(q), html: reminderHtml(q, link, info) };
 }
 
-/*  For the Messages page preview (Max, 20 Oct 2026). */
+/*  For the Messages page preview. */
 function renderQuoteLinkEmail(q, link) {
   const ref = q.kind === 'invoice' ? (q.invoiceNumber || q.number) : q.number;
   return { subject: `Your ${docLabel(q)} ${ref} from SoundzGood`, html: html(q, link) };

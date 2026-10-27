@@ -23,17 +23,15 @@ permalink: /events.html
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="css/style.css?v=710">
-  <!--  The event card is shared with /gig-guide, so its styles live in
-        their own file rather than in either page's.                  -->
-  <link rel="stylesheet" href="css/gig-card.css?v=710">
-  <link rel="stylesheet" href="css/events.css?v=710">
-  <script src="js/main.js?v=710" defer></script>
-  <!--  roster.js names the DJs on the Friday Nights cards; it is the same
-        list the entertainment page and the admin dropdown read.     -->
-  <script src="js/roster.js?v=710" defer></script>
-  <script src="js/weekend.js?v=710" defer></script>
-  <script src="js/events.js?v=710" defer></script>
+  <link rel="stylesheet" href="css/style.css?v=711">
+  <!-- The event card is shared with /gig-guide, so its styles live in their own file. -->
+  <link rel="stylesheet" href="css/gig-card.css?v=711">
+  <link rel="stylesheet" href="css/events.css?v=711">
+  <script src="js/main.js?v=711" defer></script>
+  <!-- roster.js names the DJs on the Friday Nights cards (same list as the entertainment page and admin). -->
+  <script src="js/roster.js?v=711" defer></script>
+  <script src="js/weekend.js?v=711" defer></script>
+  <script src="js/events.js?v=711" defer></script>
 </head>
 
 <!-- the class is what events.css hangs the footer tweak off -->
@@ -59,28 +57,15 @@ permalink: /events.html
      card with no photo yet still looks finished.
      ========================================================================== -->
 
-<!--  The page led with an EVENTS title above the featured event. With the
-      event itself filling the screen that was two headers stacked, so it
-      has gone. This heading stays for screen readers and search engines -
-      it says what the page is, which the artwork below cannot.        -->
+<!-- Hidden heading for screen readers and search engines - says what the page is. -->
 <h1 class="ev-sr-only">Events</h1>
 
 <!-- 2. UPCOMING - THE FEATURED EVENT ------------------------------------
-     A full height hero for whatever is on next. Halloween styling is kept
-     to this one section by .is-halloween, so it never reaches the rest of
-     the site.
-
-     THE COUNTDOWN
-     The date and time it counts to is the data-doors attribute below, and
-     one value drives everything - the ticking numbers and the line of text
-     underneath are both worked out from it. It is a full date and time
-     with the Queensland offset (+10:00), so it counts down to the right
-     moment wherever the visitor is.
-     ------------------------------------------------------------------- -->
+     Halloween styling is kept to this section by .is-halloween.
+     The countdown runs off data-doors below (Queensland time, +10:00). -->
 <section class="ev-feature is-halloween" aria-labelledby="ev-feature-name">
 
-  <!-- cobwebs, drawn rather than loaded, same as the
-       vendor signup page uses -->
+  <!-- cobwebs, drawn in code -->
   <svg class="ev-web" viewBox="0 0 100 100" aria-hidden="true">
     <path d="M0 0 L100 100 M0 0 L100 60 M0 0 L60 100 M0 0 L100 20 M0 0 L20 100"/>
     <path d="M22 0 Q14 14 0 22 M42 0 Q28 28 0 42 M62 0 Q40 40 0 62 M82 0 Q54 54 0 82"/>
@@ -170,21 +155,11 @@ permalink: /events.html
      ========================================================================== -->
 <section class="ev-residency" aria-labelledby="ev-res-name">
 
-  <!--  THE BANNER
-
-        There is no "view this week's DJ" button on it any more. The whole
-        section is one screen now, so that button scrolled to a line up
-        already in view - and it was the 80px that stopped everything
-        fitting.                                                        -->
+  <!-- THE BANNER -->
   <div class="ev-res-hero">
 
-    <!--  Same two files, same breakpoint and same poster as the homepage
-          hero and the entertainment page. That is the point: by the time
-          anyone reaches this the browser already holds the file, so the
-          banner costs nothing. A different cut would have made it another
-          download of the same footage.
-
-          preload="none" so the poster paints first and the clip follows. -->
+    <!-- Same files, breakpoint and poster as the homepage hero, so it is already cached.
+         preload="none" lets the poster show first. -->
     <video class="ev-res-video" id="ev-res-video" aria-hidden="true"
            autoplay muted loop playsinline preload="none"
            poster="images/bowen.jpeg">
@@ -226,16 +201,9 @@ permalink: /events.html
     <div class="ev-fri-lineup" id="ev-fri-lineup">
       <p class="ev-res-label">Upcoming Friday Line Up</p>
 
-      <!--  BUILT BY js/events.js, NOT TYPED IN HERE
-
-            The four dates are worked out from today, so the list rolls
-            itself forward every week and can never show a Friday that has
-            been - which is exactly what it used to do.
-
-            Who is playing comes from Firestore, set in Admin under
-            Settings. Anything not set there falls back to the short list
-            at the top of js/events.js, and anything set in neither says
-            the DJ is still to be announced, which is true.            -->
+      <!-- BUILT BY js/events.js, NOT TYPED IN HERE
+           The four Fridays are worked out from today. DJs come from Admin > Settings,
+           then the fallback list at the top of js/events.js, else "to be announced". -->
       <div class="ev-fri-grid" id="ev-fri-grid"></div>
 
       <a class="ev-res-link" href="/entertainment">
@@ -252,10 +220,6 @@ permalink: /events.html
       <h3>The Grand View Hotel</h3>
       <p>Bowen&rsquo;s iconic local.</p>
 
-      <!--  The four facts that were here - great drinks, live DJs every
-            Friday, locals and visitors, Bowen QLD - said what the section
-            above already says, and the pub can say the rest better than
-            we can. So it is a name, a line and a way through to them. -->
       <a class="ev-venue-link" href="https://www.grandviewhotelbowen.com.au/"
          target="_blank" rel="noopener">
         Visit the Grand View <span aria-hidden="true">&#8599;</span>
@@ -283,22 +247,9 @@ permalink: /events.html
 
 
 <!-- 2c. WHAT'S ON THIS WEEK -------------------------------------------------
-
-     The next seven days of listings, four on screen at a time with an
-     arrow for the rest.
-
-     The same listings as /gig-guide. Not a copy of that page: reading them
-     and drawing a card both live in js/weekend.js, which the guide uses
-     too, so the two can never show the same gig differently.
-
-     Nothing here is typed in. It is found overnight by the syncGigGuide
-     function and it changes on its own.
-
-     IF THERE IS NOTHING ON, THE WHOLE SECTION GOES. Not an empty row with
-     an apology under it - on the events page this is a bonus, and a bonus
-     with nothing to say should not take up the screen. js/events.js hides
-     it.
-     ------------------------------------------------------------------- -->
+     Next seven days of listings, same as /gig-guide (cards drawn by js/weekend.js).
+     Found overnight by the syncGigGuide function - nothing typed in.
+     If there is nothing on, js/events.js hides the whole section. -->
 <section class="section ev-section ev-weekend" id="ev-weekend" hidden
          aria-labelledby="ev-weekend-h">
 
@@ -328,10 +279,7 @@ permalink: /events.html
     </div>
   </div>
 
-  <!--  Pages four at a time the same way the annual row on /services does:
-        the track is a grid sized against its own window, so it is exactly
-        one window wide however many cards hang out of it, and one page is
-        exactly -100%. No width is ever measured.                       -->
+  <!-- Pages four at a time, same as the annual row on /services. -->
   <div class="ev-wk-view" id="ev-weekend-view">
     <div class="ev-wk-track" id="ev-weekend-grid"></div>
   </div>
@@ -342,10 +290,7 @@ permalink: /events.html
 <!-- 3. NEXT SOUNDZGOOD - TEASER ------------------------------------------ -->
 <section class="ev-teaser-wrap">
 
-  <!--  The blurred artwork behind this is the SoundzGood 2.0 banner, pushed
-        right out of focus so it reads as colour and light rather than as a
-        past event. Swap the file in the style below when you have artwork
-        for the next one.                                                  -->
+  <!-- Blurred artwork is the SoundzGood 2.0 banner. Swap the file in the style below for the next one. -->
   <article class="ev-teaser" style="--ev-art:url('images/soundzgood-2-0-banner.jpg')">
 
     <div class="ev-teaser-body">

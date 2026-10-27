@@ -7,16 +7,8 @@ permalink: /gig-guide.html
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!--  WHAT THIS PAGE IS TRYING TO BE FOUND FOR
-
-        "What's on in the Whitsundays". The title leads with that phrase
-        rather than with our name, because somebody searching it has not
-        heard of us - they want to know what is on this weekend. The name
-        goes at the end where it belongs.
-
-        The same words are the h1 and the opening line further down. Not
-        stuffing: it is genuinely what the page is, and a page whose title
-        and heading disagree gets trusted less, not more.                -->
+  <!-- Title, h1 and opening line all lead with "What's on in the Whitsundays" -
+       the search this page is for. Keep them matching. -->
   <title>What&rsquo;s On in the Whitsundays | Gigs, Festivals &amp; Local Events</title>
   <meta name="description" content="What&rsquo;s on in the Whitsundays this weekend - live music, markets, festivals and community events across Airlie Beach, Bowen, Proserpine and the Whitsunday Islands. Updated daily.">
 
@@ -32,10 +24,7 @@ permalink: /gig-guide.html
   <meta property="og:image:alt" content="SoundzGood Whitsundays">
   <meta name="twitter:card" content="summary_large_image">
 
-  <!--  Google reads this directly. It says what the page is, who keeps it
-        and which places it covers - the islands named one by one, because
-        somebody searching for Hamilton Island is not searching for a
-        region. Same reasoning as the block on the home page.            -->
+  <!-- Structured data for Google: what the page is, who keeps it, and the places it covers (islands named one by one). -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -62,12 +51,12 @@ permalink: /gig-guide.html
   </script>
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="css/style.css?v=710">
-  <link rel="stylesheet" href="css/gig-card.css?v=710">
-  <link rel="stylesheet" href="css/gig-guide.css?v=710">
-  <script src="js/main.js?v=710" defer></script>
-  <script src="js/weekend.js?v=710" defer></script>
-  <script src="js/gig-guide.js?v=710" defer></script>
+  <link rel="stylesheet" href="css/style.css?v=711">
+  <link rel="stylesheet" href="css/gig-card.css?v=711">
+  <link rel="stylesheet" href="css/gig-guide.css?v=711">
+  <script src="js/main.js?v=711" defer></script>
+  <script src="js/weekend.js?v=711" defer></script>
+  <script src="js/gig-guide.js?v=711" defer></script>
 </head>
 
 <!-- the class is what gig-guide.css hangs the footer tweak off -->
@@ -77,29 +66,17 @@ permalink: /gig-guide.html
 
 <!-- ==========================================================================
      THE GIG GUIDE
-
-     Everything below lives inside #sg-gig-guide. Every rule in gig-guide.css
-     and every listener in js/gig-guide.js is scoped to that id, so nothing
-     here can reach another page.
-
-     WHERE THE EVENTS ARE
-     Not in this file. They are one list at the top of js/gig-guide.js, and
-     everything on the page is built from it - the cards, the counts, what
-     the filters match. Add an event there and it appears here.
-
-     That list is ours - our residency and our own events. Everything else
-     is found automatically each morning by the syncGigGuide function and
-     read from Firestore; see functions/lib/gig-sources.js for where from
-     and the rules it follows.
+     Everything below lives inside #sg-gig-guide; gig-guide.css and js/gig-guide.js
+     are scoped to that id.
+     Our own events are one list at the top of js/gig-guide.js. Everything else is
+     found each morning by syncGigGuide (see functions/lib/gig-sources.js).
      ========================================================================== -->
 <main id="sg-gig-guide">
 
   <!-- 1. HERO ------------------------------------------------------------ -->
   <section class="gg-hero">
 
-    <!--  The same clip the home page hero uses. It is already in the
-          browser's cache by the time anybody gets here, so it costs
-          nothing to show it again.                                     -->
+    <!-- Same clip as the home page hero (already cached). -->
     <video class="gg-hero-video" id="gg-hero-video"
            data-src="videos/hero-1080.mp4"
            muted loop playsinline preload="none" aria-hidden="true"></video>
@@ -110,9 +87,6 @@ permalink: /gig-guide.html
       <div class="gg-hero-body">
         <p class="gg-eyebrow">The Whitsundays Gig Guide</p>
 
-        <!--  The heading is the search somebody actually types. "Gig
-              Guide" moved up into the line above it, which loses nothing
-              - the page is obviously a gig guide once you can see it. -->
         <h1 class="gg-title">What&rsquo;s On<br><span>In The Whitsundays</span></h1>
 
         <p class="gg-lead">
@@ -129,13 +103,7 @@ permalink: /gig-guide.html
 
 
   <!-- 2. FILTERS ---------------------------------------------------------
-       Every control here is wired to the same list. Nothing filters the
-       page server side, because there is no server - it is all the one
-       array in js/gig-guide.js being sifted.
-
-       The controls work without JavaScript in the sense that they do not
-       break the page: the full list renders from the markup up, and these
-       simply do nothing. -->
+       All controls sift the one list in js/gig-guide.js. Without JavaScript the full list still shows. -->
   <section class="gg-filters" aria-label="Filter events">
 
     <div class="gg-filters-inner">
@@ -170,10 +138,7 @@ permalink: /gig-guide.html
         </label>
       </div>
 
-      <!--  The pills and the two menus above are the same three filters,
-            not six. Whichever one is touched, the others are brought into
-            line - a guide that says "Bowen" in one place and "All
-            Locations" in another is worse than having one of them.    -->
+      <!-- The pills and the two menus are the same three filters - the script keeps them in step. -->
       <div class="gg-pills" role="group" aria-label="Event type">
         <button type="button" class="gg-pill is-on" data-gg-cat="all">All</button>
         <button type="button" class="gg-pill" data-gg-cat="live">Live Music</button>
@@ -213,18 +178,14 @@ permalink: /gig-guide.html
           <p class="gg-band-sub">The best gigs and events happening soon.</p>
         </div>
 
-        <!--  There is no calendar page yet, so this is not a link to one.
-              When there is, put it back as:
-              <a class="gg-more" href="/calendar">View Full Calendar</a>  -->
+        <!-- No calendar page yet. When there is, add: <a class="gg-more" href="/calendar">View Full Calendar</a> -->
       </div>
 
       <div class="gg-grid" id="gg-weekend-grid"></div>
 
       <p class="gg-empty" id="gg-weekend-empty" hidden></p>
 
-      <!--  Filled in by the script once it knows when the listings were
-            last checked. Hidden until then rather than claiming a
-            freshness it cannot prove.                                  -->
+      <!-- Filled in by the script with when listings were last checked. Hidden until then. -->
       <p class="gg-updated" id="gg-updated" hidden></p>
 
     </div>
@@ -275,9 +236,7 @@ permalink: /gig-guide.html
         see SoundzGood in action across North Queensland.
       </p>
 
-      <!--  The one thing this page is selling. Everything above it is
-            other people's events; this is the line out to ours, and it
-            goes where the menu's Hire SoundzGood goes.                 -->
+      <!-- The link out to our own work. -->
       <a class="btn btn-ticket" href="/services">Hire SoundzGood</a>
     </div>
   </section>

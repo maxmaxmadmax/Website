@@ -1,14 +1,14 @@
 /* ==========================================================================
-   DJ SET TIMES  -  /dj-times?t=<timesToken>   (Max, 21 Oct 2026)
+   DJ SET TIMES  -  /dj-times?t=<timesToken>
 
-   After a pub night Max texts the DJ this link. They pick when they started
-   and finished and press Confirm. That updates their booking and the pub's
-   invoice (hours x their rate), which then waits for Max to send it.
+   After a pub night the DJ gets this link, picks start and finish times and
+   presses Confirm. That updates their booking and the pub's invoice
+   (hours x their rate), which then waits for Max to send it.
    Data: getPubTimes / submitPubTimes (functions/index.js).
-   Uses the sponsor page styles (sponsor.css), like the details form.
+   Uses the sponsor page styles (sponsor.css).
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=710';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=711';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) => String(v == null ? '' : v)
@@ -19,8 +19,8 @@ let fns = null;
 const ampm = (t) => { const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); if (!r) return ''; const h = +r[1]; return (h % 12 || 12) + ':' + r[2] + (h < 12 ? 'am' : 'pm'); };
 const niceDay = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); return m ? new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' }) : ''; };
 
-/*  TRADING HOURS ONLY (Max, 21 Oct 2026): every 15 minutes from 5pm to
-    2:30am. KEEP IN STEP with TRADE_FROM / TRADE_TO in functions/index.js. */
+/*  Trading hours only: every 15 minutes from 5pm to 2:30am.
+    KEEP IN STEP with TRADE_FROM / TRADE_TO in functions/index.js. */
 function timeOptions(current) {
   let out = '<option value="">Choose a time</option>';
   for (let m = 17 * 60; m <= 26 * 60 + 30; m += 15) {
@@ -45,8 +45,8 @@ function done(hours, waiting) {
     <p class="spn-sub">Something wrong? Call Max on 0422 393 022.</p></section>`;
 }
 
-/*  BEFORE THE GIG (Max, 21 Oct 2026): the same link asks "are you in?". From
-    5pm on the night it switches to the times form below.                  */
+/*  Before the gig the same link asks "are you in?". From 5pm on the
+    night it switches to the times form below.                     */
 function renderConfirm(d) {
   const when = niceDay(d.date) + (d.plannedStart ? ', ' + ampm(d.plannedStart) + (d.plannedFinish ? ' to ' + ampm(d.plannedFinish) : '') : '');
   document.getElementById('dj-root').innerHTML = `

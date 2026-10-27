@@ -1,12 +1,11 @@
 /* ==========================================================================
-   CREW PICK LIST  -  picklist.html?t=<crewToken>   (Max, 16 Oct 2026)
+   CREW PICK LIST  -  picklist.html?t=<crewToken>
 
    Shows a booked job's gear (no prices) grouped by category, with Packed and
-   Returned ticks. Each tick saves straight away, so Max sees progress in
-   admin and everyone on the crew link sees the same list. The list also
-   refreshes itself every 20 seconds while it's open.
+   Returned ticks. Each tick saves straight away, so admin and everyone on
+   the crew link see the same list. Refreshes itself every 20 seconds.
    ========================================================================== */
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=710';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=711';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -48,8 +47,8 @@ const CAT_ORDER = ['Packages', 'Kits', 'Audio', 'Speaker', 'Mixer', 'Microphone'
   'Lighting', 'Truss', 'Stage', 'Furniture', 'Backline', 'DJ Mixer', 'Vision', 'Other'];
 const catRank = (c) => { const i = CAT_ORDER.findIndex((x) => x.toLowerCase() === String(c).toLowerCase()); return i < 0 ? 50 : i; };
 
-/*  SECTIONS LIKE THE QUOTE (Max, 20 Oct 2026). KEEP IN STEP with COST_GROUP
-    in js/quote-view.js: inventory category -> the heading it sits under.  */
+/*  Sections like the quote. KEEP IN STEP with COST_GROUP in
+    js/quote-view.js: inventory category -> the heading it sits under.  */
 const COST_GROUP = {
   audio: 'Audio', mixer: 'Audio', amp: 'Audio', microphone: 'Audio', iem: 'Audio', di: 'Audio',
   'studio monitor': 'Audio', cable: 'Audio', stands: 'Audio',
@@ -63,7 +62,7 @@ const sectionOf = (r) => (r.custom ? 'Other' : (COST_GROUP[String(r.category || 
 const catLabel = (r) => { const c = String(r.category || '').trim(); return c ? c.charAt(0).toUpperCase() + c.slice(1) : 'Other'; };
 
 /*  The lines that get ticks: the quote-style rows, or (older jobs) the totals. */
-const tickLines = () => (data.rows || data.items || []).concat(GEAR_VIEW ? [] : (data.extras || []));   // + extra gear (Max, 24 Oct 2026)
+const tickLines = () => (data.rows || data.items || []).concat(GEAR_VIEW ? [] : (data.extras || []));   // + extra gear
 /*  A line's ticks - its own, or the ones saved before per item. */
 const ticksOf = (r) => { const t = data.ticks || {}; return t[r.key] || (r.itemKey && t[r.itemKey]) || {}; };
 
@@ -86,7 +85,7 @@ function progressHtml() {
   return bar(c.packed, 'Packed', 'is-packed') + bar(c.returned, 'Returned', 'is-returned');
 }
 
-// &v=gear - the band / crew gear list: no ticks, no money flags (Max, 20 Oct 2026)
+// &v=gear - the band / crew gear list: no ticks, no money flags
 const GEAR_VIEW = new URLSearchParams(location.search).get('v') === 'gear';
 
 /*  "18:30" -> "6:30pm" (the details form stores 24-hour time). Anything else is shown as-is. */
@@ -151,7 +150,7 @@ function render() {
           }).join('')).join('')}
         </div>`).join('');
   }
-  // older jobs saved before 20 Oct 2026: the totals by category
+  // older jobs: the totals by category
   function oldList() {
     return cats.map((cat) => `
         <div class="pl-cat">
@@ -204,9 +203,9 @@ function render() {
   document.getElementById('pl-print').addEventListener('click', () => window.print());
 }
 
-/*  THE BRIEF for a DJ gig (Max, 22 Oct 2026): set times, the booking notes
-    and the venue's notes, address and contact. No SoundzGood gear on the
-    job = the venue supplies it, and that's said plainly.             */
+/*  THE BRIEF for a DJ gig: set times, the booking notes and the venue's
+    notes, address and contact. No SoundzGood gear on the job = the venue
+    supplies it, and that's said plainly.                              */
 function briefHtml(b, gearLines) {
   const tel = (t) => esc(t).replace(/(\+?\d[\d\s]{7,}\d)/, (n) => '<a href="tel:' + n.replace(/\s/g, '') + '">' + n + '</a>');
   const set = b.start || b.finish ? esc([niceTime(b.start), niceTime(b.finish)].filter(Boolean).join(' – ')) : '';
@@ -227,9 +226,9 @@ function briefHtml(b, gearLines) {
     </section>`;
 }
 
-/*  EXTRA GEAR (Max, 24 Oct 2026): gear going out that isn't on the quote -
-    the crew add it here so it gets ticked out and back. No prices, and it
-    never changes the quote. Pick from our inventory or type anything.  */
+/*  EXTRA GEAR: gear going out that isn't on the quote - the crew add it
+    here so it gets ticked out and back. No prices, and it never changes
+    the quote. Pick from our inventory or type anything.               */
 /* the × to take an extra off, at the end of its row (after the ticks) */
 function withDel(html, x) {
   const btn = '<button type="button" class="pl-xdel" data-x-del="' + esc(x.key) + '" aria-label="Remove ' + esc(x.name) + '">&times;</button>';
@@ -311,9 +310,8 @@ document.addEventListener('click', async (e) => {
   await refresh();
 });
 
-/*  ITEM PHOTOS (Max, 24 Oct 2026): crew who don't know our gear tap an item
-    (or its little picture) to see the photo from Inventory, big. Tap
-    anywhere to close.                                                  */
+/*  ITEM PHOTOS: tap an item (or its little picture) to see its photo
+    from Inventory, big. Tap anywhere to close.                         */
 document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-photo]');
   const open = document.querySelector('.pl-lightbox');
