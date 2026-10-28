@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=735';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=735';   // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=735';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=736';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=736';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=736';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -541,7 +541,8 @@ function proposalTop(q, days) {
     .concat(vehC ? [['Vehicles', vehC]] : [])
     .concat(del.length ? [[delCents ? 'Travel & transport' : 'Local delivery & pickup', delCents]] : [])
     .concat(lines.filter((l) => l.type === 'fee').map((l) => ['Booking & admin', lineAmount(l, days)]));
-  const r = (label, ex) => '<tr><td>' + esc(label) + '</td><td>' + (ex ? money(ex) : 'Free') + '</td><td>' + (ex ? money(Math.round(ex * 0.1)) : '') + '</td><td>' + (ex ? money(Math.round(ex * 1.1)) : 'Free') + '</td></tr>';
+  const was = (c) => c ? '<s class="qp-was">' + money(c) + '</s> ' : '';
+  const r = (label, ex, full) => '<tr><td>' + esc(label) + '</td><td>' + was(full) + (ex ? money(ex) : 'Free') + '</td><td>' + (ex ? money(Math.round(ex * 0.1)) : '') + '</td><td>' + (full ? was(Math.round(full * 1.1)) : '') + (ex ? money(Math.round(ex * 1.1)) : 'Free') + '</td></tr>';
   // QUOTE DETAILS + WHAT'S INCLUDED under the table.
   // Valid for 30 days from the quote date; the list is built from what's on the quote.
   const VALID_DAYS = 30;
@@ -573,11 +574,22 @@ function proposalTop(q, days) {
       ? '<div><dt>To secure</dt><dd>Payment in full &middot; ' + money(q.totalCents || 0) + '</dd></div>'
       : '<div><dt>To secure</dt><dd>' + pct + '% deposit &middot; ' + money(Math.round((q.totalCents || 0) * pct / 100)) + '</dd></div>')
     + '</dl></div></div>';
-  // the saving as a %: of production on DJ jobs, of the whole quote otherwise
-  const discBase = rows.filter((x) => x[0] !== 'Booking & admin' && !(isDj && x[0] === 'Entertainment fee')).reduce((t, x) => t + x[1], 0);
+  // DISCOUNT: shared across the production rows by their size, each shown
+  // crossed out at full price then the price after the saving
+  const canDisc = (x) => x[1] > 0 && x[0] !== 'Booking & admin' && !(isDj && x[0] === 'Entertainment fee');
+  const discBase = rows.filter(canDisc).reduce((t, x) => t + x[1], 0);
   const discPct = q.discountCents && discBase ? Math.round(q.discountCents / discBase * 100) : 0;
-  const discLabel = (isDj ? 'Production discount' : 'Discount') + (discPct ? '<span class="qp-save">You save ' + discPct + '%' + (isDj ? ' on production' : '') + '</span>' : '');
-  const disc = q.discountCents ? '<tr class="qp-disc"><td>' + discLabel + '</td><td>&minus;' + money(q.discountCents) + '</td><td></td><td>&minus;' + money(Math.round(q.discountCents * 1.1)) + '</td></tr>' : '';
+  if (q.discountCents && discBase) {
+    let left = q.discountCents;
+    const last = rows.map(canDisc).lastIndexOf(true);
+    rows.forEach((x, i) => {
+      if (!canDisc(x)) return;
+      const off = i === last ? left : Math.round(q.discountCents * x[1] / discBase);
+      left -= off;
+      x.push(x[1]); x[1] -= off;   // [label, after saving, full price]
+    });
+  }
+  const disc = q.discountCents ? '<tr class="qp-disc"><td colspan="4">You save ' + money(Math.round(q.discountCents * 1.1)) + ' inc GST' + (discPct ? ' &middot; ' + discPct + '% off ' + (isDj ? 'production' : 'the quote') : '') + '</td></tr>' : '';
 
   return `
     <section class="qp-hero">
@@ -609,7 +621,7 @@ function proposalTop(q, days) {
       <p class="qp-sub">Total inclusive of GST for ${esc(isDj && venueName ? 'your night at ' + venueName : event)}${when ? ' on ' + esc(when) : ''}, itemised by category below.</p>
       <table class="qp-inv">
         <thead><tr><th>Description</th><th>Ex GST</th><th>GST (10%)</th><th>Inc GST</th></tr></thead>
-        <tbody>${rows.map(([l, c2]) => r(l, c2)).join('')}${disc}</tbody>
+        <tbody>${rows.map(([l, c2, full]) => r(l, c2, full)).join('')}${disc}</tbody>
         <tfoot><tr><td>Total inc. GST</td><td></td><td></td><td>${money(q.totalCents)}</td></tr></tfoot>
       </table>
       ${details}

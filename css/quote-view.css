@@ -297,7 +297,8 @@
 .qp-inv td:first-child { white-space: normal; font-weight: 600; }
 .qp-inv tfoot td { font-weight: 800; font-size: 18px; border-bottom: none; border-top: 2px solid #111; padding-top: 12px; }
 .qp-disc td { color: #0f7a43; }
-.qp-save { display: block; margin-top: 2px; font-size: 10px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.qp-disc td[colspan] { text-align: right; font-weight: 600; }
+.qp-was { color: #9aa0a6; font-weight: 400; margin-right: 4px; }
 .qp-jump { display: inline-block; margin-top: 16px; color: #ff6b00; font-weight: 700; text-decoration: none; }
 
 .qp-term { border: 1px solid #ececec; border-radius: 10px; padding: 0 16px; margin-top: 8px; }
