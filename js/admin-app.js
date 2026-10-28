@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=718';
+} from './firebase-config.js?v=719';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=718';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=718';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=718';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=718';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=718';
-import { expandKit } from './kit.js?v=718';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=719';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=719';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=719';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=719';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=719';
+import { expandKit } from './kit.js?v=719';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -270,7 +270,8 @@ async function loadTalent() {
 async function loadPubSettings() {
   try {
     const { collection, getDocs } = fb.f;
-    const [rates, nights, fees, venues] = await Promise.all([getDocs(collection(fb.db, 'actRates')), getDocs(collection(fb.db, 'regularNights')), getDocs(collection(fb.db, 'travelFees')), getDocs(collection(fb.db, 'venues'))]);
+    const [rates, nights, fees, venues, accom] = await Promise.all([getDocs(collection(fb.db, 'actRates')), getDocs(collection(fb.db, 'regularNights')), getDocs(collection(fb.db, 'travelFees')), getDocs(collection(fb.db, 'venues')), fb.f.getDoc(fb.f.doc(fb.db, 'djSettings', 'accommodation'))]);
+    state.accomPlaces = accom.exists() && Array.isArray(accom.data().places) ? accom.data().places : [];
     /*  SAVED VENUES: each one gets its own tab on Gigs and shows in the
         booking form's venue list. Seeded with Arcadia Bar the first time. */
     state.venues = [];
@@ -2417,6 +2418,10 @@ VIEWS.entertainment = {
       const open = state.openVenue != null;
       return `<div class="inv-wrap ent${open ? ' has-detail' : ''}">${venuesMainHtml()}${open ? venueDetailHtml() : ''}</div>`;
     }
+    if (tab === 'accom') {
+      const open = state.openAccom != null;
+      return `<div class="inv-wrap ent${open ? ' has-detail' : ''}">${accomMainHtml()}${open ? accomDetailHtml() : ''}</div>`;
+    }
     if (tab === 'djs') {
       const open = state.openDj != null;
       return `<div class="inv-wrap ent${open ? ' has-detail' : ''}">${djMainHtml()}${open ? djDetailHtml() : ''}</div>`;
@@ -2451,9 +2456,11 @@ function entHead(tab) {
               <button type="button" class="ent-tab${tab === 'gigs' ? ' is-on' : ''}" data-ent-tab="gigs">Bookings</button>
               <button type="button" class="ent-tab${tab === 'djs' ? ' is-on' : ''}" data-ent-tab="djs">Entertainment Roster</button>
               <button type="button" class="ent-tab${tab === 'venues' ? ' is-on' : ''}" data-ent-tab="venues">Venues</button>
+              <button type="button" class="ent-tab${tab === 'accom' ? ' is-on' : ''}" data-ent-tab="accom">Accommodation</button>
             </div>
             ${tab === 'gigs' ? '<button type="button" class="ad-btn ad-btn-primary" id="ad-book-new">+ New booking</button>'
               : tab === 'venues' ? '<button type="button" class="ad-btn ad-btn-primary" data-venue-new>+ New venue</button>'
+              : tab === 'accom' ? '<button type="button" class="ad-btn ad-btn-primary" data-accom-new>+ New place</button>'
               : '<button type="button" class="ad-btn ad-btn-primary" data-dj-new>+ New DJ</button>'}
           </div>
         </div>`;
@@ -2674,12 +2681,13 @@ function djDetailHtml() {
 function wireEntPage() {
   const desk = document.getElementById('ad-desk');
   desk.querySelectorAll('[data-ent-tab]').forEach((b) => b.addEventListener('click', () => {
-    state.entTab = b.getAttribute('data-ent-tab'); state.entPanel = false; state.bookEditing = false; state.openDj = null; state.openVenue = null; render();
+    state.entTab = b.getAttribute('data-ent-tab'); state.entPanel = false; state.bookEditing = false; state.openDj = null; state.openVenue = null; state.openAccom = null; render();
   }));
   desk.querySelectorAll('[data-ent-close]').forEach((b) => b.addEventListener('click', () => {
-    state.entPanel = false; state.bookEditing = false; state.openDj = null; state.openVenue = null; render();
+    state.entPanel = false; state.bookEditing = false; state.openDj = null; state.openVenue = null; state.openAccom = null; render();
   }));
   wireVenuesTab(desk);
+  wireAccomTab(desk);
   // DJs tab
   const ds = document.getElementById('dj-search');
   if (ds) ds.addEventListener('input', () => { state.djSearch = ds.value; const pos = ds.selectionStart; render(); const n = document.getElementById('dj-search'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } });
@@ -2844,6 +2852,13 @@ function bookingPanel(b) {
           return `
         <label class="ad-field">Invoice to
           <select id="ad-f-cust"><option value="">No invoice</option>${custs.map((c) => `<option value="${attr(c.id)}"${c.id === custSel ? ' selected' : ''}>${esc(c.business || c.name || c.email || 'Customer')}${c.business && c.name ? ' (' + esc(c.name) + ')' : ''}</option>`).join('')}</select>
+        </label>
+        <label class="ad-field">Accommodation
+          <select id="ad-f-accom">
+            <option value=""${!draft.accomId ? ' selected' : ''}>Auto - the venue's place if the DJ is from out of town</option>
+            <option value="none"${draft.accomId === 'none' ? ' selected' : ''}>None - driving home</option>
+            ${accomOptions(draft.accomId === 'none' ? '' : draft.accomId || '')}
+          </select>
         </label>
         <label class="ad-field">Template
           <select id="ad-f-tpl">${tpls.length ? '' : '<option value="">No templates yet - make one in Sales Pipeline &gt; Templates</option>'}${tpls.map((q) => `<option value="${attr(q.id)}"${q.id === tplSel ? ' selected' : ''}>${esc(q.templateName || (q.customer && q.customer.eventName) || q.number)}</option>`).join('')}</select>
@@ -3455,6 +3470,8 @@ function venueDetailHtml() {
           <select class="ad-select" id="vn-f-cust"><option value="">Not set</option>${custs.map((c) => `<option value="${attr(c.id)}"${c.id === v.customerId ? ' selected' : ''}>${esc(c.business || c.name || c.email || 'Customer')}</option>`).join('')}</select></label>
         <label class="ad-field"><span>Template - filled in when you book here</span>
           <select class="ad-select" id="vn-f-tpl"><option value="">Not set</option>${tpls.map((q) => `<option value="${attr(q.id)}"${q.id === v.templateId ? ' selected' : ''}>${esc(q.templateName || q.number)}</option>`).join('')}</select></label>
+        <label class="ad-field"><span>Accommodation for out-of-town DJs</span>
+          <select class="ad-select" id="vn-f-accom"><option value="">None</option>${accomOptions(v.accomId || '')}</select></label>
         <label class="ad-field"><span>Notes (parking, load-in, who to ask for...)</span><textarea class="ad-input" id="vn-f-notes" rows="3" maxlength="1000">${esc(v.notes || '')}</textarea></label>
         <div class="ent-actions">
           <button type="button" class="ad-btn ad-btn-primary" id="vn-save">${isNew ? 'Add venue' : 'Save'}</button>
@@ -3496,7 +3513,7 @@ function wireVenuesTab(desk) {
       await setDoc(doc(fb.db, 'venues', id), {
         name, town, address: val('vn-f-addr').slice(0, 200), contactName: val('vn-f-contact').slice(0, 80),
         phone: val('vn-f-phone').slice(0, 40), email: val('vn-f-email').toLowerCase().slice(0, 200),
-        customerId: val('vn-f-cust'), templateId: val('vn-f-tpl'), notes: val('vn-f-notes').slice(0, 1000),
+        customerId: val('vn-f-cust'), templateId: val('vn-f-tpl'), accomId: val('vn-f-accom'), notes: val('vn-f-notes').slice(0, 1000),
         updatedAt: Date.now(), ...(isNew ? { createdAt: Date.now() } : {}),
       }, { merge: true });
       await loadPubSettings();
@@ -3510,6 +3527,96 @@ function wireVenuesTab(desk) {
     const v = (state.venues || []).find((x) => x.id === state.openVenue) || {};
     if (!window.confirm('Remove ' + (v.name || 'this venue') + ' from your venues?\n\nIts bookings stay as they are.')) return;
     try { await fb.f.deleteDoc(fb.f.doc(fb.db, 'venues', state.openVenue)); await loadPubSettings(); state.openVenue = null; if (String(state.bookFilter.tab || '').startsWith('v:')) state.bookFilter.tab = 'upcoming'; render(); }
+    catch (err) { window.alert(friendly(err)); }
+  });
+}
+
+/*  ACCOMMODATION: places DJs stay - a hotel a venue provides, or one we
+    book for the festival. Kept as one list in djSettings/accommodation.
+    Venues pick their usual place; each booking can pick one or "none".  */
+function accomOptions(sel) {
+  return (state.accomPlaces || []).map((p) => `<option value="${attr(p.id)}"${p.id === sel ? ' selected' : ''}>${esc(p.name)}</option>`).join('');
+}
+function accomMainHtml() {
+  const ps = state.accomPlaces || [];
+  const usedBy = (p) => (state.venues || []).filter((v) => v.accomId === p.id).map((v) => v.name);
+  return `
+      <div class="inv-main">
+        ${entHead('accom')}
+        <div class="ad-table-wrap inv-table-wrap">
+          <table class="ad-table inv-table">
+            <thead><tr><th>Place</th><th>Address</th><th>Paid by</th><th>Venues using it</th><th></th></tr></thead>
+            <tbody>
+              ${ps.length ? ps.map((p) => `<tr class="inv-row${state.openAccom === p.id ? ' is-open' : ''}" data-accom-open="${attr(p.id)}">
+                  <td><span class="inv-item-name">${esc(p.name)}</span></td>
+                  <td>${p.address ? esc(p.address) : '<span class="ad-cell-muted">—</span>'}</td>
+                  <td>${p.paidBy === 'us' ? 'Us' : 'The venue'}</td>
+                  <td>${usedBy(p).length ? esc(usedBy(p).join(', ')) : '<span class="ad-cell-muted">—</span>'}</td>
+                  <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-accom-open="${attr(p.id)}" aria-label="Edit">&#8250;</button></td>
+                </tr>`).join('') : '<tr><td colspan="5" class="ad-cell-muted">No places yet. Add one above.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+}
+function accomDetailHtml() {
+  const isNew = state.openAccom === '__new__';
+  const p = isNew ? {} : ((state.accomPlaces || []).find((x) => x.id === state.openAccom) || {});
+  return `
+    <aside class="inv-detail ent-detail" aria-label="Accommodation">
+      <header class="inv-detail-head">
+        <div><h2>${isNew ? 'New place' : esc(p.name || 'Place')}</h2></div>
+        <button type="button" class="inv-detail-close" data-ent-close aria-label="Close">&times;</button>
+      </header>
+      <div class="inv-detail-body">
+        <label class="ad-field"><span>Name</span><input class="ad-input" id="ac-f-name" maxlength="80" value="${attr(p.name || '')}" placeholder="e.g. Grand View Hotel"></label>
+        <label class="ad-field"><span>Address</span><input class="ad-input" id="ac-f-addr" maxlength="200" value="${attr(p.address || '')}"></label>
+        <label class="ad-field"><span>Check-in (shown to the DJ)</span><input class="ad-input" id="ac-f-checkin" maxlength="200" value="${attr(p.checkIn || '')}" placeholder="e.g. From 2pm - key at the bar"></label>
+        <label class="ad-field"><span>Contact (shown to the DJ)</span><input class="ad-input" id="ac-f-contact" maxlength="120" value="${attr(p.contact || '')}" placeholder="Name &amp; phone"></label>
+        <label class="ad-field"><span>Paid by</span>
+          <select class="ad-select" id="ac-f-paid">
+            <option value="venue"${p.paidBy !== 'us' ? ' selected' : ''}>The venue (shows on the quote as provided by them)</option>
+            <option value="us"${p.paidBy === 'us' ? ' selected' : ''}>Us (not on the quote)</option>
+          </select></label>
+        <label class="ad-field"><span>Notes for the DJ (parking, room, breakfast...)</span><textarea class="ad-input" id="ac-f-notes" rows="3" maxlength="600">${esc(p.notes || '')}</textarea></label>
+        <div class="ent-actions">
+          <button type="button" class="ad-btn ad-btn-primary" id="ac-save">${isNew ? 'Add place' : 'Save'}</button>
+          ${isNew ? '' : '<button type="button" class="ad-btn ad-btn-danger" id="ac-del">Remove</button>'}
+          <span class="ad-quote-msg" id="ac-msg"></span>
+        </div>
+      </div>
+    </aside>`;
+}
+async function saveAccomPlaces(places) {
+  await fb.f.setDoc(fb.f.doc(fb.db, 'djSettings', 'accommodation'), { places, updatedAt: Date.now() });
+  state.accomPlaces = places;
+}
+function wireAccomTab(desk) {
+  desk.querySelectorAll('[data-accom-open]').forEach((r) => r.addEventListener('click', () => { state.openAccom = r.getAttribute('data-accom-open'); render(); }));
+  desk.querySelectorAll('[data-accom-new]').forEach((b) => b.addEventListener('click', () => { state.openAccom = '__new__'; render(); }));
+  const save = document.getElementById('ac-save');
+  if (save) save.addEventListener('click', async () => {
+    const val = (id) => String((document.getElementById(id) || {}).value || '').trim();
+    const msg = document.getElementById('ac-msg');
+    const name = val('ac-f-name').slice(0, 80);
+    if (!name) { msg.textContent = 'Give the place a name.'; msg.className = 'ad-quote-msg is-bad'; return; }
+    const isNew = state.openAccom === '__new__';
+    const id = isNew ? name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) + '-' + Date.now().toString(36) : state.openAccom;
+    const place = { id, name, address: val('ac-f-addr').slice(0, 200), checkIn: val('ac-f-checkin').slice(0, 200), contact: val('ac-f-contact').slice(0, 120), paidBy: val('ac-f-paid') === 'us' ? 'us' : 'venue', notes: val('ac-f-notes').slice(0, 600) };
+    const list = (state.accomPlaces || []).filter((x) => x.id !== id).concat(place).sort((a, b) => String(a.name).localeCompare(String(b.name)));
+    save.disabled = true; msg.textContent = 'Saving…'; msg.className = 'ad-quote-msg';
+    try {
+      await saveAccomPlaces(list);
+      state.openAccom = id;
+      render();
+      const m = document.getElementById('ac-msg'); if (m) { m.textContent = 'Saved. Upcoming gig quotes not yet sent are updated.'; m.className = 'ad-quote-msg is-ok'; }
+    } catch (err) { save.disabled = false; msg.textContent = friendly(err); msg.className = 'ad-quote-msg is-bad'; }
+  });
+  const del = document.getElementById('ac-del');
+  if (del) del.addEventListener('click', async () => {
+    const p = (state.accomPlaces || []).find((x) => x.id === state.openAccom) || {};
+    if (!window.confirm('Remove ' + (p.name || 'this place') + '?\n\nVenues and bookings using it will have no accommodation.')) return;
+    try { await saveAccomPlaces((state.accomPlaces || []).filter((x) => x.id !== state.openAccom)); state.openAccom = null; render(); }
     catch (err) { window.alert(friendly(err)); }
   });
 }
@@ -3665,6 +3772,7 @@ function wireEntertainment() {
         start: startT, finish: finishT,   // pub invoices work the hours out from these
         customerId: (document.getElementById('ad-f-cust') || {}).value || '',
         templateId: (document.getElementById('ad-f-tpl') || {}).value || '',
+        accomId: (document.getElementById('ad-f-accom') || {}).value || '',
         time: startT && finishT ? ampmT(startT).toUpperCase().replace(/(AM|PM)$/, ' $1') + ' – ' + ampmT(finishT).toUpperCase().replace(/(AM|PM)$/, ' $1')
           : document.getElementById('ad-f-time').value.trim(),
         status: document.getElementById('ad-f-status').value,
@@ -3750,7 +3858,7 @@ function wireEntertainment() {
       try {
         await fb.f.setDoc(fb.f.doc(fb.db, 'talentSchedule', bookingId(date, b.slug)), {
           date, slug: b.slug, venue: b.venue || '', time: b.time || '', start: b.start || '', finish: b.finish || '',
-          customerId: b.customerId || '', templateId: b.templateId || '',
+          customerId: b.customerId || '', templateId: b.templateId || '', accomId: b.accomId || '',
           status: b.status || 'confirmed', notes: b.notes || '',
           updatedAt: fb.f.serverTimestamp(),
         });

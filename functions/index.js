@@ -4849,6 +4849,35 @@ async function djTravel(fromTown, venue) {
   return { cents: Math.max(0, Math.round(hit.cents || 0)), from: fromTown, to: toTown };
 }
 
+/*  ACCOMMODATION (Entertainment > Accommodation, kept in
+    djSettings/accommodation). A gig's place: the one picked on the booking,
+    else the venue's usual place when the DJ is from out of town.
+    "none" on the booking = driving home.                                */
+async function accomPlaces() {
+  const s = await db.collection('djSettings').doc('accommodation').get();
+  return s.exists && Array.isArray(s.data().places) ? s.data().places : [];
+}
+async function gigAccom(b, outOfTown) {
+  if (b.accomId === 'none') return null;
+  const places = await accomPlaces();
+  let id = b.accomId || '';
+  if (!id && outOfTown) {
+    const vs = await db.collection('venues').get();
+    vs.forEach((d) => { const v = d.data(); if (!id && v.accomId && samePub(v.name, b.venue)) id = v.accomId; });
+  }
+  return places.find((p) => p.id === id) || null;
+}
+async function djAccom(b) {
+  const r = await db.collection('actRates').doc(b.slug).get();
+  const tr = await djTravel(r.exists ? r.data().location : '', b.venue);
+  const p = await gigAccom(b, !!(tr.cents || tr.missing));
+  return p ? { name: p.name || '', address: p.address || '', checkIn: p.checkIn || '', contact: p.contact || '', notes: p.notes || '' } : null;
+}
+function accomText(p) {
+  if (!p) return '';
+  return '\n\nYOUR ACCOMMODATION\n' + [p.name + (p.address ? ', ' + p.address : ''), p.checkIn && 'Check-in: ' + p.checkIn, p.contact && 'Contact: ' + p.contact, p.notes].filter(Boolean).join('\n');
+}
+
 async function regularNightFor(venue) {
   const snap = await db.collection('regularNights').get();
   let hit = null;
@@ -5000,6 +5029,7 @@ exports.getPubTimes = onCall(async (request) => {
     mode: brisbaneTodayISO() < b.date || (brisbaneTodayISO() === b.date && brisbaneMinutesNow() < 17 * 60) ? 'confirm' : 'times',
     djConfirmed: !!b.djConfirmedAt,
     plannedStart: b.start || '', plannedFinish: b.finish || '',
+    accom: await djAccom(b),
   };
 });
 
@@ -5146,12 +5176,12 @@ async function gigSync(bookingId, opts = {}) {
   const tr = await djTravel(rate.location, b.venue);
   const travelLine = tr.cents ? { type: 'custom', name: 'Travel Charge - ' + tr.from + ' to ' + tr.to + ' Return', description: '', qty: 1, unitCents: tr.cents, days: 1, pubDj: true, noPick: true } : null;
   if (tr.missing) notes.push(name + ' (no travel fee set for ' + tr.missing + ')');
-  /*  OUT-OF-TOWN DJ: a note that the venue provides accommodation. Max can
+  /*  ACCOMMODATION: when the venue provides it, a note on the quote. Max can
       delete it on the quote (DJ driving home) and it stays off.           */
-  const venueName = String(b.venue || '').split(',')[0].trim();
-  const accomLine = travelLine && !(ex && ex.accomOff) ? {
+  const place = await gigAccom(b, !!(tr.cents || tr.missing));
+  const accomLine = place && place.paidBy !== 'us' && !(ex && ex.accomOff) ? {
     type: 'custom', name: 'Accommodation',
-    description: 'Accommodation is required for this booking - provided by ' + (venueName ? (/^the\s/i.test(venueName) ? '' : 'the ') + venueName : 'the venue'),
+    description: 'Accommodation is required for this booking - provided by ' + (/^the\s/i.test(place.name) ? '' : 'the ') + place.name,
     qty: 1, unitCents: 0, days: 1, pubDj: true, noPick: true, accom: true,
   } : null;
   // THE BOOKING FEE, ex GST - a setting on Entertainment:
@@ -5263,10 +5293,11 @@ async function emailDj(ref, b, kind) {
   const first = dj.name.split(' ')[0];
   const where = String(b.venue || 'the gig').split(',')[0];
   const when = prettyDay(b.date) + (b.start ? ', ' + ampm(b.start) + (b.finish ? ' to ' + ampm(b.finish) : '') : '');
+  const stay = kind === 'times' ? '' : accomText(await djAccom(b));
   const msg = kind === 'booked'
-    ? { subject: "You're booked: " + where + ' ' + prettyDay(b.date), body: 'Hi ' + first + ',\n\nYou are booked to play ' + where + ' on ' + when + '.\n\nPlease tap the button to confirm you are in.\n\nThanks,\nMax\nSoundzGood Whitsundays - 0422 393 022', label: "I'm in - confirm" }
+    ? { subject: "You're booked: " + where + ' ' + prettyDay(b.date), body: 'Hi ' + first + ',\n\nYou are booked to play ' + where + ' on ' + when + '.' + stay + '\n\nPlease tap the button to confirm you are in.\n\nThanks,\nMax\nSoundzGood Whitsundays - 0422 393 022', label: "I'm in - confirm" }
     : kind === 'tomorrow'
-      ? { subject: "Tomorrow: you're on at " + where, body: 'Hi ' + first + ',\n\nJust a reminder - you are playing ' + where + ' tomorrow, ' + when + '.' + (b.djConfirmedAt ? '' : '\n\nPlease tap the button to confirm you are in.') + '\n\nThanks,\nMax\nSoundzGood Whitsundays - 0422 393 022', label: b.djConfirmedAt ? 'View the gig' : "I'm in - confirm" }
+      ? { subject: "Tomorrow: you're on at " + where, body: 'Hi ' + first + ',\n\nJust a reminder - you are playing ' + where + ' tomorrow, ' + when + '.' + stay + (b.djConfirmedAt ? '' : '\n\nPlease tap the button to confirm you are in.') + '\n\nThanks,\nMax\nSoundzGood Whitsundays - 0422 393 022', label: b.djConfirmedAt ? 'View the gig' : "I'm in - confirm" }
       : { subject: 'Your times for ' + where + ' ' + prettyDay(b.date), body: 'Hi ' + first + ',\n\nThanks for playing ' + where + '! Please tap the button and put in when you started and finished.\n\nThanks,\nMax\nSoundzGood Whitsundays - 0422 393 022', label: 'Put in my times' };
   return sendMessageEmail({ subject: msg.subject, body: msg.body }, {}, { to: dj.email, actions: [{ label: msg.label, url: link, primary: true }] });
 }

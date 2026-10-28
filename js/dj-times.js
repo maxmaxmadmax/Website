@@ -8,7 +8,7 @@
    Uses the sponsor page styles (sponsor.css).
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=718';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=719';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) => String(v == null ? '' : v)
@@ -54,6 +54,8 @@ function renderConfirm(d) {
     <p class="spn-eyebrow" style="color:#ff6b00">SoundzGood Whitsundays</p>
     <h2>${d.djConfirmed ? 'You&rsquo;re confirmed' : 'You&rsquo;re booked'}</h2>
     <p class="spn-sub"><b>${esc(d.act)}</b> &middot; ${esc(String(d.venue || '').split(',')[0])}<br>${esc(when)}</p>
+    ${d.accom ? `<div class="dj-accom"><b>Your accommodation</b><br>${esc(d.accom.name)}${d.accom.address ? ', ' + esc(d.accom.address) : ''}
+      ${d.accom.checkIn ? '<br>Check-in: ' + esc(d.accom.checkIn) : ''}${d.accom.contact ? '<br>Contact: ' + esc(d.accom.contact) : ''}${d.accom.notes ? '<br>' + esc(d.accom.notes) : ''}</div>` : ''}
     ${d.djConfirmed
       ? '<p class="dj-ok">&#10003; Thanks &mdash; you&rsquo;re locked in. After the gig, open this same link to put in your times.</p>'
       : '<button type="button" class="spn-btn" id="dj-in">I&rsquo;m in &#10003;</button><p class="spn-msg" id="dj-msg" hidden></p>'}
