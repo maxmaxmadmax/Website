@@ -4762,6 +4762,8 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .inv-row.is-unconf td{ background:#fdf3e1; }
 .inv-row.is-unconf td:first-child{ box-shadow:inset 4px 0 0 #ba7517; }
 .ent-unconf-tag{ display:inline-block; font-size:12px; font-weight:600; padding:3px 9px; border-radius:20px; border:1px dashed #854f0b; color:#633806; background:#faeeda; white-space:nowrap; }
+.ent-sent{ display:inline-block; margin-left:10px; font-size:12px; font-weight:600; padding:2px 8px; border-radius:20px; color:#0f6e3d; background:#e3f4ea; white-space:nowrap; vertical-align:middle; }
+.ent-sent.is-not{ color:#6b7280; background:#f1f2f4; }
 .ad-cal-day.is-unconf{ border:2px dashed #ba7517; background:#faeeda; }
 .ad-cal-act.is-unconf{ background:#faeeda; color:#633806; font-weight:600; }
 .ent-payfull{ display:flex !important; flex-direction:row !important; align-items:center; gap:8px; font-size:14px; }

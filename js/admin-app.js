@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=739';
+} from './firebase-config.js?v=740';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=739';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=739';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=739';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=739';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=739';
-import { expandKit } from './kit.js?v=739';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=740';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=740';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=740';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=740';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=740';
+import { expandKit } from './kit.js?v=740';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2487,6 +2487,16 @@ function gigTrail(b) {
 function gigDots(b) {
   return '<span class="ent-dots">' + gigTrail(b).map(([l, ok]) => '<i class="' + (ok ? 'is-on' : '') + '" title="' + attr(l) + (ok ? ' ✓' : '') + '"></i>').join('') + '</span>';
 }
+/*  Has the gig's quote been emailed to the venue? "Sent 29 Oct" or "Not sent". */
+function gigSentTag(b) {
+  const inv = gigInvoice(b);
+  if (!inv) return '';
+  const s = secs(inv.lastEmailedAt);
+  if (!s) return '<span class="ent-sent is-not" title="Quote not emailed to the venue yet">Not sent</span>';
+  const d = new Date(s * 1000);
+  const when = d.toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+  return '<span class="ent-sent" title="Emailed ' + attr(when) + (inv.lastEmailedTo ? ' to ' + attr(inv.lastEmailedTo) : '') + '">&#9993; Sent ' + esc(d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })) + '</span>';
+}
 function gigTrailHtml(b) {
   const steps = gigTrail(b);
   const next = steps.find(([, ok]) => !ok);
@@ -2555,7 +2565,7 @@ function gigsMainHtml(side) {
                       <td><span class="inv-item-cell"><span class="ad-act-face ent-face" style="${act.photo ? `background-image:url('/${attr(act.photo)}')` : ''}"></span><span class="inv-item-name">${esc(act.name || b.slug)}</span></span></td>
                       <td class="ad-cell-muted">${esc(String(b.venue || '—').split(',')[0])}</td>
                       <td class="ad-cell-muted">${esc(b.time || '—')}</td>
-                      <td>${b.status === 'unconfirmed' ? '<span class="ent-unconf-tag">Unconfirmed &middot; unpaid</span>' : gigDots(b)}</td>
+                      <td>${b.status === 'unconfirmed' ? '<span class="ent-unconf-tag">Unconfirmed &middot; unpaid</span>' : gigDots(b)}${gigSentTag(b)}</td>
                       <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-book-open="${attr(b.id)}" aria-label="Open">&#8250;</button></td>
                     </tr>`;
                   }).join('') : loading ? '<tr><td colspan="6" class="ad-cell-muted ent-loading"><span class="ad-spin"></span> Loading bookings&hellip;</td></tr>' : '<tr><td colspan="6" class="ad-cell-muted">Nothing matches that.</td></tr>'}
