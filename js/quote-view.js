@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=726';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=726';   // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=726';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=727';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=727';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=727';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -132,7 +132,7 @@ function crewName(l) {
 function crewDesc(l) {
   const d = String(l.description || '');
   if (l.type === 'labour') {
-    const what = /^pack-?down/i.test(String(l.name || '')) ? 'Pack-down, load-out & return' : 'Delivery, rigging & system setup';
+    const what = /^pack-?down/i.test(String(l.name || '')) ? 'Pack-down, load-out & return' : 'System Setup';
     // older lines missed the $ ("@ 85/hr")
     return what + ' · ' + d.replace(/^([\d.]+) hrs?\b/, '$1 crew hours').replace(/@ (\d+(?:\.\d+)?)\/hr/, '@ $$$1/hr');
   }
