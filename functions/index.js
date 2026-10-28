@@ -2375,7 +2375,7 @@ function sanitizeQuote(q) {
       if (l.baseCents != null) line.baseCents = Math.max(0, Math.round(Number(l.baseCents) || 0));   // their own day rate (surcharges on top)
     }
     return line;
-  }).filter((l) => l.name || l.itemId);
+  }).filter((l) => l.name || l.itemId || l.type === 'discount');   // a discount can be left unnamed (the quote shows a default)
 
   const kind = ['estimate', 'quote', 'invoice'].includes(q.kind) ? q.kind : 'quote';
   return {
