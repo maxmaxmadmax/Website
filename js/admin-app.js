@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=731';
+} from './firebase-config.js?v=732';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=731';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=731';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=731';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=731';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=731';
-import { expandKit } from './kit.js?v=731';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=732';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=732';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=732';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=732';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=732';
+import { expandKit } from './kit.js?v=732';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
