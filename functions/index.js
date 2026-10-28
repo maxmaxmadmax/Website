@@ -2364,7 +2364,7 @@ function sanitizeQuote(q) {
     if (l.pubDj === true) line.pubDj = true;
     if (l.noPick === true) line.noPick = true;
     // a template's fill-in line: the DJ, their travel or the booking fee
-    if (['dj', 'travel', 'fee'].includes(l.djSlot)) line.djSlot = l.djSlot;
+    if (['dj', 'travel', 'fee', 'accom'].includes(l.djSlot)) line.djSlot = l.djSlot;
     if (l.perf === true) line.perf = true;             // the DJ's performance fee (super is worked out on it)
     if (l.superLine === true) line.superLine = true;   // the performer super line itself
     if (l.accom === true) line.accom = true;             // "accommodation provided by the venue" note
@@ -5196,7 +5196,8 @@ async function gigSync(bookingId, opts = {}) {
 
   /*  BUILT FROM THE TEMPLATE: the template's fill-in lines
       are swapped in place - "DJ / Entertainer" becomes this DJ + price, "DJ
-      travel" their travel (dropped if local), the booking fee the setting.
+      travel" their travel (dropped if local), "Accommodation" the venue's
+      place (dropped if local or driving home), the booking fee the setting.
       No fee line in the template = no fee. No travel line = travel goes
       under the DJ. No DJ line (older templates) = DJ + travel at the top.  */
   const tplLines = tpl.lines || [];
@@ -5207,11 +5208,12 @@ async function gigSync(bookingId, opts = {}) {
     if (l.djSlot === 'dj') { lines.push(djLine); if (!hasSlot('travel') && travelLine) lines.push(travelLine); return; }
     if (l.djSlot === 'travel') { if (travelLine) lines.push(travelLine); return; }
     if (l.djSlot === 'fee') { if (feeLine) lines.push(feeLine); return; }
+    if (l.djSlot === 'accom') { if (accomLine) lines.push(accomLine); return; }
     if (l.pubDj || l.superLine) return;   // old generated DJ lines / super (added below)
     lines.push(l);
   });
   if (!hasSlot('dj')) lines = [djLine].concat(!hasSlot('travel') && travelLine ? [travelLine] : [], lines);
-  if (accomLine) { const at = lines.indexOf(travelLine); lines.splice(at >= 0 ? at + 1 : lines.indexOf(djLine) + 1, 0, accomLine); }
+  if (accomLine && !hasSlot('accom')) { const at = lines.indexOf(travelLine); lines.splice(at >= 0 ? at + 1 : lines.indexOf(djLine) + 1, 0, accomLine); }
   if ((tpl.lines || []).some((l) => l.type === 'fee') && tpl.feeExcluded !== true) {
     const pre = quoteMoney({ hire: { days: 1 }, lines, discountCents: tpl.discountCents || 0 });
     const fee = Math.round(pre.netCents * 2 / 100 / 1000) * 1000;

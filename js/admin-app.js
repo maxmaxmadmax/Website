@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=719';
+} from './firebase-config.js?v=720';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=719';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=719';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=719';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=719';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=719';
-import { expandKit } from './kit.js?v=719';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=720';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=720';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=720';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=720';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=720';
+import { expandKit } from './kit.js?v=720';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -7161,6 +7161,7 @@ function quoteSearchMatches(term) {
   const slots = [
     { id: '__djslot', kind: 'djfee', slot: 'dj', name: 'DJ / Entertainer', sub: 'Filled in per booking', priceCents: 0, pctLabel: 'DJ + their price', description: 'Filled in per booking: the DJ, their hours and price', words: 'dj entertainer entertainment act performance' },
     { id: '__djtravel', kind: 'djfee', slot: 'travel', name: 'DJ travel', sub: 'Filled in per booking', priceCents: 0, pctLabel: 'Their travel fee', description: 'Filled in per booking: left off if the DJ is local', words: 'dj travel' },
+    { id: '__djaccom', kind: 'djfee', slot: 'accom', name: 'Accommodation', sub: 'Filled in per booking', priceCents: 0, pctLabel: 'Venue provides', description: 'Filled in per booking: left off if the DJ is local or driving home', words: 'accommodation accomodation hotel stay room' },
     { ...fee, slot: 'fee', words: 'dj booking fee management coordination backup' },
   ];
   const feeHit = slots.filter((x) => searchMatch(t, x.name, x.words));
