@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=738';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=738';   // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=738';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=739';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=739';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=739';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -164,6 +164,23 @@ function labourRow(l, amt) {
     + '</td><td class="qv-num">1</td><td class="qv-num">' + money(amt) + '</td></tr>';
 }
 
+/*  DISCOUNT shared across the equipment groups by their size, so each can be
+    shown crossed out at full price then the price after the saving. Same on
+    screen and in print. Returns the amount off each, or null if it won't fit. */
+function spreadSaving(amounts, disc) {
+  const base = amounts.reduce((t, c) => t + Math.max(0, c), 0);
+  if (!disc || !base || disc > base) return null;
+  let left = disc;
+  const last = amounts.map((c) => c > 0).lastIndexOf(true);
+  return amounts.map((c, i) => {
+    if (c <= 0) return 0;
+    const off = i === last ? left : Math.round(disc * c / base);
+    left -= off;
+    return off;
+  });
+}
+const wasMoney = (c) => '<s class="qp-was">' + money(c) + '</s> ';
+
 /*  Equipment hire by group + hire subtotal, labour, delivery. */
 function sumBreakdown(q, days) {
   const lines = q.lines || [];
@@ -178,8 +195,9 @@ function sumBreakdown(q, days) {
   if (entCents) h += '<div class="qv-sumrow qv-sumpart"><span>Entertainment fee</span><span>' + money(entCents) + '</span></div>';
   if (groups.length) {
     h += '<div class="qv-sumhead">Equipment hire</div>';
-    h += groups.map((g) => '<div class="qv-sumrow qv-sumsub"><span>' + esc(g.name) + '</span><span>' + money(g.cents) + '</span></div>').join('');
-    h += '<div class="qv-sumrow qv-sumpart"><span>Hire subtotal</span><span>' + money(hire) + '</span></div>';
+    const offs = spreadSaving(groups.map((g) => g.cents), Math.round(q.discountCents || 0));
+    h += groups.map((g, i) => '<div class="qv-sumrow qv-sumsub"><span>' + esc(g.name) + '</span><span>' + (offs && offs[i] ? wasMoney(g.cents) + money(g.cents - offs[i]) : money(g.cents)) + '</span></div>').join('');
+    h += '<div class="qv-sumrow qv-sumpart"><span>Hire subtotal</span><span>' + (offs ? wasMoney(hire) + money(hire - q.discountCents) : money(hire)) + '</span></div>';
   }
   // ONE labour total for the customer: setup, pack-down and operators together
   const crewC = lines.filter((l) => l.resType === 'staff').reduce((t, l) => t + lineAmount(l, days), 0);
@@ -398,7 +416,9 @@ function render(q) {
       <div class="qv-breakdown">${sumBreakdown(q, days)}</div>
       <div class="qv-summary">
         <!-- adds straight down: discount first, then the subtotal after it (Max, 17 Oct 2026) -->
-        ${q.discountCents ? `<div class="qv-sumrow qv-sumpart"><span>${prodPct ? 'Equipment discount (' + prodPct + '% off)' : 'Discount'}</span><span>&minus;${money(q.discountCents)}</span></div>` : ''}
+        ${!q.discountCents ? '' : spreadSaving(costBreakdown(q.lines || [], (l) => lineAmount(l, days), (l) => l.category).map((g) => g.cents), q.discountCents)
+          ? `<div class="qv-sumrow qv-save-row"><span>You save ${money(Math.round(q.discountCents * 1.1))} inc GST${prodPct ? ' &middot; ' + prodPct + '% off equipment hire' : ''}</span></div>`
+          : `<div class="qv-sumrow qv-sumpart"><span>${prodPct ? 'Equipment discount (' + prodPct + '% off)' : 'Discount'}</span><span>&minus;${money(q.discountCents)}</span></div>`}
         <div class="qv-sumrow qv-sumtotal"><span>Subtotal (ex GST)</span><span>${money(Math.round(q.totalCents || 0) - Math.round(q.gstCents || 0))}</span></div>
         <div class="qv-sumrow"><span>GST (10%)</span><span>${money(q.gstCents)}</span></div>
         <div class="qv-sumrow qv-grand"><span>Total (incl GST)</span><span>${money(q.totalCents)}</span></div>
@@ -543,7 +563,7 @@ function proposalTop(q, days) {
     .concat(vehC ? [['Vehicles', vehC]] : [])
     .concat(del.length ? [[delCents ? 'Travel & transport' : 'Local delivery & pickup', delCents]] : [])
     .concat(lines.filter((l) => l.type === 'fee').map((l) => ['Booking & admin', lineAmount(l, days)]));
-  const was = (c) => c ? '<s class="qp-was">' + money(c) + '</s> ' : '';
+  const was = (c) => (c ? wasMoney(c) : '');
   const r = (label, ex, full) => '<tr><td>' + esc(label) + '</td><td>' + was(full) + (ex ? money(ex) : 'Free') + '</td><td>' + (ex ? money(Math.round(ex * 0.1)) : '') + '</td><td>' + (full ? was(Math.round(full * 1.1)) : '') + (ex ? money(Math.round(ex * 1.1)) : 'Free') + '</td></tr>';
   // QUOTE DETAILS + WHAT'S INCLUDED under the table.
   // Valid for 30 days from the quote date; the list is built from what's on the quote.
@@ -576,24 +596,16 @@ function proposalTop(q, days) {
       ? '<div><dt>To secure</dt><dd>Payment in full &middot; ' + money(q.totalCents || 0) + '</dd></div>'
       : '<div><dt>To secure</dt><dd>' + pct + '% deposit &middot; ' + money(Math.round((q.totalCents || 0) * pct / 100)) + '</dd></div>')
     + '</dl></div></div>';
-  // DISCOUNT: shared across the equipment rows by their size, each shown
-  // crossed out at full price then the price after the saving.
-  // Entertainment, labour, vehicles, travel and the booking fee are never discounted.
+  // DISCOUNT: crossed out per equipment row (spreadSaving). Entertainment,
+  // labour, vehicles, travel and the booking fee are never discounted.
   const NO_DISC = ['Entertainment fee', 'Labour', 'Vehicles', 'Travel & transport', 'Local delivery & pickup', 'Booking & admin'];
-  const canDisc = (x) => x[1] > 0 && !NO_DISC.includes(x[0]);
-  const discBase = rows.filter(canDisc).reduce((t, x) => t + x[1], 0);
+  const discOffs = spreadSaving(rows.map((x) => (NO_DISC.includes(x[0]) ? 0 : x[1])), Math.round(q.discountCents || 0));
+  const discBase = rows.filter((x) => !NO_DISC.includes(x[0])).reduce((t, x) => t + Math.max(0, x[1]), 0);
   const discPct = q.discountCents && discBase ? Math.round(q.discountCents / discBase * 100) : 0;
-  if (q.discountCents && discBase) {
-    let left = q.discountCents;
-    const last = rows.map(canDisc).lastIndexOf(true);
-    rows.forEach((x, i) => {
-      if (!canDisc(x)) return;
-      const off = i === last ? left : Math.round(q.discountCents * x[1] / discBase);
-      left -= off;
-      x.push(x[1]); x[1] -= off;   // [label, after saving, full price]
-    });
-  }
-  const disc = q.discountCents ? '<tr class="qp-disc"><td colspan="4">You save ' + money(Math.round(q.discountCents * 1.1)) + ' inc GST' + (discPct ? ' &middot; ' + discPct + '% off equipment hire' : '') + '</td></tr>' : '';
+  if (discOffs) rows.forEach((x, i) => { if (discOffs[i]) { x.push(x[1]); x[1] -= discOffs[i]; } });   // [label, after saving, full price]
+  const disc = !q.discountCents ? '' : !discOffs
+    ? '<tr class="qp-disc"><td>Discount</td><td>&minus;' + money(q.discountCents) + '</td><td></td><td>&minus;' + money(Math.round(q.discountCents * 1.1)) + '</td></tr>'
+    : '<tr class="qp-disc"><td colspan="4">You save ' + money(Math.round(q.discountCents * 1.1)) + ' inc GST' + (discPct ? ' &middot; ' + discPct + '% off equipment hire' : '') + '</td></tr>';
 
   return `
     <section class="qp-hero">
