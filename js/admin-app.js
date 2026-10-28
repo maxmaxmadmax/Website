@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=722';
+} from './firebase-config.js?v=723';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=722';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=722';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=722';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=722';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=722';
-import { expandKit } from './kit.js?v=722';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=723';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=723';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=723';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=723';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=723';
+import { expandKit } from './kit.js?v=723';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6614,13 +6614,11 @@ function normalizePackages() {
 /*  DJ JOBS IN TWO PARTS: the entertainment (DJ, travel, booking fee, super)
     on top under Hours / Fee, then the production gear under its own heading,
     with any discount last so it reads as a saving on production.          */
-/*  Admin-only tag on smart gig lines: the booking fee is a set fee (from
-    Entertainment), the rest are filled in per gig.                        */
-function smartTag(l) {
-  if (!l.pubDj) return '';
-  const fee = l.djSlot === 'fee' || (!l.djSlot && !l.perf && !l.superLine && !l.accom && !/^Travel/i.test(String(l.name || '')));
-  return fee ? '<span class="qb-smart" title="Set fee - from Entertainment settings">Set fee</span>'
-    : '<span class="qb-smart" title="Filled in per gig by the server">&#9889; Auto</span>';
+/*  Admin-only: smart gig lines (filled in per gig by the server) get an
+    orange box. The booking fee is a set fee, so it is left plain.        */
+function isSmartLine(l) {
+  if (!l.pubDj) return false;
+  return !!(l.perf || l.superLine || l.accom || ['dj', 'travel', 'accom'].includes(l.djSlot) || (!l.djSlot && /^Travel/i.test(String(l.name || ''))));
 }
 const isEntLine = (l) => !!(l.pubDj || l.djSlot || l.superLine || l.perf);
 function sortDjSections() {
@@ -6755,8 +6753,8 @@ function renderQuoteLines() {
     return `
       <div class="qb-row" data-ql="${i}" data-top>
         <div class="qb-cell qb-c-grip"><span class="qb-grip" title="Drag to reorder">&#10303;</span></div>
-        <div class="qb-cell qb-c-desc">
-          ${smartTag(l)}<input class="qb-name" data-lf="name" value="${attr(l.name)}" placeholder="Item name">
+        <div class="qb-cell qb-c-desc${isSmartLine(l) ? ' is-smart' : ''}"${isSmartLine(l) ? ' title="Smart line - filled in per gig"' : ''}>
+          <input class="qb-name" data-lf="name" value="${attr(l.name)}" placeholder="Item name">
           ${isSystemId(l.itemId) ? (() => { const b = (invItems().find((x) => x.id === l.itemId) || {}).bundleType; return '<span class="qb-sys-tag qb-sys-line' + (b === 'package' ? ' is-pkg' : '') + '">' + (b === 'package' ? 'Package' : 'Kit') + '</span>'; })() : ''}
           ${l.description ? `<span class="qb-sub">${esc(l.description)}</span>` : ''}${stockWarn(l)}
         </div>
