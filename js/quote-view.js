@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=736';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=736';   // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=736';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=737';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=737';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=737';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -574,9 +574,11 @@ function proposalTop(q, days) {
       ? '<div><dt>To secure</dt><dd>Payment in full &middot; ' + money(q.totalCents || 0) + '</dd></div>'
       : '<div><dt>To secure</dt><dd>' + pct + '% deposit &middot; ' + money(Math.round((q.totalCents || 0) * pct / 100)) + '</dd></div>')
     + '</dl></div></div>';
-  // DISCOUNT: shared across the production rows by their size, each shown
-  // crossed out at full price then the price after the saving
-  const canDisc = (x) => x[1] > 0 && x[0] !== 'Booking & admin' && !(isDj && x[0] === 'Entertainment fee');
+  // DISCOUNT: shared across the equipment rows by their size, each shown
+  // crossed out at full price then the price after the saving.
+  // Entertainment, labour, vehicles, travel and the booking fee are never discounted.
+  const NO_DISC = ['Entertainment fee', 'Labour', 'Vehicles', 'Travel & transport', 'Local delivery & pickup', 'Booking & admin'];
+  const canDisc = (x) => x[1] > 0 && !NO_DISC.includes(x[0]);
   const discBase = rows.filter(canDisc).reduce((t, x) => t + x[1], 0);
   const discPct = q.discountCents && discBase ? Math.round(q.discountCents / discBase * 100) : 0;
   if (q.discountCents && discBase) {
@@ -589,7 +591,7 @@ function proposalTop(q, days) {
       x.push(x[1]); x[1] -= off;   // [label, after saving, full price]
     });
   }
-  const disc = q.discountCents ? '<tr class="qp-disc"><td colspan="4">You save ' + money(Math.round(q.discountCents * 1.1)) + ' inc GST' + (discPct ? ' &middot; ' + discPct + '% off ' + (isDj ? 'production' : 'the quote') : '') + '</td></tr>' : '';
+  const disc = q.discountCents ? '<tr class="qp-disc"><td colspan="4">You save ' + money(Math.round(q.discountCents * 1.1)) + ' inc GST' + (discPct ? ' &middot; ' + discPct + '% off equipment hire' : '') + '</td></tr>' : '';
 
   return `
     <section class="qp-hero">
