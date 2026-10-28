@@ -4873,6 +4873,5 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
   .ent-trail{ overflow-x:auto; }
 }
 
-/* smart (auto-filled) gig lines - admin only */
-.qb-row.is-auto{ box-shadow:inset 3px 0 0 var(--ad-orange); background:#fff8f2; }
-.qb-sys-tag.is-auto{ margin-bottom:3px; }
+/* smart gig line tag - admin only */
+.qb-smart{ display:inline-block; margin:0 0 3px; padding:0 6px; border:1px solid #f3c9a4; border-radius:5px; color:#c25400; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
