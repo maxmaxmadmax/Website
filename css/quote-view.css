@@ -737,7 +737,18 @@
 .qp-djf-set{ margin:0 0 6px; font-size:16px; color:#ffb27a; font-weight:700; }
 @media (max-width:640px){ .qp-djf{ grid-template-columns:1fr; } .qp-djf-img{ max-width:280px; } }
 /* print keeps the dark hero background, so the text stays light */
-@media print{ .qp-djf-img{ width:180px; } .qp-djf{ grid-template-columns:180px 1fr; align-items:start; break-inside:avoid; page-break-inside:avoid; } }
+@media print{
+  /* DJ page 1 must fit one A4: shorter stage photo, tighter bio */
+  .qp-hero-photo.is-dj{ min-height:80mm; }
+  .qp-hero-photo.is-dj .qp-hero-in{ padding-top:20px; }
+  .qp-djf{ grid-template-columns:150px 1fr; gap:18px; align-items:start; margin:12px 0 4px; break-inside:avoid; page-break-inside:avoid; }
+  .qp-djf-img{ width:150px; }
+  .qp-djf-text h3{ font-size:30px; }
+  .qp-djf-set{ font-size:13px; }
+  .qp-djf-bio p{ font-size:11.5px; line-height:1.45; margin-bottom:5px; }
+  .qp-djf-bio p:last-child{ font-size:11px; }
+  .qp-hero-photo.is-dj ~ .qp-hero-body .qp-intro{ font-size:12.5px; margin-bottom:12px; }
+}
 /* the DJ banner text gets the full width (the photo is not in the banner) */
 .qp-hero-photo.is-dj .qp-hero-in p{ overflow-wrap:normal; word-break:normal; }
 
