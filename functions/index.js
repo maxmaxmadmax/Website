@@ -2410,7 +2410,9 @@ exports.adminSaveQuote = onCall(async (request) => {
     const ref = db.collection('quotes').doc(String(id));
     const snap = await ref.get();
     if (!snap.exists) throw new HttpsError('not-found', 'No such quote.');
-    await ref.update({ ...clean, ...money, updatedAt: FieldValue.serverTimestamp() });
+    // made into a template: unlink it from its gig, so rebuilding the gig can't overwrite it
+    const unlink = clean.isTemplate ? { gigBookingId: FieldValue.delete(), pubKey: FieldValue.delete(), pubNight: FieldValue.delete(), pubBookings: FieldValue.delete() } : {};
+    await ref.update({ ...clean, ...money, ...unlink, updatedAt: FieldValue.serverTimestamp() });
     return { id: String(id), ...money };
   }
 
@@ -5127,8 +5129,9 @@ function gigHours(start, finish) {
 
 async function gigSync(bookingId, opts = {}) {
   const id = String(bookingId || '');
-  const exSnap = await db.collection('quotes').where('gigBookingId', '==', id).limit(1).get();
-  const existing = exSnap.empty ? null : exSnap.docs[0];
+  // a template is never the gig's quote, even if it was made from one
+  const exSnap = await db.collection('quotes').where('gigBookingId', '==', id).limit(5).get();
+  const existing = exSnap.docs.find((d) => d.data().isTemplate !== true) || null;
   const ex = existing ? existing.data() : null;
   const bSnap = await db.collection('talentSchedule').doc(id).get();
   const b = bSnap.exists ? bSnap.data() : null;
