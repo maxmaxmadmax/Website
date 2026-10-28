@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=724';
+} from './firebase-config.js?v=725';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=724';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=724';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=724';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=724';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=724';
-import { expandKit } from './kit.js?v=724';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=725';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=725';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=725';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=725';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=725';
+import { expandKit } from './kit.js?v=725';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6274,7 +6274,8 @@ function quoteFromDoc(doc) {
     autoSendOnDetails: doc.autoSendOnDetails === true,
     isTemplate: doc.isTemplate === true,
     templateName: doc.templateName || '',
-    discountCents: Math.max(0, Math.round(doc.discountCents || 0)),
+    // saved discountCents is the total; the box is only the whole-quote part
+    discountCents: Math.max(0, Math.round(doc.discountCents || 0) - (doc.lines || []).reduce((n, l) => n + (l.type === 'discount' ? Math.max(0, Math.round(l.amountCents || 0)) : 0), 0)),
     labourExcluded: doc.labourExcluded === true,
     labourPH: { setup: !!(doc.labourPH && doc.labourPH.setup), pack: !!(doc.labourPH && doc.labourPH.pack) },
     labourOff: { setup: !!(doc.labourOff && doc.labourOff.setup), pack: !!(doc.labourOff && doc.labourOff.pack) },

@@ -2294,6 +2294,13 @@ const QUOTE_DOC_STATES = ['draft', 'approved', 'sent', 'accepted', 'declined', '
 
 /*  Totals from the stored lines. Prices are ex-GST; discounts come off the
     net; GST is 10% of the net; total is net + GST.                        */
+/*  A saved quote's discountCents is the TOTAL discount (discount lines + the
+    whole-quote one). The whole-quote part on its own is the rest.          */
+function ownDiscount(q) {
+  const lineDisc = ((q && q.lines) || []).reduce((n, l) => n + (l.type === 'discount' ? Math.max(0, Math.round(l.amountCents || 0)) : 0), 0);
+  return Math.max(0, Math.round((q && q.discountCents) || 0) - lineDisc);
+}
+
 function quoteMoney(quote) {
   const days = Math.max(1, Math.round((quote.hire && quote.hire.days) || 1));
   let subtotal = 0;
@@ -4958,12 +4965,12 @@ async function pubSync(date, venue) {
   let lines = kept.concat(djLines);
   const hadFee = (base.lines || []).some((l) => l.type === 'fee') && base.feeExcluded !== true;
   if (hadFee) {
-    const pre = quoteMoney({ hire: { days: 1 }, lines, discountCents: base.discountCents || 0 });
+    const pre = quoteMoney({ hire: { days: 1 }, lines, discountCents: ownDiscount(base) });
     const fee = Math.round(pre.netCents * 2 / 100 / 1000) * 1000;
     if (fee > 0) lines.push({ type: 'fee', name: 'Booking & admin', qty: 1, unitCents: fee, days: 1 });
   }
   const clean = sanitizeQuote({
-    ...base,
+    ...base, discountCents: ownDiscount(base),
     kind: 'quote',
     customer: { ...(base.customer || {}), eventDate: prettyDay(date), eventStartTime: (bookings[0].actualStart || bookings[0].start || night.start || '') },
     hire: { startDate: date, endDate: date, days: 1 },
@@ -5215,7 +5222,7 @@ async function gigSync(bookingId, opts = {}) {
   if (!hasSlot('dj')) lines = [djLine].concat(!hasSlot('travel') && travelLine ? [travelLine] : [], lines);
   if (accomLine && !hasSlot('accom')) { const at = lines.indexOf(travelLine); lines.splice(at >= 0 ? at + 1 : lines.indexOf(djLine) + 1, 0, accomLine); }
   if ((tpl.lines || []).some((l) => l.type === 'fee') && tpl.feeExcluded !== true) {
-    const pre = quoteMoney({ hire: { days: 1 }, lines, discountCents: tpl.discountCents || 0 });
+    const pre = quoteMoney({ hire: { days: 1 }, lines, discountCents: ownDiscount(tpl) });
     const fee = Math.round(pre.netCents * 2 / 100 / 1000) * 1000;
     if (fee > 0) lines.push({ type: 'fee', name: 'Booking & admin', qty: 1, unitCents: fee, days: 1 });
   }
@@ -5227,7 +5234,7 @@ async function gigSync(bookingId, opts = {}) {
   }
   const tc = tpl.customer || {};
   const clean = sanitizeQuote({
-    ...tpl, isTemplate: false, templateName: '', kind: 'quote', labourPackDate: '', lines, accomOff: !!(ex && ex.accomOff),
+    ...tpl, discountCents: ownDiscount(tpl), isTemplate: false, templateName: '', kind: 'quote', labourPackDate: '', lines, accomOff: !!(ex && ex.accomOff),
     customer: {
       name: cust.name || '', business: cust.business || '', email: cust.email || '', ccEmail: cust.ccEmail || '',
       phone: cust.phone || '', address: cust.address || '',

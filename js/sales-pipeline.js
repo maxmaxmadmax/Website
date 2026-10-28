@@ -8,8 +8,8 @@
    the quotes and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=724';   // who still owes money
-import { isBooked, pickProgress } from './stock.js?v=724';
+import { owesMoney } from './messages.js?v=725';   // who still owes money
+import { isBooked, pickProgress } from './stock.js?v=725';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
