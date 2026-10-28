@@ -736,7 +736,8 @@
 .qp-djf-text .qp-mini{ margin:0; }
 .qp-djf-set{ margin:0 0 6px; font-size:16px; color:#ffb27a; font-weight:700; }
 @media (max-width:640px){ .qp-djf{ grid-template-columns:1fr; } .qp-djf-img{ max-width:280px; } }
-@media print{ .qp-djf-text h3{ color:#111; } .qp-djf-img{ width:180px; } .qp-djf{ grid-template-columns:180px 1fr; } }
+/* print keeps the dark hero background, so the text stays light */
+@media print{ .qp-djf-img{ width:180px; } .qp-djf{ grid-template-columns:180px 1fr; align-items:start; break-inside:avoid; page-break-inside:avoid; } }
 /* the DJ banner text gets the full width (the photo is not in the banner) */
 .qp-hero-photo.is-dj .qp-hero-in p{ overflow-wrap:normal; word-break:normal; }
 
@@ -751,7 +752,6 @@
 .qp-djf-bio{ margin:8px 0 4px; max-width:560px; }
 .qp-djf-bio p{ margin:0 0 8px; font-size:15px; line-height:1.55; color:#e8e8e8; }
 .qp-djf-bio p:last-child{ color:#ffb27a; font-weight:700; font-size:14px; }
-@media print{ .qp-djf-bio p{ color:#222; } .qp-djf-bio p:last-child{ color:#b45309; } }
 
 /* DJ jobs: the "Production" column heading part-way down the table */
 .qv-colhead th { background: #f2f2f3; color: #555; padding: 11px 14px; font-size: 12px; font-weight: 700; text-align: left; border-top: 1px solid #ececec; }

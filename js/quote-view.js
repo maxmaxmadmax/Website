@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=728';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=728';   // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=728';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=729';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=729';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=729';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -523,7 +523,8 @@ function proposalTop(q, days) {
     + '</div></div>' : '';
 
   // investment summary: each group ex GST / GST / inc GST
-  const rows = groups.map((g) => [isDj && g.name === 'Other' ? 'Entertainment (DJ)' : g.name, g.cents])   // AUDIO, LIGHTING, STAGING... (shown in capitals)
+  const entC = lines.filter((l) => l.pubDj || l.djSlot || l.superLine || l.perf).reduce((t, l) => t + lineAmount(l, days), 0);
+  const rows = (entC ? [['Entertainment fee', entC]] : []).concat(groups.map((g) => [g.name, g.cents]))   // AUDIO, LIGHTING, STAGING... (shown in capitals)
     .concat(lab.length || crewC ? [['Labour', labCents + crewC]] : [])   // setup, pack-down & operators as one
     .concat(vehC ? [['Vehicles', vehC]] : [])
     .concat(del.length ? [[delCents ? 'Travel & transport' : 'Local delivery & pickup', delCents]] : [])
