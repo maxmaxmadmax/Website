@@ -4872,3 +4872,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
   .inv-table tr.is-unconf{ background:#fdf3e1; box-shadow:inset 4px 0 0 #ba7517; }
   .ent-trail{ overflow-x:auto; }
 }
+
+/* smart (auto-filled) gig lines - admin only */
+.qb-row.is-auto{ box-shadow:inset 3px 0 0 var(--ad-orange); background:#fff8f2; }
+.qb-sys-tag.is-auto{ margin-bottom:3px; }
