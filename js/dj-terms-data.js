@@ -1,4 +1,4 @@
-// SOUNDZGOOD DJ BOOKING TERMS & CONDITIONS
+// SOUNDZGOOD ENTERTAINMENT BOOKING TERMS & CONDITIONS
 // Shown on DJ / entertainment quotes
 // (js/quote-view.js) and the /dj-terms page. Production quotes keep the
 // main terms in js/terms-data.js.
@@ -13,27 +13,27 @@
 export const DJ_TERMS_UPDATED = 'October 2026';
 
 export const DJ_TERMS_INTRO = [
-  "These DJ Booking Terms & Conditions apply when SoundzGood (“SoundzGood”, “we”, “us” or “our”) supplies a DJ or other entertainer to a venue or client.",
+  "These Entertainment Booking Terms & Conditions apply when SoundzGood (“SoundzGood”, “we”, “us” or “our”) supplies a DJ, band, musician or other entertainer (the “Entertainer”) to a venue or client.",
   "By accepting a quote, paying a deposit or invoice, clicking “Accept”, or instructing SoundzGood to proceed, the venue or client (“you” or “your”) agrees to these Terms & Conditions.",
   "The accepted quote and these Terms & Conditions together form the agreement between SoundzGood and you. Where SoundzGood also supplies sound, lighting or other equipment, our main Terms & Conditions (soundzgood.com.au/terms) apply to that equipment as well.",
 ];
 
 export const DJ_TERMS = [
   ["Bookings & payment", [
-    "Quotes are valid for the period stated on the quote and remain subject to DJ availability until the required payment has been received.",
+    "Quotes are valid for the period stated on the quote and remain subject to the Entertainer’s availability until the required payment has been received.",
     "## New venues and clients:",
-    "• Payment in full is required to confirm the booking. Until then the DJ is held for you, but the booking is not confirmed.",
+    "• Payment in full is required to confirm the booking. Until then the Entertainer is held for you, but the booking is not confirmed.",
     "## Existing venues and clients:",
     "• A 50% deposit is required to secure the booking.",
     "• The remaining balance is due 7 days before the booking unless otherwise agreed in writing.",
     "A booking is not confirmed until the required deposit or payment has been received.",
   ]],
   ["What the quote includes", [
-    "The quote lists the DJ’s performance fee for the booked hours, and may also include travel, a booking and coordination fee, and performer superannuation.",
+    "The quote lists the Entertainer’s performance fee for the booked hours, and may also include travel, a booking and coordination fee, and performer superannuation.",
     "## Performer superannuation:",
-    "Australian law requires superannuation to be paid for performers. Where shown on the quote, SoundzGood charges it and pays it into the DJ’s super fund.",
+    "Australian law requires superannuation to be paid for performers. Where shown on the quote, SoundzGood charges it and pays it into the Entertainer’s super fund.",
     "## Travel:",
-    "Where the DJ travels from another town, the quoted travel charge covers the return trip.",
+    "Where the Entertainer travels from another town, the quoted travel charge covers the return trip.",
   ]],
   ["Overdue payments", [
     "If an invoice remains unpaid for more than 28 days after its due date, SoundzGood may apply a late payment charge equal to 2% of the outstanding balance.",
@@ -53,51 +53,52 @@ export const DJ_TERMS = [
     "Where practical, SoundzGood may allow payments to be transferred to a rescheduled date.",
     "Nothing in this clause limits any rights available under Australian Consumer Law.",
   ]],
-  ["If your DJ can’t make it", [
-    "If the booked DJ is unable to perform because of illness, emergency or other circumstances outside their control, SoundzGood will supply a replacement DJ of a similar style and standard.",
-    "A change of DJ under this clause is not a reason to cancel the booking.",
+  ["If your Entertainer can’t make it", [
+    "If the booked Entertainer is unable to perform because of illness, emergency or other circumstances outside their control, SoundzGood will supply a replacement Entertainer of a similar style and standard.",
+    "A change of Entertainer under this clause is not a reason to cancel the booking.",
     "If SoundzGood cannot supply a suitable replacement, you will receive a full refund of the amounts paid for that booking, and SoundzGood will have no further liability for it.",
   ]],
   ["What the venue supplies", [
     "Unless the quote says SoundzGood is supplying them, the venue must provide, ready and working at the booked start time:",
     "• a working PA / sound system suitable for the room",
-    "• DJ decks to at least this standard: a Pioneer XDJ-RX3, or 2 × Pioneer CDJ-3000 with a Pioneer DJM-A9 mixer",
-    "• a sturdy table or DJ booth, with power right next to it",
+    "• for DJs, decks to at least this standard: a Pioneer XDJ-RX3, or 2 × Pioneer CDJ-3000 with a Pioneer DJM-A9 mixer",
+    "• for bands and musicians, any equipment listed on the quote or agreed in writing",
+    "• a sturdy table, booth or stage area, with power right next to it",
     "• a safe, dry place to set up, out of the way of patrons",
-    "• drinks and a meal for the DJ during the booking.",
+    "• drinks and a meal for the Entertainer during the booking.",
     "## Accommodation:",
-    "Where the DJ has to travel away from their home town for the booking, the venue must provide reasonable accommodation for the DJ for that night.",
+    "Where the Entertainer has to travel away from their home town for the booking, the venue must provide reasonable accommodation for the Entertainer for that night.",
   ]],
   ["Set times, late starts & extra time", [
-    "The DJ will be ready to play at the booked start time.",
+    "The Entertainer will be ready to perform at the booked start time.",
     "If the set starts late for a reason caused by the venue (for example, equipment not ready, no power, or the room not open), the full booked hours remain payable.",
-    "If the venue asks the DJ to play past the booked finish time and the DJ agrees, the extra time is charged at the DJ’s hourly rate in 15-minute blocks and added to the invoice.",
+    "If the venue asks the Entertainer to perform past the booked finish time and the Entertainer agrees, the extra time is charged at the Entertainer’s hourly rate in 15-minute blocks and added to the invoice.",
   ]],
   ["Music & requests", [
-    "The DJ will read the room and play to the crowd.",
-    "The DJ will follow reasonable instructions from the venue, such as music style, volume or no explicit lyrics before a set time.",
-    "The DJ welcomes requests from patrons and staff, but may decline requests that don’t suit the room or the night.",
+    "The Entertainer will read the room and play to the crowd.",
+    "The Entertainer will follow reasonable instructions from the venue, such as music style, volume or no explicit lyrics before a set time.",
+    "The Entertainer welcomes requests from patrons and staff, but may decline requests that don’t suit the room or the night.",
   ]],
   ["Music licensing & noise", [
     "The venue is responsible for holding its own licence to play music to the public (for example, a OneMusic Australia licence). Licensing is not included in the SoundzGood quote.",
-    "The venue is responsible for any noise limits, curfews and other conditions that apply to the venue, and must tell the DJ about them before the set.",
+    "The venue is responsible for any noise limits, curfews and other conditions that apply to the venue, and must tell the Entertainer about them before the set.",
   ]],
   ["Safety & conduct", [
-    "The venue must provide a safe working environment for the DJ, including reasonable security and protection of the DJ area from patrons.",
-    "The DJ will keep playing for the booked hours unless the venue manager agrees to stop the set.",
-    "Nothing in these Terms requires the DJ to keep working where there is a serious and immediate risk to their health or safety, as allowed under work health and safety laws.",
+    "The venue must provide a safe working environment for the Entertainer, including reasonable security and protection of the performance area from patrons.",
+    "The Entertainer will keep performing for the booked hours unless the venue manager agrees to stop the set.",
+    "Nothing in these Terms requires the Entertainer to keep working where there is a serious and immediate risk to their health or safety, as allowed under work health and safety laws.",
   ]],
-  ["Damage to the DJ’s equipment", [
-    "If the DJ’s own equipment (for example, headphones, USB drives or a controller) is damaged by patrons, venue staff or venue conditions during the booking, the venue will pay the reasonable cost of repairing or replacing it.",
+  ["Damage to the Entertainer’s equipment", [
+    "If the Entertainer’s own equipment (for example, instruments, headphones, USB drives or a controller) is damaged by patrons, venue staff or venue conditions during the booking, the venue will pay the reasonable cost of repairing or replacing it.",
   ]],
   ["Recording & streaming", [
-    "The venue may film short clips of the DJ for its own social media.",
-    "Full recordings, livestreams or broadcasts of a DJ set need SoundzGood’s written approval first.",
-    "SoundzGood and the DJ may photograph and film the booking for their own promotion, websites and social media.",
+    "The venue may film short clips of the Entertainer for its own social media.",
+    "Full recordings, livestreams or broadcasts of a performance need SoundzGood’s written approval first.",
+    "SoundzGood and the Entertainer may photograph and film the booking for their own promotion, websites and social media.",
   ]],
-  ["Booking our DJs directly", [
-    "SoundzGood introduces you to our DJs. For 12 months after your last booking with SoundzGood, you agree not to book a SoundzGood DJ directly, or through anyone else, without going through SoundzGood.",
-    "If you do, you agree to pay SoundzGood an amount equal to the DJ booking fee that would have applied to each of those bookings.",
+  ["Booking our Entertainers directly", [
+    "SoundzGood introduces you to our Entertainers. For 12 months after your last booking with SoundzGood, you agree not to book a SoundzGood Entertainer directly, or through anyone else, without going through SoundzGood.",
+    "If you do, you agree to pay SoundzGood an amount equal to the booking fee that would have applied to each of those bookings.",
   ]],
   ["Weather & events outside our control", [
     "SoundzGood is not responsible for delay or inability to perform caused by circumstances reasonably outside our control.",

@@ -7,12 +7,12 @@ permalink: /dj-terms.html
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>DJ Booking Terms &amp; Conditions | SoundzGood</title>
+    <title>Entertainment Booking Terms &amp; Conditions | SoundzGood</title>
     <meta name="description" content="Terms & Conditions for DJs and entertainers booked through SoundzGood Whitsundays.">
 
     <link rel="icon" href="images/logo.png">
-    <link rel="stylesheet" href="css/style.css?v=727">
-    <script src="js/main.js?v=727" defer></script>
+    <link rel="stylesheet" href="css/style.css?v=728">
+    <script src="js/main.js?v=728" defer></script>
 
     <!-- Terms page only. The words themselves live in js/terms-data.js,
          the same file the quote / proposal page uses, so they never drift. -->
@@ -54,14 +54,14 @@ permalink: /dj-terms.html
 <header class="page-header">
     <div class="header-overlay"></div>
     <div class="header-content">
-        <h1>DJ Booking Terms &amp; Conditions</h1>
-        <p>DJs and entertainers supplied by SoundzGood to venues and events.</p>
+        <h1>Entertainment Booking Terms &amp; Conditions</h1>
+        <p>DJs, bands and other entertainers supplied by SoundzGood to venues and events.</p>
     </div>
 </header>
 
 <section class="section">
     <div class="tc-wrap" id="tc-wrap">
-        <p class="tc-printhead">SoundzGood &mdash; DJ Booking Terms &amp; Conditions</p>
+        <p class="tc-printhead">SoundzGood &mdash; Entertainment Booking Terms &amp; Conditions</p>
         <p>Loading&hellip;</p>
     </div>
 </section>
@@ -69,13 +69,13 @@ permalink: /dj-terms.html
 <div id="footer"></div>
 
 <script type="module">
-    import { termBodyHtml } from './js/terms-data.js?v=727';
-    import { DJ_TERMS as TERMS, DJ_TERMS_INTRO as TERMS_INTRO, DJ_TERMS_UPDATED as TERMS_UPDATED } from './js/dj-terms-data.js?v=727';
+    import { termBodyHtml } from './js/terms-data.js?v=728';
+    import { DJ_TERMS as TERMS, DJ_TERMS_INTRO as TERMS_INTRO, DJ_TERMS_UPDATED as TERMS_UPDATED } from './js/dj-terms-data.js?v=728';
 
     const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
     document.getElementById('tc-wrap').innerHTML =
-        '<p class="tc-printhead">SoundzGood &mdash; DJ Booking Terms &amp; Conditions</p>'
+        '<p class="tc-printhead">SoundzGood &mdash; Entertainment Booking Terms &amp; Conditions</p>'
         + '<p class="tc-updated">Last updated: ' + esc(TERMS_UPDATED) + '</p>'
         + TERMS_INTRO.map((t) => '<p>' + esc(t) + '</p>').join('')
         + TERMS.map(([h, lines], i) =>

@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=727';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=727';   // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=727';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=728';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=728';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=728';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -132,7 +132,7 @@ function crewName(l) {
 function crewDesc(l) {
   const d = String(l.description || '');
   if (l.type === 'labour') {
-    const what = /^pack-?down/i.test(String(l.name || '')) ? 'Pack-down, load-out & return' : 'System Setup';
+    const what = /^pack-?down/i.test(String(l.name || '')) ? 'System Pack Down' : 'System Setup';
     // older lines missed the $ ("@ 85/hr")
     return what + ' · ' + d.replace(/^([\d.]+) hrs?\b/, '$1 crew hours').replace(/@ (\d+(?:\.\d+)?)\/hr/, '@ $$$1/hr');
   }
@@ -645,7 +645,7 @@ function proposalBottom(q, opts = {}) {
   // DJ / entertainment quotes get the DJ booking terms
   const djQuote = (q.customer && q.customer.eventType === 'dj') || !!q.gigDj;
   const T = djQuote ? DJ_TERMS : TERMS, TI = djQuote ? DJ_TERMS_INTRO : TERMS_INTRO;
-  const terms = '<details class="qp-term qp-legal"><summary><span class="qp-legal-warn">&#9888;</span><span><b>' + (djQuote ? 'DJ Booking ' : '') + 'Terms &amp; Conditions &mdash; read before booking</b><em>' + T.length + ' clauses &middot; binding once you accept or pay &middot; tap to read</em></span></summary>'
+  const terms = '<details class="qp-term qp-legal"><summary><span class="qp-legal-warn">&#9888;</span><span><b>' + (djQuote ? 'Entertainment Booking ' : '') + 'Terms &amp; Conditions &mdash; read before booking</b><em>' + T.length + ' clauses &middot; binding once you accept or pay &middot; tap to read</em></span></summary>'
     + '<div class="qp-legal-body">' + TI.map((t) => '<p>' + esc(t) + '</p>').join('')
     + T.map(([h, lines], i) => '<div class="qp-legal-clause"><h4>' + (i + 1) + '. ' + esc(h) + '</h4>' + termBodyHtml(lines, esc) + '</div>').join('')
     + '</div></details>';
