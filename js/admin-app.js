@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=733';
+} from './firebase-config.js?v=734';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=733';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=733';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=733';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=733';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=733';
-import { expandKit } from './kit.js?v=733';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=734';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=734';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=734';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=734';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=734';
+import { expandKit } from './kit.js?v=734';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -4482,10 +4482,14 @@ function invItem(raw) {
     eventType: r.eventType || '',
     maxGuests: invNum(r.maxGuests, 0),
     systemParts: Array.isArray(r.systemParts) ? r.systemParts : [],
+    consumable: r.consumable === true,   // used up on the job (haze fluid...) - Consumables tab
+    unit: r.unit || '',                  // e.g. "1 L bottle"
+    reorderAt: Math.max(0, invNum(r.reorderAt, 0)),   // low-stock warning at or below this
   };
 }
 
 function invItems() { return invModelRaw().map(invItem); }
+const invLow = (it) => it.consumable && it.reorderAt > 0 && it.quantityTotal - it.quantityRepair <= it.reorderAt;
 
 /* -------------------------------------------------------------------------
    Item requirements  -  the gear an item needs (see js/kit.js for the maths)
@@ -4578,6 +4582,7 @@ function invStats() {
   const items = invItems();
   let total = 0, available = 0, onHire = 0, inRepair = 0;
   items.forEach((it) => {
+    if (it.consumable) return;   // the tiles count gear, not haze fluid
     const repair = Math.min(it.quantityRepair, it.quantityTotal);
     const avail = Math.min(it.quantityAvailable, it.quantityTotal - repair);
     total += it.quantityTotal;
@@ -4600,7 +4605,9 @@ function invDistinct(key) {
 function invFiltered() {
   const f = state.invFilter;
   const needle = (f.search || '').trim().toLowerCase();
+  const cons = state.invTab === 'consumables';
   return invItems().filter((it) => {
+    if (it.consumable !== cons) return false;   // gear and consumables on their own tabs
     if (f.category !== 'all' && it.category !== f.category) return false;
     if (f.location !== 'all' && it.location !== f.location) return false;
     if (f.status !== 'all' && it.status !== f.status) return false;
@@ -4642,7 +4649,7 @@ VIEWS.inventory = {
               <button type="button" class="ad-btn" id="inv-add-pkg" title="Kits and single items together, e.g. 4-Piece Band Backline">+ New package</button>
               <button type="button" class="ad-btn" id="inv-add-sys" title="A rig made of other gear, e.g. FOH Kit">+ New kit</button>
               <button type="button" class="ad-btn" id="inv-shrink" title="Make every photo smaller and name it after the product">Shrink photos</button>
-              <button type="button" class="ad-btn ad-btn-primary" id="inv-add">+ Add Item</button>
+              <button type="button" class="ad-btn ad-btn-primary" id="inv-add">${state.invTab === 'consumables' ? '+ Add consumable' : '+ Add Item'}</button>
             </div>
           </div>
 
@@ -4657,6 +4664,10 @@ VIEWS.inventory = {
             <span>You have <b>${oldBotPackages().length}</b> website-bot package${oldBotPackages().length === 1 ? '' : 's'} in the old Packages section. Move them here so you can edit them with kits.</span>
             <button type="button" class="ad-btn ad-btn-small" id="inv-migrate-pkgs">Move into Inventory</button>
           </div>` : ''}
+          <div class="inv-tabs" role="tablist">
+            <button type="button" class="inv-tab${state.invTab !== 'consumables' ? ' is-on' : ''}" data-inv-tab="gear">Equipment</button>
+            <button type="button" class="inv-tab${state.invTab === 'consumables' ? ' is-on' : ''}" data-inv-tab="consumables">Consumables${invItems().some(invLow) ? ' <span class="inv-low-dot" title="Something is low - reorder">' + invItems().filter(invLow).length + ' low</span>' : ''}</button>
+          </div>
           <div class="inv-toolbar">
             <input type="search" id="inv-search" class="ad-search" placeholder="Search items..."
                    value="${attr(f.search)}" aria-label="Search inventory">
@@ -4917,7 +4928,7 @@ function invRowsHtml() {
       <td>${it.location ? esc(it.location) : '<span class="ad-cell-muted">—</span>'}</td>
       <td class="inv-num">${esc(money(it.priceCents))}</td>
       <td class="inv-num">${it.extraDayCents ? esc(money(it.extraDayCents)) : '<span class="ad-cell-muted">—</span>'}</td>
-      <td>${invStatusPill(it.status)}</td>
+      <td>${it.consumable ? (invLow(it) ? '<span class="inv-pill-low">Reorder</span>' : '<span class="inv-pill-ok">In stock</span>') : invStatusPill(it.status)}</td>
       <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-inv-open="${attr(it.id)}" aria-label="Edit">&#8250;</button></td>
     </tr>`).join('')
     : `<tr><td colspan="10" class="ad-cell-muted">No items match. Try clearing the filters, or add one.</td></tr>`;
@@ -4958,8 +4969,9 @@ function renderInvRows() {
    ------------------------------------------------------------------------- */
 function invEditingItem() {
   if (state.openInvId === '__new__') {
-    return invItem({ status: 'available', quantityTotal: 1, quantityAvailable: 1,
-      pricingType: 'per-day', inBot: true, location: '' });
+    const cons = state.invTab === 'consumables';
+    return invItem({ status: 'available', quantityTotal: cons ? 0 : 1, quantityAvailable: cons ? 0 : 1,
+      pricingType: 'per-day', inBot: !cons, location: '', consumable: cons, category: cons ? 'Consumables' : '' });
   }
   const found = (state.inventory || []).find((x) => x.id === state.openInvId);
   return invItem(found || {});
@@ -4974,10 +4986,10 @@ function invDetail() {
     `<option value="${v}"${it.status === v ? ' selected' : ''}>${l}</option>`;
 
   return `
-    <aside class="inv-detail" aria-label="Item details">
+    <aside class="inv-detail${it.consumable ? ' is-cons' : ''}" aria-label="Item details">
       <header class="inv-detail-head">
         <div>
-          <h2>${isNew ? 'New item' : esc(it.name || 'Item')}</h2>
+          <h2>${isNew ? (it.consumable ? 'New consumable' : 'New item') : esc(it.name || 'Item')}</h2>
           ${!isNew && it.subtitle ? `<p class="inv-detail-sub">${esc(it.subtitle)}</p>` : ''}
         </div>
         <button type="button" class="inv-detail-close" id="inv-close" aria-label="Close">&times;</button>
@@ -5002,38 +5014,43 @@ function invDetail() {
 
         <div class="inv-fgrid">
           <label class="ad-field inv-span2"><span>Item name</span>
-            <input class="ad-input" data-f="name" value="${attr(it.name)}" placeholder="Electro-Voice ICOA 12"></label>
+            <input class="ad-input" data-f="name" value="${attr(it.name)}" placeholder="${it.consumable ? 'Haze fluid' : 'Electro-Voice ICOA 12'}"></label>
+          <input type="hidden" data-f="consumable" value="${it.consumable ? '1' : ''}">
           <label class="ad-field inv-span2"><span>Subtitle</span>
             <input class="ad-input" data-f="subtitle" value="${attr(it.subtitle)}" placeholder="Active Speaker"></label>
 
           <label class="ad-field"><span>Category</span>
             <input class="ad-input" data-f="category" value="${attr(it.category)}" placeholder="Audio"></label>
-          <label class="ad-field"><span>Status</span>
+          <label class="ad-field inv-gear-only"><span>Status</span>
             <select class="ad-select" data-f="status">
               ${statusOpt('available', 'Available')}
               ${statusOpt('on-hire', 'On Hire')}
               ${statusOpt('in-repair', 'In Repair')}
             </select></label>
 
-          <label class="ad-field"><span>Quantity owned</span>
+          <label class="ad-field inv-cons-only"><span>Unit</span>
+            <input class="ad-input" data-f="unit" value="${attr(it.unit)}" placeholder="1 L bottle"></label>
+          <label class="ad-field"><span>${it.consumable ? 'In stock' : 'Quantity owned'}</span>
             <input class="ad-input" type="number" min="0" step="1" data-f="quantityTotal" value="${attr(it.quantityTotal)}"></label>
-          <label class="ad-field"><span>Quantity available</span>
+          <label class="ad-field inv-cons-only"><span>Reorder when down to</span>
+            <input class="ad-input" type="number" min="0" step="1" data-f="reorderAt" value="${attr(it.reorderAt || '')}" placeholder="e.g. 2"></label>
+          <label class="ad-field inv-gear-only"><span>Quantity available</span>
             <input class="ad-input" type="number" min="0" step="1" data-f="quantityAvailable" value="${attr(it.quantityAvailable)}"></label>
 
-          <label class="ad-field"><span>Quantity in repair</span>
+          <label class="ad-field inv-gear-only"><span>Quantity in repair</span>
             <input class="ad-input" type="number" min="0" step="1" data-f="quantityRepair" value="${attr(it.quantityRepair)}"></label>
-          <div class="ad-field"><span>On hire (worked out)</span>
+          <div class="ad-field inv-gear-only"><span>On hire (worked out)</span>
             <p class="inv-onhire" id="inv-onhire">${attr(Math.max(0, it.quantityTotal - it.quantityAvailable - it.quantityRepair))}</p></div>
 
           <label class="ad-field inv-span2"><span>Default location</span>
             <input class="ad-input" data-f="location" value="${attr(it.location)}" placeholder="Bowen"></label>
 
-          <label class="ad-field"><span>Hire price (1 day) $</span>
+          <label class="ad-field"><span>${it.consumable ? 'Charge per unit $' : 'Hire price (1 day) $'}</span>
             <input class="ad-input" type="number" min="0" step="1" data-f="priceCents" value="${attr(dollars(it.priceCents))}"></label>
-          <label class="ad-field"><span>Extra day price $</span>
+          <label class="ad-field inv-gear-only"><span>Extra day price $</span>
             <input class="ad-input" type="number" min="0" step="1" data-f="extraDayCents" value="${attr(dollars(it.extraDayCents))}"></label>
 
-          <label class="ad-field inv-span2"><span>Setup time (min per unit)</span>
+          <label class="ad-field inv-span2 inv-gear-only"><span>Setup time (min per unit)</span>
             <input class="ad-input" type="number" min="0" step="1" data-f="setupMins" value="${attr(it.setupMins || '')}"
                    placeholder="e.g. 10"><em class="inv-field-hint">Man-minutes to set one up. Feeds the labour charge on delivered quotes.</em></label>
 
@@ -5044,7 +5061,7 @@ function invDetail() {
             <textarea class="ad-input" rows="2" data-f="internalNotes" placeholder="Just for the team...">${esc(it.internalNotes)}</textarea></label>
         </div>
 
-        <div class="inv-detail-section">
+        <div class="inv-detail-section inv-gear-only">
           <h3>Repair &amp; maintenance</h3>
           <div class="inv-fgrid">
             <label class="ad-field inv-span2"><span>What&rsquo;s wrong / being done</span>
@@ -5056,7 +5073,7 @@ function invDetail() {
           </div>
         </div>
 
-        <div class="inv-detail-section">
+        <div class="inv-detail-section inv-gear-only">
           <h3>Extra equipment details</h3>
           <div class="inv-fgrid">
             <label class="ad-field inv-span2"><span>Specs</span>
@@ -5070,7 +5087,7 @@ function invDetail() {
           </div>
         </div>
 
-        <div class="inv-detail-section inv-reqs">
+        <div class="inv-detail-section inv-reqs inv-gear-only">
           <div class="inv-reqs-head">
             <h3>Item requirements</h3>
             <button type="button" class="ad-btn ad-btn-small inv-reqs-add" id="inv-req-add">+ Add requirement</button>
@@ -5081,7 +5098,7 @@ function invDetail() {
           <div class="inv-reqs-preview" id="inv-reqs-preview"></div>
         </div>
 
-        <label class="inv-toggle">
+        <label class="inv-toggle inv-gear-only">
           <span>
             <strong>Available for quotes</strong>
             <em>Offer this item as an extra in the estimate bot.</em>
@@ -5144,6 +5161,12 @@ function wireInventory() {
   if (add) add.addEventListener('click', () => {
     clearPendingPhoto(); initInvReqDraft(null); state.openSysId = null; state.openInvId = '__new__'; render();
   });
+  wrap.querySelectorAll('[data-inv-tab]').forEach((b) => b.addEventListener('click', () => {
+    state.invTab = b.getAttribute('data-inv-tab');
+    state.invPage = 1; state.openInvId = null; state.openSysId = null;
+    state.invFilter.category = 'all';
+    render();
+  }));
 
   // one-off: shrink + rename the photos already uploaded
   const shrinkBtn = document.getElementById('inv-shrink');
@@ -5477,7 +5500,7 @@ async function saveInvItem(btn) {
     status: get('status') || 'available',
     quantityTotal: qt,
     quantityRepair: Math.min(int(get('quantityRepair')), qt),
-    quantityAvailable: Math.min(int(get('quantityAvailable')), qt),
+    quantityAvailable: get('consumable') ? qt : Math.min(int(get('quantityAvailable')), qt),
     location: String(get('location') || '').trim(),
     pricingType: 'per-day',
     priceCents: dollarsToCents(get('priceCents')),
@@ -5492,7 +5515,10 @@ async function saveInvItem(btn) {
     weight: String(get('weight') || '').trim().slice(0, 100),
     powerDraw: String(get('powerDraw') || '').trim().slice(0, 100),
     included: String(get('included') || '').trim().slice(0, 2000),
-    inBot: !!get('inBot'),
+    inBot: !get('consumable') && !!get('inBot'),
+    consumable: !!get('consumable'),
+    unit: String(get('unit') || '').trim().slice(0, 60),
+    reorderAt: int(get('reorderAt')),
     // Requirements come from their own draft, not the field grid. Drop any
     // half-added row that never got an item chosen.
     requirements: invReqDraft.map(normalizeReq).filter((r) => r.itemId).slice(0, 40),

@@ -4876,3 +4876,13 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 /* smart gig lines - admin only */
 .qb-c-desc.is-smart{ border:1.5px solid var(--ad-orange); border-radius:8px; padding:6px 10px; }
 .qb-smart-note{ margin-left:10px; color:#b0b4bb; font-style:italic; white-space:nowrap; }
+
+/* inventory: Equipment | Consumables tabs */
+.inv-tabs{ display:flex; gap:6px; margin:0 0 10px; }
+.inv-tab{ border:1px solid var(--ad-line, #e5e7eb); background:#fff; border-radius:999px; padding:6px 14px; font-weight:700; font-size:13px; cursor:pointer; }
+.inv-tab.is-on{ background:#111; color:#fff; border-color:#111; }
+.inv-low-dot{ margin-left:6px; padding:1px 7px; border-radius:999px; background:#dc2626; color:#fff; font-size:11px; }
+.inv-pill-low, .inv-pill-ok{ display:inline-block; padding:2px 9px; border-radius:999px; font-size:12px; font-weight:700; }
+.inv-pill-low{ background:#fee2e2; color:#b91c1c; }
+.inv-pill-ok{ background:#dcfce7; color:#15803d; }
+.inv-detail.is-cons .inv-gear-only, .inv-detail:not(.is-cons) .inv-cons-only{ display:none !important; }
