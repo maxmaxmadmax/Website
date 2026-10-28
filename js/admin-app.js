@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=716';
+} from './firebase-config.js?v=717';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=716';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=716';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=716';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=716';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=716';
-import { expandKit } from './kit.js?v=716';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=717';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=717';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=717';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=717';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=717';
+import { expandKit } from './kit.js?v=717';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6343,8 +6343,8 @@ function quoteBuilderHtml() {
           <div class="qb-thead">
             <span class="qb-c-grip"></span>
             <span class="qb-c-desc">Item / Description</span>
-            <span class="qb-c-qty">Qty</span>
-            <span class="qb-c-rate">Amount (ex GST)</span>
+            <span class="qb-c-qty" id="q-th-qty">Qty</span>
+            <span class="qb-c-rate" id="q-th-rate">Amount (ex GST)</span>
             <span class="qb-c-days">Days</span>
             <span class="qb-c-total">Total (ex GST)</span>
             <span class="qb-c-x"></span>
@@ -6362,6 +6362,7 @@ function quoteBuilderHtml() {
                 <div class="qb-results" id="q-inv-results" hidden></div>
               </div>
               <button type="button" class="ad-btn ad-btn-small" id="q-add-custom">+ Custom item</button>
+              <button type="button" class="ad-btn ad-btn-small" id="q-add-disc">&minus; Discount</button>
             </div>
           </div>
         </div>
@@ -6501,6 +6502,37 @@ function normalizePackages() {
   quoteDraft.lines = out;
 }
 
+/*  DJ JOBS IN TWO PARTS: the entertainment (DJ, travel, booking fee, super)
+    on top under Hours / Fee, then the production gear under its own heading,
+    with any discount last so it reads as a saving on production.          */
+const isEntLine = (l) => !!(l.pubDj || l.djSlot || l.superLine || l.perf);
+function sortDjSections() {
+  const units = quoteUnits(quoteDraft.lines);
+  if (!units.some((u) => isEntLine(u[0]))) return false;
+  const rank = (l) => (isEntLine(l) ? 0 : l.type === 'fee' ? 3 : l.type === 'discount' && !l.pkgId ? 2 : 1);
+  quoteDraft.lines = units.map((u, i) => [u, i]).sort((a, b) => rank(a[0][0]) - rank(b[0][0]) || a[1] - b[1]).map((x) => x[0]).flat();
+  return true;
+}
+function setQuoteHead(dj) {
+  const q = document.getElementById('q-th-qty'), r = document.getElementById('q-th-rate');
+  if (q) q.textContent = dj ? 'Hours' : 'Qty';
+  if (r) r.textContent = dj ? 'Fee (ex GST)' : 'Amount (ex GST)';
+}
+// the production subtotal, the discount off it, then what production comes to
+const isProdDisc = (l) => !!l && l.type === 'discount' && !l.pkgId;
+function prodSums() {
+  const days = Math.max(1, Math.round(quoteDraft.hire.days || 1));
+  const L = quoteDraft.lines;
+  const sub = L.filter((l) => !isEntLine(l) && !isProdDisc(l) && l.type !== 'fee').reduce((n, l) => n + quoteLineCents(l, days), 0);
+  const off = L.filter(isProdDisc).reduce((n, l) => n + Math.max(0, Math.round(l.amountCents || 0)), 0);
+  return { sub, total: Math.max(0, sub - off) };
+}
+function refreshProdSums() {
+  const ps = prodSums();
+  document.querySelectorAll('[data-prodsum]').forEach((b) => { b.textContent = money(ps[b.dataset.prodsum]); });
+}
+const PROD_HEAD = '<div class="qb-thead qb-prodhead"><span class="qb-c-grip"></span><span class="qb-c-desc">Production</span><span class="qb-c-qty">Qty</span><span class="qb-c-rate">Amount (ex GST)</span><span class="qb-c-days">Days</span><span class="qb-c-total">Total (ex GST)</span><span class="qb-c-x"></span></div>';
+
 function renderQuoteLines() {
   const host = document.getElementById('q-lines');
   if (!host) return;
@@ -6508,6 +6540,7 @@ function renderQuoteLines() {
   const days = Math.max(1, Math.round(quoteDraft.hire.days || 1));
 
   if (!quoteDraft.lines.length) {
+    setQuoteHead(false);
     host.innerHTML = '<p class="q-lines-empty">No items yet &mdash; search inventory above, or add a custom item.</p>';
     renderQuoteTotals();
     return;
@@ -6517,6 +6550,8 @@ function renderQuoteLines() {
   normalizePackages();
   syncCrewRates();
   syncPackageDiscounts();
+  const djJob = sortDjSections();
+  setQuoteHead(djJob);
   const kitCat = kitCategoryOf();
 
   /*  SHORT ON STOCK? For this quote's hire dates: what
@@ -6566,8 +6601,8 @@ function renderQuoteLines() {
         <div class="qb-row qb-row-disc" data-ql="${i}" data-top>
           <div class="qb-cell qb-c-grip"><span class="qb-grip" title="Drag to reorder">&#10303;</span></div>
           <div class="qb-cell qb-c-desc">
-            <span class="qb-disc-badge">Discount</span>
-            <input class="qb-name" data-lf="name" value="${attr(l.name)}" placeholder="Discount">
+            <span class="qb-disc-badge">${djJob ? 'Production discount' : 'Discount'}</span>
+            <input class="qb-name" data-lf="name" value="${attr(l.name)}" placeholder="${djJob ? 'Production package price adjustment' : 'Discount'}">
           </div>
           <div class="qb-cell qb-c-qty">&mdash;</div>
           <div class="qb-cell qb-c-rate">&mdash;</div>
@@ -6623,8 +6658,13 @@ function renderQuoteLines() {
   const inv = {};
   invItems().forEach((it) => { inv[it.id] = it; });
   let html = '';
+  const firstProd = djJob ? L.findIndex((l) => !isEntLine(l)) : -1;
+  const ps = prodSums();
+  const sumRow = (label, cents, k) => '<div class="qb-prodsum is-' + k + '"><span>' + label + '</span><b data-prodsum="' + k + '">' + esc(money(cents)) + '</b></div>';
   for (let i = 0; i < L.length; i++) {
     const id = pkgOf[i];
+    if (i === firstProd) html += PROD_HEAD;
+    if (djJob && isProdDisc(L[i]) && !isProdDisc(L[i - 1])) html += sumRow('Production subtotal', ps.sub, 'sub');
     if (id && pkgOf[i - 1] !== id) {
       // the package line: name, tag, the package total (gear less its discount), remove-all
       let total = 0;
@@ -6646,6 +6686,7 @@ function renderQuoteLines() {
     }
     html += rowsHtml[i];
     if (id && pkgOf[i + 1] !== id) html += '</div></div>';
+    if (djJob && isProdDisc(L[i]) && !isProdDisc(L[i + 1])) html += sumRow('Production total', ps.total, 'total');
   }
   host.innerHTML = html;
   renderQuoteTotals();
@@ -7337,6 +7378,7 @@ function wireQuoteBuilder() {
       // update just this line's total + the grand totals, without a full re-render
       const tot = line.querySelector('.q-line-total');
       if (tot) tot.textContent = money(quoteLineCents(l, Math.max(1, Math.round(quoteDraft.hire.days || 1))));
+      refreshProdSums();
       renderQuoteTotals();
     }
   });
@@ -7345,6 +7387,8 @@ function wireQuoteBuilder() {
   const days0 = () => Math.max(1, Math.round(quoteDraft.hire.days || 1));
   const addCustom = document.getElementById('q-add-custom');
   if (addCustom) addCustom.addEventListener('click', () => { quoteDraft.lines.push({ type: 'custom', name: '', qty: 1, unitCents: 0, days: days0() }); renderQuoteLines(); });
+  const addDisc = document.getElementById('q-add-disc');
+  if (addDisc) addDisc.addEventListener('click', () => { quoteDraft.lines.push({ type: 'discount', name: '', amountCents: 0 }); renderQuoteLines(); });
 
   // inventory typeahead (top 3 as you type)
   wireInvTypeahead();

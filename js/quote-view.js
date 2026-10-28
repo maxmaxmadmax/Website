@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=716';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=716';   // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=716';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=717';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=717';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=717';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -206,9 +206,12 @@ function render(q) {
   /*  SECTIONS. A unit is a top line plus the included parts under it; each
       unit goes into one section, in this order.                          */
   // the DJ (gig invoices) goes first, in its own section
-  const SECTION_ORDER = ['Entertainment'].concat(COST_GROUP_ORDER, ['Labour', 'Travel & transport', 'Booking & admin', 'Discount']);
+  const isEnt = (l) => !!(l.pubDj || l.djSlot || l.superLine || l.perf);
+  const djJob = L.some(isEnt);
+  // DJ jobs: the discount comes off production, so it sits straight after the gear
+  const SECTION_ORDER = ['Entertainment'].concat(COST_GROUP_ORDER, djJob ? ['Labour', 'Travel & transport', 'Discount', 'Booking & admin'] : ['Labour', 'Travel & transport', 'Booking & admin', 'Discount']);
   const sectionOf = (l) => {
-    if (l.pubDj) return 'Entertainment';
+    if (isEnt(l)) return 'Entertainment';
     if (l.type === 'labour' || l.resType === 'staff') return 'Labour';
     if (l.type === 'delivery' || l.resType === 'vehicle' || l.resType === 'trailer') return 'Travel & transport';
     if (l.type === 'fee') return 'Booking & admin';
@@ -233,9 +236,20 @@ function render(q) {
   const labHrs = L.filter((l) => l.type === 'labour')
     .reduce((t, l) => t + (parseFloat((/^([\d.]+) hrs?\b/.exec(l.description || '') || [])[1]) || 0), 0);
 
+  /*  DJ jobs: entertainment on top (Hours / Fee), then a "Production"
+      column heading over the gear (Qty / Rate).                        */
+  const firstProd = djJob ? Object.keys(secStart).map(Number).sort((a, b) => a - b).find((i) => secStart[i] !== 'Entertainment') : undefined;
+  const prodHead = '<tr class="qv-colhead"><th>Production</th><th class="qv-num">Qty</th><th class="qv-num">Rate (ex GST)</th><th class="qv-num">Days</th><th class="qv-num">Total (ex GST)</th></tr>';
+  // the production subtotal, the discount off it, then what production comes to
+  const prodSub = djJob ? L.filter((l) => !isEnt(l) && l.type !== 'discount' && l.type !== 'fee').reduce((n, l) => n + lineAmount(l, days), 0) : 0;
+  const prodOff = djJob ? L.filter((l) => l.type === 'discount').reduce((n, l) => n - lineAmount(l, days), 0) : 0;
+  const sumRow = (label, cents, cls) => '<tr class="qv-prodsum ' + cls + '"><td colspan="4">' + label + '</td><td class="qv-num">' + money(cents) + '</td></tr>';
+  const hoursOf = (l) => (djJob && isEnt(l) && !l.perf ? '' : esc(l.qty));
   const rows = L.map((l, i) => secHead(i) + rowFor(l, i)).join('');
   function secHead(i) {
-    return ITEMISE_BY_SECTION && secStart[i] ? '<tr class="qv-sechead"><td colspan="5">' + esc(secStart[i]) + '</td></tr>' : '';
+    const top = i === firstProd ? prodHead : '';
+    if (djJob && secStart[i] === 'Discount') return top + sumRow('Production subtotal', prodSub, 'is-sub');
+    return top + (ITEMISE_BY_SECTION && secStart[i] ? '<tr class="qv-sechead"><td colspan="5">' + esc(secStart[i]) + '</td></tr>' : '');
   }
   function rowFor(l, i) {
     const amt = lineAmount(l, days);
@@ -282,20 +296,22 @@ function render(q) {
           plain-English reason, so it reads as what it is - not a markup. */
       return '<tr class="qv-super"><td class="qv-desc">' + esc(l.name || '') + ' <span class="qv-law">Required by law</span>'
         + (l.description ? '<span class="qv-sub">' + esc(l.description) + '</span>' : '')
-        + '</td><td class="qv-num">' + esc(l.qty) + '</td><td class="qv-num">' + money(l.unitCents)
+        + '</td><td class="qv-num">' + hoursOf(l) + '</td><td class="qv-num">' + money(l.unitCents)
         + '</td><td class="qv-num">1</td><td class="qv-num">' + money(amt) + '</td></tr>';
     }
     const isDisc = l.type === 'discount';
     const lineDays = Math.max(1, Math.round(l.days || days));
     const free = l.type === 'kit' && (l.charge === 'free' || !l.unitCents);
-    return `
+    const after = djJob && isDisc && !(L[i + 1] && L[i + 1].type === 'discount') ? sumRow('Production total', Math.max(0, prodSub - prodOff), 'is-total') : '';
+    return after ? rowHtml() + after : rowHtml();
+    function rowHtml() { return `
       <tr${isDisc ? ' class="qv-row-disc"' : ''}>
-        <td class="qv-desc">${esc(l.type === 'fee' ? 'Booking & admin' : (l.name || ''))}${l.description ? `<span class="qv-sub">${esc(l.description)}</span>` : ''}</td>
-        <td class="qv-num">${isDisc ? '' : esc(l.qty)}</td>
+        <td class="qv-desc">${esc(l.type === 'fee' ? 'Booking & admin' : (l.name || (isDisc ? (djJob ? 'Production package price adjustment' : 'Discount') : '')))}${l.description ? `<span class="qv-sub">${esc(l.description)}</span>` : ''}</td>
+        <td class="qv-num">${isDisc ? '' : hoursOf(l)}</td>
         <td class="qv-num">${isDisc ? '' : (free ? '<span class="qv-incl">Included</span>' : money(l.unitCents))}</td>
         <td class="qv-num">${isDisc || free ? '' : esc(lineDays)}</td>
-        <td class="qv-num">${free ? '' : money(amt)}</td>
-      </tr>`;
+        <td class="qv-num">${free ? '' : isDisc ? '&minus;' + money(-amt) : money(amt)}</td>
+      </tr>`; }
   }
 
   const accepted = q.status === 'accepted' || q.status === 'invoiced' || q.status === 'paid';
@@ -348,7 +364,9 @@ function render(q) {
       </div>
 
       <table class="qv-table">
-        <thead><tr><th>Description</th><th class="qv-num">Qty</th><th class="qv-num">Day rate</th><th class="qv-num">Days</th><th class="qv-num">Amount</th></tr></thead>
+        <thead>${djJob
+          ? '<tr><th>Item / Description</th><th class="qv-num">Hours</th><th class="qv-num">Fee (ex GST)</th><th class="qv-num">Days</th><th class="qv-num">Total (ex GST)</th></tr>'
+          : '<tr><th>Description</th><th class="qv-num">Qty</th><th class="qv-num">Day rate</th><th class="qv-num">Days</th><th class="qv-num">Amount</th></tr>'}</thead>
         <tbody>${rows || '<tr><td colspan="5" class="qv-sub">No items.</td></tr>'}</tbody>
       </table>
 

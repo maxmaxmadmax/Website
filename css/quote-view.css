@@ -752,3 +752,10 @@
 .qp-djf-bio p{ margin:0 0 8px; font-size:15px; line-height:1.55; color:#e8e8e8; }
 .qp-djf-bio p:last-child{ color:#ffb27a; font-weight:700; font-size:14px; }
 @media print{ .qp-djf-bio p{ color:#222; } .qp-djf-bio p:last-child{ color:#b45309; } }
+
+/* DJ jobs: the "Production" column heading part-way down the table */
+.qv-colhead th { background: #f2f2f3; color: #555; padding: 11px 14px; font-size: 12px; font-weight: 700; text-align: left; border-top: 1px solid #ececec; }
+.qv-colhead th:first-child { padding-left: 16px; }
+.qv-colhead th.qv-num { text-align: right; }
+.qv-prodsum td { background: #f7f7f8; text-align: right; font-size: 13px; color: #555; padding: 9px 14px; }
+.qv-prodsum.is-total td { font-weight: 700; color: #111; }

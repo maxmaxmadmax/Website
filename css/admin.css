@@ -4000,6 +4000,12 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-row-sub .qb-c-rate{ padding-right:8px; }       /* "Included" ends where the rate figures end */
 .qb-row-sub .qb-c-total{ padding-right:0; }
 .qb-thead .qb-c-rate{ padding-right:8px; }
+/* DJ jobs: the "Production" heading under the entertainment lines */
+.qb-prodhead{ border-radius:0; border-top:1px solid var(--ad-line); }
+.qb-prodsum{ display:flex; justify-content:flex-end; gap:24px; padding:8px 46px 8px 12px;
+             border-top:1px solid var(--ad-line); background:var(--ad-desk); font-size:.85rem; color:var(--ad-muted); }
+.qb-prodsum b{ min-width:90px; text-align:right; color:var(--ad-text); }
+.qb-prodsum.is-total{ font-weight:700; color:var(--ad-text); }
 
 /* included gear sits INSIDE its item: no line above, category sub-headings
    (Cable, Stands...) indented under the item name */
