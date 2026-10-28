@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=725';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=725';   // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=725';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=726';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=726';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=726';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -109,6 +109,7 @@ function costBreakdown(lines, centsOf, categoryOf) {
   (lines || []).forEach((l) => {
     if (l.type === 'labour' || l.type === 'delivery' || l.type === 'discount' || l.type === 'fee') return;
     if (l.resType) return;   // crew & vehicles: their own subtotal
+    if (l.pubDj || l.djSlot || l.superLine || l.perf) return;   // DJ jobs: the entertainment fee, on its own
     const c = centsOf(l);
     if (!c) return;
     const g = l.itemId ? costGroupOf(categoryOf(l)) : 'Other';
@@ -161,6 +162,8 @@ function sumBreakdown(q, days) {
   const del = lines.filter((l) => l.type === 'delivery');
   const delCents = del.reduce((t, l) => t + lineAmount(l, days), 0);
   let h = '';
+  const entCents = lines.filter((l) => l.pubDj || l.djSlot || l.superLine || l.perf).reduce((t, l) => t + lineAmount(l, days), 0);
+  if (entCents) h += '<div class="qv-sumrow qv-sumpart"><span>Entertainment fee</span><span>' + money(entCents) + '</span></div>';
   if (groups.length) {
     h += '<div class="qv-sumhead">Equipment hire</div>';
     h += groups.map((g) => '<div class="qv-sumrow qv-sumsub"><span>' + esc(g.name) + '</span><span>' + money(g.cents) + '</span></div>').join('');
@@ -243,6 +246,8 @@ function render(q) {
   // the production subtotal, the discount off it, then what production comes to
   const prodSub = djJob ? L.filter((l) => !isEnt(l) && l.type !== 'discount' && l.type !== 'fee').reduce((n, l) => n + lineAmount(l, days), 0) : 0;
   const prodOff = djJob ? L.filter((l) => l.type === 'discount').reduce((n, l) => n - lineAmount(l, days), 0) : 0;
+  // the production saving as a %, so it reads as a good deal
+  const prodPct = djJob && prodSub && prodOff ? Math.round(prodOff / prodSub * 100) : 0;
   const sumRow = (label, cents, cls) => '<tr class="qv-prodsum ' + cls + '"><td colspan="4">' + label + '</td><td class="qv-num">' + money(cents) + '</td></tr>';
   const hoursOf = (l) => (djJob && isEnt(l) && !l.perf ? '' : esc(l.qty));
   const rows = L.map((l, i) => secHead(i) + rowFor(l, i)).join('');
@@ -311,7 +316,7 @@ function render(q) {
     return after ? rowHtml() + after : rowHtml();
     function rowHtml() { return `
       <tr${isDisc ? ' class="qv-row-disc"' : ''}>
-        <td class="qv-desc">${esc(l.type === 'fee' ? 'Booking & admin' : (l.name || (isDisc ? (djJob ? 'Production package price adjustment' : 'Discount') : '')))}${l.description ? `<span class="qv-sub">${esc(l.description)}</span>` : ''}</td>
+        <td class="qv-desc">${esc(l.type === 'fee' ? 'Booking & admin' : (l.name || (isDisc ? (djJob ? 'Production package price adjustment' : 'Discount') : '')))}${l.description ? `<span class="qv-sub">${esc(l.description)}</span>` : ''}${isDisc && prodPct ? `<span class="qv-sub qv-save">You save ${prodPct}% on production</span>` : ''}</td>
         <td class="qv-num">${isDisc ? '' : hoursOf(l)}</td>
         <td class="qv-num">${isDisc ? '' : (free ? '<span class="qv-incl">Included</span>' : money(l.unitCents))}</td>
         <td class="qv-num">${isDisc || free ? '' : esc(lineDays)}</td>
@@ -379,7 +384,7 @@ function render(q) {
       <div class="qv-breakdown">${sumBreakdown(q, days)}</div>
       <div class="qv-summary">
         <!-- adds straight down: discount first, then the subtotal after it (Max, 17 Oct 2026) -->
-        ${q.discountCents ? `<div class="qv-sumrow qv-sumpart"><span>Discount</span><span>&minus;${money(q.discountCents)}</span></div>` : ''}
+        ${q.discountCents ? `<div class="qv-sumrow qv-sumpart"><span>${prodPct ? 'Production discount (' + prodPct + '% off)' : 'Discount'}</span><span>&minus;${money(q.discountCents)}</span></div>` : ''}
         <div class="qv-sumrow qv-sumtotal"><span>Subtotal (ex GST)</span><span>${money(Math.round(q.totalCents || 0) - Math.round(q.gstCents || 0))}</span></div>
         <div class="qv-sumrow"><span>GST (10%)</span><span>${money(q.gstCents)}</span></div>
         <div class="qv-sumrow qv-grand"><span>Total (incl GST)</span><span>${money(q.totalCents)}</span></div>

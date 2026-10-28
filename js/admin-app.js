@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=725';
+} from './firebase-config.js?v=726';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=725';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=725';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=725';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=725';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=725';
-import { expandKit } from './kit.js?v=725';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=726';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=726';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=726';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=726';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=726';
+import { expandKit } from './kit.js?v=726';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6831,6 +6831,7 @@ function costBreakdown(lines, centsOf, categoryOf) {
   (lines || []).forEach((l) => {
     if (l.type === 'labour' || l.type === 'delivery' || l.type === 'discount' || l.type === 'fee') return;
     if (l.resType) return;   // crew & vehicles have their own subtotal
+    if (isEntLine(l)) return;   // DJ jobs: the entertainment fee, on its own
     const c = centsOf(l);
     if (!c) return;
     const g = l.itemId ? costGroupOf(categoryOf(l)) : 'Other';
@@ -6896,9 +6897,10 @@ function renderQuoteTotals() {
       const cats = {}; (typeof invItems === 'function' ? invItems() : []).forEach((it) => { cats[it.id] = it.category; });
       const days = Math.max(1, Math.round(quoteDraft.hire.days || 1));
       const groups = costBreakdown(quoteDraft.lines, (l) => quoteLineCents(l, days), (l) => cats[l.itemId]);
-      return groups.length ? '<div class="qb-sumhead">Equipment hire</div>' + groups.map((g) => '<div class="qb-sumrow qb-sumsub"><span>' + esc(g.name) + '</span><span>' + esc(money(g.cents)) + '</span></div>').join('') : '';
+      const ent = (quoteDraft.lines || []).filter(isEntLine).reduce((n, l) => n + quoteLineCents(l, days), 0);
+      return (ent ? '<div class="qb-sumrow"><span>Entertainment fee</span><span>' + esc(money(ent)) + '</span></div>' : '') + (groups.length ? '<div class="qb-sumhead">Equipment hire</div>' + groups.map((g) => '<div class="qb-sumrow qb-sumsub"><span>' + esc(g.name) + '</span><span>' + esc(money(g.cents)) + '</span></div>').join('') : '');
     })()}
-    <div class="qb-sumrow"><span>Hire subtotal (ex GST)</span><span id="qsum-sub">${esc(money(m.subtotalCents - crewSum('staff') - crewSum('vehicle') - crewSum('trailer')))}</span></div>
+    <div class="qb-sumrow"><span>Hire subtotal (ex GST)</span><span id="qsum-sub">${esc(money(m.subtotalCents - (quoteDraft.lines || []).filter(isEntLine).reduce((n, l) => n + quoteLineCents(l, crewDays), 0) - crewSum('staff') - crewSum('vehicle') - crewSum('trailer')))}</span></div>
     ${labourRow}
     ${crewSum('staff') ? '<div class="qb-sumrow"><span>Crew &amp; operators</span><span>' + esc(money(crewSum('staff'))) + '</span></div>' : ''}
     ${crewSum('vehicle') + crewSum('trailer') ? '<div class="qb-sumrow"><span>Vehicles</span><span>' + esc(money(crewSum('vehicle') + crewSum('trailer'))) + '</span></div>' : ''}
