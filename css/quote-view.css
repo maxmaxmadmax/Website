@@ -739,7 +739,9 @@
 /* print keeps the dark hero background, so the text stays light */
 @media print{
   /* DJ page 1 must fit one A4: shorter stage photo, tighter bio */
-  .qp-hero-photo.is-dj{ flex-basis:100mm; min-height:0; }
+  /* the photo gives way to a longer bio, never the other way round */
+  .qp-hero-photo.is-dj{ flex:0 1 100mm; min-height:40mm; }
+  .qp-hero-photo.is-dj ~ .qp-hero-body{ flex:1 0 auto; }
   .qp-hero-photo.is-dj ~ .qp-hero-body{ padding-top:7mm !important; padding-bottom:9mm !important; }
   .qp-hero-photo.is-dj ~ .qp-hero-body .qp-tiles{ padding-top:6mm; gap:10px; }
   .qp-hero-photo.is-dj ~ .qp-hero-body .qp-tile b{ white-space:nowrap; font-size:12px; }

@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=732';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=732';   // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=732';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=733';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=733';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=733';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -143,6 +143,18 @@ function crewDesc(l) {
     return what + (d ? ' · ' + d : '');
   }
   return d;
+}
+
+/*  A DJ bio, paragraph by paragraph. Pasted markdown is tidied: **bold**,
+    *italic*, # headings lose their #, and one that just repeats the name goes. */
+function bioHtml(bio, name) {
+  const me = String(name || '').trim().toLowerCase();
+  const text = String(bio).replace(/\r/g, '').split('\n')
+    .filter((x) => !(/^\s*#/.test(x) && x.replace(/^\s*#+\s*/, '').trim().toLowerCase() === me))
+    .map((x) => x.replace(/^\s*#+\s*/, '')).join('\n');
+  const inline = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\*(.+?)\*/g, '<i>$1</i>');
+  return text.split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean)
+    .map((x) => '<p>' + inline(x).replace(/\n/g, '<br>') + '</p>').join('');
 }
 
 function labourRow(l, amt) {
@@ -517,7 +529,7 @@ function proposalTop(q, days) {
     + '<div class="qp-djf-text"><p class="qp-mini">Your DJ</p><h3>' + esc(dj.name) + '</h3>'
     + '<p class="qp-djf-set">' + esc(ampm(dj.start)) + ' &ndash; ' + esc(ampm(dj.finish)) + (dj.hours ? ' &middot; ' + esc(dj.hours) + ' hours' : '') + '</p>'
     // their bio, paragraph by paragraph
-    + (dj.bio ? '<div class="qp-djf-bio">' + String(dj.bio).split(/\n\s*\n/).map((x) => '<p>' + esc(x.trim()).replace(/\n/g, '<br>') + '</p>').join('') + '</div>' : '')
+    + (dj.bio ? '<div class="qp-djf-bio">' + bioHtml(dj.bio, dj.name) + '</div>' : '')
     + ((dj.styles || []).length ? '<p class="qp-styles">' + dj.styles.map((x) => '<span>' + esc(x) + '</span>').join('') + '</p>' : '')
     + '<p class="qp-requests">&#127925; Our DJs take song requests from your patrons and work with your staff on any requests through the night.</p>'
     + '</div></div>' : '';
