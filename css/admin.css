@@ -4875,3 +4875,4 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 
 /* smart gig lines - admin only */
 .qb-c-desc.is-smart{ border:1.5px solid var(--ad-orange); border-radius:8px; padding:6px 10px; }
+.qb-smart-note{ margin-left:10px; color:#b0b4bb; font-style:italic; white-space:nowrap; }

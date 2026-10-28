@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=723';
+} from './firebase-config.js?v=724';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=723';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=723';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=723';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=723';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=723';
-import { expandKit } from './kit.js?v=723';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=724';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=724';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=724';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=724';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=724';
+import { expandKit } from './kit.js?v=724';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6756,7 +6756,7 @@ function renderQuoteLines() {
         <div class="qb-cell qb-c-desc${isSmartLine(l) ? ' is-smart' : ''}"${isSmartLine(l) ? ' title="Smart line - filled in per gig"' : ''}>
           <input class="qb-name" data-lf="name" value="${attr(l.name)}" placeholder="Item name">
           ${isSystemId(l.itemId) ? (() => { const b = (invItems().find((x) => x.id === l.itemId) || {}).bundleType; return '<span class="qb-sys-tag qb-sys-line' + (b === 'package' ? ' is-pkg' : '') + '">' + (b === 'package' ? 'Package' : 'Kit') + '</span>'; })() : ''}
-          ${l.description ? `<span class="qb-sub">${esc(l.description)}</span>` : ''}${stockWarn(l)}
+          ${l.description || isSmartLine(l) ? `<span class="qb-sub">${esc(l.description || '')}${isSmartLine(l) ? '<span class="qb-smart-note">Smart Calculator</span>' : ''}</span>` : ''}${stockWarn(l)}
         </div>
         <div class="qb-cell qb-c-qty"><input class="qb-num" type="number" min="0" step="${l.perf ? '0.25' : '1'}" data-lf="qty" value="${attr(l.qty)}"${l.perf ? ' title="Hours"' : ''}></div>
         <div class="qb-cell qb-c-rate"><span class="qb-inline-dollar">$</span><input class="qb-num" type="number" min="0" step="1" data-lf="unitCents" value="${attr(rate)}"></div>
