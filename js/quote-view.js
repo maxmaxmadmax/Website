@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=717';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=717';   // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=717';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=718';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=718';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=718';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -290,6 +290,11 @@ function render(q) {
         + '<span class="qv-sub">' + esc(crewDesc(l)) + '</span></td><td class="qv-num">' + esc(l.qty)
         + '</td><td class="qv-num">' + money(l.unitCents) + '</td><td class="qv-num">' + esc(lineDays)
         + '</td><td class="qv-num">' + money(amt) + '</td></tr>';
+    }
+    if (l.accom) {
+      return '<tr class="qv-lab"><td class="qv-desc">' + esc(l.name || 'Accommodation')
+        + (l.description ? '<span class="qv-sub">' + esc(l.description) + '</span>' : '')
+        + '</td><td class="qv-num"></td><td class="qv-num"></td><td class="qv-num"></td><td class="qv-num"><span class="qv-incl">Provided</span></td></tr>';
     }
     if (l.superLine) {
       /*  PERFORMER SUPER: a "Required by law" tag and the

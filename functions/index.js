@@ -2367,6 +2367,7 @@ function sanitizeQuote(q) {
     if (['dj', 'travel', 'fee'].includes(l.djSlot)) line.djSlot = l.djSlot;
     if (l.perf === true) line.perf = true;             // the DJ's performance fee (super is worked out on it)
     if (l.superLine === true) line.superLine = true;   // the performer super line itself
+    if (l.accom === true) line.accom = true;             // "accommodation provided by the venue" note
     // CREW & VEHICLES (from Crew & Vehicles): their own subtotal, never gear
     if (['staff', 'vehicle', 'trailer'].includes(l.resType)) {
       line.resType = l.resType;
@@ -2383,6 +2384,7 @@ function sanitizeQuote(q) {
     labourExcluded: q.labourExcluded === true,
     feeExcluded: q.feeExcluded === true,
     superExcluded: q.superExcluded === true,   // performer super off
+    accomOff: q.accomOff === true,             // accommodation note removed (DJ driving home)
     autoSendOnDetails: q.autoSendOnDetails === true,   // send the quote when the customer fills in their details
     isTemplate: q.isTemplate === true,   // Sales Pipeline > Templates: a DJ gig invoice to copy - never sent
     templateName: text(q.templateName, 80),   // its own name, e.g. "Grand View Friday"
@@ -5144,6 +5146,14 @@ async function gigSync(bookingId, opts = {}) {
   const tr = await djTravel(rate.location, b.venue);
   const travelLine = tr.cents ? { type: 'custom', name: 'Travel Charge - ' + tr.from + ' to ' + tr.to + ' Return', description: '', qty: 1, unitCents: tr.cents, days: 1, pubDj: true, noPick: true } : null;
   if (tr.missing) notes.push(name + ' (no travel fee set for ' + tr.missing + ')');
+  /*  OUT-OF-TOWN DJ: a note that the venue provides accommodation. Max can
+      delete it on the quote (DJ driving home) and it stays off.           */
+  const venueName = String(b.venue || '').split(',')[0].trim();
+  const accomLine = travelLine && !(ex && ex.accomOff) ? {
+    type: 'custom', name: 'Accommodation',
+    description: 'Accommodation is required for this booking - provided by ' + (venueName ? (/^the\s/i.test(venueName) ? '' : 'the ') + venueName : 'the venue'),
+    qty: 1, unitCents: 0, days: 1, pubDj: true, noPick: true, accom: true,
+  } : null;
   // THE BOOKING FEE, ex GST - a setting on Entertainment:
   // a fixed $ or a % of the DJ's performance only.
   const fee = await djFeeSetting();
@@ -5168,6 +5178,7 @@ async function gigSync(bookingId, opts = {}) {
     lines.push(l);
   });
   if (!hasSlot('dj')) lines = [djLine].concat(!hasSlot('travel') && travelLine ? [travelLine] : [], lines);
+  if (accomLine) { const at = lines.indexOf(travelLine); lines.splice(at >= 0 ? at + 1 : lines.indexOf(djLine) + 1, 0, accomLine); }
   if ((tpl.lines || []).some((l) => l.type === 'fee') && tpl.feeExcluded !== true) {
     const pre = quoteMoney({ hire: { days: 1 }, lines, discountCents: tpl.discountCents || 0 });
     const fee = Math.round(pre.netCents * 2 / 100 / 1000) * 1000;
@@ -5181,7 +5192,7 @@ async function gigSync(bookingId, opts = {}) {
   }
   const tc = tpl.customer || {};
   const clean = sanitizeQuote({
-    ...tpl, isTemplate: false, templateName: '', kind: 'quote', labourPackDate: '', lines,
+    ...tpl, isTemplate: false, templateName: '', kind: 'quote', labourPackDate: '', lines, accomOff: !!(ex && ex.accomOff),
     customer: {
       name: cust.name || '', business: cust.business || '', email: cust.email || '', ccEmail: cust.ccEmail || '',
       phone: cust.phone || '', address: cust.address || '',

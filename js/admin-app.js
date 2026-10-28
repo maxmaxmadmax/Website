@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=717';
+} from './firebase-config.js?v=718';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=717';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=717';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=717';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=717';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=717';
-import { expandKit } from './kit.js?v=717';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=718';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=718';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=718';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=718';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=718';
+import { expandKit } from './kit.js?v=718';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6162,6 +6162,7 @@ function quoteFromDoc(doc) {
     }),
     feeExcluded: doc.feeExcluded === true,
     superExcluded: doc.superExcluded === true,
+    accomOff: doc.accomOff === true,
     autoSendOnDetails: doc.autoSendOnDetails === true,
     isTemplate: doc.isTemplate === true,
     templateName: doc.templateName || '',
@@ -7409,6 +7410,7 @@ function wireQuoteBuilder() {
     const L = quoteDraft.lines;
     const line = L[i];
     if (!line) return;
+    if (line.accom) quoteDraft.accomOff = true;   // stays off when the gig quote is rebuilt
     if (line.type === 'kit') {
       // one part: remember it on the line it belongs to, so it stays removed
       let p = i - 1;
@@ -7630,6 +7632,7 @@ function quoteDraftForSave() {
     ...quoteDraft, lines,
     feeExcluded: quoteDraft.feeExcluded === true,
     superExcluded: quoteDraft.superExcluded === true,
+    accomOff: quoteDraft.accomOff === true,
     autoSendOnDetails: quoteDraft.autoSendOnDetails === true,
     isTemplate: quoteDraft.isTemplate === true,
     templateName: String(quoteDraft.templateName || '').slice(0, 80),
