@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=734';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=734';   // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=734';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=735';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=735';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=735';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -573,7 +573,11 @@ function proposalTop(q, days) {
       ? '<div><dt>To secure</dt><dd>Payment in full &middot; ' + money(q.totalCents || 0) + '</dd></div>'
       : '<div><dt>To secure</dt><dd>' + pct + '% deposit &middot; ' + money(Math.round((q.totalCents || 0) * pct / 100)) + '</dd></div>')
     + '</dl></div></div>';
-  const disc = q.discountCents ? '<tr class="qp-disc"><td>Discount</td><td>&minus;' + money(q.discountCents) + '</td><td></td><td>&minus;' + money(Math.round(q.discountCents * 1.1)) + '</td></tr>' : '';
+  // the saving as a %: of production on DJ jobs, of the whole quote otherwise
+  const discBase = rows.filter((x) => x[0] !== 'Booking & admin' && !(isDj && x[0] === 'Entertainment fee')).reduce((t, x) => t + x[1], 0);
+  const discPct = q.discountCents && discBase ? Math.round(q.discountCents / discBase * 100) : 0;
+  const discLabel = (isDj ? 'Production discount' : 'Discount') + (discPct ? '<span class="qp-save">You save ' + discPct + '%' + (isDj ? ' on production' : '') + '</span>' : '');
+  const disc = q.discountCents ? '<tr class="qp-disc"><td>' + discLabel + '</td><td>&minus;' + money(q.discountCents) + '</td><td></td><td>&minus;' + money(Math.round(q.discountCents * 1.1)) + '</td></tr>' : '';
 
   return `
     <section class="qp-hero">
