@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=745';
+} from './firebase-config.js?v=746';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=745';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=745';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=745';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=745';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=745';
-import { expandKit } from './kit.js?v=745';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=746';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=746';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=746';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=746';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=746';
+import { expandKit } from './kit.js?v=746';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6322,7 +6322,7 @@ function copyFromSelectHtml() {
 
 async function uploadQuotePoster(file) {
   const msg = document.getElementById('q-poster-msg');
-  if (msg) msg.textContent = 'Uploading poster…';
+  if (msg) msg.textContent = 'Uploading photo…';
   try {
     const { ref, uploadBytes, getDownloadURL } = fb.st;
     const small = await shrinkPhoto(file, 1600);
@@ -6332,6 +6332,15 @@ async function uploadQuotePoster(file) {
     scheduleQuoteAutosave();
     render();
   } catch (e) { if (msg) msg.textContent = 'Upload failed - ' + (e.message || 'try again'); }
+}
+
+/*  Event type "Custom photo": your own image (e.g. the gig poster) behind the top of the customer's quote. */
+function posterBoxHtml() {
+  return `<div class="qb-poster">
+    ${quoteDraft.posterUrl ? `<img src="${attr(quoteDraft.posterUrl)}" alt="Custom photo">` : ''}
+    <label class="ad-btn ad-btn-small">${quoteDraft.posterUrl ? '&#8635; Change photo' : '&#128444; Upload photo'}<input type="file" accept="image/*" id="q-poster" hidden></label>
+    <span class="qb-poster-msg" id="q-poster-msg">${quoteDraft.posterUrl ? '' : 'or copy an image and press Ctrl+V'}</span>
+  </div>`;
 }
 
 function quoteFromDoc(doc) {
@@ -6472,12 +6481,6 @@ function quoteBuilderHtml() {
               info@soundzgood.com.au<br>
               www.soundzgood.com.au
             </div>
-            ${quoteDraft.isTemplate ? '' : `<div class="qb-poster">
-              ${quoteDraft.posterUrl ? `<img src="${attr(quoteDraft.posterUrl)}" alt="Event poster">` : ''}
-              <label class="ad-btn ad-btn-small">${quoteDraft.posterUrl ? '&#8635; Change poster' : '&#128444; Add event poster'}<input type="file" accept="image/*" id="q-poster" hidden></label>
-              ${quoteDraft.posterUrl ? '<button type="button" class="ad-btn ad-btn-small" id="q-poster-rm">Remove</button>' : ''}
-              <span class="qb-poster-msg" id="q-poster-msg">${quoteDraft.posterUrl ? '' : 'or copy an image and press Ctrl+V'}</span>
-            </div>`}
           </div>
           <div class="qb-meta">
             <p class="qb-tagline">Good People<br>Great Events</p>
@@ -6486,7 +6489,8 @@ function quoteBuilderHtml() {
               ${metaRow('Status', quoteDraft.isTemplate ? '<span class="ad-pill ad-pill-blue">Template</span>' : doc ? qdocPill(status) : '<span class="ad-pill ad-pill-grey">Draft</span>')}
               ${metaRow('Created', esc(created))}
               ${metaRow('Event / Job', `<input class="qb-min" data-qc="eventName" value="${attr(c.eventName)}" placeholder="Event name">`)}
-              ${metaRow('Event type', `<select class="qb-min" data-qc="eventType">${Object.keys(EVENT_TYPES).map((k) => `<option value="${k}"${(c.eventType || guessEventType(c.eventName)) === k ? ' selected' : ''}>${EVENT_TYPES[k]}</option>`).join('')}</select>`)}
+              ${metaRow('Event type', `<select class="qb-min" data-qc="eventType">${Object.keys(EVENT_TYPES).map((k) => `<option value="${k}"${(c.eventType || guessEventType(c.eventName)) === k ? ' selected' : ''}>${EVENT_TYPES[k]}</option>`).join('')}<option value="custom"${c.eventType === 'custom' ? ' selected' : ''}>Custom photo&hellip;</option></select>`)}
+              ${c.eventType === 'custom' ? metaRow('Photo', posterBoxHtml()) : ''}
               ${metaRow('Venue', `<input class="qb-min" data-qc="eventVenue" value="${attr(c.eventVenue || '')}" placeholder="Venue / address">`)}
               ${metaRow('Event date', `<input type="date" class="qb-min" data-qevdate value="${attr(isoFromPretty(c.eventDate) || (quoteDraft.hire && quoteDraft.hire.startDate) || '')}">`)}
               ${metaRow('Event starts', `<input type="time" class="qb-min" data-qc="eventStartTime" value="${attr(c.eventStartTime || '')}">`)}
@@ -7493,7 +7497,7 @@ function wireQuoteBuilder() {
   // customer / hire / meta fields
   wrap.addEventListener('input', (e) => {
     const t = e.target;
-    if (t.dataset.qc) { quoteDraft.customer[t.dataset.qc] = t.value; return; }
+    if (t.dataset.qc) { quoteDraft.customer[t.dataset.qc] = t.value; if (t.dataset.qc === 'eventType') render(); return; }
     // event date calendar: saved as "Tue 20 Oct 2026"
     if (t.hasAttribute('data-qauto')) { quoteDraft.autoSendOnDetails = t.checked; scheduleQuoteAutosave(); return; }
     if (t.hasAttribute('data-qtpl')) { quoteDraft.isTemplate = t.checked; scheduleQuoteAutosave(); render(); return; }
@@ -7595,7 +7599,7 @@ function wireQuoteBuilder() {
   const days0 = () => Math.max(1, Math.round(quoteDraft.hire.days || 1));
   const addCustom = document.getElementById('q-add-custom');
   if (addCustom) addCustom.addEventListener('click', () => { quoteDraft.lines.push({ type: 'custom', name: '', qty: 1, unitCents: 0, days: days0() }); renderQuoteLines(); });
-  // event poster: shown on the customer's quote under the big photo (pick a file or Ctrl+V)
+  // Event type "Custom photo": pick a file or Ctrl+V
   const poster = document.getElementById('q-poster');
   if (poster) poster.addEventListener('change', () => { if (poster.files && poster.files[0]) uploadQuotePoster(poster.files[0]); });
   if (!window.__posterPasteWired) {
@@ -7607,8 +7611,6 @@ function wireQuoteBuilder() {
       if (file) { e.preventDefault(); uploadQuotePoster(file); }
     });
   }
-  const posterRm = document.getElementById('q-poster-rm');
-  if (posterRm) posterRm.addEventListener('click', () => { quoteDraft.posterUrl = ''; scheduleQuoteAutosave(); render(); });
 
   // copy another quote's or template's lines onto the end of this one
   const copyFrom = document.getElementById('q-copyfrom');

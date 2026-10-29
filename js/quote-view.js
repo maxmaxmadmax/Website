@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=745';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=745';   // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=745';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=746';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=746';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=746';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -514,7 +514,7 @@ function proposalTop(q, days) {
   const c = q.customer || {};
   const type = HERO_PHOTO[c.eventType] ? c.eventType : guessType(c.eventName);
   // the event's own poster, if one was added, takes the place of the stock photo
-  const poster = String(q.posterUrl || '').startsWith('https://firebasestorage.googleapis.com/') ? q.posterUrl : '';
+  const poster = c.eventType === 'custom' && String(q.posterUrl || '').startsWith('https://firebasestorage.googleapis.com/') ? q.posterUrl : '';
   const lines = q.lines || [];
   const groups = costBreakdown(lines, (l) => lineAmount(l, days), (l) => l.category);
   const lab = lines.filter((l) => l.type === 'labour');
