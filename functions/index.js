@@ -2649,6 +2649,39 @@ exports.adminConfirmJob = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (req
   return { ok: true };
 });
 
+/* AUTO-ACCEPT FOR ACCOUNT VENUES (Grand View): a venue with
+   autoAcceptDays set has its gig quotes accepted that many days before the
+   gig - same as Confirm job (unpaid invoice, pick list unlocks), no deposit.
+   Nothing is emailed to the venue. 6:30am daily, before the 9:35 lists.  */
+exports.autoAcceptGigQuotes = onSchedule(
+  { schedule: '30 6 * * *', timeZone: 'Australia/Brisbane', timeoutSeconds: 300 },
+  async () => {
+    const today = brisbaneTodayISO();
+    const core = (x) => String(x || '').toLowerCase().split(',')[0].replace(/(hotel|bar|the|pub|tavern)/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+    const venues = (await db.collection('venues').get()).docs.map((d) => d.data()).filter((v) => (v.autoAcceptDays || 0) > 0 && core(v.name));
+    if (!venues.length) return;
+    const maxDays = Math.max(...venues.map((v) => v.autoAcceptDays));
+    const gigs = await db.collection('talentSchedule').where('date', '>=', today).where('date', '<=', addDaysISO(today, maxDays)).get();
+    for (const g of gigs.docs) {
+      const b = g.data();
+      if ((b.status || 'confirmed') !== 'confirmed') continue;
+      const v = venues.find((x) => core(b.venue).includes(core(x.name)) || core(x.name).includes(core(b.venue)));
+      if (!v || b.date > addDaysISO(today, v.autoAcceptDays)) continue;
+      const qs = await db.collection('quotes').where('gigBookingId', '==', g.id).get();
+      for (const qd of qs.docs) {
+        const q = qd.data();
+        if (q.isTemplate || !['approved', 'sent'].includes(q.status)) continue;
+        try {
+          const update = { status: 'invoiced', kind: 'invoice', acceptedAt: FieldValue.serverTimestamp(), autoAcceptedAt: FieldValue.serverTimestamp(), jobConfirmedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
+          if (!q.invoiceNumber) { update.invoiceNumber = invoiceNo((await nextInvoiceNumber()).n); update.invoicedAt = FieldValue.serverTimestamp(); }
+          if (!q.crewToken) update.crewToken = crypto.randomBytes(16).toString('hex');
+          await qd.ref.update(update);
+          logger.info('auto-accepted gig quote', { id: qd.id, gig: g.id });
+        } catch (err) { logger.error('auto-accept gig quote', { id: qd.id, err: err && err.message }); }
+      }
+    }
+  });
+
 /* ADMIN - UNDO A DEPOSIT / PAYMENT that was marked by hand:
    the job goes back to a sent quote, as if nothing was paid. Refused if any
    CARD money came through Stripe - refund that in Stripe instead.          */

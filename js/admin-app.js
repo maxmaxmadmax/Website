@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=740';
+} from './firebase-config.js?v=741';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=740';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=740';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=740';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=740';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=740';
-import { expandKit } from './kit.js?v=740';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=741';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=741';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=741';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=741';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=741';
+import { expandKit } from './kit.js?v=741';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2469,19 +2469,21 @@ function entHead(tab) {
 /* the gig's invoice (made from a template), if it has one */
 const gigInvoice = (b) => (state.quoteDocs || []).find((q) => q.gigBookingId === b.id && q.status !== 'cancelled') || null;
 /*  THE GIG CHECKLIST: Enquiry > DJ confirmed > Quote
-    accepted > Deposit > Set times in > Invoice sent > Paid. Every step is
+    accepted > Deposit > Set times in > Invoice sent > Paid > Entertainer paid. Every step is
     read from the booking and its quote - nothing to tick by hand.      */
 function gigTrail(b) {
   const inv = gigInvoice(b);
+  const v = venueRecord(b.venue) || {};   // account venues (Grand View) pay no deposit
   const paid = !!inv && (inv.status === 'paid' || inv.paymentStatus === 'paid');
   return [
     ['Enquiry', true],
     ['DJ confirmed', !!b.djConfirmedAt],
     ['Quote accepted', !!inv && (!!inv.acceptedAt || ['accepted', 'invoiced', 'paid'].includes(inv.status) || ['bank', 'deposit', 'paid'].includes(inv.paymentStatus))],
-    ['Deposit', paid || (!!inv && (inv.paymentStatus === 'deposit' || (inv.amountPaidCents || 0) > 0))],
+    ...(v.noDeposit ? [] : [['Deposit', paid || (!!inv && (inv.paymentStatus === 'deposit' || (inv.amountPaidCents || 0) > 0))]]),
     ['Set times in', !!b.timesConfirmedAt],
     ['Invoice sent', !!inv && (inv.kind === 'invoice' || ['invoiced', 'paid'].includes(inv.status))],
     ['Paid', paid],
+    ['Entertainer paid', !!b.djPaidAt],
   ];
 }
 function gigDots(b) {
@@ -2985,7 +2987,9 @@ function bookingPanel(b) {
               const noInv = !inv && missing.length ? '<p class="ent-noinv">&#9888; No invoice yet - press <b>Edit</b> and set ' + missing.join(' + ') + ', then Save.</p>' : '';
               return `${noInv}${dk ? '<p class="ent-deck">&#127911; Their deck: <b>' + esc(dk) + '</b></p>' : ''}${b.djConfirmedAt
                 ? '<button type="button" class="ad-btn ent-djok is-on" data-dj-confirm="' + attr(b.id) + '" data-undo="1" title="Click to undo">&#10003; DJ confirmed</button>'
-                : '<button type="button" class="ad-btn ent-djok" data-dj-confirm="' + attr(b.id) + '">&#10003; Mark DJ confirmed</button>'}<button type="button" class="ad-btn" data-pub-times="${attr(b.id)}">&#128241; Text DJ their link</button>${inv ? '<button type="button" class="ad-btn" data-dj-brief="' + attr(b.id) + '">&#128203; Text DJ the brief &amp; gear</button>' : ''}
+                : '<button type="button" class="ad-btn ent-djok" data-dj-confirm="' + attr(b.id) + '">&#10003; Mark DJ confirmed</button>'}<button type="button" class="ad-btn" data-pub-times="${attr(b.id)}">&#128241; Text DJ their link</button>' + (b.djPaidAt
+                ? '<button type="button" class="ad-btn ent-djok is-on" data-dj-paid="' + attr(b.id) + '" data-undo="1" title="Click to undo">&#10003; Entertainer paid</button>'
+                : '<button type="button" class="ad-btn ent-djok" data-dj-paid="' + attr(b.id) + '">&#36; Mark entertainer paid</button>') + '${inv ? '<button type="button" class="ad-btn" data-dj-brief="' + attr(b.id) + '">&#128203; Text DJ the brief &amp; gear</button>' : ''}
               ${b.templateId && b.customerId ? `<button type="button" class="ad-btn" data-gig-resync="${attr(b.id)}">&#8635; Update quote</button>` : ''}
               ${inv ? `<a class="ad-btn" href="#/quoteDocs?q=${attr(inv.id)}">${inv.kind === 'invoice' ? 'Invoice' : 'Quote'} ${esc(money(inv.totalCents))} &middot; ${esc(({ approved: 'ready', sent: 'sent', accepted: 'accepted', invoiced: 'unpaid', paid: 'paid' })[inv.status] || inv.status)}</a>` : ''}`;
             })()}
@@ -3200,6 +3204,18 @@ function wirePubBits() {
     btn.disabled = true;
     try {
       await fb.f.setDoc(fb.f.doc(fb.db, 'talentSchedule', id), { djConfirmedAt: undo ? null : fb.f.serverTimestamp(), djConfirmedBy: undo ? '' : 'admin' }, { merge: true });
+      await loadSchedule();
+      render();
+    } catch (err) { btn.disabled = false; window.alert(friendly(err)); }
+  }));
+  /*  ENTERTAINER PAID: ticked by hand once the DJ has been paid. Click again to undo. */
+  document.querySelectorAll('[data-dj-paid]').forEach((btn) => btn.addEventListener('click', async () => {
+    const id = btn.getAttribute('data-dj-paid');
+    const undo = btn.hasAttribute('data-undo');
+    if (undo && !window.confirm('Mark the entertainer as NOT paid?')) return;
+    btn.disabled = true;
+    try {
+      await fb.f.setDoc(fb.f.doc(fb.db, 'talentSchedule', id), { djPaidAt: undo ? null : fb.f.serverTimestamp() }, { merge: true });
       await loadSchedule();
       render();
     } catch (err) { btn.disabled = false; window.alert(friendly(err)); }
@@ -3482,6 +3498,8 @@ function venueDetailHtml() {
           <select class="ad-select" id="vn-f-tpl"><option value="">Not set</option>${tpls.map((q) => `<option value="${attr(q.id)}"${q.id === v.templateId ? ' selected' : ''}>${esc(q.templateName || q.number)}</option>`).join('')}</select></label>
         <label class="ad-field"><span>Accommodation for out-of-town DJs</span>
           <select class="ad-select" id="vn-f-accom"><option value="">None</option>${accomOptions(v.accomId || '')}</select></label>
+        <label class="ent-check"><input type="checkbox" id="vn-f-nodep"${v.noDeposit ? ' checked' : ''}> <span>Account venue - no deposit</span></label>
+        <label class="ad-field"><span>Auto-accept the quote this many days before the gig (0 = off, no email is sent)</span><input class="ad-input" type="number" min="0" max="60" id="vn-f-autoacc" value="${attr(String(v.autoAcceptDays || 0))}"></label>
         <label class="ad-field"><span>Notes (parking, load-in, who to ask for...)</span><textarea class="ad-input" id="vn-f-notes" rows="3" maxlength="1000">${esc(v.notes || '')}</textarea></label>
         <div class="ent-actions">
           <button type="button" class="ad-btn ad-btn-primary" id="vn-save">${isNew ? 'Add venue' : 'Save'}</button>
@@ -3524,6 +3542,8 @@ function wireVenuesTab(desk) {
         name, town, address: val('vn-f-addr').slice(0, 200), contactName: val('vn-f-contact').slice(0, 80),
         phone: val('vn-f-phone').slice(0, 40), email: val('vn-f-email').toLowerCase().slice(0, 200),
         customerId: val('vn-f-cust'), templateId: val('vn-f-tpl'), accomId: val('vn-f-accom'), notes: val('vn-f-notes').slice(0, 1000),
+        noDeposit: !!(document.getElementById('vn-f-nodep') || {}).checked,
+        autoAcceptDays: Math.max(0, Math.min(60, Math.round(Number(val('vn-f-autoacc')) || 0))),
         updatedAt: Date.now(), ...(isNew ? { createdAt: Date.now() } : {}),
       }, { merge: true });
       await loadPubSettings();
