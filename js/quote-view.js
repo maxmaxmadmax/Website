@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=747';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=747';   // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=747';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=748';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=748';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=748';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -58,6 +58,7 @@ async function initFns() {
     get: functions.httpsCallable(fns, 'getQuote'),
     accept: functions.httpsCallable(fns, 'acceptQuote'),
     checkout: functions.httpsCallable(fns, 'quoteCheckout'),
+    details: functions.httpsCallable(fns, 'submitQuoteDetails'),
   };
 }
 
@@ -807,12 +808,94 @@ function proposalBottom(q, opts = {}) {
     <section class="qp-sec qp-book" id="qp-book">
       <p class="qp-eyebrow">${isInv ? 'Payment' : 'Secure your booking'}</p>
       <h2 class="qp-h2">${q.status === 'draft' ? 'Estimate only' : (q.paymentStatus ? 'Your booking' : 'Choose a payment option')}</h2>
-      ${book}
+      ${q.needsDetails && q.status !== 'draft' && !q.paymentStatus ? detailsLock(q, book) : book}
       <p class="qv-msg" id="qp-msg" hidden></p>
     </section>`;
 }
 
+/*  No name / email / phone on the quote yet: the payment options sit greyed
+    out, and "Add your details" pops up the same form as the /details link.
+    Once it's saved, they unlock.                                          */
+function startTimes(cur) {
+  let out = '<option value="">Choose a time</option>';
+  for (let m = 6 * 60; m < 24 * 60; m += 30) {
+    const hh = String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+    const h = Math.floor(m / 60);
+    out += '<option value="' + hh + '"' + (hh === cur ? ' selected' : '') + '>' + ((h % 12) || 12) + ':' + String(m % 60).padStart(2, '0') + (h < 12 ? 'am' : 'pm') + '</option>';
+  }
+  return out;
+}
+function detailsLock(q, book) {
+  const c = q.customer || {};
+  const parts = String(c.name || '').trim().split(/\s+/);
+  const f = (name, label, val, type, req, wide, ph) => `<label class="qp-df${wide ? ' is-wide' : ''}"><span>${label}${req ? ' <b>*</b>' : ' <i>(optional)</i>'}</span><input name="${name}" type="${type || 'text'}" value="${esc(val || '')}"${ph ? ' placeholder="' + esc(ph) + '"' : ''}></label>`;
+  return `<div class="qp-lock">
+    <div class="qp-lock-under" aria-hidden="true" inert>${book}</div>
+    <div class="qp-lock-card">
+      <h3>Add your details to pay</h3>
+      <p>We just need a few details for your booking and tax invoice.</p>
+      <button type="button" class="qp-dgo" id="qp-dopen">Add your details</button>
+    </div>
+  </div>
+  <div class="qp-dpop" id="qp-dpop" hidden>
+    <form class="qp-dform" id="qp-dform" novalidate>
+      <button type="button" class="qp-dx" id="qp-dx" aria-label="Close">&times;</button>
+      <p class="qp-eyebrow">SoundzGood Whitsundays</p>
+      <h3>Your details</h3>
+      <p class="qp-dnote"><b>*</b> Required</p>
+      <div class="qp-dgrid">
+        ${f('firstName', 'First name', parts[0], 'text', true)}
+        ${f('lastName', 'Last name', parts.slice(1).join(' '), 'text', true)}
+        ${f('business', 'Business / organisation', c.business, 'text', false, true, 'Who the invoice is made out to - leave blank for your own name')}
+        ${f('email', 'Email', c.email, 'email', true, false, 'Your email')}
+        ${f('phone', 'Phone', c.phone, 'tel', true, false, 'Your phone')}
+        ${f('dayContact', 'Event day contact', c.dayContact, 'text', false, true, 'Name and phone of who we deal with on the day')}
+        ${f('ccEmail', 'Accounts / billing email', c.ccEmail, 'text', false, true, 'Gets a copy of the quote and invoice')}
+        ${f('address', 'Your address', c.address, 'text', false, true, 'For the invoice')}
+        <label class="qp-df"><span>Event start time <b>*</b></span><select name="eventStartTime">${startTimes(c.eventStartTime)}</select></label>
+        ${f('eventVenue', 'Venue name &amp; address', c.eventVenue, 'text', true)}
+        <label class="qp-df is-wide"><span>Anything we should know? <i>(optional)</i></span><textarea name="customerNotes" rows="3" placeholder="Access, parking, power, timings, special requests&hellip;">${esc(c.customerNotes || '')}</textarea></label>
+      </div>
+      <button type="submit" class="qp-dgo" id="qp-dgo">Continue to payment</button>
+      <p class="qp-dmsg" id="qp-dmsg" hidden></p>
+    </form>
+  </div>`;
+}
+
 function wireProposal(q) {
+  const dpop = document.getElementById('qp-dpop');
+  const dform = document.getElementById('qp-dform');
+  if (dpop) {
+    const open = (on) => { dpop.hidden = !on; document.body.style.overflow = on ? 'hidden' : ''; if (on) { const i = dform.querySelector('input'); if (i) i.focus(); } };
+    document.getElementById('qp-dopen').addEventListener('click', () => open(true));
+    document.getElementById('qp-dx').addEventListener('click', () => open(false));
+    dpop.addEventListener('click', (e) => { if (e.target === dpop) open(false); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !dpop.hidden) open(false); });
+    dform.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const v = (n) => String((dform.querySelector('[name="' + n + '"]') || {}).value || '').trim();
+      const m = document.getElementById('qp-dmsg');
+      const miss = [];
+      if (!v('firstName')) miss.push('your first name');
+      if (!v('lastName')) miss.push('your last name');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v('email'))) miss.push('your email');
+      if (v('phone').replace(/[^0-9]/g, '').length < 8) miss.push('your phone number');
+      if (!v('eventStartTime')) miss.push('the event start time');
+      if (!v('eventVenue')) miss.push('the venue');
+      if (miss.length) { m.hidden = false; m.textContent = 'Please add ' + miss.join(', ') + '.'; return; }
+      const btn = document.getElementById('qp-dgo');
+      btn.disabled = true; btn.textContent = 'Saving…';
+      try {
+        await callable.details({ token: token(), name: v('firstName') + ' ' + v('lastName'), business: v('business'), email: v('email'), phone: v('phone'),
+          ccEmail: v('ccEmail'), address: v('address'), dayContact: v('dayContact'), eventStartTime: v('eventStartTime'), eventVenue: v('eventVenue'), customerNotes: v('customerNotes') });
+        const res = await callable.get({ token: token() });
+        document.body.style.overflow = '';
+        render(res.data);
+        const b = document.getElementById('qp-book'); if (b) b.scrollIntoView();
+      } catch (err) { btn.disabled = false; btn.textContent = 'Continue to payment'; m.hidden = false; m.textContent = (err && err.message) || 'Could not save. Please try again.'; }
+    });
+  }
+
   // Download invoice (on the accepted / invoice view)
   document.querySelectorAll('[data-print]').forEach((b) => b.addEventListener('click', () => window.print()));
   // printing / PDF: show every booking term, not just the open one

@@ -2916,6 +2916,7 @@ exports.getQuote = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
     notes: q.notes || '',
     terms: q.terms || '',
     posterUrl: q.posterUrl || '',
+    needsDetails: !hasPayDetails(q.customer),   // the page asks for name / email / phone before paying
     subtotalCents: q.subtotalCents || 0,
     discountCents: q.discountCents || 0,
     gstCents: q.gstCents || 0,
@@ -2952,6 +2953,7 @@ exports.acceptQuote = onCall(async (request) => {
   if (!['approved', 'sent'].includes(q.status)) {
     throw new HttpsError('failed-precondition', 'This quote can no longer be accepted.');
   }
+  if (!hasPayDetails(q.customer)) throw new HttpsError('failed-precondition', 'Please fill in your details first.');
 
   const bank = data.method === 'bank';
   // ACCEPT = INVOICE: the quote becomes a tax invoice straight away
@@ -2993,6 +2995,7 @@ exports.quoteCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request)
   if (!['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) || q.paymentStatus === 'paid') {
     throw new HttpsError('failed-precondition', 'This quote can no longer be paid online.');
   }
+  if (!hasPayDetails(q.customer)) throw new HttpsError('failed-precondition', 'Please fill in your details first.');
 
   const total = Math.max(0, Math.round(quoteGrandTotal(q)));   // + any late payment charges
   const paid = Math.max(0, Math.round(q.amountPaidCents || 0));
@@ -4578,27 +4581,10 @@ exports.getDetailsForm = onCall(async (request) => {
   };
 });
 
-/*  PUBLIC: they press Submit. */
-exports.submitDetails = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
-  await limitIp(request, 'details', 20, 60);
-  const d = request.data || {};
-  const doc = await quoteByDetailsToken(d.token);
-  const q = doc.data();
-  const clean = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
-  const f = {
-    name: clean(d.name, 120), business: clean(d.business, 120), email: clean(d.email, 200).toLowerCase(),
-    ccEmail: emailList(d.ccEmail), phone: clean(d.phone, 40), address: clean(d.address, 300),
-    eventName: clean(d.eventName, 160), eventDate: clean(d.eventDate, 60), eventVenue: clean(d.eventVenue, 200),
-    eventStartTime: clean(d.eventStartTime, 20), customerNotes: clean(d.customerNotes, 2000),
-    dayContact: clean(d.dayContact, 200),
-  };
-  if (!f.name) throw new HttpsError('invalid-argument', 'Please enter your name.');
-  if (!DETAIL_EMAIL_RE.test(f.email)) throw new HttpsError('invalid-argument', 'Please enter a valid email address.');
-  if (!f.phone) throw new HttpsError('invalid-argument', 'Please enter a phone number.');
-  if (!f.eventName) throw new HttpsError('invalid-argument', 'Please enter the event name.');
-  if (!f.eventStartTime) throw new HttpsError('invalid-argument', 'Please enter the event start time.');
-  if (!f.eventVenue) throw new HttpsError('invalid-argument', 'Please enter the venue.');
-
+/*  Puts the customer's details on the quote, adds or updates them in
+    Customers, and emails the office. Shared by the details link and the
+    form on the quote page. Returns the merged customer.                  */
+async function saveCustomerDetails(doc, q, f) {
   const customer = { ...(q.customer || {}) };
   Object.keys(f).forEach((k) => { if (f[k]) customer[k] = f[k]; });
   await doc.ref.update({ customer, detailsReceivedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
@@ -4621,6 +4607,63 @@ exports.submitDetails = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (reque
         f.eventStartTime && 'Event starts: ' + f.eventStartTime, f.dayContact && 'Event day contact: ' + f.dayContact, f.customerNotes && 'Notes: ' + f.customerNotes].filter(Boolean).map((x) => '- ' + x).join('\n')
       + '\n\nThey are already on the quote - open it in the Sales Pipeline.',
   }, {}, { to: process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au' });
+  return customer;
+}
+
+/*  Name, email and phone are needed before a customer can accept or pay. */
+const hasPayDetails = (c) => !!(c && String(c.name || '').trim() && DETAIL_EMAIL_RE.test(String(c.email || '').trim()) && String(c.phone || '').trim());
+
+/*  PUBLIC: the quote page asks for details before paying (when the quote
+    went out without them). Name, email and phone are required.           */
+exports.submitQuoteDetails = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  await limitIp(request, 'details', 20, 60);
+  const d = request.data || {};
+  const token = String(d.token || '').trim();
+  if (!/^[a-f0-9]{20,40}$/.test(token)) throw new HttpsError('invalid-argument', 'That link is not valid.');
+  const snap = await db.collection('quotes').where('token', '==', token).limit(1).get();
+  if (snap.empty) throw new HttpsError('not-found', 'That link is not valid.');
+  const doc = snap.docs[0];
+  const q = doc.data();
+  if (!['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) || q.paymentStatus === 'paid') {
+    throw new HttpsError('failed-precondition', 'This quote can no longer be changed.');
+  }
+  const clean = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
+  const f = {
+    name: clean(d.name, 120), business: clean(d.business, 120), email: clean(d.email, 200).toLowerCase(),
+    ccEmail: emailList(d.ccEmail), phone: clean(d.phone, 40), address: clean(d.address, 300),
+    eventVenue: clean(d.eventVenue, 200), eventStartTime: clean(d.eventStartTime, 20),
+    customerNotes: clean(d.customerNotes, 2000), dayContact: clean(d.dayContact, 200),
+  };
+  if (!f.name) throw new HttpsError('invalid-argument', 'Please enter your name.');
+  if (!DETAIL_EMAIL_RE.test(f.email)) throw new HttpsError('invalid-argument', 'Please enter a valid email address.');
+  if (!f.phone) throw new HttpsError('invalid-argument', 'Please enter a phone number.');
+  await saveCustomerDetails(doc, q, f);
+  return { ok: true };
+});
+
+/*  PUBLIC: they press Submit. */
+exports.submitDetails = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  await limitIp(request, 'details', 20, 60);
+  const d = request.data || {};
+  const doc = await quoteByDetailsToken(d.token);
+  const q = doc.data();
+  const clean = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
+  const f = {
+    name: clean(d.name, 120), business: clean(d.business, 120), email: clean(d.email, 200).toLowerCase(),
+    ccEmail: emailList(d.ccEmail), phone: clean(d.phone, 40), address: clean(d.address, 300),
+    eventName: clean(d.eventName, 160), eventDate: clean(d.eventDate, 60), eventVenue: clean(d.eventVenue, 200),
+    eventStartTime: clean(d.eventStartTime, 20), customerNotes: clean(d.customerNotes, 2000),
+    dayContact: clean(d.dayContact, 200),
+  };
+  if (!f.name) throw new HttpsError('invalid-argument', 'Please enter your name.');
+  if (!DETAIL_EMAIL_RE.test(f.email)) throw new HttpsError('invalid-argument', 'Please enter a valid email address.');
+  if (!f.phone) throw new HttpsError('invalid-argument', 'Please enter a phone number.');
+  if (!f.eventName) throw new HttpsError('invalid-argument', 'Please enter the event name.');
+  if (!f.eventStartTime) throw new HttpsError('invalid-argument', 'Please enter the event start time.');
+  if (!f.eventVenue) throw new HttpsError('invalid-argument', 'Please enter the venue.');
+
+  const customer = await saveCustomerDetails(doc, q, f);
+
 
   /*  PRE-APPROVED: "Send them the quote automatically when
       they fill it in" was ticked - the quote goes to the email they just gave. */
