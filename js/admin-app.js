@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=742';
+} from './firebase-config.js?v=743';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=742';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=742';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=742';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=742';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=742';
-import { expandKit } from './kit.js?v=742';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=743';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=743';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=743';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=743';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=743';
+import { expandKit } from './kit.js?v=743';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6309,6 +6309,17 @@ function wireQuoteList() {
   });
 }
 
+/*  "Copy lines from..." on the quote: templates first, then the 40 newest quotes. */
+function copyFromSelectHtml() {
+  const docs = (state.quoteDocs || []).filter((q) => q.id !== state.openQuoteId && q.status !== 'cancelled' && (q.lines || []).length);
+  const name = (q) => q.templateName || [(q.customer || {}).eventName || (q.customer || {}).business || (q.customer || {}).name, q.number].filter(Boolean).join(' - ') || 'Untitled';
+  const tpls = docs.filter((q) => q.isTemplate).sort((x, y) => name(x).localeCompare(name(y)));
+  const recent = docs.filter((q) => !q.isTemplate).sort((x, y) => (secs(y.createdAt) || 0) - (secs(x.createdAt) || 0)).slice(0, 40);
+  if (!tpls.length && !recent.length) return '';
+  const opts = (list) => list.map((q) => `<option value="${attr(q.id)}">${esc(name(q))}</option>`).join('');
+  return `<select class="qb-date qb-copyfrom" id="q-copyfrom"><option value="">&#128203; Copy lines from a template or quote&hellip;</option>${tpls.length ? `<optgroup label="Templates">${opts(tpls)}</optgroup>` : ''}${recent.length ? `<optgroup label="Recent quotes">${opts(recent)}</optgroup>` : ''}</select>`;
+}
+
 function quoteFromDoc(doc) {
   return {
     kind: doc.kind || 'quote',
@@ -6503,6 +6514,7 @@ function quoteBuilderHtml() {
 
         <div class="qb-lines-head">
           <span class="qb-block-h">Line items</span>
+          ${copyFromSelectHtml()}
         </div>
 
         <div class="qb-table">
@@ -7562,6 +7574,17 @@ function wireQuoteBuilder() {
   const days0 = () => Math.max(1, Math.round(quoteDraft.hire.days || 1));
   const addCustom = document.getElementById('q-add-custom');
   if (addCustom) addCustom.addEventListener('click', () => { quoteDraft.lines.push({ type: 'custom', name: '', qty: 1, unitCents: 0, days: days0() }); renderQuoteLines(); });
+  // copy another quote's or template's lines onto the end of this one
+  const copyFrom = document.getElementById('q-copyfrom');
+  if (copyFrom) copyFrom.addEventListener('change', () => {
+    const src = (state.quoteDocs || []).find((q) => q.id === copyFrom.value);
+    copyFrom.value = '';
+    if (!src) return;
+    quoteFromDoc(src).lines.forEach((l) => quoteDraft.lines.push(l.days != null && l.type !== 'discount' ? { ...l, days: days0() } : l));
+    rebuildAllKits();
+    renderQuoteLines();
+    scheduleQuoteAutosave();
+  });
   const addDisc = document.getElementById('q-add-disc');
   if (addDisc) addDisc.addEventListener('click', () => { quoteDraft.lines.push({ type: 'discount', name: '', amountCents: 0 }); renderQuoteLines(); });
 

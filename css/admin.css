@@ -4889,3 +4889,4 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .inv-pill-low{ background:#fee2e2; color:#b91c1c; }
 .inv-pill-ok{ background:#dcfce7; color:#15803d; }
 .inv-detail.is-cons .inv-gear-only, .inv-detail:not(.is-cons) .inv-cons-only{ display:none !important; }
+.qb-copyfrom{ max-width:320px; }
