@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=749';
+} from './firebase-config.js?v=750';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=749';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=749';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=749';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=749';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=749';
-import { expandKit } from './kit.js?v=749';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=750';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=750';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=750';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=750';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=750';
+import { expandKit } from './kit.js?v=750';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6504,11 +6504,6 @@ function quoteBuilderHtml() {
           <div class="qb-to">
             <p class="qb-block-h">${isInvoice ? 'Bill to' : 'Quote to'}</p>
             ${quoteCustSearchHtml()}
-            ${quoteDraft.isTemplate ? '' : `<label class="qb-autosend"><input type="checkbox" data-qauto${quoteDraft.autoSendOnDetails ? ' checked' : ''}> Send them the quote automatically when they fill it in</label>
-            <p class="qb-askhead">Send ${esc(String(c.name || '').trim().split(' ')[0] || 'them')} a link to fill in their own details</p>
-            <div class="qb-askrow">
-              <button type="button" class="qb-askbtn" id="q-askemail">&#128203; Copy the link</button>
-            </div>`}
             <label class="qb-fl"><span>Name</span><input class="qb-cin qb-cin-strong" data-qc="name" value="${attr(c.name)}" placeholder="Customer name"></label>
             <label class="qb-fl"><span>Business</span><input class="qb-cin" data-qc="business" value="${attr(c.business)}" placeholder="Business (optional)"></label>
             <label class="qb-fl"><span>Address</span><input class="qb-cin" data-qc="address" value="${attr(c.address)}" placeholder="Address"></label>
@@ -7498,7 +7493,6 @@ function wireQuoteBuilder() {
     const t = e.target;
     if (t.dataset.qc) { quoteDraft.customer[t.dataset.qc] = t.value; if (t.dataset.qc === 'eventType') render(); return; }
     // event date calendar: saved as "Tue 20 Oct 2026"
-    if (t.hasAttribute('data-qauto')) { quoteDraft.autoSendOnDetails = t.checked; scheduleQuoteAutosave(); return; }
     if (t.hasAttribute('data-qtpl')) { quoteDraft.isTemplate = t.checked; scheduleQuoteAutosave(); render(); return; }
     if (t.hasAttribute('data-qtplname')) { quoteDraft.templateName = t.value; scheduleQuoteAutosave(); return; }
     if (t.hasAttribute('data-qevdate')) { quoteDraft.customer.eventDate = prettyEventDate(t.value); return; }
@@ -7704,28 +7698,6 @@ function wireQuoteActions() {
     await saveQuoteDoc(approve, true);
     if (state.openQuoteId === '__new__') return;
     try { await run('adminSetQuoteStatus', { id: state.openQuoteId, status: 'approved' }, 'Approved - now a quote. Hit Send when ready.'); render(); } catch (e) { /* message shown */ }
-  });
-
-  // ASK FOR DETAILS: text or email the customer a link to fill in their own
-  // details. Both open on Max's own phone / mail app; nothing sends by itself.
-  const detailsLink = async () => {
-    if (!state.openQuoteId || state.openQuoteId === '__new__') {
-      if (!String(quoteDraft.customer.name || '').trim()) { window.alert('Type their name first, then press this.'); return null; }
-      await saveQuoteDoc(null, true);
-    }
-    if (!state.openQuoteId || state.openQuoteId === '__new__') return null;
-    const res = await call('adminDetailsLink', { id: state.openQuoteId });
-    return { url: res.url };
-  };
-  const askEmail = document.getElementById('q-askemail');
-  if (askEmail) askEmail.addEventListener('click', async () => {
-    try {
-      const l = await detailsLink();
-      if (!l) return;
-      // just the link, ready to paste into an email
-      try { await navigator.clipboard.writeText(l.url); const was = askEmail.innerHTML; askEmail.innerHTML = '&#10003; Link copied'; setTimeout(() => { askEmail.innerHTML = was; }, 2500); }
-      catch (e) { window.prompt('Copy this link:', l.url); }
-    } catch (err) { window.alert(err.message || 'Could not make the link.'); }
   });
 
   // TEXT THE BAND THE GEAR LIST: a link to the gear only, no prices
