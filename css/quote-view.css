@@ -832,4 +832,7 @@
 .qp-team-add input { flex: 1; min-width: 0; border: 1px solid #d0d4da; border-radius: 9px; padding: 11px 12px; font: inherit; font-size: 15px; }
 .qp-team-add input:focus { outline: 2px solid #ff6a00; outline-offset: 0; border-color: #ff6a00; }
 .qp-team-add button { background: #ff6a00; color: #fff; border: 0; border-radius: 9px; padding: 0 20px; font: inherit; font-weight: 700; cursor: pointer; }
+.qp-team-share { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; font-size: 14px; color: #555; }
+.qp-team-share button { background: #fff; color: #9a4a00; border: 1px solid #ffd9b3; border-radius: 9px; padding: 9px 16px; font: inherit; font-weight: 700; cursor: pointer; }
+.qp-team-share button:hover { background: #fff3e8; }
 @media print { .qp-team { display: none; } }

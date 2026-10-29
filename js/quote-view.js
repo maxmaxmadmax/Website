@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=751';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=751';   // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=751';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=752';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=752';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=752';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -58,6 +58,7 @@ async function initFns() {
     checkout: functions.httpsCallable(fns, 'quoteCheckout'),
     details: functions.httpsCallable(fns, 'submitQuoteDetails'),
     gearTeam: functions.httpsCallable(fns, 'setGearTeam'),
+    gearLink: functions.httpsCallable(fns, 'getGearShareLink'),
   };
 }
 
@@ -822,6 +823,11 @@ function gearTeamSec(q) {
       <p class="qp-sub">Add your band, tour manager or tech. They&rsquo;ll get the gear list &mdash; no prices &mdash; when your booking is confirmed, 3 days before and on the day.</p>
       <ul class="qp-team-list">${list.map((e) => `<li><span>${esc(e)}</span><button type="button" data-team-rm="${esc(e)}" aria-label="Remove ${esc(e)}">&times;</button></li>`).join('')}</ul>
       ${list.length < 10 ? `<form class="qp-team-add" id="qp-team-add" novalidate><input type="email" id="qp-team-in" placeholder="Team member&rsquo;s email" autocomplete="off"><button type="submit">Add</button></form>` : ''}
+      <div class="qp-team-share">
+        <span>Or send them the link yourself:</span>
+        <button type="button" id="qp-team-share">Share link</button>
+        <button type="button" id="qp-team-copy">Copy link</button>
+      </div>
       <p class="qp-dmsg" id="qp-team-msg" hidden></p>
     </section>`;
 }
@@ -892,6 +898,23 @@ function wireProposal(q) {
       } catch (err) { tmsg.hidden = false; tmsg.textContent = (err && err.message) || 'Could not save. Please try again.'; }
     };
     team.querySelectorAll('[data-team-rm]').forEach((b) => b.addEventListener('click', () => save(now().filter((e) => e !== b.getAttribute('data-team-rm')))));
+    // the read-only gear list link (no prices) - share sheet on phones, else copy
+    let gearUrl = '';
+    const link = async () => gearUrl || (gearUrl = (await callable.gearLink({ token: token() })).data.url);
+    const copy = async (btn) => {
+      const u = await link();
+      try { await navigator.clipboard.writeText(u); const was = btn.textContent; btn.textContent = 'Link copied ✓'; setTimeout(() => { btn.textContent = was; }, 2500); }
+      catch (e) { window.prompt('Copy this link:', u); }
+    };
+    const shareBtn = document.getElementById('qp-team-share');
+    if (!navigator.share) shareBtn.hidden = true;
+    shareBtn.addEventListener('click', async () => {
+      try {
+        const u = await link();
+        await navigator.share({ title: 'Gear list - ' + ((q.customer || {}).eventName || 'SoundzGood'), text: 'Here’s the gear SoundzGood is supplying (no prices):', url: u });
+      } catch (err) { if (err && err.name !== 'AbortError') { tmsg.hidden = false; tmsg.textContent = err.message || 'Could not share.'; } }
+    });
+    document.getElementById('qp-team-copy').addEventListener('click', (e) => copy(e.currentTarget).catch((err) => { tmsg.hidden = false; tmsg.textContent = (err && err.message) || 'Could not make the link.'; }));
     const add = document.getElementById('qp-team-add');
     if (add) add.addEventListener('submit', (e) => {
       e.preventDefault();

@@ -2420,6 +2420,7 @@ exports.adminSaveQuote = onCall(async (request) => {
     if (!snap.exists) throw new HttpsError('not-found', 'No such quote.');
     // made into a template: unlink it from its gig, so rebuilding the gig can't overwrite it
     const unlink = clean.isTemplate ? { gigBookingId: FieldValue.delete(), pubKey: FieldValue.delete(), pubNight: FieldValue.delete(), pubBookings: FieldValue.delete() } : {};
+    clean.customer.gearEmails = (snap.data().customer || {}).gearEmails || '';   // set by the customer on their quote page
     await ref.update({ ...clean, ...money, ...unlink, updatedAt: FieldValue.serverTimestamp() });
     return { id: String(id), ...money };
   }
@@ -2592,6 +2593,16 @@ function pickItems(lines) {
 /* a tick key that is safe as a Firestore field name */
 const pickKey = (p) => (p.itemId ? 'i_' + p.itemId : 'n_' + p.name.toLowerCase()).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 120);
 
+/*  The GEAR LIST link the customer / band share (gearToken) is read-only:
+    gear and times, no ticks, no extras, no payment status. It is a
+    different code from the crew pick list link, so it can't tick anything. */
+async function gearLinkToken(ref, q) {
+  if (q.gearToken) return q.gearToken;
+  const t = crypto.randomBytes(16).toString('hex');
+  await ref.update({ gearToken: t });
+  return t;
+}
+
 async function quoteByCrewToken(token) {
   if (!/^[a-f0-9]{20,40}$/.test(String(token || ''))) throw new HttpsError('invalid-argument', 'That link is not valid.');
   const snap = await db.collection('quotes').where('crewToken', '==', String(token)).limit(1).get();
@@ -2716,10 +2727,8 @@ exports.adminGearListLink = onCall(async (request) => {
   const snap = await ref.get();
   if (!snap.exists) throw new HttpsError('not-found', 'Save the quote first.');
   const q = snap.data();
-  if (!gearReady(q)) throw new HttpsError('failed-precondition', 'Approve the quote first - then the gear list link works.');
-  let token = q.crewToken;
-  if (!token) { token = crypto.randomBytes(16).toString('hex'); await ref.update({ crewToken: token }); }
-  return { url: SITE_URL + '/picklist?t=' + token + '&v=gear' };
+  if (!listOpen(q)) throw new HttpsError('failed-precondition', 'This quote is cancelled.');
+  return { url: SITE_URL + '/picklist?t=' + (await gearLinkToken(ref, q)) + '&v=gear' };
 });
 
 exports.adminPickListLink = onCall(async (request) => {
@@ -2729,25 +2738,27 @@ exports.adminPickListLink = onCall(async (request) => {
   const snap = await ref.get();
   if (!snap.exists) throw new HttpsError('not-found', 'No such quote.');
   const q = snap.data();
-  if (!pickReady(q)) throw new HttpsError('failed-precondition', 'The pick list unlocks once the deposit is in.');
+  if (!listOpen(q)) throw new HttpsError('failed-precondition', 'This quote is cancelled.');
   let token = q.crewToken;
   if (!token) { token = crypto.randomBytes(16).toString('hex'); await ref.update({ crewToken: token }); }
   return { url: SITE_URL + '/picklist?t=' + token };
 });
 
 /* PUBLIC (crew link) - the pick list: job details and gear, NO prices */
-/*  GEAR LIST for the band: ?v=gear asks with gear:true and
-    opens as soon as the quote is out (no prices, no ticks). The full pick
-    list with Packed / Returned ticks still waits for the deposit.          */
-const gearReady = (q) => !!q && ['approved', 'sent', 'accepted', 'invoiced', 'paid'].includes(q.status);
+/*  The gear list and pick list LINKS open as soon as the quote exists (any
+    status but cancelled). The automatic gear emails still wait for the deposit. */
+const listOpen = (q) => !!q && !['cancelled', 'declined'].includes(q.status) && !q.isTemplate;
 
 exports.getPickList = onCall(async (request) => {
-  const doc = await quoteByCrewToken((request.data || {}).token);
+  const tok = String((request.data || {}).token || '');
+  if (!/^[a-f0-9]{20,40}$/.test(tok)) throw new HttpsError('invalid-argument', 'That link is not valid.');
+  const byGear = await db.collection('quotes').where('gearToken', '==', tok).limit(1).get();
+  const doc = byGear.empty ? await quoteByCrewToken(tok) : byGear.docs[0];
   const q = doc.data();
-  const gear = (request.data || {}).gear === true;
+  const gearOnly = !byGear.empty;   // the shared gear list link - read-only, always
+  const gear = gearOnly || (request.data || {}).gear === true;
   // crew already on the job get the full pick list even before payment
-  const crewOn = Array.isArray(q.crewAssigned) && q.crewAssigned.length > 0 && gearReady(q);
-  if (!(pickReady(q) || crewOn || (gear && gearReady(q)))) throw new HttpsError('failed-precondition', 'This list is not available yet.');
+  if (!listOpen(q)) throw new HttpsError('failed-precondition', 'This list is no longer available.');
   // categories from inventory, so the gear can be grouped
   const inv = await loadQuoteInventory();
   const cat = {};
@@ -2820,12 +2831,13 @@ exports.getPickList = onCall(async (request) => {
     times: { start: c.eventStartTime || q.botStart || '', finish: q.botFinish || '' },
     customerNotes: c.customerNotes || '',
     dayContact: c.dayContact || '',
-    assigned: (q.crewAssigned || []).map((x) => ({ name: x.name || '', phone: x.phone || '' })),   // staff on the job
+    assigned: (q.crewAssigned || []).map((x) => ({ name: x.name || '', phone: gearOnly ? '' : (x.phone || '') })),   // staff on the job
     crew,
-    notes: q.crewNotes || '',
+    notes: gearOnly ? '' : (q.crewNotes || ''),
     items,
-    ticks: q.pickTicks || {},
-    paidInFull: q.paymentStatus === 'paid' || q.status === 'paid',
+    ticks: gearOnly ? {} : (q.pickTicks || {}),
+    paidInFull: gearOnly ? false : (q.paymentStatus === 'paid' || q.status === 'paid'),
+    gearOnly,
   };
 });
 
@@ -2837,7 +2849,7 @@ exports.setPickTick = onCall(async (request) => {
   if (!field || !/^[a-zA-Z0-9_-]{1,120}$/.test(key)) throw new HttpsError('invalid-argument', 'Bad tick.');
   const doc = await quoteByCrewToken(d.token);
   const tq = doc.data();
-  if (!(pickReady(tq) || (Array.isArray(tq.crewAssigned) && tq.crewAssigned.length > 0 && gearReady(tq)))) throw new HttpsError('failed-precondition', 'This pick list is not available.');
+  if (!listOpen(tq)) throw new HttpsError('failed-precondition', 'This pick list is not available.');
   await doc.ref.update({
     ['pickTicks.' + key + '.' + field]: d.value === true,
     pickUpdatedAt: FieldValue.serverTimestamp(),
@@ -4644,6 +4656,20 @@ exports.submitQuoteDetails = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (
   return { ok: true };
 });
 
+/*  PUBLIC: the read-only gear list link (no prices) for the customer to
+    share with their band, tour manager or tech. */
+exports.getGearShareLink = onCall(async (request) => {
+  await limitIp(request, 'gearlink', 30, 60);
+  const token = String((request.data || {}).token || '').trim();
+  if (!/^[a-f0-9]{20,40}$/.test(token)) throw new HttpsError('invalid-argument', 'That link is not valid.');
+  const snap = await db.collection('quotes').where('token', '==', token).limit(1).get();
+  if (snap.empty) throw new HttpsError('not-found', 'That link is not valid.');
+  const doc = snap.docs[0];
+  const q = doc.data();
+  if (!listOpen(q)) throw new HttpsError('failed-precondition', 'The gear list is not available.');
+  return { url: SITE_URL + '/picklist?t=' + (await gearLinkToken(doc.ref, q)) + '&v=gear' };
+});
+
 /*  PUBLIC: "Share the gear list with your team" on the quote page. The
     customer keeps their own list of band / tour manager / tech emails
     (customer.gearEmails, max 10). They get the gear list with NO prices
@@ -4729,7 +4755,7 @@ exports.adminSendGearList = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (r
   const snap = await ref.get();
   if (!snap.exists) throw new HttpsError('not-found', 'No such quote.');
   const q = snap.data();
-  if (!pickReady(q)) throw new HttpsError('failed-precondition', 'The gear list unlocks once the deposit is in.');
+  if (!listOpen(q)) throw new HttpsError('failed-precondition', 'This quote is cancelled.');
   // TEST: the gear list + the pick list email, both to the signed-in admin only
   if ((request.data || {}).test === true) {
     const me = String(request.auth.token.email || '');
@@ -4783,7 +4809,7 @@ async function sendGearListEmail(ref, q, reason, testTo, parts = { gear: true, s
         + 'Here is the gear SoundzGood Whitsundays is supplying for ' + ev + (when ? ' on ' + when : '') + '. Have a look and let us know if anything is missing or needs changing.\n\nThanks,\nMax\nSoundzGood Whitsundays - 0422 393 022',
     }, {}, {
       to,
-      actions: [{ label: 'View the gear list', url: SITE_URL + '/picklist?t=' + token + '&v=gear', primary: true }],
+      actions: [{ label: 'View the gear list', url: SITE_URL + '/picklist?t=' + (await gearLinkToken(ref, q)) + '&v=gear', primary: true }],
     });
     if (r.sent && !testTo) await ref.update({ gearListSentAt: FieldValue.serverTimestamp(), gearListSentTo: to });
   }
@@ -5608,7 +5634,7 @@ exports.adminSendPaymentReminder = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, a
    the band's gear list); never changes the quote or the price.
    ========================================================================= */
 function crewCanPick(q) {
-  return pickReady(q) || (Array.isArray(q.crewAssigned) && q.crewAssigned.length > 0 && gearReady(q));
+  return listOpen(q);
 }
 exports.addPickExtra = onCall(async (request) => {
   await limitIp(request, 'pickextra', 60, 60);

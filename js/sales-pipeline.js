@@ -8,8 +8,8 @@
    the quotes and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=751';   // who still owes money
-import { isBooked, pickProgress } from './stock.js?v=751';
+import { owesMoney } from './messages.js?v=752';   // who still owes money
+import { isBooked, pickProgress } from './stock.js?v=752';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -313,14 +313,13 @@ export function rowsHtml(rows, f, h) {
               ${q.token ? `<a href="/quote?t=${h.attr(q.token)}" target="_blank" rel="noopener">Open customer page</a>
               <button type="button" data-sp-copy="${h.attr('https://www.soundzgood.com.au/quote?t=' + q.token)}">Copy customer link</button>` : '<span>Save it first to get a link</span>'}
               ${q.token ? `<a href="/quote?t=${h.attr(q.token)}&print=1" target="_blank" rel="noopener">Download PDF</a>` : ''}
-              ${isBooked(q)
-                ? (q.crewToken
+              ${q.status !== 'cancelled' && !q.isTemplate ? (q.crewToken
                   ? `<a href="/picklist?t=${h.attr(q.crewToken)}" target="_blank" rel="noopener">Open pick list</a>
               <button type="button" data-sp-copy="${h.attr('https://www.soundzgood.com.au/picklist?t=' + q.crewToken)}">Copy crew link</button>`
                   : `<button type="button" data-sp-act="picklist" data-id="${h.attr(q.id)}">Make pick list</button>`)
                 + `<button type="button" data-sp-act="gearlist" data-id="${h.attr(q.id)}">Email gear list (no prices)</button>`
-                + `<button type="button" data-sp-act="geartest" data-id="${h.attr(q.id)}">Test gear + pick list emails to me</button>`
-                : (['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) ? `<button type="button" data-sp-act="deposit" data-id="${h.attr(q.id)}">Deposit received</button><button type="button" data-sp-act="confirmjob" data-id="${h.attr(q.id)}">Confirm job &ndash; pay later</button>` : '')}
+                + `<button type="button" data-sp-act="geartest" data-id="${h.attr(q.id)}">Test gear + pick list emails to me</button>` : ''}
+              ${!isBooked(q) && ['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) ? `<button type="button" data-sp-act="deposit" data-id="${h.attr(q.id)}">Deposit received</button><button type="button" data-sp-act="confirmjob" data-id="${h.attr(q.id)}">Confirm job &ndash; pay later</button>` : ''}
               ${q.jobConfirmedAt && q.status !== 'paid' && !q.paymentStatus ? `<button type="button" data-sp-act="unconfirmjob" data-id="${h.attr(q.id)}">Undo job confirmation</button>` : ''}
               ${['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) ? `<button type="button" data-sp-act="paid" data-id="${h.attr(q.id)}">Mark paid</button>` : ''}
               ${(q.paymentStatus || q.status === 'paid') && q.paymentMethod !== 'card' && !(q.stripeSessions && q.stripeSessions.length) ? `<button type="button" data-sp-act="undopay" data-id="${h.attr(q.id)}">Undo deposit / payment</button>` : ''}

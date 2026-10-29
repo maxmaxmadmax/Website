@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=751';
+} from './firebase-config.js?v=752';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=751';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=751';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=751';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=751';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=751';
-import { expandKit } from './kit.js?v=751';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=752';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=752';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=752';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=752';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=752';
+import { expandKit } from './kit.js?v=752';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6250,7 +6250,7 @@ function wireQuoteList() {
     },
     async deposit(id) {
       const d = findDoc(id);
-      if (!window.confirm('Deposit received for ' + label(d) + '?\n\nThis books the job, makes it a tax invoice and unlocks the pick list.')) return;
+      if (!window.confirm('Deposit received for ' + label(d) + '?\n\nThis books the job and makes it a tax invoice.')) return;
       try { await call('adminDepositReceived', { id }); } catch (e) { window.alert(e.message || 'Could not record the deposit.'); }
     },
     // makes the private crew link (no prices) - the menu then shows Open / Copy
@@ -6510,8 +6510,6 @@ function quoteBuilderHtml() {
             <label class="qb-fl"><span>Phone</span><input class="qb-cin" data-qc="phone" value="${attr(c.phone)}" placeholder="Phone"></label>
             <label class="qb-fl"><span>Email</span><input class="qb-cin" type="email" data-qc="email" value="${attr(c.email)}" placeholder="Email"></label>
             <div class="qb-fl"><span>CC &middot; billing / accounts copy</span><div class="qb-cc" id="qb-cc">${ccChipsInner(c.ccEmail, 'Accounts email (optional) - press Enter')}</div></div>
-            <div class="qb-fl"><span>Gear list to &middot; band / crew (no prices)</span><div class="qb-cc" id="qb-gear">${ccChipsInner(c.gearEmails, 'Band or crew email - press Enter')}</div></div>
-            <button type="button" class="qb-askbtn" id="q-gearlink">&#128241; Text the band the gear list (no prices)</button>
             <label class="qb-fl"><span>Event day contact</span><input class="qb-cin" data-qc="dayContact" value="${attr(c.dayContact || '')}" placeholder="Name &amp; phone on the day"></label>
             <label class="qb-fl"><span>Customer notes</span><textarea class="qb-cin qb-cnotes" rows="3" data-qc="customerNotes" placeholder="Anything the customer told us">${esc(c.customerNotes || '')}</textarea></label>
           </div>
@@ -7435,7 +7433,7 @@ function wireQuoteBuilder() {
 
 
   // email chips: billing CC and the gear list (band / crew)
-  [['qb-cc', 'ccEmail'], ['qb-gear', 'gearEmails']].forEach(([boxId, field]) => {
+  [['qb-cc', 'ccEmail']].forEach(([boxId, field]) => {
   const ccBox = document.getElementById(boxId);
   if (ccBox) {
     const ccSet = (list, keepFocus) => {
@@ -7698,26 +7696,6 @@ function wireQuoteActions() {
     await saveQuoteDoc(approve, true);
     if (state.openQuoteId === '__new__') return;
     try { await run('adminSetQuoteStatus', { id: state.openQuoteId, status: 'approved' }, 'Approved - now a quote. Hit Send when ready.'); render(); } catch (e) { /* message shown */ }
-  });
-
-  // TEXT THE BAND THE GEAR LIST: a link to the gear only, no prices
-  const gearBtn = document.getElementById('q-gearlink');
-  if (gearBtn) gearBtn.addEventListener('click', async () => {
-    try {
-      if (!state.openQuoteId || state.openQuoteId === '__new__') { window.alert('Save the quote first, then press this.'); return; }
-      await flushQuoteAutosave().catch(() => {});
-      const res = await call('adminGearListLink', { id: state.openQuoteId });
-      const c = quoteDraft.customer || {};
-      const what = c.eventName || 'the gig';
-      const when = c.eventDate ? ' on ' + c.eventDate : '';
-      const text = "Hi, it's Max from SoundzGood - here's the gear we're supplying for " + what + when + ': ' + res.url;
-      if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
-        location.href = 'sms:?&body=' + encodeURIComponent(text);
-      } else {
-        try { await navigator.clipboard.writeText(text); window.alert('Copied - paste it into a text to the band:\n\n' + text); }
-        catch (e) { window.prompt('Copy this and text it to the band:', text); }
-      }
-    } catch (err) { window.alert(err.message || 'Could not make the link.'); }
   });
 
   const send = document.getElementById('q-send');

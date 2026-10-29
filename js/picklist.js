@@ -5,7 +5,7 @@
    Returned ticks. Each tick saves straight away, so admin and everyone on
    the crew link see the same list. Refreshes itself every 20 seconds.
    ========================================================================== */
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=751';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=752';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -86,7 +86,7 @@ function progressHtml() {
 }
 
 // &v=gear - the band / crew gear list: no ticks, no money flags
-const GEAR_VIEW = new URLSearchParams(location.search).get('v') === 'gear';
+let GEAR_VIEW = new URLSearchParams(location.search).get('v') === 'gear';
 
 /*  "18:30" -> "6:30pm" (the details form stores 24-hour time). Anything else is shown as-is. */
 function niceTime(v) {
@@ -376,6 +376,7 @@ async function load() {
     await initFns();
     const res = await callable.get({ token: token(), gear: GEAR_VIEW });
     data = res.data;
+    if (data.gearOnly) GEAR_VIEW = true;   // the shared gear list link is always the gear view
     render();
     document.getElementById('pl-root').addEventListener('change', onTick);
     setInterval(refresh, 20000);
