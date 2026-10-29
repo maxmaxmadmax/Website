@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=748';
+} from './firebase-config.js?v=749';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=748';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=748';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=748';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=748';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=748';
-import { expandKit } from './kit.js?v=748';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=749';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=749';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=749';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=749';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=749';
+import { expandKit } from './kit.js?v=749';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6507,7 +6507,6 @@ function quoteBuilderHtml() {
             ${quoteDraft.isTemplate ? '' : `<label class="qb-autosend"><input type="checkbox" data-qauto${quoteDraft.autoSendOnDetails ? ' checked' : ''}> Send them the quote automatically when they fill it in</label>
             <p class="qb-askhead">Send ${esc(String(c.name || '').trim().split(' ')[0] || 'them')} a link to fill in their own details</p>
             <div class="qb-askrow">
-              <button type="button" class="qb-askbtn" id="q-askdetails">&#128241; Text the link</button>
               <button type="button" class="qb-askbtn" id="q-askemail">&#128203; Copy the link</button>
             </div>`}
             <label class="qb-fl"><span>Name</span><input class="qb-cin qb-cin-strong" data-qc="name" value="${attr(c.name)}" placeholder="Customer name"></label>
@@ -7716,8 +7715,7 @@ function wireQuoteActions() {
     }
     if (!state.openQuoteId || state.openQuoteId === '__new__') return null;
     const res = await call('adminDetailsLink', { id: state.openQuoteId });
-    const first = String(quoteDraft.customer.name || '').split(' ')[0];
-    return { url: res.url, first };
+    return { url: res.url };
   };
   const askEmail = document.getElementById('q-askemail');
   if (askEmail) askEmail.addEventListener('click', async () => {
@@ -7727,23 +7725,6 @@ function wireQuoteActions() {
       // just the link, ready to paste into an email
       try { await navigator.clipboard.writeText(l.url); const was = askEmail.innerHTML; askEmail.innerHTML = '&#10003; Link copied'; setTimeout(() => { askEmail.innerHTML = was; }, 2500); }
       catch (e) { window.prompt('Copy this link:', l.url); }
-    } catch (err) { window.alert(err.message || 'Could not make the link.'); }
-  });
-  const askBtn = document.getElementById('q-askdetails');
-  if (askBtn) askBtn.addEventListener('click', async () => {
-    try {
-      const l = await detailsLink();
-      if (!l) return;
-      const first = l.first;
-      const res = { url: l.url };
-      const text = 'Hi' + (first ? ' ' + first : '') + ", it's Max from SoundzGood - can you pop your details in here so I can send your quote? " + res.url;
-      const phone = String(quoteDraft.customer.phone || '').replace(/[^0-9+]/g, '');
-      if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
-        location.href = 'sms:' + phone + '?&body=' + encodeURIComponent(text);
-      } else {
-        try { await navigator.clipboard.writeText(text); window.alert('Copied - paste it into a text or email:\n\n' + text); }
-        catch (e) { window.prompt('Copy this and text it to them:', text); }
-      }
     } catch (err) { window.alert(err.message || 'Could not make the link.'); }
   });
 

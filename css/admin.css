@@ -4774,7 +4774,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ent-fee-wide{ grid-column:1 / -1; max-width:560px; }
 /* text or email the details link */
 .qb-askhead{ margin:8px 0 4px; font-size:13px; font-weight:700; color:#9a4a00; }
-.qb-askrow{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:4px; }
+.qb-askrow{ display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:4px; }
 .qb-askrow .qb-askbtn{ margin:0; text-align:center; }
 /* Venues tab */
 .ent-actions{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:6px; }
@@ -4841,7 +4841,6 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
   .qb-adder{ grid-column:1 / -1; }
   .qb-searchwrap{ min-width:0; flex-basis:100%; }
   .qb-mrow{ grid-template-columns:96px minmax(0, 1fr); }
-  .qb-askrow{ grid-template-columns:1fr; }
 }
 
 /* =========================================================================

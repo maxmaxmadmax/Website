@@ -4584,7 +4584,7 @@ exports.getDetailsForm = onCall(async (request) => {
 /*  Puts the customer's details on the quote, adds or updates them in
     Customers, and emails the office. Shared by the details link and the
     form on the quote page. Returns the merged customer.                  */
-async function saveCustomerDetails(doc, q, f) {
+async function saveCustomerDetails(doc, q, f, opts = {}) {
   const customer = { ...(q.customer || {}) };
   Object.keys(f).forEach((k) => { if (f[k]) customer[k] = f[k]; });
   await doc.ref.update({ customer, detailsReceivedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
@@ -4595,7 +4595,7 @@ async function saveCustomerDetails(doc, q, f) {
     const rec = { name: f.name, business: f.business, email: f.email, ccEmail: f.ccEmail, phone: f.phone, address: f.address, updatedAt: Date.now() };
     Object.keys(rec).forEach((k) => { if (rec[k] === '') delete rec[k]; });
     if (cs.empty) await db.collection('customers').add({ type: f.business ? 'business' : 'private', notes: '', ...rec, createdAt: Date.now() });
-    else await cs.docs[0].ref.set(rec, { merge: true });
+    else if (!opts.addOnly) await cs.docs[0].ref.set(rec, { merge: true });   // the quote-page form never rewrites a saved customer
   } catch (err) { logger.warn('details: customer list', err && err.message); }
 
   await sendMessageEmail({
@@ -4627,6 +4627,8 @@ exports.submitQuoteDetails = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (
   if (!['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) || q.paymentStatus === 'paid') {
     throw new HttpsError('failed-precondition', 'This quote can no longer be changed.');
   }
+  // only while details are missing - once in, changes go through the office
+  if (hasPayDetails(q.customer)) throw new HttpsError('failed-precondition', 'We already have your details. To change them, call us on 0422 393 022.');
   const clean = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
   const f = {
     name: clean(d.name, 120), business: clean(d.business, 120), email: clean(d.email, 200).toLowerCase(),
@@ -4637,7 +4639,7 @@ exports.submitQuoteDetails = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (
   if (!f.name) throw new HttpsError('invalid-argument', 'Please enter your name.');
   if (!DETAIL_EMAIL_RE.test(f.email)) throw new HttpsError('invalid-argument', 'Please enter a valid email address.');
   if (!f.phone) throw new HttpsError('invalid-argument', 'Please enter a phone number.');
-  await saveCustomerDetails(doc, q, f);
+  await saveCustomerDetails(doc, q, f, { addOnly: true });
   return { ok: true };
 });
 

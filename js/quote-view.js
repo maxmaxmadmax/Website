@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=748';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=748';   // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=748';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=749';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=749';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=749';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -35,9 +35,7 @@ const ITEMISE_BY_SECTION = true;
 const money = (c) => '$' + (Math.round(c || 0) / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function esc(v) {
-  const d = document.createElement('div');
-  d.textContent = String(v == null ? '' : v);
-  return d.innerHTML;
+  return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function token() {
@@ -515,7 +513,7 @@ function proposalTop(q, days) {
   const c = q.customer || {};
   const type = HERO_PHOTO[c.eventType] ? c.eventType : guessType(c.eventName);
   // the event's own poster, if one was added, takes the place of the stock photo
-  const poster = c.eventType === 'custom' && String(q.posterUrl || '').startsWith('https://firebasestorage.googleapis.com/') ? q.posterUrl : '';
+  const poster = c.eventType === 'custom' && /^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[\w.-]+\/o\/quote-images%2F[\w.%-]+\?[\w=&.-]+$/.test(String(q.posterUrl || '')) ? q.posterUrl : '';
   const lines = q.lines || [];
   const groups = costBreakdown(lines, (l) => lineAmount(l, days), (l) => l.category);
   const lab = lines.filter((l) => l.type === 'labour');
@@ -870,7 +868,7 @@ function wireProposal(q) {
     document.getElementById('qp-dopen').addEventListener('click', () => open(true));
     document.getElementById('qp-dx').addEventListener('click', () => open(false));
     dpop.addEventListener('click', (e) => { if (e.target === dpop) open(false); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !dpop.hidden) open(false); });
+    if (!window.__dpopKeys) { window.__dpopKeys = true; document.addEventListener('keydown', (e) => { const p = document.getElementById('qp-dpop'); if (e.key === 'Escape' && p && !p.hidden) { p.hidden = true; document.body.style.overflow = ''; } }); }
     dform.addEventListener('submit', async (e) => {
       e.preventDefault();
       const v = (n) => String((dform.querySelector('[name="' + n + '"]') || {}).value || '').trim();
