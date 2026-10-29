@@ -5,7 +5,7 @@
    Returned ticks. Each tick saves straight away, so admin and everyone on
    the crew link see the same list. Refreshes itself every 20 seconds.
    ========================================================================== */
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=759';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=760';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -169,6 +169,7 @@ function render() {
       <h2>${esc(d.eventName || 'Job')}</h2>
       <dl class="pl-info">
         ${info('Event date', esc(d.eventDate || ''))}
+        ${d.times.soundcheck ? info('Soundcheck', esc(niceTime(d.times.soundcheck))) : ''}
         ${info('Event starts', times)}
         ${info('Venue', where)}
         ${info('Hire dates', range)}

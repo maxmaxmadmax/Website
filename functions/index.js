@@ -2337,6 +2337,7 @@ function sanitizeQuote(q) {
     eventVenue: text(q.customer && q.customer.eventVenue, 200),   // venue (customer details form)
     eventStartTime: text(q.customer && q.customer.eventStartTime, 20),   // when the event starts - we work out bump-in from it
     eventEndTime: text(q.customer && q.customer.eventEndTime, 20),
+    soundcheckTime: text(q.customer && q.customer.soundcheckTime, 20),
     customerNotes: text(q.customer && q.customer.customerNotes, 2000),   // "anything we should know" from the details form
     dayContact: text(q.customer && q.customer.dayContact, 200),   // event day contact - name & phone
     // the band / crew who get the gear list with NO prices - not the billing CC
@@ -2828,7 +2829,7 @@ exports.getPickList = onCall(async (request) => {
     contact: { name: c.name || '', business: c.business || '', phone: c.phone || '', address: c.address || '' },
     // from the customer details form: where the gear goes, when it starts, what to know
     venue: c.eventVenue || '',
-    times: { start: c.eventStartTime || q.botStart || '', finish: c.eventEndTime || q.botFinish || '' },
+    times: { soundcheck: c.soundcheckTime || '', start: c.eventStartTime || q.botStart || '', finish: c.eventEndTime || q.botFinish || '' },
     customerNotes: c.customerNotes || '',
     dayContact: c.dayContact || '',
     assigned: (q.crewAssigned || []).map((x) => ({ name: x.name || '', phone: gearOnly ? '' : (x.phone || '') })),   // staff on the job
@@ -4954,7 +4955,7 @@ exports.adminAssignCrew = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (req
     const r = await sendMessageEmail({
       subject: "You're on: " + ev + (when ? ' (' + when + ')' : ''),
       body: 'Hi ' + (x.name.split(' ')[0] || 'there') + ',\n\nYou are on this job:\n\n'
-        + ['Job: ' + ev, when && 'Date: ' + when, c.eventStartTime && 'Starts: ' + c.eventStartTime, c.eventEndTime && 'Finishes: ' + c.eventEndTime,
+        + ['Job: ' + ev, when && 'Date: ' + when, c.soundcheckTime && 'Soundcheck: ' + c.soundcheckTime, c.eventStartTime && 'Starts: ' + c.eventStartTime, c.eventEndTime && 'Finishes: ' + c.eventEndTime,
           c.eventVenue && 'Venue: ' + c.eventVenue, c.dayContact && 'On the day: ' + c.dayContact,
           'Crew: ' + staff.map((s) => s.name).join(', ')].filter(Boolean).map((t) => '- ' + t).join('\n')
         + (link ? '\n\nThe pick list is below - tick things off as you pack and when they come back.' : '')
