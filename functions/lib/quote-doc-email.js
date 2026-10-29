@@ -32,6 +32,10 @@ function transport() {
   return nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user, pass } });
 }
 
+/*  Production jobs (not DJ bookings): the customer can share the gear list
+    (no prices) with their band, tour manager or tech from their quote page. */
+const sharesGear = (q) => !q.gigDj && !(q.customer && q.customer.eventType === 'dj');
+
 function docLabel(q) {
   return q.kind === 'invoice' ? 'invoice' : 'quote';
 }
@@ -61,6 +65,11 @@ function html(q, link) {
       <p style="text-align:center;margin:0 0 22px;">
         <a href="${esc(link)}" style="display:inline-block;background:#ff6b00;color:#fff;text-decoration:none;font-weight:bold;font-size:15px;padding:13px 26px;border-radius:10px;">${verb} &rarr;</a>
       </p>
+      ${sharesGear(q) ? `<div style="border:1px solid #eee;border-radius:10px;padding:14px 18px;margin:0 0 20px;">
+        <p style="margin:0 0 4px;font-size:15px;font-weight:bold;color:#111;">Share the gear list with your team</p>
+        <p style="margin:0 0 10px;font-size:13px;color:#555;line-height:1.5;">Add your band, tour manager or tech. They&rsquo;ll get the gear list &mdash; no prices &mdash; when your booking is confirmed, 3 days before and on the day.</p>
+        <a href="${esc(link)}#qp-team" style="color:#ff6b00;font-weight:bold;font-size:14px;text-decoration:none;">Add your team &rarr;</a>
+      </div>` : ''}
       <p style="margin:0;font-size:13px;color:#666;line-height:1.6;">
         Or paste this link into your browser:<br>
         <a href="${esc(link)}" style="color:#ff6b00;word-break:break-all;">${esc(link)}</a>
@@ -87,6 +96,7 @@ function text(q, link) {
     '',
     `View it here: ${link}`,
     '',
+    ...(sharesGear(q) ? [`Share the gear list (no prices) with your band, tour manager or tech: ${link}#qp-team`, ''] : []),
     `${SELLER.name} - ${SELLER.email} - ${SELLER.site}`,
   ].join('\n');
 }

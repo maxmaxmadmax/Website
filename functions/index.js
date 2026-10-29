@@ -4635,12 +4635,41 @@ exports.submitQuoteDetails = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (
     ccEmail: emailList(d.ccEmail), phone: clean(d.phone, 40), address: clean(d.address, 300),
     eventVenue: clean(d.eventVenue, 200), eventStartTime: clean(d.eventStartTime, 20),
     customerNotes: clean(d.customerNotes, 2000), dayContact: clean(d.dayContact, 200),
+    gearEmails: emailList(d.gearEmails),
   };
   if (!f.name) throw new HttpsError('invalid-argument', 'Please enter your name.');
   if (!DETAIL_EMAIL_RE.test(f.email)) throw new HttpsError('invalid-argument', 'Please enter a valid email address.');
   if (!f.phone) throw new HttpsError('invalid-argument', 'Please enter a phone number.');
   await saveCustomerDetails(doc, q, f, { addOnly: true });
   return { ok: true };
+});
+
+/*  PUBLIC: "Share the gear list with your team" on the quote page. The
+    customer keeps their own list of band / tour manager / tech emails
+    (customer.gearEmails, max 10). They get the gear list with NO prices
+    when the deposit is in, 3 days before and on the day. The office is told. */
+exports.setGearTeam = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  await limitIp(request, 'gearteam', 20, 60);
+  const d = request.data || {};
+  const token = String(d.token || '').trim();
+  if (!/^[a-f0-9]{20,40}$/.test(token)) throw new HttpsError('invalid-argument', 'That link is not valid.');
+  const snap = await db.collection('quotes').where('token', '==', token).limit(1).get();
+  if (snap.empty) throw new HttpsError('not-found', 'That link is not valid.');
+  const doc = snap.docs[0];
+  const q = doc.data();
+  if (!['approved', 'sent', 'accepted', 'invoiced', 'paid'].includes(q.status)) throw new HttpsError('failed-precondition', 'This quote can no longer be changed.');
+  const gearEmails = emailList(d.emails);
+  const before = emailList((q.customer || {}).gearEmails);
+  if (gearEmails === before) return { gearEmails };
+  await doc.ref.update({ 'customer.gearEmails': gearEmails, updatedAt: FieldValue.serverTimestamp() });
+  try {
+    await sendMessageEmail({
+      subject: 'Gear list team updated - ' + (q.number || ''),
+      body: ((q.customer || {}).name || 'The customer') + ' updated who gets the gear list (no prices) for ' + (q.number || '') + ':\n\n'
+        + (gearEmails ? gearEmails.split(', ').map((e) => '- ' + e).join('\n') : '(nobody)') + (before ? '\n\nBefore: ' + before : ''),
+    }, {}, { to: process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au' });
+  } catch (err) { logger.warn('gear team: office email', err && err.message); }
+  return { gearEmails };
 });
 
 /*  PUBLIC: they press Submit. */

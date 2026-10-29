@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=750';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=750';   // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=750';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=751';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=751';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=751';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -57,6 +57,7 @@ async function initFns() {
     accept: functions.httpsCallable(fns, 'acceptQuote'),
     checkout: functions.httpsCallable(fns, 'quoteCheckout'),
     details: functions.httpsCallable(fns, 'submitQuoteDetails'),
+    gearTeam: functions.httpsCallable(fns, 'setGearTeam'),
   };
 }
 
@@ -802,12 +803,26 @@ function proposalBottom(q, opts = {}) {
       ${terms}
       <p class="qp-terms-link">Also at <a href="/${djQuote ? 'dj-terms' : 'terms'}" target="_blank" rel="noopener">soundzgood.com.au/${djQuote ? 'dj-terms' : 'terms'}</a></p>
     </section>`;
-  return termsSec + `
+  return (opts.terms === false || djQuote || q.status === 'draft' ? '' : gearTeamSec(q)) + termsSec + `
     <section class="qp-sec qp-book" id="qp-book">
       <p class="qp-eyebrow">${isInv ? 'Payment' : 'Secure your booking'}</p>
       <h2 class="qp-h2">${q.status === 'draft' ? 'Estimate only' : (q.paymentStatus ? 'Your booking' : 'Choose a payment option')}</h2>
       ${q.needsDetails && q.status !== 'draft' && !q.paymentStatus ? detailsLock(q, book) : book}
       <p class="qv-msg" id="qp-msg" hidden></p>
+    </section>`;
+}
+
+/*  "Share the gear list with your team": the customer adds their band,
+    tour manager or tech. They get the gear list (no prices) automatically.  */
+function gearTeamSec(q) {
+  const list = String((q.customer || {}).gearEmails || '').split(/[,;\s]+/).filter(Boolean);
+  return `<section class="qp-sec qp-team" id="qp-team">
+      <p class="qp-eyebrow">Your team</p>
+      <h2 class="qp-h2">Share the gear list</h2>
+      <p class="qp-sub">Add your band, tour manager or tech. They&rsquo;ll get the gear list &mdash; no prices &mdash; when your booking is confirmed, 3 days before and on the day.</p>
+      <ul class="qp-team-list">${list.map((e) => `<li><span>${esc(e)}</span><button type="button" data-team-rm="${esc(e)}" aria-label="Remove ${esc(e)}">&times;</button></li>`).join('')}</ul>
+      ${list.length < 10 ? `<form class="qp-team-add" id="qp-team-add" novalidate><input type="email" id="qp-team-in" placeholder="Team member&rsquo;s email" autocomplete="off"><button type="submit">Add</button></form>` : ''}
+      <p class="qp-dmsg" id="qp-team-msg" hidden></p>
     </section>`;
 }
 
@@ -850,6 +865,7 @@ function detailsLock(q, book) {
         ${f('dayContact', 'Event day contact', c.dayContact, 'text', false, true, 'Name and phone of who we deal with on the day')}
         ${f('ccEmail', 'Accounts / billing email', c.ccEmail, 'text', false, true, 'Gets a copy of the quote and invoice')}
         ${f('address', 'Your address', c.address, 'text', false, true, 'For the invoice')}
+        ${q.gigDj ? '' : f('gearEmails', 'Share the gear list with your team', c.gearEmails, 'text', false, true, 'Band, tour manager or tech emails - they get the gear list, no prices')}
         <label class="qp-df"><span>Event start time <b>*</b></span><select name="eventStartTime">${startTimes(c.eventStartTime)}</select></label>
         ${f('eventVenue', 'Venue name &amp; address', c.eventVenue, 'text', true)}
         <label class="qp-df is-wide"><span>Anything we should know? <i>(optional)</i></span><textarea name="customerNotes" rows="3" placeholder="Access, parking, power, timings, special requests&hellip;">${esc(c.customerNotes || '')}</textarea></label>
@@ -861,6 +877,31 @@ function detailsLock(q, book) {
 }
 
 function wireProposal(q) {
+  const team = document.getElementById('qp-team');
+  if (team) {
+    const tmsg = document.getElementById('qp-team-msg');
+    const now = () => String((q.customer || {}).gearEmails || '').split(/[,;\s]+/).filter(Boolean);
+    const save = async (list) => {
+      tmsg.hidden = true;
+      try {
+        const res = await callable.gearTeam({ token: token(), emails: list.join(', ') });
+        q.customer = { ...(q.customer || {}), gearEmails: res.data.gearEmails };
+        const y = window.scrollY;
+        render(q);
+        window.scrollTo(0, y);
+      } catch (err) { tmsg.hidden = false; tmsg.textContent = (err && err.message) || 'Could not save. Please try again.'; }
+    };
+    team.querySelectorAll('[data-team-rm]').forEach((b) => b.addEventListener('click', () => save(now().filter((e) => e !== b.getAttribute('data-team-rm')))));
+    const add = document.getElementById('qp-team-add');
+    if (add) add.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const v = String(document.getElementById('qp-team-in').value || '').trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { tmsg.hidden = false; tmsg.textContent = 'Please enter a valid email address.'; return; }
+      if (now().map((x) => x.toLowerCase()).includes(v)) return;
+      save([...now(), v]);
+    });
+  }
+
   const dpop = document.getElementById('qp-dpop');
   const dform = document.getElementById('qp-dform');
   if (dpop) {
@@ -885,7 +926,7 @@ function wireProposal(q) {
       btn.disabled = true; btn.textContent = 'Saving…';
       try {
         await callable.details({ token: token(), name: v('firstName') + ' ' + v('lastName'), business: v('business'), email: v('email'), phone: v('phone'),
-          ccEmail: v('ccEmail'), address: v('address'), dayContact: v('dayContact'), eventStartTime: v('eventStartTime'), eventVenue: v('eventVenue'), customerNotes: v('customerNotes') });
+          ccEmail: v('ccEmail'), gearEmails: v('gearEmails'), address: v('address'), dayContact: v('dayContact'), eventStartTime: v('eventStartTime'), eventVenue: v('eventVenue'), customerNotes: v('customerNotes') });
         const res = await callable.get({ token: token() });
         document.body.style.overflow = '';
         render(res.data);
@@ -973,6 +1014,9 @@ async function load() {
     await initFns();
     const res = await callable.get({ token: token() });
     render(res.data);
+    // from the email's "Add your team" link
+    const to = location.hash === '#qp-team' && document.getElementById('qp-team');
+    if (to) to.scrollIntoView();
   } catch (err) {
     fail('This link is not valid or has expired.');
   }
