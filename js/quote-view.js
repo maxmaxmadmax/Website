@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=752';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=752';   // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=752';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=753';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=753';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=753';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -820,7 +820,7 @@ function gearTeamSec(q) {
   return `<section class="qp-sec qp-team" id="qp-team">
       <p class="qp-eyebrow">Your team</p>
       <h2 class="qp-h2">Share the gear list</h2>
-      <p class="qp-sub">Add your band, tour manager or tech. They&rsquo;ll get the gear list &mdash; no prices &mdash; when your booking is confirmed, 3 days before and on the day.</p>
+      <p class="qp-sub">Add your band, tour manager or tech. They&rsquo;ll get the gear list when your booking is confirmed, 3 days before and on the day.</p>
       <ul class="qp-team-list">${list.map((e) => `<li><span>${esc(e)}</span><button type="button" data-team-rm="${esc(e)}" aria-label="Remove ${esc(e)}">&times;</button></li>`).join('')}</ul>
       ${list.length < 10 ? `<form class="qp-team-add" id="qp-team-add" novalidate><input type="email" id="qp-team-in" placeholder="Team member&rsquo;s email" autocomplete="off"><button type="submit">Add</button></form>` : ''}
       <div class="qp-team-share">
@@ -871,7 +871,7 @@ function detailsLock(q, book) {
         ${f('dayContact', 'Event day contact', c.dayContact, 'text', false, true, 'Name and phone of who we deal with on the day')}
         ${f('ccEmail', 'Accounts / billing email', c.ccEmail, 'text', false, true, 'Gets a copy of the quote and invoice')}
         ${f('address', 'Your address', c.address, 'text', false, true, 'For the invoice')}
-        ${q.gigDj ? '' : f('gearEmails', 'Share the gear list with your team', c.gearEmails, 'text', false, true, 'Band, tour manager or tech emails - they get the gear list, no prices')}
+        ${q.gigDj ? '' : f('gearEmails', 'Share the gear list with your team', c.gearEmails, 'text', false, true, 'Band, tour manager or tech emails - they get the gear list')}
         <label class="qp-df"><span>Event start time <b>*</b></span><select name="eventStartTime">${startTimes(c.eventStartTime)}</select></label>
         ${f('eventVenue', 'Venue name &amp; address', c.eventVenue, 'text', true)}
         <label class="qp-df is-wide"><span>Anything we should know? <i>(optional)</i></span><textarea name="customerNotes" rows="3" placeholder="Access, parking, power, timings, special requests&hellip;">${esc(c.customerNotes || '')}</textarea></label>
@@ -911,7 +911,7 @@ function wireProposal(q) {
     shareBtn.addEventListener('click', async () => {
       try {
         const u = await link();
-        await navigator.share({ title: 'Gear list - ' + ((q.customer || {}).eventName || 'SoundzGood'), text: 'Here’s the gear SoundzGood is supplying (no prices):', url: u });
+        await navigator.share({ title: 'Gear list - ' + ((q.customer || {}).eventName || 'SoundzGood'), text: 'Here’s the gear SoundzGood is supplying:', url: u });
       } catch (err) { if (err && err.name !== 'AbortError') { tmsg.hidden = false; tmsg.textContent = err.message || 'Could not share.'; } }
     });
     document.getElementById('qp-team-copy').addEventListener('click', (e) => copy(e.currentTarget).catch((err) => { tmsg.hidden = false; tmsg.textContent = (err && err.message) || 'Could not make the link.'; }));

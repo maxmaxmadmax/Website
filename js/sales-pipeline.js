@@ -8,8 +8,8 @@
    the quotes and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=752';   // who still owes money
-import { isBooked, pickProgress } from './stock.js?v=752';
+import { owesMoney } from './messages.js?v=753';   // who still owes money
+import { isBooked, pickProgress } from './stock.js?v=753';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -317,7 +317,7 @@ export function rowsHtml(rows, f, h) {
                   ? `<a href="/picklist?t=${h.attr(q.crewToken)}" target="_blank" rel="noopener">Open pick list</a>
               <button type="button" data-sp-copy="${h.attr('https://www.soundzgood.com.au/picklist?t=' + q.crewToken)}">Copy crew link</button>`
                   : `<button type="button" data-sp-act="picklist" data-id="${h.attr(q.id)}">Make pick list</button>`)
-                + `<button type="button" data-sp-act="gearlist" data-id="${h.attr(q.id)}">Email gear list (no prices)</button>`
+                + `<button type="button" data-sp-act="gearlist" data-id="${h.attr(q.id)}">Email gear list</button>`
                 + `<button type="button" data-sp-act="geartest" data-id="${h.attr(q.id)}">Test gear + pick list emails to me</button>` : ''}
               ${!isBooked(q) && ['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) ? `<button type="button" data-sp-act="deposit" data-id="${h.attr(q.id)}">Deposit received</button><button type="button" data-sp-act="confirmjob" data-id="${h.attr(q.id)}">Confirm job &ndash; pay later</button>` : ''}
               ${q.jobConfirmedAt && q.status !== 'paid' && !q.paymentStatus ? `<button type="button" data-sp-act="unconfirmjob" data-id="${h.attr(q.id)}">Undo job confirmation</button>` : ''}

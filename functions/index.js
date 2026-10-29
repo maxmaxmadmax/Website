@@ -4691,7 +4691,7 @@ exports.setGearTeam = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request
   try {
     await sendMessageEmail({
       subject: 'Gear list team updated - ' + (q.number || ''),
-      body: ((q.customer || {}).name || 'The customer') + ' updated who gets the gear list (no prices) for ' + (q.number || '') + ':\n\n'
+      body: ((q.customer || {}).name || 'The customer') + ' updated who gets the gear list for ' + (q.number || '') + ':\n\n'
         + (gearEmails ? gearEmails.split(', ').map((e) => '- ' + e).join('\n') : '(nobody)') + (before ? '\n\nBefore: ' + before : ''),
     }, {}, { to: process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au' });
   } catch (err) { logger.warn('gear team: office email', err && err.message); }
@@ -4820,7 +4820,7 @@ async function sendGearListEmail(ref, q, reason, testTo, parts = { gear: true, s
       subject: lead + 'Pick list - ' + ev + (when ? ' (' + when + ')' : '') + ' - ' + (q.invoiceNumber || q.number || ''),
       body: (reason === 'deposit' ? 'The deposit is in, so this job is booked. ' : '')
         + 'Here is the pick list for ' + ev + (when ? ' on ' + when : '') + '.'
-        + (to ? '\n\nThe gear list (no prices) also went to: ' + to : '\n\nNo "Gear list to" emails on this job, so the band / crew were not sent anything.'),
+        + (to ? '\n\nThe gear list also went to: ' + to : '\n\nNo "Gear list to" emails on this job, so the band / crew were not sent anything.'),
     }, {}, {
       to: testTo || [process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au'].concat(crewTo ? [crewTo] : []).join(', '),
       actions: [{ label: 'Open the pick list', url: SITE_URL + '/picklist?t=' + token, primary: true }],

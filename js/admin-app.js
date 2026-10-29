@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=752';
+} from './firebase-config.js?v=753';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=752';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=752';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=752';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=752';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=752';
-import { expandKit } from './kit.js?v=752';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=753';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=753';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=753';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=753';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=753';
+import { expandKit } from './kit.js?v=753';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6269,7 +6269,7 @@ function wireQuoteList() {
       const d = findDoc(id);
       const to = String((d.customer || {}).gearEmails || '').trim();
       if (!to) { window.alert('Open the quote and add the band / crew emails under "Gear list to" first.'); return; }
-      if (!window.confirm('Email the gear list (no prices) for ' + label(d) + ' to:\n\n' + to + '?')) return;
+      if (!window.confirm('Email the gear list for ' + label(d) + ' to:\n\n' + to + '?')) return;
       try {
         const r = await call('adminSendGearList', { id });
         window.alert(r.sent ? 'Sent to ' + r.to + '.' : 'It did not send: ' + (r.error || r.reason || ''));
