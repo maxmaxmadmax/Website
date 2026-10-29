@@ -10,9 +10,9 @@
    counts in the month it was last paid (lastPaidAt / paidAt / acceptedAt).
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=755';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=755';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=755';
+import { isBooked, pickLineProgress } from './stock.js?v=756';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=756';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=756';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -106,11 +106,14 @@ export function dashboardData(ctx) {
     id: 'fri:' + n.iso + ':' + pubCore(n.venue), isGig: true, noDj: true, hire: { startDate: n.iso },
     customer: { name: String(n.venue).split(',')[0], eventName: dayWord(n.weekday) + ' night', eventVenue: n.venue },
   })) : [];
-  const upcoming = jobs.filter((q) => !dead(q) && (isBooked(q) || ['approved', 'sent', 'accepted', 'invoiced'].includes(q.status)))
-    .filter((q) => inWindow(q.hire && q.hire.startDate))
+  const ourJobs = jobs.filter((q) => !dead(q) && (isBooked(q) || ['approved', 'sent', 'accepted', 'invoiced'].includes(q.status)))
+    .filter((q) => inWindow(q.hire && q.hire.startDate));
+  // a pub night invoice shows as a tag on its gig row, not as its own row
+  const upcoming = ourJobs.filter((q) => !q.pubNight)
     .concat(events, gigs, openFridays)
     .sort((a, b) => String(a.hire.startDate).localeCompare(String(b.hire.startDate)));
-  const next30 = sum(upcoming.filter((q) => !q.isEvent && !q.isGig && isBooked(q)), (q) => q.totalCents);
+  const bookedSoon = ourJobs.filter(isBooked);
+  const next30 = sum(bookedSoon, (q) => q.totalCents);
 
   const paidBooking = (b) => b.status === 'confirmed' || b.paymentStatus === 'paid';
   const vendorCents = sum((ctx.bookings || []).filter(paidBooking), (b) => (b.totalCents != null ? b.totalCents : b.amountCents));
@@ -123,7 +126,7 @@ export function dashboardData(ctx) {
     now: i === new Date().getMonth(),
   }));
 
-  return { salesNow, salesLast, inNow, inLast, owed, owedCents: sum(owed, owingOf), upcoming, next30, vendorCents, chart, year };
+  return { salesNow, salesLast, inNow, inLast, owed, owedCents: sum(owed, owingOf), upcoming, next30, next30Jobs: bookedSoon.length, vendorCents, chart, year };
 }
 
 /* ---------- to-dos ---------- */
@@ -389,7 +392,7 @@ export function dashboardHtml(ctx) {
       ${card('Sales this month', d.salesNow, trend(d.salesNow, d.salesLast))}
       ${card('Money in this month', d.inNow, trend(d.inNow, d.inLast))}
       ${card('Money owed', d.owedCents, `<span class="db-trend">${d.owed.length} job${d.owed.length === 1 ? '' : 's'}${d.owed.length ? ': ' + esc(d.owed.slice(0, 2).map(who).join(', ')) + (d.owed.length > 2 ? '&hellip;' : '') : ''}</span>`)}
-      ${card('Next 30 days', d.next30, `<span class="db-trend">${d.upcoming.filter((q) => !q.isEvent && !q.isGig && isBooked(q)).length} confirmed job${d.upcoming.filter((q) => !q.isEvent && !q.isGig && isBooked(q)).length === 1 ? '' : 's'}</span>`)}
+      ${card('Next 30 days', d.next30, `<span class="db-trend">${d.next30Jobs} confirmed job${d.next30Jobs === 1 ? '' : 's'}</span>`)}
       ${card('Vendor site fees', d.vendorCents, `<span class="db-trend">${esc(evc ? evc.ev.name || 'This event' : 'This event')}</span>`)}
     </div>
 
