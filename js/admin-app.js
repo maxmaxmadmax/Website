@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=758';
+} from './firebase-config.js?v=759';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=758';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=758';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=758';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=758';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=758';
-import { expandKit } from './kit.js?v=758';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=759';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=759';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=759';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=759';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=759';
+import { expandKit } from './kit.js?v=759';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5893,7 +5893,7 @@ function guessEventType(name) {
 function blankQuote() {
   return {
     kind: 'quote',
-    customer: { name: '', business: '', email: '', ccEmail: '', gearEmails: '', phone: '', address: '', eventName: '', eventDate: '', eventVenue: '', eventStartTime: '', customerNotes: '', dayContact: '', eventType: '' },
+    customer: { name: '', business: '', email: '', ccEmail: '', gearEmails: '', phone: '', address: '', eventName: '', eventDate: '', eventVenue: '', eventStartTime: '', eventEndTime: '', customerNotes: '', dayContact: '', eventType: '' },
     hire: { startDate: '', endDate: '', days: 1 },
     lines: [],
     discountCents: 0,
@@ -6504,6 +6504,7 @@ function quoteBuilderHtml() {
               ${metaRow('Venue', `<input class="qb-min" data-qc="eventVenue" value="${attr(c.eventVenue || '')}" placeholder="Venue / address">`)}
               ${metaRow('Event date', `<input type="date" class="qb-min" data-qevdate value="${attr(isoFromPretty(c.eventDate) || (quoteDraft.hire && quoteDraft.hire.startDate) || '')}">`)}
               ${metaRow('Event starts', `<input type="time" class="qb-min" data-qc="eventStartTime" value="${attr(c.eventStartTime || '')}">`)}
+              ${metaRow('Event ends', `<input type="time" class="qb-min" data-qc="eventEndTime" value="${attr(c.eventEndTime || '')}">`)}
               ${metaRow('Hire period', `<span class="qb-hp">${hirePeriod}</span>`)}
               ${metaRow('Days charged', `<input class="qb-min qb-min-num" type="number" min="1" step="1" data-qh="days" value="${attr(h.days)}">`)}
             </div>
