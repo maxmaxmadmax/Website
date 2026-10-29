@@ -10,9 +10,9 @@
    counts in the month it was last paid (lastPaidAt / paidAt / acceptedAt).
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=756';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=756';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=756';
+import { isBooked, pickLineProgress } from './stock.js?v=757';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=757';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=757';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -99,7 +99,7 @@ export function dashboardData(ctx) {
   // entertainment gigs - the Grand View and everywhere else
   const actName = (slug) => ((ctx.talent || []).find((t) => t.slug === slug) || {}).name || slug || 'Act';
   const gigs = (ctx.schedule || []).filter((b) => inWindow(b.date)).map((b) => ({
-    id: 'gig:' + b.id, isGig: true, bookingId: b.id, hire: { startDate: b.date },
+    id: 'gig:' + b.id, isGig: true, bookingId: b.id, hire: { startDate: b.date }, gigStatus: b.status || 'confirmed',
     customer: { name: actName(b.slug), eventName: b.time || '', eventVenue: b.venue || '' },
   }));
   const openFridays = ctx.schedule ? openRegularNights(ctx.schedule, ctx.regularNights, 30).map((n) => ({
@@ -313,13 +313,14 @@ export function dashboardHtml(ctx) {
   };
   const gigRow = (q) => {
     const c = q.customer;
+    const ok = !q.noDj && q.gigStatus === 'confirmed';
     return `
-        <li class="db-job is-gig ${q.noDj ? 'is-pending' : 'is-confirmed'}">
-          <div class="db-job-date"><b>${esc(shortDate(q.hire.startDate))}</b>${stateTag(!q.noDj)}</div>
+        <li class="db-job is-gig ${ok ? 'is-confirmed' : 'is-pending'}">
+          <div class="db-job-date"><b>${esc(shortDate(q.hire.startDate))}</b>${stateTag(ok)}</div>
           <div class="db-job-main">
             <p class="db-job-who">${esc(c.name)}${c.eventName ? ' &middot; <span>' + esc(c.eventName) + '</span>' : ''}</p>
             ${c.eventVenue ? `<p class="db-job-sub">${esc(c.eventVenue)}</p>` : ''}
-            <p class="db-job-tags">${q.noDj ? '<span class="ad-pill ad-pill-red">No DJ booked</span>' : '<span class="ad-pill db-pill-gig">Gig</span>'}${(() => {
+            <p class="db-job-tags">${q.noDj ? '<span class="ad-pill ad-pill-red">No DJ booked</span>' : '<span class="ad-pill db-pill-gig">Gig</span>' + (q.gigStatus === 'unconfirmed' ? ' <span class="ent-unconf-tag">Unconfirmed &middot; unpaid</span>' : q.gigStatus === 'pending' ? ' <span class="ad-pill ad-pill-amber">Pending</span>' : '')}${(() => {
               const inv = (ctx.quotes || []).find((x) => x.pubNight && x.pubDate === q.hire.startDate && pubCore(x.pubVenue) === pubCore(c.eventVenue) && x.status !== 'cancelled');
               if (!inv) return '';
               const word = inv.status === 'approved' ? 'Invoice ready' : inv.paymentStatus === 'paid' || inv.status === 'paid' ? 'Paid' : 'Invoice sent';
