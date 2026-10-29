@@ -11,6 +11,7 @@ In the order the slides run:
     corporate-functions.webp  Corporate Functions slide
     dj-entertainment.webp     DJ Entertainment slide
     private-functions.webp    Private Functions slide   <- still to come
+    touring-bands.webp        Touring Bands slide
     community-events.webp     Community Events slide
     festivals.webp            Festivals slide
     sporting-events.webp      Sporting Events slide
