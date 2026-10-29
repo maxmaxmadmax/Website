@@ -782,3 +782,16 @@
 .qv-colhead th.qv-num { text-align: right; }
 .qv-prodsum td { background: #f7f7f8; text-align: right; font-size: 13px; color: #555; padding: 9px 14px; }
 .qv-prodsum.is-total td { font-weight: 700; color: #111; }
+
+/* Event type "Custom photo": any size of picture shows whole (no crop),
+   with a soft blurred copy filling the gaps. Same box, fade and text as
+   the stock photos.                                                       */
+.qp-hero-photo.is-custom { background: #0b0b0b; overflow: hidden; }
+.qp-hero-blur { position: absolute; inset: -40px; background: var(--qp-photo) center / cover no-repeat;
+  filter: blur(28px) brightness(.55); }
+.qp-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center top; }
+.qp-hero-photo.is-custom::before { z-index: 1; }
+.qp-hero-photo.is-custom .qp-hero-in { z-index: 2; }
+@media screen and (max-width: 640px) {
+  .qp-hero-photo.is-custom .qp-hero-img { height: 260px; bottom: auto; }
+}

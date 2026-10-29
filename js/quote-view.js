@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=746';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=746';   // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=746';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=747';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=747';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=747';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -611,8 +611,8 @@ function proposalTop(q, days) {
 
   return `
     <section class="qp-hero">
-      <div class="qp-hero-photo${isDj ? ' is-dj is-stage' : ''}" style="--qp-photo:url('${poster ? esc(poster) : '/images/services/' + (isDj && dj && dj.photo ? 'trailer-stage.webp' : HERO_PHOTO[type])}')">
-
+      <div class="qp-hero-photo${isDj ? ' is-dj is-stage' : ''}${poster ? ' is-custom' : ''}" style="--qp-photo:url('${poster ? esc(poster) : '/images/services/' + (isDj && dj && dj.photo ? 'trailer-stage.webp' : HERO_PHOTO[type])}')">
+        ${poster ? '<div class="qp-hero-blur"></div><img class="qp-hero-img" src="' + esc(poster) + '" alt="">' : ''}
         <div class="qp-hero-in">
           <p class="qp-eyebrow">${isDj ? esc(venueName || 'Entertainment booking') : 'Event production proposal'}</p>
           <h1>${isDj ? 'SoundzGood Entertainment' : esc(event)}</h1>
