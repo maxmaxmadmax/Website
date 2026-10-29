@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=753';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=753';   // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=753';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=754';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=754';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=754';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -826,7 +826,6 @@ function gearTeamSec(q) {
       <div class="qp-team-share">
         <span>Or send them the link yourself:</span>
         <button type="button" id="qp-team-share">Share link</button>
-        <button type="button" id="qp-team-copy">Copy link</button>
       </div>
       <p class="qp-dmsg" id="qp-team-msg" hidden></p>
     </section>`;
@@ -898,7 +897,7 @@ function wireProposal(q) {
       } catch (err) { tmsg.hidden = false; tmsg.textContent = (err && err.message) || 'Could not save. Please try again.'; }
     };
     team.querySelectorAll('[data-team-rm]').forEach((b) => b.addEventListener('click', () => save(now().filter((e) => e !== b.getAttribute('data-team-rm')))));
-    // the read-only gear list link (no prices) - share sheet on phones, else copy
+    // the read-only gear list link - share sheet where the device has one, else it copies
     let gearUrl = '';
     const link = async () => gearUrl || (gearUrl = (await callable.gearLink({ token: token() })).data.url);
     const copy = async (btn) => {
@@ -907,14 +906,13 @@ function wireProposal(q) {
       catch (e) { window.prompt('Copy this link:', u); }
     };
     const shareBtn = document.getElementById('qp-team-share');
-    if (!navigator.share) shareBtn.hidden = true;
     shareBtn.addEventListener('click', async () => {
       try {
         const u = await link();
+        if (!navigator.share) return copy(shareBtn);
         await navigator.share({ title: 'Gear list - ' + ((q.customer || {}).eventName || 'SoundzGood'), text: 'Here’s the gear SoundzGood is supplying:', url: u });
       } catch (err) { if (err && err.name !== 'AbortError') { tmsg.hidden = false; tmsg.textContent = err.message || 'Could not share.'; } }
     });
-    document.getElementById('qp-team-copy').addEventListener('click', (e) => copy(e.currentTarget).catch((err) => { tmsg.hidden = false; tmsg.textContent = (err && err.message) || 'Could not make the link.'; }));
     const add = document.getElementById('qp-team-add');
     if (add) add.addEventListener('submit', (e) => {
       e.preventDefault();
