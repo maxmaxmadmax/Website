@@ -2395,6 +2395,7 @@ function sanitizeQuote(q) {
     autoSendOnDetails: q.autoSendOnDetails === true,   // send the quote when the customer fills in their details
     isTemplate: q.isTemplate === true,   // Sales Pipeline > Templates: a DJ gig invoice to copy - never sent
     templateName: text(q.templateName, 80),   // its own name, e.g. "Grand View Friday"
+    posterUrl: /^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/soundzgood-8c86f[\w.-]*\/o\/quote-images%2F[^\s"'<>]+$/.test(String(q.posterUrl || '')) ? String(q.posterUrl).slice(0, 600) : '',   // event poster on the quote
     labourPH: { setup: !!(q.labourPH && q.labourPH.setup), pack: !!(q.labourPH && q.labourPH.pack) },
     labourOff: { setup: !!(q.labourOff && q.labourOff.setup), pack: !!(q.labourOff && q.labourOff.pack) },
     labourPackDate: /^\d{4}-\d{2}-\d{2}$/.test(String(q.labourPackDate || '')) ? String(q.labourPackDate) : '',
@@ -2914,6 +2915,7 @@ exports.getQuote = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
     lines,
     notes: q.notes || '',
     terms: q.terms || '',
+    posterUrl: q.posterUrl || '',
     subtotalCents: q.subtotalCents || 0,
     discountCents: q.discountCents || 0,
     gstCents: q.gstCents || 0,
@@ -5267,7 +5269,7 @@ async function gigSync(bookingId, opts = {}) {
   }
   const tc = tpl.customer || {};
   const clean = sanitizeQuote({
-    ...tpl, discountCents: ownDiscount(tpl), isTemplate: false, templateName: '', kind: 'quote', labourPackDate: '', lines, accomOff: !!(ex && ex.accomOff),
+    ...tpl, discountCents: ownDiscount(tpl), isTemplate: false, templateName: '', posterUrl: '', kind: 'quote', labourPackDate: '', lines, accomOff: !!(ex && ex.accomOff),
     customer: {
       name: cust.name || '', business: cust.business || '', email: cust.email || '', ccEmail: cust.ccEmail || '',
       phone: cust.phone || '', address: cust.address || '',

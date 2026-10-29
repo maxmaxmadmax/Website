@@ -4890,3 +4890,6 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .inv-pill-ok{ background:#dcfce7; color:#15803d; }
 .inv-detail.is-cons .inv-gear-only, .inv-detail:not(.is-cons) .inv-cons-only{ display:none !important; }
 .qb-copyfrom{ max-width:320px; }
+.qb-poster{ margin-top:14px; display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.qb-poster img{ display:block; width:100%; max-width:340px; border-radius:8px; border:1px solid var(--ad-line); }
+.qb-poster-msg{ font-size:.8rem; color:var(--ad-muted,#667085); }

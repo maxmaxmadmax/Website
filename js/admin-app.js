@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=743';
+} from './firebase-config.js?v=744';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=743';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=743';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=743';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=743';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=743';
-import { expandKit } from './kit.js?v=743';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=744';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=744';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=744';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=744';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=744';
+import { expandKit } from './kit.js?v=744';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5405,10 +5405,10 @@ function onRemovePhoto() {
     the browser before upload (a 700KB PNG becomes ~40KB) and saved under the
     product's name, e.g. inventory/allen-heath-ab168-14w97n8h.webp.        */
 const photoSlug = (name, id) => (String(name || 'item').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'item') + '-' + String(id).slice(0, 8);
-async function shrinkPhoto(file) {
+async function shrinkPhoto(file, max = 800) {
   try {
     const bmp = await createImageBitmap(file);
-    const scale = Math.min(1, 800 / Math.max(bmp.width, bmp.height));
+    const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
     const c = document.createElement('canvas');
     c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
     c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
@@ -6320,6 +6320,20 @@ function copyFromSelectHtml() {
   return `<select class="qb-date qb-copyfrom" id="q-copyfrom"><option value="">&#128203; Copy lines from a template or quote&hellip;</option>${tpls.length ? `<optgroup label="Templates">${opts(tpls)}</optgroup>` : ''}${recent.length ? `<optgroup label="Recent quotes">${opts(recent)}</optgroup>` : ''}</select>`;
 }
 
+async function uploadQuotePoster(file) {
+  const msg = document.getElementById('q-poster-msg');
+  if (msg) msg.textContent = 'Uploading poster…';
+  try {
+    const { ref, uploadBytes, getDownloadURL } = fb.st;
+    const small = await shrinkPhoto(file, 1600);
+    const path = 'quote-images/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + (small.type === 'image/webp' ? '.webp' : '');
+    await uploadBytes(ref(fb.storage, path), small, { contentType: small.type || file.type });
+    quoteDraft.posterUrl = await getDownloadURL(ref(fb.storage, path));
+    scheduleQuoteAutosave();
+    render();
+  } catch (e) { if (msg) msg.textContent = 'Upload failed - ' + (e.message || 'try again'); }
+}
+
 function quoteFromDoc(doc) {
   return {
     kind: doc.kind || 'quote',
@@ -6341,6 +6355,7 @@ function quoteFromDoc(doc) {
     autoSendOnDetails: doc.autoSendOnDetails === true,
     isTemplate: doc.isTemplate === true,
     templateName: doc.templateName || '',
+    posterUrl: doc.posterUrl || '',
     // saved discountCents is the total; the box is only the whole-quote part
     discountCents: Math.max(0, Math.round(doc.discountCents || 0) - (doc.lines || []).reduce((n, l) => n + (l.type === 'discount' ? Math.max(0, Math.round(l.amountCents || 0)) : 0), 0)),
     labourExcluded: doc.labourExcluded === true,
@@ -6457,6 +6472,12 @@ function quoteBuilderHtml() {
               info@soundzgood.com.au<br>
               www.soundzgood.com.au
             </div>
+            ${quoteDraft.isTemplate ? '' : `<div class="qb-poster">
+              ${quoteDraft.posterUrl ? `<img src="${attr(quoteDraft.posterUrl)}" alt="Event poster">` : ''}
+              <label class="ad-btn ad-btn-small">${quoteDraft.posterUrl ? '&#8635; Change poster' : '&#128444; Add event poster'}<input type="file" accept="image/*" id="q-poster" hidden></label>
+              ${quoteDraft.posterUrl ? '<button type="button" class="ad-btn ad-btn-small" id="q-poster-rm">Remove</button>' : ''}
+              <span class="qb-poster-msg" id="q-poster-msg">${quoteDraft.posterUrl ? '' : 'or copy an image and press Ctrl+V'}</span>
+            </div>`}
           </div>
           <div class="qb-meta">
             <p class="qb-tagline">Good People<br>Great Events</p>
@@ -7574,6 +7595,21 @@ function wireQuoteBuilder() {
   const days0 = () => Math.max(1, Math.round(quoteDraft.hire.days || 1));
   const addCustom = document.getElementById('q-add-custom');
   if (addCustom) addCustom.addEventListener('click', () => { quoteDraft.lines.push({ type: 'custom', name: '', qty: 1, unitCents: 0, days: days0() }); renderQuoteLines(); });
+  // event poster: shown on the customer's quote under the big photo (pick a file or Ctrl+V)
+  const poster = document.getElementById('q-poster');
+  if (poster) poster.addEventListener('change', () => { if (poster.files && poster.files[0]) uploadQuotePoster(poster.files[0]); });
+  if (!window.__posterPasteWired) {
+    window.__posterPasteWired = true;
+    document.addEventListener('paste', (e) => {
+      if (!document.getElementById('q-poster')) return;
+      const it = [...((e.clipboardData && e.clipboardData.items) || [])].find((x) => x.type && x.type.startsWith('image/'));
+      const file = it && it.getAsFile();
+      if (file) { e.preventDefault(); uploadQuotePoster(file); }
+    });
+  }
+  const posterRm = document.getElementById('q-poster-rm');
+  if (posterRm) posterRm.addEventListener('click', () => { quoteDraft.posterUrl = ''; scheduleQuoteAutosave(); render(); });
+
   // copy another quote's or template's lines onto the end of this one
   const copyFrom = document.getElementById('q-copyfrom');
   if (copyFrom) copyFrom.addEventListener('change', () => {

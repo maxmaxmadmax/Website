@@ -7,9 +7,9 @@
    it as a PDF. Prices are ex-GST; GST is shown at 10%.
    ========================================================================== */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=743';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=743';   // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=743';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=744';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=744';   // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=744';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -513,6 +513,8 @@ function isoNice(iso, opts) {
 function proposalTop(q, days) {
   const c = q.customer || {};
   const type = HERO_PHOTO[c.eventType] ? c.eventType : guessType(c.eventName);
+  // the event's own poster, if one was added, takes the place of the stock photo
+  const poster = String(q.posterUrl || '').startsWith('https://firebasestorage.googleapis.com/') ? q.posterUrl : '';
   const lines = q.lines || [];
   const groups = costBreakdown(lines, (l) => lineAmount(l, days), (l) => l.category);
   const lab = lines.filter((l) => l.type === 'labour');
@@ -609,7 +611,7 @@ function proposalTop(q, days) {
 
   return `
     <section class="qp-hero">
-      <div class="qp-hero-photo${isDj ? ' is-dj is-stage' : ''}" style="--qp-photo:url('/images/services/${isDj && dj && dj.photo ? 'trailer-stage.webp' : HERO_PHOTO[type]}')">
+      ${poster ? '<img class="qp-poster" src="' + esc(poster) + '" alt="Event poster"><div class="qp-hero-plain">' : `<div class="qp-hero-photo${isDj ? ' is-dj is-stage' : ''}" style="--qp-photo:url('/images/services/${isDj && dj && dj.photo ? 'trailer-stage.webp' : HERO_PHOTO[type]}')">`}
 
         <div class="qp-hero-in">
           <p class="qp-eyebrow">${isDj ? esc(venueName || 'Entertainment booking') : 'Event production proposal'}</p>
