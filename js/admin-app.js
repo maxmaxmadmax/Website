@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=757';
+} from './firebase-config.js?v=758';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=757';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=757';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=757';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=757';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=757';
-import { expandKit } from './kit.js?v=757';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=758';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=758';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=758';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=758';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=758';
+import { expandKit } from './kit.js?v=758';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -49,6 +49,7 @@ const state = {
       arrival there rather than kept in sync everywhere.             */
   talent: [],
   schedule: [],
+  gigCrew: {},         // bookingId -> { crewAssigned } (private, gigCrew/)
 
   /*  The bookings desk: which month the calendar is on, which booking the
       panel is showing, whether it is being edited, and the filters under
@@ -429,6 +430,11 @@ async function loadSchedule() {
     state.schedule = rows
       .filter((r) => r.date)
       .sort((x, y) => x.date.localeCompare(y.date));
+    try {
+      const crew = await getDocs(collection(fb.db, 'gigCrew'));
+      state.gigCrew = {};
+      crew.forEach((d) => { state.gigCrew[d.id] = d.data(); });
+    } catch (e) { /* crew names just don't show */ }
     state.scheduleLoaded = true;   // the dashboard only flags DJ-less Fridays once it knows
   } catch (err) {
     state.schedule = [];
@@ -4301,8 +4307,10 @@ let dashLogAt = 0;
 
 /*  The crew picker: a small box over the dashboard with every active staff
     member. Save -> confirm who'll be emailed -> adminAssignCrew.          */
-function openCrewPicker(jobId) {
-  const q = (state.quoteDocs || []).find((x) => x.id === jobId);
+function openCrewPicker(jobId, isGig) {
+  const g = isGig && (state.schedule || []).find((x) => x.id === jobId);
+  const q = isGig ? (g && { ...(state.gigCrew[jobId] || {}), customer: { business: 'Setup', eventName: String(g.venue || '').split(',')[0] }, hire: { startDate: g.date } })
+    : (state.quoteDocs || []).find((x) => x.id === jobId);
   if (!q) return;
   const staff = (state.resources || []).filter((r) => (r.type || 'staff') === 'staff' && r.active !== false);
   const on = new Set((q.crewAssigned || []).map((x) => x.id));
@@ -4327,8 +4335,10 @@ function openCrewPicker(jobId) {
     const btn = box.querySelector('[data-save]');
     btn.disabled = true; btn.textContent = 'Saving…';
     try {
-      const r = await call('adminAssignCrew', { id: jobId, staffIds: ids });
+      const r = await call('adminAssignCrew', isGig ? { bookingId: jobId, staffIds: ids } : { id: jobId, staffIds: ids });
+      if (isGig) state.gigCrew[jobId] = { crewAssigned: staff.filter((s) => ids.includes(s.id)).map((s) => ({ id: s.id, name: s.name })) };
       close();
+      if (isGig) render();
       const bits = [];
       if (r.sent && r.sent.length) bits.push('Emailed: ' + r.sent.join(', '));
       if (r.noEmail && r.noEmail.length) bits.push('No email on file (add it in Crew & Vehicles): ' + r.noEmail.join(', '));
@@ -4405,7 +4415,7 @@ VIEWS.dashboard = {
       events: state.events || [], activeEventId: state.activeEventId, emailLog: dashLog || [],
       reminders: state.reminders || [], weather: dashWeather,
       fyWeek: (() => { const t = new Date(); t.setHours(0, 0, 0, 0); t.setDate(t.getDate() - ((t.getDay() + 6) % 7)); return leadFyWeek(t); })(),
-      schedule: state.scheduleLoaded ? state.schedule : null, talent: state.talent || [],
+      schedule: state.scheduleLoaded ? state.schedule : null, talent: state.talent || [], gigCrew: state.gigCrew,
 
       h: { esc, attr, money },
     });
@@ -4417,6 +4427,7 @@ VIEWS.dashboard = {
     desk.querySelectorAll('[data-pub-times]').forEach((b) => b.addEventListener('click', () => textDjTimes(b.getAttribute('data-pub-times'))));
     // ASSIGN CREW: tick who's working, they get emailed
     desk.querySelectorAll('[data-crew]').forEach((b) => b.addEventListener('click', () => openCrewPicker(b.getAttribute('data-crew'))));
+    desk.querySelectorAll('[data-gig-crew]').forEach((b) => b.addEventListener('click', () => openCrewPicker(b.getAttribute('data-gig-crew'), true)));
     // copy a share link (waitlist / vendor signup)
     desk.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
       const url = b.getAttribute('data-copy');

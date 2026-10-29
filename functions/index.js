@@ -4887,14 +4887,40 @@ exports.gearListReminders = onSchedule(
    names go on the quote (crewAssigned) and anyone NEWLY added with an email
    gets the job details + their pick list link. The admin confirms before
    it sends.
+   A gig night (bookingId) keeps its crew in gigCrew/ - the booking itself
+   is public. Its pick list is the night's pub invoice, once there is one.
    ========================================================================= */
+async function gigAsJob(bookingId) {
+  const b = await db.collection('talentSchedule').doc(bookingId).get();
+  if (!b.exists) throw new HttpsError('not-found', 'No such gig.');
+  const g = b.data();
+  const t = await db.collection('talent').doc(String(g.slug || '_')).get();
+  const act = (t.exists && t.data().name) || g.slug || 'DJ';
+  const inv = await db.collection('quotes').where('pubBookings', 'array-contains', bookingId).limit(1).get();
+  const q = inv.empty ? null : inv.docs[0];
+  return {
+    ref: db.collection('gigCrew').doc(bookingId),
+    pick: q && q.data().status !== 'cancelled' ? q : null,
+    customer: { eventName: 'Setup - ' + String(g.venue || '').split(',')[0] + ' (' + act + ')', eventStartTime: g.time || '', eventVenue: g.venue || '' },
+    date: g.date || '',
+  };
+}
 exports.adminAssignCrew = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
   requireAdmin(request);
   const d = request.data || {};
-  const ref = db.collection('quotes').doc(String(d.id || ''));
-  const snap = await ref.get();
-  if (!snap.exists) throw new HttpsError('not-found', 'No such job.');
-  const q = snap.data();
+  let ref, q;
+  if (d.bookingId) {
+    const g = await gigAsJob(String(d.bookingId));
+    ref = g.ref;
+    const had = await ref.get();
+    q = { ...(had.exists ? had.data() : {}), customer: g.customer, hire: { startDate: g.date }, crewToken: g.pick ? g.pick.data().crewToken : null };
+    q.pickRef = g.pick ? g.pick.ref : null;
+  } else {
+    ref = db.collection('quotes').doc(String(d.id || ''));
+    const snap = await ref.get();
+    if (!snap.exists) throw new HttpsError('not-found', 'No such job.');
+    q = snap.data();
+  }
   const ids = (Array.isArray(d.staffIds) ? d.staffIds : []).map(String).slice(0, 20);
   const staff = [];
   for (const sid of ids) {
@@ -4906,8 +4932,13 @@ exports.adminAssignCrew = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (req
   }
   let token = q.crewToken;
   const update = { crewAssigned: staff, crewAssignedAt: FieldValue.serverTimestamp() };
-  if (!token) { token = crypto.randomBytes(16).toString('hex'); update.crewToken = token; }
-  await ref.update(update);
+  if (d.bookingId) {
+    await ref.set(update, { merge: true });
+    if (!token && q.pickRef) { token = crypto.randomBytes(16).toString('hex'); await q.pickRef.update({ crewToken: token }); }
+  } else {
+    if (!token) { token = crypto.randomBytes(16).toString('hex'); update.crewToken = token; }
+    await ref.update(update);
+  }
 
   // email the people who are new on this job
   const before = new Set((q.crewAssigned || []).map((x) => x.id));
@@ -4915,7 +4946,7 @@ exports.adminAssignCrew = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (req
   const c = q.customer || {};
   const ev = c.eventName || c.business || c.name || 'a job';
   const when = c.eventDate || (q.hire && q.hire.startDate) || '';
-  const link = SITE_URL + '/picklist?t=' + token;   // staff always get the pick list, not the gear list
+  const link = token ? SITE_URL + '/picklist?t=' + token : '';   // staff always get the pick list, not the gear list
   const sent = [], noEmail = [], failed = [];
   for (const x of fresh) {
     if (!DETAIL_EMAIL_RE.test(x.email)) { noEmail.push(x.name); continue; }
@@ -4925,9 +4956,9 @@ exports.adminAssignCrew = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (req
         + ['Job: ' + ev, when && 'Date: ' + when, c.eventStartTime && 'Starts: ' + c.eventStartTime,
           c.eventVenue && 'Venue: ' + c.eventVenue, c.dayContact && 'On the day: ' + c.dayContact,
           'Crew: ' + staff.map((s) => s.name).join(', ')].filter(Boolean).map((t) => '- ' + t).join('\n')
-        + '\n\nThe pick list is below - tick things off as you pack and when they come back.'
+        + (link ? '\n\nThe pick list is below - tick things off as you pack and when they come back.' : '')
         + '\n\nThanks,\nMax\nSoundzGood Whitsundays - 0422 393 022',
-    }, {}, { to: x.email, actions: [{ label: 'Open the pick list', url: link, primary: true }] });
+    }, {}, { to: x.email, actions: link ? [{ label: 'Open the pick list', url: link, primary: true }] : [] });
     (r.sent ? sent : failed).push(x.name);
   }
   return { ok: true, assigned: staff.map((x) => x.name), sent, noEmail, failed };

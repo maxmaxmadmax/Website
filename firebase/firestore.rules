@@ -282,6 +282,10 @@ service cloud.firestore {
     match /actRates/{slug} {
       allow read, write: if isAdmin();
     }
+    // gigCrew/{bookingId}: staff setting up a gig night (admin only)
+    match /gigCrew/{bookingId} {
+      allow read, write: if isAdmin();
+    }
     match /regularNights/{nightId} {
       allow read, write: if isAdmin();
     }

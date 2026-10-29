@@ -10,9 +10,9 @@
    counts in the month it was last paid (lastPaidAt / paidAt / acceptedAt).
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=757';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=757';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=757';
+import { isBooked, pickLineProgress } from './stock.js?v=758';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=758';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=758';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -320,6 +320,7 @@ export function dashboardHtml(ctx) {
           <div class="db-job-main">
             <p class="db-job-who">${esc(c.name)}${c.eventName ? ' &middot; <span>' + esc(c.eventName) + '</span>' : ''}</p>
             ${c.eventVenue ? `<p class="db-job-sub">${esc(c.eventVenue)}</p>` : ''}
+            ${(() => { const crew = ((ctx.gigCrew || {})[q.bookingId] || {}).crewAssigned || []; return crew.length ? `<p class="db-job-sub">Setup: ${esc(crew.map((x) => x.name).join(', '))}</p>` : ''; })()}
             <p class="db-job-tags">${q.noDj ? '<span class="ad-pill ad-pill-red">No DJ booked</span>' : '<span class="ad-pill db-pill-gig">Gig</span>' + (q.gigStatus === 'unconfirmed' ? ' <span class="ent-unconf-tag">Unconfirmed &middot; unpaid</span>' : q.gigStatus === 'pending' ? ' <span class="ad-pill ad-pill-amber">Pending</span>' : '')}${(() => {
               const inv = (ctx.quotes || []).find((x) => x.pubNight && x.pubDate === q.hire.startDate && pubCore(x.pubVenue) === pubCore(c.eventVenue) && x.status !== 'cancelled');
               if (!inv) return '';
@@ -329,6 +330,7 @@ export function dashboardHtml(ctx) {
           </div>
           <div class="db-job-wx">${weatherBox(ctx.weather && ctx.weather[q.id], esc)}</div>
           <div class="db-job-acts">
+            ${q.bookingId ? `<button type="button" class="ad-btn" data-gig-crew="${attr(q.bookingId)}">&#128119; Crew</button>` : ''}
             <a class="ad-btn${q.noDj ? ' ad-btn-primary' : ''}" href="#/entertainment">${q.noDj ? 'Book a DJ' : 'Entertainment'}</a>
           </div>
         </li>`;
