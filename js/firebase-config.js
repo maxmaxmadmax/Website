@@ -14,10 +14,8 @@
        firebase functions:secrets:set STRIPE_WEBHOOK_SECRET
 
    ---------------------------------------------------------------------------
-   TO GO LIVE, replace the placeholder values below with the ones from
-   Firebase console -> Project settings -> Your apps -> Web app -> Config.
-   Until then the page runs in preview mode: everything is browsable, but
-   nothing is saved and no payment can be taken.
+   The values below come from Firebase console -> Project settings ->
+   Your apps -> Web app -> Config.
    -------------------------------------------------------------------------- */
 
 export const firebaseConfig = {

@@ -208,7 +208,6 @@
 .qv-grand { margin-top: 4px; padding-top: 6px !important; }
 @media (max-width: 640px) { .qv-sumwrap { width: 100%; } }
 .qv-breakdown .qv-sumrow.qv-sumsub { padding-left: 12px; }
-/* even tighter */
 .qv-breakdown .qv-sumrow, .qv-summary .qv-sumrow { padding: 0; line-height: 1.35; }
 .qv-breakdown .qv-sumrow.qv-sumsub { padding: 0 0 0 12px; }
 .qv-sumpart { padding-top: 2px !important; margin-top: 2px; }
@@ -523,7 +522,7 @@
   .qp-hero .qp-ref { margin-top: 9mm; }
 }
 
-/* ---- PAGE 2: INVESTMENT SUMMARY POLISH + INCLUDED / QUOTE DETAILS ---- */
+/* ---- PAGE 2: INVESTMENT SUMMARY +INCLUDED / QUOTE DETAILS ---- */
 .qp-inv thead th { background: #111; color: #fff; }
 .qp-inv tbody tr:nth-child(even) td { background: #fafafa; }
 .qp-inv tfoot td { font-size: 20px; }
@@ -713,14 +712,14 @@
   .qp-hero-djimg{ width:96px; right:16px; top:78px; bottom:auto; border-radius:12px; }   /* clear of the menu button */
 }
 @media print{ .qp-hero-djimg{ width:150px; } }
-/* DJ quotes: our stage behind, a bigger DJ photo */
+/* DJ quotes: our stage behind, a large DJ photo */
 .qp-hero-photo.is-dj{ min-height:470px; background-position:center 60%; }
 .qp-hero-djimg{ width:300px; bottom:32px; }
 @media (max-width:760px){
   .qp-hero-photo.is-dj{ min-height:420px; }
   .qp-hero-djimg{ width:130px; }
 }
-.qp-hero-photo.is-dj h1{ font-size:clamp(30px, 4.4vw, 54px); overflow-wrap:normal; word-break:normal; }   /* "ENTERTAINMENT" on one line beside the bigger photo */
+.qp-hero-photo.is-dj h1{ font-size:clamp(30px, 4.4vw, 54px); overflow-wrap:normal; word-break:normal; }   /* "ENTERTAINMENT" on one line beside the DJ photo */
 
 /* music styles + premium included list */
 .qp-styles{ margin:12px 0 0; display:flex; flex-wrap:wrap; gap:6px; }

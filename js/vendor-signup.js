@@ -19,13 +19,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=754';
+} from './firebase-config.js?v=755';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=754';
-import { termBodyHtml } from './terms-data.js?v=754';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=755';
+import { termBodyHtml } from './terms-data.js?v=755';
 import {
   VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION,
-} from './vendor-terms-data.js?v=754';
+} from './vendor-terms-data.js?v=755';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -66,7 +66,6 @@ const VENDOR_LABEL = {
   market: 'Market Stall',
 };
 
-/* Matches priceFor() in functions/index.js */
 /*  Is there a site yet - picked on the plan, or held?  */
 function hasSite() {
   return Boolean(state.siteId) || pendingSites().length > 0;
@@ -1956,8 +1955,6 @@ function renderSiteChoice() {
       says which state we are in. */
 }
 
-/*  The sign-in panel is gone - see watchAuth. Kept as a no-op that
-    hides the panel if an old cached page still has it. */
 /*  THE REVIEW STEP
     A stack of small cards, one idea each: what you are buying, what it
     costs, and who takes the money. One column at every width.
@@ -2539,8 +2536,6 @@ function validateSection(id) {
 /*  Everything, in order, for the pay button. It has to check the sections
     above it because on one page nobody is forced to walk through them -
     you can scroll straight past a half-filled one to the bottom.       */
-/*  Everything, in order, for the pay button - and it says which section
-    it stopped at rather than just refusing.                           */
 function firstIncomplete() {
   return ['type', 'details', 'site'].find((id) => !validateSection(id)) || null;
 }

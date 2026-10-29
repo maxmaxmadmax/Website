@@ -579,7 +579,6 @@ textarea:focus-visible{
     font-weight:bold;
 }
 
-/* Lineup */
 
 
 /* ==========================================================================
@@ -626,7 +625,6 @@ textarea:focus-visible{
     to{ transform:translateX(-100%); }
 }
 
-/* Sponsors */
 
 
 /* ==========================================================================
@@ -1154,8 +1152,6 @@ textarea:focus-visible{
 }
 
 
-/* Featured event panel */
-/*  The event artwork behind this panel, under a dark wash for readability. */
 
 
 /* ==========================================================================
@@ -1535,7 +1531,6 @@ nav a.nav-cta.active{
 }
 
 
-/* Event description */
 
 
 /* ==========================================================================
@@ -1705,7 +1700,6 @@ nav a.nav-cta.active{
     min-height:46px;
 }
 
-/* Event detail cards */
 
 
 /* ==========================================================================

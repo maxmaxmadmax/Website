@@ -9,9 +9,9 @@
    Same letterhead as the quote emails. Never throws - the caller decides
    what to do with { sent }.
 
-   NOTHING SENDS BY ITSELF. This file only sends when index.js asks it to,
-   and index.js only asks from the admin desk (test to Max, or a vendor
-   after Max says go).
+   This file only sends when index.js asks it to: from the admin desk, or
+   automatically once a vendor's payment is confirmed (unless paused on the
+   Messages page).
    ========================================================================== */
 
 const nodemailer = require('nodemailer');

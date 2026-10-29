@@ -2572,14 +2572,13 @@ body.ad-fit .ad-main{ min-height:0; }
 .res-build{ max-width:820px; margin:0 auto; }
 .res-addbtns{ display:flex; gap:8px; flex-wrap:wrap; }
 
-/* Crew & Vehicles - reuses the package editor grid and card styles */
 .res-build{ max-width:820px; margin:0 auto; }
 .res-addbtns{ display:flex; gap:8px; flex-wrap:wrap; }
 
 /* ==========================================================================
    LEADS — the gig lead generator. Reuses the Inventory / Crew list + slide-out
    styles; only the star rating, group labels, row extras and the email
-   composer are new. Uses the desk's own colour tokens (light desk).
+   composer are its own. Uses the desk's own colour tokens (light desk).
    ========================================================================== */
 .lead-detail .inv-detail-body{ display:block; }
 
@@ -2728,7 +2727,7 @@ body.ad-fit .ad-main{ min-height:0; }
 .lead-wk .lead-dot-more{ font-size:9px; white-space:nowrap; }
 
 /* ==========================================================================
-   LEADS — "Event Opportunities" restyle (matches the Leads mockup)
+   LEADS — "Event Opportunities" look
    ========================================================================== */
 .lead-page .inv-toolbar{ margin-bottom:12px; }
 
@@ -2851,7 +2850,7 @@ body.ad-fit .ad-main{ min-height:0; }
 .inv-wrap.has-detail .lead-table .lead-where,
 .inv-wrap.has-detail .lead-table .lead-last{ display:none; }
 
-/* ---- the editor, restyled: hero, head, quick actions, cards ---- */
+/* ---- the editor: hero, head, quick actions, cards ---- */
 .inv-detail.lead-detail{ flex-basis:400px; overflow-y:auto; overflow-x:hidden; }
 .lead-detail .inv-detail-body{ flex:none; overflow:visible; padding:4px 18px 8px; }
 .lead-detail .inv-detail-foot{ position:sticky; bottom:0; background:var(--ad-card); z-index:2; }
@@ -3449,7 +3448,7 @@ body.ad-fit .ad-main{ min-height:0; }
 .lead-pane .lead-actions{ margin-bottom:6px; }
 .lead-facts{ margin-top:4px; }
 
-/* bigger event photos: table thumbnails + panel banner when a photo exists */
+/* event photos: table thumbnails + panel banner when a photo exists */
 .lead-tile.has-img{ width:112px; height:64px; border-radius:8px; }
 .ad-desk.is-leads .lead-tile.has-img{ width:112px; height:64px; }
 .lead-hero:has(.lead-hero-img){ height:120px; }
@@ -3458,7 +3457,7 @@ body.ad-fit .ad-main{ min-height:0; }
 /* photo tiles: give the event column the room, keep date tight */
 .lead-table .lead-evcol{ width:34%; }
 .lead-table thead th:nth-child(2){ width:150px; }
-/* bigger banner: never let the header or tab bar get squeezed away */
+/* banner: never let the header or tab bar get squeezed away */
 .lead-detail > *:not(.lead-panes){ flex-shrink:0; }
 .lead-tabs{ flex-shrink:0; min-height:38px; }
 /* fixed column widths so spare room can't pile up in one column */
@@ -4654,7 +4653,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .db-modal-list em{ margin-left:auto; font-style:normal; font-size:11px; color:var(--ad-amber); background:var(--ad-amber-bg); padding:1px 7px; border-radius:20px; }
 .db-modal-note{ font-size:12px; color:var(--ad-muted); margin:12px 0; }
 .db-modal-acts{ display:flex; justify-content:flex-end; gap:8px; }
-/* weather cards 25% smaller */
+/* compact weather cards */
 .db-wxbox{ zoom:.75; }
 .db-job{ grid-template-columns:86px minmax(0, 1fr) 92px 300px; }
 @media (max-width:1100px){ .db-job{ grid-template-columns:86px minmax(0, 1fr) 92px; } }
@@ -4683,7 +4682,7 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .qb-tpl input{ accent-color:var(--ad-orange); width:16px; height:16px; }
 .qb-tplbar{ margin:0 0 12px; padding:10px 14px; border-radius:10px; background:#eef2ff; color:#3730a3; font-size:13px; }
 
-/* ENTERTAINMENT overhaul - looks like Crew & Vehicles */
+/* ENTERTAINMENT - styled like Crew & Vehicles */
 .ent-tabs{ display:inline-flex; background:var(--ad-grey-bg); border-radius:10px; padding:3px; margin-right:8px; }
 .ent-tab{ border:0; background:transparent; padding:7px 16px; border-radius:8px; font:inherit; font-size:13px; font-weight:700; color:var(--ad-muted); cursor:pointer; }
 .ent-tab.is-on{ background:#fff; color:var(--ad-text); box-shadow:0 1px 3px rgba(0,0,0,.12); }

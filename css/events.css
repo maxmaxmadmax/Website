@@ -413,7 +413,7 @@
 
 .ev-poster{
     display:block;
-    width:min(100%, 475px);   /* 25% bigger */
+    width:min(100%, 475px);
     border-radius:14px;
     overflow:hidden;
     box-shadow:0 18px 50px rgba(0,0,0,.55), 0 0 60px rgba(255,107,0,.25);

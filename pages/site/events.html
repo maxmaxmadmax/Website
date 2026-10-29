@@ -23,15 +23,15 @@ permalink: /events.html
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="css/style.css?v=754">
+  <link rel="stylesheet" href="css/style.css?v=755">
   <!-- The event card is shared with /gig-guide, so its styles live in their own file. -->
-  <link rel="stylesheet" href="css/gig-card.css?v=754">
-  <link rel="stylesheet" href="css/events.css?v=754">
-  <script src="js/main.js?v=754" defer></script>
+  <link rel="stylesheet" href="css/gig-card.css?v=755">
+  <link rel="stylesheet" href="css/events.css?v=755">
+  <script src="js/main.js?v=755" defer></script>
   <!-- roster.js names the DJs on the Friday Nights cards (same list as the entertainment page and admin). -->
-  <script src="js/roster.js?v=754" defer></script>
-  <script src="js/weekend.js?v=754" defer></script>
-  <script src="js/events.js?v=754" defer></script>
+  <script src="js/roster.js?v=755" defer></script>
+  <script src="js/weekend.js?v=755" defer></script>
+  <script src="js/events.js?v=755" defer></script>
 </head>
 
 <!-- the class is what events.css hangs the footer tweak off -->
@@ -131,27 +131,9 @@ permalink: /events.html
 <!-- ==========================================================================
      2b. FRIDAY NIGHTS RESIDENCY - THE GRAND VIEW HOTEL
 
-     TO SHOW OR HIDE THE WHOLE THING
-     Delete the word `hidden` on the <section> below to publish it. Put it
-     back to take it down. That is the only switch - no CSS, no JavaScript,
-     and nothing else on the page moves when it goes.
-
-     The four cards below carry real Fridays and say the DJ is still to be
-     announced, which is true until you name one. Put the name and the styles
-     on a card as each Friday is locked in.
-
-     ADDING A FRIDAY
-     Copy one <article class="ev-fri"> block and change the words. The date
-     tab, the name and the styles are all just text. The photo is set on the
-     card itself:
-
-         style="--ev-art:url('/images/talent/maxzi.jpg')"
-
-     A card with no photo yet shows its gradient instead, so an unfilled
-     line up still looks finished rather than broken.
-
-     If there is no line up to show at all, put `hidden` on the
-     .ev-fri-lineup block and the rest of the section carries on without it.
+     To take the whole thing down, put `hidden` on the <section> below.
+     The Friday cards are built by js/events.js (see the line up below).
+     To drop just the line up, put `hidden` on the .ev-fri-lineup block.
      ========================================================================== -->
 <section class="ev-residency" aria-labelledby="ev-res-name">
 

@@ -1116,7 +1116,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-sponsor-grid img{ max-height:20mm; }
 }
 
-/* logo 50% bigger, skeleton 20% smaller */
+/* desktop cover: large logo, smaller skeleton */
 @media screen and (min-width:901px){
     .ep-logo{ width:345px; }
     .ep-hero-art{ padding-top:305px; }
@@ -1468,7 +1468,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 }
 @media print{ .ep-ent .ep-ent-card.ep-ent-cricket h3{ font-size:11.5pt !important; white-space:nowrap; text-align:center; margin:0 !important; } }
 
-/* cricket tile, bigger. Screen only; print keeps its compact version */
+/* cricket tile on screen; print keeps its compact version */
 @media screen{
     .ep-ent-cricket{ padding:28px 30px !important; }
     .ep-ent-cricket .ep-kicker{ text-align:left; }
@@ -1482,7 +1482,7 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
     .ep-vs img{ height:110px; }
 }
 
-/* ==== ENTERTAINMENT TIDY ====
+/* ==== ENTERTAINMENT TILES ====
    website: the 4 small tiles on the right are all the same height; Zed is the
    big one - his photo fills the top and his words sit at the bottom.
    print: cricket keeps its description (sideways layout so it fits). */

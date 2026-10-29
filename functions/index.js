@@ -2310,7 +2310,6 @@ function quoteMoney(quote) {
     const qty = Math.max(0, (l.perf ? Math.round(Number(l.qty || 0) * 4) / 4 : Math.round(Number(l.qty) || 0)));   // DJ hours can be 4.5 etc
     const unit = Math.max(0, Math.round(l.unitCents || 0));
     const lineDays = Math.max(1, Math.round(l.days || days));
-    // quantity x day rate x number of days
     subtotal += Math.round(qty * unit * lineDays);
   });
   const net = Math.max(0, subtotal - discount);
@@ -2425,7 +2424,7 @@ exports.adminSaveQuote = onCall(async (request) => {
     return { id: String(id), ...money };
   }
 
-  // New: allocate a sequential number + an unguessable token.
+  // A new quote gets a sequential number + an unguessable token.
   const counterRef = db.collection('config').doc('counters');
   const seq = await db.runTransaction(async (tx) => {
     const c = await tx.get(counterRef);
@@ -2719,7 +2718,6 @@ exports.adminUndoPayment = onCall(async (request) => {
   return { ok: true };
 });
 
-/* ADMIN - the crew link for a booked job (makes one the first time) */
 /*  ADMIN - the gear list link to text the band */
 exports.adminGearListLink = onCall(async (request) => {
   requireAdmin(request);
@@ -2731,6 +2729,7 @@ exports.adminGearListLink = onCall(async (request) => {
   return { url: SITE_URL + '/picklist?t=' + (await gearLinkToken(ref, q)) + '&v=gear' };
 });
 
+/* ADMIN - the crew link for a booked job (makes one the first time) */
 exports.adminPickListLink = onCall(async (request) => {
   requireAdmin(request);
   const { id } = request.data || {};
@@ -2744,11 +2743,11 @@ exports.adminPickListLink = onCall(async (request) => {
   return { url: SITE_URL + '/picklist?t=' + token };
 });
 
-/* PUBLIC (crew link) - the pick list: job details and gear, NO prices */
 /*  The gear list and pick list LINKS open as soon as the quote exists (any
     status but cancelled). The automatic gear emails still wait for the deposit. */
 const listOpen = (q) => !!q && !['cancelled', 'declined'].includes(q.status) && !q.isTemplate;
 
+/* PUBLIC (crew link) - the pick list: job details and gear, NO prices */
 exports.getPickList = onCall(async (request) => {
   const tok = String((request.data || {}).token || '');
   if (!/^[a-f0-9]{20,40}$/.test(tok)) throw new HttpsError('invalid-argument', 'That link is not valid.');
@@ -3252,7 +3251,6 @@ exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
     chosenExtras.push(spec.label);
   });
 
-  // Generator when it's outdoors with no mains power.
   const needsGenerator = (indoor === 'outdoor' || indoor === 'mixed') && power === 'no';
   if (needsGenerator) {
     lines.push({ type: 'custom', name: 'Generator (no mains power)', description: 'Estimate — confirmed on review', qty: 1, unitCents: BOT_GENERATOR_CENTS, days });
@@ -4842,8 +4840,7 @@ async function autoGearOnDeposit(id) {
   } catch (err) { logger.error('gear list on deposit', { id, err: err && err.message }); }
 }
 
-/*  Every morning at 9:35: jobs 3 days out, and jobs on today. */
-/* GEAR + PICK LIST REMINDERS: staff get the pick list at 6am; the
+/* GEAR + PICK LIST REMINDERS for jobs 3 days out and jobs on today: staff get the pick list at 6am; the
    customer / band gear list goes at 9:35am. Each part is marked once sent
    ("staff_" / "gear_" + reason + date), and the 9:35 run also sends any
    staff list the 6am run missed. Older jobs with one shared key count as

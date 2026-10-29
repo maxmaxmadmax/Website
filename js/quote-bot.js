@@ -17,7 +17,7 @@
 
 import {
   firebaseConfig, functionsRegion, isFirebaseConfigured,
-} from './firebase-config.js?v=754';
+} from './firebase-config.js?v=755';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -561,7 +561,6 @@ function mount() {
     if (e.target.closest('[data-open-quote-bot]')) { e.preventDefault(); setOpen(true); }
   });
 
-  // Esc closes it.
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !panel.hidden) setOpen(false);
   });

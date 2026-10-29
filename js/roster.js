@@ -37,7 +37,7 @@
           photo:'images/talent/alex-emrik.jpg' },
         { slug:'dj-powerboi',        name:'DJ PowerBoi',        act:'dj',   genres:[], events:[],
           photo:'images/talent/dj-powerboi.jpg' },
-        { slug:'dougie',             name:'Dougie',             act:'dj',   genres:['R&B'], events:[],   // R&B
+        { slug:'dougie',             name:'Dougie',             act:'dj',   genres:['R&B'], events:[],
           photo:'images/talent/dougie.jpg' },
         { slug:'mosh-mechanix',      name:'Mosh Mechanix',      act:'dj',   genres:['Drum & Bass', 'Commercial'], events:[],
           photo:'images/talent/mosh-mechanix.jpg' },

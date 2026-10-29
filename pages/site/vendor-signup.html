@@ -23,8 +23,8 @@ permalink: /vendor-signup.html
     <meta property="og:image:alt" content="Eatz &amp; Beatz poster - food vans sold out, market stalls apply now">
     <meta name="twitter:card" content="summary_large_image">
 
-    <!-- Webfonts for this page only, with real fallbacks. -->
-    <!-- speed: start talking to the event list + Firebase servers straight away -->
+    <!-- speed: start talking to the event list, Firebase and webfont servers straight away.
+         Webfonts are for this page only, with real fallbacks. -->
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,15 +33,15 @@ permalink: /vendor-signup.html
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap">
 
     <link rel="icon" href="images/logo.png">
-    <link rel="stylesheet" href="css/style.css?v=754">
-    <link rel="stylesheet" href="css/vendor-signup.css?v=754">
-    <script src="js/main.js?v=754" defer></script>
+    <link rel="stylesheet" href="css/style.css?v=755">
+    <link rel="stylesheet" href="css/vendor-signup.css?v=755">
+    <script src="js/main.js?v=755" defer></script>
     <!-- speed: fetch the page's helper files at the same time as the main script -->
-    <link rel="modulepreload" href="js/firebase-config.js?v=754">
-    <link rel="modulepreload" href="js/vendor-map.js?v=754">
-    <link rel="modulepreload" href="js/terms-data.js?v=754">
-    <link rel="modulepreload" href="js/vendor-terms-data.js?v=754">
-    <script type="module" src="js/vendor-signup.js?v=754"></script>
+    <link rel="modulepreload" href="js/firebase-config.js?v=755">
+    <link rel="modulepreload" href="js/vendor-map.js?v=755">
+    <link rel="modulepreload" href="js/terms-data.js?v=755">
+    <link rel="modulepreload" href="js/vendor-terms-data.js?v=755">
+    <script type="module" src="js/vendor-signup.js?v=755"></script>
 </head>
 
 <body class="vendor-signup">
@@ -90,12 +90,12 @@ permalink: /vendor-signup.html
 </header>
 
 <!-- THE STEP RAIL -------------------------------------------------------
-     Five steps, sticky, filled in by renderRail(). -->
+     Six steps, sticky, filled in by renderRail(). -->
 <nav class="vs-rail" id="vs-rail" aria-label="Application progress"></nav>
 
 
 <!-- THE APPLICATION ------------------------------------------------------
-     One page, five sections. The side column is the booking itself. -->
+     One page, six sections. The side column is the booking itself. -->
 <section class="vs-apply" id="vs-flow">
     <div class="vs-apply-inner">
 

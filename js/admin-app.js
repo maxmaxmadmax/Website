@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=754';
+} from './firebase-config.js?v=755';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=754';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=754';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=754';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=754';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=754';
-import { expandKit } from './kit.js?v=754';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=755';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=755';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=755';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=755';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=755';
+import { expandKit } from './kit.js?v=755';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -5343,7 +5343,6 @@ function wireInvPhoto() {
       const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
       if (file) handlePhotoFile(file);
     });
-    // Click the box itself to open the file picker.
     drop.addEventListener('click', () => { if (photoInput) photoInput.click(); });
   }
 
@@ -7490,9 +7489,9 @@ function wireQuoteBuilder() {
   wrap.addEventListener('input', (e) => {
     const t = e.target;
     if (t.dataset.qc) { quoteDraft.customer[t.dataset.qc] = t.value; if (t.dataset.qc === 'eventType') render(); return; }
-    // event date calendar: saved as "Tue 20 Oct 2026"
     if (t.hasAttribute('data-qtpl')) { quoteDraft.isTemplate = t.checked; scheduleQuoteAutosave(); render(); return; }
     if (t.hasAttribute('data-qtplname')) { quoteDraft.templateName = t.value; scheduleQuoteAutosave(); return; }
+    // event date calendar: saved as "Tue 20 Oct 2026"
     if (t.hasAttribute('data-qevdate')) { quoteDraft.customer.eventDate = prettyEventDate(t.value); return; }
     if (t.dataset.qmeta) { quoteDraft[t.dataset.qmeta] = t.value; return; }
     if (t.hasAttribute('data-qdisc')) {
@@ -9674,7 +9673,7 @@ function leadFiltered(ignoreMonth) {
   const kf = state.leadContactFilter || 'all';
   const rf = state.leadRegionFilter || 'all';
   const sf = state.leadSizeFilter || 'all';
-  const ff = 'all';   // Fit filter no longer used
+  const ff = 'all';   // Fit filter is off
   const chip = state.leadChip || 'all';
   const needle = (state.leadSearch || '').trim().toLowerCase();
   return rows.filter((r) => {
@@ -10380,7 +10379,6 @@ function updateLeadSortHeaders() {
   if (wrap) wrap.scrollTop = 0;
 }
 
-/*  Quick-filter chip counts, always over every lead so they stay steady. */
 /*  Counts for the KPI tiles and the quick-filter chips - always over every
     lead, so they stay steady while you filter.                           */
 function leadChipCounts() {
@@ -10547,7 +10545,7 @@ function leadMainHtml() {
   const cf = state.leadCatFilter;
   const rf = state.leadRegionFilter || 'all';
   const sf = state.leadSizeFilter || 'all';
-  const ff = 'all';   // Fit filter no longer used
+  const ff = 'all';   // Fit filter is off
   const opt = (cur, v, l) => `<option value="${attr(v)}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`;
   const c = leadChipCounts();
   const ch = state.leadChip || 'all';
@@ -12553,7 +12551,7 @@ async function rateTipSave(form) {
 
 
 /* =========================================================================
-   LEAD SORTING v2 - Pass / Save / Chase.
+   LEAD SORTING - Pass / Save / Chase.
      Pass  -> tagged "Not for us" (still visible everywhere)
      Save  -> maybe later - the Saved list
      Chase -> go after it - the Chasing list, and Scout starts on outreach

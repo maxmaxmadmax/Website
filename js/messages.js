@@ -1,5 +1,5 @@
 /* ==========================================================================
-   MESSAGES  -  admin page        step 1: Vendors tab
+   MESSAGES  -  admin page
 
    Emails are sorted by WHO they go to (tabs) and then by WHEN they go
    (rows). Each row shows When | Subject | Who | Status | Sent.
@@ -16,7 +16,7 @@
    ctx = { state, h: { esc, attr }, call, render, money }
    ========================================================================== */
 
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=754';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=755';
 
 export const SEND_TIME = '9:35 am';
 
@@ -46,8 +46,8 @@ const WHO = { all: 'All paid vendors', food: 'Food vendors', market: 'Market sta
 const WHO_SHORT = { all: 'paid vendors', food: 'food vendors', market: 'market stalls' };
 
 /*  EMAILS ALREADY GOING OUT TO CLIENTS (shown so everything is in one place).
-    Their wording still lives in the server for now (functions/lib/quote-email.js
-    and quote-doc-email.js) - they become editable in step 2.             */
+    Their wording lives in the server (functions/lib/quote-email.js
+    and quote-doc-email.js).                                                */
 const CLIENT_EMAILS = [   // [when, name, subject, who, status, preview key]
   ['When they finish the website quote bot', 'Instant estimate', 'Your SoundzGood estimate - (event type)', 'The person who used the bot', 'Auto', 'estimate'],
   ['When you press Send on a quote', 'Quote ready', 'Your quote SG-Q-0000 from SoundzGood', 'That client (and their CC email)', 'You send it', 'quote'],
