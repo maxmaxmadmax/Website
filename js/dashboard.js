@@ -10,9 +10,9 @@
    counts in the month it was last paid (lastPaidAt / paidAt / acceptedAt).
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=760';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=760';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=760';
+import { isBooked, pickLineProgress } from './stock.js?v=761';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=761';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=761';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -99,7 +99,7 @@ export function dashboardData(ctx) {
   // entertainment gigs - the Grand View and everywhere else
   const actName = (slug) => ((ctx.talent || []).find((t) => t.slug === slug) || {}).name || slug || 'Act';
   const gigs = (ctx.schedule || []).filter((b) => inWindow(b.date)).map((b) => ({
-    id: 'gig:' + b.id, isGig: true, bookingId: b.id, hire: { startDate: b.date }, gigStatus: b.status || 'confirmed',
+    id: 'gig:' + b.id, isGig: true, bookingId: b.id, customerId: b.customerId || '', hire: { startDate: b.date }, gigStatus: b.status || 'confirmed',
     customer: { name: actName(b.slug), eventName: b.time || '', eventVenue: b.venue || '' },
   }));
   const openFridays = ctx.schedule ? openRegularNights(ctx.schedule, ctx.regularNights, 30).map((n) => ({
@@ -330,6 +330,7 @@ export function dashboardHtml(ctx) {
           </div>
           <div class="db-job-wx">${weatherBox(ctx.weather && ctx.weather[q.id], esc)}</div>
           <div class="db-job-acts">
+            ${(() => { const cu = (ctx.customers || []).find((x) => x.id === q.customerId); return cu && cu.phone ? `<a class="ad-btn" href="tel:${attr(cu.phone)}">Call</a>` : ''; })()}
             ${q.bookingId ? `<button type="button" class="ad-btn" data-gig-crew="${attr(q.bookingId)}">&#128119; Crew</button>` : ''}
             <a class="ad-btn${q.noDj ? ' ad-btn-primary' : ''}" href="#/entertainment">${q.noDj ? 'Book a DJ' : 'Entertainment'}</a>
           </div>

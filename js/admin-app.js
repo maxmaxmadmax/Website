@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=760';
+} from './firebase-config.js?v=761';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=760';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=760';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=760';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=760';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=760';
-import { expandKit } from './kit.js?v=760';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=761';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=761';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=761';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=761';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=761';
+import { expandKit } from './kit.js?v=761';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -4415,7 +4415,7 @@ VIEWS.dashboard = {
       events: state.events || [], activeEventId: state.activeEventId, emailLog: dashLog || [],
       reminders: state.reminders || [], weather: dashWeather,
       fyWeek: (() => { const t = new Date(); t.setHours(0, 0, 0, 0); t.setDate(t.getDate() - ((t.getDay() + 6) % 7)); return leadFyWeek(t); })(),
-      schedule: state.scheduleLoaded ? state.schedule : null, talent: state.talent || [], gigCrew: state.gigCrew,
+      schedule: state.scheduleLoaded ? state.schedule : null, talent: state.talent || [], gigCrew: state.gigCrew, customers: state.customers || [],
 
       h: { esc, attr, money },
     });
