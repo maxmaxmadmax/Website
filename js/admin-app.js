@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=761';
+} from './firebase-config.js?v=762';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=761';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=761';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=761';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=761';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=761';
-import { expandKit } from './kit.js?v=761';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=762';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=762';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=762';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=762';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=762';
+import { expandKit } from './kit.js?v=762';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -428,7 +428,7 @@ async function loadSchedule() {
         the calendar can be paged back into them. The filters decide what
         is on screen, not the loader.                                   */
     state.schedule = rows
-      .filter((r) => r.date)
+      .filter((r) => r.date && r.status !== 'cancelled')
       .sort((x, y) => x.date.localeCompare(y.date));
     try {
       const crew = await getDocs(collection(fb.db, 'gigCrew'));
@@ -6237,6 +6237,18 @@ function wireQuoteList() {
       state.openQuoteId = '__new__';
       location.hash = '#/quoteDocs?q=new';   // the router keeps this pre-filled copy
       try { await saveQuoteDoc(null); const m = document.getElementById('q-msg'); if (m) m.textContent = 'Copy made - this is the new estimate.'; } catch (e) { /* message shown */ }
+    },
+    // the job is off: cancelled (kept, in Archived) and its DJ booking taken off the roster
+    async canceljob(id) {
+      const q = findDoc(id) || {};
+      const gigs = [...new Set([].concat(q.pubBookings || [], q.gigBookingId || []).filter(Boolean))];
+      if (!window.confirm('Cancel ' + label(q) + '?\n\nIt moves to Archived and the customer link stops working.' + (gigs.length ? ' The DJ booking comes off the roster.' : ''))) return;
+      try {
+        await call('adminArchiveQuote', { id, archive: true });
+        const { doc, updateDoc } = fb.f;
+        for (const g of gigs) await updateDoc(doc(fb.db, 'talentSchedule', g), { status: 'cancelled' }).catch(() => {});
+        loadSchedule();
+      } catch (e) { window.alert(e.message || 'Could not cancel.'); }
     },
     async archive(id) {
       if (!window.confirm('Archive ' + label(findDoc(id)) + '? It moves to the Archived tab and the customer link stops working. You can restore it later.')) return;

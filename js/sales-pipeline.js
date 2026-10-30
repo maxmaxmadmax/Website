@@ -8,8 +8,8 @@
    the quotes and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=761';   // who still owes money
-import { isBooked, pickProgress } from './stock.js?v=761';
+import { owesMoney } from './messages.js?v=762';   // who still owes money
+import { isBooked, pickProgress } from './stock.js?v=762';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -326,7 +326,7 @@ export function rowsHtml(rows, f, h) {
               <button type="button" data-sp-act="duplicate" data-id="${h.attr(q.id)}">Duplicate</button>
               ${st.tab === 'archived'
                 ? `<button type="button" data-sp-act="restore" data-id="${h.attr(q.id)}">Restore</button>`
-                : `<button type="button" data-sp-act="archive" data-id="${h.attr(q.id)}">Archive</button>`}
+                : `<button type="button" class="sp-danger" data-sp-act="canceljob" data-id="${h.attr(q.id)}">Cancel job</button><button type="button" data-sp-act="archive" data-id="${h.attr(q.id)}">Archive</button>`}
               ${canDelete(q) || st.tab === 'archived' ? `<button type="button" class="sp-danger" data-sp-act="delete" data-id="${h.attr(q.id)}">Delete forever</button>` : ''}
             </div>
           </details>
@@ -379,7 +379,7 @@ export function wirePipeline(getJobs, f, h, act) {
     if (vb) { act.vendorInvoice(vb.getAttribute('data-id'), vb.getAttribute('data-sp-vendor'), vb); return; }
     const a = e.target.closest('[data-sp-act]');
     if (a) {
-      const fn = { duplicate: act.duplicate, archive: act.archive, restore: act.restore, delete: act.del, paid: act.paid, deposit: act.deposit, picklist: act.picklist, undopay: act.undopay, latefee: act.latefee, unlatefee: act.unlatefee, gearlist: act.gearlist, geartest: act.geartest, remind: act.remind, confirmjob: act.confirmjob, unconfirmjob: act.unconfirmjob }[a.getAttribute('data-sp-act')];
+      const fn = { duplicate: act.duplicate, archive: act.archive, canceljob: act.canceljob, restore: act.restore, delete: act.del, paid: act.paid, deposit: act.deposit, picklist: act.picklist, undopay: act.undopay, latefee: act.latefee, unlatefee: act.unlatefee, gearlist: act.gearlist, geartest: act.geartest, remind: act.remind, confirmjob: act.confirmjob, unconfirmjob: act.unconfirmjob }[a.getAttribute('data-sp-act')];
       if (fn) fn(a.getAttribute('data-id'));
       return;
     }

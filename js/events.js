@@ -235,7 +235,7 @@
     window.SGWeekend.loadCollection('talentSchedule').then(function (rows) {
         rows.forEach(function (row) {
             if (!row.date || !row.slug) return;
-            if (row.status === 'unconfirmed') return;   // held, not paid yet - not public
+            if (row.status === 'unconfirmed' || row.status === 'cancelled') return;   // held or called off - not public
 
             /*  A night can hold more than one booking. The Grand View wins for
                 these cards; anything else only fills a night the pub
