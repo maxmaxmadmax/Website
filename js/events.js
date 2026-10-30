@@ -232,7 +232,7 @@
     /*  The schedule is every booked act on every date, not only Fridays -
         it is what Admin -> Entertainment writes. The Fridays are picked
         out of it here.                                                 */
-    window.SGWeekend.loadCollection('talentSchedule').then(function (rows) {
+    window.SGWeekend.loadCollection('gigNights').then(function (rows) {
         rows.forEach(function (row) {
             if (!row.date || !row.slug) return;
             if (row.status === 'unconfirmed' || row.status === 'cancelled') return;   // held or called off - not public

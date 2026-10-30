@@ -167,9 +167,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // The roster itself is private: it carries the booker, the enquiry
+    // notes and the DJ's times link. The site reads gigNights/, a copy
+    // with only date, act, venue and status (written by a function).
     match /talentSchedule/{day} {
+      allow read, write: if isAdmin();
+    }
+    match /gigNights/{day} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if false;
     }
 
     match /gigGuide/{docId} {

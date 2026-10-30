@@ -32,7 +32,8 @@ service firebase.storage {
     // appear on the public hire catalogue and in the estimate bot; written
     // only by an admin from the inventory desk. Images only, capped in size.
     match /inventory/{allPaths=**} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if isAdmin();
       allow write: if isAdmin()
         && request.resource.size < 8 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
@@ -42,7 +43,8 @@ service firebase.storage {
     // Event posters on quotes - public read, because the customer's quote
     // page shows them. Written only by an admin. Images only, capped in size.
     match /quote-images/{allPaths=**} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if isAdmin();
       allow write: if isAdmin()
         && request.resource.size < 8 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');

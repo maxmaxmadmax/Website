@@ -5533,6 +5533,17 @@ exports.djReminders = onSchedule(
 /*  A DJ's rate / location / deck saved (DJs tab) -> their upcoming gig quotes
     are rebuilt on the server, whatever the browser does.
     Only quotes that already exist and haven't gone out are touched.        */
+/*  gigNights/: the public copy of the roster for the Friday Nights cards -
+    date, act, venue and status only. Everything else on a booking stays
+    private (talentSchedule/ is admin-only).                             */
+exports.onGigNightChanged = require('firebase-functions/v2/firestore').onDocumentWritten('talentSchedule/{id}', async (event) => {
+  const ref = db.collection('gigNights').doc(event.params.id);
+  const after = event.data && event.data.after;
+  if (!after || !after.exists) { await ref.delete().catch(() => {}); return; }
+  const b = after.data();
+  await ref.set({ date: b.date || '', slug: b.slug || '', venue: b.venue || '', status: b.status || 'confirmed', time: b.time || '' });
+});
+
 exports.onDjRatesChanged = require('firebase-functions/v2/firestore').onDocumentWritten('actRates/{slug}', async (event) => {
   const slug = event.params.slug;
   const today = brisbaneTodayISO();
