@@ -2532,10 +2532,11 @@ exports.adminArchiveQuote = onCall(async (request) => {
   const q = snap.data();
   if (archive === true) {
     if (q.status === 'cancelled') return { ok: true };
-    await ref.update({ status: 'cancelled', archivedFrom: q.status || 'draft', cancelledAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+    await ref.update({ status: 'cancelled', archivedFrom: q.status || 'draft', cancelledAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
+      ...(request.data.jobCancelled === true ? { jobCancelled: true } : {}) });   // a called-off job stays in the pipeline
   } else {
     const back = QUOTE_DOC_STATES.includes(q.archivedFrom) && q.archivedFrom !== 'cancelled' ? q.archivedFrom : 'draft';
-    await ref.update({ status: back, archivedFrom: FieldValue.delete(), updatedAt: FieldValue.serverTimestamp() });
+    await ref.update({ status: back, archivedFrom: FieldValue.delete(), jobCancelled: FieldValue.delete(), updatedAt: FieldValue.serverTimestamp() });
   }
   return { ok: true };
 });

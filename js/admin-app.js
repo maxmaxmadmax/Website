@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=762';
+} from './firebase-config.js?v=763';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=762';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=762';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=762';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=762';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=762';
-import { expandKit } from './kit.js?v=762';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=763';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=763';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=763';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=763';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=763';
+import { expandKit } from './kit.js?v=763';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -6242,9 +6242,9 @@ function wireQuoteList() {
     async canceljob(id) {
       const q = findDoc(id) || {};
       const gigs = [...new Set([].concat(q.pubBookings || [], q.gigBookingId || []).filter(Boolean))];
-      if (!window.confirm('Cancel ' + label(q) + '?\n\nIt moves to Archived and the customer link stops working.' + (gigs.length ? ' The DJ booking comes off the roster.' : ''))) return;
+      if (!window.confirm('Cancel ' + label(q) + '?\n\nIt stays in the pipeline marked Job cancelled, and the customer link stops working.' + (gigs.length ? ' The DJ booking comes off the roster.' : ''))) return;
       try {
-        await call('adminArchiveQuote', { id, archive: true });
+        await call('adminArchiveQuote', { id, archive: true, jobCancelled: true });
         const { doc, updateDoc } = fb.f;
         for (const g of gigs) await updateDoc(doc(fb.db, 'talentSchedule', g), { status: 'cancelled' }).catch(() => {});
         loadSchedule();

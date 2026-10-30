@@ -8,8 +8,8 @@
    the quotes and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=762';   // who still owes money
-import { isBooked, pickProgress } from './stock.js?v=762';
+import { owesMoney } from './messages.js?v=763';   // who still owes money
+import { isBooked, pickProgress } from './stock.js?v=763';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -71,6 +71,9 @@ export function stageOf(q) {
   if (q.vendor) {
     return { step: 4, tab: 'vendors', status: ['Paid', 'green'],
              next: ['doc', 'green', 'Invoice issued', q.emailedAt ? 'Emailed to vendor' : 'Not emailed yet'] };
+  }
+  if (q.status === 'cancelled' && q.jobCancelled) {
+    return { step: 1, tab: 'cancelled', status: ['Job cancelled', 'red'], next: ['doc', 'red', 'Job cancelled', 'Called off - Restore from the menu'] };
   }
   const s = STAGES[q.status] || STAGES.draft;
   // payment detail for jobs waiting on money
@@ -270,7 +273,7 @@ export function rowsHtml(rows, f, h) {
     const [ico, tone, nTitle, nSub] = st.next;
     if (q.vendor) {
       return `
-      <tr data-open-q="${h.attr(q.id)}">
+      <tr data-open-q="${h.attr(q.id)}"${q.jobCancelled && q.status === 'cancelled' ? ' class="sp-is-cancelled"' : ''}>
         <td class="sp-cust">
           <strong>${h.esc(c.name || 'Vendor')}<span class="ad-bot-tag">Vendor</span></strong>
           <span>${h.esc(c.eventName || '')}${q.invoiceNumber ? ' <i>' + h.esc(q.invoiceNumber) + '</i>' : ''}</span>
@@ -324,10 +327,10 @@ export function rowsHtml(rows, f, h) {
               ${['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) ? `<button type="button" data-sp-act="paid" data-id="${h.attr(q.id)}">Mark paid</button>` : ''}
               ${(q.paymentStatus || q.status === 'paid') && q.paymentMethod !== 'card' && !(q.stripeSessions && q.stripeSessions.length) ? `<button type="button" data-sp-act="undopay" data-id="${h.attr(q.id)}">Undo deposit / payment</button>` : ''}
               <button type="button" data-sp-act="duplicate" data-id="${h.attr(q.id)}">Duplicate</button>
-              ${st.tab === 'archived'
+              ${st.tab === 'archived' || st.tab === 'cancelled'
                 ? `<button type="button" data-sp-act="restore" data-id="${h.attr(q.id)}">Restore</button>`
                 : `<button type="button" class="sp-danger" data-sp-act="canceljob" data-id="${h.attr(q.id)}">Cancel job</button><button type="button" data-sp-act="archive" data-id="${h.attr(q.id)}">Archive</button>`}
-              ${canDelete(q) || st.tab === 'archived' ? `<button type="button" class="sp-danger" data-sp-act="delete" data-id="${h.attr(q.id)}">Delete forever</button>` : ''}
+              ${canDelete(q) || st.tab === 'archived' || st.tab === 'cancelled' ? `<button type="button" class="sp-danger" data-sp-act="delete" data-id="${h.attr(q.id)}">Delete forever</button>` : ''}
             </div>
           </details>
         </td>

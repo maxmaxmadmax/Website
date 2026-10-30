@@ -4067,6 +4067,9 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .sp-green{ color:var(--ad-green); background:var(--ad-green-bg); }
 .sp-red{ color:var(--ad-red); background:var(--ad-red-bg); }
 .sp-grey{ color:var(--ad-muted); background:var(--ad-grey-bg); }
+/* a called-off job: faded, struck through, still in the list */
+.sp-is-cancelled td:not(.sp-act):not(:nth-child(4)){ opacity:.55; }
+.sp-is-cancelled .sp-cust strong, .sp-is-cancelled .sp-total{ text-decoration:line-through; }
 
 .sp-bar{ display:flex; align-items:center; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
 .sp-tabs{ display:flex; gap:8px; flex-wrap:wrap; flex:1; }
