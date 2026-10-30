@@ -16,15 +16,15 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=764';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=764';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=764';
+import { termBodyHtml } from './terms-data.js?v=765';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=765';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=765';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
 const money = (c) => '$' + (Math.round(c || 0) / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const esc = (v) => String(v == null ? '' : v)
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const fmtDate = (secs) => secs
   ? new Date(secs * 1000).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
 

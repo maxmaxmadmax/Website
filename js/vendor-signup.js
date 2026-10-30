@@ -19,13 +19,13 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=764';
+} from './firebase-config.js?v=765';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=764';
-import { termBodyHtml } from './terms-data.js?v=764';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=765';
+import { termBodyHtml } from './terms-data.js?v=765';
 import {
   VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION,
-} from './vendor-terms-data.js?v=764';
+} from './vendor-terms-data.js?v=765';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2610,9 +2610,8 @@ function formatSize(bytes) {
 }
 
 function escapeHtml(value) {
-  const div = document.createElement('div');
-  div.textContent = String(value == null ? '' : value);
-  return div.innerHTML;
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 /* Tidy up listeners if the page is left. */

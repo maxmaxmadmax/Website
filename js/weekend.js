@@ -151,7 +151,7 @@
        ---------------------------------------------------------------------- */
     function esc(s) {
         return String(s)
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     function chip(ev) {
@@ -168,7 +168,9 @@
     }
 
     function card(ev) {
-        var art = ev.img ? ' style="--gg-art:url(\'' + esc((/^(https?:|\/|data:)/.test(ev.img) ? ev.img : '/' + ev.img)) + '\')"' : '';
+        var img = ev.img ? (/^(https?:|\/)/.test(ev.img) ? ev.img : '/' + ev.img) : '';
+        if (!/^(https?:\/\/|\/)[^\s'"()<>\\]*$/.test(img)) img = '';
+        var art = img ? ' style="--gg-art:url(\'' + esc(img) + '\')"' : '';
 
         return '' +
             '<article class="gg-card"' + art + '>' +
@@ -184,7 +186,7 @@
                           return '<li>' + esc(t) + '</li>';
                       }).join('') + '</ul>'
                     : '') +
-                (ev.url
+                (ev.url && /^https?:\/\//i.test(ev.url)
                     ? '<a class="gg-via" href="' + esc(ev.url) + '"' +
                       ' target="_blank" rel="noopener nofollow">' +
                       (ev.source ? 'Details via ' + esc(ev.source) : 'Event details') +

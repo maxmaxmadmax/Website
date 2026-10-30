@@ -5,14 +5,13 @@
    Returned ticks. Each tick saves straight away, so admin and everyone on
    the crew link see the same list. Refreshes itself every 20 seconds.
    ========================================================================== */
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=764';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=765';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
 function esc(v) {
-  const d = document.createElement('div');
-  d.textContent = String(v == null ? '' : v);
-  return d.innerHTML;
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 const token = () => new URLSearchParams(location.search).get('t') || '';
 

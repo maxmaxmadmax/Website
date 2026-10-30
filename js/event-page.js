@@ -41,7 +41,7 @@
               encodeURIComponent(food.getAttribute('data-event'));
 
     function esc(s) {
-        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     /*  FOOD PHOTOS - one per kind of food, free Unsplash pictures in

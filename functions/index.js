@@ -1346,14 +1346,7 @@ exports.seedEvent = onCall(async (request) => {
      no admin can exist until there are categories to sign up under. Only
      when the event does not exist yet and the id is this site's; it always
      writes the same fixed layout. After that it is admin-only. */
-  const bootstrapping =
-    !existing.exists && eventId === 'eatz-beatz-halloween-2026';
-
-  if (!bootstrapping) {
-    requireAdmin(request);
-  } else {
-    logger.warn('seedEvent ran without a sign-in - first run bootstrap', { eventId });
-  }
+  requireAdmin(request);
 
   const batch = db.batch();
 
@@ -1402,7 +1395,7 @@ exports.setAdminRole = onCall(async (request) => {
   /* An anonymous token has no email (''), and '' must never match the
      bootstrap list - anyone can get an anonymous token. */
   const callerEmail = (request.auth?.token?.email || '').toLowerCase();
-  const callerIsBootstrap = Boolean(callerEmail) && bootstrap.includes(callerEmail);
+  const callerIsBootstrap = Boolean(callerEmail) && bootstrap.includes(callerEmail) && request.auth?.token?.email_verified === true;
 
   if (!callerIsBootstrap) {
     requireAdmin(request);
@@ -2752,6 +2745,7 @@ const listOpen = (q) => !!q && !['cancelled', 'declined'].includes(q.status) && 
 
 /* PUBLIC (crew link) - the pick list: job details and gear, NO prices */
 exports.getPickList = onCall(async (request) => {
+  await limitIp(request, 'tok', 120, 60);
   const tok = String((request.data || {}).token || '');
   if (!/^[a-f0-9]{20,40}$/.test(tok)) throw new HttpsError('invalid-argument', 'That link is not valid.');
   const byGear = await db.collection('quotes').where('gearToken', '==', tok).limit(1).get();
@@ -2827,11 +2821,11 @@ exports.getPickList = onCall(async (request) => {
     hire: { startDate: (q.hire && q.hire.startDate) || '', endDate: (q.hire && q.hire.endDate) || '', days: (q.hire && q.hire.days) || 1 },
     town: (q.delivery && q.delivery.town) || '',
     delivery: del ? (del.name || 'Delivery & pickup') : 'Customer pickup',
-    contact: { name: c.name || '', business: c.business || '', phone: c.phone || '', address: c.address || '' },
+    contact: { name: c.name || '', business: c.business || '', phone: gearOnly ? '' : (c.phone || ''), address: gearOnly ? '' : (c.address || '') },
     // from the customer details form: where the gear goes, when it starts, what to know
     venue: c.eventVenue || '',
     times: { soundcheck: c.soundcheckTime || '', start: c.eventStartTime || q.botStart || '', finish: c.eventEndTime || q.botFinish || '' },
-    customerNotes: c.customerNotes || '',
+    customerNotes: gearOnly ? '' : (c.customerNotes || ''),
     dayContact: c.dayContact || '',
     assigned: (q.crewAssigned || []).map((x) => ({ name: x.name || '', phone: gearOnly ? '' : (x.phone || '') })),   // staff on the job
     crew,
@@ -2845,6 +2839,7 @@ exports.getPickList = onCall(async (request) => {
 
 /* PUBLIC (crew link) - tick / untick Packed or Returned on one item */
 exports.setPickTick = onCall(async (request) => {
+  await limitIp(request, 'tok', 120, 60);
   const d = request.data || {};
   const field = d.field === 'returned' ? 'returned' : (d.field === 'packed' ? 'packed' : '');
   const key = String(d.key || '');
@@ -2895,6 +2890,7 @@ exports.adminSendQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
 const QUOTE_DEPOSIT_PCT = 50;   // deposit to secure a booking
 
 exports.getQuote = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
+  await limitIp(request, 'tok', 120, 60);
   const token = String((request.data || {}).token || '').trim();
   if (!/^[a-f0-9]{20,40}$/.test(token)) throw new HttpsError('invalid-argument', 'That link is not valid.');
 
@@ -2907,7 +2903,7 @@ exports.getQuote = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
 
   // included / required items are grouped by category on the customer's copy,
   // the same as in the quote builder
-  const lines = (q.lines || []).map((l) => ({ ...l }));
+  const lines = (q.lines || []).map((l) => { const o = { ...l }; delete o.baseCents; delete o.resourceId; delete o.sysOrder; delete o.removedParts; if (o.type === 'labour' && o.description) o.description = String(o.description).replace(/@.*$/, '').trim(); return o; });
   const kitIds = [...new Set(lines.filter((l) => l.itemId).map((l) => l.itemId))];   // all gear lines: used for the Audio / Lighting / Staging breakdown too
   if (kitIds.length) {
     try {
@@ -2953,6 +2949,7 @@ exports.getQuote = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
 
 /*  PUBLIC - the customer accepts, by token. Idempotent once accepted.     */
 exports.acceptQuote = onCall(async (request) => {
+  await limitIp(request, 'tok', 120, 60);
   const data = request.data || {};
   const token = String(data.token || '').trim();
   const name = String(data.name || '').trim().slice(0, 120);
@@ -2994,6 +2991,7 @@ exports.acceptQuote = onCall(async (request) => {
    webhook confirms the money, never on the strength of this call.
    ------------------------------------------------------------------------- */
 exports.quoteCheckout = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
+  await limitIp(request, 'tok', 120, 60);
   const data = request.data || {};
   const token = String(data.token || '').trim();
   const name = String(data.name || '').trim().slice(0, 120);
@@ -3169,6 +3167,7 @@ exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
 
   if (!eventType) throw new HttpsError('invalid-argument', 'Please choose an event type.');
   if (!name || !(email || phone)) throw new HttpsError('invalid-argument', 'Please leave your name and a contact.');
+  if (email && !DETAIL_EMAIL_RE.test(email)) throw new HttpsError('invalid-argument', 'Please enter a valid email address.');
   if (email) await rateLimit('bot|to|' + email.toLowerCase(), 3, 24 * 60);   // at most 3 estimate emails a day to one address
 
   const inv = await loadQuoteInventory();
@@ -3387,13 +3386,13 @@ const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 exports.tellBot = onRequest({ secrets: [TELEGRAM_TOKEN], cors: false }, async (req, res) => {
   const token = TELEGRAM_TOKEN.value();
   // one-off: GET ?setup=1 points the bot at this URL
-  if (req.method === 'GET' && req.query.setup === '1') {
+  if (req.method === 'GET' && req.query.setup === '1' && req.query.key === tell.hookSecret(token)) {
     // the public address of this function (Cloud Run strips the /tellBot path from req.url, so it's fixed here)
     res.json(await tell.setup(token, 'https://australia-southeast1-soundzgood-8c86f.cloudfunctions.net/tellBot'));
     return;
   }
   // status: GET ?info=1 shows Telegram's delivery status (no secrets)
-  if (req.method === 'GET' && req.query.info === '1') {
+  if (req.method === 'GET' && req.query.info === '1' && req.query.key === tell.hookSecret(token)) {
     const r = await fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`).then((x) => x.json()).catch(() => ({}));
     const i = r.result || {};
     res.json({ url: i.url, pending: i.pending_update_count, lastError: i.last_error_message || '', lastErrorAt: i.last_error_date ? new Date(i.last_error_date * 1000).toISOString() : '' });
@@ -3611,6 +3610,7 @@ exports.adminSendVendorInvoice = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, asy
 });
 
 exports.getVendorInvoice = onCall(async (request) => {
+  await limitIp(request, 'tok', 120, 60);
   const token = String((request.data || {}).token || '').trim();
   if (!/^[a-f0-9]{20,40}$/.test(token)) throw new HttpsError('invalid-argument', 'That link is not valid.');
 
@@ -4410,6 +4410,7 @@ function sponsorValues(p, ev) {
 
 /*  PUBLIC: the sponsor page - event, spots left per level, and (personal link) who they are. */
 exports.getSponsorInfo = onCall(async (request) => {
+  await limitIp(request, 'tok', 120, 60);
   const { eventId, token } = request.data || {};
   const id = String(eventId || '').trim();
   if (!id) throw new HttpsError('invalid-argument', 'Missing event.');
@@ -4455,7 +4456,7 @@ exports.sponsorInterest = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (req
 
   const snap = await db.collection('sponsors').where('eventId', '==', eventId).get();
   const token = String(d.token || '');
-  const match = snap.docs.find((x) => (token && x.data().token === token)) || snap.docs.find((x) => String(x.data().email || '').toLowerCase() === email);
+  const match = token ? snap.docs.find((x) => x.data().token === token) : null;
   const update = { ...fields, interestedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
   if (match) {
     if (match.data().status !== 'yes') update.status = 'interested';
@@ -4576,6 +4577,7 @@ async function quoteByDetailsToken(token) {
 
 /*  PUBLIC: the form, pre-filled with what we already have. */
 exports.getDetailsForm = onCall(async (request) => {
+  await limitIp(request, 'tok', 120, 60);
   const doc = await quoteByDetailsToken((request.data || {}).token);
   const q = doc.data();
   const c = q.customer || {};
@@ -4608,7 +4610,7 @@ async function saveCustomerDetails(doc, q, f, opts = {}) {
     const rec = { name: f.name, business: f.business, email: f.email, ccEmail: f.ccEmail, phone: f.phone, address: f.address, updatedAt: Date.now() };
     Object.keys(rec).forEach((k) => { if (rec[k] === '') delete rec[k]; });
     if (cs.empty) await db.collection('customers').add({ type: f.business ? 'business' : 'private', notes: '', ...rec, createdAt: Date.now() });
-    else if (!opts.addOnly) await cs.docs[0].ref.set(rec, { merge: true });   // the quote-page form never rewrites a saved customer
+    else if (!opts.addOnly && String((q.customer || {}).email || '').toLowerCase() === f.email.toLowerCase()) await cs.docs[0].ref.set(rec, { merge: true });   // only the customer already on this quote
   } catch (err) { logger.warn('details: customer list', err && err.message); }
 
   await sendMessageEmail({
@@ -4719,6 +4721,8 @@ exports.submitDetails = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (reque
   if (!f.eventName) throw new HttpsError('invalid-argument', 'Please enter the event name.');
   if (!f.eventStartTime) throw new HttpsError('invalid-argument', 'Please enter the event start time.');
   if (!f.eventVenue) throw new HttpsError('invalid-argument', 'Please enter the venue.');
+  if (['cancelled', 'declined'].includes(q.status)) throw new HttpsError('failed-precondition', 'This quote is no longer open.');
+  if (hasPayDetails(q.customer)) throw new HttpsError('failed-precondition', 'Your details are already on this quote - call us on 0422 393 022 to change them.');
 
   const customer = await saveCustomerDetails(doc, q, f);
 
@@ -5193,6 +5197,7 @@ async function bookingByTimesToken(token) {
 
 /*  PUBLIC - the DJ's page */
 exports.getPubTimes = onCall(async (request) => {
+  await limitIp(request, 'tok', 120, 60);
   const doc = await bookingByTimesToken((request.data || {}).token);
   const b = doc.data();
   const t = await db.collection('talent').doc(b.slug).get();
@@ -5222,6 +5227,7 @@ exports.submitPubTimes = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
   if (hours > 8) throw new HttpsError('invalid-argument', 'That\'s more than 8 hours - please check with Max on 0422 393 022.');
   const doc = await bookingByTimesToken(d.token);
   const b = doc.data();
+  if (brisbaneTodayISO() < b.date || (brisbaneTodayISO() === b.date && brisbaneMinutesNow() < 17 * 60)) throw new HttpsError('failed-precondition', 'Times can be entered from 5pm on the night.');
   await doc.ref.update({ actualStart: String(d.start), actualFinish: String(d.finish), timesConfirmedAt: FieldValue.serverTimestamp() });
   const res = await gigSync(doc.id);
   let sent = false, why = '';

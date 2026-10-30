@@ -10,7 +10,7 @@
    page shows a friendly empty state rather than throwing.
    ========================================================================== */
 
-import { firebaseConfig, isFirebaseConfigured } from './firebase-config.js?v=764';
+import { firebaseConfig, isFirebaseConfigured } from './firebase-config.js?v=765';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -20,9 +20,8 @@ let activeCat = 'all';
 const money = (cents) => '$' + Math.round((cents || 0) / 100).toLocaleString('en-AU');
 
 function esc(value) {
-  const d = document.createElement('div');
-  d.textContent = String(value == null ? '' : value);
-  return d.innerHTML;
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 /*  Category pills get a stable colour from the name - same idea as the admin

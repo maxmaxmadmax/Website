@@ -179,7 +179,7 @@ function normalise(node, source, url) {
         time: time,
         venue: String(place.name || '').replace(/\s+/g, ' ').trim(),
         suburb: String(address.addressLocality || '').replace(/\s+/g, ' ').trim(),
-        url: String(node.url || url || ''),
+        url: /^https?:\/\//i.test(String(node.url || url || '')) ? String(node.url || url || '') : '',
         image: pictureFrom(node),
         source: source,
     };

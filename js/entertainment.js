@@ -77,9 +77,8 @@ function start(ROSTER) {
     var panelClose = document.getElementById('ent-panel-close');
 
     function esc(value) {
-        var d = document.createElement('div');
-        d.textContent = value == null ? '' : String(value);
-        return d.innerHTML;
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     /* Every distinct value of one field across the roster, sorted. */

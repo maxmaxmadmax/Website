@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=764';
+} from './firebase-config.js?v=765';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=764';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=764';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=764';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=764';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=764';
-import { expandKit } from './kit.js?v=764';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=765';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=765';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=765';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=765';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=765';
+import { expandKit } from './kit.js?v=765';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -908,9 +908,8 @@ const VIEWS = {};
    Helpers
    ------------------------------------------------------------------------- */
 function esc(value) {
-  const d = document.createElement('div');
-  d.textContent = String(value == null ? '' : value);
-  return d.innerHTML;
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 /*  A URL from the database, checked before it becomes a link.
@@ -937,7 +936,7 @@ function safeUrl(value) {
 }
 
 function attr(value) {
-  return String(value == null ? '' : value).replace(/"/g, '&quot;');
+  return String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function secs(ts) {

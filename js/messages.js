@@ -16,7 +16,7 @@
    ctx = { state, h: { esc, attr }, call, render, money }
    ========================================================================== */
 
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=764';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=765';
 
 export const SEND_TIME = '9:35 am';
 
@@ -267,7 +267,7 @@ function sentHtml(ctx) {
       ${open ? `<aside class="ad-card ms-card ms-pad ms-log-view">
         <button type="button" class="ms-back" data-ms-logclose>&times; Close</button>
         <p class="ms-log-meta"><b>${h.esc(open.subject)}</b><br>To: ${h.esc(open.to)}${open.cc ? '<br>CC: ' + h.esc(open.cc) : ''}${open.bcc ? '<br>Copy: ' + h.esc(open.bcc) : ''}<br>${h.esc(whenSent(open.at))}${open.ok ? '' : '<br><span class="ms-fail">Failed: ' + h.esc(open.error || '') + '</span>'}</p>
-        <iframe class="ms-log-frame" id="ms-log-frame" title="Email"></iframe>
+        <iframe sandbox="" class="ms-log-frame" id="ms-log-frame" title="Email"></iframe>
       </aside>` : ''}
     </div>`;
 }
@@ -426,7 +426,7 @@ function remindersHtml(h, state) {
     ${p ? `<aside class="ad-card ms-card ms-pad ms-log-view">
         <button type="button" class="ms-back" data-ms-cclose>&times; Close</button>
         <p class="ms-log-meta"><b>${h.esc(p.subject || '')}</b>${p.note ? '<br>' + h.esc(p.note) : ''}</p>
-        ${p.loading ? '<p class="ad-cell-muted">Loading&hellip;</p>' : '<iframe class="ms-log-frame" id="ms-cprev-frame" title="Email preview"></iframe>'}
+        ${p.loading ? '<p class="ad-cell-muted">Loading&hellip;</p>' : '<iframe sandbox="" class="ms-log-frame" id="ms-cprev-frame" title="Email preview"></iframe>'}
       </aside>` : ''}
     </div>
     <p class="ms-key">Only sent when you press Send. It asks for the deposit if nothing's paid yet, otherwise what's still owing, with the link to view &amp; pay.</p>`;
@@ -454,7 +454,7 @@ function clientsHtml(h, state) {
     ${p ? `<aside class="ad-card ms-card ms-pad ms-log-view">
         <button type="button" class="ms-back" data-ms-cclose>&times; Close</button>
         <p class="ms-log-meta"><b>${h.esc(p.subject || '')}</b>${p.note ? '<br>' + h.esc(p.note) : ''}</p>
-        ${p.loading ? '<p class="ad-cell-muted">Loading&hellip;</p>' : '<iframe class="ms-log-frame" id="ms-cprev-frame" title="Email preview"></iframe>'}
+        ${p.loading ? '<p class="ad-cell-muted">Loading&hellip;</p>' : '<iframe sandbox="" class="ms-log-frame" id="ms-cprev-frame" title="Email preview"></iframe>'}
       </aside>` : ''}
     </div>
     <p class="ms-key">Click any of these to see the email. These client emails already go out today. Editing them here, plus the quote follow-ups, balance reminders and review requests, comes in step 2.</p>`;

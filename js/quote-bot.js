@@ -17,7 +17,7 @@
 
 import {
   firebaseConfig, functionsRegion, isFirebaseConfigured,
-} from './firebase-config.js?v=764';
+} from './firebase-config.js?v=765';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -147,9 +147,8 @@ function eventTypeOptions() {
    Rendering helpers
    ------------------------------------------------------------------------- */
 function esc(value) {
-  const d = document.createElement('div');
-  d.textContent = String(value == null ? '' : value);
-  return d.innerHTML;
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function scrollDown() {
