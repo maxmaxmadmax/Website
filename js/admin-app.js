@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=767';
+} from './firebase-config.js?v=768';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=767';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=767';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=767';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=767';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=767';
-import { expandKit } from './kit.js?v=767';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=768';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=768';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=768';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=768';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=768';
+import { expandKit } from './kit.js?v=768';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -1704,6 +1704,7 @@ function wireDetail() {
   /*  data-confirm on a button means it does something a person would want
       to be asked about first - freeing a site, taking money. */
   const guarded = (el, run) => {
+    if (!el) return;
     el.addEventListener('click', () => {
       const ask = el.getAttribute('data-confirm');
       if (ask && !window.confirm(ask)) return;
