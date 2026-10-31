@@ -1851,6 +1851,28 @@ exports.adminAssignSite = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (req
   return { ok: true, siteLabel: label, emailed };
 });
 
+/*  Email one vendor the approved "Site changed" message (their drawer). */
+exports.adminSendSiteChanged = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  requireAdmin(request);
+  const bookingId = String((request.data || {}).bookingId || '');
+  const bSnap = await db.collection('bookings').doc(bookingId).get();
+  if (!bSnap.exists) throw new HttpsError('not-found', 'Booking not found.');
+  const b = bSnap.data();
+  if (b.status !== 'confirmed' || !b.siteLabel) throw new HttpsError('failed-precondition', 'They need to be paid and on a site.');
+  if (!(b.business || {}).email) throw new HttpsError('failed-precondition', 'They have no email address.');
+  const ms = await db.collection('messages').where('eventId', '==', b.eventId).get();
+  const md = ms.docs.find((x) => x.data().system === 'site-moved');
+  const m = md && md.data();
+  if (!m || m.status !== 'approved') throw new HttpsError('failed-precondition', 'Approve the "Site changed" email on the Messages page first.');
+  const evSnap = await db.collection('events').doc(b.eventId).get();
+  const r = await sendMessageTo({ subject: m.approvedSubject || m.subject, body: m.approvedBody || m.body, promo: false },
+    evSnap.exists ? evSnap.data() : {}, bSnap, { extra: { old_site: 'your previous site' } });
+  await recordSend(md.ref, bSnap, r);
+  await refreshMessageCounts(md.ref);
+  if (!r.sent) throw new HttpsError('internal', 'It did not send: ' + (r.error || r.reason || ''));
+  return { ok: true, to: b.business.email };
+});
+
 /* -------------------------------------------------------------------------
    adminCreateBooking - add a vendor by hand.
 
@@ -3843,7 +3865,7 @@ function starterMessages(eventId) {
     // SITE CHANGED: sent the moment an admin moves a paid vendor to a different site
     { ...base, system: 'site-moved', name: 'Site changed', status: 'review', trigger: { type: 'siteMoved' },
       subject: 'Your site has changed - {{event_name}}',
-      body: "Hi {{vendor_name}},\n\nA quick heads-up: we've moved {{business_name}} to site {{site_number}} for {{event_name}} on {{event_date}} (you were on {{old_site}}).\n\nYour event guide below has the updated site map. Nothing else changes.\n\nThanks,\nThe SoundzGood team" },
+      body: "Hi {{vendor_name}},\n\nA quick heads-up: we've moved {{business_name}} to site {{site_number}} for {{event_name}} on {{event_date}}.\n\nYour event guide below has the updated site map. Nothing else changes.\n\nThanks,\nThe SoundzGood team" },
     // WAITLIST OFFER: sent by the waitlist the moment a spot opens
     { ...base, system: 'waitlist', name: 'Waitlist - a spot opened', status: 'review', trigger: { type: 'waitlist' },
       subject: 'A spot just opened at {{event_name}} - claim it now',

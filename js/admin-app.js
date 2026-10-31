@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=766';
+} from './firebase-config.js?v=767';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=766';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=766';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=766';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=766';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=766';
-import { expandKit } from './kit.js?v=766';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=767';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=767';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=767';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=767';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=767';
+import { expandKit } from './kit.js?v=767';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -1653,6 +1653,11 @@ function sitePicker(b) {
       <p class="ad-seat-hint">Ctrl or Cmd click for more than one bay.</p>
       <div class="ad-actions-row">
         <button type="button" class="ad-btn ad-btn-primary" id="ad-seat-save">Save sites</button>
+        ${theirs.size && b.status === 'confirmed' ? `
+          <button type="button" class="ad-btn" id="ad-seat-tell"
+                  data-confirm="Email ${attr(vendorName(b))} the 'Site changed' message (site ${attr(b.siteLabel || '')})?">
+            Email: your site has changed
+          </button>` : ''}
         ${theirs.size ? `
           <button type="button" class="ad-btn" id="ad-seat-free"
                   data-confirm="Take their site away and leave them unseated?">
@@ -1732,6 +1737,8 @@ function wireDetail() {
   const free = document.getElementById('ad-seat-free');
   if (free) guarded(free, () =>
     runAction(free, 'adminAssignSite', { bookingId: id, siteIds: [] }));
+  const tell = document.getElementById('ad-seat-tell');
+  guarded(tell, () => runAction(tell, 'adminSendSiteChanged', { bookingId: id }));
 
   const noteForm = document.getElementById('ad-note-form');
   const noteBox = document.getElementById('ad-note-text');
