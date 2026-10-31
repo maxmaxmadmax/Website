@@ -21,14 +21,14 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=765';
+} from './firebase-config.js?v=766';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=765';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=765';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=765';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=765';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=765';
-import { expandKit } from './kit.js?v=765';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=766';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=766';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=766';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=766';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=766';
+import { expandKit } from './kit.js?v=766';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -1952,10 +1952,12 @@ function sitePanel(site) {
       somewhere. Somebody already on another site is moved from their own
       drawer instead, so a move is one action rather than a free and a
       seat that could half fail. */
-  const candidates = realApplications().filter((b) =>
-    bucket(b) !== 'declined' &&
-    (b.vendorType === 'food' ? 'food' : 'market') === site.type &&
-    !(b.siteIds && b.siteIds.length) && !b.siteId);
+  // vendors of this site's type: those without a site, and those who could be moved here
+  const sameType = realApplications().filter((b) =>
+    bucket(b) !== 'declined' && (b.vendorType === 'food' ? 'food' : 'market') === site.type);
+  const hasSite = (b) => !!((b.siteIds && b.siteIds.length) || b.siteId);
+  const candidates = sameType.filter((b) => !hasSite(b));
+  const movable = sameType.filter((b) => hasSite(b) && !(b.siteIds || [b.siteId]).includes(site.id));
 
   return `
     <header class="ad-site-panel-head">
@@ -1993,11 +1995,13 @@ function sitePanel(site) {
       </div>`
     : `
       <h3 class="ad-drawer-h">Put someone here</h3>
-      ${candidates.length ? `
+      ${candidates.length || movable.length ? `
         <select id="ad-site-who-pick">
           <option value="">Choose a vendor…</option>
-          ${candidates.map((b) => `
-            <option value="${attr(b.id)}">${esc(vendorName(b))}</option>`).join('')}
+          ${candidates.length ? '<optgroup label="Without a site">' + candidates.map((b) => `
+            <option value="${attr(b.id)}">${esc(vendorName(b))}</option>`).join('') + '</optgroup>' : ''}
+          ${movable.length ? '<optgroup label="Move here from another site">' + movable.map((b) => `
+            <option value="${attr(b.id)}" data-from="${attr(b.siteLabel || '')}">${esc(vendorName(b))} &middot; now on ${esc(b.siteLabel || '?')}</option>`).join('') + '</optgroup>' : ''}
         </select>
         <div class="ad-actions-row" style="margin-top:10px">
           <button type="button" class="ad-btn ad-btn-primary" id="ad-site-seat">Assign</button>
@@ -2044,6 +2048,8 @@ function wireSitePanel() {
   if (seat) seat.addEventListener('click', () => {
     const pick = document.getElementById('ad-site-who-pick');
     if (!pick.value) { window.alert('Choose a vendor first.'); return; }
+    const from = pick.selectedOptions[0] && pick.selectedOptions[0].getAttribute('data-from');
+    if (from && !window.confirm('Move ' + pick.selectedOptions[0].textContent.split(' · ')[0].trim() + ' from ' + from + ' to ' + site.label + '? ' + from + ' becomes free.')) return;
     runAction(seat, 'adminAssignSite', { bookingId: pick.value, siteIds: [site.id] });
   });
 

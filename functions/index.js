@@ -1739,7 +1739,7 @@ exports.adminAddNote = onCall(async (request) => {
    are taken together, so a move can never end up holding both or neither.
    Pass an empty list to free them without giving them anywhere new.
    ------------------------------------------------------------------------- */
-exports.adminAssignSite = onCall(async (request) => {
+exports.adminAssignSite = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
   requireAdmin(request);
   const { bookingId, siteIds } = request.data || {};
 
@@ -1752,7 +1752,7 @@ exports.adminAssignSite = onCall(async (request) => {
 
   const who = actor(request);
 
-  const label = await db.runTransaction(async (tx) => {
+  const res = await db.runTransaction(async (tx) => {
     const bRef = db.collection('bookings').doc(bookingId);
     const bSnap = await tx.get(bRef);
     if (!bSnap.exists) throw new HttpsError('not-found', 'Booking not found.');
@@ -1825,11 +1825,30 @@ exports.adminAssignSite = onCall(async (request) => {
     }
 
     tx.update(bRef, update);
-    return labels;
+    return { labels, was: booking.siteLabel || '', status: booking.status, eventId };
   });
-
+  const label = res.labels;
   logger.info('admin assigned site', { bookingId, siteIds: wanted, by: who.email });
-  return { ok: true, siteLabel: label };
+
+  // a paid vendor moved to a different site gets the "Site changed" email - once Max has approved it
+  let emailed = false;
+  if (wanted.length && label && label !== res.was && res.status === 'confirmed') {
+    try {
+      const ms = await db.collection('messages').where('eventId', '==', res.eventId).get();
+      const md = ms.docs.find((x) => x.data().system === 'site-moved');
+      const m = md && md.data();
+      if (m && m.status === 'approved') {
+        const fresh = await db.collection('bookings').doc(bookingId).get();
+        const evSnap = await db.collection('events').doc(res.eventId).get();
+        const r = await sendMessageTo({ subject: m.approvedSubject || m.subject, body: m.approvedBody || m.body, promo: false },
+          evSnap.exists ? evSnap.data() : {}, fresh, { extra: { old_site: res.was || 'no site' } });
+        await recordSend(md.ref, fresh, r);
+        await refreshMessageCounts(md.ref);
+        emailed = !!r.sent;
+      }
+    } catch (e) { logger.warn('site moved email', { bookingId, error: e && e.message }); }
+  }
+  return { ok: true, siteLabel: label, emailed };
 });
 
 /* -------------------------------------------------------------------------
@@ -3763,7 +3782,7 @@ async function messageRecipients(msg) {
 async function sendMessageTo(msg, ev, bookingDoc, opts) {
   const b = bookingDoc.data();
   const inv = await ensureVendorInvoice(bookingDoc.id);
-  const values = fieldsFor(b, ev, SITE_URL + '/vendor-invoice?t=' + inv.token);
+  const values = { ...fieldsFor(b, ev, SITE_URL + '/vendor-invoice?t=' + inv.token), ...(opts.extra || {}) };
   return sendMessageEmail(msg, values, {
     to: opts.test ? opts.to : (b.business || {}).email,
     test: !!opts.test,
@@ -3821,6 +3840,10 @@ function starterMessages(eventId) {
     { ...base, name: 'Thank you', status: 'review',
       subject: 'Thank you for being part of {{event_name}}', trigger: { type: 'daysAfter', days: 1 },
       body: "Hi {{vendor_name}},\n\nThank you for joining us at {{event_name}} - we hope it was a great night for {{business_name}}.\n\nWe'd love your feedback. Just reply to this email and tell us what worked and what we can do better.\n\nFollow us on Instagram @soundzgood_events for our next events.\n\nThanks again,\nThe SoundzGood team" },
+    // SITE CHANGED: sent the moment an admin moves a paid vendor to a different site
+    { ...base, system: 'site-moved', name: 'Site changed', status: 'review', trigger: { type: 'siteMoved' },
+      subject: 'Your site has changed - {{event_name}}',
+      body: "Hi {{vendor_name}},\n\nA quick heads-up: we've moved {{business_name}} to site {{site_number}} for {{event_name}} on {{event_date}} (you were on {{old_site}}).\n\nYour event guide below has the updated site map. Nothing else changes.\n\nThanks,\nThe SoundzGood team" },
     // WAITLIST OFFER: sent by the waitlist the moment a spot opens
     { ...base, system: 'waitlist', name: 'Waitlist - a spot opened', status: 'review', trigger: { type: 'waitlist' },
       subject: 'A spot just opened at {{event_name}} - claim it now',
@@ -3984,7 +4007,7 @@ exports.adminMessageTest = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (re
       note: 'This spot is held for you until Sat 24 Oct, 1:35 pm. It is only yours once payment is received.' });
     return { ...r, to };
   }
-  const r = await sendMessageTo(m, ev, list[0], { test: true, to });
+  const r = await sendMessageTo(m, ev, list[0], { test: true, to, extra: m.system === 'site-moved' ? { old_site: 'F2' } : {} });
   return { ...r, to };
 });
 
