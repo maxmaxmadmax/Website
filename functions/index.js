@@ -3951,7 +3951,7 @@ exports.adminMessageSave = onCall(async (request) => {
 });
 
 /*  approve | pause | resume | cancel | delete */
-exports.adminMessageAction = onCall(async (request) => {
+exports.adminMessageAction = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
   requireAdmin(request);
   const { id, action } = request.data || {};
   const ref = db.collection('messages').doc(String(id || ''));
@@ -3982,6 +3982,27 @@ exports.adminMessageAction = onCall(async (request) => {
     }
     await ref.update({ status: 'approved', approvedAt: FieldValue.serverTimestamp(), approvedBy: by, updatedAt: FieldValue.serverTimestamp() });
     return { ok: true, sendDate: day };
+  }
+  // SEND NOW: straight to everyone it's for, no waiting for 9:35 am
+  if (action === 'sendNow') {
+    if (m.system) throw new HttpsError('failed-precondition', 'That one sends itself.');
+    if (!String(m.subject || '').trim() || !String(m.body || '').trim()) throw new HttpsError('failed-precondition', 'Fill in the subject and the message first.');
+    if (m.status === 'sent') throw new HttpsError('failed-precondition', 'Already sent.');
+    const evSnap = await db.collection('events').doc(m.eventId).get();
+    const ev = evSnap.exists ? evSnap.data() : {};
+    const list = await messageRecipients(m);
+    if (!list.length) throw new HttpsError('failed-precondition', 'Nobody to send it to.');
+    for (const b of list) {
+      const already = await ref.collection('sends').doc(b.id).get();
+      if (already.exists && already.data().ok) continue;
+      const r = await sendMessageTo(m, ev, b, {});
+      await recordSend(ref, b, r);
+    }
+    await refreshMessageCounts(ref);
+    await ref.update({ status: 'sent', sentAt: FieldValue.serverTimestamp(), sentBy: by, updatedAt: FieldValue.serverTimestamp() });
+    const fresh = (await ref.get()).data();
+    logger.info('message sent now', { id: ref.id, name: m.name, count: list.length, by });
+    return { ok: true, sent: fresh.sentCount || 0, failed: (fresh.failed || []).length, total: list.length };
   }
   if (action === 'pause') {
     if (m.status !== 'approved') throw new HttpsError('failed-precondition', 'Only an approved message can be paused.');

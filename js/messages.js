@@ -16,7 +16,7 @@
    ctx = { state, h: { esc, attr }, call, render, money }
    ========================================================================== */
 
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=768';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=769';
 
 export const SEND_TIME = '9:35 am';
 
@@ -529,6 +529,7 @@ function editorHtml(ctx, ev) {
           ${!isNew && !dirty && m.status === 'review' ? '<button type="button" class="ad-btn ms-approve" data-ms-act="approve">Approve</button>' : ''}
           ${!isNew && m.status === 'approved' ? '<button type="button" class="ad-btn" data-ms-act="pause">Pause</button>' : ''}
           ${!isNew && m.status === 'paused' ? '<button type="button" class="ad-btn ad-btn-primary" data-ms-act="resume">Resume</button>' : ''}
+          ${!isNew && !dirty && !sys && ['approved', 'paused', 'review'].includes(m.status) ? '<button type="button" class="ad-btn ad-btn-primary" data-ms-act="sendnow">Send now</button>' : ''}
           ${!isNew && !sys && ['approved', 'paused', 'review'].includes(m.status) ? '<button type="button" class="ad-btn" data-ms-act="cancel">Cancel</button>' : ''}
           ${!isNew && !sys && !(m.sentCount > 0) ? '<button type="button" class="ad-btn ms-del" data-ms-act="delete">Delete</button>' : ''}
         </div>
@@ -821,6 +822,12 @@ export function wireMessages(ctx) {
         await call('adminMessageAction', { id, action: 'delete' });
         close();
         return;
+      } else if (what === 'sendnow') {
+        const mm = (state.messages || []).find((x) => x.id === id) || {};
+        const n = recipients(state.bookings, state.activeEventId, mm).length;
+        if (!window.confirm('Send "' + (mm.name || 'this message') + '" to ' + n + ' vendor' + (n === 1 ? '' : 's') + ' RIGHT NOW?')) { act.disabled = false; return; }
+        const r = await call('adminMessageAction', { id, action: 'sendNow' });
+        say('Sent to ' + r.sent + ' of ' + r.total + (r.failed ? ' - ' + r.failed + ' failed (see below)' : '.'), !!r.failed);
       } else if (what === 'cancel') {
         if (!window.confirm('Cancel this message? It will not send.')) { act.disabled = false; return; }
         await call('adminMessageAction', { id, action: 'cancel' });
