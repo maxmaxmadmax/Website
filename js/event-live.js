@@ -89,15 +89,19 @@
         }
 
         // the programme
-        var list = document.getElementById('ep-programme');
-        if (list && d.programme && d.programme.length) {
-            list.innerHTML = d.programme.map(function (p) {
-                return '<li><b>' + esc(ampm(p.start) || '—') + '</b> <span>' + esc(p.title)
-                    + (p.who ? ' <small>' + esc(p.who) + '</small>' : '') + '</span></li>';
-            }).join('');
+        var timed = (d.programme || []).filter(function (p) { return p.start; });
+        var timesHtml = timed.map(function (p) {
+            return '<li><b>' + esc(ampm(p.start)) + '</b> <span>' + esc(p.title)
+                + (p.who ? ' <small>' + esc(p.who) + '</small>' : '') + '</span></li>';
+        }).join('');
+        ['ep-programme', 'ep-programme-cover'].forEach(function (id) {
+            var list = document.getElementById(id);
+            if (!list || !timed.length) return;
+            list.innerHTML = timesHtml;
+            list.hidden = false;
             var sec = list.closest('[data-ep-programme]');
             if (sec) sec.hidden = false;
-        }
+        });
 
         // the entertainment cards: featured programme lines
         var ent = document.getElementById('ep-ent');

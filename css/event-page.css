@@ -1701,3 +1701,28 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
   .ep-page-3 .ep-times-poster{ display:grid; grid-template-columns:1.1fr .9fr; gap:10mm; align-items:start; }
   .ep-page-3 .ep-poster img{ max-height:230mm; width:auto; max-width:100%; }
 }
+/* the cover's copy of the times is for paper only */
+.ep-times-cover{ display:none; }
+@media print{
+  /* FOUR PAGES: cover (with the times and the poster), food, entertainment, market + FAQs + sponsors */
+  .ep-page-3{ display:none !important; }
+  .ep-hero-live{ padding:12mm 13mm; }
+  .ep-hero-live .ep-hero-inner{ display:grid !important; grid-template-columns:1.05fr .95fr; gap:10mm; align-items:start; height:100%; }
+  .ep-hero-live .ep-title{ font-size:60pt; }
+  .ep-hero-live .ep-facts{ max-width:none; }
+  .ep-times-cover{ display:block !important; margin:8mm 0 0; }
+  .ep-times-cover li{ padding:2.2mm 0; font-size:9.5pt; }
+  .ep-times-cover b{ min-width:60px; font-size:9.5pt; }
+  .ep-times-cover small{ font-size:8pt; }
+  .ep-poster-hero{ display:block !important; max-width:none; margin:0; }
+  .ep-poster-hero img{ width:100%; height:auto; max-height:260mm; object-fit:contain; border-radius:4mm; box-shadow:none; }
+  /* entertainment: the headline down the left, six beside it in three rows */
+  .ep-page-ent .ep-ent-live{ grid-template-rows:repeat(3, 1fr); }
+  .ep-page-ent .ep-ent-live.has-headline .is-headline{ grid-row:1 / span 3; }
+  .ep-page-ent .ep-ent-item:nth-child(n+7){ display:flex; }
+  .ep-page-ent .ep-ent-item:nth-child(n+8){ display:none !important; }
+  .ep-page-ent .ep-ent-item .ep-ent-photo{ height:34%; }
+  .ep-page-ent .is-headline .ep-ent-photo{ height:40%; }
+  .ep-page-ent .ep-ent-item p:not(.ep-kicker){ -webkit-line-clamp:4; }
+  .ep-page-ent .is-headline p:not(.ep-kicker){ -webkit-line-clamp:10; }
+}
