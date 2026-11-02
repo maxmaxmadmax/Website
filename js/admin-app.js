@@ -21,15 +21,15 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=784';
+} from './firebase-config.js?v=785';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=784';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=784';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=784';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=784';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=784';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=784';
-import { expandKit } from './kit.js?v=784';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=785';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=785';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=785';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=785';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=785';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=785';
+import { expandKit } from './kit.js?v=785';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2457,6 +2457,13 @@ const programmeStore = {
     await updateDoc(doc(fb.db, 'events', state.activeEventId, 'programme', id), p);
     const line = (state.programme || []).find((l) => l.id === id);
     if (line) Object.assign(line, p);
+    if (p.headline === true) {   // one headline per event
+      for (const o of (state.programme || []).filter((l) => l.id !== id && l.headline)) {
+        await updateDoc(doc(fb.db, 'events', state.activeEventId, 'programme', o.id), { headline: false });
+        o.headline = false;
+      }
+      if (!line.featured) { await updateDoc(doc(fb.db, 'events', state.activeEventId, 'programme', id), { featured: true }); line.featured = true; }
+    }
     if (!inp || document.activeElement !== inp || inp.type === 'time' || inp.type === 'checkbox') render();
   },
   async remove(id) {

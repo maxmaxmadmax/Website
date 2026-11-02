@@ -9,7 +9,7 @@
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=784';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=785';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 
@@ -380,6 +380,7 @@ function programmeHtml(ctx) {
         <div class="ev-prog-pic${p.photo ? '' : ' is-blank'}"${p.photo ? ` style="background-image:url('${attr(p.photo)}')"` : ''}></div>
         <div class="ev-prog-more-f">
           <label class="ad-check"><input type="checkbox" data-prog="featured" data-id="${attr(p.id)}"${p.featured ? ' checked' : ''}> <b>Feature on the event page</b> <span>as a card under Entertainment, with the photo and blurb</span></label>
+          <label class="ad-check"><input type="checkbox" data-prog="headline" data-id="${attr(p.id)}"${p.headline ? ' checked' : ''}> <b>Headline</b> <span>the big card - one per event. The print page fits the headline plus five featured cards.</span></label>
           <input class="ad-input" value="${attr(p.blurb || '')}" data-prog="blurb" data-id="${attr(p.id)}" placeholder="A line or two about it - who they are, what to expect" maxlength="400">
           <div class="ev-prog-more-row">
             <input class="ad-input" value="${attr(p.link || '')}" data-prog="link" data-id="${attr(p.id)}" placeholder="Link (https://...) - their site or socials" maxlength="300">

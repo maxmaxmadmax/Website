@@ -3560,7 +3560,7 @@ exports.eventLineup = onRequest({ cors: true }, async (req, res) => {
         const ours = /^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[\w.-]+\/o\/event-images%2F[\w.%-]+\?[\w=&.-]+$/.test(photo) || /^\/images\/[\w./-]+$/.test(photo);
         const link = String(p.link || '');
         return { start: String(p.start || '').slice(0, 5), finish: String(p.finish || '').slice(0, 5), title: String(p.title).slice(0, 120), who: String(p.who || '').slice(0, 120), kind: String(p.kind || 'activity').slice(0, 20),
-          featured: !!p.featured, blurb: String(p.blurb || '').slice(0, 400), photo: ours ? photo : '', link: /^https:\/\/[^\s'"()<>]+$/.test(link) ? link.slice(0, 300) : '' };
+          featured: !!p.featured, headline: !!p.headline, blurb: String(p.blurb || '').slice(0, 400), photo: ours ? photo : '', link: /^https:\/\/[^\s'"()<>]+$/.test(link) ? link.slice(0, 300) : '' };
       });
     // THE SPONSORS who said yes
     out.sponsors = spSnap.docs.map((d) => d.data()).filter((p) => p.status === 'yes' && p.business)

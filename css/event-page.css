@@ -1671,3 +1671,33 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 .ep-ent-item:not(.has-photo) h3 span{ color:var(--ep-orange); }
 .ep-ent-item .ep-ent-link{ display:inline-block; margin-top:10px; }
 .ep-ent-item:not(.has-photo) .ep-ent-link{ color:var(--ep-ink); text-decoration:underline; }
+
+/* entertainment: the headline is the big card on the left, the rest tile beside it */
+.ep-ent-live.has-headline{ grid-template-columns:1.35fr 1fr 1fr; grid-auto-flow:dense; }
+.ep-ent-live .is-headline{ grid-column:1; grid-row:span 2; }
+.ep-ent-live.has-headline .ep-ent-item:not(.is-headline){ min-height:200px; }
+.ep-ent-item.is-headline h3{ font-size:clamp(2rem, 4vw, 3rem); }
+.ep-ent-item.is-headline .ep-ent-photo{ aspect-ratio:16/10; }
+@media (max-width:900px){ .ep-ent-live.has-headline{ grid-template-columns:1fr 1fr; } .ep-ent-live .is-headline{ grid-column:1 / -1; grid-row:auto; } }
+@media (max-width:600px){ .ep-ent-live.has-headline{ grid-template-columns:1fr; } }
+
+/* PRINT: the Entertainment page always fits one A4 sheet - the headline plus five featured cards, nothing flows */
+@media print{
+  .ep-page-ent{ padding:12mm 13mm; display:flex; flex-direction:column; }
+  .ep-page-ent .ep-head{ flex:none; margin-bottom:6mm; }
+  .ep-page-ent .ep-ent-live{ flex:1; display:grid !important; grid-template-columns:1.3fr 1fr 1fr; grid-template-rows:1fr 1fr; gap:5mm; min-height:0; }
+  .ep-page-ent .ep-ent-live:not(.has-headline){ grid-template-columns:1fr 1fr 1fr; }
+  .ep-page-ent .ep-ent-item{ min-height:0 !important; overflow:hidden; box-shadow:none; border:1px solid rgba(29,13,2,.25); }
+  .ep-page-ent .ep-ent-item:nth-child(n+7){ display:none; }
+  .ep-page-ent .ep-ent-live.has-headline .is-headline{ grid-row:1 / span 2; grid-column:1; }
+  .ep-page-ent .ep-ent-item .ep-ent-photo{ aspect-ratio:auto; height:38%; flex:none; }
+  .ep-page-ent .is-headline .ep-ent-photo{ height:48%; }
+  .ep-page-ent .ep-ent-item-text{ padding:5mm 6mm; }
+  .ep-page-ent .ep-ent-item h3{ font-size:15pt; }
+  .ep-page-ent .is-headline h3{ font-size:24pt; }
+  .ep-page-ent .ep-ent-item p:not(.ep-kicker){ font-size:9.5pt; line-height:1.35; display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden; }
+  .ep-page-ent .is-headline p:not(.ep-kicker){ -webkit-line-clamp:9; }
+  .ep-page-ent .ep-kicker{ font-size:7.5pt; }
+  .ep-page-3 .ep-times-poster{ display:grid; grid-template-columns:1.1fr .9fr; gap:10mm; align-items:start; }
+  .ep-page-3 .ep-poster img{ max-height:230mm; width:auto; max-width:100%; }
+}
