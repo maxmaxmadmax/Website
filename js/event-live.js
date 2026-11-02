@@ -103,22 +103,45 @@
             if (sec) sec.hidden = false;
         });
 
-        // the entertainment cards: featured programme lines
+        // the entertainment cards: the hand-made Halloween layout, built from the featured programme lines.
+        // Two wide text cards on top; then the headline (photo on top) tall on the left, the rest stacked on the right -
+        // photo cards as photo-beside-text, plain ones alternating lime and cream.
         var ent = document.getElementById('ep-ent');
         var feats = (d.programme || []).filter(function (p) { return p.featured || p.headline; });
-        feats.sort(function (a, b) { return (b.headline ? 1 : 0) - (a.headline ? 1 : 0); });   // the headline first, the rest keep their time order
         if (ent && feats.length) {
             var KIND = { act: 'Live on stage', activity: 'On the night', food: 'Food & drink', moment: "Don't miss" };
-            ent.classList.toggle('has-headline', !!feats[0].headline);
-            ent.innerHTML = feats.map(function (p) {
-                return '<article class="ep-ent-card ep-ent-item' + (p.photo ? ' has-photo' : '') + (p.headline ? ' is-headline' : '') + '">'
-                    + (p.photo ? '<img class="ep-ent-photo" src="' + esc(p.photo) + '" alt="">' : '')
-                    + '<div class="ep-ent-item-text"><p class="ep-kicker">' + esc(KIND[p.kind] || 'On the night') + (p.start ? ' &middot; ' + esc(ampm(p.start)) : '') + '</p>'
-                    + '<h3>' + esc(p.title) + (p.who ? '<br><span>' + esc(p.who) + '</span>' : '') + '</h3>'
-                    + (p.blurb ? '<p>' + esc(p.blurb) + '</p>' : '')
-                    + (p.link ? '<a class="ep-ent-link" href="' + esc(p.link) + '" target="_blank" rel="noopener">More &rarr;</a>' : '')
-                    + '</div></article>';
-            }).join('');
+            var kicker = function (p) { return esc(KIND[p.kind] || 'On the night') + (p.start ? ' &middot; ' + esc(ampm(p.start)) : ''); };
+            var head = feats.find(function (p) { return p.headline; });
+            var rest = feats.filter(function (p) { return p !== head; });
+            var top = [], side = [];
+            rest.forEach(function (p) { if (!p.photo && top.length < 2) top.push(p); else side.push(p); });
+            if (!side.length && top.length) side.push(top.pop());
+            var h3 = function (p) { return '<h3>' + esc(p.title) + (p.who ? '<br><span>' + esc(p.who) + '</span>' : '') + '</h3>'; };
+            var text = function (p) { return (p.blurb ? '<p>' + esc(p.blurb) + '</p>' : '') + (p.link ? '<a class="ep-ent-link" href="' + esc(p.link) + '" target="_blank" rel="noopener">More &rarr;</a>' : ''); };
+            var html = '';
+            if (top.length) {
+                html += '<div class="ep-top2">' + top.map(function (p, i) {
+                    return '<article class="ep-ent-card ' + (i === 0 ? 'ep-ent-treat' : 'ep-ent-dress') + '"><p class="ep-kicker">' + kicker(p) + '</p>' + h3(p) + text(p) + '</article>';
+                }).join('') + '</div>';
+            }
+            var n = Math.max(1, side.length);
+            html += '<div class="ep-ent ep-ent-gen" style="grid-template-rows:repeat(' + n + ', auto)">';
+            if (head) {
+                html += '<article class="ep-ent-card ep-ent-band" style="grid-column:1;grid-row:1 / span ' + n + '">'
+                    + (head.photo ? '<img class="ep-ent-photo" src="' + esc(head.photo) + '" alt="">' : '')
+                    + '<div class="ep-ent-band-text"><p class="ep-kicker">' + kicker(head) + '</p>' + h3(head) + text(head) + '</div></article>';
+            }
+            var lime = 0;
+            side.forEach(function (p, i) {
+                var row = 'style="grid-column:' + (head ? 2 : (i % 2 ? 2 : 1)) + ';grid-row:' + (head ? i + 1 : Math.floor(i / 2) + 1) + '"';
+                if (p.photo) {
+                    html += '<article class="ep-ent-card ep-ent-hosts ep-ent-side" ' + row + '><img class="ep-ent-hosts-pic" src="' + esc(p.photo) + '" alt=""><div><p class="ep-kicker">' + kicker(p) + '</p>' + h3(p) + text(p) + '</div></article>';
+                } else {
+                    html += '<article class="ep-ent-card ' + (lime++ % 2 ? 'ep-ent-dress' : 'ep-ent-bingo') + ' ep-ent-side" ' + row + '><p class="ep-kicker">' + kicker(p) + '</p>' + h3(p) + text(p) + '</article>';
+                }
+            });
+            html += '</div>';
+            ent.innerHTML = html;
             var es = ent.closest('[data-ep-ent]');
             if (es) es.hidden = false;
         }
