@@ -1726,3 +1726,17 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
   .ep-page-ent .ep-ent-item p:not(.ep-kicker){ -webkit-line-clamp:4; }
   .ep-page-ent .is-headline p:not(.ep-kicker){ -webkit-line-clamp:10; }
 }
+@media print{
+  /* cover: everything on the left column, the poster big on the right */
+  .ep-hero-live .ep-title{ font-size:44pt !important; line-height:.9; }
+  .ep-hero-live .ep-subline{ font-size:12pt; margin:2mm 0 3mm; }
+  .ep-hero-live .ep-intro{ font-size:9.5pt; line-height:1.4; margin:0 0 4mm; }
+  .ep-hero-live .ep-facts{ gap:2mm; }
+  .ep-hero-live .ep-facts li{ padding:2mm 3mm; font-size:9.5pt; box-shadow:none; }
+  .ep-times-cover{ margin:5mm 0 0 !important; }
+  .ep-times-cover li{ padding:1.4mm 0 !important; font-size:8.5pt !important; }
+  .ep-times-cover b{ min-width:52px !important; font-size:8.5pt !important; }
+  .ep-times-cover small{ font-size:7.5pt !important; }
+  .ep-hero-live .ep-poster-hero{ width:100% !important; max-width:none !important; height:auto !important; }
+  .ep-hero-live .ep-poster-hero img{ width:100% !important; height:auto !important; max-height:258mm; object-fit:contain; }
+}
