@@ -27,15 +27,17 @@ permalink: /eatz-beatz-halloween-2026.html
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Permanent+Marker&display=swap">
-  <link rel="stylesheet" href="css/style.css?v=778">
-  <link rel="stylesheet" href="css/event-page.css?v=778">
-  <script src="js/main.js?v=778" defer></script>
-  <script src="js/event-page.js?v=778" defer></script>
+  <link rel="stylesheet" href="css/style.css?v=779">
+  <link rel="stylesheet" href="css/event-page.css?v=779">
+  <script src="js/main.js?v=779" defer></script>
+  <script src="js/event-page.js?v=779" defer></script>
+  <script src="js/event-live.js?v=779" defer></script>
 </head>
 
 <body class="event-page">
 
 <div id="navbar"></div>
+<div id="ep-notice" class="ep-notice" hidden></div>
 
 <!-- ==========================================================================
      EATZ & BEATZ HALLOWEEN EDITION - THE PAGE FOR PEOPLE COMING ALONG
@@ -62,9 +64,9 @@ permalink: /eatz-beatz-halloween-2026.html
       </p>
 
       <ul class="ep-facts">
-        <li><b>When</b> Sat 31 Oct 2026</li>
-        <li><b>Time</b> 4:30pm &ndash; 9:30pm</li>
-        <li><b>Where</b> Bowen Sports Complex</li>
+        <li><b>When</b> <span data-ev="when">Sat 31 Oct 2026</span></li>
+        <li><b>Time</b> <span data-ev="time">4:30pm &ndash; 9:30pm</span></li>
+        <li><b>Where</b> <span data-ev="where">Bowen Sports Complex</span></li>
         <li><b>Entry</b> Free &middot; Family event</li>
       </ul>
 
@@ -188,7 +190,7 @@ permalink: /eatz-beatz-halloween-2026.html
   <section class="ep-section ep-times-poster">
     <div>
       <h2 class="ep-h2">Times</h2>
-      <ul class="ep-times">
+      <ul class="ep-times" id="ep-programme">
         <li><b>4:30 PM</b> <span>Doors open <small>Don&rsquo;t forget to bring your chairs &amp; picnic rugs</small></span></li>
         <li><b>5:00 PM</b> <span>Bottoms Bingo <small>Cash prizes &middot; raising money for Bottoms on the Grass</small></span></li>
         <li><b>5:45 PM</b> <span>Whitsunday Autos vehicle demonstration <small>At the Main Stage</small></span></li>

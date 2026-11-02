@@ -2045,6 +2045,18 @@ exports.adminSaveEvent = onCall(async (request) => {
   ['name', 'subtitle', 'dateISO', 'dateLabel', 'venue', 'location'].forEach((k) => {
     if (f[k] !== undefined) update[k] = text(f[k]);
   });
+  if (f.intro !== undefined) update.intro = text(f.intro, 400);
+  if (f.entryText !== undefined) update.entryText = text(f.entryText, 80);
+  ['startTime', 'finishTime'].forEach((k) => {
+    if (f[k] !== undefined) update[k] = /^\d{2}:\d{2}$/.test(String(f[k] || '')) ? String(f[k]) : '';
+  });
+  /* THE NOTICE - venue change, postponed, cancelled or an update. Shown big
+     on the public page, the vendor guide and the signup page. kind '' clears it. */
+  if (f.notice !== undefined) {
+    const n = f.notice || {};
+    const kind = ['venue', 'postponed', 'cancelled', 'info'].includes(n.kind) ? n.kind : '';
+    update.notice = kind ? { kind, title: text(n.title, 120), text: text(n.text, 600), was: text(n.was, 200), at: FieldValue.serverTimestamp() } : FieldValue.delete();
+  }
   // the poster: uploaded to our Storage from the event form, or a file already on the site
   if (f.image !== undefined) {
     const img = text(f.image, 600);
@@ -3501,10 +3513,14 @@ exports.eventLineup = onRequest({ cors: true }, async (req, res) => {
   const eventId = String(req.query.event || '');
   if (!/^[a-z0-9-]{3,80}$/.test(eventId)) { res.status(400).json({ error: 'bad event' }); return; }
   try {
-    const [snap, cats] = await Promise.all([
+    const [snap, cats, evSnap, progSnap, spSnap] = await Promise.all([
       db.collection('bookings').where('eventId', '==', eventId).where('status', '==', 'confirmed').get(),
       db.collection('events').doc(eventId).collection('categories').get(),
+      db.collection('events').doc(eventId).get(),
+      db.collection('events').doc(eventId).collection('programme').get(),
+      db.collection('sponsors').where('eventId', '==', eventId).get(),
     ]);
+    if (!evSnap.exists || ['draft', 'archived'].includes(evSnap.data().status)) { res.status(404).json({ error: 'no such event' }); return; }
     const catName = {};
     cats.forEach((d) => { catName[d.id] = d.data().name || ''; });
     const out = { food: [], market: [] };
@@ -3520,7 +3536,26 @@ exports.eventLineup = onRequest({ cors: true }, async (req, res) => {
     });
     out.food.sort((a, b) => a.name.localeCompare(b.name));
     out.market.sort((a, b) => a.name.localeCompare(b.name));
-    res.set('Cache-Control', 'public, max-age=300');   // 5 minutes
+
+    // THE EVENT: only what a punter may see
+    const ev = evSnap.data();
+    const n = ev.notice || {};
+    out.event = {
+      name: ev.name || '', subtitle: ev.subtitle || '', intro: ev.intro || '', entryText: ev.entryText || '',
+      dateLabel: ev.dateLabel || '', dateISO: ev.dateISO || '', venue: ev.venue || '', location: ev.location || '',
+      startTime: ev.startTime || '', finishTime: ev.finishTime || '', image: ev.image || '', status: ev.status || '',
+      notice: n.kind ? { kind: n.kind, title: n.title || '', text: n.text || '', was: n.was || '' } : null,
+    };
+    // THE PROGRAMME: times and names, never costs or notes; behind-the-scenes lines stay behind
+    const mins = (t) => { const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); return r ? (+r[1] < 4 ? +r[1] + 24 : +r[1]) * 60 + +r[2] : 9999; };
+    out.programme = progSnap.docs.map((d) => d.data()).filter((p) => p.kind !== 'ops' && String(p.title || '').trim())
+      .sort((a, b) => mins(a.start) - mins(b.start) || (a.order || 0) - (b.order || 0))
+      .map((p) => ({ start: String(p.start || '').slice(0, 5), finish: String(p.finish || '').slice(0, 5), title: String(p.title).slice(0, 120), who: String(p.who || '').slice(0, 120), kind: String(p.kind || 'activity').slice(0, 20) }));
+    // THE SPONSORS who said yes
+    out.sponsors = spSnap.docs.map((d) => d.data()).filter((p) => p.status === 'yes' && p.business)
+      .map((p) => ({ business: String(p.business).slice(0, 80), level: String(p.level || '').slice(0, 30) }));
+
+    res.set('Cache-Control', 'public, max-age=60');   // a minute, so a last-minute notice shows quickly
     res.json(out);
   } catch (e) {
     logger.error('eventLineup', e);

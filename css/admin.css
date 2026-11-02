@@ -5047,3 +5047,14 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ev-prog-add input[name="who"]{ width:180px; }
 .ev-prog-add .ev-prog-num{ width:110px; }
 .ev-prog-card .ad-seat-hint{ margin:6px 12px 0; }
+
+/* the event notice (hub > Website) */
+.ev-notice-box{ margin-bottom:16px; }
+.ev-notice-box.is-on{ border-color:var(--ad-amber, #e0a100); background:#fffaf0; }
+.ev-notice-box.is-cancelled{ border-color:var(--ad-red); background:var(--ad-red-bg); }
+.ev-notice-top{ display:flex; gap:12px; align-items:flex-start; justify-content:space-between; }
+.ev-notice-cur{ margin:0; font-size:14px; }
+.ev-notice-acts{ margin:14px 0 0; }
+.ev-notice-tag{ font-weight:700; color:#b25b00; }
+.ev-notice-tag.is-cancelled{ color:var(--ad-red); }
+.ad-ev-2col{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }

@@ -9,7 +9,7 @@
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=778';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=779';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 
@@ -197,12 +197,30 @@ function budgetHtml(ctx) {
     </div>`;
 }
 
+export const NOTICE_WORD = { venue: 'Venue change', postponed: 'Postponed', cancelled: 'Cancelled', info: 'Update' };
 function websiteHtml(ctx) {
   const { ev, h } = ctx;
   const esc = h.esc, attr = h.attr, money = h.money;
   const p = ev.pricing || {};
   const row = (k, v) => `<div><dt>${k}</dt><dd>${v}</dd></div>`;
+  const n = ev.notice || {};
   return `
+    <div class="ad-card ev-pad ev-notice-box${n.kind ? ' is-on is-' + attr(n.kind) : ''}">
+      <div class="ev-notice-top">
+        <div>
+          <h2>Notice</h2>
+          ${n.kind ? `<p class="ev-notice-cur"><span class="ad-pill ${n.kind === 'cancelled' ? 'ad-pill-red' : 'ad-pill-amber'}">${esc(NOTICE_WORD[n.kind] || n.kind)}</span> <b>${esc(n.title || '')}</b>${n.text ? ' &mdash; ' + esc(n.text) : ''}</p>`
+            : '<p class="ad-drawer-text">Nothing up. Use these when plans change at the last minute - it goes on the public page within a minute, and you can email the vendors straight after.</p>'}
+        </div>
+        ${n.kind ? '<button type="button" class="ad-btn" data-notice="clear">Take it down</button>' : ''}
+      </div>
+      <div class="ad-actions-row ev-notice-acts">
+        <button type="button" class="ad-btn ad-btn-primary" data-notice="venue">&#127783; Change venue</button>
+        <button type="button" class="ad-btn" data-notice="postponed">&#128197; Postpone</button>
+        <button type="button" class="ad-btn" data-notice="info">&#128227; Post an update</button>
+        <button type="button" class="ad-btn ad-btn-danger" data-notice="cancelled">Cancel the event</button>
+      </div>
+    </div>
     <div class="ev-grid ev-grid-2">
       <div class="ad-card ev-pad">
         <h2>What the website shows</h2>
@@ -213,17 +231,19 @@ function websiteHtml(ctx) {
           ${row('Venue', esc([ev.venue, ev.location].filter(Boolean).join(', ') || '&mdash;'))}
           ${row('Food stall', esc(money(p.food)))}
           ${row('Market bay', esc(money(p.marketPerBay)))}
+          ${row('Times', ev.startTime ? esc(ev.startTime) + (ev.finishTime ? ' &ndash; ' + esc(ev.finishTime) : '') : '&mdash;')}
+          ${row('Intro', esc(ev.intro || '&mdash;'))}
           ${row('Signup', ev.status === 'open' ? 'Open - vendors can book' : esc(ev.status || 'closed'))}
         </dl>
         <div class="ad-actions-row">
           <button type="button" class="ad-btn ad-btn-primary" data-edit-ev="${attr(ev.id)}">Edit details</button>
-          <a class="ad-btn" href="/events" target="_blank" rel="noopener">View the events page &rarr;</a>
+          <a class="ad-btn" href="/event?e=${attr(ev.id)}" target="_blank" rel="noopener">View the live page &rarr;</a>
           <a class="ad-btn" href="/vendor-signup" target="_blank" rel="noopener">Vendor signup page &rarr;</a>
         </div>
       </div>
       <div class="ad-card ev-pad">
         <h2>Where it's used</h2>
-        <p class="ad-drawer-text">A change here goes everywhere at once: the public events page, the vendor signup page, the vendor guide and every email field like {{event_venue}}.</p>
+        <p class="ad-drawer-text">The live page at <code>/event?e=${esc(ev.id)}</code> is built from this event: poster, facts, notice, programme, paid vendors and sponsors. Edit details, and it changes within a minute.</p>
         <p class="ad-drawer-text">Moved venue or changed the date? Edit it once, then send vendors a message from the Messages tab.</p>
       </div>
     </div>`;
@@ -262,7 +282,7 @@ export function eventCardHtml(ctx) {
       <div class="ev-banner-main">
         <header class="ev-banner-head">
           <div>
-            <p class="ev-banner-kicker">${grp === 'past' ? 'Past event' : grp === 'today' ? 'Tonight' : 'Upcoming'}${active ? ' &middot; <b>active</b>' : ''}</p>
+            <p class="ev-banner-kicker">${grp === 'past' ? 'Past event' : grp === 'today' ? 'Tonight' : 'Upcoming'}${active ? ' &middot; <b>active</b>' : ''}${ev.notice && ev.notice.kind ? ` &middot; <span class="ev-notice-tag is-${attr(ev.notice.kind)}">${esc({ venue: 'Venue change', postponed: 'Postponed', cancelled: 'Cancelled', info: 'Update' }[ev.notice.kind] || 'Notice')}</span>` : ''}</p>
             <h2>${esc(ev.name || ev.id)}</h2>
             <p class="ev-banner-when">${esc(ev.dateLabel || ev.dateISO || 'No date set')}${ev.venue ? ' &middot; ' + esc(ev.venue) : ''}${ev.location ? ', ' + esc(ev.location) : ''}</p>
           </div>

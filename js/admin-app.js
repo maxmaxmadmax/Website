@@ -21,15 +21,15 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=778';
+} from './firebase-config.js?v=779';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=778';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=778';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=778';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=778';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=778';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml } from './event-hub.js?v=778';
-import { expandKit } from './kit.js?v=778';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=779';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=779';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=779';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=779';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=779';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml } from './event-hub.js?v=779';
+import { expandKit } from './kit.js?v=779';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2242,6 +2242,7 @@ VIEWS.event = {
     desk.querySelectorAll('[data-edit-ev]').forEach((el) => el.addEventListener('click', () => { state.editingEvent = { id: el.getAttribute('data-edit-ev') }; render(); }));
     desk.querySelectorAll('[data-open-ev]').forEach((el) => guarded(el, () => runAction(el, 'adminSaveEvent', { eventId: el.getAttribute('data-open-ev'), fields: { status: 'open' } })));
     desk.querySelectorAll('[data-close-ev]').forEach((el) => guarded(el, () => runAction(el, 'adminSaveEvent', { eventId: el.getAttribute('data-close-ev'), fields: { status: 'closed' } })));
+    desk.querySelectorAll('[data-notice]').forEach((b) => b.addEventListener('click', () => eventNotice(b.getAttribute('data-notice'))));
     wireEventForm();
 
     // BUDGET: amounts save as you type
@@ -2311,6 +2312,62 @@ VIEWS.event = {
     });
   },
 };
+/*  THE NOTICE: venue change, postponed, cancelled, update. Saves on the
+    event (the public page, guide and signup show it within a minute), then
+    offers a draft email to the vendors - sent from the Messages tab.     */
+async function eventNotice(kind) {
+  const ev = state.events.find((e) => e.id === state.activeEventId);
+  if (!ev) return;
+  const name = ev.name || 'the event';
+  let fields = null, title = '', text = '';
+  if (kind === 'clear') {
+    if (!window.confirm('Take the notice down?')) return;
+    fields = { notice: { kind: '' } };
+  } else if (kind === 'venue') {
+    const venue = window.prompt('New venue:', ev.venue || '');
+    if (venue == null || !venue.trim()) return;
+    title = 'Venue change - now at ' + venue.trim();
+    text = window.prompt('Message for everyone:', 'Due to the weather, ' + name + ' has moved to ' + venue.trim() + '. Same date and times.');
+    if (text == null) return;
+    fields = { venue: venue.trim(), notice: { kind: 'venue', title, text: text.trim(), was: ev.venue || '' } };
+  } else if (kind === 'postponed') {
+    const label = window.prompt('New date, as people should read it (e.g. Saturday 14 November 2026):', ev.dateLabel || '');
+    if (label == null || !label.trim()) return;
+    const iso = window.prompt('The same date as YYYY-MM-DD:', ev.dateISO || '');
+    if (iso == null || !/^\d{4}-\d{2}-\d{2}$/.test(iso.trim())) { window.alert('That date needs to look like 2026-11-14.'); return; }
+    title = 'Postponed to ' + label.trim();
+    text = window.prompt('Message for everyone:', name + ' has been postponed to ' + label.trim() + '. Bookings carry over - same site, nothing to do.');
+    if (text == null) return;
+    fields = { dateLabel: label.trim(), dateISO: iso.trim(), notice: { kind: 'postponed', title, text: text.trim(), was: ev.dateLabel || '' } };
+  } else if (kind === 'cancelled') {
+    if (!window.confirm('Mark ' + name + ' as CANCELLED? It shows on the public page and closes signup. Refunds are done by you.')) return;
+    title = name + ' is cancelled';
+    text = window.prompt('Message for everyone:', 'Unfortunately ' + name + ' will not go ahead. Vendors - we will be in touch about your booking.');
+    if (text == null) return;
+    fields = { status: 'closed', notice: { kind: 'cancelled', title, text: text.trim() } };
+  } else {
+    title = window.prompt('Headline:', 'Update');
+    if (title == null || !title.trim()) return;
+    text = window.prompt('Message for everyone:', '');
+    if (text == null) return;
+    fields = { notice: { kind: 'info', title: title.trim(), text: text.trim() } };
+  }
+  try {
+    await call('adminSaveEvent', { eventId: ev.id, fields });
+    await loadEvents();
+    render();
+  } catch (e) { window.alert(friendly(e)); return; }
+  if (kind === 'clear') return;
+  if (!window.confirm('Saved - it is on the public page now.\n\nMake a draft email to the vendors as well? You press Send now on the Messages tab.')) return;
+  try {
+    const today = isoDay(new Date());
+    await call('adminMessageSave', { id: null, eventId: ev.id, name: title, subject: title + ' - {{event_name}}',
+      body: 'Hi {{vendor_name}},\n\n' + text.trim() + '\n\nAny questions, call Max on 0422 393 022.\n\nThanks,\nThe SoundzGood team',
+      who: 'all', promo: false, trigger: { type: 'date', date: today, days: 0 } });
+    location.hash = '#/event?id=' + encodeURIComponent(ev.id) + '&tab=messages';
+    window.alert('Draft made - open "' + title + '" and press Send now.');
+  } catch (e) { window.alert(friendly(e)); }
+}
 async function loadBudget(eventId) {
   if (!eventId) return;
   try {
@@ -2463,6 +2520,15 @@ function eventForm() {
           </div>
           <input id="ad-ev-image" type="hidden" maxlength="600" value="${attr(ev.image || '')}">
 
+          <div class="ad-ev-2col">
+            <div><label for="ad-ev-start">Starts</label><input id="ad-ev-start" type="time" value="${attr(ev.startTime || '')}"></div>
+            <div><label for="ad-ev-finish">Finishes</label><input id="ad-ev-finish" type="time" value="${attr(ev.finishTime || '')}"></div>
+          </div>
+          <label for="ad-ev-intro">Intro (the public page)</label>
+          <textarea id="ad-ev-intro" rows="3" maxlength="400" placeholder="A free community night market for the whole family. Amazing food, local makers, live music.">${esc(ev.intro || '')}</textarea>
+          <label for="ad-ev-entry">Entry line</label>
+          <input id="ad-ev-entry" maxlength="80" placeholder="Free · Family event" value="${attr(ev.entryText || '')}">
+
           <label for="ad-ev-location">Location</label>
           <input id="ad-ev-location" maxlength="200" value="${attr(ev.location || '')}">
 
@@ -2577,6 +2643,7 @@ function wireEventForm() {
           venue: val('ad-ev-venue'),
           image: val('ad-ev-image'),
           location: val('ad-ev-location'),
+          startTime: val('ad-ev-start'), finishTime: val('ad-ev-finish'), intro: val('ad-ev-intro'), entryText: val('ad-ev-entry'),
           status: val('ad-ev-status'),
           maxMarketBays: Number(val('ad-ev-bays')) || 8,
           holdMinutes: Number(val('ad-ev-hold')) || 10,

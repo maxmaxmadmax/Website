@@ -1619,3 +1619,32 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 .ep-times li > span small{ text-transform:none; letter-spacing:0; }
 .ep-times b{ white-space:nowrap; }
 @media print{ .ep-page-3 .ep-times li{ font-size:9.2pt !important; } .ep-page-3 .ep-times li > span{ letter-spacing:0 !important; } .ep-page-3 .ep-times small{ font-size:7pt !important; margin-left:1.5mm !important; } }
+
+
+/* ---- THE NOTICE: venue change, postponed, cancelled, update ---- */
+.ep-notice{ position:sticky; top:0; z-index:50; background:var(--ep-ink); color:#fff; }
+.ep-notice-in{ max-width:1100px; margin:0 auto; padding:16px 20px; }
+.ep-notice-k{ margin:0 0 2px; font-family:var(--sg-font-accent); font-size:.7rem; letter-spacing:.22em; text-transform:uppercase; color:var(--ep-lime); }
+.ep-notice h2{ margin:0 0 6px; font-family:var(--ep-poster-font); font-size:clamp(1.3rem, 3.5vw, 2rem); line-height:1.05; }
+.ep-notice p{ margin:0; font-size:1rem; line-height:1.5; max-width:70ch; }
+.ep-notice-now{ margin-top:8px !important; font-weight:bold; }
+.ep-notice-now small{ font-weight:normal; opacity:.75; }
+.ep-notice.is-venue{ background:#0f3d2e; }
+.ep-notice.is-venue .ep-notice-k{ color:#9ff5c7; }
+.ep-notice.is-postponed{ background:#3a2a05; }
+.ep-notice.is-postponed .ep-notice-k{ color:#ffd76a; }
+.ep-notice.is-cancelled{ background:#5a1410; }
+.ep-notice.is-cancelled .ep-notice-k{ color:#ffb3ad; }
+.ep-notice.is-info{ background:#102a4a; }
+.ep-notice.is-info .ep-notice-k{ color:#a8d4ff; }
+.has-notice-cancelled .ep-hero-body{ opacity:.6; }
+@media print{ .ep-notice{ position:static; } }
+
+/* ---- the live page: poster beside the cover words ---- */
+.ep-hero-live .ep-hero-inner{ display:grid; grid-template-columns:1.2fr .8fr; gap:30px; align-items:center; }
+.ep-poster-hero{ display:block; max-width:420px; margin:0 auto; }
+.ep-poster-hero img{ width:100%; height:auto; border-radius:12px; box-shadow:0 18px 40px rgba(29,13,2,.35); }
+.ep-title-live{ font-size:clamp(2.4rem, 7vw, 4.6rem); }
+.ep-sponsor-names{ list-style:none; padding:0; margin:0 0 16px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+.ep-sponsor-names li{ background:var(--ep-cream); color:var(--ep-ink); border-radius:999px; padding:8px 16px; font-weight:bold; }
+@media (max-width:760px){ .ep-hero-live .ep-hero-inner{ grid-template-columns:1fr; } .ep-poster-hero{ max-width:320px; } }
