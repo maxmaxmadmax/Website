@@ -1660,3 +1660,14 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 .ep-faq-ic b{ font-family:var(--ep-poster-font); font-size:22px; font-weight:400; }
 .ep-sponsor-live li{ display:flex; align-items:center; justify-content:center; }
 .ep-sponsor-name{ font-family:var(--ep-poster-font); font-size:1.05rem; text-transform:uppercase; letter-spacing:.02em; color:var(--ep-ink); text-align:center; }
+/* entertainment cards built from the programme: with a photo they are the dark band card, without one they alternate cream and lime */
+.ep-ent-item{ background:var(--ep-cream); color:var(--ep-ink); }
+.ep-ent-item:nth-child(3n+2){ background:var(--ep-lime); }
+.ep-ent-item.has-photo{ background:#120a04; color:#fffaf2; padding:0; }
+.ep-ent-item.has-photo .ep-ent-item-text p:not(.ep-kicker){ color:#f3e3d0; }
+.ep-ent-item:not(.has-photo) .ep-ent-item-text{ padding:0; }
+.ep-ent-item h3{ font-size:clamp(1.4rem, 2.4vw, 1.9rem); hyphens:auto; overflow-wrap:break-word; }
+.ep-ent-item h3 span{ font-size:.6em; margin-top:6px; }
+.ep-ent-item:not(.has-photo) h3 span{ color:var(--ep-orange); }
+.ep-ent-item .ep-ent-link{ display:inline-block; margin-top:10px; }
+.ep-ent-item:not(.has-photo) .ep-ent-link{ color:var(--ep-ink); text-decoration:underline; }

@@ -3566,7 +3566,7 @@ exports.eventLineup = onRequest({ cors: true }, async (req, res) => {
     out.sponsors = spSnap.docs.map((d) => d.data()).filter((p) => p.status === 'yes' && p.business)
       .map((p) => {
         const logo = String(p.logo || '');
-        const ok = /^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[\w.-]+\/o\/sponsor-logos%2F[\w.%-]+\?[\w=&.-]+$/.test(logo) || /^https:\/\/www\.google\.com\/s2\/favicons\?domain=[\w.%-]+&sz=\d+$/.test(logo);
+        const ok = /^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[\w.-]+\/o\/sponsor-logos%2F[\w.%-]+\?[\w=&.-]+$/.test(logo) || /^https:\/\/www\.google\.com\/s2\/favicons\?domain=[\w.%-]+&sz=\d+$/.test(logo) || /^\/images\/[\w./-]+$/.test(logo);
         return { business: String(p.business).slice(0, 80), level: String(p.level || '').slice(0, 30), logo: ok ? logo : '', website: /^https?:\/\/[^\s'"()<>]+$/.test(String(p.website || '')) ? String(p.website).slice(0, 200) : '' };
       });
 
