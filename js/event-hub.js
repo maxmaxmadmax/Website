@@ -9,7 +9,7 @@
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=774';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=775';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 
@@ -155,7 +155,7 @@ function budgetHtml(ctx) {
   const dollars = (c) => (c ? (c / 100).toFixed(2) : '');
   const diffCell = (l) => {
     const d = l.kind === 'income' ? l.actualCents - l.plannedCents : l.plannedCents - l.actualCents;
-    if (!l.plannedCents && !l.actualCents) return '<td class="ev-bud-diff"></td>';
+    if (!l.plannedCents && !l.actualCents) return '<td class="ev-bud-diff">&nbsp;</td>';
     return `<td class="ev-bud-diff ${d < 0 ? 'is-bad' : 'is-good'}">${d < 0 ? '&minus;' : '+'}${esc(money(Math.abs(d)))}</td>`;
   };
   const rowHtml = (l) => `

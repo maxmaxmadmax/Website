@@ -21,15 +21,15 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=774';
+} from './firebase-config.js?v=775';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=774';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=774';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=774';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=774';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=774';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml } from './event-hub.js?v=774';
-import { expandKit } from './kit.js?v=774';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=775';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=775';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=775';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=775';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=775';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml } from './event-hub.js?v=775';
+import { expandKit } from './kit.js?v=775';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2235,6 +2235,15 @@ VIEWS.event = {
       seed.disabled = true;
       try { await budgetStore.seed(); } catch (e) { window.alert(friendly(e)); seed.disabled = false; }
     });
+    // Enter / arrows move down and up the column, like a sheet
+    const cells = [...desk.querySelectorAll('[data-bud]')];
+    cells.forEach((inp) => inp.addEventListener('keydown', (e) => {
+      if (!(['Enter', 'ArrowDown', 'ArrowUp'].includes(e.key))) return;
+      const col = inp.getAttribute('data-bud');
+      const same = cells.filter((x) => x.getAttribute('data-bud') === col);
+      const i = same.indexOf(inp) + (e.key === 'ArrowUp' ? -1 : 1);
+      if (same[i]) { e.preventDefault(); same[i].focus(); same[i].select(); }
+    }));
     desk.querySelectorAll('[data-bud]').forEach((inp) => {
       let timer = null;
       inp.addEventListener('input', () => {
