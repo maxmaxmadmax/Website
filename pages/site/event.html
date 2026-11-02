@@ -15,11 +15,11 @@ permalink: /event.html
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Permanent+Marker&display=swap">
-  <link rel="stylesheet" href="css/style.css?v=793">
-  <link rel="stylesheet" href="css/event-page.css?v=793">
-  <script src="js/main.js?v=793" defer></script>
-  <script src="js/event-page.js?v=793" defer></script>
-  <script src="js/event-live.js?v=793" defer></script>
+  <link rel="stylesheet" href="css/style.css?v=794">
+  <link rel="stylesheet" href="css/event-page.css?v=794">
+  <script src="js/main.js?v=794" defer></script>
+  <script src="js/event-page.js?v=794" defer></script>
+  <script src="js/event-live.js?v=794" defer></script>
 </head>
 <body class="event-page" data-ev-title>
 <div id="navbar"></div>
@@ -105,6 +105,35 @@ permalink: /event.html
         <p class="ep-market-strap">Shop local, support small business and discover something special.</p>
       </div>
       <div class="ep-market"></div>
+    </div>
+  </section>
+  <section class="ep-section ep-vol" id="volunteer">
+    <div class="ep-vol-panel">
+      <div class="ep-vol-text">
+        <p class="ep-kicker ep-kicker-line">Volunteer with us</p>
+        <h2 class="ep-big"><span>Lend</span> a hand</h2>
+        <p class="ep-market-strap">Community events run on good people. A couple of hours on the gate, the bar, setup or pack-down makes the whole night happen - and you'll have a great time doing it.</p>
+      </div>
+      <form class="ep-vol-form" id="ep-vol-form">
+        <label>Your name<input name="name" required maxlength="120" autocomplete="name"></label>
+        <div class="ep-vol-2">
+          <label>Email<input name="email" type="email" required maxlength="200" autocomplete="email"></label>
+          <label>Phone<input name="phone" type="tel" required maxlength="40" autocomplete="tel"></label>
+        </div>
+        <fieldset class="ep-vol-roles"><legend>Happy to help with</legend>
+          <label><input type="checkbox" name="roles" value="setup"> Setup</label>
+          <label><input type="checkbox" name="roles" value="packdown"> Pack-down</label>
+          <label><input type="checkbox" name="roles" value="gate"> Gate &amp; welcome</label>
+          <label><input type="checkbox" name="roles" value="bar"> Bar</label>
+          <label><input type="checkbox" name="roles" value="runner"> Runner</label>
+          <label><input type="checkbox" name="roles" value="kids"> Kids' activities</label>
+          <label><input type="checkbox" name="roles" value="anything"> Anything!</label>
+        </fieldset>
+        <label>When are you free?<input name="availability" maxlength="200" placeholder="e.g. From 3pm, or just the pack-down"></label>
+        <label>Anything else?<textarea name="message" rows="2" maxlength="1000"></textarea></label>
+        <button type="submit" class="ep-btn">Count me in &rarr;</button>
+        <p class="ep-vol-msg" id="ep-vol-msg" hidden></p>
+      </form>
     </div>
   </section>
   <section class="ep-section" data-ep-faq hidden>

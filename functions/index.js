@@ -3529,6 +3529,41 @@ exports.rsvpEvent = onCall(async (request) => {
   return { ok: true, going: ((snap.data().goingCount || 0) + people) };
 });
 
+/* =========================================================================
+   VOLUNTEERS - "Volunteer with us" on the event page. Kept in
+   events/{id}/volunteers (staff only); the office gets an email.
+   ========================================================================= */
+const VOL_ROLES = ['setup', 'packdown', 'gate', 'bar', 'runner', 'kids', 'anything'];
+exports.volunteerApply = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
+  await limitIp(request, 'volunteer', 5, 60);
+  const d = request.data || {};
+  const clean = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
+  const eventId = clean(d.eventId, 80);
+  if (!/^[a-z0-9-]{3,80}$/.test(eventId)) throw new HttpsError('invalid-argument', 'Bad event.');
+  const f = {
+    name: clean(d.name, 120), email: clean(d.email, 200).toLowerCase(), phone: clean(d.phone, 40),
+    roles: (Array.isArray(d.roles) ? d.roles : []).map((r) => String(r)).filter((r) => VOL_ROLES.includes(r)).slice(0, 7),
+    availability: clean(d.availability, 200), message: clean(d.message, 1000),
+  };
+  if (!f.name) throw new HttpsError('invalid-argument', 'Please tell us your name.');
+  if (!DETAIL_EMAIL_RE.test(f.email)) throw new HttpsError('invalid-argument', 'Please enter a valid email address.');
+  if (!f.phone) throw new HttpsError('invalid-argument', 'Please leave a phone number.');
+  const evSnap = await db.collection('events').doc(eventId).get();
+  if (!evSnap.exists || ['draft', 'archived'].includes(evSnap.data().status)) throw new HttpsError('not-found', 'That event is not open.');
+  const ev = evSnap.data();
+  const dup = await db.collection('events').doc(eventId).collection('volunteers').where('email', '==', f.email).limit(1).get();
+  if (!dup.empty) return { ok: true, already: true };
+  await db.collection('events').doc(eventId).collection('volunteers').add({ ...f, status: 'new', createdAt: FieldValue.serverTimestamp() });
+  await sendMessageEmail({
+    subject: 'Volunteer: ' + f.name + ' - ' + (ev.name || eventId),
+    body: f.name + ' wants to volunteer at ' + (ev.name || eventId) + ':\n\n'
+      + ['Email: ' + f.email, 'Phone: ' + f.phone, f.roles.length && 'Happy to help with: ' + f.roles.join(', '), f.availability && 'Available: ' + f.availability, f.message && 'Message: ' + f.message]
+        .filter(Boolean).map((x) => '- ' + x).join('\n')
+      + '\n\nSee them in the admin under the event > Volunteers.',
+  }, {}, { to: process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au' });
+  return { ok: true };
+});
+
 exports.eventLineup = onRequest({ cors: true }, async (req, res) => {
   const eventId = String(req.query.event || '');
   if (!/^[a-z0-9-]{3,80}$/.test(eventId)) { res.status(400).json({ error: 'bad event' }); return; }

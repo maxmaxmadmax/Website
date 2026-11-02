@@ -48,6 +48,11 @@ service cloud.firestore {
       match /programme/{itemId} {
         allow read, write: if isAdmin();
       }
+      // people who offered to volunteer (written by volunteerApply)
+      match /volunteers/{volId} {
+        allow read, update, delete: if isAdmin();
+        allow create: if false;
+      }
       // "I'm coming" taps from the public page (written by rsvpEvent)
       match /rsvps/{rsvpId} {
         allow read: if isAdmin();

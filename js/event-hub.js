@@ -9,13 +9,13 @@
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=793';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=794';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 
 export const HUB_TABS = [
   ['overview', 'Overview'], ['budget', 'Budget'], ['vendors', 'Vendors'], ['map', 'Sites & Map'],
-  ['programme', 'Programme'], ['messages', 'Messages'], ['sponsors', 'Sponsors'], ['website', 'Website'],
+  ['programme', 'Programme'], ['volunteers', 'Volunteers'], ['messages', 'Messages'], ['sponsors', 'Sponsors'], ['website', 'Website'],
 ];
 
 /* the lines a new budget starts with - income first, then costs */
@@ -108,7 +108,7 @@ export function eventHubHtml(ctx) {
         ${HUB_TABS.map(([k, label]) => `<a role="tab" class="ev-tab${tab === k ? ' is-on' : ''}" href="#/event?id=${attr(ev.id)}&tab=${k}">${label}</a>`).join('')}
       </div>
       <div class="ev-hub-body">
-        ${tab === 'overview' ? overviewHtml(ctx) : tab === 'budget' ? budgetHtml(ctx) : tab === 'website' ? websiteHtml(ctx) : tab === 'programme' ? programmeHtml(ctx) : tab === 'vendors' ? attendingHtml(ctx) : (ctx.inner || '')}
+        ${tab === 'overview' ? overviewHtml(ctx) : tab === 'budget' ? budgetHtml(ctx) : tab === 'website' ? websiteHtml(ctx) : tab === 'programme' ? programmeHtml(ctx) : tab === 'vendors' ? attendingHtml(ctx) : tab === 'volunteers' ? volunteersHtml(ctx) : (ctx.inner || '')}
       </div>
       <p class="ad-action-msg" id="ad-action-msg" hidden></p>
     </div>`;
@@ -466,3 +466,30 @@ export const FAQ_STANDARD = [
   ["What's happening for the kids?", 'Plenty - food, markets, entertainment and activities all night.'],
   ['Where do I park?', 'Plenty of parking at the venue. Follow the signs on the night.'],
 ];
+
+/* ---------- Volunteers: who put their hand up ---------- */
+export const VOL_STATUS = { new: ['New', 'blue'], yes: ['Confirmed', 'green'], maybe: ['Maybe', 'amber'], no: ['Not this time', 'grey'] };
+const VOL_ROLE = { setup: 'Setup', packdown: 'Pack-down', gate: 'Gate & welcome', bar: 'Bar', runner: 'Runner', kids: "Kids' activities", anything: 'Anything' };
+function volunteersHtml(ctx) {
+  const { ev, h } = ctx;
+  const esc = h.esc, attr = h.attr;
+  const list = (ctx.volunteers || []).slice().sort((a, b) => ((b.createdAt && b.createdAt.seconds) || 0) - ((a.createdAt && a.createdAt.seconds) || 0));
+  const n = (s) => list.filter((v) => (v.status || 'new') === s).length;
+  const row = (v) => `<tr>
+    <td><strong>${esc(v.name)}</strong><span class="ms-sub">${esc(v.email)}${v.phone ? ' &middot; ' + esc(v.phone) : ''}</span></td>
+    <td>${(v.roles || []).map((r) => `<span class="ev-vol-role">${esc(VOL_ROLE[r] || r)}</span>`).join(' ') || '<span class="ad-cell-muted">&mdash;</span>'}</td>
+    <td>${esc(v.availability || '')}${v.message ? '<span class="ms-sub">' + esc(v.message) + '</span>' : ''}</td>
+    <td><select class="ad-select" data-vol-status="${attr(v.id)}">${Object.keys(VOL_STATUS).map((k) => `<option value="${k}"${(v.status || 'new') === k ? ' selected' : ''}>${VOL_STATUS[k][0]}</option>`).join('')}</select></td>
+    <td class="ad-cell-right"><a class="ad-btn ad-btn-small" href="mailto:${attr(v.email)}?subject=${encodeURIComponent('Volunteering at ' + (ev.name || 'our event'))}">Email</a> ${v.phone ? `<a class="ad-btn ad-btn-small" href="sms:${attr(v.phone)}">Text</a>` : ''} <button type="button" class="ad-linkish" data-vol-del="${attr(v.id)}" title="Remove">&times;</button></td>
+  </tr>`;
+  return `
+    <div class="ev-grid ev-grid-3">
+      ${card('Put their hand up', String(list.length), n('new') ? n('new') + ' new to look at' : 'nobody new')}
+      ${card('Confirmed', String(n('yes')), n('maybe') ? n('maybe') + ' maybe' : '')}
+      ${card('The form', 'Live', `on the event page &middot; <a href="/event?e=${attr(ev.id)}#volunteer" target="_blank" rel="noopener">open it &#8599;</a>`)}
+    </div>
+    <div class="ad-card ms-card">
+      <table class="ms-table"><thead><tr><th>Who</th><th>Happy to help with</th><th>When / notes</th><th>Status</th><th></th></tr></thead>
+      <tbody>${list.map(row).join('') || '<tr><td colspan="5" class="ad-cell-muted">Nobody yet. The "Volunteer with us" form is on the live event page - share the link.</td></tr>'}</tbody></table>
+    </div>`;
+}

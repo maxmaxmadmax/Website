@@ -21,15 +21,15 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=793';
+} from './firebase-config.js?v=794';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=793';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=793';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=793';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=793';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=793';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=793';
-import { expandKit } from './kit.js?v=793';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=794';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=794';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=794';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=794';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=794';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=794';
+import { expandKit } from './kit.js?v=794';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -573,6 +573,7 @@ function routeFromHash() {
     if (id && id !== state.activeEventId && state.events.some((e) => e.id === id)) setActiveEvent(id);
     if (state.budgetFor !== state.activeEventId) loadBudget(state.activeEventId);
     if (state.programmeFor !== state.activeEventId) loadProgramme(state.activeEventId);
+    if (state.volunteersFor !== state.activeEventId) loadVolunteers(state.activeEventId);
   }
 
   /*  SALES PIPELINE: an open quote lives at #/quoteDocs?q=<id> (or ?q=new),
@@ -2226,6 +2227,7 @@ VIEWS.event = {
       bookings: state.bookings || [], sites: state.sites || [], sponsors: state.sponsors || [], waitlist: state.waitlist || [],
       budget: state.budgetFor === ev.id ? (state.budget || []) : [],
       programme: state.programmeFor === ev.id ? (state.programme || []) : [], talent: state.talent || [], categories: state.categories || [], progOpen: state.progOpen || '',
+      volunteers: state.volunteersFor === ev.id ? (state.volunteers || []) : [],
       h: { esc, attr, money },
     }) + eventForm();
   },
@@ -2336,6 +2338,18 @@ VIEWS.event = {
     });
     const faqStd = document.getElementById('ev-faq-std');
     if (faqStd) faqStd.addEventListener('click', () => { document.getElementById('ev-faq').value = FAQ_STANDARD.map(([q, a]) => q + ' | ' + a).join('\n'); });
+    // VOLUNTEERS
+    desk.querySelectorAll('[data-vol-status]').forEach((sel) => sel.addEventListener('change', async () => {
+      const { doc, updateDoc } = fb.f;
+      try { await updateDoc(doc(fb.db, 'events', state.activeEventId, 'volunteers', sel.getAttribute('data-vol-status')), { status: sel.value }); await loadVolunteers(state.activeEventId); }
+      catch (e) { window.alert(friendly(e)); }
+    }));
+    desk.querySelectorAll('[data-vol-del]').forEach((b) => b.addEventListener('click', async () => {
+      if (!window.confirm('Remove this person from the volunteer list?')) return;
+      const { doc, deleteDoc } = fb.f;
+      try { await deleteDoc(doc(fb.db, 'events', state.activeEventId, 'volunteers', b.getAttribute('data-vol-del'))); await loadVolunteers(state.activeEventId); }
+      catch (e) { window.alert(friendly(e)); }
+    }));
     const padd = document.getElementById('ev-prog-add');
     if (padd) padd.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -2451,6 +2465,18 @@ const budgetStore = {
   },
 };
 
+/*  Volunteers: events/{id}/volunteers/ - written by the public form. */
+async function loadVolunteers(eventId) {
+  if (!eventId) return;
+  try {
+    const { collection, getDocs } = fb.f;
+    const snap = await getDocs(collection(fb.db, 'events', eventId, 'volunteers'));
+    const rows = [];
+    snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
+    state.volunteers = rows; state.volunteersFor = eventId;
+    if (state.view === 'event' && state.eventTab === 'volunteers') render();
+  } catch (e) { console.warn('volunteers', e); }
+}
 /*  The programme: events/{id}/programme/ - what happens on the night. */
 async function loadProgramme(eventId) {
   if (!eventId) return;
