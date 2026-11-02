@@ -9,7 +9,7 @@
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=771';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=772';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 
@@ -259,7 +259,7 @@ export function eventCardHtml(ctx) {
   return `
     <article class="ad-card ev-banner${active ? ' is-active' : ''}${grp === 'past' ? ' is-past' : ''}" data-open-hub="${attr(ev.id)}">
       <div class="ev-banner-art${poster ? '' : ' is-blank'}"${poster ? ` style="background-image:url('${attr(poster)}')"` : ''}>
-        ${poster ? '' : '<span>No poster yet<br><small>Edit &rsaquo; Card image</small></span>'}
+        ${poster ? `<div class="ev-poster" style="background-image:url('${attr(poster)}')"></div>` : '<span>No poster yet<br><small>Edit &rsaquo; Upload poster</small></span>'}
       </div>
       <div class="ev-banner-main">
         <header class="ev-banner-head">

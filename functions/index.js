@@ -2045,6 +2045,12 @@ exports.adminSaveEvent = onCall(async (request) => {
   ['name', 'subtitle', 'dateISO', 'dateLabel', 'venue', 'location'].forEach((k) => {
     if (f[k] !== undefined) update[k] = text(f[k]);
   });
+  // the poster: uploaded to our Storage from the event form, or a file already on the site
+  if (f.image !== undefined) {
+    const img = text(f.image, 600);
+    const ours = /^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[\w.-]+\/o\/event-images%2F[\w.%-]+\?[\w=&.-]+$/.test(img) || /^\/?images\/[\w./-]+$/.test(img);
+    update.image = ours ? (img.startsWith('http') || img.startsWith('/') ? img : '/' + img) : '';
+  }
 
   /* THE CONFIRMATION EMAIL - subject and body (HTML) written in the admin
      desk. Only the length is capped; the mailer escapes every value it fills in. */

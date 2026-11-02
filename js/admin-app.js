@@ -21,15 +21,15 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=771';
+} from './firebase-config.js?v=772';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=771';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=771';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=771';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=771';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=771';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml } from './event-hub.js?v=771';
-import { expandKit } from './kit.js?v=771';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=772';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=772';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=772';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=772';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=772';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml } from './event-hub.js?v=772';
+import { expandKit } from './kit.js?v=772';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2370,10 +2370,15 @@ function eventForm() {
           <!--  Shown on the event card on the vendor signup page. A path
                 to a file in the site, like images/events/eatz-beatz.jpg.
                 Left blank, the card shows its gradient.            -->
-          <label for="ad-ev-image">Card image</label>
-          <input id="ad-ev-image" maxlength="200"
-                 placeholder="images/events/name.jpg"
-                 value="${attr(ev.image || '')}">
+          <label for="ad-ev-image">Poster</label>
+          <div class="ad-ev-poster">
+            <div class="ad-ev-poster-pic" id="ad-ev-poster-pic"${ev.image ? ` style="background-image:url('${attr(ev.image)}')"` : ''}></div>
+            <div>
+              <label class="ad-btn ad-btn-small">&#128444; ${ev.image ? 'Change poster' : 'Upload poster'}<input type="file" accept="image/*" id="ad-ev-poster-file" hidden></label>
+              <span class="ad-seat-hint" id="ad-ev-poster-msg">Shown on the Events page, the vendor guide and the website.</span>
+            </div>
+          </div>
+          <input id="ad-ev-image" type="hidden" maxlength="600" value="${attr(ev.image || '')}">
 
           <label for="ad-ev-location">Location</label>
           <input id="ad-ev-location" maxlength="200" value="${attr(ev.location || '')}">
@@ -2434,6 +2439,28 @@ function wireEventForm() {
 
   const form = document.getElementById('ad-ev-form');
   if (!form) return;
+
+  // POSTER UPLOAD: shrunk, into event-images/<id>/, the link goes in the hidden field
+  const file = document.getElementById('ad-ev-poster-file');
+  if (file) file.addEventListener('change', async () => {
+    const f = file.files && file.files[0];
+    if (!f) return;
+    const idEl = document.getElementById('ad-ev-id');
+    const evId = edit.creating ? (idEl && idEl.value.trim()) : edit.id;
+    const msg = document.getElementById('ad-ev-poster-msg');
+    if (!evId) { msg.textContent = 'Type the event id first, then upload.'; return; }
+    msg.textContent = 'Uploading…';
+    try {
+      const { ref, uploadBytes, getDownloadURL } = fb.st;
+      const small = await shrinkPhoto(f, 1600);
+      const path = 'event-images/' + evId + '/poster-' + Date.now() + (small.type === 'image/webp' ? '.webp' : '');
+      await uploadBytes(ref(fb.storage, path), small, { contentType: small.type || f.type });
+      const url = await getDownloadURL(ref(fb.storage, path));
+      document.getElementById('ad-ev-image').value = url;
+      document.getElementById('ad-ev-poster-pic').style.backgroundImage = "url('" + url.replace(/'/g, '%27') + "')";
+      msg.textContent = 'Uploaded - press ' + (edit.creating ? 'Create event' : 'Save changes') + ' to keep it.';
+    } catch (e) { msg.textContent = 'Upload failed - ' + (e.message || 'try again'); }
+  });
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
