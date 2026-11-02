@@ -51,6 +51,35 @@
         });
         if (ev.name && document.body.hasAttribute('data-ev-title')) document.title = ev.name + ' | SoundzGood Whitsundays';
 
+        // "I'm coming": a tap, how many, then the count. Remembered on this phone so it only counts once.
+        var going = document.getElementById('ep-going');
+        if (going) {
+            var btn = document.getElementById('ep-going-btn'), ask = document.getElementById('ep-going-ask'), count = document.getElementById('ep-going-count');
+            var key = 'sg-going-' + id;
+            var mine = 0;
+            try { mine = +(localStorage.getItem(key) || 0); } catch (e) { /* private mode */ }
+            var paint = function (n) { count.textContent = n ? n + (n === 1 ? ' person is coming' : ' people are coming') : 'Be the first to say you\'re coming'; };
+            paint(ev.going || 0);
+            going.hidden = false;
+            if (mine) { btn.textContent = '\u2713 You\u2019re coming' + (mine > 1 ? ' (' + mine + ')' : ''); btn.disabled = true; }
+            btn.addEventListener('click', function () { ask.hidden = !ask.hidden; });
+            ask.querySelectorAll('[data-going]').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    var n = +b.getAttribute('data-going');
+                    ask.hidden = true; btn.disabled = true; btn.textContent = 'Counting you in\u2026';
+                    fetch('https://australia-southeast1-soundzgood-8c86f.cloudfunctions.net/rsvpEvent', {
+                        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ data: { eventId: id, people: n } }),
+                    }).then(function (r) { return r.json(); }).then(function (j) {
+                        var res = (j && j.result) || {};
+                        if (!res.ok) throw new Error((j && j.error && j.error.message) || 'no');
+                        try { localStorage.setItem(key, String(n)); } catch (e) { /* fine */ }
+                        btn.textContent = '\u2713 You\u2019re coming' + (n > 1 ? ' (' + n + ')' : '');
+                        paint(res.going);
+                    }).catch(function () { btn.disabled = false; btn.textContent = '\uD83C\uDF89 I\u2019m coming'; alert('That didn\u2019t go through - try again in a moment.'); });
+                });
+            });
+        }
+
         // the poster
         if (ev.image && /^(https:\/\/|\/)[^\s'"()<>\\]*$/.test(ev.image)) {
             document.querySelectorAll('[data-ev-poster]').forEach(function (el) {

@@ -1771,3 +1771,14 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
   .ep-page-ent .ep-ent-hosts-pic{ height:100% !important; }
   .ep-page-ent .ep-top2 .ep-ent-card p:not(.ep-kicker){ font-size:9pt !important; }
 }
+
+/* I'm coming */
+.ep-going{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:14px 0 0; }
+.ep-btn-going{ background:var(--ep-lime); color:var(--ep-ink); }
+.ep-btn-going:disabled{ opacity:.9; cursor:default; }
+.ep-going-count{ font-weight:bold; font-size:.95rem; }
+.ep-going-ask{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; width:100%; }
+.ep-going-ask span{ font-weight:bold; margin-right:4px; }
+.ep-going-ask button{ width:42px; height:42px; border-radius:50%; border:2px solid var(--ep-ink); background:var(--ep-cream); font-weight:bold; font-size:1rem; cursor:pointer; }
+.ep-going-ask button:hover{ background:var(--ep-ink); color:var(--ep-cream); }
+@media print{ .ep-going{ display:none !important; } }

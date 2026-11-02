@@ -48,6 +48,11 @@ service cloud.firestore {
       match /programme/{itemId} {
         allow read, write: if isAdmin();
       }
+      // "I'm coming" taps from the public page (written by rsvpEvent)
+      match /rsvps/{rsvpId} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
 
       match /categories/{categoryId} {
         // Counts are maintained server side in the same transaction that

@@ -15,11 +15,11 @@ permalink: /event.html
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Permanent+Marker&display=swap">
-  <link rel="stylesheet" href="css/style.css?v=789">
-  <link rel="stylesheet" href="css/event-page.css?v=789">
-  <script src="js/main.js?v=789" defer></script>
-  <script src="js/event-page.js?v=789" defer></script>
-  <script src="js/event-live.js?v=789" defer></script>
+  <link rel="stylesheet" href="css/style.css?v=790">
+  <link rel="stylesheet" href="css/event-page.css?v=790">
+  <script src="js/main.js?v=790" defer></script>
+  <script src="js/event-page.js?v=790" defer></script>
+  <script src="js/event-live.js?v=790" defer></script>
 </head>
 <body class="event-page" data-ev-title>
 <div id="navbar"></div>
@@ -51,6 +51,14 @@ permalink: /event.html
         <button type="button" class="ep-btn ep-btn-ghost" id="ep-print">Print A4</button>
       </div>
       <p class="ep-share-note" id="ep-share-note" hidden>Link copied - paste it anywhere.</p>
+      <div class="ep-going" id="ep-going" hidden>
+        <button type="button" class="ep-btn ep-btn-going" id="ep-going-btn">&#127881; I'm coming</button>
+        <span class="ep-going-count" id="ep-going-count"></span>
+        <div class="ep-going-ask" id="ep-going-ask" hidden>
+          <span>How many of you?</span>
+          <button type="button" data-going="1">1</button><button type="button" data-going="2">2</button><button type="button" data-going="3">3</button><button type="button" data-going="4">4</button><button type="button" data-going="5">5+</button>
+        </div>
+      </div>
     </div>
     <a class="ep-poster ep-poster-hero" data-ev-poster href="#" target="_blank" rel="noopener" hidden>
       <img src="" alt="Event poster" width="900" height="1335">

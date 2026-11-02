@@ -3513,6 +3513,22 @@ function lineupLink(text) {
   return '';
 }
 
+/*  PUBLIC - "I'm coming" on a free event's page. One tap, how many of you.
+    Kept in events/{id}/rsvps (staff only) and counted on the event.      */
+exports.rsvpEvent = onCall(async (request) => {
+  await limitIp(request, 'rsvp', 5, 60);
+  const d = request.data || {};
+  const eventId = String(d.eventId || '');
+  if (!/^[a-z0-9-]{3,80}$/.test(eventId)) throw new HttpsError('invalid-argument', 'Bad event.');
+  const people = Math.min(10, Math.max(1, Math.round(Number(d.people) || 1)));
+  const ref = db.collection('events').doc(eventId);
+  const snap = await ref.get();
+  if (!snap.exists || ['draft', 'archived'].includes(snap.data().status)) throw new HttpsError('not-found', 'That event is not open.');
+  await ref.collection('rsvps').add({ people, at: FieldValue.serverTimestamp(), ip: callerIp(request).slice(0, 60) });
+  await ref.update({ goingCount: FieldValue.increment(people), goingParties: FieldValue.increment(1) });
+  return { ok: true, going: ((snap.data().goingCount || 0) + people) };
+});
+
 exports.eventLineup = onRequest({ cors: true }, async (req, res) => {
   const eventId = String(req.query.event || '');
   if (!/^[a-z0-9-]{3,80}$/.test(eventId)) { res.status(400).json({ error: 'bad event' }); return; }
@@ -3548,6 +3564,7 @@ exports.eventLineup = onRequest({ cors: true }, async (req, res) => {
       name: ev.name || '', subtitle: ev.subtitle || '', intro: ev.intro || '', entryText: ev.entryText || '',
       dateLabel: ev.dateLabel || '', dateISO: ev.dateISO || '', venue: ev.venue || '', location: ev.location || '',
       startTime: ev.startTime || '', finishTime: ev.finishTime || '', image: ev.image || '', status: ev.status || '',
+      going: ev.goingCount || 0,
       faq: (Array.isArray(ev.faq) ? ev.faq : []).slice(0, 12).map((x) => ({ q: String(x.q || '').slice(0, 120), a: String(x.a || '').slice(0, 400) })),
       notice: n.kind ? { kind: n.kind, title: n.title || '', text: n.text || '', was: n.was || '' } : null,
     };

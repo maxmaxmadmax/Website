@@ -9,7 +9,7 @@
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=789';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=790';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 
@@ -135,6 +135,7 @@ function overviewHtml(ctx) {
         ? card('Profit so far', esc(money(profit)), esc(money(t.actualOut)) + ' spent of ' + esc(money(t.plannedOut)) + ' planned', profit < 0 ? 'is-bad' : 'is-good')
         : card('Budget', '&mdash;', 'No budget yet - start one on the Budget tab')}
       ${card('Waitlist', String(f.waiting), f.waiting ? 'waiting for a spot' : 'nobody waiting')}
+      ${card('Coming', String(ev.goingCount || 0), (ev.goingParties || 0) + ' said "I\'m coming" on the page')}
     </div>
     <div class="ad-card ev-preview">
       <div class="ev-preview-bar">
@@ -308,7 +309,7 @@ export function eventCardHtml(ctx) {
         <div class="ev-banner-stats">
           ${f ? stat(`${f.filled} <small>/ ${f.totalSites}</small>`, 'sites filled') : stat(dash, 'sites filled')}
           ${f ? stat(String(f.paidCount), 'vendors paid' + (f.unpaidCount ? ` <em>&middot; ${f.unpaidCount} owing</em>` : '')) : stat(dash, 'vendors paid')}
-          ${f ? stat(String(f.waiting), 'on the waitlist') : stat(dash, 'on the waitlist')}
+          ${stat(String(ev.goingCount || 0), 'said they\'re coming')}
           ${stat(esc(money(ev.pricing && ev.pricing.food)) + ' <small>/ ' + esc(money(ev.pricing && ev.pricing.marketPerBay)) + '</small>', 'food stall / market bay')}
         </div>
 
