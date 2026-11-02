@@ -40,6 +40,11 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // the event's budget - planned vs actual lines, staff only
+      match /budget/{lineId} {
+        allow read, write: if isAdmin();
+      }
+
       match /categories/{categoryId} {
         // Counts are maintained server side in the same transaction that
         // allocates a site, so a limit cannot be beaten by two people

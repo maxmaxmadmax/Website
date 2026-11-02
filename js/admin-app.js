@@ -21,14 +21,15 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=769';
+} from './firebase-config.js?v=770';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=769';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=769';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=769';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=769';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=769';
-import { expandKit } from './kit.js?v=769';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=770';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=770';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=770';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=770';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=770';
+import { eventHubHtml, eventGroup, BUDGET_STARTER } from './event-hub.js?v=770';
+import { expandKit } from './kit.js?v=770';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -553,7 +554,7 @@ function wireChrome() {
    ------------------------------------------------------------------------- */
 const BUILT = ['dashboard', 'events', 'vendors', 'applications', 'map', 'entertainment',
                'settings', 'vendorEmail', 'inventory',
-               'quoteDocs', 'packages', 'resources', 'leads', 'leadRate', 'customers'];
+               'quoteDocs', 'packages', 'resources', 'leads', 'leadRate', 'customers', 'event'];
 
 /*  The Dashboard is what you land on. */
 const HOME = 'dashboard';
@@ -563,6 +564,15 @@ function routeFromHash() {
   const want = want0 || HOME;
   state.view = want;
   state.openBookingId = null;
+
+  // EVENT HUB: one event, in tabs. Opening another event switches the subscriptions.
+  if (want === 'event') {
+    const p = new URLSearchParams(qs || '');
+    state.eventTab = p.get('tab') || 'overview';
+    const id = p.get('id');
+    if (id && id !== state.activeEventId && state.events.some((e) => e.id === id)) setActiveEvent(id);
+    if (state.budgetFor !== state.activeEventId) loadBudget(state.activeEventId);
+  }
 
   /*  SALES PIPELINE: an open quote lives at #/quoteDocs?q=<id> (or ?q=new),
       so the phone / browser Back button goes back to the list. */
@@ -865,7 +875,7 @@ function render() {
       than to its content, so the desk has to know it is showing it. */
   desk.classList.toggle('is-bookings', false);   // Entertainment: a normal page like Crew & Vehicles
   desk.classList.toggle('show-roster',
-    state.view === 'entertainment' && state.showRoster);
+    (state.view === 'entertainment' || (state.view === 'event' && state.eventTab === 'entertainment')) && state.showRoster);
 
   /*  Leads works like an app: one screen tall, the top fixed, only the
       list scrolls (see "LEADS: one-screen app layout" in admin.css).  */
@@ -2121,16 +2131,15 @@ VIEWS.events = {
         </div>
       </div>
 
-      ${state.events.length ? `
-      <div class="ad-ev-list">
-        ${state.events.map((ev) => {
+      ${state.events.length ? (() => {
+        const card = (ev) => {
           const active = ev.id === state.activeEventId;
           const fill = active
             ? `${activeFill.filled} of ${activeFill.total} sites`
             : 'Select to see';
 
           return `
-            <article class="ad-card ad-ev${active ? ' is-active' : ''}">
+            <article class="ad-card ad-ev${active ? ' is-active' : ''}" data-open-hub="${attr(ev.id)}">
               <header class="ad-ev-head">
                 <div>
                   <h2>${esc(ev.name || ev.id)}</h2>
@@ -2150,11 +2159,8 @@ VIEWS.events = {
               </dl>
 
               <div class="ad-actions-row">
-                ${active
-                  ? `<span class="ad-pill ad-pill-blue">Active</span>`
-                  : `<button type="button" class="ad-btn" data-activate="${attr(ev.id)}">
-                       Make active
-                     </button>`}
+                <button type="button" class="ad-btn ad-btn-primary" data-open-hub="${attr(ev.id)}">Open</button>
+                ${active ? `<span class="ad-pill ad-pill-blue">Active</span>` : ''}
 
                 <button type="button" class="ad-btn" data-edit-ev="${attr(ev.id)}">Edit</button>
 
@@ -2169,8 +2175,15 @@ VIEWS.events = {
                      </button>`}
               </div>
             </article>`;
-        }).join('')}
-      </div>` : `<p class="ad-empty">No events yet.</p>`}
+        };
+
+        const groups = [['today', 'Today'], ['upcoming', 'Upcoming'], ['past', 'Past events']];
+        return groups.map(([g, label]) => {
+          const list = state.events.filter((ev) => eventGroup(ev) === g);
+          if (!list.length) return '';
+          return `<h2 class="ev-group${g === 'past' ? ' is-past' : ''}">${label}</h2><div class="ad-ev-list${g === 'past' ? ' is-past' : ''}">${(g === 'past' ? list.slice().reverse() : list).map(card).join('')}</div>`;
+        }).join('');
+      })() : `<p class="ad-empty">No events yet.</p>`}
 
       <p class="ad-action-msg" id="ad-action-msg" hidden></p>
 
@@ -2184,9 +2197,10 @@ VIEWS.events = {
       run();
     });
 
-    document.querySelectorAll('[data-activate]').forEach((el) => {
-      el.addEventListener('click', () => {
-        setActiveEvent(el.getAttribute('data-activate'));
+    document.querySelectorAll('[data-open-hub]').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        if (el.tagName !== 'BUTTON' && e.target.closest('button, a')) return;   // the card's own buttons
+        location.hash = '#/event?id=' + encodeURIComponent(el.getAttribute('data-open-hub'));
       });
     });
 
@@ -2214,6 +2228,113 @@ VIEWS.events = {
     });
 
     wireEventForm();
+  },
+};
+
+/* =========================================================================
+   EVENT HUB - the look lives in js/event-hub.js. Vendors, Sites & Map,
+   Entertainment, Messages and Sponsors are the existing pages drawn
+   inside the hub's tabs. The budget is events/{id}/budget/ (admin only).
+   ========================================================================= */
+const HUB_SUB = { vendors: 'vendors', map: 'map', entertainment: 'entertainment', messages: 'vendorEmail', sponsors: 'vendorEmail' };
+VIEWS.event = {
+  html() {
+    const ev = state.events.find((e) => e.id === state.activeEventId);
+    if (!ev) return '<p class="ad-empty">Pick an event on the <a href="#/events">Events</a> page.</p>';
+    const tab = state.eventTab || 'overview';
+    if (tab === 'sponsors') state.msgTab = 'sponsors';
+    else if (tab === 'messages' && state.msgTab === 'sponsors') state.msgTab = 'vendors';
+    const sub = HUB_SUB[tab] ? VIEWS[HUB_SUB[tab]] : null;
+    return eventHubHtml({
+      ev, tab, inner: sub ? sub.html() : '', eventPill,
+      bookings: state.bookings || [], sites: state.sites || [], sponsors: state.sponsors || [], waitlist: state.waitlist || [],
+      budget: state.budgetFor === ev.id ? (state.budget || []) : [],
+      h: { esc, attr, money },
+    }) + eventForm();
+  },
+  wire() {
+    const tab = state.eventTab || 'overview';
+    const sub = HUB_SUB[tab] ? VIEWS[HUB_SUB[tab]] : null;
+    if (sub && sub.wire) sub.wire();
+    const desk = document.getElementById('ad-desk');
+    const guarded = (el, run) => el.addEventListener('click', () => {
+      const ask = el.getAttribute('data-confirm');
+      if (ask && !window.confirm(ask)) return;
+      run();
+    });
+    desk.querySelectorAll('[data-edit-ev]').forEach((el) => el.addEventListener('click', () => { state.editingEvent = { id: el.getAttribute('data-edit-ev') }; render(); }));
+    desk.querySelectorAll('[data-open-ev]').forEach((el) => guarded(el, () => runAction(el, 'adminSaveEvent', { eventId: el.getAttribute('data-open-ev'), fields: { status: 'open' } })));
+    desk.querySelectorAll('[data-close-ev]').forEach((el) => guarded(el, () => runAction(el, 'adminSaveEvent', { eventId: el.getAttribute('data-close-ev'), fields: { status: 'closed' } })));
+    wireEventForm();
+
+    // BUDGET: amounts save as you type
+    const seed = document.getElementById('ev-bud-seed');
+    if (seed) seed.addEventListener('click', async () => {
+      seed.disabled = true;
+      try { await budgetStore.seed(); } catch (e) { window.alert(friendly(e)); seed.disabled = false; }
+    });
+    desk.querySelectorAll('[data-bud]').forEach((inp) => {
+      let timer = null;
+      inp.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          const field = inp.getAttribute('data-bud');
+          const value = field === 'name' ? inp.value.trim().slice(0, 80) : Math.max(0, Math.round(Number(inp.value || 0) * 100));
+          budgetStore.update(inp.getAttribute('data-id'), { [field]: value }, inp).catch((e) => window.alert(friendly(e)));
+        }, 500);
+      });
+    });
+    desk.querySelectorAll('[data-bud-del]').forEach((b) => b.addEventListener('click', async () => {
+      const row = b.closest('tr'); const name = (row && row.querySelector('[data-bud="name"]') || {}).value || 'this line';
+      if (!window.confirm('Remove "' + name + '" from the budget?')) return;
+      try { await budgetStore.remove(b.getAttribute('data-bud-del')); } catch (e) { window.alert(friendly(e)); }
+    }));
+    const add = document.getElementById('ev-bud-add');
+    if (add) add.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(add);
+      try {
+        await budgetStore.add({ name: String(fd.get('name') || '').trim().slice(0, 80), kind: fd.get('kind') === 'income' ? 'income' : 'cost', plannedCents: Math.max(0, Math.round(Number(fd.get('planned') || 0) * 100)) });
+      } catch (err) { window.alert(friendly(err)); }
+    });
+  },
+};
+async function loadBudget(eventId) {
+  if (!eventId) return;
+  try {
+    const { collection, getDocs } = fb.f;
+    const snap = await getDocs(collection(fb.db, 'events', eventId, 'budget'));
+    const rows = [];
+    snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
+    rows.sort((a, b) => (a.order || 0) - (b.order || 0));
+    state.budget = rows; state.budgetFor = eventId;
+    if (state.view === 'event' && ['overview', 'budget'].includes(state.eventTab || 'overview')) render();
+  } catch (e) { console.warn('budget', e); }
+}
+const budgetStore = {
+  col() { const { collection } = fb.f; return collection(fb.db, 'events', state.activeEventId, 'budget'); },
+  async add(p) {
+    const { addDoc } = fb.f;
+    await addDoc(this.col(), { name: '', kind: 'cost', plannedCents: 0, actualCents: 0, auto: '', order: Date.now(), ...p });
+    await loadBudget(state.activeEventId);
+  },
+  async update(id, p, inp) {
+    const { doc, updateDoc } = fb.f;
+    await updateDoc(doc(fb.db, 'events', state.activeEventId, 'budget', id), p);
+    const line = (state.budget || []).find((l) => l.id === id);
+    if (line) Object.assign(line, p);
+    if (!inp || document.activeElement !== inp) render();   // keep the cursor where it is while typing
+  },
+  async remove(id) {
+    const { doc, deleteDoc } = fb.f;
+    await deleteDoc(doc(fb.db, 'events', state.activeEventId, 'budget', id));
+    await loadBudget(state.activeEventId);
+  },
+  async seed() {
+    const { addDoc } = fb.f;
+    let n = 0;
+    for (const l of BUDGET_STARTER) await addDoc(this.col(), { plannedCents: 0, actualCents: 0, auto: '', ...l, order: ++n });
+    await loadBudget(state.activeEventId);
   },
 };
 
