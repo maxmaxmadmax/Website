@@ -16,7 +16,7 @@
    ctx = { state, h: { esc, attr }, call, render, money }
    ========================================================================== */
 
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=779';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=780';
 
 export const SEND_TIME = '9:35 am';
 
@@ -290,6 +290,20 @@ function sponsorCents(p) {
   if (p.amountCents) return p.amountCents;
   return (LEVEL[p.level] && LEVEL[p.level].priceCents) || 0;
 }
+/*  SPONSORS - a board: To ask -> Asked -> Interested -> Yes (and No).
+    Click a business to open its drawer: logo, website, brand colour,
+    contact, level, notes, and the buttons to send the ask or open their
+    proposal page (which uses their logo and colour).                     */
+const SP_COLS = ['todo', 'asked', 'interested', 'yes', 'no'];
+const SP_PALETTE = ['#ff6b00', '#0f9d58', '#4a7bd0', '#b25b00', '#7a3fd0', '#c5322b', '#0a8f8f', '#d0486b'];
+const spColor = (p) => (p.color && /^#[0-9a-f]{6}$/i.test(p.color)) ? p.color : SP_PALETTE[[...String(p.business || '')].reduce((t, c) => t + c.charCodeAt(0), 0) % SP_PALETTE.length];
+const spInitials = (name) => String(name || '?').replace(/[^\w ]/g, '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || '?';
+const spLogoOk = (u) => /^(https:\/\/|\/)[^\s'"()<>\\]*$/.test(String(u || ''));
+const spAvatar = (h, p, big) => (p.logo && spLogoOk(p.logo)
+  ? `<img class="sp-logo${big ? ' is-big' : ''}" src="${h.attr(p.logo)}" alt="">`
+  : `<span class="sp-logo sp-initials${big ? ' is-big' : ''}" style="background:${h.attr(spColor(p))}">${h.esc(spInitials(p.business))}</span>`);
+const spLink = (evId, p) => '/sponsor?e=' + encodeURIComponent(evId) + (p.token ? '&t=' + encodeURIComponent(p.token) : '');
+
 function sponsorsHtml(ctx) {
   const { state, h } = ctx;
   const list = (state.sponsors || []).slice().sort((a, b) => (a.business || '').localeCompare(b.business || ''));
@@ -300,60 +314,122 @@ function sponsorsHtml(ctx) {
   const pct = Math.min(100, Math.round(yes / SPONSOR_GOAL_CENTS * 100));
   const pct2 = Math.min(100 - pct, Math.round(maybe / SPONSOR_GOAL_CENTS * 100));
   const ask = msgs.find((m) => m.system === 'sponsor-ask');
+  const askOk = !!(ask && ask.status === 'approved');
   const ticked = state.spTicked || {};
   const nTicked = list.filter((p) => ticked[p.id] && p.status === 'todo' && p.email).length;
   const added = new Set(list.map((p) => String(p.business || '').toLowerCase()));
   const leads = (state.leads || []).filter((l) => l.email && !added.has(String(l.title || '').toLowerCase()));
   const evId = state.activeEventId;
   const evName = ((state.events || []).find((e) => e.id === evId) || {}).name || '';
+  const taken = {};
+  list.filter((p) => p.status === 'yes' && p.level).forEach((p) => { taken[p.level] = (taken[p.level] || 0) + 1; });
+
   const msgRows = msgs.map((m) => {
     const [label, tone] = STATUS[m.status] || STATUS.draft;
     return `<tr data-ms-open="${h.attr(m.id)}"><td class="ms-when">${h.esc(whenText(m, {}))}</td>
       <td><strong>${h.esc(m.name)}</strong><span class="ms-sub">${h.esc(fill(m.subject || '', { event_name: evName }, String))}</span></td>
       <td><span class="ms-chip ms-${tone}">${h.esc(label)}</span></td><td class="ms-sent">${m.sentCount || 0} sent</td></tr>`;
   }).join('');
-  const row = (p) => {
-    const [lab, tone] = SP_STATUS[p.status] || SP_STATUS.todo;
-    const can = p.status === 'todo' && p.email;
-    return `<tr class="ms-fixed">
-      <td><input type="checkbox" data-sp-tick="${h.attr(p.id)}"${ticked[p.id] && can ? ' checked' : ''}${can ? '' : ' disabled'} aria-label="Ask ${h.attr(p.business)}"></td>
-      <td><strong>${h.esc(p.business)}</strong><span class="ms-sub">${h.esc({ lead: 'Lead Generator', past: 'Past sponsor', manual: 'Added by you', website: 'Sponsor page', suggested: 'Big Bowen business' }[p.source] || '')}</span>${p.notes ? '<span class="ms-sub ms-sp-tip">' + h.esc(p.notes) + '</span>' : ''}</td>
-      <td>${h.esc(p.contactName || '')}${p.email ? '<span class="ms-sub">' + h.esc(p.email) + '</span>' : '<input class="ad-input ms-sp-email" data-sp-email="' + h.attr(p.id) + '" placeholder="Add their email" type="email">'}</td>
-      <td><select class="ad-select ms-sp-sel" data-sp-status="${h.attr(p.id)}">${Object.keys(SP_STATUS).map((k) => `<option value="${k}"${(p.status || 'todo') === k ? ' selected' : ''}>${SP_STATUS[k][0]}</option>`).join('')}</select>
-        <span class="ms-chip ms-${tone} ms-sp-chip">${h.esc(lab)}</span></td>
-      <td><select class="ad-select ms-sp-sel" data-sp-level="${h.attr(p.id)}"><option value="">Level&hellip;</option>${SPONSOR_LEVELS.map((l) => `<option value="${l.key}"${p.level === l.key ? ' selected' : ''}>${h.esc(l.name.split(' - ')[0])}${l.priceCents ? ' ' + money0(l.priceCents) : ''}</option>`).join('')}</select>
-        ${p.level === 'supporter' ? `<input class="ad-input ms-sp-amt" data-sp-amount="${h.attr(p.id)}" placeholder="$ value" value="${p.amountCents ? Math.round(p.amountCents / 100) : ''}">` : ''}</td>
-      <td class="ms-sp-note">${p.message ? '<span title="' + h.attr(p.message) + '">&#128172;</span>' : ''}<button type="button" class="ms-sp-del" data-sp-del="${h.attr(p.id)}" title="Remove">&times;</button></td>
-    </tr>`;
-  };
-  return `<div class="ms-sp-goal ad-card">
-      <div><b>${money0(yes)}</b> committed of your <b>${money0(SPONSOR_GOAL_CENTS)}</b> goal${maybe ? ' &middot; <span>' + money0(maybe) + ' interested</span>' : ''}</div>
-      <div class="ms-sp-bar"><span style="width:${pct}%"></span><i style="width:${pct2}%"></i></div>
-      <a href="/sponsor?e=${encodeURIComponent(evId)}" target="_blank" rel="noopener">Open the sponsor page &#8599;</a>
-    </div>
-    <div class="ad-card ms-card"><table class="ms-table"><thead><tr><th>When</th><th>Email</th><th>Status</th><th>Sent</th></tr></thead><tbody>${msgRows}</tbody></table></div>
-    <div class="ad-card ms-card ms-sp">
-      <div class="ms-sp-bar2">
-        <b>Businesses to ask</b><span>${list.length}</span>
-        <button type="button" class="ad-btn ad-btn-small" data-sp-add>+ Add a business</button>
-        <button type="button" class="ad-btn ad-btn-small" data-sp-leads>From Lead Generator (${leads.length})</button>
-        <button type="button" class="ad-btn ad-btn-small" data-sp-big>Add big Bowen businesses (${SUGGESTED_SPONSORS.filter((s) => !added.has(s.business.toLowerCase())).length})</button>
-        <button type="button" class="ad-btn ad-btn-small" data-sp-past>Add past sponsors</button>
-        <button type="button" class="ad-btn ad-btn-primary ms-sp-send" data-sp-send${nTicked ? '' : ' disabled'}>Send the ask to ${nTicked} ticked</button>
+
+  const card = (p) => {
+    const can = p.status === 'todo' && !!p.email;
+    const lv = LEVEL[p.level];
+    return `<article class="sp-card${state.spOpen === p.id ? ' is-open' : ''}" data-sp-open="${h.attr(p.id)}">
+      ${spAvatar(h, p)}
+      <div class="sp-card-main">
+        <b>${h.esc(p.business)}</b>
+        <span>${h.esc(p.contactName || p.email || 'no contact yet')}</span>
+        ${lv ? `<em class="sp-lvl is-${h.attr(p.level)}">${h.esc(lv.name.split(' - ')[0])}${sponsorCents(p) ? ' &middot; ' + money0(sponsorCents(p)) : ''}</em>` : ''}
+        ${p.message ? '<i class="sp-card-msg" title="They left a message">&#128172;</i>' : ''}
       </div>
-      ${ask && ask.status !== 'approved' ? '<p class="ms-note ms-sp-warn">Approve &ldquo;Sponsorship - the ask&rdquo; above before you can send.</p>' : ''}
-      ${state.spAdding ? `<form class="ms-sp-form" data-sp-form>
-        <input class="ad-input" name="business" placeholder="Business" required>
-        <input class="ad-input" name="contactName" placeholder="Contact name">
-        <input class="ad-input" name="email" type="email" placeholder="Email">
-        <input class="ad-input" name="phone" placeholder="Phone">
-        <button type="submit" class="ad-btn ad-btn-primary">Add</button><button type="button" class="ad-btn" data-sp-cancel>Cancel</button></form>` : ''}
-      ${state.spPicking ? `<div class="ms-sp-pick"><p>Tick the businesses to add (only ones with an email are shown):</p>
-        <div class="ms-sp-picklist">${leads.map((l) => `<label><input type="checkbox" data-sp-lead="${h.attr(l.id)}"> <b>${h.esc(l.title || '')}</b> <span>${h.esc(l.contactName || '')} &middot; ${h.esc(l.email)}</span></label>`).join('') || '<p class="ad-cell-muted">No leads with an email that aren&rsquo;t already on the list.</p>'}</div>
-        <button type="button" class="ad-btn ad-btn-primary" data-sp-leadadd>Add ticked</button> <button type="button" class="ad-btn" data-sp-cancel>Cancel</button></div>` : ''}
-      <table class="ms-table"><thead><tr><th></th><th>Business</th><th>Contact</th><th>Status</th><th>Level</th><th></th></tr></thead>
-      <tbody>${list.map(row).join('') || '<tr class="ms-fixed"><td colspan="6" class="ad-cell-muted">No businesses yet - add some from your Lead Generator, by hand, or your past sponsors.</td></tr>'}</tbody></table>
+      ${can ? `<label class="sp-card-tick" title="Tick to include in the ask"><input type="checkbox" data-sp-tick="${h.attr(p.id)}"${ticked[p.id] ? ' checked' : ''} aria-label="Ask ${h.attr(p.business)}"></label>` : ''}
+    </article>`;
+  };
+  const col = (key) => {
+    const [lab] = SP_STATUS[key];
+    const items = list.filter((p) => (p.status || 'todo') === key);
+    const sum = items.reduce((t, p) => t + sponsorCents(p), 0);
+    return `<section class="sp-col is-${key}">
+      <header><b>${h.esc(lab)}</b><span>${items.length}${sum && key !== 'no' ? ' &middot; ' + money0(sum) : ''}</span></header>
+      <div class="sp-col-body">${items.map(card).join('') || '<p class="sp-col-empty">&mdash;</p>'}</div>
+    </section>`;
+  };
+
+  const open = state.spOpen ? list.find((p) => p.id === state.spOpen) : null;
+  const drawer = open ? (() => {
+    const p = open;
+    const f = (field, label, value, type, extra) => `<label class="sp-f"><span>${label}</span><input class="ad-input" type="${type || 'text'}" value="${h.attr(value || '')}" data-sp-field="${field}" data-id="${h.attr(p.id)}"${extra || ''}></label>`;
+    const site = String(p.website || '').replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    return `
+    <div class="sp-scrim" data-sp-close></div>
+    <aside class="sp-drawer" role="dialog" aria-label="${h.attr(p.business)}" style="--sp-brand:${h.attr(spColor(p))}">
+      <div class="sp-drawer-brand">
+        ${spAvatar(h, p, true)}
+        <div class="sp-drawer-brandbtns">
+          <label class="ad-btn ad-btn-small">&#128444; ${p.logo ? 'Change logo' : 'Upload logo'}<input type="file" accept="image/*" data-sp-logo-file="${h.attr(p.id)}" hidden></label>
+          ${site ? `<button type="button" class="ad-btn ad-btn-small" data-sp-findlogo="${h.attr(p.id)}" title="Grabs the icon from ${h.attr(site)}">Find from website</button>` : ''}
+          ${p.logo ? `<button type="button" class="ad-btn ad-btn-small" data-sp-field-clear="logo" data-id="${h.attr(p.id)}">Remove</button>` : ''}
+        </div>
+        <button type="button" class="ad-drawer-close" data-sp-close aria-label="Close">&times;</button>
+      </div>
+      <div class="sp-drawer-body">
+        ${f('business', 'Business', p.business)}
+        <div class="sp-2">${f('contactName', 'Contact', p.contactName)}${f('phone', 'Phone', p.phone, 'tel')}</div>
+        ${f('email', 'Email', p.email, 'email')}
+        <div class="sp-2">${f('website', 'Website', p.website, 'url', ' placeholder="https://"')}
+          <label class="sp-f"><span>Brand colour</span><span class="sp-color"><input type="color" value="${h.attr(spColor(p))}" data-sp-field="color" data-id="${h.attr(p.id)}"><code>${h.esc(spColor(p))}</code></span></label></div>
+        <div class="sp-2">
+          <label class="sp-f"><span>Status</span><select class="ad-select" data-sp-status="${h.attr(p.id)}">${Object.keys(SP_STATUS).map((k) => `<option value="${k}"${(p.status || 'todo') === k ? ' selected' : ''}>${SP_STATUS[k][0]}</option>`).join('')}</select></label>
+          <label class="sp-f"><span>Level</span><select class="ad-select" data-sp-level="${h.attr(p.id)}"><option value="">Level&hellip;</option>${SPONSOR_LEVELS.map((l) => `<option value="${l.key}"${p.level === l.key ? ' selected' : ''}>${h.esc(l.name.split(' - ')[0])}${l.priceCents ? ' ' + money0(l.priceCents) : ''}</option>`).join('')}</select></label>
+        </div>
+        ${p.level === 'supporter' ? `<label class="sp-f"><span>Value of their support</span><input class="ad-input" data-sp-amount="${h.attr(p.id)}" placeholder="$" value="${p.amountCents ? Math.round(p.amountCents / 100) : ''}"></label>` : ''}
+        <label class="sp-f"><span>Notes (just for you)</span><textarea class="ad-input" rows="3" data-sp-field="notes" data-id="${h.attr(p.id)}">${h.esc(p.notes || '')}</textarea></label>
+        ${p.message ? `<div class="sp-theirs"><b>Their message</b><p>${h.esc(p.message)}</p></div>` : ''}
+        <p class="ad-seat-hint">${h.esc({ lead: 'From the Lead Generator', past: 'A past sponsor', manual: 'Added by you', website: 'Came in through the sponsor page', suggested: 'Big Bowen business' }[p.source] || '')}${p.askedAt ? ' &middot; asked' : ''}</p>
+      </div>
+      <div class="sp-drawer-acts">
+        ${p.status === 'todo' && p.email ? `<button type="button" class="ad-btn ad-btn-primary" data-sp-sendone="${h.attr(p.id)}"${askOk ? '' : ' disabled title="Approve the ask email first"'}>Send them the ask</button>` : ''}
+        <a class="ad-btn" href="${h.attr(spLink(evId, p))}" target="_blank" rel="noopener">Open their proposal &#8599;</a>
+        <button type="button" class="ad-btn" data-sp-copylink="${h.attr(p.id)}">Copy proposal link</button>
+        <button type="button" class="ad-btn ms-sp-del-btn" data-sp-del="${h.attr(p.id)}">Remove</button>
+      </div>
+    </aside>`;
+  })() : '';
+
+  return `<div class="sp-top">
+      <div class="ad-card sp-goal">
+        <p class="ev-card-t">Sponsorship</p>
+        <p class="sp-goal-big">${money0(yes)} <small>of ${money0(SPONSOR_GOAL_CENTS)}</small></p>
+        <div class="ms-sp-bar"><span style="width:${pct}%"></span><i style="width:${pct2}%"></i></div>
+        <p class="ev-card-sub">${maybe ? money0(maybe) + ' more interested &middot; ' : ''}<a href="/sponsor?e=${encodeURIComponent(evId)}" target="_blank" rel="noopener">Open the sponsor page &#8599;</a></p>
+      </div>
+      <div class="ad-card sp-slots">
+        <p class="ev-card-t">Spots</p>
+        <div class="sp-slot-row">${SPONSOR_LEVELS.filter((l) => l.spots).map((l) => `<span class="sp-slot is-${l.key}${(taken[l.key] || 0) >= l.spots ? ' is-full' : ''}"><b>${taken[l.key] || 0}/${l.spots}</b>${h.esc(l.name.split(' - ')[0])}</span>`).join('')}</div>
+        <p class="ev-card-sub">${list.filter((p) => p.status === 'yes').length} said yes &middot; ${list.filter((p) => p.status === 'asked').length} asked, waiting</p>
+      </div>
     </div>
+    <div class="ad-card ms-card sp-emails"><table class="ms-table"><thead><tr><th>When</th><th>Email</th><th>Status</th><th>Sent</th></tr></thead><tbody>${msgRows}</tbody></table></div>
+    <div class="sp-bar">
+      <b>Businesses</b><span>${list.length}</span>
+      <button type="button" class="ad-btn ad-btn-small" data-sp-add>+ Add a business</button>
+      <button type="button" class="ad-btn ad-btn-small" data-sp-leads>From Lead Generator (${leads.length})</button>
+      <button type="button" class="ad-btn ad-btn-small" data-sp-big>Big Bowen businesses (${SUGGESTED_SPONSORS.filter((s) => !added.has(s.business.toLowerCase())).length})</button>
+      <button type="button" class="ad-btn ad-btn-small" data-sp-past>Past sponsors</button>
+      <button type="button" class="ad-btn ad-btn-primary ms-sp-send" data-sp-send${nTicked ? '' : ' disabled'}>Send the ask to ${nTicked} ticked</button>
+    </div>
+    ${ask && !askOk ? '<p class="ms-note ms-sp-warn">Approve &ldquo;Sponsorship - the ask&rdquo; above before you can send.</p>' : ''}
+    ${state.spAdding ? `<form class="ms-sp-form ad-card" data-sp-form>
+      <input class="ad-input" name="business" placeholder="Business" required>
+      <input class="ad-input" name="contactName" placeholder="Contact name">
+      <input class="ad-input" name="email" type="email" placeholder="Email">
+      <input class="ad-input" name="phone" placeholder="Phone">
+      <button type="submit" class="ad-btn ad-btn-primary">Add</button><button type="button" class="ad-btn" data-sp-cancel>Cancel</button></form>` : ''}
+    ${state.spPicking ? `<div class="ms-sp-pick ad-card"><p>Tick the businesses to add (only ones with an email are shown):</p>
+      <div class="ms-sp-picklist">${leads.map((l) => `<label><input type="checkbox" data-sp-lead="${h.attr(l.id)}"> <b>${h.esc(l.title || '')}</b> <span>${h.esc(l.contactName || '')} &middot; ${h.esc(l.email || '')}</span></label>`).join('') || '<p class="ad-cell-muted">Nothing new in the Lead Generator with an email.</p>'}</div>
+      <button type="button" class="ad-btn ad-btn-primary" data-sp-leadadd>Add ticked</button> <button type="button" class="ad-btn" data-sp-cancel>Cancel</button></div>` : ''}
+    <div class="sp-board">${SP_COLS.map(col).join('')}</div>
+    ${drawer}
     ${needsEmailHtml(h, added)}`;
 }
 
@@ -706,6 +782,38 @@ export function wireMessages(ctx) {
       state.spPicking = false; render();
       return;
     }
+    if (e.target.closest('[data-sp-close]')) { state.spOpen = null; render(); return; }
+    const openCard = e.target.closest('[data-sp-open]');
+    if (openCard && !e.target.closest('input, label, button, a')) { state.spOpen = openCard.getAttribute('data-sp-open'); render(); return; }
+    const clr = e.target.closest('[data-sp-field-clear]');
+    if (clr) { await ctx.sponsors.update(clr.getAttribute('data-id'), { [clr.getAttribute('data-sp-field-clear')]: '' }); return; }
+    const findLogo = e.target.closest('[data-sp-findlogo]');
+    if (findLogo) {
+      const p = (state.sponsors || []).find((x) => x.id === findLogo.getAttribute('data-sp-findlogo'));
+      const host = String((p && p.website) || '').replace(/^https?:\/\//, '').replace(/\/.*$/, '').trim();
+      if (!host) { window.alert('Add their website first.'); return; }
+      await ctx.sponsors.update(p.id, { logo: 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(host) + '&sz=256' });
+      return;
+    }
+    const sendOne = e.target.closest('[data-sp-sendone]');
+    if (sendOne) {
+      const p = (state.sponsors || []).find((x) => x.id === sendOne.getAttribute('data-sp-sendone'));
+      if (!p || !window.confirm('Send the sponsorship email to ' + p.business + ' (' + p.email + ')?')) return;
+      sendOne.disabled = true; sendOne.textContent = 'Sending...';
+      try {
+        const r = await call('adminSponsorSend', { eventId: state.activeEventId, ids: [p.id] });
+        window.alert(r.sent ? 'Sent.' : 'Not sent: ' + ((r.failed || []).join(', ') || 'unknown'));
+      } catch (err) { window.alert(err.message || 'Could not send.'); }
+      render();
+      return;
+    }
+    const copyLink = e.target.closest('[data-sp-copylink]');
+    if (copyLink) {
+      const p = (state.sponsors || []).find((x) => x.id === copyLink.getAttribute('data-sp-copylink'));
+      const url = 'https://www.soundzgood.com.au' + spLink(state.activeEventId, p || {});
+      (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(() => { copyLink.textContent = 'Copied'; }).catch(() => window.prompt('Copy this link:', url));
+      return;
+    }
     const del = e.target.closest('[data-sp-del]');
     if (del) {
       const p = (state.sponsors || []).find((x) => x.id === del.getAttribute('data-sp-del'));
@@ -870,6 +978,22 @@ export function wireMessages(ctx) {
   root.addEventListener('change', async (e) => {
     const t = e.target;
     if (t.matches('[data-sp-tick]')) { state.spTicked = { ...(state.spTicked || {}), [t.getAttribute('data-sp-tick')]: t.checked }; render(); return; }
+    if (t.matches('[data-sp-field]')) {
+      const field = t.getAttribute('data-sp-field');
+      let value = String(t.value || '').trim().slice(0, field === 'notes' ? 2000 : 200);
+      if (field === 'color' && !/^#[0-9a-f]{6}$/i.test(value)) value = '';
+      if (field === 'website' && value && !/^https?:\/\//i.test(value)) value = 'https://' + value;
+      await ctx.sponsors.update(t.getAttribute('data-id'), { [field]: value });
+      return;
+    }
+    if (t.matches('[data-sp-logo-file]')) {
+      const file = t.files && t.files[0];
+      if (!file || !ctx.upload) return;
+      const id = t.getAttribute('data-sp-logo-file');
+      try { const url = await ctx.upload(file, 'sponsor-logos/' + id + '/'); await ctx.sponsors.update(id, { logo: url }); }
+      catch (err) { window.alert('Upload failed - ' + (err.message || 'try again')); }
+      return;
+    }
     if (t.matches('[data-sp-status]')) { await ctx.sponsors.update(t.getAttribute('data-sp-status'), { status: t.value }); return; }
     if (t.matches('[data-sp-level]')) { await ctx.sponsors.update(t.getAttribute('data-sp-level'), { level: t.value }); return; }
     if (t.matches('[data-sp-amount]')) { await ctx.sponsors.update(t.getAttribute('data-sp-amount'), { amountCents: Math.max(0, Math.round(Number(String(t.value).replace(/[^0-9.]/g, '')) * 100) || 0) }); return; }

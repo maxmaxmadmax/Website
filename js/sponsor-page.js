@@ -8,8 +8,8 @@
    Data: getSponsorInfo / sponsorInterest (functions/index.js).
    ========================================================================== */
 
-import { SPONSOR_LEVELS, EVENT_COSTS } from './sponsor-data.js?v=779';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured, eventId as defaultEventId } from './firebase-config.js?v=779';
+import { SPONSOR_LEVELS, EVENT_COSTS } from './sponsor-data.js?v=780';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured, eventId as defaultEventId } from './firebase-config.js?v=780';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) => String(v == null ? '' : v)
@@ -46,7 +46,13 @@ function render(d) {
   const p = d.prospect || {};
   const poster = posterOf(ev);
   document.title = 'Become a Sponsor - ' + (ev.name || 'Eatz & Beatz') + ' | SoundzGood';
+  if (p.color && /^#[0-9a-f]{6}$/i.test(p.color)) document.documentElement.style.setProperty('--spn-brand', p.color);
+  const logoOk = /^https:\/\/(firebasestorage\.googleapis\.com|www\.google\.com)\/[^\s'"()<>]*$/.test(String(p.logo || ''));
   document.getElementById('spn-root').innerHTML = `
+  ${p.business ? `<div class="spn-for">
+    <div class="spn-for-lockup">${poster ? `<img class="spn-for-ev" src="${esc(poster)}" alt="">` : ''}<span class="spn-for-x">&times;</span>${logoOk ? `<img class="spn-for-logo" src="${esc(p.logo)}" alt="${esc(p.business)}">` : `<span class="spn-for-initials">${esc(String(p.business).replace(/[^\w ]/g, '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join(''))}</span>`}</div>
+    <div><p class="spn-eyebrow">A proposal prepared for</p><h2>${esc(p.business)}</h2>${p.contactName ? `<p>For ${esc(p.contactName)}</p>` : ''}</div>
+  </div>` : ''}
   <section class="spn-hero">
     ${poster ? `<img class="spn-poster" src="${esc(poster)}" alt="${esc(ev.name)} poster">` : ''}
     <div class="spn-hero-text">

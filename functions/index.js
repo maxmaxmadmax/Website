@@ -4531,7 +4531,9 @@ exports.getSponsorInfo = onCall(async (request) => {
     const x = d.data();
     if (x.status === 'yes' && x.level) taken[x.level] = (taken[x.level] || 0) + 1;
     if (token && /^[a-f0-9]{20,40}$/.test(String(token)) && x.token === token) {
-      prospect = { business: x.business || '', contactName: x.contactName || '', email: x.email || '', phone: x.phone || '' };
+      const ownLogo = /^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[\w.-]+\/o\/sponsor-logos%2F[\w.%-]+\?[\w=&.-]+$/.test(String(x.logo || '')) || /^https:\/\/www\.google\.com\/s2\/favicons\?domain=[\w.%-]+&sz=\d+$/.test(String(x.logo || ''));
+      prospect = { business: x.business || '', contactName: x.contactName || '', email: x.email || '', phone: x.phone || '',
+        logo: ownLogo ? x.logo : '', color: /^#[0-9a-f]{6}$/i.test(String(x.color || '')) ? x.color : '', website: String(x.website || '').slice(0, 200) };
     }
   });
   const left = {};

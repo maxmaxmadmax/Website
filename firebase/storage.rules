@@ -62,6 +62,17 @@ service firebase.storage {
       allow delete: if isAdmin();
     }
 
+    // Sponsor logos - uploaded on the Sponsors board. Public read, because
+    // the proposal page shows them. Admin write.
+    match /sponsor-logos/{allPaths=**} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow write: if isAdmin()
+        && request.resource.size < 4 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if isAdmin();
+    }
+
     // Lead files - briefs, event maps, stage plots attached to a lead in the
     // admin lead generator. Private: admins only, any common file type,
     // capped in size.

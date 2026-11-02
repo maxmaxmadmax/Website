@@ -21,15 +21,15 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=779';
+} from './firebase-config.js?v=780';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=779';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=779';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=779';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=779';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=779';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml } from './event-hub.js?v=779';
-import { expandKit } from './kit.js?v=779';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=780';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=780';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=780';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=780';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=780';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml } from './event-hub.js?v=780';
+import { expandKit } from './kit.js?v=780';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -4547,7 +4547,15 @@ window.__sgAdmin = { state, VIEWS, call, render };
    MESSAGES - the page lives in js/messages.js. The view key stays
    'vendorEmail' so old links still land here.
    ========================================================================= */
-function msgCtx() { return { state, h: { esc, attr }, call, render, loadLog, sponsors: sponsorStore }; }
+function msgCtx() { return { state, h: { esc, attr }, call, render, loadLog, sponsors: sponsorStore, upload: uploadImage }; }
+/*  A picture into our Storage (shrunk first). Returns the download link. */
+async function uploadImage(file, folder, max = 800) {
+  const { ref, uploadBytes, getDownloadURL } = fb.st;
+  const small = await shrinkPhoto(file, max);
+  const path = folder + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + (small.type === 'image/webp' ? '.webp' : '');
+  await uploadBytes(ref(fb.storage, path), small, { contentType: small.type || file.type });
+  return getDownloadURL(ref(fb.storage, path));
+}
 /*  Sponsors tab: the list of businesses to ask (admins write it directly). */
 const sponsorStore = {
   async add(p) {
