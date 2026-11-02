@@ -21,15 +21,15 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=775';
+} from './firebase-config.js?v=776';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=775';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=775';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=775';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=775';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=775';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml } from './event-hub.js?v=775';
-import { expandKit } from './kit.js?v=775';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=776';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=776';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=776';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=776';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=776';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml } from './event-hub.js?v=776';
+import { expandKit } from './kit.js?v=776';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -572,6 +572,7 @@ function routeFromHash() {
     const id = p.get('id');
     if (id && id !== state.activeEventId && state.events.some((e) => e.id === id)) setActiveEvent(id);
     if (state.budgetFor !== state.activeEventId) loadBudget(state.activeEventId);
+    if (state.programmeFor !== state.activeEventId) loadProgramme(state.activeEventId);
   }
 
   /*  SALES PIPELINE: an open quote lives at #/quoteDocs?q=<id> (or ?q=new),
@@ -2134,8 +2135,9 @@ VIEWS.events = {
       ${state.events.length ? (() => {
         const card = (ev) => eventCardHtml({
           ev, active: ev.id === state.activeEventId, eventPill, h: { esc, attr, money },
-          figures: ev.id === state.activeEventId ? eventFigures({ ev, bookings: state.bookings || [], sites: state.sites || [], sponsors: state.sponsors || [], waitlist: state.waitlist || [] }) : null,
+          figures: ev.id === state.activeEventId ? eventFigures({ ev, bookings: state.bookings || [], sites: state.sites || [], sponsors: state.sponsors || [], waitlist: state.waitlist || [], programme: state.programmeFor === ev.id ? (state.programme || []) : [] }) : null,
           budget: state.budgetFor === ev.id ? (state.budget || []) : [],
+          programme: state.programmeFor === ev.id ? (state.programme || []) : [],
         });
 
         const groups = [['today', 'Today'], ['upcoming', 'Upcoming'], ['past', 'Past events']];
@@ -2159,6 +2161,7 @@ VIEWS.events = {
     });
 
     if (state.budgetFor !== state.activeEventId) loadBudget(state.activeEventId);
+    if (state.programmeFor !== state.activeEventId) loadProgramme(state.activeEventId);
     document.querySelectorAll('[data-open-hub]').forEach((el) => {
       el.addEventListener('click', (e) => {
         if (el.tagName !== 'BUTTON' && e.target.closest('button, a')) return;   // the card's own buttons
@@ -2198,7 +2201,7 @@ VIEWS.events = {
    Entertainment, Messages and Sponsors are the existing pages drawn
    inside the hub's tabs. The budget is events/{id}/budget/ (admin only).
    ========================================================================= */
-const HUB_SUB = { vendors: 'vendors', map: 'map', entertainment: 'entertainment', messages: 'vendorEmail', sponsors: 'vendorEmail' };
+const HUB_SUB = { vendors: 'vendors', map: 'map', messages: 'vendorEmail', sponsors: 'vendorEmail' };
 VIEWS.event = {
   html() {
     const ev = state.events.find((e) => e.id === state.activeEventId);
@@ -2211,6 +2214,7 @@ VIEWS.event = {
       ev, tab, inner: sub ? sub.html() : '', eventPill,
       bookings: state.bookings || [], sites: state.sites || [], sponsors: state.sponsors || [], waitlist: state.waitlist || [],
       budget: state.budgetFor === ev.id ? (state.budget || []) : [],
+      programme: state.programmeFor === ev.id ? (state.programme || []) : [], talent: state.talent || [],
       h: { esc, attr, money },
     }) + eventForm();
   },
@@ -2260,6 +2264,32 @@ VIEWS.event = {
       if (!window.confirm('Remove "' + name + '" from the budget?')) return;
       try { await budgetStore.remove(b.getAttribute('data-bud-del')); } catch (e) { window.alert(friendly(e)); }
     }));
+    // PROGRAMME: same idea - edit in place, saves as you type
+    desk.querySelectorAll('[data-prog]').forEach((inp) => {
+      let timer = null;
+      const save = () => {
+        const field = inp.getAttribute('data-prog');
+        const value = field === 'costCents' ? Math.max(0, Math.round(Number(inp.value || 0) * 100)) : String(inp.value || '').trim().slice(0, 300);
+        programmeStore.update(inp.getAttribute('data-id'), { [field]: value }, inp).catch((e) => window.alert(friendly(e)));
+      };
+      inp.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(save, inp.tagName === 'SELECT' ? 0 : 500); });
+      inp.addEventListener('change', () => { clearTimeout(timer); save(); });
+    });
+    desk.querySelectorAll('[data-prog-del]').forEach((b) => b.addEventListener('click', async () => {
+      const row = b.closest('tr'); const name = (row && row.querySelector('[data-prog="title"]') || {}).value || 'this';
+      if (!window.confirm('Take "' + name + '" off the programme?')) return;
+      try { await programmeStore.remove(b.getAttribute('data-prog-del')); } catch (e) { window.alert(friendly(e)); }
+    }));
+    const padd = document.getElementById('ev-prog-add');
+    if (padd) padd.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(padd);
+      try {
+        await programmeStore.add({ start: String(fd.get('start') || ''), title: String(fd.get('title') || '').trim().slice(0, 120), who: String(fd.get('who') || '').trim().slice(0, 120),
+          kind: String(fd.get('kind') || 'activity'), costCents: Math.max(0, Math.round(Number(fd.get('cost') || 0) * 100)) });
+      } catch (err) { window.alert(friendly(err)); }
+    });
+
     const add = document.getElementById('ev-bud-add');
     if (add) add.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -2306,6 +2336,39 @@ const budgetStore = {
     let n = 0;
     for (const l of BUDGET_STARTER) await addDoc(this.col(), { plannedCents: 0, actualCents: 0, auto: '', ...l, order: ++n });
     await loadBudget(state.activeEventId);
+  },
+};
+
+/*  The programme: events/{id}/programme/ - what happens on the night. */
+async function loadProgramme(eventId) {
+  if (!eventId) return;
+  try {
+    const { collection, getDocs } = fb.f;
+    const snap = await getDocs(collection(fb.db, 'events', eventId, 'programme'));
+    const rows = [];
+    snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
+    state.programme = rows; state.programmeFor = eventId;
+    if (state.view === 'events' || (state.view === 'event' && ['overview', 'budget', 'programme'].includes(state.eventTab || 'overview'))) render();
+  } catch (e) { console.warn('programme', e); }
+}
+const programmeStore = {
+  col() { const { collection } = fb.f; return collection(fb.db, 'events', state.activeEventId, 'programme'); },
+  async add(p) {
+    const { addDoc } = fb.f;
+    await addDoc(this.col(), { start: '', finish: '', title: '', who: '', kind: 'activity', costCents: 0, notes: '', order: Date.now(), ...p });
+    await loadProgramme(state.activeEventId);
+  },
+  async update(id, p, inp) {
+    const { doc, updateDoc } = fb.f;
+    await updateDoc(doc(fb.db, 'events', state.activeEventId, 'programme', id), p);
+    const line = (state.programme || []).find((l) => l.id === id);
+    if (line) Object.assign(line, p);
+    if (!inp || document.activeElement !== inp || inp.type === 'time') render();
+  },
+  async remove(id) {
+    const { doc, deleteDoc } = fb.f;
+    await deleteDoc(doc(fb.db, 'events', state.activeEventId, 'programme', id));
+    await loadProgramme(state.activeEventId);
   },
 };
 

@@ -9,13 +9,13 @@
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=775';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=776';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 
 export const HUB_TABS = [
   ['overview', 'Overview'], ['budget', 'Budget'], ['vendors', 'Vendors'], ['map', 'Sites & Map'],
-  ['entertainment', 'Entertainment'], ['messages', 'Messages'], ['sponsors', 'Sponsors'], ['website', 'Website'],
+  ['programme', 'Programme'], ['messages', 'Messages'], ['sponsors', 'Sponsors'], ['website', 'Website'],
 ];
 
 /* the lines a new budget starts with - income first, then costs */
@@ -23,7 +23,7 @@ export const BUDGET_STARTER = [
   { name: 'Vendor site fees', kind: 'income', auto: 'vendors' },
   { name: 'Sponsorship', kind: 'income', auto: 'sponsors' },
   { name: 'Bar & drinks', kind: 'income' },
-  { name: 'Entertainment', kind: 'cost' },
+  { name: 'Entertainment & activities', kind: 'cost', auto: 'programme' },
   { name: 'Equipment & production', kind: 'cost' },
   { name: 'Marketing & posters', kind: 'cost' },
   { name: 'Staff & security', kind: 'cost' },
@@ -63,13 +63,14 @@ export function eventFigures(ctx) {
     filled: sites.filter((s) => s.status === 'booked' || s.status === 'held').length,
     totalSites: sites.length,
     waiting: (ctx.waitlist || []).filter((w) => w.eventId === ctx.ev.id && w.status === 'waiting').length,
+    programmeCents: (ctx.programme || []).reduce((t, p) => t + (p.costCents || 0), 0),
   };
 }
 
 /* budget lines with the automatic actuals filled in */
 export function budgetLines(ctx, f) {
   return (ctx.budget || []).map((l) => {
-    const actual = l.auto === 'vendors' ? f.vendorCents : l.auto === 'sponsors' ? f.sponsorYes : (l.actualCents || 0);
+    const actual = l.auto === 'vendors' ? f.vendorCents : l.auto === 'sponsors' ? f.sponsorYes : l.auto === 'programme' ? f.programmeCents : (l.actualCents || 0);
     return { ...l, actualCents: actual };
   });
 }
@@ -107,7 +108,7 @@ export function eventHubHtml(ctx) {
         ${HUB_TABS.map(([k, label]) => `<a role="tab" class="ev-tab${tab === k ? ' is-on' : ''}" href="#/event?id=${attr(ev.id)}&tab=${k}">${label}</a>`).join('')}
       </div>
       <div class="ev-hub-body">
-        ${tab === 'overview' ? overviewHtml(ctx) : tab === 'budget' ? budgetHtml(ctx) : tab === 'website' ? websiteHtml(ctx) : (ctx.inner || '')}
+        ${tab === 'overview' ? overviewHtml(ctx) : tab === 'budget' ? budgetHtml(ctx) : tab === 'website' ? websiteHtml(ctx) : tab === 'programme' ? programmeHtml(ctx) : (ctx.inner || '')}
       </div>
       <p class="ad-action-msg" id="ad-action-msg" hidden></p>
     </div>`;
@@ -163,7 +164,7 @@ function budgetHtml(ctx) {
       <td><input class="ad-input ev-bud-name" value="${attr(l.name || '')}" data-bud="name" data-id="${attr(l.id)}" placeholder="Line"></td>
       <td><input class="ad-input ev-bud-num" type="number" step="0.01" min="0" value="${dollars(l.plannedCents)}" data-bud="plannedCents" data-id="${attr(l.id)}" placeholder="0.00"></td>
       <td>${l.auto
-        ? `<span class="ev-bud-auto" title="Filled in from ${l.auto === 'vendors' ? 'paid vendor bookings' : 'sponsors who said yes'}">${esc(money(l.actualCents))} <small>auto</small></span>`
+        ? `<span class="ev-bud-auto" title="Filled in from ${l.auto === 'vendors' ? 'paid vendor bookings' : l.auto === 'sponsors' ? 'sponsors who said yes' : 'the Programme tab'}">${esc(money(l.actualCents))} <small>auto</small></span>`
         : `<input class="ad-input ev-bud-num" type="number" step="0.01" min="0" value="${dollars(l.actualCents)}" data-bud="actualCents" data-id="${attr(l.id)}" placeholder="0.00">`}</td>
       ${diffCell(l)}
       <td class="ev-bud-x"><button type="button" class="ad-linkish" data-bud-del="${attr(l.id)}" aria-label="Remove ${attr(l.name || 'line')}">&times;</button></td>
@@ -312,5 +313,53 @@ export function timelineHtml(events, activeId, h) {
         return `<a class="ev-tl-dot is-${g}${e.id === activeId ? ' is-active' : ''}${i % 2 ? ' is-low' : ''}" style="left:${x(day(e.dateISO))}%" href="#/event?id=${attr(e.id)}" title="${attr(e.name || e.id)} - ${attr(e.dateLabel || e.dateISO)}">
           <i></i><b>${esc(e.name || e.id)}</b><small>${esc(short(e.dateISO))}</small></a>`;
       }).join('')}
+    </div>`;
+}
+
+/* ---------- the Programme: everything happening on the night, in time order ---------- */
+export const PROGRAMME_KINDS = [['act', 'Live act / DJ'], ['activity', 'Activity'], ['food', 'Food & drink'], ['moment', 'Announcement / moment'], ['ops', 'Behind the scenes']];
+const KIND = Object.fromEntries(PROGRAMME_KINDS);
+const ampm = (t) => { const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); if (!r) return ''; const h = +r[1]; return (h % 12 || 12) + (r[2] === '00' ? '' : ':' + r[2]) + (h < 12 ? 'am' : 'pm'); };
+const minutes = (t) => { const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); return r ? (+r[1] < 4 ? +r[1] + 24 : +r[1]) * 60 + +r[2] : 9999; };   // after midnight sorts last
+
+function programmeHtml(ctx) {
+  const { ev, h } = ctx;
+  const esc = h.esc, attr = h.attr, money = h.money;
+  const items = (ctx.programme || []).slice().sort((a, b) => minutes(a.start) - minutes(b.start) || (a.order || 0) - (b.order || 0));
+  const total = items.reduce((t, p) => t + (p.costCents || 0), 0);
+  const acts = (ctx.talent || []).filter((t) => !t.hidden).slice().sort((a, b) => String(a.name).localeCompare(String(b.name)));
+  const dollars = (c) => (c ? (c / 100).toFixed(2) : '');
+  const row = (p) => `
+    <tr class="ev-prog-row is-${attr(p.kind || 'activity')}" data-prog-row="${attr(p.id)}">
+      <td class="ev-prog-time"><input class="ad-input" type="time" value="${attr(p.start || '')}" data-prog="start" data-id="${attr(p.id)}"><span class="ev-prog-to">&ndash;</span><input class="ad-input" type="time" value="${attr(p.finish || '')}" data-prog="finish" data-id="${attr(p.id)}"></td>
+      <td><input class="ad-input ev-prog-what" value="${attr(p.title || '')}" data-prog="title" data-id="${attr(p.id)}" placeholder="What's happening"></td>
+      <td><input class="ad-input" value="${attr(p.who || '')}" data-prog="who" data-id="${attr(p.id)}" placeholder="Who (act, chef, team)" list="ev-prog-acts"></td>
+      <td><select class="ad-select" data-prog="kind" data-id="${attr(p.id)}">${PROGRAMME_KINDS.map(([k, l]) => `<option value="${k}"${(p.kind || 'activity') === k ? ' selected' : ''}>${l}</option>`).join('')}</select></td>
+      <td><input class="ad-input ev-prog-num" type="number" step="0.01" min="0" value="${dollars(p.costCents)}" data-prog="costCents" data-id="${attr(p.id)}" placeholder="0.00"></td>
+      <td><input class="ad-input" value="${attr(p.notes || '')}" data-prog="notes" data-id="${attr(p.id)}" placeholder="Notes - power, stage, contact"></td>
+      <td class="ev-prog-x"><button type="button" class="ad-linkish" data-prog-del="${attr(p.id)}" aria-label="Remove">&times;</button></td>
+    </tr>`;
+  return `
+    <div class="ev-grid ev-grid-3">
+      ${card('On the programme', String(items.length), items.length ? items.filter((p) => p.kind === 'act').length + ' act' + (items.filter((p) => p.kind === 'act').length === 1 ? '' : 's') + ' &middot; ' + items.filter((p) => p.kind !== 'act').length + ' other' : 'nothing yet')}
+      ${card('Runs', items.length && items[0].start ? esc(ampm(items[0].start)) + (items[items.length - 1].finish || items[items.length - 1].start ? ' &ndash; ' + esc(ampm(items[items.length - 1].finish || items[items.length - 1].start)) : '') : '&mdash;', 'first to last on the list')}
+      ${card('Entertainment & activities', esc(money(total)), 'goes straight into the budget')}
+    </div>
+    <div class="ad-card ev-prog-card">
+      <datalist id="ev-prog-acts">${acts.map((t) => `<option value="${attr(t.name || t.slug)}">`).join('')}</datalist>
+      ${items.length ? `
+      <table class="ev-prog">
+        <thead><tr><th>Time</th><th>What</th><th>Who</th><th>Kind</th><th>Cost</th><th>Notes</th><th></th></tr></thead>
+        <tbody>${items.map(row).join('')}</tbody>
+      </table>` : `<p class="ev-prog-empty">Nothing on the programme yet. Add the gates opening, the acts, the jumping castle, the cooking demo - anything that happens on the night.</p>`}
+      <form class="ev-prog-add" id="ev-prog-add">
+        <input class="ad-input" type="time" name="start" title="Start time">
+        <input class="ad-input" name="title" placeholder="Add to the programme, e.g. Free jumping castle" required maxlength="120">
+        <input class="ad-input" name="who" placeholder="Who" list="ev-prog-acts" maxlength="120">
+        <select class="ad-select" name="kind">${PROGRAMME_KINDS.map(([k, l]) => `<option value="${k}"${k === 'activity' ? ' selected' : ''}>${l}</option>`).join('')}</select>
+        <input class="ad-input ev-prog-num" name="cost" type="number" step="0.01" min="0" placeholder="Cost $">
+        <button type="submit" class="ad-btn ad-btn-primary">Add</button>
+      </form>
+      <p class="ad-seat-hint">Saves as you type, sorted by start time. Type a name under Who to pick an act from the roster.</p>
     </div>`;
 }

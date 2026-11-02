@@ -44,6 +44,10 @@ service cloud.firestore {
       match /budget/{lineId} {
         allow read, write: if isAdmin();
       }
+      // the night's programme - acts, activities, moments
+      match /programme/{itemId} {
+        allow read, write: if isAdmin();
+      }
 
       match /categories/{categoryId} {
         // Counts are maintained server side in the same transaction that
