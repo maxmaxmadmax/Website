@@ -1740,3 +1740,8 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
   .ep-hero-live .ep-poster-hero{ width:100% !important; max-width:none !important; height:auto !important; }
   .ep-hero-live .ep-poster-hero img{ width:100% !important; height:auto !important; max-height:258mm; object-fit:contain; }
 }
+@media print{
+  .ep-hero-live .ep-hero-inner{ grid-template-columns:.9fr 1.1fr !important; }
+  .ep-hero-live .ep-facts{ grid-template-columns:1fr !important; }
+  .ep-page-4 .ep-sponsors > p{ display:none; }
+}
