@@ -21,15 +21,15 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=770';
+} from './firebase-config.js?v=771';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=770';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=770';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=770';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=770';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=770';
-import { eventHubHtml, eventGroup, BUDGET_STARTER } from './event-hub.js?v=770';
-import { expandKit } from './kit.js?v=770';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=771';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=771';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=771';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=771';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=771';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml } from './event-hub.js?v=771';
+import { expandKit } from './kit.js?v=771';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2124,7 +2124,7 @@ VIEWS.events = {
       <div class="ad-page-head">
         <div>
           <h1>Events</h1>
-          <p>Pick which event the rest of the admin is about.</p>
+          <p>Every event in one place - open one for its vendors, sites, money and messages.</p>
         </div>
         <div class="ad-page-actions">
           <button type="button" class="ad-btn ad-btn-orange" id="ad-ev-new">New event</button>
@@ -2132,53 +2132,14 @@ VIEWS.events = {
       </div>
 
       ${state.events.length ? (() => {
-        const card = (ev) => {
-          const active = ev.id === state.activeEventId;
-          const fill = active
-            ? `${activeFill.filled} of ${activeFill.total} sites`
-            : 'Select to see';
-
-          return `
-            <article class="ad-card ad-ev${active ? ' is-active' : ''}" data-open-hub="${attr(ev.id)}">
-              <header class="ad-ev-head">
-                <div>
-                  <h2>${esc(ev.name || ev.id)}</h2>
-                  <p class="ad-ev-when">
-                    ${esc(ev.dateLabel || ev.dateISO || 'No date set')}${
-                      ev.venue ? ' &middot; ' + esc(ev.venue) : ''}
-                  </p>
-                </div>
-                ${eventPill(ev.status)}
-              </header>
-
-              <dl class="ad-kvs">
-                ${row('Id', `<code>${esc(ev.id)}</code>`)}
-                ${row('Sites filled', esc(fill))}
-                ${row('Food stall', esc(money(ev.pricing && ev.pricing.food)))}
-                ${row('Market bay', esc(money(ev.pricing && ev.pricing.marketPerBay)))}
-              </dl>
-
-              <div class="ad-actions-row">
-                <button type="button" class="ad-btn ad-btn-primary" data-open-hub="${attr(ev.id)}">Open</button>
-                ${active ? `<span class="ad-pill ad-pill-blue">Active</span>` : ''}
-
-                <button type="button" class="ad-btn" data-edit-ev="${attr(ev.id)}">Edit</button>
-
-                ${ev.status === 'open'
-                  ? `<button type="button" class="ad-btn" data-close-ev="${attr(ev.id)}"
-                             data-confirm="Close vendor signup for ${attr(ev.name || ev.id)}? Nobody new can take a site.">
-                       Close signup
-                     </button>`
-                  : `<button type="button" class="ad-btn" data-open-ev="${attr(ev.id)}"
-                             data-confirm="Open vendor signup for ${attr(ev.name || ev.id)}?">
-                       Open signup
-                     </button>`}
-              </div>
-            </article>`;
-        };
+        const card = (ev) => eventCardHtml({
+          ev, active: ev.id === state.activeEventId, eventPill, h: { esc, attr, money },
+          figures: ev.id === state.activeEventId ? eventFigures({ ev, bookings: state.bookings || [], sites: state.sites || [], sponsors: state.sponsors || [], waitlist: state.waitlist || [] }) : null,
+          budget: state.budgetFor === ev.id ? (state.budget || []) : [],
+        });
 
         const groups = [['today', 'Today'], ['upcoming', 'Upcoming'], ['past', 'Past events']];
-        return groups.map(([g, label]) => {
+        return timelineHtml(state.events, state.activeEventId, { esc, attr }) + groups.map(([g, label]) => {
           const list = state.events.filter((ev) => eventGroup(ev) === g);
           if (!list.length) return '';
           return `<h2 class="ev-group${g === 'past' ? ' is-past' : ''}">${label}</h2><div class="ad-ev-list${g === 'past' ? ' is-past' : ''}">${(g === 'past' ? list.slice().reverse() : list).map(card).join('')}</div>`;
@@ -2197,6 +2158,7 @@ VIEWS.events = {
       run();
     });
 
+    if (state.budgetFor !== state.activeEventId) loadBudget(state.activeEventId);
     document.querySelectorAll('[data-open-hub]').forEach((el) => {
       el.addEventListener('click', (e) => {
         if (el.tagName !== 'BUTTON' && e.target.closest('button, a')) return;   // the card's own buttons
@@ -2308,7 +2270,7 @@ async function loadBudget(eventId) {
     snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
     rows.sort((a, b) => (a.order || 0) - (b.order || 0));
     state.budget = rows; state.budgetFor = eventId;
-    if (state.view === 'event' && ['overview', 'budget'].includes(state.eventTab || 'overview')) render();
+    if (state.view === 'events' || (state.view === 'event' && ['overview', 'budget'].includes(state.eventTab || 'overview'))) render();
   } catch (e) { console.warn('budget', e); }
 }
 const budgetStore = {

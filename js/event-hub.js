@@ -9,7 +9,7 @@
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=770';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=771';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 
@@ -228,5 +228,92 @@ function websiteHtml(ctx) {
         <p class="ad-drawer-text">A change here goes everywhere at once: the public events page, the vendor signup page, the vendor guide and every email field like {{event_venue}}.</p>
         <p class="ad-drawer-text">Moved venue or changed the date? Edit it once, then send vendors a message from the Messages tab.</p>
       </div>
+    </div>`;
+}
+
+/* ---------- the Events page: one wide card per event ---------- */
+const EVENT_POSTERS = [
+  { match: (ev) => /eatz/i.test(ev.name || '') && String(ev.dateISO || '').startsWith('2026-10-31'), url: '/images/events/eatz-beatz-halloween-2026-v3.webp' },
+];
+export function posterOf(ev) {
+  if (ev.image && /^(https:\/\/|\/)[^\s'"()<>\\]*$/.test(ev.image)) return ev.image;
+  const p = EVENT_POSTERS.find((x) => x.match(ev));
+  return p ? p.url : '';
+}
+
+/*  ctx: { ev, active, figures|null, budget, h, eventPill }. Figures are
+    only known for the active event (its bookings are the ones subscribed). */
+export function eventCardHtml(ctx) {
+  const { ev, active, h } = ctx;
+  const esc = h.esc, attr = h.attr, money = h.money;
+  const f = ctx.figures;
+  const lines = f ? budgetLines({ budget: ctx.budget || [] }, f) : [];
+  const t = budgetTotals(lines);
+  const revenue = f ? f.vendorCents + f.sponsorYes : 0;
+  const expenses = t.actualOut;
+  const profit = revenue - expenses;
+  const poster = posterOf(ev);
+  const grp = eventGroup(ev);
+  const stat = (big, label) => `<div class="ev-stat"><b>${big}</b><span>${label}</span></div>`;
+  const dash = '<b class="is-dim">&mdash;</b>';
+  return `
+    <article class="ad-card ev-banner${active ? ' is-active' : ''}${grp === 'past' ? ' is-past' : ''}" data-open-hub="${attr(ev.id)}">
+      <div class="ev-banner-art${poster ? '' : ' is-blank'}"${poster ? ` style="background-image:url('${attr(poster)}')"` : ''}>
+        ${poster ? '' : '<span>No poster yet<br><small>Edit &rsaquo; Card image</small></span>'}
+      </div>
+      <div class="ev-banner-main">
+        <header class="ev-banner-head">
+          <div>
+            <p class="ev-banner-kicker">${grp === 'past' ? 'Past event' : grp === 'today' ? 'Tonight' : 'Upcoming'}${active ? ' &middot; <b>active</b>' : ''}</p>
+            <h2>${esc(ev.name || ev.id)}</h2>
+            <p class="ev-banner-when">${esc(ev.dateLabel || ev.dateISO || 'No date set')}${ev.venue ? ' &middot; ' + esc(ev.venue) : ''}${ev.location ? ', ' + esc(ev.location) : ''}</p>
+          </div>
+          ${ctx.eventPill(ev.status)}
+        </header>
+
+        <div class="ev-banner-stats">
+          ${f ? stat(`${f.filled} <small>/ ${f.totalSites}</small>`, 'sites filled') : stat(dash, 'sites filled')}
+          ${f ? stat(String(f.paidCount), 'vendors paid' + (f.unpaidCount ? ` <em>&middot; ${f.unpaidCount} owing</em>` : '')) : stat(dash, 'vendors paid')}
+          ${f ? stat(String(f.waiting), 'on the waitlist') : stat(dash, 'on the waitlist')}
+          ${stat(esc(money(ev.pricing && ev.pricing.food)) + ' <small>/ ' + esc(money(ev.pricing && ev.pricing.marketPerBay)) + '</small>', 'food stall / market bay')}
+        </div>
+
+        <div class="ev-banner-money">
+          <div class="ev-money is-in"><span>Revenue</span><b>${f ? esc(money(revenue)) : '&mdash;'}</b><small>${f ? esc(money(f.vendorCents)) + ' vendors &middot; ' + esc(money(f.sponsorYes)) + ' sponsors' : 'open the event to see'}</small></div>
+          <div class="ev-money is-out"><span>Expenses</span><b>${f && lines.length ? esc(money(expenses)) : '&mdash;'}</b><small>${f && lines.length ? 'of ' + esc(money(t.plannedOut)) + ' planned' : 'no budget yet'}</small></div>
+          <div class="ev-money ${f && lines.length ? (profit < 0 ? 'is-bad' : 'is-good') : ''}"><span>Profit</span><b>${f && lines.length ? esc(money(profit)) : '&mdash;'}</b><small>${f && lines.length ? 'revenue minus expenses' : ''}</small></div>
+        </div>
+
+        <div class="ad-actions-row ev-banner-acts">
+          <button type="button" class="ad-btn ad-btn-primary" data-open-hub="${attr(ev.id)}">Open event</button>
+          <a class="ad-btn" href="#/event?id=${attr(ev.id)}&tab=budget">Budget</a>
+          <button type="button" class="ad-btn" data-edit-ev="${attr(ev.id)}">Edit</button>
+          ${ev.status === 'open'
+            ? `<button type="button" class="ad-btn" data-close-ev="${attr(ev.id)}" data-confirm="Close vendor signup for ${attr(ev.name || ev.id)}? Nobody new can take a site.">Close signup</button>`
+            : `<button type="button" class="ad-btn" data-open-ev="${attr(ev.id)}" data-confirm="Open vendor signup for ${attr(ev.name || ev.id)}?">Open signup</button>`}
+        </div>
+      </div>
+    </article>`;
+}
+
+/* ---------- the timeline across the top of the Events page ---------- */
+export function timelineHtml(events, activeId, h) {
+  const esc = h.esc, attr = h.attr;
+  const dated = events.filter((e) => e.dateISO).slice().sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+  if (dated.length < 1) return '';
+  const day = (iso) => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86400000;
+  const today = day(new Date().toISOString().slice(0, 10));
+  const lo = Math.min(day(dated[0].dateISO), today) - 20, hi = Math.max(day(dated[dated.length - 1].dateISO), today) + 20;
+  const x = (d) => ((d - lo) / Math.max(1, hi - lo) * 100).toFixed(2);
+  const short = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
+  return `
+    <div class="ev-tl" aria-label="Events timeline">
+      <div class="ev-tl-line"></div>
+      <div class="ev-tl-now" style="left:${x(today)}%"><span>Today</span></div>
+      ${dated.map((e, i) => {
+        const g = eventGroup(e);
+        return `<a class="ev-tl-dot is-${g}${e.id === activeId ? ' is-active' : ''}${i % 2 ? ' is-low' : ''}" style="left:${x(day(e.dateISO))}%" href="#/event?id=${attr(e.id)}" title="${attr(e.name || e.id)} - ${attr(e.dateLabel || e.dateISO)}">
+          <i></i><b>${esc(e.name || e.id)}</b><small>${esc(short(e.dateISO))}</small></a>`;
+      }).join('')}
     </div>`;
 }
