@@ -5123,3 +5123,31 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .sp-drawer-acts{ display:flex; gap:8px; flex-wrap:wrap; padding:12px 18px 16px; border-top:1px solid var(--ad-line); }
 .ms-sp-del-btn{ margin-left:auto; color:var(--ad-red); }
 @media (max-width:1100px){ .sp-board{ grid-template-columns:repeat(5, 220px); } .sp-top{ grid-template-columns:1fr; } }
+
+/* overview: the live page */
+.ev-preview{ padding:0; overflow:hidden; }
+.ev-preview-bar{ display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid var(--ad-line); }
+.ev-preview-bar span{ color:var(--ad-muted); font-size:13px; flex:1; }
+.ev-preview-frame{ display:block; width:100%; height:78vh; border:0; background:#f39243; }
+/* vendors tab: who's coming */
+.ev-vend-top{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:0 0 14px; }
+.ev-vend-top p{ margin:0; flex:1; color:var(--ad-muted); }
+.ev-vend-group{ margin-bottom:22px; }
+.ev-vend-group header{ display:flex; align-items:baseline; gap:10px; margin:0 0 10px; }
+.ev-vend-group h2{ margin:0; font-size:20px; }
+.ev-vend-group header span{ font-weight:800; color:var(--ad-orange); }
+.ev-vend-group header em{ font-style:normal; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--ad-muted); }
+.ev-vend-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:10px; }
+.ev-vend{ display:flex; gap:12px; background:#fff; border:1px solid var(--ad-line); border-radius:12px; padding:12px 14px; }
+.ev-vend-group.is-food .ev-vend{ border-left:4px solid #ff6b00; }
+.ev-vend-group.is-market .ev-vend{ border-left:4px solid #4a7bd0; }
+.ev-vend-main{ flex:1; min-width:0; }
+.ev-vend-cat{ margin:0 0 2px; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--ad-orange); }
+.ev-vend h3{ margin:0 0 4px; font-size:16px; }
+.ev-vend-blurb{ margin:0; font-size:13px; color:#444; }
+.ev-vend-blurb.is-dim{ color:#aaa; font-style:italic; }
+.ev-vend-side{ text-align:right; flex:0 0 auto; }
+.ev-vend-side b{ display:block; font-size:16px; }
+.ev-vend-side b .is-warn{ color:var(--ad-red); font-size:12px; }
+.ev-vend-side span{ font-size:11px; color:var(--ad-muted); text-transform:uppercase; letter-spacing:1px; }
+.ev-vend-none{ color:var(--ad-muted); margin:0; }

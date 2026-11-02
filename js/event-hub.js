@@ -9,7 +9,7 @@
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=780';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=781';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 
@@ -108,7 +108,7 @@ export function eventHubHtml(ctx) {
         ${HUB_TABS.map(([k, label]) => `<a role="tab" class="ev-tab${tab === k ? ' is-on' : ''}" href="#/event?id=${attr(ev.id)}&tab=${k}">${label}</a>`).join('')}
       </div>
       <div class="ev-hub-body">
-        ${tab === 'overview' ? overviewHtml(ctx) : tab === 'budget' ? budgetHtml(ctx) : tab === 'website' ? websiteHtml(ctx) : tab === 'programme' ? programmeHtml(ctx) : (ctx.inner || '')}
+        ${tab === 'overview' ? overviewHtml(ctx) : tab === 'budget' ? budgetHtml(ctx) : tab === 'website' ? websiteHtml(ctx) : tab === 'programme' ? programmeHtml(ctx) : tab === 'vendors' ? attendingHtml(ctx) : (ctx.inner || '')}
       </div>
       <p class="ad-action-msg" id="ad-action-msg" hidden></p>
     </div>`;
@@ -136,7 +136,14 @@ function overviewHtml(ctx) {
         : card('Budget', '&mdash;', 'No budget yet - start one on the Budget tab')}
       ${card('Waitlist', String(f.waiting), f.waiting ? 'waiting for a spot' : 'nobody waiting')}
     </div>
-`;
+    <div class="ad-card ev-preview">
+      <div class="ev-preview-bar">
+        <b>The live page</b><span>what everyone sees &middot; updates within a minute of a change</span>
+        <button type="button" class="ad-btn ad-btn-small" data-preview-reload>&#8635; Refresh</button>
+        <a class="ad-btn ad-btn-small" href="/event?e=${attr(ev.id)}" target="_blank" rel="noopener">Open in a new tab &#8599;</a>
+      </div>
+      <iframe class="ev-preview-frame" id="ev-preview" src="/event?e=${attr(ev.id)}" title="Live event page" loading="lazy"></iframe>
+    </div>`;
 }
 
 function budgetHtml(ctx) {
@@ -382,4 +389,43 @@ function programmeHtml(ctx) {
       </form>
       <p class="ad-seat-hint">Saves as you type, sorted by start time. Type a name under Who to pick an act from the roster.</p>
     </div>`;
+}
+
+/* ---------- Vendors tab: who's coming, Food and Market ---------- */
+function attendingHtml(ctx) {
+  const { ev, h } = ctx;
+  const esc = h.esc, attr = h.attr;
+  const catName = Object.fromEntries((ctx.categories || []).map((c) => [c.id, c.name || '']));
+  const all = (ctx.bookings || []).filter((b) => b.eventId === ev.id && b.status !== 'cancelled');
+  const coming = all.filter(paid).sort((a, b) => String((a.business || {}).name || '').localeCompare(String((b.business || {}).name || '')));
+  const pending = all.length - coming.length;
+  const card = (b) => {
+    const biz = b.business || {};
+    const blurb = String(biz.description || '').replace(/\s+/g, ' ').trim();
+    return `<article class="ev-vend">
+      <div class="ev-vend-main">
+        <p class="ev-vend-cat">${esc(catName[b.categoryId] || (b.vendorType === 'food' ? 'Food' : 'Market'))}</p>
+        <h3>${esc(biz.name || 'Unnamed')}</h3>
+        ${blurb ? `<p class="ev-vend-blurb">${esc(blurb.length > 140 ? blurb.slice(0, 137) + '…' : blurb)}</p>` : '<p class="ev-vend-blurb is-dim">No blurb yet - it shows on the event page once they add one.</p>'}
+      </div>
+      <div class="ev-vend-side">
+        <b>${b.siteLabel ? esc(b.siteLabel) : '<span class="is-warn">no site</span>'}</b>
+        <span>${b.paymentStatus === 'free' ? 'Free entry' : 'Paid'}</span>
+      </div>
+    </article>`;
+  };
+  const group = (type, title, strap) => {
+    const list = coming.filter((b) => (b.vendorType === 'food' ? 'food' : 'market') === type);
+    return `<section class="ev-vend-group is-${type}">
+      <header><h2>${title}</h2><span>${list.length}</span><em>${strap}</em></header>
+      ${list.length ? `<div class="ev-vend-grid">${list.map(card).join('')}</div>` : '<p class="ev-vend-none">Nobody locked in yet.</p>'}
+    </section>`;
+  };
+  return `
+    <div class="ev-vend-top">
+      <p>${coming.length} vendor${coming.length === 1 ? '' : 's'} locked in (paid and confirmed). They appear on the live page as they lock in.${pending ? ` <b>${pending}</b> more applied and not paid yet.` : ''}</p>
+      <a class="ad-btn" href="#/vendors">Applications &amp; the full list &rarr;</a>
+    </div>
+    ${group('food', 'Food vendors', 'Local flavours / Great food')}
+    ${group('market', 'Market stalls', 'Local makers & creators')}`;
 }

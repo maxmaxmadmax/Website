@@ -21,15 +21,15 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=780';
+} from './firebase-config.js?v=781';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=780';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=780';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=780';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=780';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=780';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml } from './event-hub.js?v=780';
-import { expandKit } from './kit.js?v=780';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=781';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=781';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=781';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=781';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=781';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml } from './event-hub.js?v=781';
+import { expandKit } from './kit.js?v=781';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2212,7 +2212,7 @@ VIEWS.events = {
    Entertainment, Messages and Sponsors are the existing pages drawn
    inside the hub's tabs. The budget is events/{id}/budget/ (admin only).
    ========================================================================= */
-const HUB_SUB = { vendors: 'vendors', map: 'map', messages: 'vendorEmail', sponsors: 'vendorEmail' };
+const HUB_SUB = { map: 'map', messages: 'vendorEmail', sponsors: 'vendorEmail' };
 VIEWS.event = {
   html() {
     const ev = state.events.find((e) => e.id === state.activeEventId);
@@ -2225,7 +2225,7 @@ VIEWS.event = {
       ev, tab, inner: sub ? sub.html() : '', eventPill,
       bookings: state.bookings || [], sites: state.sites || [], sponsors: state.sponsors || [], waitlist: state.waitlist || [],
       budget: state.budgetFor === ev.id ? (state.budget || []) : [],
-      programme: state.programmeFor === ev.id ? (state.programme || []) : [], talent: state.talent || [],
+      programme: state.programmeFor === ev.id ? (state.programme || []) : [], talent: state.talent || [], categories: state.categories || [],
       h: { esc, attr, money },
     }) + eventForm();
   },
@@ -2243,6 +2243,8 @@ VIEWS.event = {
     desk.querySelectorAll('[data-open-ev]').forEach((el) => guarded(el, () => runAction(el, 'adminSaveEvent', { eventId: el.getAttribute('data-open-ev'), fields: { status: 'open' } })));
     desk.querySelectorAll('[data-close-ev]').forEach((el) => guarded(el, () => runAction(el, 'adminSaveEvent', { eventId: el.getAttribute('data-close-ev'), fields: { status: 'closed' } })));
     desk.querySelectorAll('[data-notice]').forEach((b) => b.addEventListener('click', () => eventNotice(b.getAttribute('data-notice'))));
+    const pv = document.querySelector('[data-preview-reload]');
+    if (pv) pv.addEventListener('click', () => { const fr = document.getElementById('ev-preview'); if (fr) fr.src = fr.src.split('&r=')[0] + '&r=' + Date.now(); });
     wireEventForm();
 
     // BUDGET: amounts save as you type
