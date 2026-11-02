@@ -4954,13 +4954,12 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 
 /* Events page: one wide card per event, poster on the left */
 .ad-ev-list{ grid-template-columns:1fr; }
-.ev-banner{ display:grid; grid-template-columns:1fr minmax(200px, 24%); min-height:44vh; padding:0; overflow:hidden; cursor:pointer; }
+.ev-banner{ display:grid; grid-template-columns:1fr minmax(220px, 27%); min-height:44vh; padding:0; overflow:hidden; cursor:pointer; }
 .ev-banner-art{ order:2; border-left:1px solid var(--ad-line); }
 .ev-banner.is-active{ border-color:var(--ad-orange); box-shadow:0 0 0 1px var(--ad-orange); }
 .ad-ev-list.is-past .ev-banner{ opacity:.8; }
-.ev-banner-art{ position:relative; background:#111 center/cover no-repeat; isolation:isolate; }
-.ev-banner-art::before{ content:""; position:absolute; inset:0; background:inherit; filter:blur(18px) brightness(.55); transform:scale(1.15); z-index:-1; }
-.ev-banner-art .ev-poster{ position:absolute; inset:0; background:center/contain no-repeat; }
+.ev-banner-art{ position:relative; overflow:hidden; background:#15151a !important; }
+.ev-banner-art .ev-poster{ position:absolute; inset:14px; background:center/contain no-repeat; filter:drop-shadow(0 6px 18px rgba(0,0,0,.45)); }
 
 .ev-banner-art.is-blank{ display:flex; align-items:center; justify-content:center; text-align:center; color:#999; font-size:14px; background:var(--ad-grey-bg); }
 .ev-banner-art.is-blank small{ color:#aaa; }
