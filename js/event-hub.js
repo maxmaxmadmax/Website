@@ -9,7 +9,7 @@
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=773';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=774';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 
@@ -125,7 +125,6 @@ function overviewHtml(ctx) {
   const t = budgetTotals(lines);
   const hasBudget = lines.length > 0;
   const profit = t.actualIn - t.actualOut;
-  const link = (tab, label) => `<a class="ad-btn" href="#/event?id=${attr(ev.id)}&tab=${tab}">${label}</a>`;
   return `
     <div class="ev-grid">
       ${card('Sites filled', `${f.filled} <small>of ${f.totalSites}</small>`, f.unseated ? f.unseated + ' paid vendor' + (f.unseated === 1 ? '' : 's') + ' with no site' : 'Everyone paid has a site')}
@@ -136,9 +135,7 @@ function overviewHtml(ctx) {
         : card('Budget', '&mdash;', 'No budget yet - start one on the Budget tab')}
       ${card('Waitlist', String(f.waiting), f.waiting ? 'waiting for a spot' : 'nobody waiting')}
     </div>
-    <div class="ev-links">
-      ${link('vendors', 'Vendors')}${link('map', 'Sites &amp; Map')}${link('entertainment', 'Entertainment')}${link('messages', 'Messages')}${link('sponsors', 'Sponsors')}${link('budget', 'Budget')}
-    </div>`;
+`;
 }
 
 function budgetHtml(ctx) {
