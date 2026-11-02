@@ -5166,3 +5166,16 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ad-check{ display:flex; align-items:center; gap:8px; font-size:14px; }
 .ad-check span{ color:var(--ad-muted); font-size:13px; }
 .ev-faq{ width:100%; font-size:13px; line-height:1.5; margin-bottom:10px; }
+
+/* budget: invoices and receipts on a line */
+.ev-bud-x{ width:72px !important; white-space:nowrap; }
+.ev-bud-clip{ cursor:pointer; color:var(--ad-muted); font-size:16px; margin-right:8px; opacity:.6; }
+.ev-bud-clip.has-files{ opacity:1; color:var(--ad-orange); }
+.ev-bud-clip b{ font-size:11px; margin-left:1px; }
+.ev-bud tr:hover .ev-bud-clip{ opacity:1; }
+.ev-bud-files td{ background:#fffaf0 !important; padding:6px 12px !important; height:auto !important; }
+.ev-bud-files-in{ display:flex; gap:10px; flex-wrap:wrap; }
+.ev-bud-file{ display:inline-flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--ad-line); border-radius:8px; padding:4px 8px; font-size:13px; }
+.ev-bud-file a{ color:var(--ad-text); text-decoration:none; }
+.ev-bud-file a:hover{ text-decoration:underline; }
+.ev-bud-file button{ color:var(--ad-muted); font-size:15px; line-height:1; }

@@ -21,15 +21,15 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=792';
+} from './firebase-config.js?v=793';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=792';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=792';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=792';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=792';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=792';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=792';
-import { expandKit } from './kit.js?v=792';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=793';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=793';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=793';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=793';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=793';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=793';
+import { expandKit } from './kit.js?v=793';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2273,6 +2273,24 @@ VIEWS.event = {
         }, 500);
       });
     });
+    // INVOICES / RECEIPTS on a budget line
+    desk.querySelectorAll('[data-bud-file]').forEach((inp) => inp.addEventListener('change', async () => {
+      const file = inp.files && inp.files[0];
+      if (!file) return;
+      const id = inp.getAttribute('data-bud-file');
+      const line = (state.budget || []).find((l) => l.id === id) || {};
+      try {
+        const url = await uploadFile(file, 'event-files/' + state.activeEventId + '/budget/' + id + '/');
+        await budgetStore.update(id, { files: (line.files || []).concat([{ name: file.name, url, at: Date.now() }]) });
+      } catch (e) { window.alert('Upload failed - ' + (e.message || 'try again')); }
+    }));
+    desk.querySelectorAll('[data-bud-unfile]').forEach((b) => b.addEventListener('click', async () => {
+      const id = b.getAttribute('data-bud-unfile'), i = +b.getAttribute('data-i');
+      const line = (state.budget || []).find((l) => l.id === id) || {};
+      const f = (line.files || [])[i];
+      if (!f || !window.confirm('Remove "' + f.name + '" from this line? The file stays in storage.')) return;
+      try { await budgetStore.update(id, { files: (line.files || []).filter((_, k) => k !== i) }); } catch (e) { window.alert(friendly(e)); }
+    }));
     desk.querySelectorAll('[data-bud-del]').forEach((b) => b.addEventListener('click', async () => {
       const row = b.closest('tr'); const name = (row && row.querySelector('[data-bud="name"]') || {}).value || 'this line';
       if (!window.confirm('Remove "' + name + '" from the budget?')) return;
@@ -4581,6 +4599,14 @@ window.__sgAdmin = { state, VIEWS, call, render };
    'vendorEmail' so old links still land here.
    ========================================================================= */
 function msgCtx() { return { state, h: { esc, attr }, call, render, loadLog, sponsors: sponsorStore, upload: uploadImage }; }
+/*  Any file into our Storage, as is. Returns the download link. */
+async function uploadFile(file, folder) {
+  const { ref, uploadBytes, getDownloadURL } = fb.st;
+  const safe = String(file.name || 'file').replace(/[^\w.-]+/g, '-').slice(0, 80);
+  const path = folder + Date.now() + '-' + safe;
+  await uploadBytes(ref(fb.storage, path), file, { contentType: file.type || 'application/octet-stream' });
+  return getDownloadURL(ref(fb.storage, path));
+}
 /*  A picture into our Storage (shrunk first). Returns the download link. */
 async function uploadImage(file, folder, max = 800) {
   const { ref, uploadBytes, getDownloadURL } = fb.st;
