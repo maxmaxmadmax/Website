@@ -4942,7 +4942,8 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 
 /* Events page: one wide card per event, poster on the left */
 .ad-ev-list{ grid-template-columns:1fr; }
-.ev-banner{ display:grid; grid-template-columns:minmax(240px, 32%) 1fr; min-height:50vh; padding:0; overflow:hidden; cursor:pointer; }
+.ev-banner{ display:grid; grid-template-columns:1fr minmax(200px, 24%); min-height:44vh; padding:0; overflow:hidden; cursor:pointer; }
+.ev-banner-art{ order:2; border-left:1px solid var(--ad-line); }
 .ev-banner.is-active{ border-color:var(--ad-orange); box-shadow:0 0 0 1px var(--ad-orange); }
 .ad-ev-list.is-past .ev-banner{ opacity:.8; }
 .ev-banner-art{ position:relative; background:#111 center/cover no-repeat; isolation:isolate; }
@@ -4951,9 +4952,9 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 
 .ev-banner-art.is-blank{ display:flex; align-items:center; justify-content:center; text-align:center; color:#999; font-size:14px; background:var(--ad-grey-bg); }
 .ev-banner-art.is-blank small{ color:#aaa; }
-.ev-banner-main{ padding:22px 26px 20px; display:flex; flex-direction:column; gap:18px; min-width:0; }
+.ev-banner-main{ padding:24px 28px 22px; display:flex; flex-direction:column; gap:18px; min-width:0; }
 .ev-banner-head{ display:flex; align-items:flex-start; gap:12px; }
-.ev-banner-head h2{ margin:0 0 4px; font-size:26px; letter-spacing:-.4px; }
+.ev-banner-head h2{ margin:0 0 4px; font-size:30px; letter-spacing:-.4px; }
 .ev-banner-head .ad-pill{ margin-left:auto; flex:0 0 auto; }
 .ev-banner-kicker{ margin:0 0 4px; font-size:12px; letter-spacing:1px; text-transform:uppercase; color:var(--ad-muted); }
 .ev-banner-kicker b{ color:var(--ad-orange); }
