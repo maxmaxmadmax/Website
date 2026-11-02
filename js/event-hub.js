@@ -9,7 +9,7 @@
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=791';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=792';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 
@@ -135,7 +135,6 @@ function overviewHtml(ctx) {
         ? card('Profit so far', esc(money(profit)), esc(money(t.actualOut)) + ' spent of ' + esc(money(t.plannedOut)) + ' planned', profit < 0 ? 'is-bad' : 'is-good')
         : card('Budget', '&mdash;', 'No budget yet - start one on the Budget tab')}
       ${card('Waitlist', String(f.waiting), f.waiting ? 'waiting for a spot' : 'nobody waiting')}
-      ${card('Coming', String(ev.goingCount || 0), (ev.goingParties || 0) + ' said "I\'m coming" on the page')}
     </div>
     <div class="ad-card ev-preview">
       <div class="ev-preview-bar">
@@ -175,8 +174,9 @@ function budgetHtml(ctx) {
         ? `<span class="ev-bud-auto" title="Filled in from ${l.auto === 'vendors' ? 'paid vendor bookings' : l.auto === 'sponsors' ? 'sponsors who said yes' : 'the Programme tab'}">${esc(money(l.actualCents))} <small>auto</small></span>`
         : `<input class="ad-input ev-bud-num" type="number" step="0.01" min="0" value="${dollars(l.actualCents)}" data-bud="actualCents" data-id="${attr(l.id)}" placeholder="0.00">`}</td>
       ${diffCell(l)}
-      <td class="ev-bud-x"><button type="button" class="ad-linkish" data-bud-del="${attr(l.id)}" aria-label="Remove ${attr(l.name || 'line')}">&times;</button></td>
-    </tr>`;
+      <td class="ev-bud-x"><label class="ad-linkish ev-bud-clip${(l.files || []).length ? ' has-files' : ''}" title="Attach an invoice or receipt">&#128206;${(l.files || []).length ? '<b>' + (l.files || []).length + '</b>' : ''}<input type="file" accept="image/*,.pdf" data-bud-file="${attr(l.id)}" hidden></label><button type="button" class="ad-linkish" data-bud-del="${attr(l.id)}" aria-label="Remove ${attr(l.name || 'line')}">&times;</button></td>
+    </tr>
+    ${(l.files || []).length ? `<tr class="ev-bud-files"><td colspan="5"><div class="ev-bud-files-in">${(l.files || []).map((f, i) => `<span class="ev-bud-file"><a href="${attr(f.url)}" target="_blank" rel="noopener">&#128196; ${esc(f.name || 'file')}</a><button type="button" class="ad-linkish" data-bud-unfile="${attr(l.id)}" data-i="${i}" title="Remove this file">&times;</button></span>`).join('')}</div></td></tr>` : ''}`;
   const section = (kind, title, pIn, aIn) => `
     <tbody>
       <tr class="ev-bud-h"><th>${title}</th><th>Planned</th><th>Actual</th><th>Diff</th><th></th></tr>
@@ -309,7 +309,7 @@ export function eventCardHtml(ctx) {
         <div class="ev-banner-stats">
           ${f ? stat(`${f.filled} <small>/ ${f.totalSites}</small>`, 'sites filled') : stat(dash, 'sites filled')}
           ${f ? stat(String(f.paidCount), 'vendors paid' + (f.unpaidCount ? ` <em>&middot; ${f.unpaidCount} owing</em>` : '')) : stat(dash, 'vendors paid')}
-          ${stat(String(ev.goingCount || 0), 'said they\'re coming')}
+          ${f ? stat(String(f.waiting), 'on the waitlist') : stat(dash, 'on the waitlist')}
           ${stat(esc(money(ev.pricing && ev.pricing.food)) + ' <small>/ ' + esc(money(ev.pricing && ev.pricing.marketPerBay)) + '</small>', 'food stall / market bay')}
         </div>
 

@@ -73,6 +73,12 @@ service firebase.storage {
       allow delete: if isAdmin();
     }
 
+    // Event paperwork - invoices and receipts attached to budget lines. Staff only.
+    match /event-files/{eventId}/{allPaths=**} {
+      allow read, delete: if isAdmin();
+      allow write: if isAdmin() && request.resource.size < 20 * 1024 * 1024;
+    }
+
     // Lead files - briefs, event maps, stage plots attached to a lead in the
     // admin lead generator. Private: admins only, any common file type,
     // capped in size.
