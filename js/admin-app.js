@@ -21,15 +21,15 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=776';
+} from './firebase-config.js?v=777';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=776';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=776';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=776';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=776';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=776';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml } from './event-hub.js?v=776';
-import { expandKit } from './kit.js?v=776';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=777';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=777';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=777';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=777';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=777';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml } from './event-hub.js?v=777';
+import { expandKit } from './kit.js?v=777';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -1633,6 +1633,15 @@ function actionBar(b) {
           <button type="button" class="ad-btn" data-pay="unpaid">Mark unpaid</button>`}
       </div>
 
+      ${b.status !== 'cancelled' ? `
+      <h3 class="ad-drawer-h">Not coming?</h3>
+      <div class="ad-actions-row">
+        <button type="button" class="ad-btn ad-btn-danger" id="ad-cancel-booking"
+                data-confirm="Cancel ${attr(vendorName(b))}? They come off the event page and the vendor list${b.siteLabel ? ', and ' + attr(b.siteLabel) + ' is freed' : ''}. No refund is made - do that in Stripe if needed.">
+          Not coming &ndash; cancel booking
+        </button>
+      </div>` : '<p class="ad-drawer-text ad-cell-muted">This booking is cancelled.</p>'}
+
       <p class="ad-action-msg" id="ad-action-msg" hidden></p>
     </div>`;
 }
@@ -1734,6 +1743,8 @@ function wireDetail() {
       bookingId: id, paymentStatus: el.getAttribute('data-pay'),
     }));
   });
+  const cancelBtn = document.getElementById('ad-cancel-booking');
+  if (cancelBtn) guarded(cancelBtn, () => runAction(cancelBtn, 'adminCancelBooking', { bookingId: id }));
 
   const save = document.getElementById('ad-seat-save');
   if (save) save.addEventListener('click', () => {
