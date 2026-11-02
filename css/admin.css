@@ -5151,3 +5151,18 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ev-vend-side b .is-warn{ color:var(--ad-red); font-size:12px; }
 .ev-vend-side span{ font-size:11px; color:var(--ad-muted); text-transform:uppercase; letter-spacing:1px; }
 .ev-vend-none{ color:var(--ad-muted); margin:0; }
+
+/* programme: "on the page" */
+.ev-prog-page{ margin-right:6px; color:#c9a200; font-size:17px; }
+.ev-prog-page.is-on{ color:#e0a100; }
+.ev-prog-more td{ background:#fffaf0 !important; padding:10px 12px !important; height:auto !important; }
+.ev-prog-more-in{ display:flex; gap:14px; align-items:flex-start; }
+.ev-prog-pic{ width:120px; height:90px; border-radius:10px; background:#eee center/cover no-repeat; flex:0 0 auto; border:1px solid var(--ad-line); }
+.ev-prog-pic.is-blank{ background:repeating-linear-gradient(45deg, #f3f3f3, #f3f3f3 8px, #ececec 8px, #ececec 16px); }
+.ev-prog-more-f{ flex:1; display:flex; flex-direction:column; gap:8px; }
+.ev-prog-more-f .ad-input{ width:100%; height:36px; border:1px solid var(--ad-line) !important; border-radius:8px !important; background:#fff !important; }
+.ev-prog-more-row{ display:flex; gap:8px; align-items:center; }
+.ev-prog-more-row .ad-input{ flex:1; }
+.ad-check{ display:flex; align-items:center; gap:8px; font-size:14px; }
+.ad-check span{ color:var(--ad-muted); font-size:13px; }
+.ev-faq{ width:100%; font-size:13px; line-height:1.5; margin-bottom:10px; }

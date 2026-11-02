@@ -21,15 +21,15 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=781';
+} from './firebase-config.js?v=782';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=781';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=781';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=781';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=781';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=781';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml } from './event-hub.js?v=781';
-import { expandKit } from './kit.js?v=781';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=782';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=782';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=782';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=782';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=782';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=782';
+import { expandKit } from './kit.js?v=782';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2225,7 +2225,7 @@ VIEWS.event = {
       ev, tab, inner: sub ? sub.html() : '', eventPill,
       bookings: state.bookings || [], sites: state.sites || [], sponsors: state.sponsors || [], waitlist: state.waitlist || [],
       budget: state.budgetFor === ev.id ? (state.budget || []) : [],
-      programme: state.programmeFor === ev.id ? (state.programme || []) : [], talent: state.talent || [], categories: state.categories || [],
+      programme: state.programmeFor === ev.id ? (state.programme || []) : [], talent: state.talent || [], categories: state.categories || [], progOpen: state.progOpen || '',
       h: { esc, attr, money },
     }) + eventForm();
   },
@@ -2283,7 +2283,7 @@ VIEWS.event = {
       let timer = null;
       const save = () => {
         const field = inp.getAttribute('data-prog');
-        const value = field === 'costCents' ? Math.max(0, Math.round(Number(inp.value || 0) * 100)) : String(inp.value || '').trim().slice(0, 300);
+        const value = field === 'costCents' ? Math.max(0, Math.round(Number(inp.value || 0) * 100)) : inp.type === 'checkbox' ? inp.checked : String(inp.value || '').trim().slice(0, field === 'blurb' ? 400 : 300);
         programmeStore.update(inp.getAttribute('data-id'), { [field]: value }, inp).catch((e) => window.alert(friendly(e)));
       };
       inp.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(save, inp.tagName === 'SELECT' ? 0 : 500); });
@@ -2294,6 +2294,30 @@ VIEWS.event = {
       if (!window.confirm('Take "' + name + '" off the programme?')) return;
       try { await programmeStore.remove(b.getAttribute('data-prog-del')); } catch (e) { window.alert(friendly(e)); }
     }));
+    desk.querySelectorAll('[data-prog-more]').forEach((b) => b.addEventListener('click', () => {
+      const id = b.getAttribute('data-prog-more');
+      state.progOpen = state.progOpen === id ? '' : id;
+      render();
+    }));
+    desk.querySelectorAll('[data-prog-photo]').forEach((inp) => inp.addEventListener('change', async () => {
+      const file = inp.files && inp.files[0];
+      if (!file) return;
+      try {
+        const url = await uploadImage(file, 'event-images/' + state.activeEventId + '/programme/', 1200);
+        await programmeStore.update(inp.getAttribute('data-prog-photo'), { photo: url });
+      } catch (e) { window.alert('Upload failed - ' + (e.message || 'try again')); }
+    }));
+    // FAQs
+    const faqSave = document.getElementById('ev-faq-save');
+    if (faqSave) faqSave.addEventListener('click', async () => {
+      const lines = String(document.getElementById('ev-faq').value || '').split('\n').map((l) => l.trim()).filter(Boolean);
+      const faq = lines.map((l) => { const i = l.indexOf('|'); return i > 0 ? { q: l.slice(0, i).trim(), a: l.slice(i + 1).trim() } : null; }).filter((x) => x && x.q && x.a);
+      faqSave.disabled = true;
+      try { await call('adminSaveEvent', { eventId: state.activeEventId, fields: { faq } }); await loadEvents(); render(); }
+      catch (e) { window.alert(friendly(e)); faqSave.disabled = false; }
+    });
+    const faqStd = document.getElementById('ev-faq-std');
+    if (faqStd) faqStd.addEventListener('click', () => { document.getElementById('ev-faq').value = FAQ_STANDARD.map(([q, a]) => q + ' | ' + a).join('\n'); });
     const padd = document.getElementById('ev-prog-add');
     if (padd) padd.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -2433,7 +2457,7 @@ const programmeStore = {
     await updateDoc(doc(fb.db, 'events', state.activeEventId, 'programme', id), p);
     const line = (state.programme || []).find((l) => l.id === id);
     if (line) Object.assign(line, p);
-    if (!inp || document.activeElement !== inp || inp.type === 'time') render();
+    if (!inp || document.activeElement !== inp || inp.type === 'time' || inp.type === 'checkbox') render();
   },
   async remove(id) {
     const { doc, deleteDoc } = fb.f;

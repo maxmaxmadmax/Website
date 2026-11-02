@@ -15,11 +15,11 @@ permalink: /event.html
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Permanent+Marker&display=swap">
-  <link rel="stylesheet" href="css/style.css?v=781">
-  <link rel="stylesheet" href="css/event-page.css?v=781">
-  <script src="js/main.js?v=781" defer></script>
-  <script src="js/event-page.js?v=781" defer></script>
-  <script src="js/event-live.js?v=781" defer></script>
+  <link rel="stylesheet" href="css/style.css?v=782">
+  <link rel="stylesheet" href="css/event-page.css?v=782">
+  <script src="js/main.js?v=782" defer></script>
+  <script src="js/event-page.js?v=782" defer></script>
+  <script src="js/event-live.js?v=782" defer></script>
 </head>
 <body class="event-page" data-ev-title>
 <div id="navbar"></div>
@@ -74,14 +74,23 @@ permalink: /event.html
   }());
 </script>
 
-<!-- THE PROGRAMME - from Admin > Events > Programme -->
+<!-- ENTERTAINMENT + THE PROGRAMME - from Admin > Events > Programme -->
 <div class="ep-page ep-page-3">
-  <section class="ep-section" data-ep-programme hidden>
+  <section class="ep-section" data-ep-ent hidden>
     <div class="ep-head">
-      <h2 class="ep-h2">On the night</h2>
-      <p class="ep-strap">The programme <i>/</i> Times may shift a little</p>
+      <h2 class="ep-h2">Entertainment</h2>
+      <p class="ep-strap">On the night <i>/</i> For everyone</p>
     </div>
-    <ul class="ep-times" id="ep-programme"></ul>
+    <div class="ep-ent-live" id="ep-ent"></div>
+  </section>
+  <section class="ep-section ep-times-poster" data-ep-programme hidden>
+    <div>
+      <h2 class="ep-h2">Times</h2>
+      <ul class="ep-times" id="ep-programme"></ul>
+    </div>
+    <a class="ep-poster" data-ev-poster href="#" target="_blank" rel="noopener" hidden>
+      <img src="" alt="Event poster" width="900" height="1335">
+    </a>
   </section>
 </div>
 
@@ -97,10 +106,18 @@ permalink: /event.html
       <div class="ep-market"></div>
     </div>
   </section>
+  <section class="ep-section" data-ep-faq hidden>
+    <div class="ep-faq-head">
+      <span class="ep-faq-tag">FAQs</span>
+      <h2 class="ep-h2">Good to know.</h2>
+      <p class="ep-faq-sub">Everything you need before you roll in.</p>
+    </div>
+    <ul class="ep-faq" id="ep-faq"></ul>
+  </section>
   <section class="ep-section" data-ep-sponsors hidden>
     <div class="ep-sponsors">
       <h2 class="ep-h2">Thanks to our sponsors</h2>
-      <ul class="ep-sponsor-names" id="ep-sponsors-live"></ul>
+      <ul class="ep-sponsor-grid ep-sponsor-live" id="ep-sponsors-live"></ul>
       <p>Want your business on the next one? <a href="/contact">Become a sponsor &rarr;</a></p>
     </div>
   </section>

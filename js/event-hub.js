@@ -9,7 +9,7 @@
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=781';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=782';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 
@@ -249,6 +249,15 @@ function websiteHtml(ctx) {
         </div>
       </div>
       <div class="ad-card ev-pad">
+        <h2>Good to know (FAQs)</h2>
+        <p class="ad-drawer-text">One per line: <code>Question? | Answer</code>. They show at the bottom of the live page.</p>
+        <textarea class="ad-input ev-faq" id="ev-faq" rows="10" placeholder="Do I need a ticket? | Nope! It's free entry - just turn up.">${esc((ev.faq || []).map((x) => x.q + ' | ' + x.a).join('\n'))}</textarea>
+        <div class="ad-actions-row">
+          <button type="button" class="ad-btn ad-btn-primary" id="ev-faq-save">Save FAQs</button>
+          <button type="button" class="ad-btn" id="ev-faq-std">Use the standard set</button>
+        </div>
+      </div>
+      <div class="ad-card ev-pad">
         <h2>Where it's used</h2>
         <p class="ad-drawer-text">The live page at <code>/event?e=${esc(ev.id)}</code> is built from this event: poster, facts, notice, programme, paid vendors and sponsors. Edit details, and it changes within a minute.</p>
         <p class="ad-drawer-text">Moved venue or changed the date? Edit it once, then send vendors a message from the Messages tab.</p>
@@ -364,8 +373,21 @@ function programmeHtml(ctx) {
       <td><select class="ad-select" data-prog="kind" data-id="${attr(p.id)}">${PROGRAMME_KINDS.map(([k, l]) => `<option value="${k}"${(p.kind || 'activity') === k ? ' selected' : ''}>${l}</option>`).join('')}</select></td>
       <td><input class="ad-input ev-prog-num" type="number" step="0.01" min="0" value="${dollars(p.costCents)}" data-prog="costCents" data-id="${attr(p.id)}" placeholder="0.00"></td>
       <td><input class="ad-input" value="${attr(p.notes || '')}" data-prog="notes" data-id="${attr(p.id)}" placeholder="Notes - power, stage, contact"></td>
-      <td class="ev-prog-x"><button type="button" class="ad-linkish" data-prog-del="${attr(p.id)}" aria-label="Remove">&times;</button></td>
-    </tr>`;
+      <td class="ev-prog-x"><button type="button" class="ad-linkish ev-prog-page${p.featured ? ' is-on' : ''}" data-prog-more="${attr(p.id)}" title="How it shows on the event page">${p.featured ? '&#9733;' : '&#9734;'}</button><button type="button" class="ad-linkish" data-prog-del="${attr(p.id)}" aria-label="Remove">&times;</button></td>
+    </tr>
+    ${ctx.progOpen === p.id ? `<tr class="ev-prog-more"><td colspan="7">
+      <div class="ev-prog-more-in">
+        <div class="ev-prog-pic${p.photo ? '' : ' is-blank'}"${p.photo ? ` style="background-image:url('${attr(p.photo)}')"` : ''}></div>
+        <div class="ev-prog-more-f">
+          <label class="ad-check"><input type="checkbox" data-prog="featured" data-id="${attr(p.id)}"${p.featured ? ' checked' : ''}> <b>Feature on the event page</b> <span>as a card under Entertainment, with the photo and blurb</span></label>
+          <input class="ad-input" value="${attr(p.blurb || '')}" data-prog="blurb" data-id="${attr(p.id)}" placeholder="A line or two about it - who they are, what to expect" maxlength="400">
+          <div class="ev-prog-more-row">
+            <input class="ad-input" value="${attr(p.link || '')}" data-prog="link" data-id="${attr(p.id)}" placeholder="Link (https://...) - their site or socials" maxlength="300">
+            <label class="ad-btn ad-btn-small">&#128444; ${p.photo ? 'Change photo' : 'Add photo'}<input type="file" accept="image/*" data-prog-photo="${attr(p.id)}" hidden></label>
+          </div>
+        </div>
+      </div>
+    </td></tr>` : ''}`;
   return `
     <div class="ev-grid ev-grid-3">
       ${card('On the programme', String(items.length), items.length ? items.filter((p) => p.kind === 'act').length + ' act' + (items.filter((p) => p.kind === 'act').length === 1 ? '' : 's') + ' &middot; ' + items.filter((p) => p.kind !== 'act').length + ' other' : 'nothing yet')}
@@ -429,3 +451,14 @@ function attendingHtml(ctx) {
     ${group('food', 'Food vendors', 'Local flavours / Great food')}
     ${group('market', 'Market stalls', 'Local makers & creators')}`;
 }
+
+/* the FAQs a new event starts from */
+export const FAQ_STANDARD = [
+  ['Do I need a ticket?', "Nope! It's free entry - just turn up."],
+  ['Is it family friendly?', 'Absolutely. Bring the kids and enjoy great food, markets, live music and fun for all ages.'],
+  ['Should I bring a chair?', 'Yes! Bring a camp chair or picnic rug and settle in for the night.'],
+  ['Can I bring food or drinks?', 'No outside food or drinks please. Come hungry and support our local food vendors and bar.'],
+  ['Can I bring alcohol?', 'No BYO alcohol. There will be a licensed bar operating on the night.'],
+  ["What's happening for the kids?", 'Plenty - food, markets, entertainment and activities all night.'],
+  ['Where do I park?', 'Plenty of parking at the venue. Follow the signs on the night.'],
+];

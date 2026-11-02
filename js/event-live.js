@@ -99,10 +99,41 @@
             if (sec) sec.hidden = false;
         }
 
+        // the entertainment cards: featured programme lines
+        var ent = document.getElementById('ep-ent');
+        var feats = (d.programme || []).filter(function (p) { return p.featured; });
+        if (ent && feats.length) {
+            var KIND = { act: 'Live on stage', activity: 'On the night', food: 'Food & drink', moment: "Don't miss" };
+            ent.innerHTML = feats.map(function (p) {
+                return '<article class="ep-ent-card ep-ent-item' + (p.photo ? ' has-photo' : '') + '">'
+                    + (p.photo ? '<img class="ep-ent-photo" src="' + esc(p.photo) + '" alt="">' : '')
+                    + '<div class="ep-ent-item-text"><p class="ep-kicker">' + esc(KIND[p.kind] || 'On the night') + (p.start ? ' &middot; ' + esc(ampm(p.start)) : '') + '</p>'
+                    + '<h3>' + esc(p.title) + (p.who ? '<br><span>' + esc(p.who) + '</span>' : '') + '</h3>'
+                    + (p.blurb ? '<p>' + esc(p.blurb) + '</p>' : '')
+                    + (p.link ? '<a class="ep-ent-link" href="' + esc(p.link) + '" target="_blank" rel="noopener">More &rarr;</a>' : '')
+                    + '</div></article>';
+            }).join('');
+            var es = ent.closest('[data-ep-ent]');
+            if (es) es.hidden = false;
+        }
+
+        // the FAQs
+        var faq = document.getElementById('ep-faq');
+        if (faq && ev.faq && ev.faq.length) {
+            faq.innerHTML = ev.faq.map(function (x) {
+                return '<li class="ep-faq-item"><span class="ep-faq-ic" aria-hidden="true"><b>?</b></span><div><b>' + esc(x.q) + '</b><p>' + esc(x.a) + '</p></div></li>';
+            }).join('');
+            var fs2 = faq.closest('[data-ep-faq]');
+            if (fs2) fs2.hidden = false;
+        }
+
         // the sponsors
         var sp = document.getElementById('ep-sponsors-live');
         if (sp && d.sponsors && d.sponsors.length) {
-            sp.innerHTML = d.sponsors.map(function (s) { return '<li>' + esc(s.business) + '</li>'; }).join('');
+            sp.innerHTML = d.sponsors.map(function (s) {
+                var inner = s.logo ? '<img src="' + esc(s.logo) + '" alt="' + esc(s.business) + '">' : '<span class="ep-sponsor-name">' + esc(s.business) + '</span>';
+                return '<li>' + (s.website ? '<a href="' + esc(s.website) + '" target="_blank" rel="noopener">' + inner + '</a>' : inner) + '</li>';
+            }).join('');
             var ss = sp.closest('[data-ep-sponsors]');
             if (ss) ss.hidden = false;
         }

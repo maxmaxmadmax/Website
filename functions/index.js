@@ -2046,6 +2046,10 @@ exports.adminSaveEvent = onCall(async (request) => {
     if (f[k] !== undefined) update[k] = text(f[k]);
   });
   if (f.intro !== undefined) update.intro = text(f.intro, 400);
+  if (f.faq !== undefined) {
+    update.faq = (Array.isArray(f.faq) ? f.faq : []).slice(0, 12)
+      .map((x) => ({ q: text(x && x.q, 120), a: text(x && x.a, 400) })).filter((x) => x.q && x.a);
+  }
   if (f.entryText !== undefined) update.entryText = text(f.entryText, 80);
   ['startTime', 'finishTime'].forEach((k) => {
     if (f[k] !== undefined) update[k] = /^\d{2}:\d{2}$/.test(String(f[k] || '')) ? String(f[k]) : '';
@@ -3544,16 +3548,27 @@ exports.eventLineup = onRequest({ cors: true }, async (req, res) => {
       name: ev.name || '', subtitle: ev.subtitle || '', intro: ev.intro || '', entryText: ev.entryText || '',
       dateLabel: ev.dateLabel || '', dateISO: ev.dateISO || '', venue: ev.venue || '', location: ev.location || '',
       startTime: ev.startTime || '', finishTime: ev.finishTime || '', image: ev.image || '', status: ev.status || '',
+      faq: (Array.isArray(ev.faq) ? ev.faq : []).slice(0, 12).map((x) => ({ q: String(x.q || '').slice(0, 120), a: String(x.a || '').slice(0, 400) })),
       notice: n.kind ? { kind: n.kind, title: n.title || '', text: n.text || '', was: n.was || '' } : null,
     };
     // THE PROGRAMME: times and names, never costs or notes; behind-the-scenes lines stay behind
     const mins = (t) => { const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); return r ? (+r[1] < 4 ? +r[1] + 24 : +r[1]) * 60 + +r[2] : 9999; };
     out.programme = progSnap.docs.map((d) => d.data()).filter((p) => p.kind !== 'ops' && String(p.title || '').trim())
       .sort((a, b) => mins(a.start) - mins(b.start) || (a.order || 0) - (b.order || 0))
-      .map((p) => ({ start: String(p.start || '').slice(0, 5), finish: String(p.finish || '').slice(0, 5), title: String(p.title).slice(0, 120), who: String(p.who || '').slice(0, 120), kind: String(p.kind || 'activity').slice(0, 20) }));
+      .map((p) => {
+        const photo = String(p.photo || '');
+        const ours = /^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[\w.-]+\/o\/event-images%2F[\w.%-]+\?[\w=&.-]+$/.test(photo) || /^\/images\/[\w./-]+$/.test(photo);
+        const link = String(p.link || '');
+        return { start: String(p.start || '').slice(0, 5), finish: String(p.finish || '').slice(0, 5), title: String(p.title).slice(0, 120), who: String(p.who || '').slice(0, 120), kind: String(p.kind || 'activity').slice(0, 20),
+          featured: !!p.featured, blurb: String(p.blurb || '').slice(0, 400), photo: ours ? photo : '', link: /^https:\/\/[^\s'"()<>]+$/.test(link) ? link.slice(0, 300) : '' };
+      });
     // THE SPONSORS who said yes
     out.sponsors = spSnap.docs.map((d) => d.data()).filter((p) => p.status === 'yes' && p.business)
-      .map((p) => ({ business: String(p.business).slice(0, 80), level: String(p.level || '').slice(0, 30) }));
+      .map((p) => {
+        const logo = String(p.logo || '');
+        const ok = /^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[\w.-]+\/o\/sponsor-logos%2F[\w.%-]+\?[\w=&.-]+$/.test(logo) || /^https:\/\/www\.google\.com\/s2\/favicons\?domain=[\w.%-]+&sz=\d+$/.test(logo);
+        return { business: String(p.business).slice(0, 80), level: String(p.level || '').slice(0, 30), logo: ok ? logo : '', website: /^https?:\/\/[^\s'"()<>]+$/.test(String(p.website || '')) ? String(p.website).slice(0, 200) : '' };
+      });
 
     res.set('Cache-Control', 'public, max-age=60');   // a minute, so a last-minute notice shows quickly
     res.json(out);

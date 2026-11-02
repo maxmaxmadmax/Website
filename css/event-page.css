@@ -1648,3 +1648,15 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 .ep-sponsor-names{ list-style:none; padding:0; margin:0 0 16px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
 .ep-sponsor-names li{ background:var(--ep-cream); color:var(--ep-ink); border-radius:999px; padding:8px 16px; font-weight:bold; }
 @media (max-width:760px){ .ep-hero-live .ep-hero-inner{ grid-template-columns:1fr; } .ep-poster-hero{ max-width:320px; } }
+
+/* the live page: hidden means hidden, even for the poster link */
+.ep-poster-hero[hidden], .ep-poster[hidden]{ display:none; }
+/* entertainment cards built from the programme */
+.ep-ent-live{ display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px; }
+.ep-ent-item{ display:flex; flex-direction:column; }
+.ep-ent-item .ep-ent-photo{ aspect-ratio:4/3; object-fit:cover; }
+.ep-ent-item-text{ padding:20px 22px 22px; }
+.ep-ent-item-text h3 span{ display:block; font-size:.75em; opacity:.8; }
+.ep-faq-ic b{ font-family:var(--ep-poster-font); font-size:22px; font-weight:400; }
+.ep-sponsor-live li{ display:flex; align-items:center; justify-content:center; }
+.ep-sponsor-name{ font-family:var(--ep-poster-font); font-size:1.05rem; text-transform:uppercase; letter-spacing:.02em; color:var(--ep-ink); text-align:center; }
