@@ -10,7 +10,7 @@
     One sponsor per industry: once a business in an industry has said yes
     to the event picked, the others in that industry show "industry taken". */
 
-import { spAvatar, spColor } from './messages.js?v=805';
+import { spAvatar, spColor } from './messages.js?v=806';
 
 export const STAGES = [['idea', 'Idea'], ['research', 'Researching'], ['ready', 'Ready to ask'], ['asked', 'Asked'], ['sponsor', 'Sponsor'], ['no', 'Not now']];
 const STAGE = Object.fromEntries(STAGES);
@@ -230,7 +230,7 @@ function findHtml(ctx, list) {
 
 export function wireSponsorDir(ctx) {
   const { state, render, biz, sponsors, upload, call } = ctx;
-  const root = document.getElementById('ad-desk');
+  const root = document.querySelector('.spd');
   if (!root) return;
   const current = () => (state.sponsorBiz || []).find((x) => x.id === state.spDirOpen);
   const toCents = (v) => Math.max(0, Math.round(Number(String(v).replace(/[^0-9.]/g, '')) * 100) || 0);
