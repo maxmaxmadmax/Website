@@ -1,0 +1,1039 @@
+/* ==========================================================================
+   SOUNDZGOOD 2.0 (2025) - the old poster-style event page.
+   Loaded by /events/pastevents/soundzgood2.0/ only, on top of site.css.
+   ========================================================================== */
+
+/* Big black type in the detail cards */
+.detail-card p {
+    font-family: var(--sg-font-display);
+    letter-spacing: -0.5px;
+}
+
+/* ==========================================================================
+   ACTS - one block per artist, alternating left and right
+   ========================================================================== */
+.acts {
+    max-width: var(--sg-max-width);
+    margin: 20px auto 0;
+}
+
+.act {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: center;
+    gap: 6px;
+
+    padding: 46px 0;
+    text-align: center;
+    color: #000;
+}
+
+/* Alternate the alignment so the eye keeps moving down the page.
+   nth-of-type (not nth-child) because the wave dividers sit between acts. */
+.act:nth-of-type(odd) {
+    text-align: left;
+    justify-items: start;
+}
+
+.act:nth-of-type(even) {
+    text-align: right;
+    justify-items: end;
+}
+
+.act h3 {
+    font-size: clamp(2.1rem, 8vw, 5rem);
+    line-height: 0.92;
+    text-transform: uppercase;
+    letter-spacing: -1.5px;
+    margin: 0;
+}
+
+.act p {
+    font-family: var(--sg-font-accent);
+    font-size: clamp(0.78rem, 2vw, 0.95rem);
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.68);
+    margin: 0;
+}
+
+/*  ARTIST BIOGRAPHY AND VIDEO - under each act, full width.          */
+.act-bio {
+    grid-column: 1 / -1;
+    max-width: 70ch;
+    margin-top: 20px;
+    text-align: left; /* long copy always reads left, even on mirrored rows */
+}
+
+/* Overrides the short uppercase role styling for the body copy */
+.act .act-bio p {
+    font-family: var(--sg-font);
+    font-size: clamp(0.92rem, 1.9vw, 1.02rem);
+    font-weight: normal;
+    letter-spacing: 0;
+    text-transform: none;
+    line-height: 1.6;
+    color: rgba(0, 0, 0, 0.78);
+    margin: 0 0 14px;
+}
+
+/* Responsive 16:9 video */
+.act-video {
+    position: relative;
+    width: 100%;
+    max-width: 620px;
+    aspect-ratio: 16 / 9;
+    margin-top: 18px;
+
+    border: 2px solid rgba(0, 0, 0, 0.55);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 10px 26px rgba(80, 28, 0, 0.3);
+}
+
+.act-video iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+/* Wavy hand-drawn divider between acts */
+.act-wave {
+    display: block;
+    width: 100%;
+    height: 14px;
+    color: rgba(0, 0, 0, 0.4);
+}
+
+.act-wave path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 3;
+    stroke-linecap: round;
+}
+
+/*  ARTIST CUT-OUTS
+    Save a transparent PNG/WebP in the images folder and add this inside an
+    act, just above the <h3>:
+        <img src="images/events/soundzgood-2-0/rossco.webp" alt="Rossco" class="artist-photo">
+    The act becomes a two-column row automatically.                        */
+/* Odd acts: cut-out on the left, name on the right */
+.act:has(.artist-photo) {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    gap: 4px 34px;
+    text-align: left;
+    justify-items: start;
+    align-content: end;
+}
+
+.act:has(.artist-photo) .artist-photo {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+}
+.act:has(.artist-photo) h3 {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+}
+.act:has(.artist-photo) p {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+}
+
+/* Even acts: mirrored - name on the left, cut-out on the right */
+.act:nth-of-type(even):has(.artist-photo) {
+    grid-template-columns: 1fr auto;
+    text-align: right;
+    justify-items: end;
+}
+
+.act:nth-of-type(even):has(.artist-photo) .artist-photo {
+    grid-column: 2;
+}
+.act:nth-of-type(even):has(.artist-photo) h3 {
+    grid-column: 1;
+}
+.act:nth-of-type(even):has(.artist-photo) p {
+    grid-column: 1;
+}
+
+/* Sized by height so every cut-out appears at the same scale. */
+.artist-photo {
+    grid-row: span 2;
+    height: clamp(170px, 27vw, 290px);
+    width: auto;
+    max-width: min(46vw, 340px);
+    object-fit: contain;
+    object-position: bottom center;
+    align-self: end;
+
+    /* Die-cut sticker edge: a white outline plus a lifted shadow, so each
+       cut-out looks like it has been pasted onto the page. */
+    filter: drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff)
+        drop-shadow(0 16px 22px rgba(0, 0, 0, 0.45));
+}
+
+/*  SCRAPBOOK SCROLL ANIMATION
+    js/main.js puts .has-scroll-anim on <html>, then .is-visible on each act
+    as it scrolls into view. Without JavaScript everything just shows.     */
+
+/*  Each act flies in from its own side, tilted back in 3D and blurred,
+    then slaps flat onto the page and settles slightly crooked.          */
+/* ==========================================================================
+   CLOSING BANNER - full-width image that closes the page
+   ========================================================================== */
+.closing-banner {
+    background: #000;
+    padding: 0;
+    line-height: 0; /* removes the gap under an inline image */
+}
+
+.closing-banner img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+/* ==========================================================================
+   DETAIL CARDS - what-you-need-to-know cards under the hero
+   ========================================================================== */
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    max-width: var(--sg-max-width);
+    margin: auto;
+}
+
+.detail-card {
+    background: var(--sg-panel);
+    border: 1px solid var(--sg-border);
+    border-radius: 14px;
+    padding: 28px 22px;
+    text-align: center;
+}
+
+.detail-card h3 {
+    font-family: var(--sg-font-accent);
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--sg-gold);
+    margin-bottom: 10px;
+}
+
+.detail-card p {
+    font-size: 1.15rem;
+    font-weight: bold;
+}
+/* ==========================================================================
+   EVENT COPY - body copy
+   ========================================================================== */
+.event-copy {
+    max-width: 760px;
+    margin: auto;
+    text-align: center;
+}
+
+.event-copy p {
+    color: var(--sg-muted);
+    font-size: 1.08rem;
+    margin-bottom: 20px;
+}
+
+.event-copy p.lead {
+    color: #fff;
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+/* Scrolling announcement strip */
+
+@keyframes scrollText {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-100%);
+    }
+}
+/* ==========================================================================
+   EVENT FLOW - the sunset band with palms
+   ========================================================================== */
+.event-flow {
+    position: relative;
+    background: linear-gradient(
+        180deg,
+        var(--sg-sun-top) 0%,
+        var(--sg-sun-mid) 30%,
+        var(--sg-sun-deep) 58%,
+        #a34412 76%,
+        #3d1806 90%,
+        #000 100%
+    );
+    color: #000;
+    overflow: hidden;
+}
+
+.event-flow::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: var(--sg-grain);
+    opacity: 0.16;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+}
+
+.event-flow > * {
+    position: relative;
+    z-index: 1;
+    background: transparent;
+}
+
+/* Tighter spacing through the flow */
+.event-flow > .section {
+    padding-top: 44px;
+    padding-bottom: 44px;
+}
+
+.event-flow h2,
+.event-flow h3,
+.event-flow h5 {
+    color: #000;
+}
+
+/*  Detail bar: bold black type straight onto the sunset, no boxes. */
+.event-flow .detail-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0;
+    border-top: 3px solid #000;
+    border-bottom: 3px solid #000;
+    max-width: var(--sg-max-width);
+    margin: auto;
+}
+
+.event-flow .detail-card {
+    flex: 1 1 190px;
+    background: transparent;
+    border: none;
+    border-right: 2px solid rgba(0, 0, 0, 0.28);
+    border-radius: 0;
+    padding: 26px 18px;
+    color: #000;
+}
+
+.event-flow .detail-card:last-child {
+    border-right: none;
+}
+
+.event-flow .detail-card h3 {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.72rem;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+}
+
+.event-flow .detail-card p {
+    color: #000;
+    font-size: clamp(1rem, 2.2vw, 1.3rem);
+    line-height: 1.25;
+}
+
+/* Palm silhouettes down the edges of the flow */
+.flow-palm {
+    position: absolute;
+    width: clamp(150px, 22vw, 330px);
+    height: auto;
+    color: #000;
+    opacity: 0.14;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.flow-palm path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 5;
+    stroke-linecap: round;
+}
+
+.flow-palm-left {
+    top: 2%;
+    left: -4%;
+}
+
+.flow-palm-right {
+    top: 26%;
+    right: -4%;
+    transform: scaleX(-1);
+}
+
+.flow-palm-low {
+    bottom: 16%;
+    left: -6%;
+    opacity: 0.1;
+}
+
+/* Copy near the bottom of the flow sits on dark, so it flips to white */
+.event-flow .flow-copy h2,
+.event-flow .flow-copy p {
+    color: #fff;
+}
+
+.event-flow .flow-copy p.lead {
+    color: #fff;
+}
+
+.event-flow .flow-copy .btn {
+    background: var(--sg-orange-bright);
+    border-color: var(--sg-orange-bright);
+    color: #fff;
+}
+
+/*  Poster tagline: LIVE MUSIC / FOOD / BAR / DJS - light and widely spaced. */
+.poster-tagline {
+    font-family: var(--sg-font);
+    font-weight: 400;
+    font-size: clamp(0.62rem, min(1.7vh, 1.7vw), 0.95rem);
+    letter-spacing: 0.34em;
+    text-indent: 0.34em; /* balances the trailing letter-space so it stays centred */
+    text-transform: uppercase;
+    margin: 0 0 0.75vh;
+}
+
+/* The two tagline rows sit together as one block */
+.poster-tagline + .poster-tagline {
+    margin-bottom: 0;
+}
+/* ==========================================================================
+   EVENT HERO - the poster-style header
+   ========================================================================== */
+.event-hero {
+    position: relative;
+    min-height: 100vh;
+    min-height: 100svh;
+    overflow: hidden;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+/*  Poster-style hero: orange sunset sky with the video showing through. */
+.event-hero .overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to bottom,
+        rgba(247, 168, 63, 0.97) 0%,
+        rgba(244, 150, 52, 0.95) 38%,
+        rgba(235, 118, 34, 0.86) 62%,
+        rgba(198, 84, 20, 0.72) 80%,
+        rgba(60, 24, 6, 0.86) 93%,
+        rgba(0, 0, 0, 0.95) 100%
+    );
+    z-index: 1;
+}
+
+.event-hero .overlay::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: var(--sg-grain);
+    opacity: 0.12;
+    mix-blend-mode: overlay;
+}
+
+.event-hero-content {
+    position: relative;
+    z-index: 2;
+    /*  Sized in vh so the whole poster fits the screen. The top clears the
+        menu using --sg-nav-height (set by js/main.js).                  */
+    padding: calc(var(--sg-nav-height, 88px) + 8px) 20px 1.4vh;
+
+    width: 100%;
+    max-width: 960px;
+    min-width: 0; /* lets long titles wrap instead of widening the page */
+}
+
+/* The event logo carries the sun, palms and wordmark in one file */
+.event-logo-heading {
+    margin: 0;
+}
+
+/* Sized against viewport height, not width, so the logo, the lineup, the
+   date and the ticket button all fit on the first screen together. */
+.event-logo {
+    display: block;
+    height: clamp(140px, 44vh, 660px);
+    width: auto;
+    max-width: 94%;
+    margin: 0 auto 1.5vh;
+}
+
+/* Hero sits on the orange sky, so its type goes black like the poster */
+.event-hero-content {
+    color: #000;
+}
+
+.event-hero .poster-tagline {
+    color: #000;
+}
+
+.event-headline-date {
+    font-family: var(--sg-font-display);
+    font-size: clamp(1.4rem, min(4.3vh, 5.2vw), 3.4rem);
+    line-height: 1;
+    letter-spacing: -1.5px;
+    text-transform: uppercase;
+    margin: 1.8vh 0 0.8vh;
+    color: #000;
+}
+
+.event-hero .event-date {
+    font-family: var(--sg-font);
+    font-weight: bold;
+    font-size: clamp(0.7rem, min(1.75vh, 2.1vw), 1.05rem);
+    letter-spacing: 0.2em;
+    text-indent: 0.2em;
+    text-transform: uppercase;
+    color: #000;
+    margin: 0;
+}
+
+/* Venue sits in a black box with orange type */
+.event-hero .event-location {
+    display: inline-block;
+    background: #000;
+    color: var(--sg-orange-bright);
+    border-radius: 8px;
+    padding: 13px 30px;
+
+    font-family: var(--sg-font-display);
+    font-size: clamp(0.72rem, min(1.85vh, 2.4vw), 1.25rem);
+    letter-spacing: 1.5px;
+    padding: 1.2vh 3vh;
+    margin: 1.2vh 0 0;
+    text-shadow: none;
+}
+
+/* Black ticket button reads best against the orange sky */
+.event-hero .btn-ticket {
+    background: #000;
+    border-color: #000;
+    color: #fff;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.event-hero .btn-ticket:hover {
+    background: #1a1a1a;
+}
+
+.event-hero h1 {
+    font-size: clamp(2.8rem, 11vw, 7rem);
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    line-height: 0.95;
+}
+
+.event-location {
+    font-size: clamp(1.05rem, 3vw, 1.8rem);
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.event-date {
+    margin: 12px 0 28px;
+    color: #eee;
+    font-family: var(--sg-font-accent);
+    letter-spacing: 2px;
+    font-size: clamp(0.9rem, 2.6vw, 1.1rem);
+    text-transform: uppercase;
+}
+/* ==========================================================================
+   LINEUP - the wall of artist names
+   ========================================================================== */
+.lineup {
+    position: relative;
+    padding: 56px 6% 40px;
+    text-align: center;
+}
+
+/* Sunburst rays behind the LINEUP title */
+.lineup::before {
+    content: '';
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(1000px, 150vw);
+    aspect-ratio: 1;
+    background: repeating-conic-gradient(from 0deg, rgba(0, 0, 0, 0.075) 0deg 5deg, transparent 5deg 11deg);
+    -webkit-mask-image: radial-gradient(circle, #000 12%, transparent 62%);
+    mask-image: radial-gradient(circle, #000 12%, transparent 62%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.lineup > * {
+    position: relative;
+    z-index: 1;
+}
+
+.lineup h2 {
+    font-size: clamp(2.8rem, 11vw, 7rem);
+    text-transform: uppercase;
+    letter-spacing: -2px;
+    margin-bottom: 10px;
+}
+
+/*  THE LINEUP WALL - festival-poster style, names separated by diamonds. */
+
+.lineup-wall {
+    max-width: 920px;
+    margin: 1.8vh auto 0;
+}
+
+/* One line of the billing */
+.lw-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1em 0.55em; /* the space either side of the sun */
+
+    margin: 0 0 0.5vh;
+    line-height: 1.1;
+}
+
+.lw-line:last-child {
+    margin-bottom: 0;
+}
+
+.lw-name {
+    font-family: var(--sg-font-display);
+    font-size: clamp(1rem, min(3.3vh, 3.8vw), 2.85rem);
+    text-transform: uppercase;
+    letter-spacing: -0.5px;
+    color: #000;
+    white-space: nowrap;
+
+    /* soft lift, so the type sits on the sunset instead of looking flat */
+    text-shadow: 0 3px 14px rgba(90, 30, 0, 0.22);
+}
+
+/* The long billing line is set smaller, the way posters size a long name */
+.lw-line-sm .lw-name {
+    font-size: clamp(0.78rem, min(2.5vh, 2.7vw), 1.85rem);
+    letter-spacing: 0;
+}
+
+/*  Separator: the SoundzGood sun, drawn in CSS. Colour is background-color below. */
+.lw-sep {
+    --sun-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='%23000' stroke-width='2.1' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='4' fill='%23000'/%3E%3Cline x1='12' y1='1.8' x2='12' y2='4.2'/%3E%3Cline x1='12' y1='19.8' x2='12' y2='22.2'/%3E%3Cline x1='1.8' y1='12' x2='4.2' y2='12'/%3E%3Cline x1='19.8' y1='12' x2='22.2' y2='12'/%3E%3Cline x1='4.8' y1='4.8' x2='6.5' y2='6.5'/%3E%3Cline x1='17.5' y1='17.5' x2='19.2' y2='19.2'/%3E%3Cline x1='4.8' y1='19.2' x2='6.5' y2='17.5'/%3E%3Cline x1='17.5' y1='6.5' x2='19.2' y2='4.8'/%3E%3C/g%3E%3C/svg%3E");
+
+    display: inline-block;
+    width: clamp(13px, 1.9vw, 24px);
+    aspect-ratio: 1;
+    flex: 0 0 auto;
+
+    background-color: #000;
+    -webkit-mask: var(--sun-icon) center / contain no-repeat;
+    mask: var(--sun-icon) center / contain no-repeat;
+
+    opacity: 0.75;
+}
+/* ==========================================================================
+   SCROLL ANIMATIONS - acts fly in as they scroll into view (js/main.js adds .is-visible)
+   ========================================================================== */
+.has-scroll-anim .act {
+    opacity: 0;
+    transform-origin: center bottom;
+    will-change: transform, opacity;
+    transform: perspective(1100px) translate3d(-90px, 120px, 0) rotateX(52deg) rotate(-14deg) scale(0.55);
+    filter: blur(8px);
+    transition:
+        opacity 0.45s ease,
+        transform 1s cubic-bezier(0.16, 1.42, 0.3, 1),
+        filter 0.55s ease;
+}
+
+.has-scroll-anim .act:nth-of-type(even) {
+    transform: perspective(1100px) translate3d(90px, 120px, 0) rotateX(52deg) rotate(14deg) scale(0.55);
+}
+
+/*  Landed - flat. Tilting a tall act would push copy off a narrow screen,
+    so only the cut-out keeps the crooked look.                         */
+.has-scroll-anim .act.is-visible,
+.has-scroll-anim .act:nth-of-type(even).is-visible {
+    opacity: 1;
+    will-change: auto; /* release the GPU hint once it has landed */
+    transform: perspective(1100px) translate3d(0, 0, 0) rotateX(0deg) rotate(0deg) scale(1);
+    filter: blur(0);
+}
+
+/* The cut-out is stuck down a beat after the name, with its own kick */
+.has-scroll-anim .artist-photo {
+    opacity: 0;
+    transform: translateY(60px) rotate(-11deg) scale(0.72);
+    transition:
+        opacity 0.5s ease 0.22s,
+        transform 0.9s cubic-bezier(0.16, 1.55, 0.3, 1) 0.22s;
+}
+
+.has-scroll-anim .act:nth-of-type(even) .artist-photo {
+    transform: translateY(60px) rotate(11deg) scale(0.72);
+}
+
+/* The cut-out keeps the pasted-crooked look (small, so the tilt is safe). */
+.has-scroll-anim .act.is-visible .artist-photo {
+    opacity: 1;
+    transform: translateY(0) rotate(-2.5deg) scale(1);
+}
+
+.has-scroll-anim .act:nth-of-type(even).is-visible .artist-photo {
+    transform: translateY(0) rotate(2.5deg) scale(1);
+}
+
+/* Dividers sweep open between the acts */
+.has-scroll-anim .act-wave {
+    opacity: 0;
+    transform: scaleX(0.15);
+    transform-origin: center;
+    transition:
+        opacity 0.5s ease,
+        transform 0.8s cubic-bezier(0.16, 1.3, 0.3, 1);
+}
+
+.has-scroll-anim .act-wave.is-visible {
+    opacity: 1;
+    transform: scaleX(1);
+}
+/* ==========================================================================
+   TICKET BAR - sticky buy-tickets strip under the hero
+   ========================================================================== */
+.ticket-bar {
+    position: sticky;
+    top: 0;
+    z-index: 90;
+
+    background: rgba(10, 10, 10, 0.96);
+    border-top: 1px solid #2a1600;
+    border-bottom: 1px solid #2a1600;
+    backdrop-filter: blur(6px);
+
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 14px 28px;
+
+    padding: 14px 6%;
+
+    transition:
+        opacity 0.3s ease,
+        transform 0.35s ease,
+        visibility 0.35s;
+}
+
+/* Hidden by js/main.js once the checkout section is on screen, since the
+   real ticket form is right there. */
+.ticket-bar.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-100%);
+    pointer-events: none;
+}
+
+.ticket-bar p {
+    font-family: var(--sg-font-accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    color: var(--sg-muted);
+    margin: 0;
+}
+
+.ticket-bar .btn {
+    padding: 12px 30px;
+    min-height: 46px;
+}
+/* ==========================================================================
+   WEEKEND - accommodation and things-to-do cards
+   ========================================================================== */
+.weekend-section {
+    background: radial-gradient(120% 90% at 50% 0%, #1b1005 0%, #0a0a0a 62%);
+}
+
+.weekend-eyebrow {
+    font-family: var(--sg-font-accent);
+    font-size: 0.78rem;
+    font-weight: bold;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--sg-gold);
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.weekend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 26px;
+    max-width: var(--sg-max-width);
+    margin: auto;
+}
+
+/* The whole card is the link */
+.weekend-card {
+    position: relative;
+    display: block;
+    min-height: 420px;
+    border-radius: 20px;
+    overflow: hidden;
+    text-decoration: none;
+    border: 1px solid var(--sg-border);
+    transition:
+        transform 0.3s,
+        border-color 0.3s;
+}
+
+.weekend-card:hover,
+.weekend-card:focus-visible {
+    transform: translateY(-6px);
+    border-color: #4a2a06;
+}
+
+.weekend-card img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s ease;
+}
+
+.weekend-card:hover img {
+    transform: scale(1.06);
+}
+
+/* Scrim so the copy stays readable over the photo */
+.weekend-card-body {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    min-height: 420px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 10px;
+
+    padding: 32px 30px 30px;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.72) 68%, rgba(0, 0, 0, 0.92) 100%);
+}
+
+.weekend-card-body h3 {
+    font-family: var(--sg-font-display);
+    font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+.weekend-card-body p {
+    color: var(--sg-muted);
+    max-width: 44ch;
+}
+
+.weekend-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+
+    font-family: var(--sg-font-accent);
+    font-size: 0.85rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--sg-orange-bright);
+    margin-top: 6px;
+}
+
+.weekend-cta::after {
+    content: '\2192'; /* arrow */
+    transition: transform 0.25s;
+}
+
+.weekend-card:hover .weekend-cta::after {
+    transform: translateX(5px);
+}
+
+/* Practical travel note for people coming in from out of town */
+.weekend-note {
+    max-width: 640px;
+    margin: 32px auto 0;
+    text-align: center;
+    color: var(--sg-dim);
+    font-size: 0.92rem;
+}
+/* ==========================================================================
+   PHONE
+   ========================================================================== */
+@media (max-width: 768px) {
+    .event-hero {
+        min-height: auto;
+    }
+
+    .event-hero-content {
+        padding: calc(var(--sg-nav-height, 84px) + 10px) 20px 3.5vh;
+    }
+
+    /* Height-driven (never width) so the square logo keeps its shape */
+    .event-logo {
+        height: clamp(150px, 38vh, 340px);
+        width: auto;
+        margin-bottom: 2vh;
+    }
+
+    .poster-tagline {
+        letter-spacing: 0.26em;
+        text-indent: 0.26em;
+        margin-bottom: 1vh;
+    }
+
+    .lineup-wall {
+        margin: 2.4vh auto 0;
+    }
+
+    .event-headline-date {
+        margin: 2.4vh 0 0.7vh;
+    }
+
+    .lw-line {
+        gap: 0.08em 0.45em;
+        margin-bottom: 0.2em;
+    }
+
+    .event-hero .event-location {
+        padding: 11px 22px;
+        margin-top: 12px;
+    }
+
+    .event-hero .poster-tagline {
+        margin-bottom: 4px;
+    }
+
+    .event-headline-date {
+        margin: 8px 0 2px;
+    }
+
+    .event-hero .event-location {
+        margin-bottom: 16px;
+    }
+
+    /* Two-up instead of one long column */
+    .event-flow .detail-card {
+        flex: 1 1 40%;
+        padding: 18px 12px;
+        border-bottom: 2px solid rgba(0, 0, 0, 0.28);
+    }
+
+    .event-flow .detail-card:nth-child(2n) {
+        border-right: none;
+    }
+
+    .event-flow .detail-card:nth-last-child(-n + 2) {
+        border-bottom: none;
+    }
+
+    .event-date {
+        margin: 10px 0 22px;
+    }
+
+    .act {
+        padding: 32px 0;
+    }
+
+    /* Gentler entry on a narrow screen. The acts are tall, so a big
+       rotation swings them a long way sideways on the way in. */
+    .has-scroll-anim .act {
+        transform: perspective(1100px) translate3d(-26px, 70px, 0) rotateX(34deg) rotate(-5deg) scale(0.82);
+        filter: blur(5px);
+    }
+
+    .has-scroll-anim .act:nth-of-type(even) {
+        transform: perspective(1100px) translate3d(26px, 70px, 0) rotateX(34deg) rotate(5deg) scale(0.82);
+    }
+
+    /* Not enough width for a photo beside a long name, so stack them.
+       The left/right alternation is kept so the zig-zag still reads. */
+    .act:has(.artist-photo),
+    .act:nth-of-type(even):has(.artist-photo) {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        gap: 10px;
+    }
+
+    .act:has(.artist-photo) .artist-photo,
+    .act:nth-of-type(even):has(.artist-photo) .artist-photo {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .act:has(.artist-photo) h3,
+    .act:nth-of-type(even):has(.artist-photo) h3 {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    .act:has(.artist-photo) p,
+    .act:nth-of-type(even):has(.artist-photo) p {
+        grid-column: 1;
+        grid-row: 3;
+    }
+
+    /* Smaller so the longest name ("Brothas Entertainment") still fits */
+    .act h3 {
+        font-size: clamp(1.7rem, 7.5vw, 3rem);
+        letter-spacing: -1px;
+    }
+
+    .artist-photo {
+        height: clamp(180px, 42vw, 230px);
+        max-width: 80vw;
+    }
+
+    .lineup {
+        padding: 60px 6%;
+    }
+
+    .ticket-bar {
+        flex-direction: column;
+        gap: 10px;
+        padding: 14px 20px;
+    }
+
+    .ticket-bar .btn {
+        width: 100%;
+        max-width: 320px;
+    }
+}
+
+@media (max-width: 400px) {
+    .lineup {
+        padding: 50px 5%;
+    }
+}

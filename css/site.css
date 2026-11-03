@@ -1,0 +1,1009 @@
+/* ==========================================================================
+   SITE - shared by every public page. Page files load on top of this.
+   (The admin does not use it - see admin.css.)
+
+   TOKENS      colours, fonts, widths
+   BASE        reset and plain elements
+   LAYOUT      sections, page headers, feature grid
+   BUTTONS     .btn and friends
+   NAV         the top menu (components/navbar.html)
+   FOOTER      components/footer.html
+   HOME        hero video and the next-event panel (index only)
+   CONTACT     the contact page
+   PHONE       everything below 900px / 768px - keep last
+   ========================================================================== */
+
+/* ==========================================================================
+   TOKENS
+   ========================================================================== */
+:root {
+    --sg-orange: #ff6b00;
+    --sg-orange-bright: #ff8c00;
+    --sg-gold: #ffb700;
+
+    /* Sunset tones from the poster artwork */
+    --sg-sun-top: #f7a83f;
+    --sg-sun-mid: #f0862b;
+    --sg-sun-deep: #e2661a;
+    --sg-sand: #ffd9a0;
+
+    --sg-black: #000;
+    --sg-panel: #111;
+    --sg-panel-light: #161616;
+    --sg-border: #222;
+
+    --sg-text: #fff;
+    --sg-muted: #d0d0d0;
+    --sg-dim: #aaa;
+
+    --sg-font: Arial, Helvetica, sans-serif;
+    --sg-font-display: 'Arial Black', 'Arial Bold', 'Helvetica Neue', Impact, sans-serif;
+    --sg-font-accent: 'Courier New', Courier, monospace;
+    --sg-font-script: 'Brush Script MT', 'Segoe Script', 'Pacifico', cursive;
+
+    /* Paper grain, drawn in CSS (no image to load) */
+    --sg-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+
+    --sg-max-width: 1200px;
+}
+
+/* ==========================================================================
+   BASE
+   ========================================================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background: var(--sg-black);
+    color: var(--sg-text);
+    font-family: var(--sg-font);
+    line-height: 1.6;
+    overflow-x: hidden; /* nothing can scroll sideways */
+}
+
+img,
+video {
+    max-width: 100%;
+}
+
+a {
+    color: var(--sg-orange);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+    line-height: 1.15;
+}
+
+/* Headings use the heavy poster face */
+h1,
+h2,
+.featured-event h2 {
+    font-family: var(--sg-font-display);
+    letter-spacing: -0.5px;
+}
+
+/* Long words and URLs wrap instead of widening the page */
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+li,
+a {
+    overflow-wrap: break-word;
+}
+
+/* Keyboard focus ring */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 3px solid var(--sg-gold);
+    outline-offset: 3px;
+}
+
+/* ==========================================================================
+   LAYOUT
+   ========================================================================== */
+.section {
+    padding: 80px 6%;
+}
+
+.section h2 {
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: clamp(1.9rem, 5vw, 2.8rem);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.section-intro {
+    max-width: 720px;
+    margin: 0 auto 50px;
+    text-align: center;
+    color: var(--sg-muted);
+}
+
+.dark {
+    background: var(--sg-panel);
+}
+
+/* Page header - the dark band at the top of contact, hire and terms */
+.page-header {
+    position: relative;
+    min-height: 52vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background: linear-gradient(140deg, #1a0d00 0%, #000 55%, #150a00 100%);
+}
+
+.header-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+}
+
+.header-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 110px 6% 60px;
+    max-width: 820px;
+}
+
+.header-content h1 {
+    font-size: clamp(2.2rem, 6vw, 4rem);
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.header-content p {
+    color: var(--sg-muted);
+    font-size: 1.05rem;
+}
+
+.header-content .buttons {
+    margin-top: 28px;
+}
+
+/* Feature grid - short text blocks side by side */
+.features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 30px;
+}
+
+.feature {
+    text-align: center;
+}
+
+.feature h3 {
+    color: var(--sg-orange);
+    margin-bottom: 10px;
+}
+
+.feature p {
+    color: var(--sg-muted);
+}
+
+/* ==========================================================================
+   BUTTONS
+   ========================================================================== */
+.btn {
+    display: inline-block;
+    background: var(--sg-orange);
+    color: #fff;
+    padding: 16px 36px;
+    border-radius: 50px;
+    border: 2px solid var(--sg-orange);
+    font-family: var(--sg-font-accent);
+    font-weight: bold;
+    font-size: 1rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-decoration: none;
+    text-align: center;
+    min-height: 52px; /* easy tap target */
+    cursor: pointer;
+    transition:
+        transform 0.25s,
+        background 0.25s;
+}
+
+.btn:hover,
+.btn:focus-visible {
+    transform: translateY(-3px);
+}
+
+/* Outline version */
+.btn-outline {
+    background: transparent;
+    color: #fff;
+    border: 2px solid var(--sg-orange);
+}
+
+.btn-outline:hover,
+.btn-outline:focus-visible {
+    background: var(--sg-orange);
+}
+
+/* Loud version for ticket links */
+.btn-ticket {
+    background: var(--sg-orange-bright);
+    border-color: var(--sg-orange-bright);
+    font-size: 1.15rem;
+    padding: 18px 46px;
+    box-shadow: 0 0 24px rgba(255, 140, 0, 0.45);
+}
+
+/* A row of buttons */
+.buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 18px;
+}
+
+/* ==========================================================================
+   NAV - sits over the top of the page. Items live in components/navbar.html.
+   ========================================================================== */
+nav {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 40px;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0));
+}
+
+.nav-logo a {
+    display: block;
+    padding: 0;
+    border-bottom: none;
+}
+
+.nav-logo img {
+    height: 45px;
+    width: auto;
+    display: block;
+}
+
+nav ul {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    list-style: none;
+}
+
+nav a {
+    display: inline-block;
+    padding: 10px 2px;
+    color: #fff;
+    font-size: 0.95rem;
+    letter-spacing: 1px;
+    text-decoration: none;
+    text-transform: uppercase;
+    border-bottom: 2px solid transparent;
+    transition:
+        color 0.25s,
+        border-color 0.25s;
+}
+
+nav a:hover {
+    color: var(--sg-gold);
+}
+
+/* Current page (js/main.js sets .active) */
+nav a.active {
+    color: var(--sg-orange);
+    border-bottom-color: var(--sg-orange);
+    font-weight: bold;
+}
+
+/* Dropdowns */
+nav .has-sub {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+nav .sub-toggle {
+    background: none;
+    border: 0;
+    padding: 10px 2px;
+    color: #fff;
+    font-size: 0.7rem;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+        color 0.25s,
+        transform 0.25s;
+}
+
+nav .sub-toggle:hover {
+    color: var(--sg-gold);
+}
+
+nav .has-sub.is-open .sub-toggle span {
+    display: inline-block;
+    transform: rotate(180deg);
+}
+
+nav .subnav {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 110;
+    display: block;
+    min-width: 210px;
+    padding: 8px;
+    margin: 0;
+    background: rgba(12, 12, 12, 0.97);
+    border: 1px solid var(--sg-border);
+    border-radius: 12px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+    /* Kept in the page so it can fade and stays reachable by keyboard */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition:
+        opacity 0.18s,
+        transform 0.18s,
+        visibility 0.18s;
+}
+
+nav .has-sub:hover .subnav,
+nav .has-sub:focus-within .subnav,
+nav .has-sub.is-open .subnav {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+nav .subnav li {
+    display: block;
+}
+
+nav .subnav a {
+    display: block;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border-bottom: 0;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+nav .subnav a:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--sg-gold);
+}
+
+/* Parent lights up when the current page is under it */
+nav .has-sub.has-active > a {
+    color: var(--sg-orange);
+    border-bottom-color: var(--sg-orange);
+    font-weight: bold;
+}
+
+/* The one coloured item: Contact */
+nav a.nav-cta {
+    background: var(--sg-orange);
+    border: 2px solid var(--sg-orange);
+    border-radius: 50px;
+    padding: 10px 22px;
+    font-weight: bold;
+}
+
+nav a.nav-cta:hover {
+    background: transparent;
+    color: #fff;
+}
+
+nav a.nav-cta.active {
+    border-bottom-color: var(--sg-orange);
+}
+
+/* Home page: menu hides over the hero, slides in as a fixed bar further down
+   (js/main.js toggles .is-tucked) */
+.home nav {
+    position: fixed;
+    background: rgba(10, 10, 10, 0.94);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--sg-border);
+    transition:
+        opacity 0.35s ease,
+        transform 0.4s ease,
+        visibility 0.4s;
+}
+
+.home nav.is-tucked {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-105%);
+    pointer-events: none;
+}
+
+/* Burger button - only shows on a phone (see PHONE) */
+.nav-burger {
+    display: none;
+}
+
+/* ==========================================================================
+   FOOTER - components/footer.html
+   ========================================================================== */
+.footer {
+    background: #0a0a0a;
+    border-top: 1px solid var(--sg-border);
+}
+
+.footer-content {
+    max-width: var(--sg-max-width);
+    margin: auto;
+    padding: 60px 6%;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 50px;
+}
+
+.footer-logo h2 {
+    color: var(--sg-orange);
+    margin-bottom: 15px;
+    letter-spacing: 2px;
+}
+
+.footer-logo p {
+    color: var(--sg-dim);
+}
+
+.footer-links,
+.footer-contact {
+    display: flex;
+    flex-direction: column;
+    font-style: normal; /* <address> is italic by default */
+}
+
+.footer-links h3,
+.footer-contact h3 {
+    margin-bottom: 18px;
+    font-size: 1.05rem;
+}
+
+.footer-links a {
+    color: var(--sg-dim);
+    text-decoration: none;
+    padding: 9px 0; /* 44px tap target */
+    transition: color 0.25s;
+}
+
+.footer-links a:hover {
+    color: var(--sg-orange);
+}
+
+.footer-contact p {
+    color: var(--sg-dim);
+    margin-bottom: 10px;
+}
+
+.footer-contact a {
+    display: inline-block;
+    padding: 9px 0;
+    color: var(--sg-dim);
+    text-decoration: none;
+}
+
+.footer-contact a:hover {
+    color: var(--sg-orange);
+}
+
+.footer-bottom {
+    border-top: 1px solid var(--sg-border);
+    text-align: center;
+    padding: 20px;
+}
+
+.footer-bottom p {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* ==========================================================================
+   HOME - index.html only
+   ========================================================================== */
+
+/* Hero: full-screen video, dark overlay, logo and buttons */
+.hero {
+    position: relative;
+    min-height: 100vh;
+    min-height: 100svh;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+}
+
+.hero .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 120px 20px 60px;
+    width: 100%;
+    max-width: 900px;
+    min-width: 0;
+}
+
+.hero-logo {
+    width: min(340px, 70%);
+    height: auto;
+    margin-bottom: 24px;
+}
+
+.hero-content h1 {
+    font-size: clamp(2.6rem, 8vw, 5rem);
+    margin-bottom: 20px;
+    line-height: 1;
+}
+
+/* Next event panel */
+.featured-event {
+    position: relative;
+    overflow: hidden;
+    background-color: #000;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.74), rgba(0, 0, 0, 0.86)), url('../images/services/trailer-stage.webp');
+    background-size: cover;
+    background-position: center;
+    border: 1px solid #3a2000;
+    border-radius: 18px;
+    max-width: var(--sg-max-width);
+    margin: auto;
+    padding: 50px 40px;
+    text-align: center;
+}
+
+.featured-event .eyebrow {
+    font-family: var(--sg-font-accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--sg-gold);
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+}
+
+.featured-event h2 {
+    font-size: clamp(2.2rem, 7vw, 4.2rem);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* Edition line under the event name */
+.featured-event .event-subtitle {
+    font-family: var(--sg-font-display);
+    font-size: clamp(1.1rem, 3.2vw, 1.8rem);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--sg-orange);
+    margin-bottom: 24px;
+}
+
+.event-facts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px 40px;
+    list-style: none;
+    margin-bottom: 32px;
+}
+
+.event-facts li {
+    font-family: var(--sg-font-accent);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--sg-muted);
+    font-size: 0.95rem;
+}
+
+.event-facts li strong {
+    display: block;
+    color: #fff;
+    font-size: 1.1rem;
+}
+
+/* With a poster: poster left, words right */
+.featured-event.has-poster {
+    display: grid;
+    grid-template-columns: minmax(0, 340px) 1fr;
+    gap: 40px;
+    align-items: center;
+    text-align: center;
+}
+
+.fe-poster {
+    display: block;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+    transform: rotate(-2deg);
+    transition: transform 0.2s;
+}
+
+.fe-poster:hover {
+    transform: rotate(0deg) scale(1.02);
+}
+
+.fe-poster img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* ==========================================================================
+   CONTACT - contact.html: details left, form right
+   ========================================================================== */
+.contact-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    max-width: var(--sg-max-width);
+    margin: auto;
+}
+
+.contact-info h2 {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.contact-info p {
+    color: var(--sg-muted);
+}
+
+.contact-item {
+    margin-top: 28px;
+}
+
+.contact-item h3 {
+    color: var(--sg-orange);
+    margin-bottom: 8px;
+    font-size: 1rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.contact-item a {
+    color: #fff;
+    text-decoration: none;
+}
+
+.contact-item a:hover {
+    color: var(--sg-orange);
+}
+
+.contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.contact-form input,
+.contact-form select,
+.contact-form textarea {
+    padding: 15px;
+    border-radius: 8px;
+    background: var(--sg-panel);
+    color: #fff;
+    border: 1px solid var(--sg-border);
+    font-family: var(--sg-font);
+    font-size: 1rem;
+    width: 100%;
+}
+
+.contact-form textarea {
+    resize: vertical;
+}
+
+.contact-form .btn {
+    border: none;
+    width: 100%;
+}
+
+/* ==========================================================================
+   PHONE - keep last, these override everything above
+   ========================================================================== */
+
+/* Tablet and down */
+@media (max-width: 900px) {
+    .contact-wrapper {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+
+    .footer-content {
+        grid-template-columns: 1fr 1fr;
+        gap: 36px;
+    }
+}
+
+/* Featured poster stacks on top */
+@media (max-width: 860px) {
+    .featured-event.has-poster {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 28px;
+    }
+
+    .fe-poster {
+        max-width: 300px;
+        margin: 0 auto;
+    }
+}
+
+/* Phone */
+@media (max-width: 768px) {
+    nav {
+        padding: 12px 16px;
+        gap: 12px;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));
+        border-bottom: none;
+    }
+
+    .nav-logo img {
+        height: 28px;
+    }
+
+    .hero {
+        min-height: auto;
+    }
+
+    /* Top padding clears the menu (js/main.js measures --sg-nav-height) */
+    .hero-content {
+        padding: calc(var(--sg-nav-height, 120px) + 20px) 20px 60px;
+    }
+
+    .hero-logo {
+        width: min(210px, 58%);
+        margin-bottom: 18px;
+    }
+
+    .header-content {
+        padding: calc(var(--sg-nav-height, 118px) + 18px) 20px 50px;
+    }
+
+    .page-header {
+        min-height: auto;
+    }
+
+    .section {
+        padding: 60px 6%;
+    }
+
+    .btn {
+        width: 100%;
+        max-width: 320px;
+    }
+
+    .buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .featured-event {
+        padding: 36px 22px;
+    }
+
+    .event-facts {
+        gap: 16px 26px;
+    }
+
+    .contact-info h2 {
+        text-align: center;
+    }
+
+    .footer-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+        padding: 50px 8%;
+    }
+
+    .footer-links,
+    .footer-contact {
+        align-items: center;
+    }
+
+    /* Sponsor logos on the event page */
+    .sponsors img {
+        height: 48px;
+        max-width: 140px;
+    }
+}
+
+@media (max-width: 400px) {
+    .section {
+        padding: 50px 5%;
+    }
+}
+
+/* The menu on a phone - a burger button and a drop-down panel */
+@media (max-width: 900px) {
+    /* The menu becomes a burger button and a drop-down panel */
+    .nav-burger {
+        display: grid;
+        gap: 5px;
+        flex: 0 0 auto;
+        width: 44px;
+        height: 44px;
+        padding: 10px;
+        place-content: center;
+        border: 0;
+        border-radius: 10px;
+        background: none;
+        cursor: pointer;
+    }
+
+    .nav-burger span {
+        display: block;
+        width: 22px;
+        height: 2px;
+        border-radius: 2px;
+        background: #fff;
+        transition:
+            transform 0.2s ease,
+            opacity 0.2s ease;
+    }
+
+    /* Burger turns into a cross while open */
+    nav.is-open .nav-burger span:nth-child(1) {
+        transform: translateY(7px) rotate(45deg);
+    }
+    nav.is-open .nav-burger span:nth-child(2) {
+        opacity: 0;
+    }
+    nav.is-open .nav-burger span:nth-child(3) {
+        transform: translateY(-7px) rotate(-45deg);
+    }
+
+    /* The panel hangs under the bar so the bar height never changes */
+    nav ul {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        display: none;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        margin: 0;
+        padding: 8px 16px 18px;
+        background: #0b0b0b;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    nav.is-open ul {
+        display: flex;
+    }
+
+    nav ul li {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    nav ul li:last-child {
+        border-bottom: 0;
+    }
+
+    nav a {
+        display: block;
+        padding: 15px 4px;
+        font-size: 1rem;
+        letter-spacing: 0.02em;
+        text-align: left;
+    }
+
+    nav .nav-long {
+        display: inline;
+    }
+
+    /* Sub-items shown indented, always open */
+    nav .has-sub {
+        display: block;
+    }
+
+    nav .sub-toggle {
+        display: none;
+    }
+
+    nav .subnav {
+        position: static;
+        display: block;
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        min-width: 0;
+        margin: 0 0 6px;
+        padding: 0;
+        border: 0;
+        background: none;
+        box-shadow: none;
+    }
+
+    nav .subnav li {
+        border-bottom: 0;
+    }
+
+    nav .subnav a {
+        padding: 11px 4px 11px 18px;
+        font-size: 0.92rem;
+        color: rgba(255, 255, 255, 0.72);
+        border-left: 2px solid rgba(255, 255, 255, 0.14);
+    }
+
+    nav .subnav a:hover,
+    nav .subnav a.active {
+        color: #fff;
+        border-left-color: var(--sg-orange);
+    }
+
+    nav .nav-cta-item {
+        margin-top: 12px;
+        border-bottom: 0;
+    }
+
+    nav a.nav-cta {
+        display: block;
+        padding: 14px 20px;
+        text-align: center;
+    }
+
+    .nav-logo img {
+        height: 34px;
+    }
+}
+
+/* Less motion for people who asked for it */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    .btn:hover,
+    .sponsors a:hover img {
+        transform: none;
+    }
+}
