@@ -19,12 +19,10 @@
         nobody can write them). Same key as js/firebase-config.js.        */
     var PROJECT = 'soundzgood-8c86f';
     var WEB_KEY = 'AIzaSyCVWdD7fE24MuN-v5XQLObJbSHYRUbPlPY';
-    var REST = 'https://firestore.googleapis.com/v1/projects/' + PROJECT +
-               '/databases/(default)/documents/';
+    var REST = 'https://firestore.googleapis.com/v1/projects/' + PROJECT + '/databases/(default)/documents/';
 
     var DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     function midnight(d) {
         return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -50,12 +48,12 @@
        ---------------------------------------------------------------------- */
     function weekendRange(from) {
         var now = from ? midnight(from) : today();
-        var dow = now.getDay();              /* 0 Sunday ... 6 Saturday */
+        var dow = now.getDay(); /* 0 Sunday ... 6 Saturday */
         var start = new Date(now);
 
-        if (dow === 0) start.setDate(start.getDate() - 2);        /* Sunday */
-        else if (dow === 6) start.setDate(start.getDate() - 1);   /* Saturday */
-        else start.setDate(start.getDate() + (5 - dow));          /* the Friday ahead */
+        if (dow === 0) start.setDate(start.getDate() - 2); /* Sunday */
+        else if (dow === 6) start.setDate(start.getDate() - 1); /* Saturday */
+        else start.setDate(start.getDate() + (5 - dow)); /* the Friday ahead */
 
         var end = new Date(start);
         end.setDate(end.getDate() + 2);
@@ -79,11 +77,16 @@
         var out = {};
         Object.keys(fields || {}).forEach(function (k) {
             var v = fields[k];
-            out[k] = v.stringValue !== undefined ? v.stringValue
-                   : v.integerValue !== undefined ? parseInt(v.integerValue, 10)
-                   : v.timestampValue !== undefined ? v.timestampValue
-                   : v.booleanValue !== undefined ? v.booleanValue
-                   : '';
+            out[k] =
+                v.stringValue !== undefined
+                    ? v.stringValue
+                    : v.integerValue !== undefined
+                      ? parseInt(v.integerValue, 10)
+                      : v.timestampValue !== undefined
+                        ? v.timestampValue
+                        : v.booleanValue !== undefined
+                          ? v.booleanValue
+                          : '';
         });
         return out;
     }
@@ -95,28 +98,29 @@
                 return r.json();
             })
             .then(function (body) {
-                return (body.documents || []).map(function (doc) {
-                    var d = plain(doc.fields);
+                return (body.documents || [])
+                    .map(function (doc) {
+                        var d = plain(doc.fields);
 
-                    return {
-                        name: d.name,
-                        day: d.start ? parseDay(d.start) : null,
-                        time: d.time,
-                        venue: d.venue + (d.suburb && d.venue.indexOf(d.suburb) < 0
-                                            ? ', ' + d.suburb : ''),
-                        area: d.area,
-                        img: d.image,
-                        url: d.url,
-                        source: d.source,
-                        tags: [],
-                        cats: []
-                    };
-                }).sort(function (a, b) {
-                    if (!a.day && !b.day) return 0;
-                    if (!a.day) return 1;
-                    if (!b.day) return -1;
-                    return a.day - b.day;
-                });
+                        return {
+                            name: d.name,
+                            day: d.start ? parseDay(d.start) : null,
+                            time: d.time,
+                            venue: d.venue + (d.suburb && d.venue.indexOf(d.suburb) < 0 ? ', ' + d.suburb : ''),
+                            area: d.area,
+                            img: d.image,
+                            url: d.url,
+                            source: d.source,
+                            tags: [],
+                            cats: []
+                        };
+                    })
+                    .sort(function (a, b) {
+                        if (!a.day && !b.day) return 0;
+                        if (!a.day) return 1;
+                        if (!b.day) return -1;
+                        return a.day - b.day;
+                    });
             });
     }
 
@@ -142,29 +146,39 @@
 
     function loadStatus() {
         return fetch(REST + 'gigGuide/status?key=' + WEB_KEY)
-            .then(function (r) { return r.ok ? r.json() : null; })
-            .then(function (body) { return body ? plain(body.fields) : null; });
+            .then(function (r) {
+                return r.ok ? r.json() : null;
+            })
+            .then(function (body) {
+                return body ? plain(body.fields) : null;
+            });
     }
 
     /* ----------------------------------------------------------------------
        DRAWING ONE
        ---------------------------------------------------------------------- */
     function esc(s) {
-        return String(s)
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     function chip(ev) {
         if (!ev.day) {
-            return '<span class="gg-chip is-tba"><b>' +
-                   esc(ev.dateText || 'TBA') + '</b></span>';
+            return '<span class="gg-chip is-tba"><b>' + esc(ev.dateText || 'TBA') + '</b></span>';
         }
 
-        return '<span class="gg-chip">' +
-               '<i>' + DAYS[ev.day.getDay()].toUpperCase() + '</i>' +
-               '<b>' + ev.day.getDate() + '</b>' +
-               '<i>' + MONTHS[ev.day.getMonth()].toUpperCase() + '</i>' +
-               '</span>';
+        return (
+            '<span class="gg-chip">' +
+            '<i>' +
+            DAYS[ev.day.getDay()].toUpperCase() +
+            '</i>' +
+            '<b>' +
+            ev.day.getDate() +
+            '</b>' +
+            '<i>' +
+            MONTHS[ev.day.getMonth()].toUpperCase() +
+            '</i>' +
+            '</span>'
+        );
     }
 
     function card(ev) {
@@ -172,28 +186,39 @@
         if (!/^(https?:\/\/|\/)[^\s'"()<>\\]*$/.test(img)) img = '';
         var art = img ? ' style="--gg-art:url(\'' + esc(img) + '\')"' : '';
 
-        return '' +
-            '<article class="gg-card"' + art + '>' +
-              '<div class="gg-card-art" aria-hidden="true"></div>' +
-              chip(ev) +
-              '<div class="gg-card-body">' +
-                '<h3>' + esc(ev.name) + '</h3>' +
-                (ev.venue ? '<p class="gg-where">' + esc(ev.venue) + '</p>' : '') +
-                (ev.time ? '<p class="gg-when">' + esc(ev.time) + '</p>' : '') +
-                (ev.tags && ev.tags.length
-                    ? '<ul class="gg-tags">' +
-                      ev.tags.map(function (t) {
+        return (
+            '' +
+            '<article class="gg-card"' +
+            art +
+            '>' +
+            '<div class="gg-card-art" aria-hidden="true"></div>' +
+            chip(ev) +
+            '<div class="gg-card-body">' +
+            '<h3>' +
+            esc(ev.name) +
+            '</h3>' +
+            (ev.venue ? '<p class="gg-where">' + esc(ev.venue) + '</p>' : '') +
+            (ev.time ? '<p class="gg-when">' + esc(ev.time) + '</p>' : '') +
+            (ev.tags && ev.tags.length
+                ? '<ul class="gg-tags">' +
+                  ev.tags
+                      .map(function (t) {
                           return '<li>' + esc(t) + '</li>';
-                      }).join('') + '</ul>'
-                    : '') +
-                (ev.url && /^https?:\/\//i.test(ev.url)
-                    ? '<a class="gg-via" href="' + esc(ev.url) + '"' +
-                      ' target="_blank" rel="noopener nofollow">' +
-                      (ev.source ? 'Details via ' + esc(ev.source) : 'Event details') +
-                      '</a>'
-                    : '') +
-              '</div>' +
-            '</article>';
+                      })
+                      .join('') +
+                  '</ul>'
+                : '') +
+            (ev.url && /^https?:\/\//i.test(ev.url)
+                ? '<a class="gg-via" href="' +
+                  esc(ev.url) +
+                  '"' +
+                  ' target="_blank" rel="noopener nofollow">' +
+                  (ev.source ? 'Details via ' + esc(ev.source) : 'Event details') +
+                  '</a>'
+                : '') +
+            '</div>' +
+            '</article>'
+        );
     }
 
     global.SGWeekend = {
@@ -209,4 +234,4 @@
         DAYS: DAYS,
         MONTHS: MONTHS
     };
-}(window));
+})(window);

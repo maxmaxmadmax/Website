@@ -37,7 +37,7 @@ async function syncGigs(db) {
     } catch (err) {
         /*  A broken cache is a slow run, not a failed one.              */
         logger.warn('gig guide cache unreadable, running cold', {
-            reason: (err && err.message) || 'unknown',
+            reason: (err && err.message) || 'unknown'
         });
         cache = {};
     }
@@ -82,8 +82,8 @@ async function syncGigs(db) {
                 url: ev.url || '',
                 image: ev.image || '',
                 source: ev.source || '',
-                updatedAt: FieldValue.serverTimestamp(),
-            },
+                updatedAt: FieldValue.serverTimestamp()
+            }
         });
     });
 
@@ -117,7 +117,7 @@ async function syncGigs(db) {
         past: report.past,
         skipped: report.skipped,
         errors: report.errors,
-        tookMs: Date.now() - started,
+        tookMs: Date.now() - started
     };
 
     await db.doc('gigGuide/status').set(status, { merge: true });
@@ -125,7 +125,7 @@ async function syncGigs(db) {
     await db.doc('gigGuide/cache').set({
         json: JSON.stringify(found.cache),
         entries: Object.keys(found.cache).length,
-        savedAt: FieldValue.serverTimestamp(),
+        savedAt: FieldValue.serverTimestamp()
     });
 
     logger.info('gig guide synced', {
@@ -134,7 +134,7 @@ async function syncGigs(db) {
         fromCache: report.cached,
         removed: status.removed,
         errors: report.errors.length,
-        tookMs: status.tookMs,
+        tookMs: status.tookMs
     });
 
     return status;

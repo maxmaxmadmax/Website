@@ -19,49 +19,51 @@ const { bodyHtml, fill } = require('./message-email');
 const logger = require('firebase-functions/logger');
 
 const SELLER = {
-  name: 'SoundzGood Whitsundays',
-  legal: process.env.SG_LEGAL_NAME || '',
-  abn: process.env.SG_ABN || '',
-  email: process.env.SG_FROM_EMAIL || 'bookings@soundzgood.com.au',
-  site: 'www.soundzgood.com.au',
+    name: 'SoundzGood Whitsundays',
+    legal: process.env.SG_LEGAL_NAME || '',
+    abn: process.env.SG_ABN || '',
+    email: process.env.SG_FROM_EMAIL || 'bookings@soundzgood.com.au',
+    site: 'www.soundzgood.com.au'
 };
 const OFFICE = process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au';
 
-const money = (c) => '$' + (Math.round(c || 0) / 100).toLocaleString('en-AU',
-  { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const money = (c) => '$' + (Math.round(c || 0) / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function esc(v) {
-  return String(v == null ? '' : v)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    return String(v == null ? '' : v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 }
 
 function transport() {
-  const user = (process.env.SMTP_USER || '').trim();
-  const pass = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
-  if (!user || !pass) return null;
-  return nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user, pass } });
+    const user = (process.env.SMTP_USER || '').trim();
+    const pass = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
+    if (!user || !pass) return null;
+    return nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user, pass } });
 }
 
 /*  The {{fields}} the invoice email can use (Messages page). */
 function invoiceValues(d) {
-  return {
-    vendor_name: d.contactName || d.businessName || 'there',
-    business_name: d.businessName || '',
-    site_number: d.siteLabel || '',
-    event_name: d.eventName || '',
-    event_date: d.eventDate || '',
-    event_venue: d.eventVenue || '',
-    total_paid: money(d.totalCents),
-    invoice_number: d.invoiceNumber || '',
-  };
+    return {
+        vendor_name: d.contactName || d.businessName || 'there',
+        business_name: d.businessName || '',
+        site_number: d.siteLabel || '',
+        event_name: d.eventName || '',
+        event_date: d.eventDate || '',
+        event_venue: d.eventVenue || '',
+        total_paid: money(d.totalCents),
+        invoice_number: d.invoiceNumber || ''
+    };
 }
 
 function html(d) {
-  const who = d.contactName || d.businessName || 'there';
-  // WORDING FROM THE MESSAGES PAGE: the approved text, then the total box and
-  // the guide button. Without it, the built-in wording below.
-  if (d.bodyTpl) return htmlFromTemplate(d);
-  return `<!doctype html>
+    const who = d.contactName || d.businessName || 'there';
+    // WORDING FROM THE MESSAGES PAGE: the approved text, then the total box and
+    // the guide button. Without it, the built-in wording below.
+    if (d.bodyTpl) return htmlFromTemplate(d);
+    return `<!doctype html>
 <html><body style="margin:0;padding:24px;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
   <div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;overflow:hidden;">
     <div style="background:#111;padding:24px;">
@@ -105,25 +107,25 @@ function html(d) {
 }
 
 function text(d) {
-  return [
-    `Thank you - you're booked in (${d.eventName || 'Eatz & Beatz'})`,
-    '',
-    `Hi ${d.contactName || d.businessName || 'there'}, thank you for being part of ${d.eventName || 'Eatz & Beatz'}.`,
-    `Total paid (incl GST): ${money(d.totalCents)}   Invoice ${d.invoiceNumber}`,
-    '',
-    `Your tax invoice, event details and vendor instructions: ${d.link}`,
-    '',
-    'HELP US PROMOTE THE EVENT - a bigger crowd means more sales for every stall. Your guide includes the event poster, the A4 program and share links. Please post them on your socials, share them with your customers and pop the poster up and help us advertise.',
-    '',
-    `${SELLER.name} - ${SELLER.email} - ${SELLER.site}`,
-  ].join('\n');
+    return [
+        `Thank you - you're booked in (${d.eventName || 'Eatz & Beatz'})`,
+        '',
+        `Hi ${d.contactName || d.businessName || 'there'}, thank you for being part of ${d.eventName || 'Eatz & Beatz'}.`,
+        `Total paid (incl GST): ${money(d.totalCents)}   Invoice ${d.invoiceNumber}`,
+        '',
+        `Your tax invoice, event details and vendor instructions: ${d.link}`,
+        '',
+        'HELP US PROMOTE THE EVENT - a bigger crowd means more sales for every stall. Your guide includes the event poster, the A4 program and share links. Please post them on your socials, share them with your customers and pop the poster up and help us advertise.',
+        '',
+        `${SELLER.name} - ${SELLER.email} - ${SELLER.site}`
+    ].join('\n');
 }
 
 /*  d: { to, link, invoiceNumber, totalCents, businessName, contactName,
          eventName, eventDate, test }                                    */
 function htmlFromTemplate(d) {
-  const values = invoiceValues(d);
-  return `<!doctype html>
+    const values = invoiceValues(d);
+    return `<!doctype html>
 <html><body style="margin:0;padding:24px;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
   <div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;overflow:hidden;">
     <div style="background:#111;padding:24px;">
@@ -157,27 +159,34 @@ function htmlFromTemplate(d) {
 }
 
 async function sendVendorInvoiceEmail(d) {
-  const tx = transport();
-  if (!tx) { logger.warn('vendor invoice email: SMTP not configured'); return { sent: false, reason: 'no-smtp' }; }
-  if (!d.to) return { sent: false, reason: 'no-address' };
+    const tx = transport();
+    if (!tx) {
+        logger.warn('vendor invoice email: SMTP not configured');
+        return { sent: false, reason: 'no-smtp' };
+    }
+    if (!d.to) return { sent: false, reason: 'no-address' };
 
-  try {
-    await tx.sendMail({
-      kind: 'vendor-invoice',
-      from: `${SELLER.name} <${SELLER.email}>`,
-      to: d.to,
-      // a copy of every email goes to the office
-      ...(d.test ? {} : { bcc: OFFICE }),
-      replyTo: OFFICE,
-      subject: (d.test ? '[TEST] ' : '') + (d.subjectTpl ? fill(d.subjectTpl, invoiceValues(d), (v) => String(v)) : `Your tax invoice & event guide - ${d.eventName || 'Eatz & Beatz'}`),
-      text: d.bodyTpl ? fill(d.bodyTpl, invoiceValues(d), (v) => String(v)) + '\n\nYour invoice & event guide: ' + d.link : text(d),
-      html: html(d),
-    });
-    return { sent: true };
-  } catch (err) {
-    logger.error('vendor invoice email failed', { to: d.to, smtpError: err && err.message });
-    return { sent: false, reason: 'smtp-error', error: err && err.message };
-  }
+    try {
+        await tx.sendMail({
+            kind: 'vendor-invoice',
+            from: `${SELLER.name} <${SELLER.email}>`,
+            to: d.to,
+            // a copy of every email goes to the office
+            ...(d.test ? {} : { bcc: OFFICE }),
+            replyTo: OFFICE,
+            subject:
+                (d.test ? '[TEST] ' : '') +
+                (d.subjectTpl
+                    ? fill(d.subjectTpl, invoiceValues(d), (v) => String(v))
+                    : `Your tax invoice & event guide - ${d.eventName || 'Eatz & Beatz'}`),
+            text: d.bodyTpl ? fill(d.bodyTpl, invoiceValues(d), (v) => String(v)) + '\n\nYour invoice & event guide: ' + d.link : text(d),
+            html: html(d)
+        });
+        return { sent: true };
+    } catch (err) {
+        logger.error('vendor invoice email failed', { to: d.to, smtpError: err && err.message });
+        return { sent: false, reason: 'smtp-error', error: err && err.message };
+    }
 }
 
 /*  For the admin Messages page preview: the exact subject + HTML a vendor gets. */

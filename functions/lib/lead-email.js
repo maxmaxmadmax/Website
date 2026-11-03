@@ -17,32 +17,32 @@ const nodemailer = require('nodemailer');
 const logger = require('firebase-functions/logger');
 
 const SELLER = {
-  name: 'SoundzGood Whitsundays',
-  email: process.env.SG_FROM_EMAIL || 'bookings@soundzgood.com.au',
-  site: 'www.soundzgood.com.au',
+    name: 'SoundzGood Whitsundays',
+    email: process.env.SG_FROM_EMAIL || 'bookings@soundzgood.com.au',
+    site: 'www.soundzgood.com.au'
 };
 const OFFICE = process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au';
 
 function esc(value) {
-  return String(value == null ? '' : value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 }
 
 function transport() {
-  const user = (process.env.SMTP_USER || '').trim();
-  const pass = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
-  if (!user || !pass) return null;
-  return nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user, pass } });
+    const user = (process.env.SMTP_USER || '').trim();
+    const pass = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
+    if (!user || !pass) return null;
+    return nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user, pass } });
 }
 
 /*  The admin's plain-text message, wrapped in the letterhead. Line breaks
     become <br> so the paragraphing they typed survives.                   */
 function leadHtml(body) {
-  const safe = esc(body).replace(/\n/g, '<br>');
-  return `<!doctype html>
+    const safe = esc(body).replace(/\n/g, '<br>');
+    return `<!doctype html>
 <html><body style="margin:0;padding:24px;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
   <div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;overflow:hidden;">
     <div style="background:#111;padding:20px 24px;">
@@ -58,28 +58,28 @@ function leadHtml(body) {
 
 /*  Send one outreach email. Returns { sent, reason?, error? }. */
 async function sendLeadEmail({ to, subject, body }) {
-  const tx = transport();
-  if (!tx) {
-    logger.warn('lead email: SMTP not configured');
-    return { sent: false, reason: 'no-smtp' };
-  }
-  if (!to) return { sent: false, reason: 'no-address' };
+    const tx = transport();
+    if (!tx) {
+        logger.warn('lead email: SMTP not configured');
+        return { sent: false, reason: 'no-smtp' };
+    }
+    if (!to) return { sent: false, reason: 'no-address' };
 
-  try {
-    await tx.sendMail({
-      kind: 'lead',
-      from: `${SELLER.name} <${SELLER.email}>`,
-      to,
-      replyTo: OFFICE,
-      subject: subject || 'SoundzGood Whitsundays',
-      text: String(body || ''),
-      html: leadHtml(body || ''),
-    });
-    return { sent: true };
-  } catch (err) {
-    logger.error('lead email failed', { to, smtpError: err && err.message, smtpCode: err && (err.code || err.responseCode) });
-    return { sent: false, reason: 'smtp-error', error: err && err.message };
-  }
+    try {
+        await tx.sendMail({
+            kind: 'lead',
+            from: `${SELLER.name} <${SELLER.email}>`,
+            to,
+            replyTo: OFFICE,
+            subject: subject || 'SoundzGood Whitsundays',
+            text: String(body || ''),
+            html: leadHtml(body || '')
+        });
+        return { sent: true };
+    } catch (err) {
+        logger.error('lead email failed', { to, smtpError: err && err.message, smtpCode: err && (err.code || err.responseCode) });
+        return { sent: false, reason: 'smtp-error', error: err && err.message };
+    }
 }
 
 module.exports = { sendLeadEmail, leadHtml };

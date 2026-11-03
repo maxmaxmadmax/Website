@@ -33,8 +33,7 @@
 
 'use strict';
 
-const USER_AGENT =
-    'SoundzGoodGigGuide/1.0 (+https://www.soundzgood.com.au; events@soundzgood.com.au)';
+const USER_AGENT = 'SoundzGoodGigGuide/1.0 (+https://www.soundzgood.com.au; events@soundzgood.com.au)';
 
 /*  Long enough for a slow page, short enough that one unresponsive site
     cannot hold the whole run open.                                      */
@@ -47,7 +46,6 @@ const CONCURRENCY = 6;
     where it is used.                                                    */
 const CACHE_VERSION = 2;
 
-
 /* --------------------------------------------------------------------------
    THE DATE
 
@@ -59,7 +57,6 @@ function todayInQueensland() {
     return new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Brisbane' });
 }
 
-
 /* --------------------------------------------------------------------------
    FETCHING
    -------------------------------------------------------------------------- */
@@ -67,7 +64,7 @@ async function fetchText(url) {
     const stop = AbortSignal.timeout(TIMEOUT_MS);
     const res = await fetch(url, {
         headers: { 'user-agent': USER_AGENT, accept: 'text/html,application/json' },
-        signal: stop,
+        signal: stop
     });
 
     if (!res.ok) {
@@ -107,7 +104,6 @@ async function pool(items, size, work) {
     return out;
 }
 
-
 /* --------------------------------------------------------------------------
    READING SCHEMA.ORG OUT OF A PAGE
 
@@ -131,9 +127,7 @@ function eventsInHtml(html) {
             continue;
         }
 
-        const nodes = Array.isArray(parsed)
-            ? parsed
-            : (Array.isArray(parsed['@graph']) ? parsed['@graph'] : [parsed]);
+        const nodes = Array.isArray(parsed) ? parsed : Array.isArray(parsed['@graph']) ? parsed['@graph'] : [parsed];
 
         nodes.forEach((node) => {
             if (!node || typeof node !== 'object') return;
@@ -151,7 +145,9 @@ function eventsInHtml(html) {
 /*  Turns a schema.org Event into our shape. Returns null for anything
     without the two things a listing cannot do without: a name and a date. */
 function normalise(node, source, url) {
-    const name = String(node.name || '').replace(/\s+/g, ' ').trim();
+    const name = String(node.name || '')
+        .replace(/\s+/g, ' ')
+        .trim();
     const startsAt = String(node.startDate || '');
     const start = startsAt.slice(0, 10);
 
@@ -177,11 +173,15 @@ function normalise(node, source, url) {
         name: name,
         start: start,
         time: time,
-        venue: String(place.name || '').replace(/\s+/g, ' ').trim(),
-        suburb: String(address.addressLocality || '').replace(/\s+/g, ' ').trim(),
+        venue: String(place.name || '')
+            .replace(/\s+/g, ' ')
+            .trim(),
+        suburb: String(address.addressLocality || '')
+            .replace(/\s+/g, ' ')
+            .trim(),
         url: /^https?:\/\//i.test(String(node.url || url || '')) ? String(node.url || url || '') : '',
         image: pictureFrom(node),
-        source: source,
+        source: source
     };
 }
 
@@ -198,7 +198,6 @@ function pictureFrom(node) {
     raw = raw.trim();
     return /^https:\/\//.test(raw) ? raw : '';
 }
-
 
 /* ==========================================================================
    SOURCE: EVENTS ON THE HORIZON
@@ -219,12 +218,12 @@ const EOTH = 'https://eventsonthehorizon.com';
 
         /wp-json/wp/v2/whats-on?slug=airlie-beach-qld                     */
 const EOTH_AREAS = [
-    { term: 100625, area: 'bowen' },          /* ~100 */
-    { term: 100110, area: 'airlie' },         /* ~430 */
-    { term: 100182, area: 'proserpine' },     /* ~190 */
-    { term: 100129, area: 'cannonvale' },     /* ~50, filed under whitsundays */
-    { term: 101537, area: 'collinsville' },   /* ~25 */
-    { term: 101498, area: 'whitsundays' },    /* Hamilton Island */
+    { term: 100625, area: 'bowen' } /* ~100 */,
+    { term: 100110, area: 'airlie' } /* ~430 */,
+    { term: 100182, area: 'proserpine' } /* ~190 */,
+    { term: 100129, area: 'cannonvale' } /* ~50, filed under whitsundays */,
+    { term: 101537, area: 'collinsville' } /* ~25 */,
+    { term: 101498, area: 'whitsundays' } /* Hamilton Island */
 ];
 
 /*  Cannonvale and Hamilton Island are their own places to the people who
@@ -236,8 +235,7 @@ async function eventsOnTheHorizon(area, report, cache, nextCache) {
     const posts = [];
 
     for (let page = 1; page <= 6; page++) {
-        const url = EOTH + '/wp-json/wp/v2/event?whats-on=' + area.term +
-                    '&per_page=100&page=' + page + '&_fields=id,link,modified';
+        const url = EOTH + '/wp-json/wp/v2/event?whats-on=' + area.term + '&per_page=100&page=' + page + '&_fields=id,link,modified';
 
         let batch;
         try {
@@ -278,9 +276,7 @@ async function eventsOnTheHorizon(area, report, cache, nextCache) {
         const html = await fetchText(post.link);
         const nodes = eventsInHtml(html);
 
-        const event = nodes.length
-            ? normalise(nodes[0], 'Events on the Horizon', post.link)
-            : null;
+        const event = nodes.length ? normalise(nodes[0], 'Events on the Horizon', post.link) : null;
 
         /*  A page with nothing usable on it is remembered as nothing
             usable, so it is not read again tomorrow for the same
@@ -304,7 +300,6 @@ async function eventsOnTheHorizon(area, report, cache, nextCache) {
     return results;
 }
 
-
 /* ==========================================================================
    THE RUN
    ========================================================================== */
@@ -319,9 +314,7 @@ async function eventsOnTheHorizon(area, report, cache, nextCache) {
      Tourism Whitsundays  no Event markup on its pages
      Whitsunday Regional  no Event markup either (its HTML could be parsed
      Council              if council events are wanted) */
-const SOURCES = [
-    { name: 'Events on the Horizon', areas: EOTH_AREAS, run: eventsOnTheHorizon },
-];
+const SOURCES = [{ name: 'Events on the Horizon', areas: EOTH_AREAS, run: eventsOnTheHorizon }];
 
 /*  A stable id for an event, so that running twice does not make two of
     everything, and so an event whose time changes updates rather than
@@ -343,8 +336,14 @@ function idFor(event) {
 async function collect(cache) {
     const today = todayInQueensland();
     const report = {
-        listed: 0, fetched: 0, cached: 0,
-        parsed: 0, future: 0, past: 0, skipped: 0, errors: [],
+        listed: 0,
+        fetched: 0,
+        cached: 0,
+        parsed: 0,
+        future: 0,
+        past: 0,
+        skipped: 0,
+        errors: []
     };
 
     const events = [];
@@ -360,18 +359,26 @@ async function collect(cache) {
             try {
                 rows = await source.run(area, report, was, now);
             } catch (err) {
-                report.errors.push(source.name + '/' + area.area + ': ' +
-                                   ((err && err.message) || 'unknown'));
+                report.errors.push(source.name + '/' + area.area + ': ' + ((err && err.message) || 'unknown'));
                 continue;
             }
 
             rows.forEach((row) => {
-                if (row.__error) { report.errors.push(row.__error); return; }
-                if (row.__skipped) { report.skipped++; return; }
+                if (row.__error) {
+                    report.errors.push(row.__error);
+                    return;
+                }
+                if (row.__skipped) {
+                    report.skipped++;
+                    return;
+                }
 
                 report.parsed++;
 
-                if (row.start < today) { report.past++; return; }
+                if (row.start < today) {
+                    report.past++;
+                    return;
+                }
 
                 const id = idFor(row);
                 if (!id || seen.has(id)) return;
@@ -402,5 +409,5 @@ module.exports = {
     /* exported for testing rather than for use */
     eventsInHtml,
     normalise,
-    idFor,
+    idFor
 };

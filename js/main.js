@@ -13,11 +13,10 @@
     see tools/bump-assets.js). Used on the menu and footer fetches so they
     don't stay cached after a deploy. Empty if there is no ?v=. */
 var SG_VERSION = (function () {
-    var el = document.currentScript ||
-             document.querySelector('script[src*="main.js"]');
+    var el = document.currentScript || document.querySelector('script[src*="main.js"]');
     var found = el && el.src.match(/[?&]v=([^&]+)/);
     return found ? found[1] : '';
-}());
+})();
 
 /*  ALWAYS THE LATEST PAGE
     GitHub Pages caches each page for ten minutes. Every page checks
@@ -36,17 +35,23 @@ var SG_VERSION = (function () {
         }
         if (!SG_VERSION || !window.fetch) return;
         fetch('/version.json?t=' + Date.now(), { cache: 'no-store' })
-            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (r) {
+                return r.ok ? r.json() : null;
+            })
             .then(function (d) {
                 if (!d || !(Number(d.v) > Number(SG_VERSION))) return;
-                if (landed === String(d.v)) return;          // already tried this version
+                if (landed === String(d.v)) return; // already tried this version
                 var p = new URLSearchParams(location.search);
                 p.set('_v', d.v);
                 location.replace(location.pathname + '?' + p + location.hash);
             })
-            .catch(function () { /* offline - keep what we have */ });
-    } catch (e) { /* very old browser - no harm done */ }
-}());
+            .catch(function () {
+                /* offline - keep what we have */
+            });
+    } catch (e) {
+        /* very old browser - no harm done */
+    }
+})();
 
 function versioned(url) {
     return SG_VERSION ? url + '?v=' + encodeURIComponent(SG_VERSION) : url;
@@ -129,7 +134,9 @@ function initBurger() {
     /* A link means they are going somewhere, so the panel has done its job. */
     var links = navEl.querySelectorAll('a');
     for (var i = 0; i < links.length; i++) {
-        links[i].addEventListener('click', function () { setOpen(false); });
+        links[i].addEventListener('click', function () {
+            setOpen(false);
+        });
     }
 
     document.addEventListener('click', function (ev) {
@@ -212,7 +219,7 @@ function initSubmenus() {
                 toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
                 closeAll(parent);
             });
-        }(parents[i]));
+        })(parents[i]);
     }
 
     /* Tapping or clicking anywhere else puts them away again. */
@@ -245,22 +252,25 @@ function initHomeNav() {
 
     navEl.classList.add('is-tucked');
 
-    var observer = new IntersectionObserver(function (entries) {
-        var entry = entries[0];
+    var observer = new IntersectionObserver(
+        function (entries) {
+            var entry = entries[0];
 
-        // showing once the section is reached, and staying shown past it
-        if (entry.isIntersecting || entry.boundingClientRect.top < 0) {
-            navEl.classList.remove('is-tucked');
-        } else {
-            navEl.classList.add('is-tucked'); // scrolled back up to the hero
-        }
-    }, {
-        /* Trimming most of the viewport off the bottom means the menu waits
+            // showing once the section is reached, and staying shown past it
+            if (entry.isIntersecting || entry.boundingClientRect.top < 0) {
+                navEl.classList.remove('is-tucked');
+            } else {
+                navEl.classList.add('is-tucked'); // scrolled back up to the hero
+            }
+        },
+        {
+            /* Trimming most of the viewport off the bottom means the menu waits
            until the section is genuinely arriving, rather than appearing
            while the hero is still filling the screen. */
-        threshold: 0,
-        rootMargin: '0px 0px -60% 0px'
-    });
+            threshold: 0,
+            rootMargin: '0px 0px -60% 0px'
+        }
+    );
 
     observer.observe(trigger);
 }
@@ -275,25 +285,27 @@ function initTicketBar() {
         return;
     }
 
-    var observer = new IntersectionObserver(function (entries) {
-        // rootMargin below trims the bottom of the viewport, so this only
-        // counts once the checkout reaches the top strip of the screen.
-        if (entries[0].isIntersecting) {
-            bar.classList.add('is-hidden');
-        } else {
-            bar.classList.remove('is-hidden');
+    var observer = new IntersectionObserver(
+        function (entries) {
+            // rootMargin below trims the bottom of the viewport, so this only
+            // counts once the checkout reaches the top strip of the screen.
+            if (entries[0].isIntersecting) {
+                bar.classList.add('is-hidden');
+            } else {
+                bar.classList.remove('is-hidden');
+            }
+        },
+        {
+            threshold: 0,
+            rootMargin: '0px 0px -80% 0px'
         }
-    }, {
-        threshold: 0,
-        rootMargin: '0px 0px -80% 0px'
-    });
+    );
 
     observer.observe(checkout);
 }
 
 function supportsScrollAnimation() {
-    return 'IntersectionObserver' in window &&
-        !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    return 'IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 /* Paste each act onto the page as it scrolls into view */
@@ -311,21 +323,24 @@ function initScrapbookAnimation() {
 
     var observerHasFired = false;
 
-    var observer = new IntersectionObserver(function (entries) {
-        observerHasFired = true;
+    var observer = new IntersectionObserver(
+        function (entries) {
+            observerHasFired = true;
 
-        for (var i = 0; i < entries.length; i++) {
-            if (entries[i].isIntersecting) {
-                entries[i].target.classList.add('is-visible');
-                observer.unobserve(entries[i].target); // only animate once
+            for (var i = 0; i < entries.length; i++) {
+                if (entries[i].isIntersecting) {
+                    entries[i].target.classList.add('is-visible');
+                    observer.unobserve(entries[i].target); // only animate once
+                }
             }
-        }
-    }, {
-        /* threshold 0: fires as soon as the top edge of an act comes into
+        },
+        {
+            /* threshold 0: fires as soon as the top edge of an act comes into
            view (the acts are tall). */
-        threshold: 0,
-        rootMargin: '0px 0px -10% 0px'
-    });
+            threshold: 0,
+            rootMargin: '0px 0px -10% 0px'
+        }
+    );
 
     for (var i = 0; i < items.length; i++) {
         observer.observe(items[i]);

@@ -17,9 +17,9 @@ const nodemailer = require('nodemailer');
 const logger = require('firebase-functions/logger');
 
 const SELLER = {
-  name: 'SoundzGood Whitsundays',
-  email: process.env.SG_FROM_EMAIL || 'bookings@soundzgood.com.au',
-  site: 'www.soundzgood.com.au',
+    name: 'SoundzGood Whitsundays',
+    email: process.env.SG_FROM_EMAIL || 'bookings@soundzgood.com.au',
+    site: 'www.soundzgood.com.au'
 };
 
 /*  Where a reply from the visitor lands, and where the "book me in" nudge
@@ -29,74 +29,76 @@ const OFFICE = process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au';
 const money = (cents) => '$' + Math.round((cents || 0) / 100).toLocaleString('en-AU');
 
 function esc(value) {
-  return String(value == null ? '' : value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 }
 
 /*  Same SMTP as the booking mail - Google Workspace, app password with the
     spaces stripped. Returns null when the secret is not set, so the caller
     can say "saved, but no email went" rather than crash.                 */
 function transport() {
-  const user = (process.env.SMTP_USER || '').trim();
-  const pass = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
-  if (!user || !pass) return null;
+    const user = (process.env.SMTP_USER || '').trim();
+    const pass = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
+    if (!user || !pass) return null;
 
-  return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: { user, pass },
-  });
+    return nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: { user, pass }
+    });
 }
 
 function summaryRows(lead) {
-  const rows = [];
-  const add = (k, v) => { if (v) rows.push([k, v]); };
+    const rows = [];
+    const add = (k, v) => {
+        if (v) rows.push([k, v]);
+    };
 
-  add('Event', lead.eventTypeLabel);
-  add('Where', lead.locationLabel);
-  add('Size', lead.sizeLabel);
-  add('Length', lead.durationLabel);
-  add('Looking for', (lead.serviceLabels || []).join(', '));
-  if (lead.eventDate) add('Your date', lead.eventDate);
-  return rows;
+    add('Event', lead.eventTypeLabel);
+    add('Where', lead.locationLabel);
+    add('Size', lead.sizeLabel);
+    add('Length', lead.durationLabel);
+    add('Looking for', (lead.serviceLabels || []).join(', '));
+    if (lead.eventDate) add('Your date', lead.eventDate);
+    return rows;
 }
 
 /*  True when we have a price guide to show. "Other"/no-match enquiries come
     through with no range - those still get a confirmation email, just without
     a number.                                                                */
 function hasRange(lead) {
-  return lead.estimateLowCents != null || lead.estimateHighCents != null;
+    return lead.estimateLowCents != null || lead.estimateHighCents != null;
 }
 
 function rangeText(lead) {
-  const lo = money(lead.estimateLowCents);
-  const hi = money(lead.estimateHighCents);
-  return lo === hi ? lo : `${lo} - ${hi}`;
+    const lo = money(lead.estimateLowCents);
+    const hi = money(lead.estimateHighCents);
+    return lo === hi ? lo : `${lo} - ${hi}`;
 }
 
 function leadHtml(lead) {
-  const rows = summaryRows(lead);
-  const row = (k, v) => `
+    const rows = summaryRows(lead);
+    const row = (k, v) => `
     <tr>
       <td style="padding:7px 0;color:#555;font-size:14px;">${esc(k)}</td>
       <td style="padding:7px 0;text-align:right;font-size:14px;color:#111;">${esc(v)}</td>
     </tr>`;
 
-  const priceBlock = hasRange(lead)
-    ? `<div style="background:#fff7ef;border:1px solid #ffd9b3;border-radius:10px;padding:18px 20px;margin:0 0 20px;text-align:center;">
+    const priceBlock = hasRange(lead)
+        ? `<div style="background:#fff7ef;border:1px solid #ffd9b3;border-radius:10px;padding:18px 20px;margin:0 0 20px;text-align:center;">
         <p style="margin:0 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#b25b00;">Estimated range</p>
         <p style="margin:0;font-size:28px;font-weight:bold;color:#111;">${esc(rangeText(lead))}</p>
         <p style="margin:8px 0 0;font-size:12px;color:#b25b00;">Price guide only</p>
       </div>`
-    : `<div style="background:#fff7ef;border:1px solid #ffd9b3;border-radius:10px;padding:18px 20px;margin:0 0 20px;text-align:center;">
+        : `<div style="background:#fff7ef;border:1px solid #ffd9b3;border-radius:10px;padding:18px 20px;margin:0 0 20px;text-align:center;">
         <p style="margin:0;font-size:15px;color:#111;">Thanks for the details - we'll price this up for you by hand.</p>
       </div>`;
 
-  return `<!doctype html>
+    return `<!doctype html>
 <html><body style="margin:0;padding:24px;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
   <div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;overflow:hidden;">
 
@@ -113,9 +115,13 @@ function leadHtml(lead) {
 
       ${priceBlock}
 
-      ${rows.length ? `<table style="width:100%;border-collapse:collapse;border-top:1px solid #eee;margin:0 0 18px;">
+      ${
+          rows.length
+              ? `<table style="width:100%;border-collapse:collapse;border-top:1px solid #eee;margin:0 0 18px;">
         ${rows.map((r) => row(r[0], r[1])).join('')}
-      </table>` : ''}
+      </table>`
+              : ''
+      }
 
       <div style="background:#f6f8ff;border:1px solid #d7e0ff;border-radius:10px;padding:16px 20px;margin:0 0 20px;">
         <p style="margin:0 0 6px;font-size:14px;color:#111;"><strong>What happens next</strong></p>
@@ -141,60 +147,60 @@ function leadHtml(lead) {
 }
 
 function leadText(lead) {
-  const rows = summaryRows(lead);
-  return [
-    'Your estimate - SoundzGood Whitsundays',
-    '',
-    `Thanks ${lead.name || 'there'} - here's a price guide for your event.`,
-    '',
-    hasRange(lead)
-      ? `ESTIMATED RANGE (guide only): ${rangeText(lead)}`
-      : "We'll price this up for you by hand.",
-    '',
-    ...rows.map((r) => `${r[0]}: ${r[1]}`),
-    '',
-    'WHAT HAPPENS NEXT',
-    'This is a guide only, not a fixed quote. Our team will review your event and',
-    "send you an official quote to look over - we'll be in touch soon. Any questions,",
-    'just reply to this email.',
-    '',
-    'Cheers, The SoundzGood team',
-    `${SELLER.name} - ${SELLER.email} - ${SELLER.site}`,
-  ].filter((l) => l !== undefined).join('\n');
+    const rows = summaryRows(lead);
+    return [
+        'Your estimate - SoundzGood Whitsundays',
+        '',
+        `Thanks ${lead.name || 'there'} - here's a price guide for your event.`,
+        '',
+        hasRange(lead) ? `ESTIMATED RANGE (guide only): ${rangeText(lead)}` : "We'll price this up for you by hand.",
+        '',
+        ...rows.map((r) => `${r[0]}: ${r[1]}`),
+        '',
+        'WHAT HAPPENS NEXT',
+        'This is a guide only, not a fixed quote. Our team will review your event and',
+        "send you an official quote to look over - we'll be in touch soon. Any questions,",
+        'just reply to this email.',
+        '',
+        'Cheers, The SoundzGood team',
+        `${SELLER.name} - ${SELLER.email} - ${SELLER.site}`
+    ]
+        .filter((l) => l !== undefined)
+        .join('\n');
 }
 
 /*  Send the visitor their estimate. Returns { sent, reason?, error? };
     never throws.                                                         */
 async function sendQuoteEmail(lead) {
-  const tx = transport();
-  if (!tx) {
-    logger.warn('quote lead saved but SMTP not configured, no email sent');
-    return { sent: false, reason: 'no-smtp' };
-  }
+    const tx = transport();
+    if (!tx) {
+        logger.warn('quote lead saved but SMTP not configured, no email sent');
+        return { sent: false, reason: 'no-smtp' };
+    }
 
-  const to = lead.email;
-  if (!to) return { sent: false, reason: 'no-address' };
+    const to = lead.email;
+    if (!to) return { sent: false, reason: 'no-address' };
 
-  try {
-    await tx.sendMail({
-      kind: 'estimate',
-      from: `${SELLER.name} <${SELLER.email}>`,
-      to,
-      replyTo: OFFICE,
-      subject: `Your SoundzGood estimate${lead.eventTypeLabel ? ' - ' + lead.eventTypeLabel : ''}`,
-      text: leadText(lead),
-      html: leadHtml(lead),
-    });
-    return { sent: true };
-  } catch (err) {
-    logger.error('quote lead email failed', {
-      to,
-      smtpError: err && err.message,
-      smtpCode: err && (err.code || err.responseCode),
-      smtpResponse: err && err.response,
-    });
-    return { sent: false, reason: 'smtp-error', error: err && err.message };
-  }
+    try {
+        await tx.sendMail({
+            kind: 'estimate',
+            from: `${SELLER.name} <${SELLER.email}>`,
+            to,
+            replyTo: OFFICE,
+            subject: `Your SoundzGood estimate${lead.eventTypeLabel ? ' - ' + lead.eventTypeLabel : ''}`,
+            text: leadText(lead),
+            html: leadHtml(lead)
+        });
+        return { sent: true };
+    } catch (err) {
+        logger.error('quote lead email failed', {
+            to,
+            smtpError: err && err.message,
+            smtpCode: err && (err.code || err.responseCode),
+            smtpResponse: err && err.response
+        });
+        return { sent: false, reason: 'smtp-error', error: err && err.message };
+    }
 }
 
 module.exports = { sendQuoteEmail, __test: { leadHtml, leadText, rangeText } };

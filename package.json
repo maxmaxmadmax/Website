@@ -1,0 +1,18 @@
+{
+  "name": "soundzgood-website",
+  "private": true,
+  "scripts": {
+    "format": "prettier --write \"js/**/*.js\" \"css/**/*.css\" \"functions/*.js\" \"functions/lib/**/*.js\"",
+    "format:check": "prettier --check \"js/**/*.js\" \"css/**/*.css\" \"functions/*.js\" \"functions/lib/**/*.js\"",
+    "lint": "eslint js functions/index.js functions/lib",
+    "lint:fix": "eslint --fix js functions/index.js functions/lib",
+    "clean": "npm run format && npm run lint",
+    "undo": "git revert --no-edit HEAD && node ../tools/bump-assets.js && git commit -qam \"Bump assets after rollback\" && git push"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0",
+    "prettier": "^3.9.10"
+  }
+}

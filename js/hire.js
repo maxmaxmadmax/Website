@@ -10,7 +10,7 @@
    page shows a friendly empty state rather than throwing.
    ========================================================================== */
 
-import { firebaseConfig, isFirebaseConfigured } from './firebase-config.js?v=810';
+import { firebaseConfig, isFirebaseConfigured } from './firebase-config.js?v=811';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -20,102 +20,106 @@ let activeCat = 'all';
 const money = (cents) => '$' + Math.round((cents || 0) / 100).toLocaleString('en-AU');
 
 function esc(value) {
-  return String(value == null ? '' : value)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 /*  Category pills get a stable colour from the name - same idea as the admin
     table, so "Audio" reads the same everywhere.                           */
 const CAT_CLASSES = ['hc1', 'hc2', 'hc3', 'hc4', 'hc5', 'hc6'];
 function catClass(cat) {
-  if (!cat) return 'hc0';
-  let h = 0;
-  for (let i = 0; i < cat.length; i++) h = (h * 31 + cat.charCodeAt(i)) >>> 0;
-  return CAT_CLASSES[h % CAT_CLASSES.length];
+    if (!cat) return 'hc0';
+    let h = 0;
+    for (let i = 0; i < cat.length; i++) h = (h * 31 + cat.charCodeAt(i)) >>> 0;
+    return CAT_CLASSES[h % CAT_CLASSES.length];
 }
 
 async function load() {
-  if (!isFirebaseConfigured) return renderEmpty('The catalogue is not connected yet.');
+    if (!isFirebaseConfigured) return renderEmpty('The catalogue is not connected yet.');
 
-  try {
-    const [{ initializeApp }, firestore] = await Promise.all([
-      import(`${SDK}/firebase-app.js`),
-      import(`${SDK}/firebase-firestore.js`),
-    ]);
-    const app = initializeApp(firebaseConfig);
-    const db = firestore.getFirestore(app);
-    const snap = await firestore.getDocs(firestore.collection(db, 'inventory'));
+    try {
+        const [{ initializeApp }, firestore] = await Promise.all([
+            import(`${SDK}/firebase-app.js`),
+            import(`${SDK}/firebase-firestore.js`)
+        ]);
+        const app = initializeApp(firebaseConfig);
+        const db = firestore.getFirestore(app);
+        const snap = await firestore.getDocs(firestore.collection(db, 'inventory'));
 
-    items = [];
-    snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
-    items = items.filter((it) => it && it.name);
-    items.sort((a, b) =>
-      (a.category || '').localeCompare(b.category || '')
-      || (a.name || '').localeCompare(b.name || ''));
+        items = [];
+        snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+        items = items.filter((it) => it && it.name);
+        items.sort((a, b) => (a.category || '').localeCompare(b.category || '') || (a.name || '').localeCompare(b.name || ''));
 
-    renderFilters();
-    renderGrid();
-  } catch (err) {
-    renderEmpty('We could not load the gear just now. Please try again later.');
-  }
+        renderFilters();
+        renderGrid();
+    } catch (err) {
+        renderEmpty('We could not load the gear just now. Please try again later.');
+    }
 }
 
 function categories() {
-  const set = [];
-  items.forEach((it) => {
-    const c = (it.category || '').trim();
-    if (c && !set.includes(c)) set.push(c);
-  });
-  return set.sort((a, b) => a.localeCompare(b));
+    const set = [];
+    items.forEach((it) => {
+        const c = (it.category || '').trim();
+        if (c && !set.includes(c)) set.push(c);
+    });
+    return set.sort((a, b) => a.localeCompare(b));
 }
 
 function renderFilters() {
-  const host = document.getElementById('hire-filters');
-  if (!host) return;
-  const cats = categories();
-  if (!cats.length) { host.innerHTML = ''; return; }
+    const host = document.getElementById('hire-filters');
+    if (!host) return;
+    const cats = categories();
+    if (!cats.length) {
+        host.innerHTML = '';
+        return;
+    }
 
-  const chip = (val, label) =>
-    `<button type="button" class="hire-chip${activeCat === val ? ' is-on' : ''}"
+    const chip = (val, label) =>
+        `<button type="button" class="hire-chip${activeCat === val ? ' is-on' : ''}"
              data-cat="${esc(val)}">${esc(label)}</button>`;
 
-  host.innerHTML = chip('all', 'All gear') + cats.map((c) => chip(c, c)).join('');
+    host.innerHTML = chip('all', 'All gear') + cats.map((c) => chip(c, c)).join('');
 
-  host.querySelectorAll('[data-cat]').forEach((b) => {
-    b.addEventListener('click', () => {
-      activeCat = b.getAttribute('data-cat');
-      renderFilters();
-      renderGrid();
+    host.querySelectorAll('[data-cat]').forEach((b) => {
+        b.addEventListener('click', () => {
+            activeCat = b.getAttribute('data-cat');
+            renderFilters();
+            renderGrid();
+        });
     });
-  });
 }
 
 function renderGrid() {
-  const host = document.getElementById('hire-grid');
-  if (!host) return;
+    const host = document.getElementById('hire-grid');
+    if (!host) return;
 
-  const list = activeCat === 'all'
-    ? items : items.filter((it) => (it.category || '') === activeCat);
+    const list = activeCat === 'all' ? items : items.filter((it) => (it.category || '') === activeCat);
 
-  if (!list.length) {
-    host.innerHTML = '<p class="hire-empty">No gear in this category yet '
-      + '&mdash; <a href="/contact">get in touch</a> and we’ll sort you out.</p>';
-    return;
-  }
+    if (!list.length) {
+        host.innerHTML =
+            '<p class="hire-empty">No gear in this category yet ' +
+            '&mdash; <a href="/contact">get in touch</a> and we’ll sort you out.</p>';
+        return;
+    }
 
-  host.innerHTML = list.map(card).join('');
+    host.innerHTML = list.map(card).join('');
 }
 
 function card(it) {
-  const cls = catClass(it.category);
-  const media = it.photoUrl
-    ? `<img src="${esc(it.photoUrl)}" alt="${esc(it.name)}" loading="lazy">`
-    : `<span class="hire-noimg ${cls}" aria-hidden="true">${esc((it.category || it.name || '?').trim().charAt(0).toUpperCase())}</span>`;
+    const cls = catClass(it.category);
+    const media = it.photoUrl
+        ? `<img src="${esc(it.photoUrl)}" alt="${esc(it.name)}" loading="lazy">`
+        : `<span class="hire-noimg ${cls}" aria-hidden="true">${esc((it.category || it.name || '?').trim().charAt(0).toUpperCase())}</span>`;
 
-  const price = it.priceCents
-    ? `<p class="hire-price">${money(it.priceCents)} <span>/ day</span></p>` : '';
+    const price = it.priceCents ? `<p class="hire-price">${money(it.priceCents)} <span>/ day</span></p>` : '';
 
-  return `
+    return `
     <article class="hire-card">
       <div class="hire-media">${media}</div>
       <div class="hire-body">
@@ -131,13 +135,12 @@ function card(it) {
 }
 
 function renderEmpty(msg) {
-  const host = document.getElementById('hire-grid');
-  if (host) host.innerHTML = `<p class="hire-empty">${esc(msg)} `
-    + '<a href="/contact">Contact us</a> and we’ll help.</p>';
+    const host = document.getElementById('hire-grid');
+    if (host) host.innerHTML = `<p class="hire-empty">${esc(msg)} ` + '<a href="/contact">Contact us</a> and we’ll help.</p>';
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', load);
+    document.addEventListener('DOMContentLoaded', load);
 } else {
-  load();
+    load();
 }

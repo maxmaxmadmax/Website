@@ -16,29 +16,44 @@
         share.addEventListener('click', function () {
             var data = { title: document.title, url: location.href.split('#')[0] };
             if (navigator.share) {
-                navigator.share(data).catch(function () { /* they closed it */ });
+                navigator.share(data).catch(function () {
+                    /* they closed it */
+                });
                 return;
             }
             var note = document.getElementById('ep-share-note');
             (navigator.clipboard ? navigator.clipboard.writeText(data.url) : Promise.reject())
-                .then(function () { if (note) note.hidden = false; })
-                .catch(function () { prompt('Copy this link:', data.url); });
+                .then(function () {
+                    if (note) note.hidden = false;
+                })
+                .catch(function () {
+                    prompt('Copy this link:', data.url);
+                });
         });
     }
 
     /* ---- 2. Print ---- */
     var print = document.getElementById('ep-print');
-    if (print) print.addEventListener('click', function () { window.print(); });
+    if (print)
+        print.addEventListener('click', function () {
+            window.print();
+        });
     // ?print=1 opens the print / save-as-PDF box straight away (link from the vendor invoice page)
-    if (/[?&]print=1/.test(location.search)) window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 800); });
+    if (/[?&]print=1/.test(location.search))
+        window.addEventListener('load', function () {
+            setTimeout(function () {
+                window.print();
+            }, 800);
+        });
 
     /* ---- 3. Vendors ---- */
     var food = document.getElementById('ep-food');
     var market = document.getElementById('ep-market');
     if (!food) return;
 
-    var URL = 'https://australia-southeast1-soundzgood-8c86f.cloudfunctions.net/eventLineup?event=' +
-              encodeURIComponent(food.getAttribute('data-event'));
+    var URL =
+        'https://australia-southeast1-soundzgood-8c86f.cloudfunctions.net/eventLineup?event=' +
+        encodeURIComponent(food.getAttribute('data-event'));
 
     function esc(s) {
         return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -48,11 +63,24 @@
         images/vendor-cats/ (see CREDITS.txt there). A vendor's own photo
         can replace one later: same file name.                         */
     var PHOTOS = [
-        'burgers-fries-american', 'cakes-baked-sweets', 'chicken-wings', 'drinks-juice-smoothies',
-        'hot-dogs-sausages', 'ice-cream-gelato', 'indian-curry', 'lollies-fairy-floss',
-        'mexican-tacos', 'pizza-italian',
-        'asian-noodles', 'bbq-smoked-meats', 'seafood', 'coffee', 'donuts-churros',
-        'healthy-salads-acai', 'vegetarian-vegan', 'other-food'
+        'burgers-fries-american',
+        'cakes-baked-sweets',
+        'chicken-wings',
+        'drinks-juice-smoothies',
+        'hot-dogs-sausages',
+        'ice-cream-gelato',
+        'indian-curry',
+        'lollies-fairy-floss',
+        'mexican-tacos',
+        'pizza-italian',
+        'asian-noodles',
+        'bbq-smoked-meats',
+        'seafood',
+        'coffee',
+        'donuts-churros',
+        'healthy-salads-acai',
+        'vegetarian-vegan',
+        'other-food'
     ];
 
     /*  THE WORDS ON EACH CARD
@@ -67,51 +95,85 @@
         Keyed by the business name exactly as they typed it. A vendor with
         no line here gets the first sentence of their own description.  */
     var WORDS = {
-        'Airlie Waffle':        { tag: 'Waffles',       line: 'Bubble waffles and bubble iced tea.', name: 'Airlie Waffles' },
-        'Amazing wieners':      { tag: 'Hot dogs',      line: 'German bratwurst, cheesy kransky and kids’ hot dogs.' },
-        'Ammos Shak':           { tag: 'Indian',        line: 'Indian food and curries.', name: 'Ammo’s Shak' },
-        'Cheeky Chicky':        { tag: 'Fried chicken', line: 'Pork belly bites, crispy wings, loaded fries and chicken burgers.', cat: 'chicken-wings' },
-        'Grumpy Mas':           { tag: 'Burgers',       line: 'Hearty food.'   /* their own words */, photo: 'images/vendors/grumpy-mas.webp' },
-        'Loopy Scoops':         { tag: 'Ice cream',     line: 'Soft serve, premium scooped ice cream and snow cones.',
-                                  link: 'https://www.facebook.com/p/Loopy-Scoops-61575237328097/' },
-        'Sweet Wheels':         { tag: 'Sweet treats',  line: 'Sweet treats from the red food van.', cat: 'lollies-fairy-floss', photo: 'images/vendors/sweet-wheels.webp', top: true },   // top: keeps the face in the card
-        'Tropical Blendz':      { tag: 'Drinks',        line: 'Fresh drinks and smoothies.', cat: 'drinks-juice-smoothies', photo: 'images/vendors/tropical-blendz.webp', logo: true },   // their logo
-        'Tropical Pizza':       { tag: 'Pizza',         line: 'Pizza, wings and soft drinks.', photo: 'images/vendors/tropical-pizza.webp' },   // photo from their truck
-        'Vandito Viesta':       { tag: 'Mexican',       line: 'Nachos and tacos - beef, chicken, pulled pork and beans.',
-                                  photo: 'images/vendors/vandito-viesta.webp',
-                                  link: 'https://www.facebook.com/p/Vandito-Viesta-61586241928820/' },
+        'Airlie Waffle': { tag: 'Waffles', line: 'Bubble waffles and bubble iced tea.', name: 'Airlie Waffles' },
+        'Amazing wieners': { tag: 'Hot dogs', line: 'German bratwurst, cheesy kransky and kids’ hot dogs.' },
+        'Ammos Shak': { tag: 'Indian', line: 'Indian food and curries.', name: 'Ammo’s Shak' },
+        'Cheeky Chicky': {
+            tag: 'Fried chicken',
+            line: 'Pork belly bites, crispy wings, loaded fries and chicken burgers.',
+            cat: 'chicken-wings'
+        },
+        'Grumpy Mas': { tag: 'Burgers', line: 'Hearty food.' /* their own words */, photo: 'images/vendors/grumpy-mas.webp' },
+        'Loopy Scoops': {
+            tag: 'Ice cream',
+            line: 'Soft serve, premium scooped ice cream and snow cones.',
+            link: 'https://www.facebook.com/p/Loopy-Scoops-61575237328097/'
+        },
+        'Sweet Wheels': {
+            tag: 'Sweet treats',
+            line: 'Sweet treats from the red food van.',
+            cat: 'lollies-fairy-floss',
+            photo: 'images/vendors/sweet-wheels.webp',
+            top: true
+        }, // top: keeps the face in the card
+        'Tropical Blendz': {
+            tag: 'Drinks',
+            line: 'Fresh drinks and smoothies.',
+            cat: 'drinks-juice-smoothies',
+            photo: 'images/vendors/tropical-blendz.webp',
+            logo: true
+        }, // their logo
+        'Tropical Pizza': { tag: 'Pizza', line: 'Pizza, wings and soft drinks.', photo: 'images/vendors/tropical-pizza.webp' }, // photo from their truck
+        'Vandito Viesta': {
+            tag: 'Mexican',
+            line: 'Nachos and tacos - beef, chicken, pulled pork and beans.',
+            photo: 'images/vendors/vandito-viesta.webp',
+            link: 'https://www.facebook.com/p/Vandito-Viesta-61586241928820/'
+        },
 
-        'Pretty Girl Ave':      { cat: 'gifts-novelty',   // booked as Other
-                                  link: 'https://pretty-girl-ave.deed.page/' },   // their page
+        'Pretty Girl Ave': {
+            cat: 'gifts-novelty', // booked as Other
+            link: 'https://pretty-girl-ave.deed.page/'
+        }, // their page
 
         // booked under Plants / Garden, but they sell sweets
-        'Sian\'s Sugar Shack':  { cat: 'local-produce-packaged', label: 'Sweets & Treats' }
+        "Sian's Sugar Shack": { cat: 'local-produce-packaged', label: 'Sweets & Treats' }
     };
 
     /*  MARKET TILE ICONS - simple line drawings, one per kind of stall. */
     var P = 'fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"';
     var ICON = {
-        'clothing-fashion':        '<path ' + P + ' d="M8 3l-5 3 2 5 3-1v11h8V10l3 1 2-5-5-3a4 4 0 01-8 0z"/>',
-        'jewellery':               '<path ' + P + ' d="M6 3h12l3 6-9 12L3 9zM3 9h18M9 3l3 6 3-6M12 9v12"/>',
-        'plants-garden':           '<path ' + P + ' d="M12 21V11M12 11C12 6 8 3 4 3c0 5 3 8 8 8zM12 14c0-4 3-7 8-7 0 4-3 7-8 7z"/>',
-        'gifts-novelty':           '<path ' + P + ' d="M3 9h18v4H3zM5 13v8h14v-8M12 9v12M12 9c-2-4-7-4-5-1 1 1 5 1 5 1zM12 9c2-4 7-4 5-1-1 1-5 1-5 1z"/>',
-        'handmade-crafts':         '<path ' + P + ' d="M12 21s-8-5-8-11a4.5 4.5 0 018-3 4.5 4.5 0 018 3c0 6-8 11-8 11z"/>',
-        'toys-kids-products':      '<path ' + P + ' d="M12 21a7 7 0 100-14 7 7 0 000 14zM6 9a2.5 2.5 0 112-4M18 9a2.5 2.5 0 10-2-4M10 13h.01M14 13h.01M10 16c1 1 3 1 4 0"/>',
-        'candles-home-fragrance':  '<path ' + P + ' d="M8 10h8v11H8zM12 10V7M12 7c-2-2 0-4 0-4s2 2 0 4z"/>',
+        'clothing-fashion': '<path ' + P + ' d="M8 3l-5 3 2 5 3-1v11h8V10l3 1 2-5-5-3a4 4 0 01-8 0z"/>',
+        jewellery: '<path ' + P + ' d="M6 3h12l3 6-9 12L3 9zM3 9h18M9 3l3 6 3-6M12 9v12"/>',
+        'plants-garden': '<path ' + P + ' d="M12 21V11M12 11C12 6 8 3 4 3c0 5 3 8 8 8zM12 14c0-4 3-7 8-7 0 4-3 7-8 7z"/>',
+        'gifts-novelty':
+            '<path ' + P + ' d="M3 9h18v4H3zM5 13v8h14v-8M12 9v12M12 9c-2-4-7-4-5-1 1 1 5 1 5 1zM12 9c2-4 7-4 5-1-1 1-5 1-5 1z"/>',
+        'handmade-crafts': '<path ' + P + ' d="M12 21s-8-5-8-11a4.5 4.5 0 018-3 4.5 4.5 0 018 3c0 6-8 11-8 11z"/>',
+        'toys-kids-products':
+            '<path ' +
+            P +
+            ' d="M12 21a7 7 0 100-14 7 7 0 000 14zM6 9a2.5 2.5 0 112-4M18 9a2.5 2.5 0 10-2-4M10 13h.01M14 13h.01M10 16c1 1 3 1 4 0"/>',
+        'candles-home-fragrance': '<path ' + P + ' d="M8 10h8v11H8zM12 10V7M12 7c-2-2 0-4 0-4s2 2 0 4z"/>',
         'arts-prints-photography': '<path ' + P + ' d="M3 5h18v14H3zM3 16l5-5 4 4 3-3 6 6M15 9h.01"/>',
-        'homewares-decor':         '<path ' + P + ' d="M3 11l9-8 9 8M5 9v12h14V9"/>',
-        'beauty-skincare':         '<path ' + P + ' d="M9 3h6v4H9zM8 7h8v14H8zM8 12h8"/>',
-        'pet-products':            '<path ' + P + ' d="M12 20c-3 0-6-1.5-6-4 0-3 3-5 6-5s6 2 6 5c0 2.5-3 4-6 4zM6 11a2 2 0 110-4 2 2 0 010 4zM18 11a2 2 0 110-4 2 2 0 010 4zM9.5 7a2 2 0 110-4 2 2 0 010 4zM14.5 7a2 2 0 110-4 2 2 0 010 4z"/>',
-        'spiritual-crystals':      '<path ' + P + ' d="M12 2l5 6-5 14-5-14zM7 8h10M12 2v20"/>',
-        'services-promotional':    '<path ' + P + ' d="M3 10v4h3l7 5V5L6 10zM16 9a4 4 0 010 6M19 6a8 8 0 010 12"/>',
-        'community-charity-club':  '<path ' + P + ' d="M8 11a3 3 0 100-6 3 3 0 000 6zM16 11a3 3 0 100-6 3 3 0 000 6zM2 20c0-3 3-6 6-6s6 3 6 6M12 20c0-3 2-6 4-6 3 0 6 3 6 6"/>',
-        'local-produce-packaged':  '<path ' + P + ' d="M6 9a6 6 0 0112 0v1H6zM5 10h14l-2 11H7zM12 3v3"/>'
+        'homewares-decor': '<path ' + P + ' d="M3 11l9-8 9 8M5 9v12h14V9"/>',
+        'beauty-skincare': '<path ' + P + ' d="M9 3h6v4H9zM8 7h8v14H8zM8 12h8"/>',
+        'pet-products':
+            '<path ' +
+            P +
+            ' d="M12 20c-3 0-6-1.5-6-4 0-3 3-5 6-5s6 2 6 5c0 2.5-3 4-6 4zM6 11a2 2 0 110-4 2 2 0 010 4zM18 11a2 2 0 110-4 2 2 0 010 4zM9.5 7a2 2 0 110-4 2 2 0 010 4zM14.5 7a2 2 0 110-4 2 2 0 010 4z"/>',
+        'spiritual-crystals': '<path ' + P + ' d="M12 2l5 6-5 14-5-14zM7 8h10M12 2v20"/>',
+        'services-promotional': '<path ' + P + ' d="M3 10v4h3l7 5V5L6 10zM16 9a4 4 0 010 6M19 6a8 8 0 010 12"/>',
+        'community-charity-club':
+            '<path ' +
+            P +
+            ' d="M8 11a3 3 0 100-6 3 3 0 000 6zM16 11a3 3 0 100-6 3 3 0 000 6zM2 20c0-3 3-6 6-6s6 3 6 6M12 20c0-3 2-6 4-6 3 0 6 3 6 6"/>',
+        'local-produce-packaged': '<path ' + P + ' d="M6 9a6 6 0 0112 0v1H6zM5 10h14l-2 11H7zM12 3v3"/>'
     };
     var BAG = '<path ' + P + ' d="M5 8h14l-1 13H6zM9 8V6a3 3 0 016 0v2"/>';
 
     function linkOf(r) {
         var w = WORDS[r.name] || {};
-        var l = w.link || r.link;   // a link Max gave us beats the one they typed
+        var l = w.link || r.link; // a link Max gave us beats the one they typed
         return l && /^https?:\/\//i.test(l) ? l : '';
     }
 
@@ -124,48 +186,82 @@
         // the vendor's own photo first, else the generic one for their kind of food
         var img = w.photo || (PHOTOS.indexOf(cat) >= 0 ? 'images/vendor-cats/' + cat + '.webp' : '');
         var pic = img
-            ? '<span class="ep-fv-pic' + (w.logo ? ' ep-fv-pic-logo' : '') + (w.top ? ' ep-fv-pic-top' : '') + '" style="background-image:url(\'' + img + '\')"></span>'
+            ? '<span class="ep-fv-pic' +
+              (w.logo ? ' ep-fv-pic-logo' : '') +
+              (w.top ? ' ep-fv-pic-top' : '') +
+              '" style="background-image:url(\'' +
+              img +
+              '\')"></span>'
             : '<span class="ep-fv-pic ep-fv-pic-none" aria-hidden="true"></span>';
-        var inner = pic +
+        var inner =
+            pic +
             '<span class="ep-fv-text">' +
-              '<small>' + esc(tag) + '</small>' +
-              '<b>' + esc(w.name || r.name) + '</b>' +
-              (line ? '<span>' + esc(line) + '</span>' : '') +
+            '<small>' +
+            esc(tag) +
+            '</small>' +
+            '<b>' +
+            esc(w.name || r.name) +
+            '</b>' +
+            (line ? '<span>' + esc(line) + '</span>' : '') +
             '</span>' +
             (link ? '<i class="ep-fv-go" aria-hidden="true">&rarr;</i>' : '');
         /*  The vendor's own link (checked server side: http/https only).
             Opens in a new tab; nofollow because we don't vouch for it. */
         return link
-            ? '<a class="ep-fv" href="' + esc(link).replace(/"/g, '&quot;') +
-              '" target="_blank" rel="noopener nofollow ugc">' + inner + '</a>'
+            ? '<a class="ep-fv" href="' +
+                  esc(link).replace(/"/g, '&quot;') +
+                  '" target="_blank" rel="noopener nofollow ugc">' +
+                  inner +
+                  '</a>'
             : '<div class="ep-fv">' + inner + '</div>';
     }
 
     /*  MARKET STALLS: one tile per kind of stall, with every vendor of that
         kind listed on it.                                             */
     function marketTiles(rows) {
-        var groups = [], byCat = {};
+        var groups = [],
+            byCat = {};
         rows.forEach(function (r) {
             var w = WORDS[r.name] || {};
             var cat = w.cat || r.categoryId || 'other-market';
             var label = w.label || (r.category && !/^other/i.test(r.category) ? r.category : 'Other stalls');
-            if (!byCat[cat]) { byCat[cat] = { cat: cat, label: label, names: [] }; groups.push(byCat[cat]); }
+            if (!byCat[cat]) {
+                byCat[cat] = { cat: cat, label: label, names: [] };
+                groups.push(byCat[cat]);
+            }
             var link = linkOf(r);
-            byCat[cat].names.push(link
-                ? '<a href="' + esc(link).replace(/"/g, '&quot;') + '" target="_blank" rel="noopener nofollow ugc">' +
-                  esc(r.name) + '</a>'
-                : esc(r.name));
+            byCat[cat].names.push(
+                link
+                    ? '<a href="' +
+                          esc(link).replace(/"/g, '&quot;') +
+                          '" target="_blank" rel="noopener nofollow ugc">' +
+                          esc(r.name) +
+                          '</a>'
+                    : esc(r.name)
+            );
         });
-        groups.sort(function (a, b) { return a.label.localeCompare(b.label); });
-        return groups.map(function (g) {
-            return '<div class="ep-mt">' +
-                '<div class="ep-mt-head">' +
-                  '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICON[g.cat] || BAG) + '</svg>' +
-                  '<b>' + esc(g.label.replace(/ \/ /g, ' & ')) + '</b>' +
-                '</div>' +
-                '<ul><li>' + g.names.join('</li><li>') + '</li></ul>' +
-                '</div>';
-        }).join('');
+        groups.sort(function (a, b) {
+            return a.label.localeCompare(b.label);
+        });
+        return groups
+            .map(function (g) {
+                return (
+                    '<div class="ep-mt">' +
+                    '<div class="ep-mt-head">' +
+                    '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+                    (ICON[g.cat] || BAG) +
+                    '</svg>' +
+                    '<b>' +
+                    esc(g.label.replace(/ \/ /g, ' & ')) +
+                    '</b>' +
+                    '</div>' +
+                    '<ul><li>' +
+                    g.names.join('</li><li>') +
+                    '</li></ul>' +
+                    '</div>'
+                );
+            })
+            .join('');
     }
 
     /*  HOW CROWDED IS IT?
@@ -184,7 +280,8 @@
             var w = WORDS[r.name] || {};
             kinds[w.cat || r.categoryId || 'other-market'] = 1;
         });
-        var k = Object.keys(kinds).length, n = rows.length;
+        var k = Object.keys(kinds).length,
+            n = rows.length;
         return n <= 15 && k <= 6 ? 's' : n <= 30 ? 'm' : 'l';
     }
 
@@ -192,17 +289,42 @@
         add ?demo=10,50 (food, market) or ?demo=50 to fill the page with pretend
         vendors and check the layout and the A4 print still hold up.   */
     function demo(n, nMarket) {
-        var foodCats = ['burgers-fries-american', 'pizza-italian', 'mexican-tacos', 'asian-noodles', 'indian-curry',
-                        'bbq-smoked-meats', 'seafood', 'chicken-wings', 'hot-dogs-sausages', 'donuts-churros',
-                        'ice-cream-gelato', 'cakes-baked-sweets', 'coffee', 'drinks-juice-smoothies'];
-        var marketCats = ['clothing-fashion', 'jewellery', 'candles-home-fragrance', 'arts-prints-photography',
-                          'handmade-crafts', 'homewares-decor', 'beauty-skincare', 'plants-garden', 'toys-kids-products',
-                          'pet-products', 'local-produce-packaged', 'gifts-novelty', 'spiritual-crystals',
-                          'community-charity-club'];
+        var foodCats = [
+            'burgers-fries-american',
+            'pizza-italian',
+            'mexican-tacos',
+            'asian-noodles',
+            'indian-curry',
+            'bbq-smoked-meats',
+            'seafood',
+            'chicken-wings',
+            'hot-dogs-sausages',
+            'donuts-churros',
+            'ice-cream-gelato',
+            'cakes-baked-sweets',
+            'coffee',
+            'drinks-juice-smoothies'
+        ];
+        var marketCats = [
+            'clothing-fashion',
+            'jewellery',
+            'candles-home-fragrance',
+            'arts-prints-photography',
+            'handmade-crafts',
+            'homewares-decor',
+            'beauty-skincare',
+            'plants-garden',
+            'toys-kids-products',
+            'pet-products',
+            'local-produce-packaged',
+            'gifts-novelty',
+            'spiritual-crystals',
+            'community-charity-club'
+        ];
         var d = { food: [], market: [] };
         var total = nMarket != null ? n + nMarket : n;
         for (var i = 0; i < total; i++) {
-            var isFood = nMarket != null ? i < n : i % 5 < 2;   // ?demo=10,50 = 10 food + 50 market
+            var isFood = nMarket != null ? i < n : i % 5 < 2; // ?demo=10,50 = 10 food + 50 market
             var list = isFood ? foodCats : marketCats;
             var cat = list[i % list.length];
             (isFood ? d.food : d.market).push({
@@ -215,10 +337,14 @@
         return d;
     }
 
-    var demoN = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) &&
-                (location.search.match(/[?&]demo=([\d,]+)/) || [])[1];
+    var demoN = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && (location.search.match(/[?&]demo=([\d,]+)/) || [])[1];
 
-    (demoN ? Promise.resolve(demo(+demoN.split(',')[0], demoN.split(',')[1] != null ? +demoN.split(',')[1] : null)) : fetch(URL).then(function (r) { return r.ok ? r.json() : null; }))
+    (demoN
+        ? Promise.resolve(demo(+demoN.split(',')[0], demoN.split(',')[1] != null ? +demoN.split(',')[1] : null))
+        : fetch(URL).then(function (r) {
+              return r.ok ? r.json() : null;
+          })
+    )
         .then(function (d) {
             if (!d) return;
             if (d.food && d.food.length) {
@@ -233,5 +359,7 @@
                 market.hidden = false;
             }
         })
-        .catch(function () { /* stays hidden */ });
-}());
+        .catch(function () {
+            /* stays hidden */
+        });
+})();

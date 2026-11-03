@@ -31,7 +31,9 @@
     var progress = page.querySelector('#sgs-progress-bar');
     var startBtn = page.querySelector('[data-sgs-start]');
 
-    var names = navButtons.map(function (b) { return b.textContent.trim(); });
+    var names = navButtons.map(function (b) {
+        return b.textContent.trim();
+    });
     var current = 0;
 
     var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -54,7 +56,9 @@
         if (document.hidden && gliding !== null) {
             window.cancelAnimationFrame(gliding);
             gliding = null;
-            if (glideTo !== null) { track.scrollLeft = glideTo; }
+            if (glideTo !== null) {
+                track.scrollLeft = glideTo;
+            }
         }
     });
 
@@ -76,7 +80,9 @@
 
         var from = track.scrollLeft;
         var travel = to - from;
-        if (!travel) { return; }
+        if (!travel) {
+            return;
+        }
 
         var started = window.performance.now();
 
@@ -84,9 +90,7 @@
             var p = Math.min(1, (now - started) / SLIDE_MS);
 
             /* ease in out - slow at both ends, quick through the middle */
-            var eased = p < 0.5
-                ? 2 * p * p
-                : 1 - Math.pow(-2 * p + 2, 2) / 2;
+            var eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
 
             track.scrollLeft = from + travel * eased;
 
@@ -94,7 +98,7 @@
                 gliding = window.requestAnimationFrame(frame);
             } else {
                 gliding = null;
-                track.scrollLeft = to;   /* land exactly, not a fraction off */
+                track.scrollLeft = to; /* land exactly, not a fraction off */
             }
 
             /*  Repaint here, not on the scroll event - a background tab may never
@@ -120,8 +124,12 @@
         return indexAt(track.scrollLeft);
     }
 
-    function atStart() { return currentIndex() === 0; }
-    function atEnd() { return currentIndex() === slides.length - 1; }
+    function atStart() {
+        return currentIndex() === 0;
+    }
+    function atEnd() {
+        return currentIndex() === slides.length - 1;
+    }
 
     /* ---------------------------------------------------------------------
        Keeping the labels, arrows and bar in step
@@ -139,8 +147,7 @@
         });
 
         if (compact) {
-            compact.innerHTML = '<b>' + pad(i + 1) + '</b> / ' + pad(slides.length) +
-                ' &mdash; ' + (names[i] || '');
+            compact.innerHTML = '<b>' + pad(i + 1) + '</b> / ' + pad(slides.length) + ' &mdash; ' + (names[i] || '');
         }
 
         /*  Line the bar up under its label (labels differ in width). When the
@@ -156,16 +163,19 @@
                 var barBox = progress.parentNode.getBoundingClientRect();
                 var labelBox = active.getBoundingClientRect();
                 progress.style.width = labelBox.width + 'px';
-                progress.style.transform =
-                    'translateX(' + (labelBox.left - barBox.left) + 'px)';
+                progress.style.transform = 'translateX(' + (labelBox.left - barBox.left) + 'px)';
             } else {
-                progress.style.width = (100 / slides.length) + '%';
-                progress.style.transform = 'translateX(' + (i * 100) + '%)';
+                progress.style.width = 100 / slides.length + '%';
+                progress.style.transform = 'translateX(' + i * 100 + '%)';
             }
         }
 
-        if (prevBtn) { prevBtn.disabled = atStart(); }
-        if (nextBtn) { nextBtn.disabled = atEnd(); }
+        if (prevBtn) {
+            prevBtn.disabled = atStart();
+        }
+        if (nextBtn) {
+            nextBtn.disabled = atEnd();
+        }
     }
 
     function pad(n) {
@@ -175,14 +185,20 @@
     /*  Held to one run per frame - scroll fires in bursts and paint
         measures elements. */
     var painting = false;
-    track.addEventListener('scroll', function () {
-        if (painting) { return; }
-        painting = true;
-        window.requestAnimationFrame(function () {
-            painting = false;
-            paint();
-        });
-    }, { passive: true });
+    track.addEventListener(
+        'scroll',
+        function () {
+            if (painting) {
+                return;
+            }
+            painting = true;
+            window.requestAnimationFrame(function () {
+                painting = false;
+                paint();
+            });
+        },
+        { passive: true }
+    );
 
     var resizeTimer;
     window.addEventListener('resize', function () {
@@ -197,11 +213,17 @@
        Controls
        --------------------------------------------------------------------- */
     if (prevBtn) {
-        prevBtn.addEventListener('click', function () { holdAuto(); goTo(currentIndex() - 1); });
+        prevBtn.addEventListener('click', function () {
+            holdAuto();
+            goTo(currentIndex() - 1);
+        });
     }
 
     if (nextBtn) {
-        nextBtn.addEventListener('click', function () { holdAuto(); goTo(currentIndex() + 1); });
+        nextBtn.addEventListener('click', function () {
+            holdAuto();
+            goTo(currentIndex() + 1);
+        });
     }
 
     navButtons.forEach(function (btn) {
@@ -212,7 +234,10 @@
     });
 
     if (startBtn) {
-        startBtn.addEventListener('click', function () { holdAuto(); goTo(1); });
+        startBtn.addEventListener('click', function () {
+            holdAuto();
+            goTo(1);
+        });
     }
 
     /* Left and right move between slides while the slider has the focus.
@@ -249,18 +274,22 @@
     var heldUntil = 0;
 
     function step() {
-        if (paused || Date.now() < heldUntil) { return; }
+        if (paused || Date.now() < heldUntil) {
+            return;
+        }
 
         var i = currentIndex();
         if (i >= slides.length - 1) {
-            goTo(0, true);          // straight back to the start
+            goTo(0, true); // straight back to the start
         } else {
             goTo(i + 1);
         }
     }
 
     function startAuto() {
-        if (reduceMotion || timer) { return; }
+        if (reduceMotion || timer) {
+            return;
+        }
         timer = setInterval(step, DWELL);
     }
 
@@ -282,18 +311,33 @@
 
         /*  Keyboard focus parks it so people tabbing through can read.
             Hover does not. */
-        stageEl.addEventListener('focusin', function () { paused = true; });
-        stageEl.addEventListener('focusout', function () { paused = false; });
+        stageEl.addEventListener('focusin', function () {
+            paused = true;
+        });
+        stageEl.addEventListener('focusout', function () {
+            paused = false;
+        });
 
         document.addEventListener('visibilitychange', function () {
-            if (document.hidden) { stopAuto(); } else { startAuto(); }
+            if (document.hidden) {
+                stopAuto();
+            } else {
+                startAuto();
+            }
         });
 
         /*  Only runs while the banner is actually on screen. */
         if ('IntersectionObserver' in window) {
-            new IntersectionObserver(function (entries) {
-                if (entries[0].isIntersecting) { startAuto(); } else { stopAuto(); }
-            }, { threshold: 0.35 }).observe(stageEl);
+            new IntersectionObserver(
+                function (entries) {
+                    if (entries[0].isIntersecting) {
+                        startAuto();
+                    } else {
+                        stopAuto();
+                    }
+                },
+                { threshold: 0.35 }
+            ).observe(stageEl);
         } else {
             startAuto();
         }
@@ -308,12 +352,20 @@
     var video = page.querySelector('#sgs-hero-video');
 
     function setUpVideo() {
-        if (!video || reduceMotion) { return; }
-        if (video.getAttribute('src')) { return; }          // already running
-        if (!window.matchMedia('(min-width: 901px)').matches) { return; }
+        if (!video || reduceMotion) {
+            return;
+        }
+        if (video.getAttribute('src')) {
+            return;
+        } // already running
+        if (!window.matchMedia('(min-width: 901px)').matches) {
+            return;
+        }
 
         var src = video.getAttribute('data-src');
-        if (!src) { return; }
+        if (!src) {
+            return;
+        }
 
         video.setAttribute('src', src);
         video.load();
@@ -326,9 +378,13 @@
     }
 
     /* Fades the "scroll on for more" hint out once the page starts moving. */
-    window.addEventListener('scroll', function () {
-        page.classList.toggle('is-scrolled', window.scrollY > 40);
-    }, { passive: true });
+    window.addEventListener(
+        'scroll',
+        function () {
+            page.classList.toggle('is-scrolled', window.scrollY > 40);
+        },
+        { passive: true }
+    );
 
     /* First run. Painted again after load - the track may have no width
        yet, which would grey out the next arrow. */
@@ -339,7 +395,7 @@
         paint();
         setUpVideo();
     });
-}());
+})();
 
 /* --------------------------------------------------------------------------
    THE REGION SPLIT
@@ -373,7 +429,7 @@
     var current = 50;
     var target = 50;
     var frame = null;
-    var introUntil = 0;          /* while set, the intro owns the split */
+    var introUntil = 0; /* while set, the intro owns the split */
 
     function paint() {
         band.style.setProperty('--sgs-split', current.toFixed(2) + '%');
@@ -392,16 +448,14 @@
             if (left <= 0) {
                 introUntil = 0;
                 current = INTRO_TO;
-                target = INTRO_TO;   /* the cursor takes over from here */
+                target = INTRO_TO; /* the cursor takes over from here */
                 paint();
                 return;
             }
 
-            var p = 1 - (left / INTRO_MS);
+            var p = 1 - left / INTRO_MS;
             /* ease in out - slow at both ends, quicker through the middle */
-            var eased = p < 0.5
-                ? 2 * p * p
-                : 1 - Math.pow(-2 * p + 2, 2) / 2;
+            var eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
 
             current = INTRO_FROM + (INTRO_TO - INTRO_FROM) * eased;
             paint();
@@ -414,7 +468,7 @@
         if (Math.abs(diff) < 0.08) {
             current = target;
             paint();
-            return;              /* settled - stop asking for frames */
+            return; /* settled - stop asking for frames */
         }
 
         current += diff * CHASE;
@@ -432,11 +486,14 @@
     }
 
     if ('IntersectionObserver' in window) {
-        var watcher = new IntersectionObserver(function (entries) {
-            if (!entries[0].isIntersecting) return;
-            watcher.disconnect();        /* once, not every time it scrolls past */
-            startIntro();
-        }, { threshold: 0.4 });
+        var watcher = new IntersectionObserver(
+            function (entries) {
+                if (!entries[0].isIntersecting) return;
+                watcher.disconnect(); /* once, not every time it scrolls past */
+                startIntro();
+            },
+            { threshold: 0.4 }
+        );
         watcher.observe(band);
     } else {
         startIntro();
@@ -456,8 +513,7 @@
         target = Math.max(0, Math.min(100, pct));
         run();
     });
-}());
-
+})();
 
 /* --------------------------------------------------------------------------
    THE ANNUAL EVENTS ROW
@@ -483,16 +539,13 @@
     var cards = track.querySelectorAll('.sgs-an-card').length;
     if (!cards) return;
 
-    var arrows = Array.prototype.slice.call(
-        section.querySelectorAll('[data-sgs-annual]')
-    );
+    var arrows = Array.prototype.slice.call(section.querySelectorAll('[data-sgs-annual]'));
 
     var page = 0;
-    var built = 0;          /* how many dashes are in the DOM right now */
+    var built = 0; /* how many dashes are in the DOM right now */
 
     function perView() {
-        var raw = window.getComputedStyle(section)
-            .getPropertyValue('--sgs-an-per');
+        var raw = window.getComputedStyle(section).getPropertyValue('--sgs-an-per');
         var n = parseInt(raw, 10);
         return n > 0 ? n : 1;
     }
@@ -509,7 +562,7 @@
         built = total;
         dots.innerHTML = '';
 
-        if (total < 2) return;   /* one page needs no page indicator */
+        if (total < 2) return; /* one page needs no page indicator */
 
         for (var i = 0; i < total; i++) {
             var b = document.createElement('button');
@@ -551,9 +604,7 @@
             var first = page * per + 1;
             var lastCard = Math.min(cards, first + per - 1);
 
-            count.textContent = first === lastCard
-                ? first + ' of ' + cards
-                : first + '–' + lastCard + ' of ' + cards;
+            count.textContent = first === lastCard ? first + ' of ' + cards : first + '–' + lastCard + ' of ' + cards;
         }
     }
 
@@ -581,4 +632,4 @@
     window.addEventListener('resize', paint);
 
     paint();
-}());
+})();

@@ -32,43 +32,40 @@
    Only list real events - never made-up ones to fill the page.
    ========================================================================== */
 var GG_LISTINGS = [
-
     {
-        name:  'Friday Nights',
+        name: 'Friday Nights',
         every: 'friday',
-        time:  '9:30 PM – Late',
+        time: '9:30 PM – Late',
         venue: 'The Grand View Hotel, Bowen',
-        area:  'bowen',
-        cats:  ['dj', 'live'],
-        tags:  ['DJ', 'Nightlife', 'Free Entry'],
-        img:   ''
+        area: 'bowen',
+        cats: ['dj', 'live'],
+        tags: ['DJ', 'Nightlife', 'Free Entry'],
+        img: ''
     },
 
     {
-        name:  'Eatz & Beatz — Halloween Edition',
-        date:  '2026-10-31',
+        name: 'Eatz & Beatz — Halloween Edition',
+        date: '2026-10-31',
         venue: 'Bowen Sports Complex',
-        area:  'bowen',
-        cats:  ['markets', 'food', 'family', 'live'],
-        tags:  ['Food', 'Markets', 'Music', 'Family'],
-        img:   '',
-        big:   true
+        area: 'bowen',
+        cats: ['markets', 'food', 'family', 'live'],
+        tags: ['Food', 'Markets', 'Music', 'Family'],
+        img: '',
+        big: true
     },
 
     {
-        name:     'SoundzGood — Next Chapter',
-        date:     null,
+        name: 'SoundzGood — Next Chapter',
+        date: null,
         dateText: '2027',
-        venue:    'Bowen, QLD',
-        area:     'bowen',
-        cats:     ['festivals', 'live'],
-        tags:     ['Festival', 'Music', 'Coming Soon'],
-        img:      '',
-        big:      true
+        venue: 'Bowen, QLD',
+        area: 'bowen',
+        cats: ['festivals', 'live'],
+        tags: ['Festival', 'Music', 'Coming Soon'],
+        img: '',
+        big: true
     }
-
 ];
-
 
 /* ==========================================================================
    Everything below builds the page. You should not have to touch it to add
@@ -86,8 +83,7 @@ var GG_LISTINGS = [
     var page = document.getElementById('sg-gig-guide');
     if (!page) return;
 
-    var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     var DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     /*  How many weeks ahead a repeating event is worked out to. */
@@ -124,9 +120,7 @@ var GG_LISTINGS = [
 
         GG_LISTINGS.forEach(function (ev) {
             if (ev.every) {
-                var want = DAYS.indexOf(
-                    ev.every.slice(0, 1).toUpperCase() + ev.every.slice(1, 3)
-                );
+                var want = DAYS.indexOf(ev.every.slice(0, 1).toUpperCase() + ev.every.slice(1, 3));
                 if (want < 0) return;
 
                 var d = new Date(today);
@@ -263,11 +257,9 @@ var GG_LISTINGS = [
             return true;
         });
 
-        fill(weekendGrid, weekendEmpty, weekend,
-             'Nothing listed for this weekend yet.');
+        fill(weekendGrid, weekendEmpty, weekend, 'Nothing listed for this weekend yet.');
 
-        fill(upcomingGrid, upcomingEmpty, upcoming,
-             'Nothing else listed just now.');
+        fill(upcomingGrid, upcomingEmpty, upcoming, 'Nothing else listed just now.');
 
         if (upPage > pages() - 1) upPage = pages() - 1;
         if (upPage < 0) upPage = 0;
@@ -296,9 +288,7 @@ var GG_LISTINGS = [
 
     function perView() {
         if (!view) return 1;
-        var n = parseInt(
-            window.getComputedStyle(view).getPropertyValue('--gg-per'), 10
-        );
+        var n = parseInt(window.getComputedStyle(view).getPropertyValue('--gg-per'), 10);
         return n > 0 ? n : 1;
     }
 
@@ -397,8 +387,7 @@ var GG_LISTINGS = [
             ev.preventDefault();
             var email = document.getElementById('gg-email');
             var note = 'Please add me to the weekend gig guide list.';
-            window.location.href = '/contact?note=' + encodeURIComponent(note) +
-                '&email=' + encodeURIComponent(email ? email.value : '');
+            window.location.href = '/contact?note=' + encodeURIComponent(note) + '&email=' + encodeURIComponent(email ? email.value : '');
         });
     }
 
@@ -414,34 +403,44 @@ var GG_LISTINGS = [
         events arrive. If that call fails the page keeps what it has.   */
     draw();
 
-    loadFound().then(function (found) {
-        if (!found.length) return;
+    loadFound()
+        .then(function (found) {
+            if (!found.length) return;
 
-        events = expand().concat(found).sort(function (a, b) {
-            if (!a.day && !b.day) return 0;
-            if (!a.day) return 1;
-            if (!b.day) return -1;
-            return a.day - b.day;
+            events = expand()
+                .concat(found)
+                .sort(function (a, b) {
+                    if (!a.day && !b.day) return 0;
+                    if (!a.day) return 1;
+                    if (!b.day) return -1;
+                    return a.day - b.day;
+                });
+
+            draw();
+            return loadStatus();
+        })
+        .then(function (status) {
+            if (!status || !status.ranAt) return;
+
+            var when = new Date(status.ranAt);
+            if (isNaN(when)) return;
+
+            var note = document.getElementById('gg-updated');
+            if (!note) return;
+
+            note.textContent =
+                'Listings checked ' +
+                when.toLocaleDateString('en-AU', {
+                    day: 'numeric',
+                    month: 'long',
+                    hour: 'numeric',
+                    minute: '2-digit'
+                }) +
+                '. Always check with the organiser before you travel.';
+            note.hidden = false;
+        })
+        .catch(function (err) {
+            /*  The hand written listings are already on screen. */
+            if (window.console) console.warn('gig guide: found events unavailable', err);
         });
-
-        draw();
-        return loadStatus();
-    }).then(function (status) {
-        if (!status || !status.ranAt) return;
-
-        var when = new Date(status.ranAt);
-        if (isNaN(when)) return;
-
-        var note = document.getElementById('gg-updated');
-        if (!note) return;
-
-        note.textContent = 'Listings checked ' +
-            when.toLocaleDateString('en-AU', {
-                day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit'
-            }) + '. Always check with the organiser before you travel.';
-        note.hidden = false;
-    }).catch(function (err) {
-        /*  The hand written listings are already on screen. */
-        if (window.console) console.warn('gig guide: found events unavailable', err);
-    });
-}());
+})();

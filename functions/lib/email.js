@@ -17,78 +17,77 @@ const logger = require('firebase-functions/logger');
 
 /* Who the invoice is from. The ABN is required for a valid tax invoice. */
 const SELLER = {
-  name: 'SoundzGood Whitsundays',
-  abn: process.env.SG_ABN || '',
-  email: process.env.SG_FROM_EMAIL || 'bookings@soundzgood.com.au',
-  site: 'www.soundzgood.com.au',
+    name: 'SoundzGood Whitsundays',
+    abn: process.env.SG_ABN || '',
+    email: process.env.SG_FROM_EMAIL || 'bookings@soundzgood.com.au',
+    site: 'www.soundzgood.com.au'
 };
 
 const OFFICE_COPY = process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au';
 
 function transport() {
-  const user = (process.env.SMTP_USER || '').trim();
+    const user = (process.env.SMTP_USER || '').trim();
 
-  /* Google app passwords come with spaces; SMTP wants the 16 characters only. */
-  const pass = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
+    /* Google app passwords come with spaces; SMTP wants the 16 characters only. */
+    const pass = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
 
-  if (!user || !pass) return null;
+    if (!user || !pass) return null;
 
-  /* Google Workspace SMTP, port 465 with TLS. */
-  return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: { user, pass },
-  });
+    /* Google Workspace SMTP, port 465 with TLS. */
+    return nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: { user, pass }
+    });
 }
 
 const money = (cents) => '$' + ((cents || 0) / 100).toFixed(2);
 
 function esc(value) {
-  return String(value == null ? '' : value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 }
 
 /* Older bookings have no fee saved, so fall back to the site price. */
 function figures(booking) {
-  const site = booking.amountCents || 0;
-  const fee = booking.bookingFeeCents != null ? booking.bookingFeeCents : 0;
-  const gst = booking.gstCents != null ? booking.gstCents : 0;
-  const total = booking.totalCents != null ? booking.totalCents : site + fee + gst;
-  return { site, fee, gst, total, subtotal: site + fee };
+    const site = booking.amountCents || 0;
+    const fee = booking.bookingFeeCents != null ? booking.bookingFeeCents : 0;
+    const gst = booking.gstCents != null ? booking.gstCents : 0;
+    const total = booking.totalCents != null ? booking.totalCents : site + fee + gst;
+    return { site, fee, gst, total, subtotal: site + fee };
 }
 
 /* Every {{field}} a template can use - the admin screen lists these.
    Unknown {{fields}} are left as they are, so a typo shows in the preview. */
 function placeholders(booking, event) {
-  const biz = booking.business || {};
-  const f = figures(booking);
+    const biz = booking.business || {};
+    const f = figures(booking);
 
-  return {
-    vendor_name: biz.contactName || '',
-    business_name: biz.name || '',
-    vendor_email: biz.email || '',
-    event_name: event.name || '',
-    event_date: event.dateLabel || event.dateISO || '',
-    event_venue: [event.venue, event.location].filter(Boolean).join(', '),
-    site_number: booking.siteLabel || '',
-    site_type: booking.vendorType === 'market' ? 'Market Stall' : 'Food Vendor',
-    amount_paid: money(f.total),
-    reference: booking.reference || '',
-  };
+    return {
+        vendor_name: biz.contactName || '',
+        business_name: biz.name || '',
+        vendor_email: biz.email || '',
+        event_name: event.name || '',
+        event_date: event.dateLabel || event.dateISO || '',
+        event_venue: [event.venue, event.location].filter(Boolean).join(', '),
+        site_number: booking.siteLabel || '',
+        site_type: booking.vendorType === 'market' ? 'Market Stall' : 'Food Vendor',
+        amount_paid: money(f.total),
+        reference: booking.reference || ''
+    };
 }
 
 /* Fill in {{fields}}. Values are HTML-escaped so a name like
    "Ben & Jerry's" cannot break the email. */
 function fill(template, values, escapeValue) {
-  const clean = escapeValue === undefined ? esc : escapeValue;
-  return String(template || '').replace(/\{\{\s*([a-z_]+)\s*\}\}/gi,
-    function (whole, key) {
-      const v = values[key.toLowerCase()];
-      return v === undefined ? whole : clean(v);
+    const clean = escapeValue === undefined ? esc : escapeValue;
+    return String(template || '').replace(/\{\{\s*([a-z_]+)\s*\}\}/gi, function (whole, key) {
+        const v = values[key.toLowerCase()];
+        return v === undefined ? whole : clean(v);
     });
 }
 
@@ -97,60 +96,61 @@ const raw = (v) => String(v == null ? '' : v);
 
 /* The custom template for this event - only if both subject and body are set. */
 function customTemplate(event) {
-  const t = (event && event.vendorEmail) || {};
-  const subject = String(t.subject || '').trim();
-  const body = String(t.body || '').trim();
-  return subject && body ? { subject: subject, body: body } : null;
+    const t = (event && event.vendorEmail) || {};
+    const subject = String(t.subject || '').trim();
+    const body = String(t.body || '').trim();
+    return subject && body ? { subject: subject, body: body } : null;
 }
 
 /* THE LETTERHEAD - black bar, white card and footer around the message. */
 function shell(inner) {
-  return [
-    '<!doctype html>',
-    '<html><body style="margin:0;padding:24px;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">',
-    '<div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;overflow:hidden;">',
-    '<div style="background:#111;padding:24px;">',
-    '<p style="margin:0;color:#ff6b00;font-size:12px;letter-spacing:2px;text-transform:uppercase;">',
-    esc(SELLER.name),
-    '</p></div>',
-    '<div style="padding:24px;font-size:15px;line-height:1.6;color:#111;">',
-    inner,
-    '</div>',
-    '<div style="padding:0 24px 24px;color:#777;font-size:12px;line-height:1.6;">',
-    esc(SELLER.name) + (SELLER.abn ? ' &middot; ABN ' + esc(SELLER.abn) : '') + '<br>',
-    esc(SELLER.email) + ' &middot; ' + esc(SELLER.site),
-    '</div></div></body></html>',
-  ].join('');
+    return [
+        '<!doctype html>',
+        '<html><body style="margin:0;padding:24px;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">',
+        '<div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;overflow:hidden;">',
+        '<div style="background:#111;padding:24px;">',
+        '<p style="margin:0;color:#ff6b00;font-size:12px;letter-spacing:2px;text-transform:uppercase;">',
+        esc(SELLER.name),
+        '</p></div>',
+        '<div style="padding:24px;font-size:15px;line-height:1.6;color:#111;">',
+        inner,
+        '</div>',
+        '<div style="padding:0 24px 24px;color:#777;font-size:12px;line-height:1.6;">',
+        esc(SELLER.name) + (SELLER.abn ? ' &middot; ABN ' + esc(SELLER.abn) : '') + '<br>',
+        esc(SELLER.email) + ' &middot; ' + esc(SELLER.site),
+        '</div></div></body></html>'
+    ].join('');
 }
 
 function vendorSubject(booking, event) {
-  const custom = customTemplate(event);
-  if (custom) return fill(custom.subject, placeholders(booking, event), raw);
+    const custom = customTemplate(event);
+    if (custom) return fill(custom.subject, placeholders(booking, event), raw);
 
-  return `You're in - ${event.name || 'the event'}, site ${booking.siteLabel || ''}`.trim();
+    return `You're in - ${event.name || 'the event'}, site ${booking.siteLabel || ''}`.trim();
 }
 
 /* -------------------------------------------------------------------------
    The vendor's copy: confirmation and tax invoice in one
    ------------------------------------------------------------------------- */
 function vendorHtml(booking, bookingId, event) {
-  /* Custom wording if there is any, inside the letterhead. */
-  const custom = customTemplate(event);
-  if (custom) return shell(fill(custom.body, placeholders(booking, event)));
+    /* Custom wording if there is any, inside the letterhead. */
+    const custom = customTemplate(event);
+    if (custom) return shell(fill(custom.body, placeholders(booking, event)));
 
-  const f = figures(booking);
-  const biz = booking.business || {};
-  const when = event.dateLabel || event.dateISO || '';
-  const where = [event.venue, event.location].filter(Boolean).join(', ');
+    const f = figures(booking);
+    const biz = booking.business || {};
+    const when = event.dateLabel || event.dateISO || '';
+    const where = [event.venue, event.location].filter(Boolean).join(', ');
 
-  const row = (label, value, strong) => `
+    const row = (label, value, strong) => `
     <tr>
       <td style="padding:8px 0;color:#555;font-size:14px;">${esc(label)}</td>
       <td style="padding:8px 0;text-align:right;font-size:14px;${
-        strong ? 'font-weight:bold;color:#111;' : 'color:#111;'}">${esc(value)}</td>
+          strong ? 'font-weight:bold;color:#111;' : 'color:#111;'
+      }">${esc(value)}</td>
     </tr>`;
 
-  return `<!doctype html>
+    return `<!doctype html>
 <html><body style="margin:0;padding:24px;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
   <div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;overflow:hidden;">
 
@@ -208,59 +208,66 @@ function vendorHtml(booking, bookingId, event) {
 }
 
 function vendorText(booking, bookingId, event) {
-  /* Plain-text version of the same letter, for mail apps that refuse HTML. */
-  const custom = customTemplate(event);
-  if (custom) {
-    return fill(custom.body, placeholders(booking, event))
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<\/(p|div|li|h[1-6])>/gi, '\n')
-      .replace(/<[^>]+>/g, '')
-      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-      .replace(/&nbsp;/g, ' ').replace(/&#39;/g, "'").replace(/&quot;/g, '"')
-      .replace(/\n{3,}/g, '\n\n')
-      .trim();
-  }
+    /* Plain-text version of the same letter, for mail apps that refuse HTML. */
+    const custom = customTemplate(event);
+    if (custom) {
+        return fill(custom.body, placeholders(booking, event))
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<\/(p|div|li|h[1-6])>/gi, '\n')
+            .replace(/<[^>]+>/g, '')
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&#39;/g, "'")
+            .replace(/&quot;/g, '"')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+    }
 
-  const f = figures(booking);
-  const biz = booking.business || {};
-  return [
-    `You're booked in - ${event.name || 'the event'}`,
-    '',
-    `Reference: ${booking.reference || bookingId}`,
-    `Business:  ${biz.name || ''}`,
-    `Site:      ${booking.siteLabel || ''}`,
-    event.dateLabel ? `When:      ${event.dateLabel}` : '',
-    [event.venue, event.location].filter(Boolean).length
-      ? `Where:     ${[event.venue, event.location].filter(Boolean).join(', ')}` : '',
-    '',
-    'TAX INVOICE',
-    `${SELLER.name}${SELLER.abn ? ' - ABN ' + SELLER.abn : ''}`,
-    '',
-    `Site fee              ${money(f.site)}`,
-    `Booking fee           ${money(f.fee)}`,
-    `Subtotal              ${money(f.subtotal)}`,
-    `GST (10%)             ${money(f.gst)}`,
-    `Total paid (incl GST) ${money(f.total)}`,
-    '',
-    "Keep this email - the reference identifies your booking. We'll be in touch",
-    'closer to the day with bump-in times. Reply here if anything changes.',
-    '',
-    `${SELLER.name} - ${SELLER.email} - ${SELLER.site}`,
-  ].filter((l) => l !== '').join('\n');
+    const f = figures(booking);
+    const biz = booking.business || {};
+    return [
+        `You're booked in - ${event.name || 'the event'}`,
+        '',
+        `Reference: ${booking.reference || bookingId}`,
+        `Business:  ${biz.name || ''}`,
+        `Site:      ${booking.siteLabel || ''}`,
+        event.dateLabel ? `When:      ${event.dateLabel}` : '',
+        [event.venue, event.location].filter(Boolean).length
+            ? `Where:     ${[event.venue, event.location].filter(Boolean).join(', ')}`
+            : '',
+        '',
+        'TAX INVOICE',
+        `${SELLER.name}${SELLER.abn ? ' - ABN ' + SELLER.abn : ''}`,
+        '',
+        `Site fee              ${money(f.site)}`,
+        `Booking fee           ${money(f.fee)}`,
+        `Subtotal              ${money(f.subtotal)}`,
+        `GST (10%)             ${money(f.gst)}`,
+        `Total paid (incl GST) ${money(f.total)}`,
+        '',
+        "Keep this email - the reference identifies your booking. We'll be in touch",
+        'closer to the day with bump-in times. Reply here if anything changes.',
+        '',
+        `${SELLER.name} - ${SELLER.email} - ${SELLER.site}`
+    ]
+        .filter((l) => l !== '')
+        .join('\n');
 }
 
 /* -------------------------------------------------------------------------
    The office copy: what an admin needs at a glance
    ------------------------------------------------------------------------- */
 function officeHtml(booking, bookingId, event) {
-  const f = figures(booking);
-  const biz = booking.business || {};
+    const f = figures(booking);
+    const biz = booking.business || {};
 
-  const row = (k, v) => `
+    const row = (k, v) => `
     <tr><td style="padding:6px 12px 6px 0;color:#666;font-size:13px;">${esc(k)}</td>
         <td style="padding:6px 0;font-size:13px;color:#111;">${esc(v)}</td></tr>`;
 
-  return `<!doctype html>
+    return `<!doctype html>
 <html><body style="margin:0;padding:20px;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
   <div style="max-width:560px;margin:auto;background:#fff;border-radius:8px;padding:20px;">
     <h2 style="margin:0 0 4px;font-size:17px;color:#111;">New vendor confirmed</h2>
@@ -291,73 +298,73 @@ function officeHtml(booking, bookingId, event) {
    Send both. Never throws.
    ------------------------------------------------------------------------- */
 async function sendBookingEmails(booking, bookingId, event, opts = {}) {
-  const tx = transport();
+    const tx = transport();
 
-  if (!tx) {
-    logger.warn('booking confirmed but SMTP is not configured, no email sent', { bookingId });
-    return { sent: false, reason: 'no-smtp' };
-  }
-
-  const from = `${SELLER.name} <${SELLER.email}>`;
-  const to = (booking.business || {}).email;
-  /* Failures are returned as well as logged, so the caller can show why. */
-  const results = { vendor: false, office: false, errors: [] };
-
-  /* officeOnly: the vendor gets the invoice email from
-     vendor-invoice-email.js instead, so only the office copy goes. */
-  if (to && !opts.officeOnly) {
-    try {
-      await tx.sendMail({
-        kind: 'vendor-confirmation',
-        from,
-        to,
-        replyTo: OFFICE_COPY,
-        subject: vendorSubject(booking, event),
-        text: vendorText(booking, bookingId, event),
-        html: vendorHtml(booking, bookingId, event),
-      });
-      results.vendor = true;
-    } catch (err) {
-      logger.error('vendor confirmation email failed', {
-        bookingId,
-        to,
-        /* Not 'message' - the logger uses that key for its own text. */
-        smtpError: err && err.message,
-        smtpCode: err && (err.code || err.responseCode),
-        smtpResponse: err && err.response,
-      });
-      results.errors.push('vendor: ' + (err && err.message));
+    if (!tx) {
+        logger.warn('booking confirmed but SMTP is not configured, no email sent', { bookingId });
+        return { sent: false, reason: 'no-smtp' };
     }
-  } else {
-    logger.warn('booking has no email address, cannot send confirmation', { bookingId });
-  }
 
-  try {
-    await tx.sendMail({
-      kind: 'office-copy',
-      from,
-      to: OFFICE_COPY,
-      replyTo: to || OFFICE_COPY,
-      subject: `New vendor: ${(booking.business || {}).name || 'unnamed'} - ${booking.siteLabel || ''}`,
-      html: officeHtml(booking, bookingId, event),
-    });
-    results.office = true;
-  } catch (err) {
-    logger.error('office copy email failed', {
-      bookingId,
-      smtpError: err && err.message,
-      smtpCode: err && (err.code || err.responseCode),
-      smtpResponse: err && err.response,
-    });
-    results.errors.push('office: ' + (err && err.message));
-  }
+    const from = `${SELLER.name} <${SELLER.email}>`;
+    const to = (booking.business || {}).email;
+    /* Failures are returned as well as logged, so the caller can show why. */
+    const results = { vendor: false, office: false, errors: [] };
 
-  return { sent: results.vendor || results.office, ...results };
+    /* officeOnly: the vendor gets the invoice email from
+     vendor-invoice-email.js instead, so only the office copy goes. */
+    if (to && !opts.officeOnly) {
+        try {
+            await tx.sendMail({
+                kind: 'vendor-confirmation',
+                from,
+                to,
+                replyTo: OFFICE_COPY,
+                subject: vendorSubject(booking, event),
+                text: vendorText(booking, bookingId, event),
+                html: vendorHtml(booking, bookingId, event)
+            });
+            results.vendor = true;
+        } catch (err) {
+            logger.error('vendor confirmation email failed', {
+                bookingId,
+                to,
+                /* Not 'message' - the logger uses that key for its own text. */
+                smtpError: err && err.message,
+                smtpCode: err && (err.code || err.responseCode),
+                smtpResponse: err && err.response
+            });
+            results.errors.push('vendor: ' + (err && err.message));
+        }
+    } else {
+        logger.warn('booking has no email address, cannot send confirmation', { bookingId });
+    }
+
+    try {
+        await tx.sendMail({
+            kind: 'office-copy',
+            from,
+            to: OFFICE_COPY,
+            replyTo: to || OFFICE_COPY,
+            subject: `New vendor: ${(booking.business || {}).name || 'unnamed'} - ${booking.siteLabel || ''}`,
+            html: officeHtml(booking, bookingId, event)
+        });
+        results.office = true;
+    } catch (err) {
+        logger.error('office copy email failed', {
+            bookingId,
+            smtpError: err && err.message,
+            smtpCode: err && (err.code || err.responseCode),
+            smtpResponse: err && err.response
+        });
+        results.errors.push('office: ' + (err && err.message));
+    }
+
+    return { sent: results.vendor || results.office, ...results };
 }
 
 /* __test exposes the rendering so it can be checked without sending.
    sendBookingEmails is the only thing index.js calls. */
 module.exports = {
-  sendBookingEmails,
-  __test: { vendorSubject, vendorHtml, vendorText, fill, placeholders },
+    sendBookingEmails,
+    __test: { vendorSubject, vendorHtml, vendorText, fill, placeholders }
 };

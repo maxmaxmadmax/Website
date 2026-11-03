@@ -19,12 +19,12 @@
    -------------------------------------------------------------------------- */
 
 export const firebaseConfig = {
-  apiKey: 'AIzaSyCVWdD7fE24MuN-v5XQLObJbSHYRUbPlPY',
-  authDomain: 'soundzgood-8c86f.firebaseapp.com',
-  projectId: 'soundzgood-8c86f',
-  storageBucket: 'soundzgood-8c86f.firebasestorage.app',
-  messagingSenderId: '188284062614',
-  appId: '1:188284062614:web:5e9f6f64713fb2e02dabb7',
+    apiKey: 'AIzaSyCVWdD7fE24MuN-v5XQLObJbSHYRUbPlPY',
+    authDomain: 'soundzgood-8c86f.firebaseapp.com',
+    projectId: 'soundzgood-8c86f',
+    storageBucket: 'soundzgood-8c86f.firebasestorage.app',
+    messagingSenderId: '188284062614',
+    appId: '1:188284062614:web:5e9f6f64713fb2e02dabb7'
 };
 
 /* The region the Cloud Functions are deployed to. Matches
@@ -36,7 +36,6 @@ export const eventId = 'eatz-beatz-halloween-2026';
 
 /* True once the placeholders above have been filled in. The page checks this
    and, if false, runs in preview mode rather than throwing errors at people. */
-export const isFirebaseConfigured =
-  !Object.values(firebaseConfig).some(
+export const isFirebaseConfigured = !Object.values(firebaseConfig).some(
     (value) => typeof value === 'string' && value.startsWith('REPLACE_WITH')
-  );
+);

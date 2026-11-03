@@ -38,287 +38,291 @@
     RESPONSIVE (must be last). Do not re-sort rules inside a section -
     order decides which rule wins.                                        */
 
-
 /* ==========================================================================
    TOKENS - every colour, font and measurement, in one place.
    ========================================================================== */
-:root{
-    --sg-orange:#ff6b00;
-    --sg-orange-bright:#ff8c00;
-    --sg-gold:#ffb700;
+:root {
+    --sg-orange: #ff6b00;
+    --sg-orange-bright: #ff8c00;
+    --sg-gold: #ffb700;
 
     /* Sunset tones taken from the SoundzGood 2.0 poster artwork */
-    --sg-sun-top:#f7a83f;
-    --sg-sun-mid:#f0862b;
-    --sg-sun-deep:#e2661a;
-    --sg-sand:#ffd9a0;
+    --sg-sun-top: #f7a83f;
+    --sg-sun-mid: #f0862b;
+    --sg-sun-deep: #e2661a;
+    --sg-sand: #ffd9a0;
 
-    --sg-black:#000;
-    --sg-panel:#111;
-    --sg-panel-light:#161616;
-    --sg-border:#222;
+    --sg-black: #000;
+    --sg-panel: #111;
+    --sg-panel-light: #161616;
+    --sg-border: #222;
 
-    --sg-text:#fff;
-    --sg-muted:#d0d0d0;
-    --sg-dim:#aaa;
+    --sg-text: #fff;
+    --sg-muted: #d0d0d0;
+    --sg-dim: #aaa;
 
-    --sg-font:Arial, Helvetica, sans-serif;
+    --sg-font: Arial, Helvetica, sans-serif;
     /* Heavy black type, like the poster wordmark */
-    --sg-font-display:"Arial Black", "Arial Bold", "Helvetica Neue", Impact, sans-serif;
-    --sg-font-accent:'Courier New', Courier, monospace;
-    --sg-font-script:"Brush Script MT", "Segoe Script", "Pacifico", cursive;
+    --sg-font-display: 'Arial Black', 'Arial Bold', 'Helvetica Neue', Impact, sans-serif;
+    --sg-font-accent: 'Courier New', Courier, monospace;
+    --sg-font-script: 'Brush Script MT', 'Segoe Script', 'Pacifico', cursive;
 
     /* Subtle paper-style grain, drawn in CSS so there is no extra image to load */
-    --sg-grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+    --sg-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
 
-    --sg-max-width:1200px;
+    --sg-max-width: 1200px;
 }
-
 
 /* ==========================================================================
    BASE - the reset and plain element styles.
    ========================================================================== */
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-html{
-    scroll-behavior:smooth;
+html {
+    scroll-behavior: smooth;
 }
 
-body{
-    background:var(--sg-black);
-    color:var(--sg-text);
-    font-family:var(--sg-font);
-    line-height:1.6;
+body {
+    background: var(--sg-black);
+    color: var(--sg-text);
+    font-family: var(--sg-font);
+    line-height: 1.6;
 
     /* Safety net so nothing can cause sideways scrolling */
-    overflow-x:hidden;
+    overflow-x: hidden;
 }
 
 img,
-video{
-    max-width:100%;
+video {
+    max-width: 100%;
 }
 
-a{
-    color:var(--sg-orange);
+a {
+    color: var(--sg-orange);
 }
 
-h1,h2,h3,h4,h5{
-    line-height:1.15;
+h1,
+h2,
+h3,
+h4,
+h5 {
+    line-height: 1.15;
 }
 
 h1,
 h2,
 .detail-card p,
-.featured-event h2{
-    font-family:var(--sg-font-display);
-    letter-spacing:-.5px;
+.featured-event h2 {
+    font-family: var(--sg-font-display);
+    letter-spacing: -0.5px;
 }
 
 /* Stops long words/URLs pushing the layout wider than the screen */
-p, h1, h2, h3, h4, h5, li, a{
-    overflow-wrap:break-word;
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+li,
+a {
+    overflow-wrap: break-word;
 }
-
 
 /* ==========================================================================
    LAYOUT - section wrapper, page headers, feature and call-to-action rows.
    ========================================================================== */
-.section{
-    padding:80px 6%;
+.section {
+    padding: 80px 6%;
 }
 
-
-.section h2{
-    margin-bottom:20px;
-    text-align:center;
-    font-size:clamp(1.9rem, 5vw, 2.8rem);
-    letter-spacing:1px;
-    text-transform:uppercase;
+.section h2 {
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: clamp(1.9rem, 5vw, 2.8rem);
+    letter-spacing: 1px;
+    text-transform: uppercase;
 }
 
-.section-intro{
-    max-width:720px;
-    margin:0 auto 50px;
-    text-align:center;
-    color:var(--sg-muted);
+.section-intro {
+    max-width: 720px;
+    margin: 0 auto 50px;
+    text-align: center;
+    color: var(--sg-muted);
 }
 
-.dark{
-    background:var(--sg-panel);
+.dark {
+    background: var(--sg-panel);
 }
-
 
 /* Page headers (services / contact) */
-.page-header{
-    position:relative;
-    min-height:52vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    overflow:hidden;
+.page-header {
+    position: relative;
+    min-height: 52vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
 
-    background:linear-gradient(140deg, #1a0d00 0%, #000 55%, #150a00 100%);
+    background: linear-gradient(140deg, #1a0d00 0%, #000 55%, #150a00 100%);
 }
 
-
-.header-overlay{
-    position:absolute;
-    inset:0;
-    background:rgba(0,0,0,.65);
+.header-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
 }
 
-.header-content{
-    position:relative;
-    z-index:2;
-    text-align:center;
-    padding:110px 6% 60px;
-    max-width:820px;
+.header-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 110px 6% 60px;
+    max-width: 820px;
 }
 
-.header-content h1{
-    font-size:clamp(2.2rem, 6vw, 4rem);
-    margin-bottom:14px;
-    text-transform:uppercase;
-    letter-spacing:1px;
+.header-content h1 {
+    font-size: clamp(2.2rem, 6vw, 4rem);
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
-.header-content p{
-    color:var(--sg-muted);
-    font-size:1.05rem;
+.header-content p {
+    color: var(--sg-muted);
+    font-size: 1.05rem;
 }
-
 
 /* Simple text grid */
-.features{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
-    gap:30px;
+.features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 30px;
 }
 
-.feature{
-    text-align:center;
+.feature {
+    text-align: center;
 }
 
-.feature h3{
-    color:var(--sg-orange);
-    margin-bottom:10px;
+.feature h3 {
+    color: var(--sg-orange);
+    margin-bottom: 10px;
 }
 
-.feature p{
-    color:var(--sg-muted);
+.feature p {
+    color: var(--sg-muted);
 }
 
 /* ==========================================================================
    ACTS - one block per artist (name, cut-out, bio, video), alternating
    left and right down the page.
    ========================================================================== */
-.acts{
-    max-width:var(--sg-max-width);
-    margin:20px auto 0;
+.acts {
+    max-width: var(--sg-max-width);
+    margin: 20px auto 0;
 }
 
-.act{
-    display:grid;
-    grid-template-columns:1fr;
-    align-items:center;
-    gap:6px;
+.act {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: center;
+    gap: 6px;
 
-    padding:46px 0;
-    text-align:center;
-    color:#000;
+    padding: 46px 0;
+    text-align: center;
+    color: #000;
 }
 
 /* Alternate the alignment so the eye keeps moving down the page.
    nth-of-type (not nth-child) because the wave dividers sit between acts. */
-.act:nth-of-type(odd){
-    text-align:left;
-    justify-items:start;
+.act:nth-of-type(odd) {
+    text-align: left;
+    justify-items: start;
 }
 
-.act:nth-of-type(even){
-    text-align:right;
-    justify-items:end;
+.act:nth-of-type(even) {
+    text-align: right;
+    justify-items: end;
 }
 
-.act h3{
-    font-size:clamp(2.1rem, 8vw, 5rem);
-    line-height:.92;
-    text-transform:uppercase;
-    letter-spacing:-1.5px;
-    margin:0;
+.act h3 {
+    font-size: clamp(2.1rem, 8vw, 5rem);
+    line-height: 0.92;
+    text-transform: uppercase;
+    letter-spacing: -1.5px;
+    margin: 0;
 }
 
-.act p{
-    font-family:var(--sg-font-accent);
-    font-size:clamp(.78rem, 2vw, .95rem);
-    font-weight:bold;
-    letter-spacing:2px;
-    text-transform:uppercase;
-    color:rgba(0,0,0,.68);
-    margin:0;
+.act p {
+    font-family: var(--sg-font-accent);
+    font-size: clamp(0.78rem, 2vw, 0.95rem);
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.68);
+    margin: 0;
 }
 
 /*  ARTIST BIOGRAPHY AND VIDEO - under each act, full width.          */
-.act-bio{
-    grid-column:1 / -1;
-    max-width:70ch;
-    margin-top:20px;
-    text-align:left; /* long copy always reads left, even on mirrored rows */
+.act-bio {
+    grid-column: 1 / -1;
+    max-width: 70ch;
+    margin-top: 20px;
+    text-align: left; /* long copy always reads left, even on mirrored rows */
 }
 
 /* Overrides the short uppercase role styling for the body copy */
-.act .act-bio p{
-    font-family:var(--sg-font);
-    font-size:clamp(.92rem, 1.9vw, 1.02rem);
-    font-weight:normal;
-    letter-spacing:0;
-    text-transform:none;
-    line-height:1.6;
-    color:rgba(0,0,0,.78);
-    margin:0 0 14px;
+.act .act-bio p {
+    font-family: var(--sg-font);
+    font-size: clamp(0.92rem, 1.9vw, 1.02rem);
+    font-weight: normal;
+    letter-spacing: 0;
+    text-transform: none;
+    line-height: 1.6;
+    color: rgba(0, 0, 0, 0.78);
+    margin: 0 0 14px;
 }
 
 /* Responsive 16:9 video */
-.act-video{
-    position:relative;
-    width:100%;
-    max-width:620px;
-    aspect-ratio:16 / 9;
-    margin-top:18px;
+.act-video {
+    position: relative;
+    width: 100%;
+    max-width: 620px;
+    aspect-ratio: 16 / 9;
+    margin-top: 18px;
 
-    border:2px solid rgba(0,0,0,.55);
-    border-radius:12px;
-    overflow:hidden;
-    background:#000;
-    box-shadow:0 10px 26px rgba(80,28,0,.3);
+    border: 2px solid rgba(0, 0, 0, 0.55);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 10px 26px rgba(80, 28, 0, 0.3);
 }
 
-.act-video iframe{
-    position:absolute;
-    inset:0;
-    width:100%;
-    height:100%;
-    border:0;
+.act-video iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
 }
 
 /* Wavy hand-drawn divider between acts */
-.act-wave{
-    display:block;
-    width:100%;
-    height:14px;
-    color:rgba(0,0,0,.4);
+.act-wave {
+    display: block;
+    width: 100%;
+    height: 14px;
+    color: rgba(0, 0, 0, 0.4);
 }
 
-.act-wave path{
-    fill:none;
-    stroke:currentColor;
-    stroke-width:3;
-    stroke-linecap:round;
+.act-wave path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 3;
+    stroke-linecap: round;
 }
 
 /*  ARTIST CUT-OUTS
@@ -327,50 +331,62 @@ p, h1, h2, h3, h4, h5, li, a{
         <img src="images/events/soundzgood-2-0/rossco.webp" alt="Rossco" class="artist-photo">
     The act becomes a two-column row automatically.                        */
 /* Odd acts: cut-out on the left, name on the right */
-.act:has(.artist-photo){
-    grid-template-columns:auto 1fr;
-    grid-template-rows:auto auto;
-    gap:4px 34px;
-    text-align:left;
-    justify-items:start;
-    align-content:end;
+.act:has(.artist-photo) {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    gap: 4px 34px;
+    text-align: left;
+    justify-items: start;
+    align-content: end;
 }
 
-.act:has(.artist-photo) .artist-photo{ grid-column:1; grid-row:1 / span 2; }
-.act:has(.artist-photo) h3{ grid-column:2; grid-row:1; align-self:end; }
-.act:has(.artist-photo) p { grid-column:2; grid-row:2; align-self:start; }
+.act:has(.artist-photo) .artist-photo {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+}
+.act:has(.artist-photo) h3 {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+}
+.act:has(.artist-photo) p {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+}
 
 /* Even acts: mirrored - name on the left, cut-out on the right */
-.act:nth-of-type(even):has(.artist-photo){
-    grid-template-columns:1fr auto;
-    text-align:right;
-    justify-items:end;
+.act:nth-of-type(even):has(.artist-photo) {
+    grid-template-columns: 1fr auto;
+    text-align: right;
+    justify-items: end;
 }
 
-.act:nth-of-type(even):has(.artist-photo) .artist-photo{ grid-column:2; }
-.act:nth-of-type(even):has(.artist-photo) h3{ grid-column:1; }
-.act:nth-of-type(even):has(.artist-photo) p { grid-column:1; }
+.act:nth-of-type(even):has(.artist-photo) .artist-photo {
+    grid-column: 2;
+}
+.act:nth-of-type(even):has(.artist-photo) h3 {
+    grid-column: 1;
+}
+.act:nth-of-type(even):has(.artist-photo) p {
+    grid-column: 1;
+}
 
 /* Sized by height so every cut-out appears at the same scale. */
-.artist-photo{
-    grid-row:span 2;
-    height:clamp(170px, 27vw, 290px);
-    width:auto;
-    max-width:min(46vw, 340px);
-    object-fit:contain;
-    object-position:bottom center;
-    align-self:end;
+.artist-photo {
+    grid-row: span 2;
+    height: clamp(170px, 27vw, 290px);
+    width: auto;
+    max-width: min(46vw, 340px);
+    object-fit: contain;
+    object-position: bottom center;
+    align-self: end;
 
     /* Die-cut sticker edge: a white outline plus a lifted shadow, so each
        cut-out looks like it has been pasted onto the page. */
-    filter:
-        drop-shadow(3px 0 0 #fff)
-        drop-shadow(-3px 0 0 #fff)
-        drop-shadow(0 3px 0 #fff)
-        drop-shadow(0 -3px 0 #fff)
-        drop-shadow(0 16px 22px rgba(0,0,0,.45));
+    filter: drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff)
+        drop-shadow(0 16px 22px rgba(0, 0, 0, 0.45));
 }
-
 
 /*  SCRAPBOOK SCROLL ANIMATION
     js/main.js puts .has-scroll-anim on <html>, then .is-visible on each act
@@ -379,65 +395,66 @@ p, h1, h2, h3, h4, h5, li, a{
 /*  Each act flies in from its own side, tilted back in 3D and blurred,
     then slaps flat onto the page and settles slightly crooked.          */
 
-
 /* ==========================================================================
    BUTTONS - solid, outline, and the ticket button.
    ========================================================================== */
-.btn{
-    display:inline-block;
+.btn {
+    display: inline-block;
 
-    background:var(--sg-orange);
-    color:#fff;
+    background: var(--sg-orange);
+    color: #fff;
 
-    padding:16px 36px;
-    border-radius:50px;
-    border:2px solid var(--sg-orange);
+    padding: 16px 36px;
+    border-radius: 50px;
+    border: 2px solid var(--sg-orange);
 
-    font-family:var(--sg-font-accent);
-    font-weight:bold;
-    font-size:1rem;
-    letter-spacing:1px;
-    text-transform:uppercase;
-    text-decoration:none;
-    text-align:center;
+    font-family: var(--sg-font-accent);
+    font-weight: bold;
+    font-size: 1rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-decoration: none;
+    text-align: center;
 
     /* Comfortable tap target on phones */
-    min-height:52px;
+    min-height: 52px;
 
-    cursor:pointer;
-    transition:transform .25s, background .25s;
+    cursor: pointer;
+    transition:
+        transform 0.25s,
+        background 0.25s;
 }
 
 .btn:hover,
-.btn:focus-visible{
-    transform:translateY(-3px);
+.btn:focus-visible {
+    transform: translateY(-3px);
 }
 
-.btn-outline{
-    background:transparent;
-    color:#fff;
-    border:2px solid var(--sg-orange);
+.btn-outline {
+    background: transparent;
+    color: #fff;
+    border: 2px solid var(--sg-orange);
 }
 
 .btn-outline:hover,
-.btn-outline:focus-visible{
-    background:var(--sg-orange);
+.btn-outline:focus-visible {
+    background: var(--sg-orange);
 }
 
 /* Extra-loud version used for the main ticket links */
-.btn-ticket{
-    background:var(--sg-orange-bright);
-    border-color:var(--sg-orange-bright);
-    font-size:1.15rem;
-    padding:18px 46px;
-    box-shadow:0 0 24px rgba(255,140,0,.45);
+.btn-ticket {
+    background: var(--sg-orange-bright);
+    border-color: var(--sg-orange-bright);
+    font-size: 1.15rem;
+    padding: 18px 46px;
+    box-shadow: 0 0 24px rgba(255, 140, 0, 0.45);
 }
 
-.buttons{
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    gap:18px;
+.buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 18px;
 }
 
 /* Visible keyboard focus ring on every interactive element */
@@ -445,194 +462,189 @@ a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
-textarea:focus-visible{
-    outline:3px solid var(--sg-gold);
-    outline-offset:3px;
+textarea:focus-visible {
+    outline: 3px solid var(--sg-gold);
+    outline-offset: 3px;
 }
-
 
 /* ==========================================================================
    CLOSING BANNER - the full-width image that closes an event page.
    ========================================================================== */
-.closing-banner{
-    background:#000;
-    padding:0;
-    line-height:0; /* removes the gap under an inline image */
+.closing-banner {
+    background: #000;
+    padding: 0;
+    line-height: 0; /* removes the gap under an inline image */
 }
 
-.closing-banner img{
-    display:block;
-    width:100%;
-    height:auto;
+.closing-banner img {
+    display: block;
+    width: 100%;
+    height: auto;
 }
-
 
 /*  THE EVENT FLOW - one sunset running behind several sections, warm at
     the top, sinking into black at the bottom.                            */
 
-
 /* ==========================================================================
    CONTACT - details on one side, form on the other.
    ========================================================================== */
-.header-content .buttons{
-    margin-top:28px;
+.header-content .buttons {
+    margin-top: 28px;
 }
 
-
-.contact-wrapper{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:60px;
-    max-width:var(--sg-max-width);
-    margin:auto;
+.contact-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    max-width: var(--sg-max-width);
+    margin: auto;
 }
 
-.contact-info h2{
-    margin-bottom:20px;
-    text-align:left;
+.contact-info h2 {
+    margin-bottom: 20px;
+    text-align: left;
 }
 
-.contact-info p{
-    color:var(--sg-muted);
+.contact-info p {
+    color: var(--sg-muted);
 }
 
-.contact-item{
-    margin-top:28px;
+.contact-item {
+    margin-top: 28px;
 }
 
-.contact-item h3{
-    color:var(--sg-orange);
-    margin-bottom:8px;
-    font-size:1rem;
-    letter-spacing:1px;
-    text-transform:uppercase;
+.contact-item h3 {
+    color: var(--sg-orange);
+    margin-bottom: 8px;
+    font-size: 1rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
 }
 
-.contact-item a{
-    color:#fff;
-    text-decoration:none;
+.contact-item a {
+    color: #fff;
+    text-decoration: none;
 }
 
-.contact-item a:hover{
-    color:var(--sg-orange);
+.contact-item a:hover {
+    color: var(--sg-orange);
 }
 
-.contact-form{
-    display:flex;
-    flex-direction:column;
-    gap:15px;
+.contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
 .contact-form input,
 .contact-form select,
-.contact-form textarea{
-    padding:15px;
-    border-radius:8px;
-    background:var(--sg-panel);
-    color:#fff;
-    border:1px solid var(--sg-border);
-    font-family:var(--sg-font);
-    font-size:1rem;
-    width:100%;
+.contact-form textarea {
+    padding: 15px;
+    border-radius: 8px;
+    background: var(--sg-panel);
+    color: #fff;
+    border: 1px solid var(--sg-border);
+    font-family: var(--sg-font);
+    font-size: 1rem;
+    width: 100%;
 }
 
-.contact-form textarea{
-    resize:vertical;
+.contact-form textarea {
+    resize: vertical;
 }
 
-.contact-form .btn{
-    border:none;
-    width:100%;
+.contact-form .btn {
+    border: none;
+    width: 100%;
 }
-
 
 /* ==========================================================================
    DETAIL CARDS - the what-you-need-to-know cards under an event hero.
    ========================================================================== */
-.detail-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
-    gap:20px;
-    max-width:var(--sg-max-width);
-    margin:auto;
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    max-width: var(--sg-max-width);
+    margin: auto;
 }
 
-.detail-card{
-    background:var(--sg-panel);
-    border:1px solid var(--sg-border);
-    border-radius:14px;
-    padding:28px 22px;
-    text-align:center;
+.detail-card {
+    background: var(--sg-panel);
+    border: 1px solid var(--sg-border);
+    border-radius: 14px;
+    padding: 28px 22px;
+    text-align: center;
 }
 
-.detail-card h3{
-    font-family:var(--sg-font-accent);
-    font-size:.8rem;
-    letter-spacing:2px;
-    text-transform:uppercase;
-    color:var(--sg-gold);
-    margin-bottom:10px;
+.detail-card h3 {
+    font-family: var(--sg-font-accent);
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--sg-gold);
+    margin-bottom: 10px;
 }
 
-.detail-card p{
-    font-size:1.15rem;
-    font-weight:bold;
+.detail-card p {
+    font-size: 1.15rem;
+    font-weight: bold;
 }
-
-
 
 /* ==========================================================================
    EVENT COPY - event page body copy and the scrolling announcement strip.
    ========================================================================== */
-.event-copy{
-    max-width:760px;
-    margin:auto;
-    text-align:center;
+.event-copy {
+    max-width: 760px;
+    margin: auto;
+    text-align: center;
 }
 
-.event-copy p{
-    color:var(--sg-muted);
-    font-size:1.08rem;
-    margin-bottom:20px;
+.event-copy p {
+    color: var(--sg-muted);
+    font-size: 1.08rem;
+    margin-bottom: 20px;
 }
 
-.event-copy p.lead{
-    color:#fff;
-    font-size:1.25rem;
-    font-weight:bold;
+.event-copy p.lead {
+    color: #fff;
+    font-size: 1.25rem;
+    font-weight: bold;
 }
 
 /* Scrolling announcement strip */
-.announcement-strip{
-    background:linear-gradient(90deg, var(--sg-sun-top), var(--sg-sun-deep));
-    color:#000;
-    overflow:hidden;
-    white-space:nowrap;
-    padding:16px 0;
-    font-family:var(--sg-font-display);
-    letter-spacing:1px;
-    text-transform:uppercase;
+.announcement-strip {
+    background: linear-gradient(90deg, var(--sg-sun-top), var(--sg-sun-deep));
+    color: #000;
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 16px 0;
+    font-family: var(--sg-font-display);
+    letter-spacing: 1px;
+    text-transform: uppercase;
 }
 
-.announcement-strip p{
-    display:inline-block;
-    padding-left:100%;
-    animation:scrollText 22s linear infinite;
+.announcement-strip p {
+    display: inline-block;
+    padding-left: 100%;
+    animation: scrollText 22s linear infinite;
 }
 
-@keyframes scrollText{
-    from{ transform:translateX(0); }
-    to{ transform:translateX(-100%); }
+@keyframes scrollText {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-100%);
+    }
 }
-
-
 
 /* ==========================================================================
    EVENT FLOW - the sunset band near the foot of an event page, with palms.
    ========================================================================== */
-.event-flow{
-    position:relative;
-    background:linear-gradient(
+.event-flow {
+    position: relative;
+    background: linear-gradient(
         180deg,
         var(--sg-sun-top) 0%,
         var(--sg-sun-mid) 30%,
@@ -641,1225 +653,1171 @@ textarea:focus-visible{
         #3d1806 90%,
         #000 100%
     );
-    color:#000;
-    overflow:hidden;
+    color: #000;
+    overflow: hidden;
 }
 
-.event-flow::before{
-    content:"";
-    position:absolute;
-    inset:0;
-    background-image:var(--sg-grain);
-    opacity:.16;
-    mix-blend-mode:multiply;
-    pointer-events:none;
+.event-flow::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: var(--sg-grain);
+    opacity: 0.16;
+    mix-blend-mode: multiply;
+    pointer-events: none;
 }
 
-.event-flow > *{
-    position:relative;
-    z-index:1;
-    background:transparent;
+.event-flow > * {
+    position: relative;
+    z-index: 1;
+    background: transparent;
 }
 
 /* Tighter spacing through the flow */
-.event-flow > .section{
-    padding-top:44px;
-    padding-bottom:44px;
+.event-flow > .section {
+    padding-top: 44px;
+    padding-bottom: 44px;
 }
-
 
 .event-flow h2,
 .event-flow h3,
-.event-flow h5{
-    color:#000;
+.event-flow h5 {
+    color: #000;
 }
 
 /*  Detail bar: bold black type straight onto the sunset, no boxes. */
-.event-flow .detail-grid{
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    gap:0;
-    border-top:3px solid #000;
-    border-bottom:3px solid #000;
-    max-width:var(--sg-max-width);
-    margin:auto;
+.event-flow .detail-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0;
+    border-top: 3px solid #000;
+    border-bottom: 3px solid #000;
+    max-width: var(--sg-max-width);
+    margin: auto;
 }
 
-.event-flow .detail-card{
-    flex:1 1 190px;
-    background:transparent;
-    border:none;
-    border-right:2px solid rgba(0,0,0,.28);
-    border-radius:0;
-    padding:26px 18px;
-    color:#000;
+.event-flow .detail-card {
+    flex: 1 1 190px;
+    background: transparent;
+    border: none;
+    border-right: 2px solid rgba(0, 0, 0, 0.28);
+    border-radius: 0;
+    padding: 26px 18px;
+    color: #000;
 }
 
-.event-flow .detail-card:last-child{
-    border-right:none;
+.event-flow .detail-card:last-child {
+    border-right: none;
 }
 
-.event-flow .detail-card h3{
-    color:rgba(0,0,0,.6);
-    font-size:.72rem;
-    letter-spacing:3px;
-    margin-bottom:8px;
+.event-flow .detail-card h3 {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.72rem;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
 }
 
-.event-flow .detail-card p{
-    color:#000;
-    font-size:clamp(1rem, 2.2vw, 1.3rem);
-    line-height:1.25;
+.event-flow .detail-card p {
+    color: #000;
+    font-size: clamp(1rem, 2.2vw, 1.3rem);
+    line-height: 1.25;
 }
 
 /* Palm silhouettes down the edges of the flow */
-.flow-palm{
-    position:absolute;
-    width:clamp(150px, 22vw, 330px);
-    height:auto;
-    color:#000;
-    opacity:.14;
-    pointer-events:none;
-    z-index:0;
+.flow-palm {
+    position: absolute;
+    width: clamp(150px, 22vw, 330px);
+    height: auto;
+    color: #000;
+    opacity: 0.14;
+    pointer-events: none;
+    z-index: 0;
 }
 
-.flow-palm path{
-    fill:none;
-    stroke:currentColor;
-    stroke-width:5;
-    stroke-linecap:round;
+.flow-palm path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 5;
+    stroke-linecap: round;
 }
 
-.flow-palm-left{
-    top:2%;
-    left:-4%;
+.flow-palm-left {
+    top: 2%;
+    left: -4%;
 }
 
-.flow-palm-right{
-    top:26%;
-    right:-4%;
-    transform:scaleX(-1);
+.flow-palm-right {
+    top: 26%;
+    right: -4%;
+    transform: scaleX(-1);
 }
 
-.flow-palm-low{
-    bottom:16%;
-    left:-6%;
-    opacity:.1;
+.flow-palm-low {
+    bottom: 16%;
+    left: -6%;
+    opacity: 0.1;
 }
 
 /* Copy near the bottom of the flow sits on dark, so it flips to white */
 .event-flow .flow-copy h2,
-.event-flow .flow-copy p{
-    color:#fff;
+.event-flow .flow-copy p {
+    color: #fff;
 }
 
-.event-flow .flow-copy p.lead{
-    color:#fff;
+.event-flow .flow-copy p.lead {
+    color: #fff;
 }
 
-.event-flow .flow-copy .btn{
-    background:var(--sg-orange-bright);
-    border-color:var(--sg-orange-bright);
-    color:#fff;
+.event-flow .flow-copy .btn {
+    background: var(--sg-orange-bright);
+    border-color: var(--sg-orange-bright);
+    color: #fff;
 }
-
 
 /*  Poster tagline: LIVE MUSIC / FOOD / BAR / DJS - light and widely spaced. */
-.poster-tagline{
-    font-family:var(--sg-font);
-    font-weight:400;
-    font-size:clamp(.62rem, min(1.7vh, 1.7vw), .95rem);
-    letter-spacing:.34em;
-    text-indent:.34em; /* balances the trailing letter-space so it stays centred */
-    text-transform:uppercase;
-    margin:0 0 .75vh;
+.poster-tagline {
+    font-family: var(--sg-font);
+    font-weight: 400;
+    font-size: clamp(0.62rem, min(1.7vh, 1.7vw), 0.95rem);
+    letter-spacing: 0.34em;
+    text-indent: 0.34em; /* balances the trailing letter-space so it stays centred */
+    text-transform: uppercase;
+    margin: 0 0 0.75vh;
 }
 
 /* The two tagline rows sit together as one block */
-.poster-tagline + .poster-tagline{
-    margin-bottom:0;
+.poster-tagline + .poster-tagline {
+    margin-bottom: 0;
 }
-
 
 /*  SPONSOR WALL - logos are mostly dark on white, so they sit on a white panel. */
 
 /* Orange sunset band, sitting between the weekend section and the checkout */
 
-
 /* ==========================================================================
    EVENT HERO - the poster-style header on an event page.
    ========================================================================== */
-.event-hero{
-    position:relative;
-    min-height:100vh;
-    min-height:100svh;
-    overflow:hidden;
+.event-hero {
+    position: relative;
+    min-height: 100vh;
+    min-height: 100svh;
+    overflow: hidden;
 
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 
 /*  Poster-style hero: orange sunset sky with the video showing through. */
-.event-hero .overlay{
-    position:absolute;
-    inset:0;
-    background:
-        linear-gradient(
-            to bottom,
-            rgba(247,168,63,.97) 0%,
-            rgba(244,150,52,.95) 38%,
-            rgba(235,118,34,.86) 62%,
-            rgba(198,84,20,.72) 80%,
-            rgba(60,24,6,.86) 93%,
-            rgba(0,0,0,.95) 100%
-        );
-    z-index:1;
+.event-hero .overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to bottom,
+        rgba(247, 168, 63, 0.97) 0%,
+        rgba(244, 150, 52, 0.95) 38%,
+        rgba(235, 118, 34, 0.86) 62%,
+        rgba(198, 84, 20, 0.72) 80%,
+        rgba(60, 24, 6, 0.86) 93%,
+        rgba(0, 0, 0, 0.95) 100%
+    );
+    z-index: 1;
 }
 
-.event-hero .overlay::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    background-image:var(--sg-grain);
-    opacity:.12;
-    mix-blend-mode:overlay;
+.event-hero .overlay::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: var(--sg-grain);
+    opacity: 0.12;
+    mix-blend-mode: overlay;
 }
 
-.event-hero-content{
-    position:relative;
-    z-index:2;
+.event-hero-content {
+    position: relative;
+    z-index: 2;
     /*  Sized in vh so the whole poster fits the screen. The top clears the
         menu using --sg-nav-height (set by js/main.js).                  */
-    padding:calc(var(--sg-nav-height, 88px) + 8px) 20px 1.4vh;
+    padding: calc(var(--sg-nav-height, 88px) + 8px) 20px 1.4vh;
 
-    width:100%;
-    max-width:960px;
-    min-width:0; /* lets long titles wrap instead of widening the page */
+    width: 100%;
+    max-width: 960px;
+    min-width: 0; /* lets long titles wrap instead of widening the page */
 }
 
 /* The event logo carries the sun, palms and wordmark in one file */
-.event-logo-heading{
-    margin:0;
+.event-logo-heading {
+    margin: 0;
 }
 
 /* Sized against viewport height, not width, so the logo, the lineup, the
    date and the ticket button all fit on the first screen together. */
-.event-logo{
-    display:block;
-    height:clamp(140px, 44vh, 660px);
-    width:auto;
-    max-width:94%;
-    margin:0 auto 1.5vh;
+.event-logo {
+    display: block;
+    height: clamp(140px, 44vh, 660px);
+    width: auto;
+    max-width: 94%;
+    margin: 0 auto 1.5vh;
 }
-
 
 /* Hero sits on the orange sky, so its type goes black like the poster */
-.event-hero-content{
-    color:#000;
+.event-hero-content {
+    color: #000;
 }
 
-.event-hero .poster-tagline{
-    color:#000;
+.event-hero .poster-tagline {
+    color: #000;
 }
 
-.event-headline-date{
-    font-family:var(--sg-font-display);
-    font-size:clamp(1.4rem, min(4.3vh, 5.2vw), 3.4rem);
-    line-height:1;
-    letter-spacing:-1.5px;
-    text-transform:uppercase;
-    margin:1.8vh 0 .8vh;
-    color:#000;
+.event-headline-date {
+    font-family: var(--sg-font-display);
+    font-size: clamp(1.4rem, min(4.3vh, 5.2vw), 3.4rem);
+    line-height: 1;
+    letter-spacing: -1.5px;
+    text-transform: uppercase;
+    margin: 1.8vh 0 0.8vh;
+    color: #000;
 }
 
-.event-hero .event-date{
-    font-family:var(--sg-font);
-    font-weight:bold;
-    font-size:clamp(.7rem, min(1.75vh, 2.1vw), 1.05rem);
-    letter-spacing:.2em;
-    text-indent:.2em;
-    text-transform:uppercase;
-    color:#000;
-    margin:0;
+.event-hero .event-date {
+    font-family: var(--sg-font);
+    font-weight: bold;
+    font-size: clamp(0.7rem, min(1.75vh, 2.1vw), 1.05rem);
+    letter-spacing: 0.2em;
+    text-indent: 0.2em;
+    text-transform: uppercase;
+    color: #000;
+    margin: 0;
 }
 
 /* Venue sits in a black box with orange type */
-.event-hero .event-location{
-    display:inline-block;
-    background:#000;
-    color:var(--sg-orange-bright);
-    border-radius:8px;
-    padding:13px 30px;
+.event-hero .event-location {
+    display: inline-block;
+    background: #000;
+    color: var(--sg-orange-bright);
+    border-radius: 8px;
+    padding: 13px 30px;
 
-    font-family:var(--sg-font-display);
-    font-size:clamp(.72rem, min(1.85vh, 2.4vw), 1.25rem);
-    letter-spacing:1.5px;
-    padding:1.2vh 3vh;
-    margin:1.2vh 0 0;
-    text-shadow:none;
+    font-family: var(--sg-font-display);
+    font-size: clamp(0.72rem, min(1.85vh, 2.4vw), 1.25rem);
+    letter-spacing: 1.5px;
+    padding: 1.2vh 3vh;
+    margin: 1.2vh 0 0;
+    text-shadow: none;
 }
 
 /* Black ticket button reads best against the orange sky */
-.event-hero .btn-ticket{
-    background:#000;
-    border-color:#000;
-    color:#fff;
-    box-shadow:0 10px 30px rgba(0,0,0,.35);
+.event-hero .btn-ticket {
+    background: #000;
+    border-color: #000;
+    color: #fff;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
-.event-hero .btn-ticket:hover{
-    background:#1a1a1a;
+.event-hero .btn-ticket:hover {
+    background: #1a1a1a;
 }
 
-
-.event-hero h1{
-    font-size:clamp(2.8rem, 11vw, 7rem);
-    margin-bottom:14px;
-    text-transform:uppercase;
-    letter-spacing:2px;
-    line-height:.95;
+.event-hero h1 {
+    font-size: clamp(2.8rem, 11vw, 7rem);
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    line-height: 0.95;
 }
 
-.event-location{
-    font-size:clamp(1.05rem, 3vw, 1.8rem);
-    font-weight:bold;
-    letter-spacing:2px;
-    text-transform:uppercase;
+.event-location {
+    font-size: clamp(1.05rem, 3vw, 1.8rem);
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
 }
 
-.event-date{
-    margin:12px 0 28px;
-    color:#eee;
-    font-family:var(--sg-font-accent);
-    letter-spacing:2px;
-    font-size:clamp(.9rem, 2.6vw, 1.1rem);
-    text-transform:uppercase;
+.event-date {
+    margin: 12px 0 28px;
+    color: #eee;
+    font-family: var(--sg-font-accent);
+    letter-spacing: 2px;
+    font-size: clamp(0.9rem, 2.6vw, 1.1rem);
+    text-transform: uppercase;
 }
 
 /* Sticky ticket bar - keeps GET TICKETS reachable down the whole page */
 
-
 /* ==========================================================================
    FEATURED EVENT - the next-event panel on the homepage.
    ========================================================================== */
-.featured-event{
-    position:relative;
-    overflow:hidden;
+.featured-event {
+    position: relative;
+    overflow: hidden;
 
     /*  The picture behind the next event: our trailer stage photo (1536px
         wide, sharp enough for this 1100px+ box). Change the file below
         when there is artwork for the event being promoted.             */
-    background-color:#000;
-    background-image:
-        linear-gradient(rgba(0,0,0,.74), rgba(0,0,0,.86)),
-        url("../images/services/trailer-stage.webp");
-    background-size:cover;
-    background-position:center;
+    background-color: #000;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.74), rgba(0, 0, 0, 0.86)), url('../images/services/trailer-stage.webp');
+    background-size: cover;
+    background-position: center;
 
-    border:1px solid #3a2000;
-    border-radius:18px;
-    max-width:var(--sg-max-width);
-    margin:auto;
-    padding:50px 40px;
-    text-align:center;
+    border: 1px solid #3a2000;
+    border-radius: 18px;
+    max-width: var(--sg-max-width);
+    margin: auto;
+    padding: 50px 40px;
+    text-align: center;
 }
 
-.featured-event .eyebrow{
-    font-family:var(--sg-font-accent);
-    letter-spacing:3px;
-    text-transform:uppercase;
-    color:var(--sg-gold);
-    font-size:.85rem;
-    margin-bottom:12px;
+.featured-event .eyebrow {
+    font-family: var(--sg-font-accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--sg-gold);
+    font-size: 0.85rem;
+    margin-bottom: 12px;
 }
 
-.featured-event h2{
-    font-size:clamp(2.2rem, 7vw, 4.2rem);
-    margin-bottom:6px;
-    text-transform:uppercase;
-    letter-spacing:2px;
+.featured-event h2 {
+    font-size: clamp(2.2rem, 7vw, 4.2rem);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
 }
 
 /*  The edition on its own line under the event name, so the name does
     not break on a phone.                                                */
-.featured-event .event-subtitle{
-    font-family:var(--sg-font-display);
-    font-size:clamp(1.1rem, 3.2vw, 1.8rem);
-    letter-spacing:1px;
-    text-transform:uppercase;
-    color:var(--sg-orange);
-    margin-bottom:24px;
+.featured-event .event-subtitle {
+    font-family: var(--sg-font-display);
+    font-size: clamp(1.1rem, 3.2vw, 1.8rem);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--sg-orange);
+    margin-bottom: 24px;
 }
 
-.event-facts{
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    gap:14px 40px;
-    list-style:none;
-    margin-bottom:32px;
+.event-facts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px 40px;
+    list-style: none;
+    margin-bottom: 32px;
 }
 
-.event-facts li{
-    font-family:var(--sg-font-accent);
-    letter-spacing:1px;
-    text-transform:uppercase;
-    color:var(--sg-muted);
-    font-size:.95rem;
+.event-facts li {
+    font-family: var(--sg-font-accent);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--sg-muted);
+    font-size: 0.95rem;
 }
 
-.event-facts li strong{
-    display:block;
-    color:#fff;
-    font-size:1.1rem;
+.event-facts li strong {
+    display: block;
+    color: #fff;
+    font-size: 1.1rem;
 }
-
 
 /* ==========================================================================
    FOOTER - shared by every page, injected from components/footer.html.
    ========================================================================== */
-.footer{
-    background:#0a0a0a;
-    border-top:1px solid var(--sg-border);
+.footer {
+    background: #0a0a0a;
+    border-top: 1px solid var(--sg-border);
 }
 
-.footer-content{
-    max-width:var(--sg-max-width);
-    margin:auto;
-    padding:60px 6%;
+.footer-content {
+    max-width: var(--sg-max-width);
+    margin: auto;
+    padding: 60px 6%;
 
-    display:grid;
-    grid-template-columns:2fr 1fr 1fr;
-    gap:50px;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 50px;
 }
 
-.footer-logo h2{
-    color:var(--sg-orange);
-    margin-bottom:15px;
-    letter-spacing:2px;
+.footer-logo h2 {
+    color: var(--sg-orange);
+    margin-bottom: 15px;
+    letter-spacing: 2px;
 }
 
-.footer-logo p{
-    color:var(--sg-dim);
+.footer-logo p {
+    color: var(--sg-dim);
 }
 
 .footer-links,
-.footer-contact{
-    display:flex;
-    flex-direction:column;
+.footer-contact {
+    display: flex;
+    flex-direction: column;
 }
 
 .footer-links h3,
-.footer-contact h3{
-    margin-bottom:18px;
-    font-size:1.05rem;
+.footer-contact h3 {
+    margin-bottom: 18px;
+    font-size: 1.05rem;
 }
 
-.footer-links a{
-    color:var(--sg-dim);
-    text-decoration:none;
-    padding:9px 0; /* keeps the tap target 44px tall */
-    transition:color .25s;
+.footer-links a {
+    color: var(--sg-dim);
+    text-decoration: none;
+    padding: 9px 0; /* keeps the tap target 44px tall */
+    transition: color 0.25s;
 }
 
-.footer-links a:hover{
-    color:var(--sg-orange);
+.footer-links a:hover {
+    color: var(--sg-orange);
 }
 
-.footer-contact p{
-    color:var(--sg-dim);
-    margin-bottom:10px;
+.footer-contact p {
+    color: var(--sg-dim);
+    margin-bottom: 10px;
 }
 
-.footer-contact a{
-    display:inline-block;
-    padding:9px 0; /* keeps the tap target 44px tall */
-    color:var(--sg-dim);
-    text-decoration:none;
+.footer-contact a {
+    display: inline-block;
+    padding: 9px 0; /* keeps the tap target 44px tall */
+    color: var(--sg-dim);
+    text-decoration: none;
 }
 
-.footer-contact a:hover{
-    color:var(--sg-orange);
+.footer-contact a:hover {
+    color: var(--sg-orange);
 }
 
-.footer-bottom{
-    border-top:1px solid var(--sg-border);
-    text-align:center;
-    padding:20px;
+.footer-bottom {
+    border-top: 1px solid var(--sg-border);
+    text-align: center;
+    padding: 20px;
 }
 
-.footer-bottom p{
-    color:#666;
-    font-size:.9rem;
+.footer-bottom p {
+    color: #666;
+    font-size: 0.9rem;
 }
-
 
 /* ==========================================================================
    HERO - homepage hero: full-bleed video, dark overlay, logo and buttons.
    ========================================================================== */
-.hero{
-    position:relative;
-    min-height:100vh;
-    min-height:100svh;
-    overflow:hidden;
+.hero {
+    position: relative;
+    min-height: 100vh;
+    min-height: 100svh;
+    overflow: hidden;
 
-    display:flex;
-    align-items:center;
-    justify-content:center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.hero-video{
-    position:absolute;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    z-index:0;
+.hero-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
 }
 
-.hero .overlay{
-    position:absolute;
-    inset:0;
-    background:rgba(0,0,0,.5);
-    z-index:1;
+.hero .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1;
 }
 
-.hero-content{
-    position:relative;
-    z-index:2;
-    text-align:center;
-    padding:120px 20px 60px;
+.hero-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 120px 20px 60px;
 
-    width:100%;
-    max-width:900px;
-    min-width:0;
+    width: 100%;
+    max-width: 900px;
+    min-width: 0;
 }
 
-.hero-logo{
-    width:min(340px, 70%);
-    height:auto;
-    margin-bottom:24px;
+.hero-logo {
+    width: min(340px, 70%);
+    height: auto;
+    margin-bottom: 24px;
 }
 
-.hero-content h1{
-    font-size:clamp(2.6rem, 8vw, 5rem);
-    margin-bottom:20px;
-    line-height:1;
+.hero-content h1 {
+    font-size: clamp(2.6rem, 8vw, 5rem);
+    margin-bottom: 20px;
+    line-height: 1;
 }
-
-
-
 
 /* ==========================================================================
    LINEUP - the wall of artist names.
    ========================================================================== */
-.lineup{
-    position:relative;
-    padding:56px 6% 40px;
-    text-align:center;
+.lineup {
+    position: relative;
+    padding: 56px 6% 40px;
+    text-align: center;
 }
 
 /* Sunburst rays behind the LINEUP title */
-.lineup::before{
-    content:"";
-    position:absolute;
-    top:-40px;
-    left:50%;
-    transform:translateX(-50%);
-    width:min(1000px, 150vw);
-    aspect-ratio:1;
-    background:repeating-conic-gradient(
-        from 0deg,
-        rgba(0,0,0,.075) 0deg 5deg,
-        transparent 5deg 11deg
-    );
-    -webkit-mask-image:radial-gradient(circle, #000 12%, transparent 62%);
-    mask-image:radial-gradient(circle, #000 12%, transparent 62%);
-    pointer-events:none;
-    z-index:0;
+.lineup::before {
+    content: '';
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(1000px, 150vw);
+    aspect-ratio: 1;
+    background: repeating-conic-gradient(from 0deg, rgba(0, 0, 0, 0.075) 0deg 5deg, transparent 5deg 11deg);
+    -webkit-mask-image: radial-gradient(circle, #000 12%, transparent 62%);
+    mask-image: radial-gradient(circle, #000 12%, transparent 62%);
+    pointer-events: none;
+    z-index: 0;
 }
 
-.lineup > *{
-    position:relative;
-    z-index:1;
+.lineup > * {
+    position: relative;
+    z-index: 1;
 }
 
-.lineup h2{
-    font-size:clamp(2.8rem, 11vw, 7rem);
-    text-transform:uppercase;
-    letter-spacing:-2px;
-    margin-bottom:10px;
+.lineup h2 {
+    font-size: clamp(2.8rem, 11vw, 7rem);
+    text-transform: uppercase;
+    letter-spacing: -2px;
+    margin-bottom: 10px;
 }
 
 /*  THE LINEUP WALL - festival-poster style, names separated by diamonds. */
 
-.lineup-wall{
-    max-width:920px;
-    margin:1.8vh auto 0;
+.lineup-wall {
+    max-width: 920px;
+    margin: 1.8vh auto 0;
 }
 
 /* One line of the billing */
-.lw-line{
-    display:flex;
-    flex-wrap:wrap;
-    align-items:center;
-    justify-content:center;
-    gap:.1em .55em;   /* the space either side of the sun */
+.lw-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1em 0.55em; /* the space either side of the sun */
 
-    margin:0 0 .5vh;
-    line-height:1.1;
+    margin: 0 0 0.5vh;
+    line-height: 1.1;
 }
 
-.lw-line:last-child{
-    margin-bottom:0;
+.lw-line:last-child {
+    margin-bottom: 0;
 }
 
-.lw-name{
-    font-family:var(--sg-font-display);
-    font-size:clamp(1rem, min(3.3vh, 3.8vw), 2.85rem);
-    text-transform:uppercase;
-    letter-spacing:-.5px;
-    color:#000;
-    white-space:nowrap;
+.lw-name {
+    font-family: var(--sg-font-display);
+    font-size: clamp(1rem, min(3.3vh, 3.8vw), 2.85rem);
+    text-transform: uppercase;
+    letter-spacing: -0.5px;
+    color: #000;
+    white-space: nowrap;
 
     /* soft lift, so the type sits on the sunset instead of looking flat */
-    text-shadow:0 3px 14px rgba(90, 30, 0, .22);
+    text-shadow: 0 3px 14px rgba(90, 30, 0, 0.22);
 }
 
 /* The long billing line is set smaller, the way posters size a long name */
-.lw-line-sm .lw-name{
-    font-size:clamp(.78rem, min(2.5vh, 2.7vw), 1.85rem);
-    letter-spacing:0;
+.lw-line-sm .lw-name {
+    font-size: clamp(0.78rem, min(2.5vh, 2.7vw), 1.85rem);
+    letter-spacing: 0;
 }
 
 /*  Separator: the SoundzGood sun, drawn in CSS. Colour is background-color below. */
-.lw-sep{
-    --sun-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='%23000' stroke-width='2.1' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='4' fill='%23000'/%3E%3Cline x1='12' y1='1.8' x2='12' y2='4.2'/%3E%3Cline x1='12' y1='19.8' x2='12' y2='22.2'/%3E%3Cline x1='1.8' y1='12' x2='4.2' y2='12'/%3E%3Cline x1='19.8' y1='12' x2='22.2' y2='12'/%3E%3Cline x1='4.8' y1='4.8' x2='6.5' y2='6.5'/%3E%3Cline x1='17.5' y1='17.5' x2='19.2' y2='19.2'/%3E%3Cline x1='4.8' y1='19.2' x2='6.5' y2='17.5'/%3E%3Cline x1='17.5' y1='6.5' x2='19.2' y2='4.8'/%3E%3C/g%3E%3C/svg%3E");
+.lw-sep {
+    --sun-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='%23000' stroke-width='2.1' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='4' fill='%23000'/%3E%3Cline x1='12' y1='1.8' x2='12' y2='4.2'/%3E%3Cline x1='12' y1='19.8' x2='12' y2='22.2'/%3E%3Cline x1='1.8' y1='12' x2='4.2' y2='12'/%3E%3Cline x1='19.8' y1='12' x2='22.2' y2='12'/%3E%3Cline x1='4.8' y1='4.8' x2='6.5' y2='6.5'/%3E%3Cline x1='17.5' y1='17.5' x2='19.2' y2='19.2'/%3E%3Cline x1='4.8' y1='19.2' x2='6.5' y2='17.5'/%3E%3Cline x1='17.5' y1='6.5' x2='19.2' y2='4.8'/%3E%3C/g%3E%3C/svg%3E");
 
-    display:inline-block;
-    width:clamp(13px, 1.9vw, 24px);
-    aspect-ratio:1;
-    flex:0 0 auto;
+    display: inline-block;
+    width: clamp(13px, 1.9vw, 24px);
+    aspect-ratio: 1;
+    flex: 0 0 auto;
 
-    background-color:#000;
-    -webkit-mask:var(--sun-icon) center / contain no-repeat;
-    mask:var(--sun-icon) center / contain no-repeat;
+    background-color: #000;
+    -webkit-mask: var(--sun-icon) center / contain no-repeat;
+    mask: var(--sun-icon) center / contain no-repeat;
 
-    opacity:.75;
+    opacity: 0.75;
 }
 
-
 /*  THE LINEUP FLOW - one continuous sunset, acts separated by a hand-drawn wave. */
-
 
 /* ==========================================================================
    NAVIGATION - the bar, the Events dropdown, and the homepage tucking.
    Menu items live in components/navbar.html.
    ========================================================================== */
-nav{
-    position:absolute;
-    top:0;
-    left:0;
-    width:100%;
-    z-index:100;
+nav {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
 
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
 
-    padding:20px 40px;
+    padding: 20px 40px;
 
-    background:linear-gradient(
-        to bottom,
-        rgba(0,0,0,.55),
-        rgba(0,0,0,0)
-    );
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0));
 }
 
-.Nav a{
-    display:block;
-    padding:0; /* logo shouldn't inherit the menu link padding */
-    border-bottom:none;
+.Nav a {
+    display: block;
+    padding: 0; /* logo shouldn't inherit the menu link padding */
+    border-bottom: none;
 }
 
-.Nav img{
-    height:45px;
-    width:auto;
-    display:block;
+.Nav img {
+    height: 45px;
+    width: auto;
+    display: block;
 }
 
-nav ul{
-    display:flex;
-    align-items:center;
-    gap:32px;
-    list-style:none;
+nav ul {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    list-style: none;
 }
 
-nav a{
-    display:inline-block;
-    padding:10px 2px;
+nav a {
+    display: inline-block;
+    padding: 10px 2px;
 
-    color:#fff;
-    font-size:.95rem;
-    letter-spacing:1px;
-    text-decoration:none;
-    text-transform:uppercase;
+    color: #fff;
+    font-size: 0.95rem;
+    letter-spacing: 1px;
+    text-decoration: none;
+    text-transform: uppercase;
 
-    border-bottom:2px solid transparent;
-    transition:color .25s, border-color .25s;
+    border-bottom: 2px solid transparent;
+    transition:
+        color 0.25s,
+        border-color 0.25s;
 }
 
-nav a:hover{
-    color:var(--sg-gold);
+nav a:hover {
+    color: var(--sg-gold);
 }
 
 /* Current page - set automatically by js/main.js */
-nav a.active{
-    color:var(--sg-orange);
-    border-bottom-color:var(--sg-orange);
-    font-weight:bold;
+nav a.active {
+    color: var(--sg-orange);
+    border-bottom-color: var(--sg-orange);
+    font-weight: bold;
 }
 
-nav .has-sub{
-    position:relative;
-    display:flex;
-    align-items:center;
-    gap:4px;
+nav .has-sub {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
-nav .sub-toggle{
-    background:none;
-    border:0;
-    padding:10px 2px;
-    color:#fff;
-    font-size:.7rem;
-    line-height:1;
-    cursor:pointer;
-    transition:color .25s, transform .25s;
+nav .sub-toggle {
+    background: none;
+    border: 0;
+    padding: 10px 2px;
+    color: #fff;
+    font-size: 0.7rem;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+        color 0.25s,
+        transform 0.25s;
 }
 
-nav .sub-toggle:hover{
-    color:var(--sg-gold);
+nav .sub-toggle:hover {
+    color: var(--sg-gold);
 }
 
-nav .has-sub.is-open .sub-toggle span{
-    display:inline-block;
-    transform:rotate(180deg);
+nav .has-sub.is-open .sub-toggle span {
+    display: inline-block;
+    transform: rotate(180deg);
 }
 
-nav .subnav{
-    position:absolute;
-    top:100%;
-    left:0;
-    z-index:110;
+nav .subnav {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 110;
 
-    display:block;
-    min-width:210px;
-    padding:8px;
-    margin:0;
+    display: block;
+    min-width: 210px;
+    padding: 8px;
+    margin: 0;
 
-    background:rgba(12,12,12,.97);
-    border:1px solid var(--sg-border);
-    border-radius:12px;
-    box-shadow:0 18px 40px rgba(0,0,0,.55);
+    background: rgba(12, 12, 12, 0.97);
+    border: 1px solid var(--sg-border);
+    border-radius: 12px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
 
     /*  Kept in the page (not display:none) so it can fade and stays reachable
         by keyboard while opening.                                     */
-    opacity:0;
-    visibility:hidden;
-    transform:translateY(-6px);
-    transition:opacity .18s, transform .18s, visibility .18s;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition:
+        opacity 0.18s,
+        transform 0.18s,
+        visibility 0.18s;
 }
 
 nav .has-sub:hover .subnav,
 nav .has-sub:focus-within .subnav,
-nav .has-sub.is-open .subnav{
-    opacity:1;
-    visibility:visible;
-    transform:translateY(0);
+nav .has-sub.is-open .subnav {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
 }
 
-nav .subnav li{
-    display:block;
+nav .subnav li {
+    display: block;
 }
 
-nav .subnav a{
-    display:block;
-    padding:10px 12px;
-    border-radius:8px;
-    border-bottom:0;
-    font-size:.85rem;
-    letter-spacing:.5px;
-    white-space:nowrap;
+nav .subnav a {
+    display: block;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border-bottom: 0;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
 }
 
-nav .subnav a:hover{
-    background:rgba(255,255,255,.07);
-    color:var(--sg-gold);
+nav .subnav a:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--sg-gold);
 }
 
 /*  The parent is marked when the current page lives under it. */
-nav .has-sub.has-active > a{
-    color:var(--sg-orange);
-    border-bottom-color:var(--sg-orange);
-    font-weight:bold;
+nav .has-sub.has-active > a {
+    color: var(--sg-orange);
+    border-bottom-color: var(--sg-orange);
+    font-weight: bold;
 }
-
 
 /* "Buy Tickets" pill inside the menu */
-nav a.nav-cta{
-    background:var(--sg-orange);
-    border:2px solid var(--sg-orange);
-    border-radius:50px;
-    padding:10px 22px;
-    font-weight:bold;
+nav a.nav-cta {
+    background: var(--sg-orange);
+    border: 2px solid var(--sg-orange);
+    border-radius: 50px;
+    padding: 10px 22px;
+    font-weight: bold;
 }
 
-nav a.nav-cta:hover{
-    background:transparent;
-    color:#fff;
+nav a.nav-cta:hover {
+    background: transparent;
+    color: #fff;
 }
 
-nav a.nav-cta.active{
-    border-bottom-color:var(--sg-orange);
+nav a.nav-cta.active {
+    border-bottom-color: var(--sg-orange);
 }
-
 
 /*  HOME PAGE MENU - hidden over the hero, then slides in as a fixed bar
     at the next event section. js/main.js adds and removes .is-tucked.   */
-.home nav{
-    position:fixed;
-    background:rgba(10,10,10,.94);
-    backdrop-filter:blur(8px);
-    border-bottom:1px solid var(--sg-border);
-    transition:opacity .35s ease, transform .4s ease, visibility .4s;
+.home nav {
+    position: fixed;
+    background: rgba(10, 10, 10, 0.94);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--sg-border);
+    transition:
+        opacity 0.35s ease,
+        transform 0.4s ease,
+        visibility 0.4s;
 }
 
-.home nav.is-tucked{
-    opacity:0;
-    visibility:hidden;
-    transform:translateY(-105%);
-    pointer-events:none;
+.home nav.is-tucked {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-105%);
+    pointer-events: none;
 }
 
 /* ==========================================================================
    SCROLL ANIMATIONS - js/main.js adds .has-scroll-anim on <html> and
    .is-visible on each block. With JavaScript off everything just shows.
    ========================================================================== */
-.has-scroll-anim .act{
-    opacity:0;
-    transform-origin:center bottom;
-    will-change:transform, opacity;
-    transform:
-        perspective(1100px)
-        translate3d(-90px, 120px, 0)
-        rotateX(52deg)
-        rotate(-14deg)
-        scale(.55);
-    filter:blur(8px);
+.has-scroll-anim .act {
+    opacity: 0;
+    transform-origin: center bottom;
+    will-change: transform, opacity;
+    transform: perspective(1100px) translate3d(-90px, 120px, 0) rotateX(52deg) rotate(-14deg) scale(0.55);
+    filter: blur(8px);
     transition:
-        opacity .45s ease,
-        transform 1s cubic-bezier(.16, 1.42, .3, 1),
-        filter .55s ease;
+        opacity 0.45s ease,
+        transform 1s cubic-bezier(0.16, 1.42, 0.3, 1),
+        filter 0.55s ease;
 }
 
-.has-scroll-anim .act:nth-of-type(even){
-    transform:
-        perspective(1100px)
-        translate3d(90px, 120px, 0)
-        rotateX(52deg)
-        rotate(14deg)
-        scale(.55);
+.has-scroll-anim .act:nth-of-type(even) {
+    transform: perspective(1100px) translate3d(90px, 120px, 0) rotateX(52deg) rotate(14deg) scale(0.55);
 }
 
 /*  Landed - flat. Tilting a tall act would push copy off a narrow screen,
     so only the cut-out keeps the crooked look.                         */
 .has-scroll-anim .act.is-visible,
-.has-scroll-anim .act:nth-of-type(even).is-visible{
-    opacity:1;
-    will-change:auto; /* release the GPU hint once it has landed */
-    transform:
-        perspective(1100px)
-        translate3d(0, 0, 0)
-        rotateX(0deg)
-        rotate(0deg)
-        scale(1);
-    filter:blur(0);
+.has-scroll-anim .act:nth-of-type(even).is-visible {
+    opacity: 1;
+    will-change: auto; /* release the GPU hint once it has landed */
+    transform: perspective(1100px) translate3d(0, 0, 0) rotateX(0deg) rotate(0deg) scale(1);
+    filter: blur(0);
 }
 
 /* The cut-out is stuck down a beat after the name, with its own kick */
-.has-scroll-anim .artist-photo{
-    opacity:0;
-    transform:translateY(60px) rotate(-11deg) scale(.72);
+.has-scroll-anim .artist-photo {
+    opacity: 0;
+    transform: translateY(60px) rotate(-11deg) scale(0.72);
     transition:
-        opacity .5s ease .22s,
-        transform .9s cubic-bezier(.16, 1.55, .3, 1) .22s;
+        opacity 0.5s ease 0.22s,
+        transform 0.9s cubic-bezier(0.16, 1.55, 0.3, 1) 0.22s;
 }
 
-.has-scroll-anim .act:nth-of-type(even) .artist-photo{
-    transform:translateY(60px) rotate(11deg) scale(.72);
+.has-scroll-anim .act:nth-of-type(even) .artist-photo {
+    transform: translateY(60px) rotate(11deg) scale(0.72);
 }
 
 /* The cut-out keeps the pasted-crooked look (small, so the tilt is safe). */
-.has-scroll-anim .act.is-visible .artist-photo{
-    opacity:1;
-    transform:translateY(0) rotate(-2.5deg) scale(1);
+.has-scroll-anim .act.is-visible .artist-photo {
+    opacity: 1;
+    transform: translateY(0) rotate(-2.5deg) scale(1);
 }
 
-.has-scroll-anim .act:nth-of-type(even).is-visible .artist-photo{
-    transform:translateY(0) rotate(2.5deg) scale(1);
+.has-scroll-anim .act:nth-of-type(even).is-visible .artist-photo {
+    transform: translateY(0) rotate(2.5deg) scale(1);
 }
 
 /* Dividers sweep open between the acts */
-.has-scroll-anim .act-wave{
-    opacity:0;
-    transform:scaleX(.15);
-    transform-origin:center;
+.has-scroll-anim .act-wave {
+    opacity: 0;
+    transform: scaleX(0.15);
+    transform-origin: center;
     transition:
-        opacity .5s ease,
-        transform .8s cubic-bezier(.16, 1.3, .3, 1);
+        opacity 0.5s ease,
+        transform 0.8s cubic-bezier(0.16, 1.3, 0.3, 1);
 }
 
-.has-scroll-anim .act-wave.is-visible{
-    opacity:1;
-    transform:scaleX(1);
+.has-scroll-anim .act-wave.is-visible {
+    opacity: 1;
+    transform: scaleX(1);
 }
-
-
-
 
 /* ==========================================================================
    SPONSOR FEATURE - the larger sponsor panel with its own buttons.
    ========================================================================== */
-.sponsor-feature{
-    position:relative;
-    padding:70px 6%;
-    overflow:hidden;
-    background:linear-gradient(
-        180deg,
-        var(--sg-sun-top) 0%,
-        var(--sg-sun-mid) 55%,
-        var(--sg-sun-deep) 100%
-    );
+.sponsor-feature {
+    position: relative;
+    padding: 70px 6%;
+    overflow: hidden;
+    background: linear-gradient(180deg, var(--sg-sun-top) 0%, var(--sg-sun-mid) 55%, var(--sg-sun-deep) 100%);
 }
 
-.sponsor-feature::before{
-    content:"";
-    position:absolute;
-    inset:0;
-    background-image:var(--sg-grain);
-    opacity:.16;
-    mix-blend-mode:multiply;
-    pointer-events:none;
+.sponsor-feature::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: var(--sg-grain);
+    opacity: 0.16;
+    mix-blend-mode: multiply;
+    pointer-events: none;
 }
 
-.sponsor-feature > *{
-    position:relative;
-    z-index:1;
+.sponsor-feature > * {
+    position: relative;
+    z-index: 1;
 }
 
-.sponsor-feature h2{
-    color:#000;
+.sponsor-feature h2 {
+    color: #000;
 }
 
-.sponsor-feature .section-intro{
-    color:rgba(0,0,0,.7);
-    margin-bottom:38px;
+.sponsor-feature .section-intro {
+    color: rgba(0, 0, 0, 0.7);
+    margin-bottom: 38px;
 }
 
-
-.sponsor-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
-    align-items:center;
-    justify-items:center;
-    gap:34px 28px;
+.sponsor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    align-items: center;
+    justify-items: center;
+    gap: 34px 28px;
 }
 
 /* Each logo sits on its own white tile, which suits both dark-on-white
    and transparent logos. */
-.sponsor-grid a{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    width:100%;
-    min-height:130px;
-    padding:20px;
+.sponsor-grid a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 130px;
+    padding: 20px;
 
-    background:#fff;
-    border-radius:14px;
-    box-shadow:0 10px 26px rgba(80,28,0,.28);
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 10px 26px rgba(80, 28, 0, 0.28);
 
-    transition:transform .25s, box-shadow .25s;
+    transition:
+        transform 0.25s,
+        box-shadow 0.25s;
 }
 
-.sponsor-grid img{
-    max-height:84px;
-    max-width:100%;
-    width:auto;
-    object-fit:contain;
+.sponsor-grid img {
+    max-height: 84px;
+    max-width: 100%;
+    width: auto;
+    object-fit: contain;
 }
 
-.sponsor-grid a:hover{
-    transform:translateY(-5px);
-    box-shadow:0 16px 34px rgba(80,28,0,.38);
+.sponsor-grid a:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 16px 34px rgba(80, 28, 0, 0.38);
 }
 
 /* Humanitix embedded checkout */
-.checkout-embed{
-    max-width:900px;
-    margin:auto;
+.checkout-embed {
+    max-width: 900px;
+    margin: auto;
 }
 
-.checkout-embed iframe{
-    width:100%;
-    min-height:600px;
-    border:0;
-    border-radius:14px;
+.checkout-embed iframe {
+    width: 100%;
+    min-height: 600px;
+    border: 0;
+    border-radius: 14px;
 }
-
 
 /*  MAKE A WEEKEND OF IT - photos do the selling, copy over the top.
     Aimed at people driving in from out of town.                        */
 
-
 /*  Buttons sitting on the orange band go black, so they read against it  */
-.sponsor-feature .btn{
-    background:#000;
-    border-color:#000;
-    color:#fff;
+.sponsor-feature .btn {
+    background: #000;
+    border-color: #000;
+    color: #fff;
 }
 
-.sponsor-feature .btn:hover{
-    background:#1a1a1a;
+.sponsor-feature .btn:hover {
+    background: #1a1a1a;
 }
 
-.sponsor-feature .btn-outline{
-    background:transparent;
-    color:#000;
-    border-color:#000;
+.sponsor-feature .btn-outline {
+    background: transparent;
+    color: #000;
+    border-color: #000;
 }
 
-.sponsor-feature .btn-outline:hover{
-    background:#000;
-    color:#fff;
+.sponsor-feature .btn-outline:hover {
+    background: #000;
+    color: #fff;
 }
 
 /* Buttons in a page header (services hero) */
 
-
 /* ==========================================================================
    TICKET BAR - the sticky buy-tickets strip after the hero.
    ========================================================================== */
-.ticket-bar{
-    position:sticky;
-    top:0;
-    z-index:90;
+.ticket-bar {
+    position: sticky;
+    top: 0;
+    z-index: 90;
 
-    background:rgba(10,10,10,.96);
-    border-top:1px solid #2a1600;
-    border-bottom:1px solid #2a1600;
-    backdrop-filter:blur(6px);
+    background: rgba(10, 10, 10, 0.96);
+    border-top: 1px solid #2a1600;
+    border-bottom: 1px solid #2a1600;
+    backdrop-filter: blur(6px);
 
-    display:flex;
-    flex-wrap:wrap;
-    align-items:center;
-    justify-content:center;
-    gap:14px 28px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 14px 28px;
 
-    padding:14px 6%;
+    padding: 14px 6%;
 
-    transition:opacity .3s ease, transform .35s ease, visibility .35s;
+    transition:
+        opacity 0.3s ease,
+        transform 0.35s ease,
+        visibility 0.35s;
 }
 
 /* Hidden by js/main.js once the checkout section is on screen, since the
    real ticket form is right there. */
-.ticket-bar.is-hidden{
-    opacity:0;
-    visibility:hidden;
-    transform:translateY(-100%);
-    pointer-events:none;
+.ticket-bar.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-100%);
+    pointer-events: none;
 }
 
-.ticket-bar p{
-    font-family:var(--sg-font-accent);
-    letter-spacing:2px;
-    text-transform:uppercase;
-    font-size:.9rem;
-    color:var(--sg-muted);
-    margin:0;
+.ticket-bar p {
+    font-family: var(--sg-font-accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    color: var(--sg-muted);
+    margin: 0;
 }
 
-.ticket-bar .btn{
-    padding:12px 30px;
-    min-height:46px;
+.ticket-bar .btn {
+    padding: 12px 30px;
+    min-height: 46px;
 }
-
-
 
 /* ==========================================================================
    WEEKEND - accommodation and things-to-do cards around the event.
    ========================================================================== */
-.weekend-section{
-    background:
-        radial-gradient(120% 90% at 50% 0%, #1b1005 0%, #0a0a0a 62%);
+.weekend-section {
+    background: radial-gradient(120% 90% at 50% 0%, #1b1005 0%, #0a0a0a 62%);
 }
 
-.weekend-eyebrow{
-    font-family:var(--sg-font-accent);
-    font-size:.78rem;
-    font-weight:bold;
-    letter-spacing:4px;
-    text-transform:uppercase;
-    color:var(--sg-gold);
-    text-align:center;
-    margin-bottom:12px;
+.weekend-eyebrow {
+    font-family: var(--sg-font-accent);
+    font-size: 0.78rem;
+    font-weight: bold;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--sg-gold);
+    text-align: center;
+    margin-bottom: 12px;
 }
 
-.weekend-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
-    gap:26px;
-    max-width:var(--sg-max-width);
-    margin:auto;
+.weekend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 26px;
+    max-width: var(--sg-max-width);
+    margin: auto;
 }
 
 /* The whole card is the link */
-.weekend-card{
-    position:relative;
-    display:block;
-    min-height:420px;
-    border-radius:20px;
-    overflow:hidden;
-    text-decoration:none;
-    border:1px solid var(--sg-border);
-    transition:transform .3s, border-color .3s;
+.weekend-card {
+    position: relative;
+    display: block;
+    min-height: 420px;
+    border-radius: 20px;
+    overflow: hidden;
+    text-decoration: none;
+    border: 1px solid var(--sg-border);
+    transition:
+        transform 0.3s,
+        border-color 0.3s;
 }
 
 .weekend-card:hover,
-.weekend-card:focus-visible{
-    transform:translateY(-6px);
-    border-color:#4a2a06;
+.weekend-card:focus-visible {
+    transform: translateY(-6px);
+    border-color: #4a2a06;
 }
 
-.weekend-card img{
-    position:absolute;
-    inset:0;
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    transition:transform .6s ease;
+.weekend-card img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s ease;
 }
 
-.weekend-card:hover img{
-    transform:scale(1.06);
+.weekend-card:hover img {
+    transform: scale(1.06);
 }
 
 /* Scrim so the copy stays readable over the photo */
-.weekend-card-body{
-    position:relative;
-    z-index:1;
-    height:100%;
-    min-height:420px;
+.weekend-card-body {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    min-height: 420px;
 
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    justify-content:flex-end;
-    gap:10px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 10px;
 
-    padding:32px 30px 30px;
-    background:linear-gradient(
-        to bottom,
-        rgba(0,0,0,0) 30%,
-        rgba(0,0,0,.72) 68%,
-        rgba(0,0,0,.92) 100%
-    );
+    padding: 32px 30px 30px;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.72) 68%, rgba(0, 0, 0, 0.92) 100%);
 }
 
-.weekend-card-body h3{
-    font-family:var(--sg-font-display);
-    font-size:clamp(1.5rem, 3.4vw, 2.1rem);
-    letter-spacing:-.5px;
-    text-transform:uppercase;
-    color:#fff;
+.weekend-card-body h3 {
+    font-family: var(--sg-font-display);
+    font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+    color: #fff;
 }
 
-.weekend-card-body p{
-    color:var(--sg-muted);
-    max-width:44ch;
+.weekend-card-body p {
+    color: var(--sg-muted);
+    max-width: 44ch;
 }
 
-.weekend-cta{
-    display:inline-flex;
-    align-items:center;
-    gap:.5em;
+.weekend-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
 
-    font-family:var(--sg-font-accent);
-    font-size:.85rem;
-    font-weight:bold;
-    letter-spacing:2px;
-    text-transform:uppercase;
-    color:var(--sg-orange-bright);
-    margin-top:6px;
+    font-family: var(--sg-font-accent);
+    font-size: 0.85rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--sg-orange-bright);
+    margin-top: 6px;
 }
 
-.weekend-cta::after{
-    content:"\2192"; /* arrow */
-    transition:transform .25s;
+.weekend-cta::after {
+    content: '\2192'; /* arrow */
+    transition: transform 0.25s;
 }
 
-.weekend-card:hover .weekend-cta::after{
-    transform:translateX(5px);
+.weekend-card:hover .weekend-cta::after {
+    transform: translateX(5px);
 }
 
 /* Practical travel note for people coming in from out of town */
-.weekend-note{
-    max-width:640px;
-    margin:32px auto 0;
-    text-align:center;
-    color:var(--sg-dim);
-    font-size:.92rem;
+.weekend-note {
+    max-width: 640px;
+    margin: 32px auto 0;
+    text-align: center;
+    color: var(--sg-dim);
+    font-size: 0.92rem;
 }
 
-
 /* Full-width artwork that closes the page */
-
 
 /* ==========================================================================
    RESPONSIVE - KEEP LAST. These override what is above them.
    ========================================================================== */
-@media (max-width:900px){
-
-    .contact-wrapper{
-        grid-template-columns:1fr;
-        gap:40px;
+@media (max-width: 900px) {
+    .contact-wrapper {
+        grid-template-columns: 1fr;
+        gap: 40px;
     }
 
-    .footer-content{
-        grid-template-columns:1fr 1fr;
-        gap:36px;
+    .footer-content {
+        grid-template-columns: 1fr 1fr;
+        gap: 36px;
     }
-
 }
 
-@media (max-width:768px){
-
+@media (max-width: 768px) {
     /* One row: the logo, and the button that opens the menu. */
-    nav{
-        padding:12px 16px;
-        gap:12px;
-        background:linear-gradient(
-            to bottom,
-            rgba(0,0,0,.5),
-            rgba(0,0,0,0)
-        );
-        border-bottom:none;
+    nav {
+        padding: 12px 16px;
+        gap: 12px;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));
+        border-bottom: none;
     }
 
     /*  The logo stays visible on a phone - it is the only way back to the
@@ -1867,393 +1825,419 @@ nav a.nav-cta.active{
 
     /*  The Contact button stays visible on a phone. */
 
-    .Nav img{
-        height:28px;
+    .Nav img {
+        height: 28px;
     }
 
     /* Trim the hero's top padding on a phone */
     .hero,
-    .event-hero{
-        min-height:auto;
+    .event-hero {
+        min-height: auto;
     }
 
     /* Top padding clears the overlaying nav, measured not guessed */
-    .hero-content{
-        padding:calc(var(--sg-nav-height, 120px) + 20px) 20px 60px;
+    .hero-content {
+        padding: calc(var(--sg-nav-height, 120px) + 20px) 20px 60px;
     }
 
-    .hero-logo{
-        width:min(210px, 58%);
-        margin-bottom:18px;
+    .hero-logo {
+        width: min(210px, 58%);
+        margin-bottom: 18px;
     }
 
-    .event-hero-content{
-        padding:calc(var(--sg-nav-height, 84px) + 10px) 20px 3.5vh;
+    .event-hero-content {
+        padding: calc(var(--sg-nav-height, 84px) + 10px) 20px 3.5vh;
     }
-
 
     /* Height-driven (never width) so the square logo keeps its shape */
-    .event-logo{
-        height:clamp(150px, 38vh, 340px);
-        width:auto;
-        margin-bottom:2vh;
+    .event-logo {
+        height: clamp(150px, 38vh, 340px);
+        width: auto;
+        margin-bottom: 2vh;
     }
 
-    .poster-tagline{
-        letter-spacing:.26em;
-        text-indent:.26em;
-        margin-bottom:1vh;
+    .poster-tagline {
+        letter-spacing: 0.26em;
+        text-indent: 0.26em;
+        margin-bottom: 1vh;
     }
 
-    .lineup-wall{
-        margin:2.4vh auto 0;
+    .lineup-wall {
+        margin: 2.4vh auto 0;
     }
 
-    .event-headline-date{
-        margin:2.4vh 0 .7vh;
+    .event-headline-date {
+        margin: 2.4vh 0 0.7vh;
     }
 
-    .lw-line{
-        gap:.08em .45em;
-        margin-bottom:.2em;
+    .lw-line {
+        gap: 0.08em 0.45em;
+        margin-bottom: 0.2em;
     }
 
-    .event-hero .event-location{
-        padding:11px 22px;
-        margin-top:12px;
+    .event-hero .event-location {
+        padding: 11px 22px;
+        margin-top: 12px;
     }
 
-    .event-hero .poster-tagline{
-        margin-bottom:4px;
+    .event-hero .poster-tagline {
+        margin-bottom: 4px;
     }
 
-    .event-headline-date{
-        margin:8px 0 2px;
+    .event-headline-date {
+        margin: 8px 0 2px;
     }
 
-    .event-hero .event-location{
-        margin-bottom:16px;
+    .event-hero .event-location {
+        margin-bottom: 16px;
     }
 
     /* Two-up instead of one long column */
-    .event-flow .detail-card{
-        flex:1 1 40%;
-        padding:18px 12px;
-        border-bottom:2px solid rgba(0,0,0,.28);
+    .event-flow .detail-card {
+        flex: 1 1 40%;
+        padding: 18px 12px;
+        border-bottom: 2px solid rgba(0, 0, 0, 0.28);
     }
 
-    .event-flow .detail-card:nth-child(2n){
-        border-right:none;
+    .event-flow .detail-card:nth-child(2n) {
+        border-right: none;
     }
 
-    .event-flow .detail-card:nth-last-child(-n+2){
-        border-bottom:none;
+    .event-flow .detail-card:nth-last-child(-n + 2) {
+        border-bottom: none;
     }
 
-    .event-date{
-        margin:10px 0 22px;
+    .event-date {
+        margin: 10px 0 22px;
     }
 
-
-    .act{
-        padding:32px 0;
+    .act {
+        padding: 32px 0;
     }
 
     /* Gentler entry on a narrow screen. The acts are tall, so a big
        rotation swings them a long way sideways on the way in. */
-    .has-scroll-anim .act{
-        transform:
-            perspective(1100px)
-            translate3d(-26px, 70px, 0)
-            rotateX(34deg)
-            rotate(-5deg)
-            scale(.82);
-        filter:blur(5px);
+    .has-scroll-anim .act {
+        transform: perspective(1100px) translate3d(-26px, 70px, 0) rotateX(34deg) rotate(-5deg) scale(0.82);
+        filter: blur(5px);
     }
 
-    .has-scroll-anim .act:nth-of-type(even){
-        transform:
-            perspective(1100px)
-            translate3d(26px, 70px, 0)
-            rotateX(34deg)
-            rotate(5deg)
-            scale(.82);
+    .has-scroll-anim .act:nth-of-type(even) {
+        transform: perspective(1100px) translate3d(26px, 70px, 0) rotateX(34deg) rotate(5deg) scale(0.82);
     }
 
     /* Not enough width for a photo beside a long name, so stack them.
        The left/right alternation is kept so the zig-zag still reads. */
     .act:has(.artist-photo),
-    .act:nth-of-type(even):has(.artist-photo){
-        grid-template-columns:1fr;
-        grid-template-rows:auto auto auto;
-        gap:10px;
+    .act:nth-of-type(even):has(.artist-photo) {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        gap: 10px;
     }
 
     .act:has(.artist-photo) .artist-photo,
-    .act:nth-of-type(even):has(.artist-photo) .artist-photo{
-        grid-column:1;
-        grid-row:1;
+    .act:nth-of-type(even):has(.artist-photo) .artist-photo {
+        grid-column: 1;
+        grid-row: 1;
     }
 
     .act:has(.artist-photo) h3,
-    .act:nth-of-type(even):has(.artist-photo) h3{
-        grid-column:1;
-        grid-row:2;
+    .act:nth-of-type(even):has(.artist-photo) h3 {
+        grid-column: 1;
+        grid-row: 2;
     }
 
     .act:has(.artist-photo) p,
-    .act:nth-of-type(even):has(.artist-photo) p{
-        grid-column:1;
-        grid-row:3;
+    .act:nth-of-type(even):has(.artist-photo) p {
+        grid-column: 1;
+        grid-row: 3;
     }
 
     /* Smaller so the longest name ("Brothas Entertainment") still fits */
-    .act h3{
-        font-size:clamp(1.7rem, 7.5vw, 3rem);
-        letter-spacing:-1px;
+    .act h3 {
+        font-size: clamp(1.7rem, 7.5vw, 3rem);
+        letter-spacing: -1px;
     }
 
-    .artist-photo{
-        height:clamp(180px, 42vw, 230px);
-        max-width:80vw;
+    .artist-photo {
+        height: clamp(180px, 42vw, 230px);
+        max-width: 80vw;
     }
 
-    .header-content{
-        padding:calc(var(--sg-nav-height, 118px) + 18px) 20px 50px;
+    .header-content {
+        padding: calc(var(--sg-nav-height, 118px) + 18px) 20px 50px;
     }
 
-    .page-header{
-        min-height:auto;
+    .page-header {
+        min-height: auto;
     }
 
     .section,
-    .lineup{
-        padding:60px 6%;
+    .lineup {
+        padding: 60px 6%;
     }
 
-    .btn{
-        width:100%;
-        max-width:320px;
+    .btn {
+        width: 100%;
+        max-width: 320px;
     }
 
-    .buttons{
-        flex-direction:column;
-        align-items:center;
+    .buttons {
+        flex-direction: column;
+        align-items: center;
     }
 
-    .ticket-bar{
-        flex-direction:column;
-        gap:10px;
-        padding:14px 20px;
+    .ticket-bar {
+        flex-direction: column;
+        gap: 10px;
+        padding: 14px 20px;
     }
 
-    .ticket-bar .btn{
-        width:100%;
-        max-width:320px;
+    .ticket-bar .btn {
+        width: 100%;
+        max-width: 320px;
     }
 
-    .featured-event{
-        padding:36px 22px;
+    .featured-event {
+        padding: 36px 22px;
     }
 
-    .event-facts{
-        gap:16px 26px;
+    .event-facts {
+        gap: 16px 26px;
     }
 
-
-    .contact-info h2{
-        text-align:center;
+    .contact-info h2 {
+        text-align: center;
     }
 
-    .footer-content{
-        grid-template-columns:1fr;
-        text-align:center;
-        padding:50px 8%;
+    .footer-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+        padding: 50px 8%;
     }
 
     .footer-links,
-    .footer-contact{
-        align-items:center;
+    .footer-contact {
+        align-items: center;
     }
 
-    .sponsors img{
-        height:48px;
-        max-width:140px;
+    .sponsors img {
+        height: 48px;
+        max-width: 140px;
     }
-
 }
 
-@media (max-width:400px){
-
+@media (max-width: 400px) {
     .section,
-    .lineup{
-        padding:50px 5%;
+    .lineup {
+        padding: 50px 5%;
     }
-
 }
-
 
 /* Respect users who prefer less motion */
-@media (prefers-reduced-motion:reduce){
-
-    html{
-        scroll-behavior:auto;
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
     }
 
-    .announcement-strip p{
-        animation:none;
-        padding-left:0;
-        text-align:center;
+    .announcement-strip p {
+        animation: none;
+        padding-left: 0;
+        text-align: center;
     }
 
     .btn:hover,
-    .sponsors a:hover img{
-        transform:none;
+    .sponsors a:hover img {
+        transform: none;
     }
 }
-
-
 
 /* ==========================================================================
    THE MENU ON A PHONE - a button and a drop-down panel, below 900px.
    ========================================================================== */
-.nav-burger{ display:none; }
+.nav-burger {
+    display: none;
+}
 
-@media (max-width:900px){
-
+@media (max-width: 900px) {
     /*  THE BUTTON  */
-    .nav-burger{
-        display:grid;
-        gap:5px;
-        flex:0 0 auto;
+    .nav-burger {
+        display: grid;
+        gap: 5px;
+        flex: 0 0 auto;
 
         /*  44px square, so it is easy to hit with a finger. */
-        width:44px;
-        height:44px;
-        padding:10px;
-        place-content:center;
+        width: 44px;
+        height: 44px;
+        padding: 10px;
+        place-content: center;
 
-        border:0;
-        border-radius:10px;
-        background:none;
-        cursor:pointer;
+        border: 0;
+        border-radius: 10px;
+        background: none;
+        cursor: pointer;
     }
 
-    .nav-burger span{
-        display:block;
-        width:22px;
-        height:2px;
-        border-radius:2px;
-        background:#fff;
-        transition:transform .2s ease, opacity .2s ease;
+    .nav-burger span {
+        display: block;
+        width: 22px;
+        height: 2px;
+        border-radius: 2px;
+        background: #fff;
+        transition:
+            transform 0.2s ease,
+            opacity 0.2s ease;
     }
 
     /*  Turns into a cross while the panel is open. */
-    nav.is-open .nav-burger span:nth-child(1){ transform:translateY(7px) rotate(45deg); }
-    nav.is-open .nav-burger span:nth-child(2){ opacity:0; }
-    nav.is-open .nav-burger span:nth-child(3){ transform:translateY(-7px) rotate(-45deg); }
+    nav.is-open .nav-burger span:nth-child(1) {
+        transform: translateY(7px) rotate(45deg);
+    }
+    nav.is-open .nav-burger span:nth-child(2) {
+        opacity: 0;
+    }
+    nav.is-open .nav-burger span:nth-child(3) {
+        transform: translateY(-7px) rotate(-45deg);
+    }
 
     /*  THE PANEL - hidden until the button is pressed. Positioned under the
         bar, not inside it, so the bar height (--sg-nav-height, which every
         hero pads down from) stays the same. Opening it must not push the page. */
-    nav ul{
-        position:absolute;
-        top:100%;
-        left:0;
-        right:0;
+    nav ul {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
 
-        display:none;
-        flex-direction:column;
-        align-items:stretch;
-        gap:0;
+        display: none;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
 
-        margin:0;
-        padding:8px 16px 18px;
+        margin: 0;
+        padding: 8px 16px 18px;
 
         /*  Solid, not the bar's gradient, so it reads over any photo. */
-        background:#0b0b0b;
-        border-top:1px solid rgba(255,255,255,.08);
-        box-shadow:0 18px 40px rgba(0,0,0,.5);
+        background: #0b0b0b;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
     }
 
-    nav.is-open ul{ display:flex; }
-
-    nav ul li{
-        border-bottom:1px solid rgba(255,255,255,.07);
+    nav.is-open ul {
+        display: flex;
     }
 
-    nav ul li:last-child{ border-bottom:0; }
+    nav ul li {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
 
-    nav a{
-        display:block;
-        padding:15px 4px;
-        font-size:1rem;
-        letter-spacing:.02em;
-        text-align:left;
+    nav ul li:last-child {
+        border-bottom: 0;
+    }
+
+    nav a {
+        display: block;
+        padding: 15px 4px;
+        font-size: 1rem;
+        letter-spacing: 0.02em;
+        text-align: left;
     }
 
     /*  The name in full. */
-    nav .nav-long{ display:inline; }
+    nav .nav-long {
+        display: inline;
+    }
 
     /*  SUB-ITEMS - shown indented, not folded away, to save a tap. */
     /*  The parent stacks over its children (on a computer .has-sub is a row). */
-    nav .has-sub{ display:block; }
-
-    nav .sub-toggle{ display:none; }
-
-    nav .subnav{
-        position:static;
-        display:block;
-        opacity:1;
-        visibility:visible;
-        transform:none;
-        min-width:0;
-        margin:0 0 6px;
-        padding:0;
-        border:0;
-        background:none;
-        box-shadow:none;
+    nav .has-sub {
+        display: block;
     }
 
-    nav .subnav li{ border-bottom:0; }
+    nav .sub-toggle {
+        display: none;
+    }
 
-    nav .subnav a{
-        padding:11px 4px 11px 18px;
-        font-size:.92rem;
-        color:rgba(255,255,255,.72);
-        border-left:2px solid rgba(255,255,255,.14);
+    nav .subnav {
+        position: static;
+        display: block;
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        min-width: 0;
+        margin: 0 0 6px;
+        padding: 0;
+        border: 0;
+        background: none;
+        box-shadow: none;
+    }
+
+    nav .subnav li {
+        border-bottom: 0;
+    }
+
+    nav .subnav a {
+        padding: 11px 4px 11px 18px;
+        font-size: 0.92rem;
+        color: rgba(255, 255, 255, 0.72);
+        border-left: 2px solid rgba(255, 255, 255, 0.14);
     }
 
     nav .subnav a:hover,
-    nav .subnav a.active{
-        color:#fff;
-        border-left-color:var(--sg-orange);
+    nav .subnav a.active {
+        color: #fff;
+        border-left-color: var(--sg-orange);
     }
 
     /*  Contact stays the one coloured item, full width at the bottom. */
-    nav .nav-cta-item{
-        margin-top:12px;
-        border-bottom:0;
+    nav .nav-cta-item {
+        margin-top: 12px;
+        border-bottom: 0;
     }
 
-    nav a.nav-cta{
-        display:block;
-        padding:14px 20px;
-        text-align:center;
+    nav a.nav-cta {
+        display: block;
+        padding: 14px 20px;
+        text-align: center;
     }
 
-    .Nav img{
-        height:34px;
+    .Nav img {
+        height: 34px;
     }
 }
 
 /* NEXT EVENT with its POSTER: poster on the left, the
    words and buttons on the right; on a phone the poster sits on top.    */
-.featured-event.has-poster{ display:grid; grid-template-columns:minmax(0, 340px) 1fr; gap:40px; align-items:center; text-align:center; }
-.fe-poster{ display:block; border-radius:12px; overflow:hidden; box-shadow:0 18px 40px rgba(0,0,0,.55); transform:rotate(-2deg); transition:transform .2s; }
-.fe-poster:hover{ transform:rotate(0deg) scale(1.02); }
-.fe-poster img{ display:block; width:100%; height:auto; }
-@media (max-width:860px){
-    .featured-event.has-poster{ grid-template-columns:minmax(0, 1fr); gap:28px; }
-    .fe-poster{ max-width:300px; margin:0 auto; }
+.featured-event.has-poster {
+    display: grid;
+    grid-template-columns: minmax(0, 340px) 1fr;
+    gap: 40px;
+    align-items: center;
+    text-align: center;
+}
+.fe-poster {
+    display: block;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+    transform: rotate(-2deg);
+    transition: transform 0.2s;
+}
+.fe-poster:hover {
+    transform: rotate(0deg) scale(1.02);
+}
+.fe-poster img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+@media (max-width: 860px) {
+    .featured-event.has-poster {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 28px;
+    }
+    .fe-poster {
+        max-width: 300px;
+        margin: 0 auto;
+    }
 }

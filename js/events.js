@@ -67,10 +67,14 @@
         if (left <= 0) {
             stop();
             box.classList.add('is-open');
-            if (label) { label.textContent = 'Doors are open'; }
+            if (label) {
+                label.textContent = 'Doors are open';
+            }
 
             var units = box.querySelector('.ev-countdown-units');
-            if (units) { units.hidden = true; }
+            if (units) {
+                units.hidden = true;
+            }
             return;
         }
 
@@ -79,14 +83,24 @@
         var hours = Math.floor((secs % 86400) / 3600);
         var mins = Math.floor((secs % 3600) / 60);
 
-        if (fields.days) { fields.days.textContent = days; }
-        if (fields.hours) { fields.hours.textContent = pad(hours); }
-        if (fields.mins) { fields.mins.textContent = pad(mins); }
-        if (fields.secs) { fields.secs.textContent = pad(secs % 60); }
+        if (fields.days) {
+            fields.days.textContent = days;
+        }
+        if (fields.hours) {
+            fields.hours.textContent = pad(hours);
+        }
+        if (fields.mins) {
+            fields.mins.textContent = pad(mins);
+        }
+        if (fields.secs) {
+            fields.secs.textContent = pad(secs % 60);
+        }
     }
 
     function start() {
-        if (timer) { return; }
+        if (timer) {
+            return;
+        }
         tick();
         timer = setInterval(tick, 1000);
     }
@@ -102,11 +116,15 @@
 
     /* Nothing to count while the tab is in the background. */
     document.addEventListener('visibilitychange', function () {
-        if (document.hidden) { stop(); } else { start(); }
+        if (document.hidden) {
+            stop();
+        } else {
+            start();
+        }
     });
 
     start();
-}());
+})();
 
 /*  The reel behind the Friday Nights banner. Separate from the countdown
     block above, which stops early on pages without a countdown.
@@ -117,13 +135,11 @@
     var video = document.getElementById('ev-res-video');
     if (!video) return;
 
-    if (window.matchMedia &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         video.removeAttribute('autoplay');
         video.pause();
     }
-}());
-
+})();
 
 /* ==========================================================================
    THE FRIDAY NIGHTS LINE UP
@@ -145,8 +161,7 @@
     var roster = window.SG_ROSTER_BY_SLUG || {};
 
     function esc(s) {
-        return String(s)
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     /*  The next four Fridays, today included if today is a Friday - the
@@ -165,9 +180,7 @@
     }
 
     function key(d) {
-        return d.getFullYear() + '-' +
-               String(d.getMonth() + 1).padStart(2, '0') + '-' +
-               String(d.getDate()).padStart(2, '0');
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     }
 
     function label(d) {
@@ -178,28 +191,39 @@
     function card(d, booked) {
         var act = booked && roster[booked.slug];
         var name = (act && act.name) || (booked && booked.name) || 'DJ To Be Announced';
-        var art = act && act.photo
-            ? ' style="--ev-art:url(\'' + esc((/^(https?:|\/|data:)/.test(act.photo) ? act.photo : '/' + act.photo)) + '\')"'
-            : '';
+        var art =
+            act && act.photo
+                ? ' style="--ev-art:url(\'' + esc(/^(https?:|\/|data:)/.test(act.photo) ? act.photo : '/' + act.photo) + '\')"'
+                : '';
 
-        return '' +
-            '<article class="ev-fri"' + art + '>' +
-              '<div class="ev-fri-art" aria-hidden="true">' +
-                '<span class="ev-fri-date">' + esc(label(d)) + '</span>' +
-              '</div>' +
-              '<div class="ev-fri-body">' +
-                /*  The name and nothing else. */
-                '<h3>' + esc(name) + '</h3>' +
-              '</div>' +
-            '</article>';
+        return (
+            '' +
+            '<article class="ev-fri"' +
+            art +
+            '>' +
+            '<div class="ev-fri-art" aria-hidden="true">' +
+            '<span class="ev-fri-date">' +
+            esc(label(d)) +
+            '</span>' +
+            '</div>' +
+            '<div class="ev-fri-body">' +
+            /*  The name and nothing else. */
+            '<h3>' +
+            esc(name) +
+            '</h3>' +
+            '</div>' +
+            '</article>'
+        );
     }
 
     var nights = fridays();
 
     function draw(booked) {
-        grid.innerHTML = nights.map(function (d) {
-            return card(d, booked[key(d)]);
-        }).join('');
+        grid.innerHTML = nights
+            .map(function (d) {
+                return card(d, booked[key(d)]);
+            })
+            .join('');
     }
 
     /*  Drawn once straight away so the dates are right, then again when
@@ -214,7 +238,9 @@
         booked[k] = { slug: seed[k] };
     });
 
-    function redraw() { draw(booked); }
+    function redraw() {
+        draw(booked);
+    }
 
     redraw();
 
@@ -232,29 +258,30 @@
     /*  The schedule is every booked act on every date, not only Fridays -
         it is what Admin -> Entertainment writes. The Fridays are picked
         out of it here.                                                 */
-    window.SGWeekend.loadCollection('gigNights').then(function (rows) {
-        rows.forEach(function (row) {
-            if (!row.date || !row.slug) return;
-            if (row.status === 'unconfirmed' || row.status === 'cancelled') return;   // held or called off - not public
+    window.SGWeekend.loadCollection('gigNights')
+        .then(function (rows) {
+            rows.forEach(function (row) {
+                if (!row.date || !row.slug) return;
+                if (row.status === 'unconfirmed' || row.status === 'cancelled') return; // held or called off - not public
 
-            /*  A night can hold more than one booking. The Grand View wins for
+                /*  A night can hold more than one booking. The Grand View wins for
                 these cards; anything else only fills a night the pub
                 hasn't claimed.                                         */
-            var mine = /grand view/i.test(row.venue || '');
-            if (!mine && booked[row.date] && booked[row.date].fromVenue) return;
+                var mine = /grand view/i.test(row.venue || '');
+                if (!mine && booked[row.date] && booked[row.date].fromVenue) return;
 
-            booked[row.date] = {
-                slug: row.slug,
-                fromVenue: mine
-            };
+                booked[row.date] = {
+                    slug: row.slug,
+                    fromVenue: mine
+                };
+            });
+
+            redraw();
+        })
+        .catch(function (err) {
+            if (window.console) console.warn('friday nights schedule unavailable', err);
         });
-
-        redraw();
-    }).catch(function (err) {
-        if (window.console) console.warn('friday nights schedule unavailable', err);
-    });
-}());
-
+})();
 
 /* --------------------------------------------------------------------------
    WHAT'S ON THIS WEEK
@@ -294,15 +321,12 @@
         var short = { weekday: 'long', day: 'numeric' };
         var full = { weekday: 'long', day: 'numeric', month: 'long' };
 
-        return from.toLocaleDateString('en-AU', same ? short : full) +
-               ' \u2013 ' + to.toLocaleDateString('en-AU', full);
+        return from.toLocaleDateString('en-AU', same ? short : full) + ' \u2013 ' + to.toLocaleDateString('en-AU', full);
     }
 
     function perView() {
         if (!view) return 1;
-        var n = parseInt(
-            window.getComputedStyle(view).getPropertyValue('--ev-wk-per'), 10
-        );
+        var n = parseInt(window.getComputedStyle(view).getPropertyValue('--ev-wk-per'), 10);
         return n > 0 ? n : 1;
     }
 
@@ -330,28 +354,32 @@
         });
     }
 
-    W.loadGigs().then(function (rows) {
-        var soon = rows.filter(function (ev) {
-            return ev.day && ev.day >= from && ev.day <= to;
-        });
+    W.loadGigs()
+        .then(function (rows) {
+            var soon = rows.filter(function (ev) {
+                return ev.day && ev.day >= from && ev.day <= to;
+            });
 
-        if (!soon.length) return;
+            if (!soon.length) return;
 
-        track.innerHTML = soon.map(W.card).join('');
-        if (when) when.textContent = saying();
-        section.hidden = false;
+            track.innerHTML = soon.map(W.card).join('');
+            if (when) when.textContent = saying();
+            section.hidden = false;
 
-        arrows.forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                page += parseInt(btn.getAttribute('data-ev-wk'), 10) || 0;
+            arrows.forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    page += parseInt(btn.getAttribute('data-ev-wk'), 10) || 0;
+                    paint(soon.length);
+                });
+            });
+
+            window.addEventListener('resize', function () {
                 paint(soon.length);
             });
+            paint(soon.length);
+        })
+        .catch(function (err) {
+            /*  Left hidden. Nothing on the page depends on it.             */
+            if (window.console) console.warn('this week strip unavailable', err);
         });
-
-        window.addEventListener('resize', function () { paint(soon.length); });
-        paint(soon.length);
-    }).catch(function (err) {
-        /*  Left hidden. Nothing on the page depends on it.             */
-        if (window.console) console.warn('this week strip unavailable', err);
-    });
-}());
+})();

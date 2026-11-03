@@ -19,79 +19,97 @@ const nodemailer = require('nodemailer');
 const logger = require('firebase-functions/logger');
 
 const SELLER = {
-  name: 'SoundzGood Whitsundays',
-  legal: process.env.SG_LEGAL_NAME || '',
-  abn: process.env.SG_ABN || '',
-  email: process.env.SG_FROM_EMAIL || 'bookings@soundzgood.com.au',
-  site: 'www.soundzgood.com.au',
+    name: 'SoundzGood Whitsundays',
+    legal: process.env.SG_LEGAL_NAME || '',
+    abn: process.env.SG_ABN || '',
+    email: process.env.SG_FROM_EMAIL || 'bookings@soundzgood.com.au',
+    site: 'www.soundzgood.com.au'
 };
 const OFFICE = process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au';
 
 function esc(v) {
-  return String(v == null ? '' : v)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    return String(v == null ? '' : v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 }
 
 function transport() {
-  const user = (process.env.SMTP_USER || '').trim();
-  const pass = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
-  if (!user || !pass) return null;
-  return nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user, pass } });
+    const user = (process.env.SMTP_USER || '').trim();
+    const pass = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
+    if (!user || !pass) return null;
+    return nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user, pass } });
 }
 
 /*  The fields a message can use. Same list as FIELDS in js/messages.js. */
 function fieldsFor(booking, event, guideLink) {
-  const biz = booking.business || {};
-  return {
-    vendor_name: biz.contactName || biz.name || 'there',
-    business_name: biz.name || '',
-    site_number: booking.siteLabel || '',
-    event_name: event.name || '',
-    event_date: event.dateLabel || event.dateISO || '',
-    event_venue: [event.venue, event.location].filter(Boolean).join(', '),
-    guide_link: guideLink || '',
-  };
+    const biz = booking.business || {};
+    return {
+        vendor_name: biz.contactName || biz.name || 'there',
+        business_name: biz.name || '',
+        site_number: booking.siteLabel || '',
+        event_name: event.name || '',
+        event_date: event.dateLabel || event.dateISO || '',
+        event_venue: [event.venue, event.location].filter(Boolean).join(', '),
+        guide_link: guideLink || ''
+    };
 }
 
 function fill(text, values, clean) {
-  return String(text || '').replace(/\{\{\s*([a-z_]+)\s*\}\}/gi, (whole, key) => {
-    const v = values[key.toLowerCase()];
-    return v === undefined ? whole : clean(v);
-  });
+    return String(text || '').replace(/\{\{\s*([a-z_]+)\s*\}\}/gi, (whole, key) => {
+        const v = values[key.toLowerCase()];
+        return v === undefined ? whole : clean(v);
+    });
 }
 
 /*  A web address in the text becomes a link (e.g. the Google review link). */
 function linkify(html) {
-  return html.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" style="color:#ff6b00;font-weight:bold;">$1</a>');
+    return html.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" style="color:#ff6b00;font-weight:bold;">$1</a>');
 }
 
 /*  Plain text -> paragraphs and bullet lists, already filled in. */
 function bodyHtml(body, values) {
-  return String(body || '').replace(/\r/g, '').split(/\n\s*\n/).map((block) => {
-    const lines = block.split('\n').filter((l) => l.trim() !== '');
-    if (!lines.length) return '';
-    if (lines.every((l) => /^\s*-\s+/.test(l))) {
-      return '<ul style="margin:0 0 14px;padding-left:20px;">'
-        + lines.map((l) => '<li style="margin:0 0 6px;">' + linkify(fill(esc(l.replace(/^\s*-\s+/, '')), values, esc)) + '</li>').join('')
-        + '</ul>';
-    }
-    return '<p style="margin:0 0 14px;">' + lines.map((l) => linkify(fill(esc(l), values, esc))).join('<br>') + '</p>';
-  }).join('');
+    return String(body || '')
+        .replace(/\r/g, '')
+        .split(/\n\s*\n/)
+        .map((block) => {
+            const lines = block.split('\n').filter((l) => l.trim() !== '');
+            if (!lines.length) return '';
+            if (lines.every((l) => /^\s*-\s+/.test(l))) {
+                return (
+                    '<ul style="margin:0 0 14px;padding-left:20px;">' +
+                    lines
+                        .map((l) => '<li style="margin:0 0 6px;">' + linkify(fill(esc(l.replace(/^\s*-\s+/, '')), values, esc)) + '</li>')
+                        .join('') +
+                    '</ul>'
+                );
+            }
+            return '<p style="margin:0 0 14px;">' + lines.map((l) => linkify(fill(esc(l), values, esc))).join('<br>') + '</p>';
+        })
+        .join('');
 }
 
 function html(msg, values, opts) {
-  const actions = (opts.actions || []).map((a) => `<a href="${esc(a.url)}" style="display:inline-block;margin:6px;${a.primary
-      ? 'background:#ff6b00;color:#fff;'
-      : 'background:#fff;color:#111;border:2px solid #111;'}text-decoration:none;font-weight:bold;font-size:15px;padding:12px 22px;border-radius:10px;">${esc(a.label)}</a>`).join('');
-  const actionBlock = actions ? `<p style="text-align:center;margin:20px 0 6px;">${actions}</p>` : '';
-  const noteBlock = opts.note ? `<p style="margin:12px 0 0;font-size:13px;color:#777;text-align:center;">${esc(opts.note)}</p>` : '';
-  const button = values.guide_link
-    ? `<p style="text-align:center;margin:22px 0 6px;">
+    const actions = (opts.actions || [])
+        .map(
+            (a) =>
+                `<a href="${esc(a.url)}" style="display:inline-block;margin:6px;${
+                    a.primary ? 'background:#ff6b00;color:#fff;' : 'background:#fff;color:#111;border:2px solid #111;'
+                }text-decoration:none;font-weight:bold;font-size:15px;padding:12px 22px;border-radius:10px;">${esc(a.label)}</a>`
+        )
+        .join('');
+    const actionBlock = actions ? `<p style="text-align:center;margin:20px 0 6px;">${actions}</p>` : '';
+    const noteBlock = opts.note ? `<p style="margin:12px 0 0;font-size:13px;color:#777;text-align:center;">${esc(opts.note)}</p>` : '';
+    const button = values.guide_link
+        ? `<p style="text-align:center;margin:22px 0 6px;">
         <a href="${esc(values.guide_link)}" style="display:inline-block;background:#ff6b00;color:#fff;text-decoration:none;font-weight:bold;font-size:15px;padding:13px 26px;border-radius:10px;">View your invoice &amp; event guide &rarr;</a>
-      </p>` : '';
-  const unsub = opts.unsubscribeLink
-    ? `<br><a href="${esc(opts.unsubscribeLink)}" style="color:#999;">Unsubscribe from event news</a>` : '';
-  return `<!doctype html>
+      </p>`
+        : '';
+    const unsub = opts.unsubscribeLink
+        ? `<br><a href="${esc(opts.unsubscribeLink)}" style="color:#999;">Unsubscribe from event news</a>`
+        : '';
+    return `<!doctype html>
 <html><body style="margin:0;padding:24px;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
   <div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;overflow:hidden;">
     <div style="background:#111;padding:20px 24px;">
@@ -114,40 +132,42 @@ function html(msg, values, opts) {
 }
 
 function text(msg, values, opts) {
-  const plain = fill(String(msg.body || ''), values, (v) => String(v));
-  return [
-    plain,
-    values.guide_link ? '\nYour invoice & event guide: ' + values.guide_link : '',
-    ...(opts.actions || []).map((a) => a.label + ': ' + a.url),
-    opts.note || '',
-    '',
-    `${SELLER.name} - ${SELLER.email} - ${SELLER.site}`,
-    opts.unsubscribeLink ? 'Unsubscribe from event news: ' + opts.unsubscribeLink : '',
-  ].filter((l) => l !== '').join('\n');
+    const plain = fill(String(msg.body || ''), values, (v) => String(v));
+    return [
+        plain,
+        values.guide_link ? '\nYour invoice & event guide: ' + values.guide_link : '',
+        ...(opts.actions || []).map((a) => a.label + ': ' + a.url),
+        opts.note || '',
+        '',
+        `${SELLER.name} - ${SELLER.email} - ${SELLER.site}`,
+        opts.unsubscribeLink ? 'Unsubscribe from event news: ' + opts.unsubscribeLink : ''
+    ]
+        .filter((l) => l !== '')
+        .join('\n');
 }
 
 /*  opts: { to, test, unsubscribeLink } */
 async function sendMessageEmail(msg, values, opts) {
-  const tx = transport();
-  if (!tx) return { sent: false, reason: 'no-smtp' };
-  if (!opts.to) return { sent: false, reason: 'no-address' };
-  try {
-    await tx.sendMail({
-      kind: 'message',
-      from: `${SELLER.name} <${SELLER.email}>`,
-      to: opts.to,
-      // a copy of every email goes to the office
-      ...(opts.test ? {} : { bcc: OFFICE }),
-      replyTo: OFFICE,
-      subject: (opts.test ? '[TEST] ' : '') + fill(msg.subject, values, (v) => String(v)),
-      text: text(msg, values, opts),
-      html: html(msg, values, opts),
-    });
-    return { sent: true };
-  } catch (err) {
-    logger.error('message email failed', { to: opts.to, smtpError: err && err.message });
-    return { sent: false, reason: 'smtp-error', error: err && err.message };
-  }
+    const tx = transport();
+    if (!tx) return { sent: false, reason: 'no-smtp' };
+    if (!opts.to) return { sent: false, reason: 'no-address' };
+    try {
+        await tx.sendMail({
+            kind: 'message',
+            from: `${SELLER.name} <${SELLER.email}>`,
+            to: opts.to,
+            // a copy of every email goes to the office
+            ...(opts.test ? {} : { bcc: OFFICE }),
+            replyTo: OFFICE,
+            subject: (opts.test ? '[TEST] ' : '') + fill(msg.subject, values, (v) => String(v)),
+            text: text(msg, values, opts),
+            html: html(msg, values, opts)
+        });
+        return { sent: true };
+    } catch (err) {
+        logger.error('message email failed', { to: opts.to, smtpError: err && err.message });
+        return { sent: false, reason: 'smtp-error', error: err && err.message };
+    }
 }
 
 module.exports = { sendMessageEmail, fieldsFor, bodyHtml, fill };

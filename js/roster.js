@@ -21,26 +21,30 @@
             events: ['Clubs', 'Festivals', 'Weddings'],              */
     var TALENT = [
         /* ---- DJs ---- */
-        { slug:'maxzi',              name:'MAXZI',              act:'dj',   genres:[], events:[],
-          photo:'images/talent/maxzi.jpg' },
-        { slug:'lucas',              name:'Lucas',              act:'dj',   genres:[], events:[],
-          photo:'images/talent/lucas.jpg' },
-        { slug:'dj-karma',           name:'DJ Karma',           act:'dj',   genres:[], events:[],
-          photo:'images/talent/dj-karma.jpg' },
-        { slug:'nina-sinclair',      name:'Nina Sinclair',      act:'dj',   genres:[], events:[],
-          photo:'images/talent/nina-sinclair.jpg' },
-        { slug:'dj-charly-templar',  name:'DJ Charly Templar',  act:'dj',   genres:[], events:[],
-          photo:'images/talent/dj-charly-templar.jpg' },
-        { slug:'kriss-kross',        name:'Kriss Kross',        act:'dj',   genres:[], events:[],
-          photo:'images/talent/kriss-kross.jpg' },
-        { slug:'alex-emrik',         name:'Alex Emrik',         act:'dj',   genres:[], events:[],
-          photo:'images/talent/alex-emrik.jpg' },
-        { slug:'dj-powerboi',        name:'DJ PowerBoi',        act:'dj',   genres:[], events:[],
-          photo:'images/talent/dj-powerboi.jpg' },
-        { slug:'dougie',             name:'Dougie',             act:'dj',   genres:['R&B'], events:[],
-          photo:'images/talent/dougie.jpg' },
-        { slug:'mosh-mechanix',      name:'Mosh Mechanix',      act:'dj',   genres:['Drum & Bass', 'Commercial'], events:[],
-          photo:'images/talent/mosh-mechanix.jpg' },
+        { slug: 'maxzi', name: 'MAXZI', act: 'dj', genres: [], events: [], photo: 'images/talent/maxzi.jpg' },
+        { slug: 'lucas', name: 'Lucas', act: 'dj', genres: [], events: [], photo: 'images/talent/lucas.jpg' },
+        { slug: 'dj-karma', name: 'DJ Karma', act: 'dj', genres: [], events: [], photo: 'images/talent/dj-karma.jpg' },
+        { slug: 'nina-sinclair', name: 'Nina Sinclair', act: 'dj', genres: [], events: [], photo: 'images/talent/nina-sinclair.jpg' },
+        {
+            slug: 'dj-charly-templar',
+            name: 'DJ Charly Templar',
+            act: 'dj',
+            genres: [],
+            events: [],
+            photo: 'images/talent/dj-charly-templar.jpg'
+        },
+        { slug: 'kriss-kross', name: 'Kriss Kross', act: 'dj', genres: [], events: [], photo: 'images/talent/kriss-kross.jpg' },
+        { slug: 'alex-emrik', name: 'Alex Emrik', act: 'dj', genres: [], events: [], photo: 'images/talent/alex-emrik.jpg' },
+        { slug: 'dj-powerboi', name: 'DJ PowerBoi', act: 'dj', genres: [], events: [], photo: 'images/talent/dj-powerboi.jpg' },
+        { slug: 'dougie', name: 'Dougie', act: 'dj', genres: ['R&B'], events: [], photo: 'images/talent/dougie.jpg' },
+        {
+            slug: 'mosh-mechanix',
+            name: 'Mosh Mechanix',
+            act: 'dj',
+            genres: ['Drum & Bass', 'Commercial'],
+            events: [],
+            photo: 'images/talent/mosh-mechanix.jpg'
+        }
 
         /*  PARKED: solo artists and bands. Take the comment marks off and they
             come back, along with their tabs and dropdown options.
@@ -71,8 +75,8 @@
        ---------------------------------------------------------------------- */
     var PROJECT = 'soundzgood-8c86f';
     var WEB_KEY = 'AIzaSyCVWdD7fE24MuN-v5XQLObJbSHYRUbPlPY';
-    var REST = 'https://firestore.googleapis.com/v1/projects/' + PROJECT +
-               '/databases/(default)/documents/talent?pageSize=200&key=' + WEB_KEY;
+    var REST =
+        'https://firestore.googleapis.com/v1/projects/' + PROJECT + '/databases/(default)/documents/talent?pageSize=200&key=' + WEB_KEY;
 
     function index(list) {
         return list.reduce(function (map, t) {
@@ -84,7 +88,9 @@
     /*  A to Z by name. A leading "DJ " is skipped, so DJ Karma files
         under K.                                                       */
     function sortKey(t) {
-        return String(t.name || '').replace(/^dj\s+/i, '').toLowerCase();
+        return String(t.name || '')
+            .replace(/^dj\s+/i, '')
+            .toLowerCase();
     }
 
     function publish(list) {
@@ -123,14 +129,18 @@
         var out = {};
         Object.keys(fields || {}).forEach(function (k) {
             var v = fields[k];
-            out[k] = v.stringValue !== undefined ? v.stringValue
-                   : v.booleanValue !== undefined ? v.booleanValue
-                   : v.integerValue !== undefined ? parseInt(v.integerValue, 10)
-                   : v.arrayValue !== undefined
-                       ? (v.arrayValue.values || []).map(function (x) {
-                             return x.stringValue || '';
-                         })
-                   : '';
+            out[k] =
+                v.stringValue !== undefined
+                    ? v.stringValue
+                    : v.booleanValue !== undefined
+                      ? v.booleanValue
+                      : v.integerValue !== undefined
+                        ? parseInt(v.integerValue, 10)
+                        : v.arrayValue !== undefined
+                          ? (v.arrayValue.values || []).map(function (x) {
+                                return x.stringValue || '';
+                            })
+                          : '';
         });
         return out;
     }
@@ -152,24 +162,28 @@
             var bySlug = index(TALENT);
 
             saved.forEach(function (t) {
-                if (t.hidden) { delete bySlug[t.slug]; return; }
+                if (t.hidden) {
+                    delete bySlug[t.slug];
+                    return;
+                }
 
                 var was = bySlug[t.slug] || {};
                 bySlug[t.slug] = {
                     slug: t.slug,
                     name: t.name || was.name || t.slug,
                     act: t.act || was.act || 'dj',
-                    photo: t.photo !== undefined && t.photo !== ''
-                        ? t.photo : (was.photo || ''),
-                    genres: (t.genres && t.genres.length) ? t.genres : (was.genres || []),
-                    events: (t.events && t.events.length) ? t.events : (was.events || []),
-                    location: t.location || was.location || '',   // home town, on the card
-                    female: t.female === true,   // "Female DJs" in the genre filter
+                    photo: t.photo !== undefined && t.photo !== '' ? t.photo : was.photo || '',
+                    genres: t.genres && t.genres.length ? t.genres : was.genres || [],
+                    events: t.events && t.events.length ? t.events : was.events || [],
+                    location: t.location || was.location || '', // home town, on the card
+                    female: t.female === true, // "Female DJs" in the genre filter
                     order: t.order
                 };
             });
 
-            var merged = Object.keys(bySlug).map(function (k) { return bySlug[k]; });
+            var merged = Object.keys(bySlug).map(function (k) {
+                return bySlug[k];
+            });
 
             /*  Anything given an order in admin sorts by it; everything
                 else keeps the order it is written in above.            */
@@ -186,5 +200,4 @@
             if (global.console) console.warn('roster: using the built-in list', err);
             return publish(TALENT);
         });
-}(window));
-
+})(window);

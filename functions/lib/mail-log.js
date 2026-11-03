@@ -20,41 +20,43 @@ const logger = require('firebase-functions/logger');
 const realCreate = nodemailer.createTransport.bind(nodemailer);
 
 async function writeLog(entry) {
-  try {
-    const { getFirestore, FieldValue } = require('firebase-admin/firestore');
-    await getFirestore().collection('emailLog').add({ ...entry, at: FieldValue.serverTimestamp() });
-  } catch (err) {
-    logger.warn('email log write failed', { message: err && err.message });
-  }
+    try {
+        const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+        await getFirestore()
+            .collection('emailLog')
+            .add({ ...entry, at: FieldValue.serverTimestamp() });
+    } catch (err) {
+        logger.warn('email log write failed', { message: err && err.message });
+    }
 }
 
 const list = (v) => (Array.isArray(v) ? v.join(', ') : String(v || ''));
 
 nodemailer.createTransport = function (...args) {
-  const tx = realCreate(...args);
-  const send = tx.sendMail.bind(tx);
-  tx.sendMail = async function (opts = {}) {
-    const { kind, ...mail } = opts;
-    const entry = {
-      kind: String(kind || 'email'),
-      to: list(mail.to),
-      cc: list(mail.cc),
-      bcc: list(mail.bcc),
-      subject: String(mail.subject || '').slice(0, 300),
-      html: String(mail.html || '').slice(0, 300000),
-      text: mail.html ? '' : String(mail.text || '').slice(0, 20000),
-      test: /^\[TEST\]/.test(String(mail.subject || '')),
+    const tx = realCreate(...args);
+    const send = tx.sendMail.bind(tx);
+    tx.sendMail = async function (opts = {}) {
+        const { kind, ...mail } = opts;
+        const entry = {
+            kind: String(kind || 'email'),
+            to: list(mail.to),
+            cc: list(mail.cc),
+            bcc: list(mail.bcc),
+            subject: String(mail.subject || '').slice(0, 300),
+            html: String(mail.html || '').slice(0, 300000),
+            text: mail.html ? '' : String(mail.text || '').slice(0, 20000),
+            test: /^\[TEST\]/.test(String(mail.subject || ''))
+        };
+        try {
+            const r = await send(mail);
+            await writeLog({ ...entry, ok: true, error: '' });
+            return r;
+        } catch (err) {
+            await writeLog({ ...entry, ok: false, error: String((err && err.message) || err).slice(0, 500) });
+            throw err;
+        }
     };
-    try {
-      const r = await send(mail);
-      await writeLog({ ...entry, ok: true, error: '' });
-      return r;
-    } catch (err) {
-      await writeLog({ ...entry, ok: false, error: String((err && err.message) || err).slice(0, 500) });
-      throw err;
-    }
-  };
-  return tx;
+    return tx;
 };
 
 module.exports = {};

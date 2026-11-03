@@ -9,86 +9,104 @@
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=810';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=811';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 
 export const HUB_TABS = [
-  ['overview', 'Overview'], ['budget', 'Budget'], ['vendors', 'Vendors'], ['map', 'Sites & Map'],
-  ['programme', 'Programme'], ['volunteers', 'Volunteers'], ['messages', 'Messages'], ['sponsors', 'Sponsors'], ['website', 'Website'],
+    ['overview', 'Overview'],
+    ['budget', 'Budget'],
+    ['vendors', 'Vendors'],
+    ['map', 'Sites & Map'],
+    ['programme', 'Programme'],
+    ['volunteers', 'Volunteers'],
+    ['messages', 'Messages'],
+    ['sponsors', 'Sponsors'],
+    ['website', 'Website']
 ];
 
 /* the lines a new budget starts with - income first, then costs */
 export const BUDGET_STARTER = [
-  { name: 'Vendor site fees', kind: 'income', auto: 'vendors' },
-  { name: 'Sponsorship', kind: 'income', auto: 'sponsors' },
-  { name: 'Bar & drinks', kind: 'income' },
-  { name: 'Entertainment & activities', kind: 'cost', auto: 'programme' },
-  { name: 'Equipment & production', kind: 'cost' },
-  { name: 'Marketing & posters', kind: 'cost' },
-  { name: 'Staff & security', kind: 'cost' },
-  { name: 'Permits, insurance & venue', kind: 'cost' },
-  { name: 'Other', kind: 'cost' },
+    { name: 'Vendor site fees', kind: 'income', auto: 'vendors' },
+    { name: 'Sponsorship', kind: 'income', auto: 'sponsors' },
+    { name: 'Bar & drinks', kind: 'income' },
+    { name: 'Entertainment & activities', kind: 'cost', auto: 'programme' },
+    { name: 'Equipment & production', kind: 'cost' },
+    { name: 'Marketing & posters', kind: 'cost' },
+    { name: 'Staff & security', kind: 'cost' },
+    { name: 'Permits, insurance & venue', kind: 'cost' },
+    { name: 'Other', kind: 'cost' }
 ];
 
 const isoToday = () => {
-  const n = new Date();
-  return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0');
+    const n = new Date();
+    return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0');
 };
 
 /* 'today' | 'upcoming' | 'past' */
 export function eventGroup(ev) {
-  if (!ev.dateISO) return 'upcoming';
-  const t = isoToday();
-  return ev.dateISO < t ? 'past' : ev.dateISO === t ? 'today' : 'upcoming';
+    if (!ev.dateISO) return 'upcoming';
+    const t = isoToday();
+    return ev.dateISO < t ? 'past' : ev.dateISO === t ? 'today' : 'upcoming';
 }
 
 const paid = (b) => b.status === 'confirmed' || b.paymentStatus === 'paid';
-const bCents = (b) => (b.totalCents != null ? b.totalCents : (b.amountCents || 0));
+const bCents = (b) => (b.totalCents != null ? b.totalCents : b.amountCents || 0);
 const sponsorCents = (p) => (LEVEL[p.level] && LEVEL[p.level].priceCents) || 0;
 
 /* the numbers every tab shares */
 export function eventFigures(ctx) {
-  const bookings = (ctx.bookings || []).filter((b) => b.eventId === ctx.ev.id && b.status !== 'cancelled');
-  const paidList = bookings.filter(paid);
-  const sponsors = (ctx.sponsors || []).filter((p) => p.eventId === ctx.ev.id);
-  const sites = ctx.sites || [];
-  return {
-    vendorCents: paidList.reduce((t, b) => t + bCents(b), 0),
-    sponsorYes: sponsors.filter((p) => p.status === 'yes').reduce((t, p) => t + sponsorCents(p), 0),
-    sponsorMaybe: sponsors.filter((p) => p.status === 'interested').reduce((t, p) => t + sponsorCents(p), 0),
-    paidCount: paidList.length,
-    unpaidCount: bookings.length - paidList.length,
-    unseated: paidList.filter((b) => !b.siteLabel).length,
-    filled: sites.filter((s) => s.status === 'booked' || s.status === 'held').length,
-    totalSites: sites.length,
-    waiting: (ctx.waitlist || []).filter((w) => w.eventId === ctx.ev.id && w.status === 'waiting').length,
-    programmeCents: (ctx.programme || []).reduce((t, p) => t + (p.costCents || 0), 0),
-  };
+    const bookings = (ctx.bookings || []).filter((b) => b.eventId === ctx.ev.id && b.status !== 'cancelled');
+    const paidList = bookings.filter(paid);
+    const sponsors = (ctx.sponsors || []).filter((p) => p.eventId === ctx.ev.id);
+    const sites = ctx.sites || [];
+    return {
+        vendorCents: paidList.reduce((t, b) => t + bCents(b), 0),
+        sponsorYes: sponsors.filter((p) => p.status === 'yes').reduce((t, p) => t + sponsorCents(p), 0),
+        sponsorMaybe: sponsors.filter((p) => p.status === 'interested').reduce((t, p) => t + sponsorCents(p), 0),
+        paidCount: paidList.length,
+        unpaidCount: bookings.length - paidList.length,
+        unseated: paidList.filter((b) => !b.siteLabel).length,
+        filled: sites.filter((s) => s.status === 'booked' || s.status === 'held').length,
+        totalSites: sites.length,
+        waiting: (ctx.waitlist || []).filter((w) => w.eventId === ctx.ev.id && w.status === 'waiting').length,
+        programmeCents: (ctx.programme || []).reduce((t, p) => t + (p.costCents || 0), 0)
+    };
 }
 
 /* budget lines with the automatic actuals filled in */
 export function budgetLines(ctx, f) {
-  return (ctx.budget || []).map((l) => {
-    const actual = l.auto === 'vendors' ? f.vendorCents : l.auto === 'sponsors' ? f.sponsorYes : l.auto === 'programme' ? f.programmeCents : (l.actualCents || 0);
-    return { ...l, actualCents: actual };
-  });
+    return (ctx.budget || []).map((l) => {
+        const actual =
+            l.auto === 'vendors'
+                ? f.vendorCents
+                : l.auto === 'sponsors'
+                  ? f.sponsorYes
+                  : l.auto === 'programme'
+                    ? f.programmeCents
+                    : l.actualCents || 0;
+        return { ...l, actualCents: actual };
+    });
 }
 const sum = (rows, k) => rows.reduce((t, r) => t + (r[k] || 0), 0);
 export function budgetTotals(lines) {
-  const inc = lines.filter((l) => l.kind === 'income'), cost = lines.filter((l) => l.kind !== 'income');
-  return {
-    plannedIn: sum(inc, 'plannedCents'), actualIn: sum(inc, 'actualCents'),
-    plannedOut: sum(cost, 'plannedCents'), actualOut: sum(cost, 'actualCents'),
-  };
+    const inc = lines.filter((l) => l.kind === 'income'),
+        cost = lines.filter((l) => l.kind !== 'income');
+    return {
+        plannedIn: sum(inc, 'plannedCents'),
+        actualIn: sum(inc, 'actualCents'),
+        plannedOut: sum(cost, 'plannedCents'),
+        actualOut: sum(cost, 'actualCents')
+    };
 }
 
 /* ---------- the page ---------- */
 export function eventHubHtml(ctx) {
-  const { ev, tab, h } = ctx;
-  const esc = h.esc, attr = h.attr;
-  const grp = eventGroup(ev);
-  return `
+    const { ev, tab, h } = ctx;
+    const esc = h.esc,
+        attr = h.attr;
+    const grp = eventGroup(ev);
+    return `
     <div class="ev-hub">
       <div class="ad-page-head ev-hub-head">
         <div>
@@ -99,41 +117,52 @@ export function eventHubHtml(ctx) {
         <div class="ad-page-actions">
           ${ctx.eventPill(ev.status)}
           <button type="button" class="ad-btn" data-edit-ev="${attr(ev.id)}">Edit details</button>
-          ${ev.status === 'open'
-            ? `<button type="button" class="ad-btn" data-close-ev="${attr(ev.id)}" data-confirm="Close vendor signup for ${attr(ev.name || ev.id)}? Nobody new can take a site.">Close signup</button>`
-            : `<button type="button" class="ad-btn" data-open-ev="${attr(ev.id)}" data-confirm="Open vendor signup for ${attr(ev.name || ev.id)}?">Open signup</button>`}
+          ${
+              ev.status === 'open'
+                  ? `<button type="button" class="ad-btn" data-close-ev="${attr(ev.id)}" data-confirm="Close vendor signup for ${attr(ev.name || ev.id)}? Nobody new can take a site.">Close signup</button>`
+                  : `<button type="button" class="ad-btn" data-open-ev="${attr(ev.id)}" data-confirm="Open vendor signup for ${attr(ev.name || ev.id)}?">Open signup</button>`
+          }
         </div>
       </div>
       <div class="ev-tabs" role="tablist">
         ${HUB_TABS.map(([k, label]) => `<a role="tab" class="ev-tab${tab === k ? ' is-on' : ''}" href="#/event?id=${attr(ev.id)}&tab=${k}">${label}</a>`).join('')}
       </div>
       <div class="ev-hub-body">
-        ${tab === 'overview' ? overviewHtml(ctx) : tab === 'budget' ? budgetHtml(ctx) : tab === 'website' ? websiteHtml(ctx) : tab === 'programme' ? programmeHtml(ctx) : tab === 'vendors' ? attendingHtml(ctx) : tab === 'volunteers' ? volunteersHtml(ctx) : (ctx.inner || '')}
+        ${tab === 'overview' ? overviewHtml(ctx) : tab === 'budget' ? budgetHtml(ctx) : tab === 'website' ? websiteHtml(ctx) : tab === 'programme' ? programmeHtml(ctx) : tab === 'vendors' ? attendingHtml(ctx) : tab === 'volunteers' ? volunteersHtml(ctx) : ctx.inner || ''}
       </div>
       <p class="ad-action-msg" id="ad-action-msg" hidden></p>
     </div>`;
 }
 
 function card(title, big, sub, tone) {
-  return `<div class="ad-card ev-card${tone ? ' ' + tone : ''}"><p class="ev-card-t">${title}</p><p class="ev-card-big">${big}</p>${sub ? `<p class="ev-card-sub">${sub}</p>` : ''}</div>`;
+    return `<div class="ad-card ev-card${tone ? ' ' + tone : ''}"><p class="ev-card-t">${title}</p><p class="ev-card-big">${big}</p>${sub ? `<p class="ev-card-sub">${sub}</p>` : ''}</div>`;
 }
 
 function overviewHtml(ctx) {
-  const { ev, h } = ctx;
-  const esc = h.esc, attr = h.attr, money = h.money;
-  const f = eventFigures(ctx);
-  const lines = budgetLines(ctx, f);
-  const t = budgetTotals(lines);
-  const hasBudget = lines.length > 0;
-  const profit = t.actualIn - t.actualOut;
-  return `
+    const { ev, h } = ctx;
+    const esc = h.esc,
+        attr = h.attr,
+        money = h.money;
+    const f = eventFigures(ctx);
+    const lines = budgetLines(ctx, f);
+    const t = budgetTotals(lines);
+    const hasBudget = lines.length > 0;
+    const profit = t.actualIn - t.actualOut;
+    return `
     <div class="ev-grid">
       ${card('Sites filled', `${f.filled} <small>of ${f.totalSites}</small>`, f.unseated ? f.unseated + ' paid vendor' + (f.unseated === 1 ? '' : 's') + ' with no site' : 'Everyone paid has a site')}
       ${card('Vendors paid', String(f.paidCount), f.unpaidCount ? f.unpaidCount + ' still to pay' : 'Nobody owing')}
       ${card('Money in', esc(money(f.vendorCents + f.sponsorYes)), esc(money(f.vendorCents)) + ' vendor fees &middot; ' + esc(money(f.sponsorYes)) + ' sponsors' + (f.sponsorMaybe ? ' (+' + esc(money(f.sponsorMaybe)) + ' interested)' : ''))}
-      ${hasBudget
-        ? card('Profit so far', esc(money(profit)), esc(money(t.actualOut)) + ' spent of ' + esc(money(t.plannedOut)) + ' planned', profit < 0 ? 'is-bad' : 'is-good')
-        : card('Budget', '&mdash;', 'No budget yet - start one on the Budget tab')}
+      ${
+          hasBudget
+              ? card(
+                    'Profit so far',
+                    esc(money(profit)),
+                    esc(money(t.actualOut)) + ' spent of ' + esc(money(t.plannedOut)) + ' planned',
+                    profit < 0 ? 'is-bad' : 'is-good'
+                )
+              : card('Budget', '&mdash;', 'No budget yet - start one on the Budget tab')
+      }
       ${card('Waitlist', String(f.waiting), f.waiting ? 'waiting for a spot' : 'nobody waiting')}
     </div>
     <div class="ad-card ev-preview">
@@ -147,44 +176,52 @@ function overviewHtml(ctx) {
 }
 
 function budgetHtml(ctx) {
-  const { h } = ctx;
-  const esc = h.esc, attr = h.attr, money = h.money;
-  const f = eventFigures(ctx);
-  const lines = budgetLines(ctx, f);
-  if (!lines.length) {
-    return `
+    const { h } = ctx;
+    const esc = h.esc,
+        attr = h.attr,
+        money = h.money;
+    const f = eventFigures(ctx);
+    const lines = budgetLines(ctx, f);
+    if (!lines.length) {
+        return `
       <div class="ad-card ev-empty">
         <h2>No budget yet</h2>
         <p>Start with the usual lines - vendor fees and sponsorship fill themselves in from what's been paid. Add, rename or remove anything after.</p>
         <button type="button" class="ad-btn ad-btn-primary" id="ev-bud-seed">Start the budget</button>
       </div>`;
-  }
-  const t = budgetTotals(lines);
-  const dollars = (c) => (c ? (c / 100).toFixed(2) : '');
-  const diffCell = (l) => {
-    const d = l.kind === 'income' ? l.actualCents - l.plannedCents : l.plannedCents - l.actualCents;
-    if (!l.plannedCents && !l.actualCents) return '<td class="ev-bud-diff">&nbsp;</td>';
-    return `<td class="ev-bud-diff ${d < 0 ? 'is-bad' : 'is-good'}">${d < 0 ? '&minus;' : '+'}${esc(money(Math.abs(d)))}</td>`;
-  };
-  const rowHtml = (l) => `
+    }
+    const t = budgetTotals(lines);
+    const dollars = (c) => (c ? (c / 100).toFixed(2) : '');
+    const diffCell = (l) => {
+        const d = l.kind === 'income' ? l.actualCents - l.plannedCents : l.plannedCents - l.actualCents;
+        if (!l.plannedCents && !l.actualCents) return '<td class="ev-bud-diff">&nbsp;</td>';
+        return `<td class="ev-bud-diff ${d < 0 ? 'is-bad' : 'is-good'}">${d < 0 ? '&minus;' : '+'}${esc(money(Math.abs(d)))}</td>`;
+    };
+    const rowHtml = (l) => `
     <tr data-bud-row="${attr(l.id)}">
       <td><input class="ad-input ev-bud-name" value="${attr(l.name || '')}" data-bud="name" data-id="${attr(l.id)}" placeholder="Line"></td>
       <td><input class="ad-input ev-bud-num" type="number" step="0.01" min="0" value="${dollars(l.plannedCents)}" data-bud="plannedCents" data-id="${attr(l.id)}" placeholder="0.00"></td>
-      <td>${l.auto
-        ? `<span class="ev-bud-auto" title="Filled in from ${l.auto === 'vendors' ? 'paid vendor bookings' : l.auto === 'sponsors' ? 'sponsors who said yes' : 'the Programme tab'}">${esc(money(l.actualCents))} <small>auto</small></span>`
-        : `<input class="ad-input ev-bud-num" type="number" step="0.01" min="0" value="${dollars(l.actualCents)}" data-bud="actualCents" data-id="${attr(l.id)}" placeholder="0.00">`}</td>
+      <td>${
+          l.auto
+              ? `<span class="ev-bud-auto" title="Filled in from ${l.auto === 'vendors' ? 'paid vendor bookings' : l.auto === 'sponsors' ? 'sponsors who said yes' : 'the Programme tab'}">${esc(money(l.actualCents))} <small>auto</small></span>`
+              : `<input class="ad-input ev-bud-num" type="number" step="0.01" min="0" value="${dollars(l.actualCents)}" data-bud="actualCents" data-id="${attr(l.id)}" placeholder="0.00">`
+      }</td>
       ${diffCell(l)}
       <td class="ev-bud-x"><label class="ad-linkish ev-bud-clip${(l.files || []).length ? ' has-files' : ''}" title="Attach an invoice or receipt">&#128206;${(l.files || []).length ? '<b>' + (l.files || []).length + '</b>' : ''}<input type="file" accept="image/*,.pdf" data-bud-file="${attr(l.id)}" hidden></label><button type="button" class="ad-linkish" data-bud-del="${attr(l.id)}" aria-label="Remove ${attr(l.name || 'line')}">&times;</button></td>
     </tr>
     ${(l.files || []).length ? `<tr class="ev-bud-files"><td colspan="5"><div class="ev-bud-files-in">${(l.files || []).map((f, i) => `<span class="ev-bud-file"><a href="${attr(f.url)}" target="_blank" rel="noopener">&#128196; ${esc(f.name || 'file')}</a><button type="button" class="ad-linkish" data-bud-unfile="${attr(l.id)}" data-i="${i}" title="Remove this file">&times;</button></span>`).join('')}</div></td></tr>` : ''}`;
-  const section = (kind, title, pIn, aIn) => `
+    const section = (kind, title, pIn, aIn) => `
     <tbody>
       <tr class="ev-bud-h"><th>${title}</th><th>Planned</th><th>Actual</th><th>Diff</th><th></th></tr>
-      ${lines.filter((l) => (l.kind === 'income') === (kind === 'income')).map(rowHtml).join('')}
+      ${lines
+          .filter((l) => (l.kind === 'income') === (kind === 'income'))
+          .map(rowHtml)
+          .join('')}
       <tr class="ev-bud-tot"><td>Total ${title.toLowerCase()}</td><td>${esc(money(pIn))}</td><td>${esc(money(aIn))}</td><td></td><td></td></tr>
     </tbody>`;
-  const pp = t.plannedIn - t.plannedOut, ap = t.actualIn - t.actualOut;
-  return `
+    const pp = t.plannedIn - t.plannedOut,
+        ap = t.actualIn - t.actualOut;
+    return `
     <div class="ev-grid ev-grid-3">
       ${card('Planned profit', esc(money(pp)), esc(money(t.plannedIn)) + ' in &middot; ' + esc(money(t.plannedOut)) + ' out', pp < 0 ? 'is-bad' : '')}
       ${card('Actual so far', esc(money(ap)), esc(money(t.actualIn)) + ' in &middot; ' + esc(money(t.actualOut)) + ' out', ap < 0 ? 'is-bad' : 'is-good')}
@@ -207,18 +244,23 @@ function budgetHtml(ctx) {
 
 export const NOTICE_WORD = { venue: 'Venue change', postponed: 'Postponed', cancelled: 'Cancelled', info: 'Update' };
 function websiteHtml(ctx) {
-  const { ev, h } = ctx;
-  const esc = h.esc, attr = h.attr, money = h.money;
-  const p = ev.pricing || {};
-  const row = (k, v) => `<div><dt>${k}</dt><dd>${v}</dd></div>`;
-  const n = ev.notice || {};
-  return `
+    const { ev, h } = ctx;
+    const esc = h.esc,
+        attr = h.attr,
+        money = h.money;
+    const p = ev.pricing || {};
+    const row = (k, v) => `<div><dt>${k}</dt><dd>${v}</dd></div>`;
+    const n = ev.notice || {};
+    return `
     <div class="ad-card ev-pad ev-notice-box${n.kind ? ' is-on is-' + attr(n.kind) : ''}">
       <div class="ev-notice-top">
         <div>
           <h2>Notice</h2>
-          ${n.kind ? `<p class="ev-notice-cur"><span class="ad-pill ${n.kind === 'cancelled' ? 'ad-pill-red' : 'ad-pill-amber'}">${esc(NOTICE_WORD[n.kind] || n.kind)}</span> <b>${esc(n.title || '')}</b>${n.text ? ' &mdash; ' + esc(n.text) : ''}</p>`
-            : '<p class="ad-drawer-text">Nothing up. Use these when plans change at the last minute - it goes on the public page within a minute, and you can email the vendors straight after.</p>'}
+          ${
+              n.kind
+                  ? `<p class="ev-notice-cur"><span class="ad-pill ${n.kind === 'cancelled' ? 'ad-pill-red' : 'ad-pill-amber'}">${esc(NOTICE_WORD[n.kind] || n.kind)}</span> <b>${esc(n.title || '')}</b>${n.text ? ' &mdash; ' + esc(n.text) : ''}</p>`
+                  : '<p class="ad-drawer-text">Nothing up. Use these when plans change at the last minute - it goes on the public page within a minute, and you can email the vendors straight after.</p>'
+          }
         </div>
         ${n.kind ? '<button type="button" class="ad-btn" data-notice="clear">Take it down</button>' : ''}
       </div>
@@ -268,30 +310,35 @@ function websiteHtml(ctx) {
 
 /* ---------- the Events page: one wide card per event ---------- */
 const EVENT_POSTERS = [
-  { match: (ev) => /eatz/i.test(ev.name || '') && String(ev.dateISO || '').startsWith('2026-10-31'), url: '/images/events/eatz-beatz-halloween-2026-v3.webp' },
+    {
+        match: (ev) => /eatz/i.test(ev.name || '') && String(ev.dateISO || '').startsWith('2026-10-31'),
+        url: '/images/events/eatz-beatz-halloween-2026-v3.webp'
+    }
 ];
 export function posterOf(ev) {
-  if (ev.image && /^(https:\/\/|\/)[^\s'"()<>\\]*$/.test(ev.image)) return ev.image;
-  const p = EVENT_POSTERS.find((x) => x.match(ev));
-  return p ? p.url : '';
+    if (ev.image && /^(https:\/\/|\/)[^\s'"()<>\\]*$/.test(ev.image)) return ev.image;
+    const p = EVENT_POSTERS.find((x) => x.match(ev));
+    return p ? p.url : '';
 }
 
 /*  ctx: { ev, active, figures|null, budget, h, eventPill }. Figures are
     only known for the active event (its bookings are the ones subscribed). */
 export function eventCardHtml(ctx) {
-  const { ev, active, h } = ctx;
-  const esc = h.esc, attr = h.attr, money = h.money;
-  const f = ctx.figures;
-  const lines = f ? budgetLines({ budget: ctx.budget || [] }, f) : [];
-  const t = budgetTotals(lines);
-  const revenue = f ? f.vendorCents + f.sponsorYes : 0;
-  const expenses = t.actualOut;
-  const profit = revenue - expenses;
-  const poster = posterOf(ev);
-  const grp = eventGroup(ev);
-  const stat = (big, label) => `<div class="ev-stat"><b>${big}</b><span>${label}</span></div>`;
-  const dash = '<b class="is-dim">&mdash;</b>';
-  return `
+    const { ev, active, h } = ctx;
+    const esc = h.esc,
+        attr = h.attr,
+        money = h.money;
+    const f = ctx.figures;
+    const lines = f ? budgetLines({ budget: ctx.budget || [] }, f) : [];
+    const t = budgetTotals(lines);
+    const revenue = f ? f.vendorCents + f.sponsorYes : 0;
+    const expenses = t.actualOut;
+    const profit = revenue - expenses;
+    const poster = posterOf(ev);
+    const grp = eventGroup(ev);
+    const stat = (big, label) => `<div class="ev-stat"><b>${big}</b><span>${label}</span></div>`;
+    const dash = '<b class="is-dim">&mdash;</b>';
+    return `
     <article class="ad-card ev-banner${active ? ' is-active' : ''}${grp === 'past' ? ' is-past' : ''}" data-open-hub="${attr(ev.id)}">
       <div class="ev-banner-art${poster ? '' : ' is-blank'}"${poster ? ` style="background-image:url('${attr(poster)}')"` : ''}>
         ${poster ? `<div class="ev-poster" style="background-image:url('${attr(poster)}')"></div>` : '<span>No poster yet<br><small>Edit &rsaquo; Upload poster</small></span>'}
@@ -323,9 +370,11 @@ export function eventCardHtml(ctx) {
           <button type="button" class="ad-btn ad-btn-primary" data-open-hub="${attr(ev.id)}">Open event</button>
           <a class="ad-btn" href="#/event?id=${attr(ev.id)}&tab=budget">Budget</a>
           <button type="button" class="ad-btn" data-edit-ev="${attr(ev.id)}">Edit</button>
-          ${ev.status === 'open'
-            ? `<button type="button" class="ad-btn" data-close-ev="${attr(ev.id)}" data-confirm="Close vendor signup for ${attr(ev.name || ev.id)}? Nobody new can take a site.">Close signup</button>`
-            : `<button type="button" class="ad-btn" data-open-ev="${attr(ev.id)}" data-confirm="Open vendor signup for ${attr(ev.name || ev.id)}?">Open signup</button>`}
+          ${
+              ev.status === 'open'
+                  ? `<button type="button" class="ad-btn" data-close-ev="${attr(ev.id)}" data-confirm="Close vendor signup for ${attr(ev.name || ev.id)}? Nobody new can take a site.">Close signup</button>`
+                  : `<button type="button" class="ad-btn" data-open-ev="${attr(ev.id)}" data-confirm="Open vendor signup for ${attr(ev.name || ev.id)}?">Open signup</button>`
+          }
         </div>
       </div>
     </article>`;
@@ -333,40 +382,66 @@ export function eventCardHtml(ctx) {
 
 /* ---------- the timeline across the top of the Events page ---------- */
 export function timelineHtml(events, activeId, h) {
-  const esc = h.esc, attr = h.attr;
-  const dated = events.filter((e) => e.dateISO).slice().sort((a, b) => a.dateISO.localeCompare(b.dateISO));
-  if (dated.length < 1) return '';
-  const day = (iso) => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86400000;
-  const today = day(new Date().toISOString().slice(0, 10));
-  const lo = Math.min(day(dated[0].dateISO), today) - 20, hi = Math.max(day(dated[dated.length - 1].dateISO), today) + 20;
-  const x = (d) => ((d - lo) / Math.max(1, hi - lo) * 100).toFixed(2);
-  const short = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
-  return `
+    const esc = h.esc,
+        attr = h.attr;
+    const dated = events
+        .filter((e) => e.dateISO)
+        .slice()
+        .sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+    if (dated.length < 1) return '';
+    const day = (iso) => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86400000;
+    const today = day(new Date().toISOString().slice(0, 10));
+    const lo = Math.min(day(dated[0].dateISO), today) - 20,
+        hi = Math.max(day(dated[dated.length - 1].dateISO), today) + 20;
+    const x = (d) => (((d - lo) / Math.max(1, hi - lo)) * 100).toFixed(2);
+    const short = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
+    return `
     <div class="ev-tl" aria-label="Events timeline">
       <div class="ev-tl-line"></div>
       <div class="ev-tl-now" style="left:${x(today)}%"><span>Today</span></div>
-      ${dated.map((e, i) => {
-        const g = eventGroup(e);
-        return `<a class="ev-tl-dot is-${g}${e.id === activeId ? ' is-active' : ''}${i % 2 ? ' is-low' : ''}" style="left:${x(day(e.dateISO))}%" href="#/event?id=${attr(e.id)}" title="${attr(e.name || e.id)} - ${attr(e.dateLabel || e.dateISO)}">
+      ${dated
+          .map((e, i) => {
+              const g = eventGroup(e);
+              return `<a class="ev-tl-dot is-${g}${e.id === activeId ? ' is-active' : ''}${i % 2 ? ' is-low' : ''}" style="left:${x(day(e.dateISO))}%" href="#/event?id=${attr(e.id)}" title="${attr(e.name || e.id)} - ${attr(e.dateLabel || e.dateISO)}">
           <i></i><b>${esc(e.name || e.id)}</b><small>${esc(short(e.dateISO))}</small></a>`;
-      }).join('')}
+          })
+          .join('')}
     </div>`;
 }
 
 /* ---------- the Programme: everything happening on the night, in time order ---------- */
-export const PROGRAMME_KINDS = [['act', 'Live act / DJ'], ['activity', 'Activity'], ['food', 'Food & drink'], ['moment', 'Announcement / moment'], ['ops', 'Behind the scenes']];
+export const PROGRAMME_KINDS = [
+    ['act', 'Live act / DJ'],
+    ['activity', 'Activity'],
+    ['food', 'Food & drink'],
+    ['moment', 'Announcement / moment'],
+    ['ops', 'Behind the scenes']
+];
 const KIND = Object.fromEntries(PROGRAMME_KINDS);
-const ampm = (t) => { const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); if (!r) return ''; const h = +r[1]; return (h % 12 || 12) + (r[2] === '00' ? '' : ':' + r[2]) + (h < 12 ? 'am' : 'pm'); };
-const minutes = (t) => { const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); return r ? (+r[1] < 4 ? +r[1] + 24 : +r[1]) * 60 + +r[2] : 9999; };   // after midnight sorts last
+const ampm = (t) => {
+    const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || ''));
+    if (!r) return '';
+    const h = +r[1];
+    return (h % 12 || 12) + (r[2] === '00' ? '' : ':' + r[2]) + (h < 12 ? 'am' : 'pm');
+};
+const minutes = (t) => {
+    const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || ''));
+    return r ? (+r[1] < 4 ? +r[1] + 24 : +r[1]) * 60 + +r[2] : 9999;
+}; // after midnight sorts last
 
 function programmeHtml(ctx) {
-  const { ev, h } = ctx;
-  const esc = h.esc, attr = h.attr, money = h.money;
-  const items = (ctx.programme || []).slice().sort((a, b) => minutes(a.start) - minutes(b.start) || (a.order || 0) - (b.order || 0));
-  const total = items.reduce((t, p) => t + (p.costCents || 0), 0);
-  const acts = (ctx.talent || []).filter((t) => !t.hidden).slice().sort((a, b) => String(a.name).localeCompare(String(b.name)));
-  const dollars = (c) => (c ? (c / 100).toFixed(2) : '');
-  const row = (p) => `
+    const { ev, h } = ctx;
+    const esc = h.esc,
+        attr = h.attr,
+        money = h.money;
+    const items = (ctx.programme || []).slice().sort((a, b) => minutes(a.start) - minutes(b.start) || (a.order || 0) - (b.order || 0));
+    const total = items.reduce((t, p) => t + (p.costCents || 0), 0);
+    const acts = (ctx.talent || [])
+        .filter((t) => !t.hidden)
+        .slice()
+        .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+    const dollars = (c) => (c ? (c / 100).toFixed(2) : '');
+    const row = (p) => `
     <tr class="ev-prog-row is-${attr(p.kind || 'activity')}" data-prog-row="${attr(p.id)}">
       <td class="ev-prog-time"><input class="ad-input" type="time" value="${attr(p.start || '')}" data-prog="start" data-id="${attr(p.id)}"><span class="ev-prog-to">&ndash;</span><input class="ad-input" type="time" value="${attr(p.finish || '')}" data-prog="finish" data-id="${attr(p.id)}"></td>
       <td><input class="ad-input ev-prog-what" value="${attr(p.title || '')}" data-prog="title" data-id="${attr(p.id)}" placeholder="What's happening"></td>
@@ -376,7 +451,9 @@ function programmeHtml(ctx) {
       <td><input class="ad-input" value="${attr(p.notes || '')}" data-prog="notes" data-id="${attr(p.id)}" placeholder="Notes - power, stage, contact"></td>
       <td class="ev-prog-x"><button type="button" class="ad-linkish ev-prog-page${p.featured ? ' is-on' : ''}" data-prog-more="${attr(p.id)}" title="How it shows on the event page">${p.featured ? '&#9733;' : '&#9734;'}</button><button type="button" class="ad-linkish" data-prog-del="${attr(p.id)}" aria-label="Remove">&times;</button></td>
     </tr>
-    ${ctx.progOpen === p.id ? `<tr class="ev-prog-more"><td colspan="7">
+    ${
+        ctx.progOpen === p.id
+            ? `<tr class="ev-prog-more"><td colspan="7">
       <div class="ev-prog-more-in">
         <div class="ev-prog-pic${p.photo ? '' : ' is-blank'}"${p.photo ? ` style="background-image:url('${attr(p.photo)}')"` : ''}></div>
         <div class="ev-prog-more-f">
@@ -389,8 +466,10 @@ function programmeHtml(ctx) {
           </div>
         </div>
       </div>
-    </td></tr>` : ''}`;
-  return `
+    </td></tr>`
+            : ''
+    }`;
+    return `
     <div class="ev-grid ev-grid-3">
       ${card('On the programme', String(items.length), items.length ? items.filter((p) => p.kind === 'act').length + ' act' + (items.filter((p) => p.kind === 'act').length === 1 ? '' : 's') + ' &middot; ' + items.filter((p) => p.kind !== 'act').length + ' other' : 'nothing yet')}
       ${card('Runs', items.length && items[0].start ? esc(ampm(items[0].start)) + (items[items.length - 1].finish || items[items.length - 1].start ? ' &ndash; ' + esc(ampm(items[items.length - 1].finish || items[items.length - 1].start)) : '') : '&mdash;', 'first to last on the list')}
@@ -398,11 +477,15 @@ function programmeHtml(ctx) {
     </div>
     <div class="ad-card ev-prog-card">
       <datalist id="ev-prog-acts">${acts.map((t) => `<option value="${attr(t.name || t.slug)}">`).join('')}</datalist>
-      ${items.length ? `
+      ${
+          items.length
+              ? `
       <table class="ev-prog">
         <thead><tr><th>Time</th><th>What</th><th>Who</th><th>Kind</th><th>Cost</th><th>Notes</th><th></th></tr></thead>
         <tbody>${items.map(row).join('')}</tbody>
-      </table>` : `<p class="ev-prog-empty">Nothing on the programme yet. Add the gates opening, the acts, the jumping castle, the cooking demo - anything that happens on the night.</p>`}
+      </table>`
+              : `<p class="ev-prog-empty">Nothing on the programme yet. Add the gates opening, the acts, the jumping castle, the cooking demo - anything that happens on the night.</p>`
+      }
       <form class="ev-prog-add" id="ev-prog-add">
         <input class="ad-input" type="time" name="start" title="Start time">
         <input class="ad-input" name="title" placeholder="Add to the programme, e.g. Free jumping castle" required maxlength="120">
@@ -417,18 +500,33 @@ function programmeHtml(ctx) {
 
 /* ---------- Vendors tab: who's coming, Food and Market ---------- */
 function attendingHtml(ctx) {
-  const { ev, h } = ctx;
-  const esc = h.esc, attr = h.attr;
-  const catName = Object.fromEntries((ctx.categories || []).map((c) => [c.id, c.name || '']));
-  const all = (ctx.bookings || []).filter((b) => b.eventId === ev.id && b.status !== 'cancelled');
-  // by site number (F1, F2 ... M1, M2 ...), the ones with no site last
-  const siteKey = (b) => { const m = /^([A-Za-z]+)\s*(\d+)/.exec(String(b.siteLabel || '')); return m ? [0, m[1].toUpperCase(), +m[2]] : [1, '', 0]; };
-  const coming = all.filter(paid).sort((a, b) => { const x = siteKey(a), y = siteKey(b); return x[0] - y[0] || x[1].localeCompare(y[1]) || x[2] - y[2] || String((a.business || {}).name || '').localeCompare(String((b.business || {}).name || '')); });
-  const pending = all.length - coming.length;
-  const card = (b) => {
-    const biz = b.business || {};
-    const blurb = String(biz.description || '').replace(/\s+/g, ' ').trim();
-    return `<article class="ev-vend">
+    const { ev, h } = ctx;
+    const esc = h.esc,
+        attr = h.attr;
+    const catName = Object.fromEntries((ctx.categories || []).map((c) => [c.id, c.name || '']));
+    const all = (ctx.bookings || []).filter((b) => b.eventId === ev.id && b.status !== 'cancelled');
+    // by site number (F1, F2 ... M1, M2 ...), the ones with no site last
+    const siteKey = (b) => {
+        const m = /^([A-Za-z]+)\s*(\d+)/.exec(String(b.siteLabel || ''));
+        return m ? [0, m[1].toUpperCase(), +m[2]] : [1, '', 0];
+    };
+    const coming = all.filter(paid).sort((a, b) => {
+        const x = siteKey(a),
+            y = siteKey(b);
+        return (
+            x[0] - y[0] ||
+            x[1].localeCompare(y[1]) ||
+            x[2] - y[2] ||
+            String((a.business || {}).name || '').localeCompare(String((b.business || {}).name || ''))
+        );
+    });
+    const pending = all.length - coming.length;
+    const card = (b) => {
+        const biz = b.business || {};
+        const blurb = String(biz.description || '')
+            .replace(/\s+/g, ' ')
+            .trim();
+        return `<article class="ev-vend">
       <div class="ev-vend-main">
         <p class="ev-vend-cat">${esc(catName[b.categoryId] || (b.vendorType === 'food' ? 'Food' : 'Market'))}</p>
         <h3>${esc(biz.name || 'Unnamed')}</h3>
@@ -439,15 +537,15 @@ function attendingHtml(ctx) {
         <span>${b.paymentStatus === 'free' ? 'Free entry' : 'Paid'}</span>
       </div>
     </article>`;
-  };
-  const group = (type, title, strap) => {
-    const list = coming.filter((b) => (b.vendorType === 'food' ? 'food' : 'market') === type);
-    return `<section class="ev-vend-group is-${type}">
+    };
+    const group = (type, title, strap) => {
+        const list = coming.filter((b) => (b.vendorType === 'food' ? 'food' : 'market') === type);
+        return `<section class="ev-vend-group is-${type}">
       <header><h2>${title}</h2><span>${list.length}</span><em>${strap}</em></header>
       ${list.length ? `<div class="ev-vend-grid">${list.map(card).join('')}</div>` : '<p class="ev-vend-none">Nobody locked in yet.</p>'}
     </section>`;
-  };
-  return `
+    };
+    return `
     <div class="ev-vend-top">
       <p>${coming.length} vendor${coming.length === 1 ? '' : 's'} locked in (paid and confirmed). They appear on the live page as they lock in.${pending ? ` <b>${pending}</b> more applied and not paid yet.` : ''}</p>
       <a class="ad-btn" href="#/vendors">Applications &amp; the full list &rarr;</a>
@@ -458,31 +556,44 @@ function attendingHtml(ctx) {
 
 /* the FAQs a new event starts from */
 export const FAQ_STANDARD = [
-  ['Do I need a ticket?', "Nope! It's free entry - just turn up."],
-  ['Is it family friendly?', 'Absolutely. Bring the kids and enjoy great food, markets, live music and fun for all ages.'],
-  ['Should I bring a chair?', 'Yes! Bring a camp chair or picnic rug and settle in for the night.'],
-  ['Can I bring food or drinks?', 'No outside food or drinks please. Come hungry and support our local food vendors and bar.'],
-  ['Can I bring alcohol?', 'No BYO alcohol. There will be a licensed bar operating on the night.'],
-  ["What's happening for the kids?", 'Plenty - food, markets, entertainment and activities all night.'],
-  ['Where do I park?', 'Plenty of parking at the venue. Follow the signs on the night.'],
+    ['Do I need a ticket?', "Nope! It's free entry - just turn up."],
+    ['Is it family friendly?', 'Absolutely. Bring the kids and enjoy great food, markets, live music and fun for all ages.'],
+    ['Should I bring a chair?', 'Yes! Bring a camp chair or picnic rug and settle in for the night.'],
+    ['Can I bring food or drinks?', 'No outside food or drinks please. Come hungry and support our local food vendors and bar.'],
+    ['Can I bring alcohol?', 'No BYO alcohol. There will be a licensed bar operating on the night.'],
+    ["What's happening for the kids?", 'Plenty - food, markets, entertainment and activities all night.'],
+    ['Where do I park?', 'Plenty of parking at the venue. Follow the signs on the night.']
 ];
 
 /* ---------- Volunteers: who put their hand up ---------- */
 export const VOL_STATUS = { new: ['New', 'blue'], yes: ['Confirmed', 'green'], maybe: ['Maybe', 'amber'], no: ['Not this time', 'grey'] };
-const VOL_ROLE = { setup: 'Setup', packdown: 'Pack-down', gate: 'Gate & welcome', bar: 'Bar', runner: 'Runner', kids: "Kids' activities", anything: 'Anything' };
+const VOL_ROLE = {
+    setup: 'Setup',
+    packdown: 'Pack-down',
+    gate: 'Gate & welcome',
+    bar: 'Bar',
+    runner: 'Runner',
+    kids: "Kids' activities",
+    anything: 'Anything'
+};
 function volunteersHtml(ctx) {
-  const { ev, h } = ctx;
-  const esc = h.esc, attr = h.attr;
-  const list = (ctx.volunteers || []).slice().sort((a, b) => ((b.createdAt && b.createdAt.seconds) || 0) - ((a.createdAt && a.createdAt.seconds) || 0));
-  const n = (s) => list.filter((v) => (v.status || 'new') === s).length;
-  const row = (v) => `<tr>
+    const { ev, h } = ctx;
+    const esc = h.esc,
+        attr = h.attr;
+    const list = (ctx.volunteers || [])
+        .slice()
+        .sort((a, b) => ((b.createdAt && b.createdAt.seconds) || 0) - ((a.createdAt && a.createdAt.seconds) || 0));
+    const n = (s) => list.filter((v) => (v.status || 'new') === s).length;
+    const row = (v) => `<tr>
     <td><strong>${esc(v.name)}</strong><span class="ms-sub">${esc(v.email)}${v.phone ? ' &middot; ' + esc(v.phone) : ''}</span></td>
     <td>${(v.roles || []).map((r) => `<span class="ev-vol-role">${esc(VOL_ROLE[r] || r)}</span>`).join(' ') || '<span class="ad-cell-muted">&mdash;</span>'}</td>
     <td>${esc(v.availability || '')}${v.message ? '<span class="ms-sub">' + esc(v.message) + '</span>' : ''}</td>
-    <td><select class="ad-select" data-vol-status="${attr(v.id)}">${Object.keys(VOL_STATUS).map((k) => `<option value="${k}"${(v.status || 'new') === k ? ' selected' : ''}>${VOL_STATUS[k][0]}</option>`).join('')}</select></td>
+    <td><select class="ad-select" data-vol-status="${attr(v.id)}">${Object.keys(VOL_STATUS)
+        .map((k) => `<option value="${k}"${(v.status || 'new') === k ? ' selected' : ''}>${VOL_STATUS[k][0]}</option>`)
+        .join('')}</select></td>
     <td class="ad-cell-right"><a class="ad-btn ad-btn-small" href="mailto:${attr(v.email)}?subject=${encodeURIComponent('Volunteering at ' + (ev.name || 'our event'))}">Email</a> ${v.phone ? `<a class="ad-btn ad-btn-small" href="sms:${attr(v.phone)}">Text</a>` : ''} <button type="button" class="ad-linkish" data-vol-del="${attr(v.id)}" title="Remove">&times;</button></td>
   </tr>`;
-  return `
+    return `
     <div class="ev-grid ev-grid-3">
       ${card('Put their hand up', String(list.length), n('new') ? n('new') + ' new to look at' : 'nobody new')}
       ${card('Confirmed', String(n('yes')), n('maybe') ? n('maybe') + ' maybe' : '')}

@@ -10,26 +10,29 @@ const nodemailer = require('nodemailer');
 const logger = require('firebase-functions/logger');
 
 const SELLER = {
-  name: 'SoundzGood Whitsundays',
-  legal: process.env.SG_LEGAL_NAME || '',
-  abn: process.env.SG_ABN || '',
-  email: process.env.SG_FROM_EMAIL || 'bookings@soundzgood.com.au',
-  site: 'www.soundzgood.com.au',
+    name: 'SoundzGood Whitsundays',
+    legal: process.env.SG_LEGAL_NAME || '',
+    abn: process.env.SG_ABN || '',
+    email: process.env.SG_FROM_EMAIL || 'bookings@soundzgood.com.au',
+    site: 'www.soundzgood.com.au'
 };
 const OFFICE = process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au';
 
 const money = (c) => '$' + (Math.round(c || 0) / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function esc(v) {
-  return String(v == null ? '' : v)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    return String(v == null ? '' : v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 }
 
 function transport() {
-  const user = (process.env.SMTP_USER || '').trim();
-  const pass = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
-  if (!user || !pass) return null;
-  return nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user, pass } });
+    const user = (process.env.SMTP_USER || '').trim();
+    const pass = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
+    if (!user || !pass) return null;
+    return nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user, pass } });
 }
 
 /*  Production jobs (not DJ bookings): the customer can share the gear list
@@ -37,16 +40,16 @@ function transport() {
 const sharesGear = (q) => !q.gigDj && !(q.customer && q.customer.eventType === 'dj');
 
 function docLabel(q) {
-  return q.kind === 'invoice' ? 'invoice' : 'quote';
+    return q.kind === 'invoice' ? 'invoice' : 'quote';
 }
 
 function html(q, link) {
-  const isInvoice = q.kind === 'invoice';
-  const ref = isInvoice ? (q.invoiceNumber || q.number) : q.number;
-  const who = (q.customer && q.customer.name) || 'there';
-  const verb = isInvoice ? 'View your invoice' : 'View &amp; accept your quote';
+    const isInvoice = q.kind === 'invoice';
+    const ref = isInvoice ? q.invoiceNumber || q.number : q.number;
+    const who = (q.customer && q.customer.name) || 'there';
+    const verb = isInvoice ? 'View your invoice' : 'View &amp; accept your quote';
 
-  return `<!doctype html>
+    return `<!doctype html>
 <html><body style="margin:0;padding:24px;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
   <div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;overflow:hidden;">
     <div style="background:#111;padding:24px;">
@@ -65,11 +68,15 @@ function html(q, link) {
       <p style="text-align:center;margin:0 0 22px;">
         <a href="${esc(link)}" style="display:inline-block;background:#ff6b00;color:#fff;text-decoration:none;font-weight:bold;font-size:15px;padding:13px 26px;border-radius:10px;">${verb} &rarr;</a>
       </p>
-      ${sharesGear(q) ? `<div style="border:1px solid #eee;border-radius:10px;padding:14px 18px;margin:0 0 20px;">
+      ${
+          sharesGear(q)
+              ? `<div style="border:1px solid #eee;border-radius:10px;padding:14px 18px;margin:0 0 20px;">
         <p style="margin:0 0 4px;font-size:15px;font-weight:bold;color:#111;">Share the gear list with your team</p>
         <p style="margin:0 0 10px;font-size:13px;color:#555;line-height:1.5;">Add your band, tour manager or tech. They&rsquo;ll get the gear list when your booking is confirmed, 3 days before and on the day.</p>
         <a href="${esc(link)}#qp-team" style="color:#ff6b00;font-weight:bold;font-size:14px;text-decoration:none;">Add your team &rarr;</a>
-      </div>` : ''}
+      </div>`
+              : ''
+      }
       <p style="margin:0;font-size:13px;color:#666;line-height:1.6;">
         Or paste this link into your browser:<br>
         <a href="${esc(link)}" style="color:#ff6b00;word-break:break-all;">${esc(link)}</a>
@@ -87,50 +94,55 @@ function html(q, link) {
 }
 
 function text(q, link) {
-  const ref = q.kind === 'invoice' ? (q.invoiceNumber || q.number) : q.number;
-  return [
-    `Your ${docLabel(q)} ${ref} - SoundzGood Whitsundays`,
-    '',
-    `Hi ${(q.customer && q.customer.name) || 'there'}, here's your ${docLabel(q)}.`,
-    `Total (incl GST): ${money(q.totalCents)}`,
-    '',
-    `View it here: ${link}`,
-    '',
-    ...(sharesGear(q) ? [`Share the gear list with your band, tour manager or tech: ${link}#qp-team`, ''] : []),
-    `${SELLER.name} - ${SELLER.email} - ${SELLER.site}`,
-  ].join('\n');
+    const ref = q.kind === 'invoice' ? q.invoiceNumber || q.number : q.number;
+    return [
+        `Your ${docLabel(q)} ${ref} - SoundzGood Whitsundays`,
+        '',
+        `Hi ${(q.customer && q.customer.name) || 'there'}, here's your ${docLabel(q)}.`,
+        `Total (incl GST): ${money(q.totalCents)}`,
+        '',
+        `View it here: ${link}`,
+        '',
+        ...(sharesGear(q) ? [`Share the gear list with your band, tour manager or tech: ${link}#qp-team`, ''] : []),
+        `${SELLER.name} - ${SELLER.email} - ${SELLER.site}`
+    ].join('\n');
 }
 
 async function sendQuoteLinkEmail(q, link) {
-  const tx = transport();
-  if (!tx) { logger.warn('quote email: SMTP not configured'); return { sent: false, reason: 'no-smtp' }; }
-  const to = q.customer && q.customer.email;
-  if (!to) return { sent: false, reason: 'no-address' };
+    const tx = transport();
+    if (!tx) {
+        logger.warn('quote email: SMTP not configured');
+        return { sent: false, reason: 'no-smtp' };
+    }
+    const to = q.customer && q.customer.email;
+    if (!to) return { sent: false, reason: 'no-address' };
 
-  try {
-    await tx.sendMail({
-      kind: 'quote',
-      from: `${SELLER.name} <${SELLER.email}>`,
-      to,
-      // the customer's CC addresses (comma separated, e.g. their accounts team)
-      // get a copy; never the main address twice
-      ...(() => {
-        const cc = String((q.customer && q.customer.ccEmail) || '').split(/[,;\s]+/).map((e) => e.trim())
-          .filter((e) => e && e.toLowerCase() !== String(to).toLowerCase());
-        return cc.length ? { cc: cc.join(', ') } : {};
-      })(),
-      // a copy of every email goes to the office
-      bcc: OFFICE,
-      replyTo: OFFICE,
-      subject: `Your ${docLabel(q)} ${q.kind === 'invoice' ? (q.invoiceNumber || q.number) : q.number} from SoundzGood`,
-      text: text(q, link),
-      html: html(q, link),
-    });
-    return { sent: true };
-  } catch (err) {
-    logger.error('quote email failed', { to, smtpError: err && err.message });
-    return { sent: false, reason: 'smtp-error', error: err && err.message };
-  }
+    try {
+        await tx.sendMail({
+            kind: 'quote',
+            from: `${SELLER.name} <${SELLER.email}>`,
+            to,
+            // the customer's CC addresses (comma separated, e.g. their accounts team)
+            // get a copy; never the main address twice
+            ...(() => {
+                const cc = String((q.customer && q.customer.ccEmail) || '')
+                    .split(/[,;\s]+/)
+                    .map((e) => e.trim())
+                    .filter((e) => e && e.toLowerCase() !== String(to).toLowerCase());
+                return cc.length ? { cc: cc.join(', ') } : {};
+            })(),
+            // a copy of every email goes to the office
+            bcc: OFFICE,
+            replyTo: OFFICE,
+            subject: `Your ${docLabel(q)} ${q.kind === 'invoice' ? q.invoiceNumber || q.number : q.number} from SoundzGood`,
+            text: text(q, link),
+            html: html(q, link)
+        });
+        return { sent: true };
+    } catch (err) {
+        logger.error('quote email failed', { to, smtpError: err && err.message });
+        return { sent: false, reason: 'smtp-error', error: err && err.message };
+    }
 }
 
 /* --------------------------------------------------------------------------
@@ -139,11 +151,11 @@ async function sendQuoteLinkEmail(q, link) {
    info = { dueCents, dueLabel, isDeposit, balanceDue }
    -------------------------------------------------------------------------- */
 function reminderHtml(q, link, info) {
-  const isInvoice = q.kind === 'invoice';
-  const ref = isInvoice ? (q.invoiceNumber || q.number) : q.number;
-  const who = String((q.customer && q.customer.name) || '').split(' ')[0] || 'there';
-  const what = q.customer && q.customer.eventName ? ' for ' + esc(q.customer.eventName) : '';
-  return `<!doctype html>
+    const isInvoice = q.kind === 'invoice';
+    const ref = isInvoice ? q.invoiceNumber || q.number : q.number;
+    const who = String((q.customer && q.customer.name) || '').split(' ')[0] || 'there';
+    const what = q.customer && q.customer.eventName ? ' for ' + esc(q.customer.eventName) : '';
+    return `<!doctype html>
 <html><body style="margin:0;padding:24px;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
   <div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;overflow:hidden;">
     <div style="background:#111;padding:24px;">
@@ -180,36 +192,51 @@ function reminderHtml(q, link, info) {
 </body></html>`;
 }
 function reminderSubject(q) {
-  return 'Payment reminder - ' + (q.kind === 'invoice' ? (q.invoiceNumber || q.number) : q.number) + ' from SoundzGood';
+    return 'Payment reminder - ' + (q.kind === 'invoice' ? q.invoiceNumber || q.number : q.number) + ' from SoundzGood';
 }
 async function sendPaymentReminderEmail(q, link, info) {
-  const tx = transport();
-  if (!tx) return { sent: false, reason: 'no-smtp' };
-  const to = q.customer && q.customer.email;
-  if (!to) return { sent: false, reason: 'no-address' };
-  const cc = String((q.customer && q.customer.ccEmail) || '').split(/[,;\s]+/).map((e) => e.trim()).filter((e) => e && e.toLowerCase() !== String(to).toLowerCase());
-  const who = String((q.customer && q.customer.name) || '').split(' ')[0] || 'there';
-  try {
-    await tx.sendMail({
-      from: `${SELLER.name} <${SELLER.email}>`, to, ...(cc.length ? { cc: cc.join(', ') } : {}), bcc: OFFICE, replyTo: OFFICE,
-      subject: reminderSubject(q),
-      text: ['Hi ' + who + ', just a quick reminder about your ' + docLabel(q) + '.', info.dueLabel + ': ' + money(info.dueCents), '', 'View & pay: ' + link, '', "If you've already paid, thank you - please ignore this.", SELLER.name + ' - 0422 393 022'].join('\n'),
-      html: reminderHtml(q, link, info),
-    });
-    return { sent: true };
-  } catch (err) {
-    logger.error('reminder email failed', { to, smtpError: err && err.message });
-    return { sent: false, reason: 'smtp-error', error: err && err.message };
-  }
+    const tx = transport();
+    if (!tx) return { sent: false, reason: 'no-smtp' };
+    const to = q.customer && q.customer.email;
+    if (!to) return { sent: false, reason: 'no-address' };
+    const cc = String((q.customer && q.customer.ccEmail) || '')
+        .split(/[,;\s]+/)
+        .map((e) => e.trim())
+        .filter((e) => e && e.toLowerCase() !== String(to).toLowerCase());
+    const who = String((q.customer && q.customer.name) || '').split(' ')[0] || 'there';
+    try {
+        await tx.sendMail({
+            from: `${SELLER.name} <${SELLER.email}>`,
+            to,
+            ...(cc.length ? { cc: cc.join(', ') } : {}),
+            bcc: OFFICE,
+            replyTo: OFFICE,
+            subject: reminderSubject(q),
+            text: [
+                'Hi ' + who + ', just a quick reminder about your ' + docLabel(q) + '.',
+                info.dueLabel + ': ' + money(info.dueCents),
+                '',
+                'View & pay: ' + link,
+                '',
+                "If you've already paid, thank you - please ignore this.",
+                SELLER.name + ' - 0422 393 022'
+            ].join('\n'),
+            html: reminderHtml(q, link, info)
+        });
+        return { sent: true };
+    } catch (err) {
+        logger.error('reminder email failed', { to, smtpError: err && err.message });
+        return { sent: false, reason: 'smtp-error', error: err && err.message };
+    }
 }
 function renderPaymentReminder(q, link, info) {
-  return { subject: reminderSubject(q), html: reminderHtml(q, link, info) };
+    return { subject: reminderSubject(q), html: reminderHtml(q, link, info) };
 }
 
 /*  For the Messages page preview. */
 function renderQuoteLinkEmail(q, link) {
-  const ref = q.kind === 'invoice' ? (q.invoiceNumber || q.number) : q.number;
-  return { subject: `Your ${docLabel(q)} ${ref} from SoundzGood`, html: html(q, link) };
+    const ref = q.kind === 'invoice' ? q.invoiceNumber || q.number : q.number;
+    return { subject: `Your ${docLabel(q)} ${ref} from SoundzGood`, html: html(q, link) };
 }
 
 module.exports = { sendQuoteLinkEmail, renderQuoteLinkEmail, sendPaymentReminderEmail, renderPaymentReminder };
