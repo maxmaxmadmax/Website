@@ -5181,3 +5181,5 @@ body.ad-rate-app .rt-wrap{ background:#f3f4f7; }
 .ev-bud-file button{ color:var(--ad-muted); font-size:15px; line-height:1; }
 
 .ev-vol-role{ display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--ad-grey-bg); margin:1px 0; }
+
+a.ms-tab{ text-decoration:none; display:inline-flex; align-items:center; color:inherit; }
