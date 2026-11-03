@@ -10,7 +10,7 @@
     One sponsor per industry: once a business in an industry has said yes
     to the event picked, the others in that industry show "industry taken". */
 
-import { spAvatar, spColor } from './messages.js?v=806';
+import { spAvatar, spColor } from './messages.js?v=807';
 
 export const STAGES = [['idea', 'Idea'], ['research', 'Researching'], ['ready', 'Ready to ask'], ['asked', 'Asked'], ['sponsor', 'Sponsor'], ['no', 'Not now']];
 const STAGE = Object.fromEntries(STAGES);
