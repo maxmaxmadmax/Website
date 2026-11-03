@@ -21,15 +21,15 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=799';
+} from './firebase-config.js?v=800';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=799';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=799';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=799';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=799';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=799';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=799';
-import { expandKit } from './kit.js?v=799';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=800';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=800';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=800';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=800';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=800';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=800';
+import { expandKit } from './kit.js?v=800';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -559,8 +559,16 @@ const BUILT = ['dashboard', 'events', 'vendors', 'applications', 'map', 'enterta
 /*  The Dashboard is what you land on. */
 const HOME = 'dashboard';
 
+/*  Sidebar shortcuts into the event hub: #/sponsors and #/volunteers open
+    the current event on that tab.                                        */
+const HUB_SHORTCUTS = ['sponsors', 'volunteers'];
+
 function routeFromHash() {
   const [want0, qs] = (location.hash.replace('#/', '') || HOME).split('?');
+  if (HUB_SHORTCUTS.includes(want0)) {
+    location.replace('#/event?id=' + encodeURIComponent(state.activeEventId || '') + '&tab=' + want0);
+    return;
+  }
   const want = want0 || HOME;
   state.view = want;
   state.openBookingId = null;
@@ -612,8 +620,9 @@ function routeFromHash() {
     }
   }
 
+  const lit = want === 'event' && HUB_SHORTCUTS.includes(state.eventTab) ? state.eventTab : want;
   document.querySelectorAll('[data-view]').forEach((b) =>
-    b.classList.toggle('is-active', b.getAttribute('data-view') === want));
+    b.classList.toggle('is-active', b.getAttribute('data-view') === lit));
 
   render();
 
