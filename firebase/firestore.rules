@@ -281,6 +281,10 @@ service cloud.firestore {
     match /sponsors/{sponsorId} {
       allow read, write: if isAdmin();
     }
+    // Sponsor directory (Max, 3 Nov 2026): one doc per business, research only
+    match /sponsorBiz/{bizId} {
+      allow read, write: if isAdmin();
+    }
 
     // Vendor waitlist (Max, 20 Oct 2026): admins read; only the server writes
     match /waitlist/{entryId} {

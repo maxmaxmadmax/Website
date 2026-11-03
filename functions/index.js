@@ -5932,3 +5932,94 @@ exports.adminOptimisePhotos = onCall({ memory: '1GiB', timeoutSeconds: 540 }, as
   }
   return { ok: true, done, failed, beforeKB: Math.round(before / 1024), afterKB: Math.round(after / 1024) };
 });
+
+/* =========================================================================
+   SPONSOR DIRECTORY - finding and sizing up businesses (admin only)
+
+   findBusinesses: "car dealers" / "cafes" / a name -> businesses around
+   Bowen from OpenStreetMap (free, no key): name, website, phone, address.
+   lookupBusiness: their website -> logo, blurb, Facebook, Instagram.
+   ========================================================================= */
+const BOWEN = { lat: -20.0137, lon: 148.2476 };
+const OSM_KINDS = {
+  'car': 'shop=car', 'car dealer': 'shop=car', 'mechanic': 'shop=car_repair', 'tyre': 'shop=tyres', 'auto': 'shop=car_repair',
+  'cafe': 'amenity=cafe', 'coffee': 'amenity=cafe', 'restaurant': 'amenity=restaurant', 'takeaway': 'amenity=fast_food', 'pub': 'amenity=pub', 'hotel': 'tourism=hotel', 'motel': 'tourism=motel', 'bar': 'amenity=bar',
+  'caravan': 'tourism=caravan_site', 'accommodation': 'tourism=hotel', 'resort': 'tourism=hotel',
+  'supermarket': 'shop=supermarket', 'bakery': 'shop=bakery', 'butcher': 'shop=butcher', 'bottle': 'shop=alcohol', 'liquor': 'shop=alcohol', 'newsagent': 'shop=newsagent', 'chemist': 'amenity=pharmacy', 'pharmacy': 'amenity=pharmacy',
+  'hardware': 'shop=hardware', 'electrical': 'shop=electronics', 'furniture': 'shop=furniture', 'clothing': 'shop=clothes', 'florist': 'shop=florist', 'jewel': 'shop=jewelry', 'gift': 'shop=gift', 'print': 'shop=copyshop',
+  'hair': 'shop=hairdresser', 'beauty': 'shop=beauty', 'gym': 'leisure=fitness_centre', 'fitness': 'leisure=fitness_centre',
+  'real estate': 'office=estate_agent', 'estate': 'office=estate_agent', 'accountant': 'office=accountant', 'lawyer': 'office=lawyer', 'solicitor': 'office=lawyer', 'insurance': 'office=insurance', 'bank': 'amenity=bank',
+  'dentist': 'amenity=dentist', 'doctor': 'amenity=doctors', 'medical': 'amenity=doctors', 'vet': 'amenity=veterinary', 'physio': 'healthcare=physiotherapist',
+  'fuel': 'amenity=fuel', 'servo': 'amenity=fuel', 'boat': 'shop=boat', 'marine': 'shop=boat', 'fishing': 'shop=fishing', 'bike': 'shop=bicycle',
+  'builder': 'craft=builder', 'electrician': 'craft=electrician', 'plumber': 'craft=plumber', 'school': 'amenity=school', 'club': 'club', 'sports': 'leisure=sports_centre', 'farm': 'landuse=farmland',
+};
+const osmQuery = (q) => {
+  const s = q.toLowerCase().trim();
+  const hit = Object.keys(OSM_KINDS).sort((a, b) => b.length - a.length).find((k) => s.includes(k));
+  const around = `(around:20000,${BOWEN.lat},${BOWEN.lon})`;
+  const parts = [`nwr["name"~"${s.replace(/[^\w\s'&-]/g, '').replace(/\s+/g, '.*')}",i]${around};`];
+  if (hit) {
+    const [k, v] = OSM_KINDS[hit].split('=');
+    parts.push(v ? `nwr["${k}"="${v}"]${around};` : `nwr["${k}"]${around};`);
+  }
+  return `[out:json][timeout:20];(${parts.join('')});out center tags 60;`;
+};
+exports.findBusinesses = onCall({ timeoutSeconds: 60 }, async (request) => {
+  requireAdmin(request);
+  const q = String((request.data || {}).query || '').trim().slice(0, 60);
+  if (q.length < 2) throw new HttpsError('invalid-argument', 'Type what to look for.');
+  const r = await fetch('https://overpass-api.de/api/interpreter', {
+    method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', 'user-agent': 'SoundzGood admin (info@soundzgood.com.au)' },
+    body: 'data=' + encodeURIComponent(osmQuery(q)), signal: AbortSignal.timeout(25000),
+  });
+  if (!r.ok) throw new HttpsError('unavailable', 'The map service is busy - try again in a minute.');
+  const j = await r.json();
+  const seen = new Set();
+  const out = [];
+  (j.elements || []).forEach((el) => {
+    const t = el.tags || {};
+    const name = String(t.name || '').trim();
+    if (!name || seen.has(name.toLowerCase())) return;
+    seen.add(name.toLowerCase());
+    const kind = t.shop || t.amenity || t.tourism || t.office || t.craft || t.leisure || t.healthcare || t.club || '';
+    const addr = [t['addr:housenumber'], t['addr:street'], t['addr:city'] || t['addr:suburb']].filter(Boolean).join(' ');
+    let website = String(t.website || t['contact:website'] || t.url || '').trim();
+    if (website && !/^https?:\/\//i.test(website)) website = 'https://' + website;
+    out.push({
+      business: name.slice(0, 120), kind: String(kind).replace(/_/g, ' ').slice(0, 40), address: addr.slice(0, 160),
+      website: website.slice(0, 200), phone: String(t.phone || t['contact:phone'] || '').slice(0, 40), email: String(t.email || t['contact:email'] || '').slice(0, 120),
+      facebook: String(t['contact:facebook'] || '').slice(0, 200), instagram: String(t['contact:instagram'] || '').slice(0, 200),
+    });
+  });
+  out.sort((a, b) => (b.website ? 1 : 0) - (a.website ? 1 : 0) || a.business.localeCompare(b.business));
+  return { results: out.slice(0, 40) };
+});
+
+exports.lookupBusiness = onCall({ timeoutSeconds: 30 }, async (request) => {
+  requireAdmin(request);
+  let site = String((request.data || {}).website || '').trim().slice(0, 200);
+  if (!/^https?:\/\//i.test(site)) site = 'https://' + site;
+  let u;
+  try { u = new URL(site); } catch (e) { throw new HttpsError('invalid-argument', 'That is not a web address.'); }
+  if (!/^[\w.-]+\.[a-z]{2,}$/i.test(u.hostname) || /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(u.hostname)) throw new HttpsError('invalid-argument', 'That is not a public website.');
+  let html = '';
+  try {
+    const r = await fetch(u.origin + '/', { headers: { 'user-agent': 'Mozilla/5.0 (compatible; SoundzGood admin)' }, redirect: 'follow', signal: AbortSignal.timeout(10000) });
+    html = (await r.text()).slice(0, 400000);
+  } catch (e) { throw new HttpsError('unavailable', 'Could not reach their website.'); }
+  const meta = (names) => { for (const n of names) { const m = new RegExp(`<meta[^>]+(?:property|name)=["']${n}["'][^>]+content=["']([^"']+)["']`, 'i').exec(html) || new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${n}["']`, 'i').exec(html); if (m) return m[1]; } return ''; };
+  const abs = (href) => { try { return new URL(href, u.origin).href; } catch (e) { return ''; } };
+  const unent = (s) => String(s || '').replace(/&amp;/g, '&').replace(/&#39;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+  const title = unent((/<title[^>]*>([^<]*)<\/title>/i.exec(html) || [])[1] || '').split(/\s[|\-–]\s/)[0];
+  const blurb = unent(meta(['og:description', 'description', 'twitter:description'])).slice(0, 300);
+  const ogImage = meta(['og:image', 'twitter:image']);
+  const icon = (/<link[^>]+rel=["'][^"']*(?:apple-touch-icon|icon)[^"']*["'][^>]+href=["']([^"']+)["']/i.exec(html) || /<link[^>]+href=["']([^"']+)["'][^>]+rel=["'][^"']*(?:apple-touch-icon|icon)[^"']*["']/i.exec(html) || [])[1];
+  const social = (host) => { const m = new RegExp(`https?://(?:www\\.)?${host}/([A-Za-z0-9_.-]+)/?`, 'i').exec(html); return m && !/^(sharer|share|plugins|dialog|intent|hashtag|explore|p|reel|tr|login)$/i.test(m[1]) ? `https://www.${host}/${m[1]}` : ''; };
+  const phone = (/(?:\(0\d\)\s?\d{4}\s?\d{4}|04\d{2}\s?\d{3}\s?\d{3}|1[38]00\s?\d{3}\s?\d{3}|\b0\d\s?\d{4}\s?\d{4}\b)/.exec(html.replace(/<[^>]+>/g, ' ')) || [])[0] || '';
+  const email = (/[\w.+-]+@[\w-]+\.[\w.-]+/.exec(html.replace(/<[^>]+>/g, ' ').replace(/\.(png|jpe?g|svg|webp|gif)/gi, ' ')) || [])[0] || '';
+  return {
+    business: title.slice(0, 120), blurb, website: u.origin,
+    logo: ogImage ? abs(ogImage) : (icon ? abs(icon) : 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(u.hostname) + '&sz=256'),
+    facebook: social('facebook.com'), instagram: social('instagram.com'), phone: phone.replace(/\s+/g, ' ').trim(), email: /unsubscribe|example|sentry|wixpress/i.test(email) ? '' : email,
+  };
+});

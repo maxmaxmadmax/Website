@@ -16,7 +16,7 @@
    ctx = { state, h: { esc, attr }, call, render, money }
    ========================================================================== */
 
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=801';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=802';
 
 export const SEND_TIME = '9:35 am';
 
@@ -383,6 +383,10 @@ function sponsorsHtml(ctx) {
           <label class="sp-f"><span>Status</span><select class="ad-select" data-sp-status="${h.attr(p.id)}">${Object.keys(SP_STATUS).map((k) => `<option value="${k}"${(p.status || 'todo') === k ? ' selected' : ''}>${SP_STATUS[k][0]}</option>`).join('')}</select></label>
           <label class="sp-f"><span>Level</span><select class="ad-select" data-sp-level="${h.attr(p.id)}"><option value="">Level&hellip;</option>${SPONSOR_LEVELS.map((l) => `<option value="${l.key}"${p.level === l.key ? ' selected' : ''}>${h.esc(l.name.split(' - ')[0])}${l.priceCents ? ' ' + money0(l.priceCents) : ''}</option>`).join('')}</select></label>
         </div>
+        <div class="sp-2">
+          <label class="sp-f"><span>Type</span><select class="ad-select" data-sp-field="kind" data-id="${h.attr(p.id)}">${[['cash', 'Cash'], ['inkind', 'In-kind'], ['prize', 'Prize']].map(([k, l]) => `<option value="${k}"${(p.kind || 'cash') === k ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+          <label class="sp-f"><span>What they give</span><input class="ad-input" data-sp-field="gives" data-id="${h.attr(p.id)}" value="${h.attr(p.gives || '')}" placeholder="${p.kind === 'prize' ? 'e.g. a $100 voucher' : 'e.g. the PA, printing'}"></label>
+        </div>
         ${p.level === 'supporter' ? `<label class="sp-f"><span>Value of their support</span><input class="ad-input" data-sp-amount="${h.attr(p.id)}" placeholder="$" value="${p.amountCents ? Math.round(p.amountCents / 100) : ''}"></label>` : ''}
         <label class="sp-f"><span>Notes (just for you)</span><textarea class="ad-input" rows="3" data-sp-field="notes" data-id="${h.attr(p.id)}">${h.esc(p.notes || '')}</textarea></label>
         ${p.message ? `<div class="sp-theirs"><b>Their message</b><p>${h.esc(p.message)}</p></div>` : ''}
@@ -417,6 +421,8 @@ function sponsorsHtml(ctx) {
       <button type="button" class="ad-btn ad-btn-small" data-sp-leads>From Lead Generator (${leads.length})</button>
       <button type="button" class="ad-btn ad-btn-small" data-sp-big>Big Bowen businesses (${SUGGESTED_SPONSORS.filter((s) => !added.has(s.business.toLowerCase())).length})</button>
       <button type="button" class="ad-btn ad-btn-small" data-sp-past>Past sponsors</button>
+      <button type="button" class="ad-btn ad-btn-small" data-sp-dir>From the directory (${(state.sponsorBiz || []).filter((b) => !added.has(String(b.business || '').toLowerCase())).length})</button>
+      <button type="button" class="ad-btn ad-btn-small" data-sp-mc title="One page for the MC: every sponsor to thank and every prize">&#128221; MC sheet</button>
       <button type="button" class="ad-btn ad-btn-primary ms-sp-send" data-sp-send${nTicked ? '' : ' disabled'}>Send the ask to ${nTicked} ticked</button>
     </div>
     ${ask && !askOk ? '<p class="ms-note ms-sp-warn">Approve &ldquo;Sponsorship - the ask&rdquo; above before you can send.</p>' : ''}
@@ -767,6 +773,17 @@ export function wireMessages(ctx) {
       for (const p of fill) { const s = SUGGESTED_SPONSORS.find((x) => x.business.toLowerCase() === String(p.business).toLowerCase()); await ctx.sponsors.update(p.id, { email: s.email, notes: s.note }); }
       return;
     }
+    if (e.target.closest('[data-sp-mc]')) { openMcSheet(ctx); return; }
+    if (e.target.closest('[data-sp-dir]')) {
+      const have = new Set((state.sponsors || []).map((p) => String(p.business || '').toLowerCase()));
+      const pool = (state.sponsorBiz || []).filter((b) => b.business && !have.has(String(b.business).toLowerCase())).sort((a, b) => (b.stars || 0) - (a.stars || 0) || a.business.localeCompare(b.business));
+      if (!pool.length) { window.alert('Everyone in the directory is already on this event.'); return; }
+      const pick = window.prompt('Type the number of the business to add:\n' + pool.slice(0, 40).map((b, i) => (i + 1) + '. ' + b.business + (b.industry ? ' (' + b.industry + ')' : '') + (b.stars ? ' ' + '\u2605'.repeat(b.stars) : '')).join('\n'));
+      const b = pool[(+pick || 0) - 1];
+      if (!b) return;
+      await ctx.sponsors.add({ business: b.business, bizId: b.id, contactName: b.contactName || '', email: b.email || '', phone: b.phone || '', website: b.website || '', logo: b.logo || '', color: b.color || '', source: 'directory' });
+      return;
+    }
     if (e.target.closest('[data-sp-past]')) {
       const have = new Set((state.sponsors || []).map((p) => String(p.business || '').toLowerCase()));
       const add = PAST_SPONSORS.filter((n) => !have.has(n.toLowerCase()));
@@ -1014,4 +1031,46 @@ export function wireMessages(ctx) {
     await ctx.sponsors.add({ business: v('business'), contactName: v('contactName'), email: v('email'), phone: v('phone'), source: 'manual' });
     state.spAdding = false; render();
   });
+}
+
+/*  THE MC SHEET - one printable page for the night: every confirmed sponsor
+    with the thank-yous we promised, and every prize with who gave it.
+    Opens in a new tab; print or save as PDF from there.                   */
+function openMcSheet(ctx) {
+  const { state, h } = ctx;
+  const ev = (state.events || []).find((e) => e.id === state.activeEventId) || {};
+  const yes = (state.sponsors || []).filter((p) => p.status === 'yes');
+  const order = { platinum: 0, gold: 1, silver: 2, bronze: 3, supporter: 4 };
+  const lv = (p) => (LEVEL[p.level] ? LEVEL[p.level].name.split(' - ')[0] : '');
+  const thanks = (p) => { const m = /(\d+)\s*thank-you/i.exec(((LEVEL[p.level] || {}).perks || []).join(' ')); return m ? +m[1] : (p.level ? 1 : 0); };
+  const sponsors = yes.filter((p) => p.kind !== 'prize').sort((a, b) => (order[a.level] ?? 9) - (order[b.level] ?? 9) || sponsorCents(b) - sponsorCents(a) || String(a.business).localeCompare(String(b.business)));
+  const prizes = yes.filter((p) => p.kind === 'prize').sort((a, b) => String(a.business).localeCompare(String(b.business)));
+  const logo = (p) => (p.logo && /^(https:\/\/|\/)/.test(p.logo)) ? `<img src="${h.attr(p.logo)}" alt="">` : '';
+  const spRow = (p) => `<tr><td class="logo">${logo(p)}</td><td><b>${h.esc(p.business)}</b>${p.website ? `<br><small>${h.esc(String(p.website).replace(/^https?:\/\//, ''))}</small>` : ''}</td>
+    <td>${h.esc(lv(p) || (p.kind === 'inkind' ? 'In-kind' : 'Supporter'))}${p.gives ? `<br><small>${h.esc(p.gives)}</small>` : ''}</td>
+    <td class="num">${thanks(p) || '—'}</td><td class="tick">${Array.from({ length: Math.max(1, thanks(p)) }, () => '<span></span>').join('')}</td><td>${h.esc(p.notes || '')}</td></tr>`;
+  const przRow = (p) => `<tr><td class="logo">${logo(p)}</td><td><b>${h.esc(p.business)}</b>${p.contactName ? `<br><small>${h.esc(p.contactName)}${p.phone ? ' &middot; ' + h.esc(p.phone) : ''}</small>` : ''}</td><td>${h.esc(p.gives || '—')}</td><td class="tick"><span></span></td><td>${h.esc(p.notes || '')}</td></tr>`;
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>MC sheet - ${h.esc(ev.name || 'event')}</title>
+<style>
+  body{ font:14px/1.45 Arial, Helvetica, sans-serif; color:#111; margin:0; padding:28px 32px; }
+  h1{ font-size:26px; margin:0 0 2px; } h1 small{ font-size:14px; font-weight:normal; color:#666; display:block; margin-top:4px; }
+  h2{ font-size:16px; margin:26px 0 8px; padding-bottom:6px; border-bottom:2px solid #ff6b00; }
+  table{ width:100%; border-collapse:collapse; } th{ text-align:left; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#666; padding:6px 8px; border-bottom:1px solid #ddd; }
+  td{ padding:8px; border-bottom:1px solid #e6e6e6; vertical-align:top; } td.logo{ width:46px; } td.logo img{ width:40px; height:40px; object-fit:contain; border:1px solid #e6e6e6; border-radius:6px; background:#fff; }
+  td.num{ text-align:center; width:60px; } td.tick{ white-space:nowrap; } td.tick span{ display:inline-block; width:16px; height:16px; border:1.5px solid #333; border-radius:4px; margin-right:4px; vertical-align:middle; }
+  small{ color:#666; } .bar{ display:flex; gap:10px; margin:0 0 18px; } .bar button{ font:inherit; padding:8px 14px; border:1px solid #333; border-radius:8px; background:#fff; cursor:pointer; }
+  .note{ margin-top:22px; padding:12px 14px; border:1px dashed #bbb; border-radius:8px; color:#444; }
+  @media print{ .bar{ display:none; } body{ padding:0; } h2{ break-after:avoid; } tr{ break-inside:avoid; } }
+</style></head><body>
+<div class="bar"><button onclick="print()">Print / save as PDF</button></div>
+<h1>MC sheet - ${h.esc(ev.name || '')}${ev.subtitle ? ' ' + h.esc(ev.subtitle) : ''}<small>${h.esc(ev.dateLabel || '')}${ev.venue ? ' &middot; ' + h.esc(ev.venue) : ''} &middot; tick each thank-you as you do it</small></h1>
+<h2>Sponsors to thank (${sponsors.length})</h2>
+${sponsors.length ? `<table><thead><tr><th></th><th>Business</th><th>Package / what they gave</th><th>Thank-yous</th><th>Done</th><th>Notes</th></tr></thead><tbody>${sponsors.map(spRow).join('')}</tbody></table>` : '<p><small>No confirmed sponsors yet.</small></p>'}
+<h2>Prizes (${prizes.length})</h2>
+${prizes.length ? `<table><thead><tr><th></th><th>From</th><th>The prize</th><th>Given</th><th>Notes</th></tr></thead><tbody>${prizes.map(przRow).join('')}</tbody></table>` : '<p><small>No prizes yet - set a sponsor\'s type to Prize and say what they give.</small></p>'}
+<div class="note">Platinum = presenting partner: say "${h.esc(ev.name || 'the event')} presented by [them]" on opening and closing. Thank every sponsor at least once before the headline act and again at the end of the night.</div>
+</body></html>`;
+  const w = window.open('', '_blank');
+  if (!w) { window.alert('Your browser blocked the new tab - allow pop-ups for this site.'); return; }
+  w.document.open(); w.document.write(html); w.document.close();
 }

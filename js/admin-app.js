@@ -21,16 +21,16 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=801';
+} from './firebase-config.js?v=802';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=801';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=801';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=801';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=801';
-import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=801';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=801';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=801';
-import { expandKit } from './kit.js?v=801';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=802';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=802';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=802';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=802';
+import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=802';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=802';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=802';
+import { expandKit } from './kit.js?v=802';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -2230,7 +2230,7 @@ VIEWS.event = {
     const ev = state.events.find((e) => e.id === state.activeEventId);
     if (!ev) return '<p class="ad-empty">Pick an event on the <a href="#/events">Events</a> page.</p>';
     const tab = state.eventTab || 'overview';
-    if (tab === 'sponsors') state.msgTab = 'sponsors';
+    if (tab === 'sponsors') { state.msgTab = 'sponsors'; loadAllSponsors(); }
     else if (tab === 'messages' && state.msgTab === 'sponsors') state.msgTab = 'vendors';
     const sub = HUB_SUB[tab] ? VIEWS[HUB_SUB[tab]] : null;
     return eventHubHtml({
@@ -4635,7 +4635,7 @@ window.__sgAdmin = { state, VIEWS, call, render };
    MESSAGES - the page lives in js/messages.js. The view key stays
    'vendorEmail' so old links still land here.
    ========================================================================= */
-function msgCtx() { return { state, h: { esc, attr }, call, render, loadLog, sponsors: sponsorStore, upload: uploadImage }; }
+function msgCtx() { return { state, h: { esc, attr }, call, render, loadLog, sponsors: sponsorStore, biz: bizStore, upload: uploadImage }; }
 /*  Any file into our Storage, as is. Returns the download link. */
 async function uploadFile(file, folder) {
   const { ref, uploadBytes, getDownloadURL } = fb.st;
@@ -4653,6 +4653,22 @@ async function uploadImage(file, folder, max = 800) {
   return getDownloadURL(ref(fb.storage, path));
 }
 /*  Sponsors tab: the list of businesses to ask (admins write it directly). */
+/* the directory: one record per business, across events */
+const bizStore = {
+  async add(p) {
+    const { collection, addDoc, serverTimestamp } = fb.f;
+    const ref = await addDoc(collection(fb.db, 'sponsorBiz'), { business: '', industry: '', stage: 'idea', stars: 0, ...p, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    return ref.id;
+  },
+  async update(id, p) {
+    const { doc, updateDoc, serverTimestamp } = fb.f;
+    await updateDoc(doc(fb.db, 'sponsorBiz', id), { ...p, updatedAt: serverTimestamp() });
+  },
+  async remove(id) {
+    const { doc, deleteDoc } = fb.f;
+    await deleteDoc(doc(fb.db, 'sponsorBiz', id));
+  },
+};
 const sponsorStore = {
   async add(p) {
     const { collection, addDoc, serverTimestamp } = fb.f;
@@ -4842,6 +4858,11 @@ let sponsorsAllUnsub = null;
 function loadAllSponsors() {
   if (sponsorsAllUnsub) return;
   const { collection, onSnapshot } = fb.f;
+  onSnapshot(collection(fb.db, 'sponsorBiz'), (snap) => {
+    state.sponsorBiz = [];
+    snap.forEach((d) => state.sponsorBiz.push({ id: d.id, ...d.data() }));
+    if (state.view === 'sponsorDir' || (state.view === 'event' && state.eventTab === 'sponsors')) render();
+  }, (err) => console.error('sponsorBiz', err));
   sponsorsAllUnsub = onSnapshot(collection(fb.db, 'sponsors'), (snap) => {
     state.sponsorsAll = [];
     snap.forEach((d) => state.sponsorsAll.push({ id: d.id, ...d.data() }));
