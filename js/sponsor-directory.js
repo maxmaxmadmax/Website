@@ -10,8 +10,8 @@
     One sponsor per industry: once a business in an industry has said yes
     to the event picked, the others in that industry show "industry taken". */
 
-import { spAvatar, spColor } from './messages.js?v=809';
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=809';
+import { spAvatar, spColor } from './messages.js?v=810';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=810';
 
 /* what to ask for, from the score */
 const ASK = { 5: 'gold', 4: 'silver', 3: 'bronze', 2: 'supporter', 1: 'supporter' };
@@ -24,6 +24,12 @@ export function suggestedAsk(b) {
     const fit = SPONSOR_LEVELS.filter((l) => l.priceCents && l.priceCents <= cents).sort((x, y) => y.priceCents - x.priceCents)[0];
     return { level: fit ? fit.key : 'supporter', label: fit ? fit.name.split(' - ')[0] : 'Supporter', cents, basis: 'gave ' + money0(hist.top) + (hist.last ? ' to ' + hist.last.event + (hist.last.year ? ' ' + hist.last.year : '') : '') };
   }
+  if (hist.bestTier > 0 && hist.best) {
+    // we know the tier they took elsewhere, not the dollars: pitch the matching package
+    const key = hist.bestTier >= 3.5 ? 'gold' : hist.bestTier >= 2.5 ? 'gold' : hist.bestTier >= 1.5 ? 'silver' : hist.bestTier >= 0.75 ? 'bronze' : 'supporter';
+    const lv = LEVEL_OF[key] || {};
+    return { level: key, label: (lv.name || 'Supporter').split(' - ')[0], cents: lv.priceCents || 25000, basis: (TIER_WORD(hist.bestTier) || hist.best.what) + ' at ' + hist.best.event + (hist.best.year ? ' ' + hist.best.year : '') };
+  }
   const lvl = LEVEL_OF[ASK[b.score] || 'supporter'] || {};
   const cents = b.budgetCents || lvl.priceCents || (b.gives === 'prize' ? 0 : 25000);
   return { level: lvl.key || 'supporter', label: (lvl.name || 'Supporter').split(' - ')[0], cents, basis: b.budgetCents ? 'your budget guess' : 'from the stars' };
@@ -34,7 +40,7 @@ export function whyScore(b) {
   if (b.size === 'corp' || b.size === 'large') w.push('big employer'); else if (b.size === 'medium') w.push('mid-size');
   if (b.local === 'bowen') w.push('Bowen local'); else if (b.local === 'whitsundays') w.push('Whitsundays');
   if (b.hist && b.hist.last) w.push('gave ' + money0(b.hist.last.amountCents) + ' to ' + b.hist.last.event + (b.hist.last.year ? ' ' + b.hist.last.year : ''));
-  else if (b.hist && b.hist.deals && b.hist.deals.length) w.push('sponsored ' + b.hist.deals[0].event);
+  else if (b.hist && b.hist.best) w.push((TIER_WORD(b.hist.bestTier) || 'sponsor') + ' at ' + b.hist.best.event + (b.hist.best.year ? ' ' + b.hist.best.year : '') + (b.hist.deals.length > 1 ? ' +' + (b.hist.deals.length - 1) + ' more' : ''));
   if (b.hist && b.hist.backed) w.push('backed us ' + b.hist.backed + 'x');
   if (b.budgetCents) w.push('budget guess $' + Math.round(b.budgetCents / 100));
   if (b.facebook || b.instagram) w.push('on socials');
@@ -56,12 +62,25 @@ const niceDate = (iso) => iso ? new Date(String(iso).slice(0, 10) + 'T12:00:00')
 const secs = (t) => (t && typeof t.seconds === 'number') ? t.seconds : 0;
 const handle = (url) => { const m = /(?:facebook|instagram)\.com\/([A-Za-z0-9_.-]+)/i.exec(String(url || '')); return m ? '@' + m[1] : ''; };
 
+/* how big a tier is, from the words on a sponsor page */
+export function tierRank(what) {
+  const w = String(what || '').toLowerCase();
+  const kind = /in.?kind/.test(w) ? -0.5 : 0;   // in-kind counts a touch less than cash
+  if (/naming|title|presenting|platinum|premium|major/.test(w)) return 4 + kind;
+  if (/gold/.test(w)) return 3 + kind;
+  if (/silver/.test(w)) return 2 + kind;
+  if (/bronze/.test(w)) return 1 + kind;
+  if (/sponsor|supporter|partner|donor|prize/.test(w)) return 0.5;
+  return 0;
+}
+const TIER_WORD = (r) => r >= 4 ? 'Naming / Platinum' : r >= 3 ? 'Gold' : r >= 2 ? 'Silver' : r >= 1 ? 'Bronze' : r > 0 ? 'Sponsor' : '';
 /* the suggested value, 1-5, from the facts; their own stars win if set */
 export function suggestedScore(b, hist) {
   let s = 0;
   s += { small: 1, medium: 2, large: 3, corp: 3 }[b.size] || 0;
   s += { bowen: 2, whitsundays: 1.5, nq: 1, far: 0 }[b.local] || 0;
   s += Math.min(2, (hist.backed || 0));
+  if (hist.bestTier >= 3) s += 2; else if (hist.bestTier >= 1) s += 1.5; else if (hist.bestTier > 0) s += 1;   // they already sponsor things
   if (b.budgetCents >= 200000) s += 2; else if (b.budgetCents >= 50000) s += 1;
   if (b.facebook || b.instagram) s += 0.5;
   return Math.max(1, Math.min(5, Math.round(s / 2)));
@@ -80,7 +99,11 @@ function history(b, sponsors, evOf) {
   const given = deals.filter((d) => d.amountCents);
   const last = given[0] || null;
   const top = given.reduce((m, d) => Math.max(m, d.amountCents), 0);
-  return { deals, last, top, records: mine, backed: yes.length, cents, lastAsked: asked ? new Date(secs(asked.askedAt) * 1000).toISOString().slice(0, 10) : '', events: yes.map((p) => (evOf[p.eventId] || {}).name || p.eventId) };
+  deals.forEach((d) => { d.rank = tierRank(d.what); });
+  const best = deals.slice().sort((x, y) => (y.amountCents || 0) - (x.amountCents || 0) || y.rank - x.rank || (y.year || 0) - (x.year || 0))[0] || null;
+  const bestTier = best ? best.rank : 0;
+  const bestLabel = best ? ((best.amountCents ? money0(best.amountCents) + ' ' : '') + (TIER_WORD(best.rank) || best.what || 'sponsor') + ' · ' + best.event + (best.year ? ' ' + best.year : '')) : '';
+  return { deals, last, top, best, bestTier, bestLabel, records: mine, backed: yes.length, cents, lastAsked: asked ? new Date(secs(asked.askedAt) * 1000).toISOString().slice(0, 10) : '', events: yes.map((p) => (evOf[p.eventId] || {}).name || p.eventId) };
 }
 
 export function sponsorDirHtml(ctx) {
@@ -103,7 +126,7 @@ export function sponsorDirHtml(ctx) {
   const q = key(f.q);
   const rows = list.filter((b) => (!f.stage || (b.stage || 'idea') === f.stage) && (!f.industry || key(b.industry) === key(f.industry))
     && (!q || [b.business, b.industry, b.contactName, b.email, b.website, b.notes, b.blurb].some((v) => key(v).includes(q))))
-    .sort((a, b) => b.score - a.score || (b.hist.backed - a.hist.backed) || String(a.business).localeCompare(String(b.business)));
+    .sort((a, b) => b.score - a.score || (b.hist.bestTier - a.hist.bestTier) || (b.hist.backed - a.hist.backed) || String(a.business).localeCompare(String(b.business)));
   const industries = [...new Set(INDUSTRIES.concat(list.map((b) => b.industry).filter(Boolean)))];
 
   const row = (b) => {
@@ -114,7 +137,7 @@ export function sponsorDirHtml(ctx) {
       <td class="spd-c-val">${stars(b.score)}${b.stars ? '' : '<small class="spd-sugg">suggested</small>'}</td>
       <td><span class="spd-stage is-${h.attr(t ? 'taken' : (b.stage || 'idea'))}">${t ? 'Industry taken' : h.esc(STAGE[b.stage || 'idea'] || 'Idea')}</span></td>
       <td class="spd-c-contact">${b.contactName ? `<b>${h.esc(b.contactName)}</b>` : ''}${b.phone ? `<small>${h.esc(b.phone)}</small>` : ''}${b.email ? `<small>${h.esc(b.email)}</small>` : ''}${!b.contactName && !b.phone && !b.email ? '<small class="is-dim">no contact yet</small>' : ''}</td>
-      <td class="spd-c-hist">${h2.last ? `<b>${money0(h2.last.amountCents)}</b><small>${h.esc(h2.last.event)}${h2.last.year ? ' ' + h2.last.year : ''}</small>` : (h2.deals && h2.deals.length) ? `<small>${h.esc(h2.deals[0].event)} (amount unknown)</small>` : '<small class="is-dim">nothing known</small>'}</td>
+      <td class="spd-c-hist">${h2.best ? `<b>${h2.best.amountCents ? money0(h2.best.amountCents) : h.esc(TIER_WORD(h2.best.rank) || h2.best.what || 'Sponsor')}</b><small>${h.esc(h2.best.event)}${h2.best.year ? ' ' + h2.best.year : ''}${h2.deals.length > 1 ? ' · ' + h2.deals.length + ' deals' : ''}</small>` : '<small class="is-dim">nothing known</small>'}</td>
       <td class="spd-c-ask"><b>${suggestedAsk(b).cents ? money0(suggestedAsk(b).cents) : '—'}</b><small>${h.esc(suggestedAsk(b).label)}</small></td>
       <td class="spd-c-gives">${b.gives ? h.esc(GIVES[b.gives] || b.gives) : '<small class="is-dim">—</small>'}${b.givesWhat ? `<small>${h.esc(b.givesWhat)}</small>` : ''}</td>
       <td class="spd-c-soc">${b.facebook ? `<a href="${h.attr(b.facebook)}" target="_blank" rel="noopener" title="Facebook">f</a>` : ''}${b.instagram ? `<a href="${h.attr(b.instagram)}" target="_blank" rel="noopener" title="Instagram">&#9711;</a>` : ''}${b.website ? `<a href="${h.attr(b.website)}" target="_blank" rel="noopener" title="Website">&#127760;</a>` : ''}${b.shared ? '<em title="They shared our event">&#128227;</em>' : ''}</td>
@@ -125,7 +148,7 @@ export function sponsorDirHtml(ctx) {
     rows.forEach((b) => { const k = b.industry || 'No industry yet'; (groups[k] = groups[k] || []).push(b); });
     const names = Object.keys(groups).sort((x, y) => (x === 'No industry yet') - (y === 'No industry yet') || x.localeCompare(y));
     return `<div class="ad-card spd-tablewrap"><table class="spd-table spd-list">
-      <thead><tr><th>Business</th><th>Value</th><th>Stage</th><th>Contact</th><th>Last gave</th><th>Suggested ask</th><th>Usually gives</th><th>Links</th></tr></thead>
+      <thead><tr><th>Business</th><th>Value</th><th>Stage</th><th>Contact</th><th>Best known deal</th><th>Suggested ask</th><th>Usually gives</th><th>Links</th></tr></thead>
       <tbody>${names.map((n) => { const t = takenBy[key(n)]; return `<tr class="spd-group"><td colspan="8"><b>${h.esc(n)}</b><span>${groups[n].length}</span>${t ? `<em>&#10003; taken by ${h.esc(t)}</em>` : '<em class="is-open">open</em>'}</td></tr>` + groups[n].map(row).join(''); }).join('')}</tbody>
     </table></div>`;
   };
@@ -135,8 +158,8 @@ export function sponsorDirHtml(ctx) {
     const open = list.filter((b) => !['no', 'sponsor', 'asked'].includes(b.stage || 'idea') && !taken(b));
     const byInd = {};
     open.forEach((b) => { const k = b.industry || 'No industry yet'; (byInd[k] = byInd[k] || []).push(b); });
-    const rows = Object.keys(byInd).map((ind) => { const g = byInd[ind].sort((a, b) => b.score - a.score || (b.hist.backed - a.hist.backed)); return { ind, best: g[0], others: g.length - 1, ask: suggestedAsk(g[0]) }; })
-      .sort((a, b) => b.best.score - a.best.score || b.ask.cents - a.ask.cents || a.ind.localeCompare(b.ind));
+    const rows = Object.keys(byInd).map((ind) => { const g = byInd[ind].sort((a, b) => b.score - a.score || (b.hist.bestTier - a.hist.bestTier) || (b.hist.backed - a.hist.backed)); return { ind, best: g[0], others: g.length - 1, ask: suggestedAsk(g[0]) }; })
+      .sort((a, b) => b.best.score - a.best.score || (b.best.hist.bestTier - a.best.hist.bestTier) || b.ask.cents - a.ask.cents || a.ind.localeCompare(b.ind));
     const total = rows.reduce((t, r) => t + r.ask.cents, 0);
     const takenRows = Object.keys(takenBy).sort();
     return `<div class="spd-pot">
@@ -267,8 +290,8 @@ function panelHtml(ctx, list, evOf, taken) {
         </section>
       </div>
       <section class="spd-box spd-deals"><h3>Sponsorship history <small>what they have given, to anyone</small></h3>
-        ${b.hist.deals.length ? `<table class="spd-deal-table"><thead><tr><th>Event</th><th>Year</th><th class="spd-num">Gave</th><th>What / how you know</th><th></th></tr></thead><tbody>${b.hist.deals.map((d) => `<tr><td>${h.esc(d.event)}${d.ours ? ' <i class="spd-ours">ours</i>' : ''}</td><td>${d.year || ''}</td><td class="spd-num">${d.amountCents ? money0(d.amountCents) : '—'}</td><td>${h.esc([d.what, d.source].filter(Boolean).join(' · '))}</td><td>${d.ours ? '' : `<button type="button" class="ad-linkish" data-spd-dealdel="${h.attr(d.key || '')}" title="Remove">&times;</button>`}</td></tr>`).join('')}</tbody></table>
-        <p class="ad-seat-hint">Best known: <b>${money0(b.hist.top)}</b> &rarr; suggested ask <b>${money0(suggestedAsk(b).cents)}</b> (${h.esc(suggestedAsk(b).label)}).</p>` : '<p class="ad-seat-hint">Nothing known yet. Look at the Show, the Fishing Classic, the footy club, the school fete - who they back and how much - and log it here. That sets the ask.</p>'}
+        ${b.hist.deals.length ? `<table class="spd-deal-table"><thead><tr><th>Event</th><th>Year</th><th class="spd-num">Gave</th><th>What / how you know</th><th></th></tr></thead><tbody>${b.hist.deals.map((d) => `<tr><td>${h.esc(d.event)}${d.ours ? ' <i class="spd-ours">ours</i>' : ''}</td><td>${d.year || ''}</td><td class="spd-num">${d.amountCents ? money0(d.amountCents) : (TIER_WORD(d.rank) ? '<i>' + h.esc(TIER_WORD(d.rank)) + '</i>' : '—')}</td><td>${h.esc([d.what, d.source].filter(Boolean).join(' · '))}</td><td>${d.ours ? '' : `<button type="button" class="ad-linkish" data-spd-dealdel="${h.attr(d.key || '')}" title="Remove">&times;</button>`}</td></tr>`).join('')}</tbody></table>
+        <p class="ad-seat-hint">Best known: <b>${h.esc(b.hist.bestLabel)}</b> &rarr; suggested ask <b>${money0(suggestedAsk(b).cents)}</b> (${h.esc(suggestedAsk(b).label)}).</p>` : '<p class="ad-seat-hint">Nothing known yet. Look at the Show, the Fishing Classic, the footy club, the school fete - who they back and how much - and log it here. That sets the ask.</p>'}
         <form class="spd-deal-form" data-spd-dealform>
           <input class="ad-input" name="event" placeholder="Event or club (e.g. Bowen Show)" required maxlength="80">
           <input class="ad-input" name="year" type="number" placeholder="Year" min="2000" max="2100">

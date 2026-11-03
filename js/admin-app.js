@@ -21,16 +21,16 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=809';
+} from './firebase-config.js?v=810';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=809';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=809';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=809';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=809';
-import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=809';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=809';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=809';
-import { expandKit } from './kit.js?v=809';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=810';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=810';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=810';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=810';
+import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=810';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=810';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=810';
+import { expandKit } from './kit.js?v=810';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
