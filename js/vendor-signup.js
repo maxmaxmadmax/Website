@@ -14,11 +14,11 @@
       nothing saves and payment is blocked.
    -------------------------------------------------------------------------- */
 
-import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=815';
+import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=816';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=815';
-import { termBodyHtml } from './terms-data.js?v=815';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION } from './vendor-terms-data.js?v=815';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=816';
+import { termBodyHtml } from './terms-data.js?v=816';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION } from './vendor-terms-data.js?v=816';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 

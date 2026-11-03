@@ -712,11 +712,6 @@
         gap: 0 !important;
     }
 }
-@media print {
-    .eng-generic {
-        display: none;
-    }
-}
 
 /* website: the credits list scrolls in its own box as it grows.
    On paper it is printed in full. */

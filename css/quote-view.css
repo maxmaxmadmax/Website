@@ -149,13 +149,7 @@
     font-size: 12px;
     margin-top: 2px;
 }
-.qv-perday {
-    display: block;
-    font-weight: 400;
-    color: #b25b00;
-    font-size: 12px;
-    margin-top: 2px;
-}
+
 .qv-row-disc td {
     color: #0f7a43;
 }
@@ -789,11 +783,7 @@
     padding: 34px 40px 36px;
     max-width: 620px;
 }
-.qp-hero-logo {
-    height: 54px;
-    width: auto;
-    margin-bottom: 26px;
-}
+
 .qp-hero h1 {
     font-size: clamp(30px, 5vw, 46px);
     line-height: 1.05;
@@ -1032,12 +1022,7 @@
 .qp-go {
     width: 100%;
 }
-.qp-secure {
-    font-size: 12px;
-    color: #888;
-    text-align: center;
-    margin: 8px 0 0;
-}
+
 .qp-side {
     background: #f6f6f7;
     border-radius: 10px;
@@ -1071,10 +1056,7 @@
     .qp-hero-in {
         padding: 24px 20px 26px;
     }
-    .qp-hero-logo {
-        height: 44px;
-        margin-bottom: 18px;
-    }
+
     .qp-sec {
         padding: 20px 16px;
     }
@@ -1347,33 +1329,7 @@
 }
 
 /* ---- FULL TERMS & CONDITIONS (wording lives in js/terms-data.js) ---- */
-.qp-terms-intro {
-    color: #444;
-    font-size: 14px;
-    line-height: 1.55;
-    margin: 0 0 10px;
-}
-.qp-term-body {
-    padding-bottom: 6px;
-}
-.qp-term-body p {
-    margin: 0 0 10px;
-    color: #444;
-    line-height: 1.55;
-    font-size: 14px;
-}
-.qp-term-body .tc-sub {
-    font-weight: 700;
-    color: #111;
-    margin: 12px 0 2px;
-}
-.qp-term-body ul {
-    margin: 0 0 12px 20px;
-    padding: 0;
-    color: #444;
-    font-size: 14px;
-    line-height: 1.5;
-}
+
 .qp-terms-link {
     font-size: 13px;
     color: #666;
@@ -1395,14 +1351,6 @@
     }
     .qp-term-body p,
     .qp-term-body ul,
-    .qp-terms-intro {
-        font-size: 9.5px;
-        line-height: 1.4;
-        margin-bottom: 4px;
-    }
-    .qp-term-body .tc-sub {
-        margin: 4px 0 1px;
-    }
     .qp-terms-link {
         display: none;
     }
@@ -1987,10 +1935,6 @@
     border-color: #f3b3ad !important;
     color: #a1261b !important;
 }
-.qp-overdue-row span {
-    color: #a1261b;
-    font-weight: 700;
-}
 
 /* ==========================================================================
    PAYMENT GATEWAY
@@ -2415,100 +2359,22 @@
 .qp-dj-line b {
     color: #fff;
 }
-.qp-dj {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin: 18px 0 6px;
-    padding: 14px 16px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, rgba(255, 107, 0, 0.18), rgba(255, 107, 0, 0.05));
-    border: 1px solid rgba(255, 107, 0, 0.35);
-}
-.qp-dj-face {
-    width: 72px;
-    height: 72px;
-    flex: none;
-    border-radius: 50%;
-    background: #222 center/cover;
-    box-shadow: 0 0 0 3px #ff6b00;
-}
-.qp-dj b {
-    display: block;
-    font-size: 20px;
-}
-.qp-dj span {
-    display: block;
-    margin-top: 2px;
-    font-size: 14px;
-    opacity: 0.9;
-}
-.qp-dj em {
-    display: inline-block;
-    margin-top: 6px;
-    font-style: normal;
-    font-size: 12px;
-    padding: 2px 8px;
-    border-radius: 20px;
-    background: rgba(255, 255, 255, 0.12);
-}
-.qp-dj em.is-ok {
-    background: #0f9d58;
-    color: #fff;
-}
-@media print {
-    .qp-dj {
-        background: #fff4ec;
-        border-color: #ffd2b0;
-    }
-    .qp-dj-face {
-        box-shadow: 0 0 0 2px #ff6b00;
-    }
-}
+
 /* DJ quotes: the DJ's portrait as a sharp card on the right - the heading never covers the face */
-.qp-hero-djimg {
-    position: absolute;
-    right: 40px;
-    bottom: 28px;
-    z-index: 1;
-    width: 210px;
-    aspect-ratio: 4 / 5;
-    object-fit: cover;
-    object-position: center 20%;
-    border-radius: 16px;
-    box-shadow:
-        0 0 0 3px #ff6b00,
-        0 18px 40px rgba(0, 0, 0, 0.55);
-}
+
 @media (max-width: 760px) {
-    .qp-hero-djimg {
-        width: 96px;
-        right: 16px;
-        top: 78px;
-        bottom: auto;
-        border-radius: 12px;
-    } /* clear of the menu button */
+    /* clear of the menu button */
 }
-@media print {
-    .qp-hero-djimg {
-        width: 150px;
-    }
-}
+
 /* DJ quotes: our stage behind, a large DJ photo */
 .qp-hero-photo.is-dj {
     min-height: 470px;
     background-position: center 60%;
 }
-.qp-hero-djimg {
-    width: 300px;
-    bottom: 32px;
-}
+
 @media (max-width: 760px) {
     .qp-hero-photo.is-dj {
         min-height: 420px;
-    }
-    .qp-hero-djimg {
-        width: 130px;
     }
 }
 .qp-hero-photo.is-dj h1 {

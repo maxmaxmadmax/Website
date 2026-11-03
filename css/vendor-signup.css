@@ -1043,22 +1043,6 @@
     stroke-width: 2;
 }
 
-.vmap-landmark-stage rect {
-    fill: #1d1030;
-    stroke: var(--vs-purple);
-}
-
-.vmap-landmark-bar rect {
-    fill: #221004;
-    stroke: #5a3a10;
-}
-
-.vmap-landmark-path rect {
-    fill: #101010;
-    stroke: #232323;
-    stroke-dasharray: 6 6;
-}
-
 .vmap-landmark-text {
     fill: #8a8a8a;
     font-family: 'Courier New', Courier, monospace;

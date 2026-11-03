@@ -8,8 +8,8 @@
    Data: getSponsorInfo / sponsorInterest (functions/index.js).
    ========================================================================== */
 
-import { SPONSOR_LEVELS, EVENT_COSTS } from './sponsor-data.js?v=815';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured, eventId as defaultEventId } from './firebase-config.js?v=815';
+import { SPONSOR_LEVELS, EVENT_COSTS } from './sponsor-data.js?v=816';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured, eventId as defaultEventId } from './firebase-config.js?v=816';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) =>

@@ -75,33 +75,6 @@ body:has(.bl-wrap) {
 }
 
 /* quick facts */
-.bl-facts {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-    gap: 1px;
-    background: #e6e6e6;
-    border: 1px solid #e6e6e6;
-    border-radius: 12px;
-    overflow: hidden;
-    margin: 0 0 36px;
-}
-.bl-facts div {
-    background: #fafafa;
-    padding: 14px 16px;
-}
-.bl-facts dt {
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--sg-orange);
-}
-.bl-facts dd {
-    margin: 4px 0 0;
-    color: #111;
-    font-size: 15px;
-    line-height: 1.4;
-}
 
 /* body copy */
 .bl-post h2 {
@@ -141,24 +114,6 @@ body:has(.bl-wrap) {
 .bl-gear b {
     color: var(--sg-orange);
     margin-right: 6px;
-}
-
-.bl-quote {
-    margin: 0 0 18px;
-    padding: 20px 22px;
-    background: #fff7f0;
-    border-left: 4px solid var(--sg-orange);
-    border-radius: 10px;
-    font-family: var(--sg-font-display);
-    font-size: 26px;
-    color: #111;
-}
-.bl-quote span {
-    display: block;
-    margin-top: 6px;
-    font-family: var(--sg-font);
-    font-size: 13px;
-    color: #777;
 }
 
 /* call to action - stays dark so it stands out on the white page */

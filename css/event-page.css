@@ -297,11 +297,6 @@
     margin: 0 6px;
 }
 
-.ep-sub {
-    margin: 14px 0 0;
-    font-size: 0.95rem;
-}
-
 /* ---- food vendor cards ---- */
 .ep-food {
     display: grid;
@@ -519,34 +514,6 @@ a.ep-fv:focus-visible {
 }
 
 /* ---- what's on ---- */
-.ep-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
-}
-
-.ep-card {
-    background: var(--ep-cream);
-    border-radius: 12px;
-    padding: 18px;
-    box-shadow: 0 5px 0 rgba(29, 13, 2, 0.25);
-}
-
-.ep-icon {
-    font-size: 1.8rem;
-    display: block;
-    margin-bottom: 8px;
-}
-.ep-card h3 {
-    margin: 0 0 4px;
-    font-size: 1.05rem;
-    text-transform: uppercase;
-}
-.ep-card p {
-    margin: 0;
-    line-height: 1.45;
-    color: #4a2a12;
-}
 
 /* ---- entertainment ---- */
 .ep-ent {
@@ -665,21 +632,8 @@ a.ep-fv:focus-visible {
     font-size: clamp(1.4rem, 3vw, 2rem);
     margin-bottom: 12px;
 }
-.ep-sponsor-logos {
-    display: grid;
-    justify-items: center;
-    gap: 10px;
-}
-.ep-sponsor-logos img {
-    display: block;
-    height: auto;
-}
-.ep-sponsor-logos img:first-child {
-    width: 100%;
-}
-.ep-sponsor-logos img:last-child {
-    width: 68.8%;
-} /* same logo height as row 1 */
+
+/* same logo height as row 1 */
 .ep-sponsors p {
     margin: 12px 0 0;
 }
@@ -689,11 +643,6 @@ a.ep-fv:focus-visible {
 }
 
 /* ---- times + good to know ---- */
-.ep-two {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 30px;
-}
 
 .ep-times,
 .ep-know {
@@ -739,9 +688,7 @@ a.ep-fv:focus-visible {
         height: 120px;
         font-size: 1rem;
     }
-    .ep-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+
     .ep-market-panel {
         grid-template-columns: 1fr;
     }
@@ -819,10 +766,6 @@ a.ep-fv:focus-visible {
     display: block;
     width: 100%;
     height: auto;
-}
-.ep-poster-link {
-    color: var(--ep-ink);
-    font-weight: bold;
 }
 
 @media (max-width: 700px) {
@@ -1134,9 +1077,7 @@ a.ep-fv:focus-visible {
     .ep-times b {
         min-width: 26mm;
     }
-    .ep-times-poster .ep-sub {
-        font-size: 10pt;
-    }
+
     .ep-poster {
         width: 58mm;
         transform: rotate(2deg);
@@ -1198,14 +1139,7 @@ a.ep-fv:focus-visible {
         font-size: 24pt;
         margin-bottom: 4mm;
     }
-    .ep-know {
-        grid-template-columns: 1fr 1fr;
-        gap: 2.5mm;
-    }
-    .ep-know li {
-        font-size: 11pt;
-        padding: 2.6mm 4.5mm;
-    }
+
     .ep-page-4 > .ep-section + .ep-section:not(:has(.ep-sponsors)) {
         margin-top: 6mm;
     }
@@ -1228,15 +1162,7 @@ a.ep-fv:focus-visible {
         margin-bottom: 5mm;
         color: #fff;
     }
-    .ep-sponsor-logos {
-        gap: 4mm;
-    }
-    .ep-sponsor-logos img:first-child {
-        width: 84%;
-    }
-    .ep-sponsor-logos img:last-child {
-        width: 57.8%;
-    }
+
     .ep-sponsors p {
         margin: 5mm 0 0;
         font-size: 10pt;
@@ -1388,15 +1314,7 @@ a.ep-fv:focus-visible {
 
     /* good to know folds into three short columns to make room */
     .ep-page-4[data-size='m'] .ep-know,
-    .ep-page-4[data-size='l'] .ep-know {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 2mm;
-    }
     .ep-page-4[data-size='m'] .ep-know li,
-    .ep-page-4[data-size='l'] .ep-know li {
-        font-size: 8.5pt;
-        padding: 2mm 3mm;
-    }
     .ep-page-4[data-size='m'] .ep-h2,
     .ep-page-4[data-size='l'] .ep-h2 {
         font-size: 20pt;
@@ -2019,17 +1937,7 @@ a.ep-fv:focus-visible {
         width: 24mm !important;
     }
 }
-.ep-castle-time {
-    margin: 2px 0 0;
-    font-weight: bold;
-    color: var(--ep-orange);
-    font-size: 0.9rem;
-}
-@media print {
-    .ep-castle-time {
-        font-size: 8.5pt;
-    }
-}
+
 @media print {
     .ep-ent-castle .ep-kicker {
         display: none;
@@ -2294,9 +2202,7 @@ a.ep-fv:focus-visible {
     .ep-ent-castle h3 {
         font-size: 15pt !important;
     }
-    .ep-castle-time {
-        margin: 0 0 1mm !important;
-    }
+
     .ep-castle-by {
         white-space: nowrap;
         margin: 0 !important;
@@ -2414,54 +2320,9 @@ a.ep-fv:focus-visible {
 }
 
 /* ---- HOSTS STRIP: the MCs, under the Entertainment heading ---- */
-.ep-hosts {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px 24px;
-    flex-wrap: wrap;
-    background: var(--ep-ink);
-    color: var(--ep-cream);
-    border-radius: 16px;
-    padding: 16px 26px;
-    margin: 0 0 14px;
-    box-shadow: 0 6px 0 rgba(29, 13, 2, 0.3);
-}
-.ep-hosts .ep-kicker {
-    color: var(--ep-lime);
-    margin: 0;
-}
-.ep-hosts-names {
-    font-family: var(--ep-poster-font);
-    text-transform: uppercase;
-    line-height: 1;
-    font-size: clamp(1.3rem, 3vw, 2rem);
-    margin: 0;
-}
-@media print {
-    .ep-hosts {
-        padding: 3mm 6mm;
-        margin: 0 0 4mm;
-        border-radius: 3mm;
-        box-shadow: none;
-    }
-    .ep-hosts .ep-kicker {
-        font-size: 8pt;
-    }
-    .ep-hosts-names {
-        font-size: 16pt;
-    }
-}
 
 /* page 3 with the hosts strip: win back the room it takes */
 @media print {
-    .ep-hosts {
-        padding: 2.2mm 5mm !important;
-        margin: 0 0 3mm !important;
-    }
-    .ep-hosts-names {
-        font-size: 14pt !important;
-    }
     .ep-ent-photo {
         height: 84mm !important;
     }
@@ -2480,55 +2341,8 @@ a.ep-fv:focus-visible {
 }
 
 /* hosts strip with their photo on the left */
-.ep-hosts {
-    display: grid;
-    grid-template-columns: 260px 1fr;
-    align-items: center;
-    gap: 22px;
-    padding: 0 26px 0 0;
-    overflow: hidden;
-}
-.ep-hosts-pic {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-    object-position: center 20%;
-    display: block;
-}
-.ep-hosts .ep-kicker {
-    margin: 0 0 6px;
-}
-.ep-hosts-names {
-    font-size: clamp(1.5rem, 3.4vw, 2.4rem);
-}
-@media (max-width: 600px) {
-    .ep-hosts {
-        grid-template-columns: 1fr;
-        padding: 0 0 18px;
-        gap: 14px;
-    }
-    .ep-hosts-pic {
-        height: 200px;
-    }
-    .ep-hosts > div {
-        padding: 0 20px;
-    }
-}
+
 @media print {
-    .ep-hosts {
-        grid-template-columns: 34mm 1fr !important;
-        gap: 6mm !important;
-        padding: 0 6mm 0 0 !important;
-    }
-    .ep-hosts-pic {
-        height: 22mm;
-    }
-    .ep-hosts .ep-kicker {
-        margin-bottom: 1.5mm;
-    }
-    .ep-hosts-names {
-        font-size: 17pt !important;
-    }
     .ep-ent-photo {
         height: 72mm !important;
     }
@@ -2548,9 +2362,6 @@ a.ep-fv:focus-visible {
     }
 }
 @media print {
-    .ep-hosts-pic {
-        height: 19mm !important;
-    }
     .ep-times li {
         padding: 1.8mm 4.5mm !important;
     }
@@ -3429,22 +3240,7 @@ a.ep-fv:focus-visible {
 .ep-title-live {
     font-size: clamp(2.4rem, 7vw, 4.6rem);
 }
-.ep-sponsor-names {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 16px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-}
-.ep-sponsor-names li {
-    background: var(--ep-cream);
-    color: var(--ep-ink);
-    border-radius: 999px;
-    padding: 8px 16px;
-    font-weight: bold;
-}
+
 @media (max-width: 760px) {
     .ep-hero-live .ep-hero-inner {
         grid-template-columns: 1fr;
@@ -3460,27 +3256,7 @@ a.ep-fv:focus-visible {
     display: none;
 }
 /* entertainment cards built from the programme */
-.ep-ent-live {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 16px;
-}
-.ep-ent-item {
-    display: flex;
-    flex-direction: column;
-}
-.ep-ent-item .ep-ent-photo {
-    aspect-ratio: 4/3;
-    object-fit: cover;
-}
-.ep-ent-item-text {
-    padding: 20px 22px 22px;
-}
-.ep-ent-item-text h3 span {
-    display: block;
-    font-size: 0.75em;
-    opacity: 0.8;
-}
+
 .ep-faq-ic b {
     font-family: var(--ep-poster-font);
     font-size: 22px;
@@ -3500,77 +3276,8 @@ a.ep-fv:focus-visible {
     text-align: center;
 }
 /* entertainment cards built from the programme: with a photo they are the dark band card, without one they alternate cream and lime */
-.ep-ent-item {
-    background: var(--ep-cream);
-    color: var(--ep-ink);
-}
-.ep-ent-item:nth-child(3n + 2) {
-    background: var(--ep-lime);
-}
-.ep-ent-item.has-photo {
-    background: #120a04;
-    color: #fffaf2;
-    padding: 0;
-}
-.ep-ent-item.has-photo .ep-ent-item-text p:not(.ep-kicker) {
-    color: #f3e3d0;
-}
-.ep-ent-item:not(.has-photo) .ep-ent-item-text {
-    padding: 0;
-}
-.ep-ent-item h3 {
-    font-size: clamp(1.4rem, 2.4vw, 1.9rem);
-    hyphens: auto;
-    overflow-wrap: break-word;
-}
-.ep-ent-item h3 span {
-    font-size: 0.6em;
-    margin-top: 6px;
-}
-.ep-ent-item:not(.has-photo) h3 span {
-    color: var(--ep-orange);
-}
-.ep-ent-item .ep-ent-link {
-    display: inline-block;
-    margin-top: 10px;
-}
-.ep-ent-item:not(.has-photo) .ep-ent-link {
-    color: var(--ep-ink);
-    text-decoration: underline;
-}
 
 /* entertainment: the headline is the big card on the left, the rest tile beside it */
-.ep-ent-live.has-headline {
-    grid-template-columns: 1.35fr 1fr 1fr;
-    grid-auto-flow: dense;
-}
-.ep-ent-live .is-headline {
-    grid-column: 1;
-    grid-row: span 2;
-}
-.ep-ent-live.has-headline .ep-ent-item:not(.is-headline) {
-    min-height: 200px;
-}
-.ep-ent-item.is-headline h3 {
-    font-size: clamp(2rem, 4vw, 3rem);
-}
-.ep-ent-item.is-headline .ep-ent-photo {
-    aspect-ratio: 16/10;
-}
-@media (max-width: 900px) {
-    .ep-ent-live.has-headline {
-        grid-template-columns: 1fr 1fr;
-    }
-    .ep-ent-live .is-headline {
-        grid-column: 1 / -1;
-        grid-row: auto;
-    }
-}
-@media (max-width: 600px) {
-    .ep-ent-live.has-headline {
-        grid-template-columns: 1fr;
-    }
-}
 
 /* PRINT: the Entertainment page always fits one A4 sheet - the headline plus five featured cards, nothing flows */
 @media print {
@@ -3583,55 +3290,15 @@ a.ep-fv:focus-visible {
         flex: none;
         margin-bottom: 6mm;
     }
-    .ep-page-ent .ep-ent-live {
-        flex: 1;
-        display: grid !important;
-        grid-template-columns: 1.3fr 1fr 1fr;
-        grid-template-rows: 1fr 1fr;
-        gap: 5mm;
-        min-height: 0;
-    }
-    .ep-page-ent .ep-ent-live:not(.has-headline) {
-        grid-template-columns: 1fr 1fr 1fr;
-    }
-    .ep-page-ent .ep-ent-item {
-        min-height: 0 !important;
-        overflow: hidden;
-        box-shadow: none;
-        border: 1px solid rgba(29, 13, 2, 0.25);
-    }
-    .ep-page-ent .ep-ent-item:nth-child(n + 7) {
-        display: none;
-    }
-    .ep-page-ent .ep-ent-live.has-headline .is-headline {
-        grid-row: 1 / span 2;
-        grid-column: 1;
-    }
-    .ep-page-ent .ep-ent-item .ep-ent-photo {
-        aspect-ratio: auto;
-        height: 38%;
-        flex: none;
-    }
+
     .ep-page-ent .is-headline .ep-ent-photo {
         height: 48%;
     }
-    .ep-page-ent .ep-ent-item-text {
-        padding: 5mm 6mm;
-    }
-    .ep-page-ent .ep-ent-item h3 {
-        font-size: 15pt;
-    }
+
     .ep-page-ent .is-headline h3 {
         font-size: 24pt;
     }
-    .ep-page-ent .ep-ent-item p:not(.ep-kicker) {
-        font-size: 9.5pt;
-        line-height: 1.35;
-        display: -webkit-box;
-        -webkit-line-clamp: 5;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
+
     .ep-page-ent .is-headline p:not(.ep-kicker) {
         -webkit-line-clamp: 9;
     }
@@ -3704,27 +3371,11 @@ a.ep-fv:focus-visible {
         box-shadow: none;
     }
     /* entertainment: the headline down the left, six beside it in three rows */
-    .ep-page-ent .ep-ent-live {
-        grid-template-rows: repeat(3, 1fr);
-    }
-    .ep-page-ent .ep-ent-live.has-headline .is-headline {
-        grid-row: 1 / span 3;
-    }
-    .ep-page-ent .ep-ent-item:nth-child(n + 7) {
-        display: flex;
-    }
-    .ep-page-ent .ep-ent-item:nth-child(n + 8) {
-        display: none !important;
-    }
-    .ep-page-ent .ep-ent-item .ep-ent-photo {
-        height: 34%;
-    }
+
     .ep-page-ent .is-headline .ep-ent-photo {
         height: 40%;
     }
-    .ep-page-ent .ep-ent-item p:not(.ep-kicker) {
-        -webkit-line-clamp: 4;
-    }
+
     .ep-page-ent .is-headline p:not(.ep-kicker) {
         -webkit-line-clamp: 10;
     }
@@ -3895,14 +3546,7 @@ a.ep-fv:focus-visible {
     flex-wrap: wrap;
     margin: 14px 0 0;
 }
-.ep-btn-going {
-    background: var(--ep-lime);
-    color: var(--ep-ink);
-}
-.ep-btn-going:disabled {
-    opacity: 0.9;
-    cursor: default;
-}
+
 .ep-going-count {
     font-weight: bold;
     font-size: 0.95rem;

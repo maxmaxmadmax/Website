@@ -613,22 +613,6 @@ textarea:focus-visible {
 }
 
 /* Scrolling announcement strip */
-.announcement-strip {
-    background: linear-gradient(90deg, var(--sg-sun-top), var(--sg-sun-deep));
-    color: #000;
-    overflow: hidden;
-    white-space: nowrap;
-    padding: 16px 0;
-    font-family: var(--sg-font-display);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-}
-
-.announcement-strip p {
-    display: inline-block;
-    padding-left: 100%;
-    animation: scrollText 22s linear infinite;
-}
 
 @keyframes scrollText {
     from {
@@ -1514,113 +1498,16 @@ nav a.nav-cta.active {
 /* ==========================================================================
    SPONSOR FEATURE - the larger sponsor panel with its own buttons.
    ========================================================================== */
-.sponsor-feature {
-    position: relative;
-    padding: 70px 6%;
-    overflow: hidden;
-    background: linear-gradient(180deg, var(--sg-sun-top) 0%, var(--sg-sun-mid) 55%, var(--sg-sun-deep) 100%);
-}
-
-.sponsor-feature::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: var(--sg-grain);
-    opacity: 0.16;
-    mix-blend-mode: multiply;
-    pointer-events: none;
-}
-
-.sponsor-feature > * {
-    position: relative;
-    z-index: 1;
-}
-
-.sponsor-feature h2 {
-    color: #000;
-}
-
-.sponsor-feature .section-intro {
-    color: rgba(0, 0, 0, 0.7);
-    margin-bottom: 38px;
-}
-
-.sponsor-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    align-items: center;
-    justify-items: center;
-    gap: 34px 28px;
-}
 
 /* Each logo sits on its own white tile, which suits both dark-on-white
    and transparent logos. */
-.sponsor-grid a {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    min-height: 130px;
-    padding: 20px;
-
-    background: #fff;
-    border-radius: 14px;
-    box-shadow: 0 10px 26px rgba(80, 28, 0, 0.28);
-
-    transition:
-        transform 0.25s,
-        box-shadow 0.25s;
-}
-
-.sponsor-grid img {
-    max-height: 84px;
-    max-width: 100%;
-    width: auto;
-    object-fit: contain;
-}
-
-.sponsor-grid a:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 16px 34px rgba(80, 28, 0, 0.38);
-}
 
 /* Humanitix embedded checkout */
-.checkout-embed {
-    max-width: 900px;
-    margin: auto;
-}
-
-.checkout-embed iframe {
-    width: 100%;
-    min-height: 600px;
-    border: 0;
-    border-radius: 14px;
-}
 
 /*  MAKE A WEEKEND OF IT - photos do the selling, copy over the top.
     Aimed at people driving in from out of town.                        */
 
 /*  Buttons sitting on the orange band go black, so they read against it  */
-.sponsor-feature .btn {
-    background: #000;
-    border-color: #000;
-    color: #fff;
-}
-
-.sponsor-feature .btn:hover {
-    background: #1a1a1a;
-}
-
-.sponsor-feature .btn-outline {
-    background: transparent;
-    color: #000;
-    border-color: #000;
-}
-
-.sponsor-feature .btn-outline:hover {
-    background: #000;
-    color: #fff;
-}
 
 /* Buttons in a page header (services hero) */
 
@@ -2039,12 +1926,6 @@ nav a.nav-cta.active {
 @media (prefers-reduced-motion: reduce) {
     html {
         scroll-behavior: auto;
-    }
-
-    .announcement-strip p {
-        animation: none;
-        padding-left: 0;
-        text-align: center;
     }
 
     .btn:hover,
