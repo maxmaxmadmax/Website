@@ -16,7 +16,7 @@
    ctx = { state, h: { esc, attr }, call, render, money }
    ========================================================================== */
 
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=795';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=796';
 
 export const SEND_TIME = '9:35 am';
 
@@ -187,6 +187,7 @@ export function messagesHtml(ctx) {
   if (state.msgOpen) return editorHtml(ctx, ev);
 
   const tab = state.msgTab || 'vendors';
+  const inHub = state.view === 'event' && state.eventTab === 'messages';
   const list = (state.messages || []).filter((m) => m.audience !== 'sponsors').slice().sort((a, b) => {
     const rank = (x) => (x.system === 'invoice' ? 0 : x.system === 'waitlist' ? 1 : 2);
     if (rank(a) !== rank(b)) return rank(a) - rank(b);
@@ -220,9 +221,9 @@ export function messagesHtml(ctx) {
     </div>
     <div class="ms-tabs" role="tablist">
       <button type="button" class="ms-tab${tab === 'vendors' ? ' is-on' : ''}" role="tab" data-ms-tab="vendors">Vendors</button>
-      <button type="button" class="ms-tab${tab === 'clients' ? ' is-on' : ''}" role="tab" data-ms-tab="clients">Clients</button>
+      ${inHub ? '' : `<button type="button" class="ms-tab${tab === 'clients' ? ' is-on' : ''}" role="tab" data-ms-tab="clients">Clients</button>`}
       <button type="button" class="ms-tab" disabled title="Coming soon">Crew &amp; performers</button>
-      <button type="button" class="ms-tab${tab === 'sponsors' ? ' is-on' : ''}" role="tab" data-ms-tab="sponsors">Sponsors</button>
+      ${inHub ? `<a class="ms-tab" role="tab" href="#/event?id=${h.attr(state.activeEventId || '')}&tab=sponsors">Sponsors</a>` : `<button type="button" class="ms-tab${tab === 'sponsors' ? ' is-on' : ''}" role="tab" data-ms-tab="sponsors">Sponsors</button>`}
       <button type="button" class="ms-tab${tab === 'reminders' ? ' is-on' : ''}" role="tab" data-ms-tab="reminders">Reminders</button>
       <button type="button" class="ms-tab ms-tab-log${tab === 'sent' ? ' is-on' : ''}" role="tab" data-ms-tab="sent">Sent emails</button>
     </div>
