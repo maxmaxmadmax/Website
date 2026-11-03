@@ -16,16 +16,16 @@
    Allocation and money only change through the admin Cloud Functions.
    -------------------------------------------------------------------------- */
 
-import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=821';
+import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=822';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=821';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=821';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=821';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=821';
-import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=821';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=821';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=821';
-import { expandKit } from './kit.js?v=821';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=822';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=822';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=822';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=822';
+import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=822';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=822';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=822';
+import { expandKit } from './kit.js?v=822';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 

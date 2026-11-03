@@ -521,8 +521,8 @@
    Pages the row of annual events. Counts the cards and sets a page number
    on the track; the CSS does the movement.
 
-   How many fit per page comes from --sgs-an-per in events.css (set by its
-   media queries), so new breakpoints need no change here. Without JS the
+   How many fit per page comes from --per on the slider window (site.css
+   SLIDER), so new breakpoints need no change here. Without JS the
    row shows its first four cards.
    -------------------------------------------------------------------------- */
 (function () {
@@ -545,7 +545,7 @@
     var built = 0; /* how many dashes are in the DOM right now */
 
     function perView() {
-        var raw = window.getComputedStyle(section).getPropertyValue('--sgs-an-per');
+        var raw = window.getComputedStyle(track.parentElement).getPropertyValue('--per');
         var n = parseInt(raw, 10);
         return n > 0 ? n : 1;
     }
@@ -584,7 +584,7 @@
         if (page > last) page = last;
         if (page < 0) page = 0;
 
-        track.style.setProperty('--sgs-an-page', page);
+        track.style.setProperty('--page', page);
 
         arrows.forEach(function (btn) {
             var dir = parseInt(btn.getAttribute('data-sgs-annual'), 10);

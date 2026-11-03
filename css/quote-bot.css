@@ -1,7 +1,9 @@
 /* ==========================================================================
-   ESTIMATE BOT  -  styling for the services-page quote assistant
-   A phone-sized chat card in the house dark theme. Everything is scoped
-   under .sgq so it cannot touch the rest of the services page.
+   QUOTE BOT - the chat card that gives a price guide (js/quote-bot.js).
+   Loaded by services, hire and the job stories. Everything is .sgq-
+
+   CARD        the chat card: header, message stream, choice chips, form
+   LAUNCHER    the floating bubble bottom-right and its pop-up panel
    ========================================================================== */
 
 .sgq {
@@ -241,8 +243,6 @@
     margin-left: auto;
 }
 
-/* a category heading inside the multi-select dock, breaking to its own line */
-
 /* ---- contact form --------------------------------------------------- */
 /* the form sits inside the scrollable stream, as its own card, so the
    conversation above it stays readable */
@@ -366,9 +366,9 @@
     }
 }
 
-/* =========================================================================
-   FLOATING LAUNCHER  -  the bubble bottom-right and the pop-up panel
-   ========================================================================= */
+/* ==========================================================================
+   LAUNCHER
+   ========================================================================== */
 .sgq-fab-wrap {
     position: fixed;
     right: 20px;
