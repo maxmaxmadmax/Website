@@ -10,7 +10,7 @@
     One sponsor per industry: once a business in an industry has said yes
     to the event picked, the others in that industry show "industry taken". */
 
-import { spAvatar, spColor } from './messages.js?v=803';
+import { spAvatar, spColor } from './messages.js?v=804';
 
 export const STAGES = [['idea', 'Idea'], ['research', 'Researching'], ['ready', 'Ready to ask'], ['asked', 'Asked'], ['sponsor', 'Sponsor'], ['no', 'Not now']];
 const STAGE = Object.fromEntries(STAGES);
@@ -49,7 +49,7 @@ function history(b, sponsors, evOf) {
 
 export function sponsorDirHtml(ctx) {
   const { state, h } = ctx;
-  const f = state.spDir || (state.spDir = { tab: 'biz', q: '', stage: '', industry: '', event: state.activeEventId || '' });
+  const f = state.spDir || (state.spDir = { tab: 'biz', q: '', stage: '', industry: '', event: '' });
   const events = (state.events || []).slice().sort((a, b) => String(b.dateISO || '').localeCompare(String(a.dateISO || '')));
   const evOf = Object.fromEntries(events.map((e) => [e.id, e]));
   const sponsors = state.sponsorsAll || [];
@@ -129,7 +129,6 @@ export function sponsorDirHtml(ctx) {
       <div class="spd-tabs">
         <button type="button" class="ad-tab${f.tab !== 'ind' ? ' is-on' : ''}" data-spd-tab="biz">Businesses</button>
         <button type="button" class="ad-tab${f.tab === 'ind' ? ' is-on' : ''}" data-spd-tab="ind">Industries</button>
-        <label class="spd-evpick">One sponsor per industry for: <select class="ad-select" data-spd-f="event">${opt('', 'any event', f.event)}${events.filter((e) => e.status !== 'archived').map((e) => opt(e.id, e.name + (e.subtitle ? ' - ' + e.subtitle : ''), f.event)).join('')}</select></label>
       </div>
       ${f.tab === 'ind' ? industryTab() : `
       <div class="spd-filters">
