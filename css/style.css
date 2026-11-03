@@ -1051,6 +1051,7 @@ textarea:focus-visible {
 .footer-contact {
     display: flex;
     flex-direction: column;
+    font-style: normal; /* <address> is italic by default */
 }
 
 .footer-links h3,
