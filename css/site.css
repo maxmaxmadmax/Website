@@ -321,6 +321,89 @@ textarea:focus-visible {
 }
 
 /* ==========================================================================
+   SLIDER - a row of cards that pages sideways with two arrow buttons.
+   JS sets --page on .slide-track and reads --per from .slide-view.
+   ========================================================================== */
+.slide-arrows {
+    display: flex;
+    gap: 10px;
+}
+
+.slide-arrow {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--sg-border);
+    background: var(--sg-panel);
+    color: #fff;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.slide-arrow:hover:not(:disabled) {
+    background: var(--sg-orange);
+    border-color: var(--sg-orange);
+    color: #0a0a0a;
+}
+
+/* Dimmed, not hidden, at the ends so the row does not jump */
+.slide-arrow:disabled {
+    opacity: 0.28;
+    cursor: default;
+}
+
+/* The window: --per cards across */
+.slide-view {
+    --per: 4;
+    --gap: 20px;
+    overflow: hidden;
+    padding: 8px 0; /* room for the hover lift */
+    margin: -8px 0;
+}
+
+/* One page is exactly -100% */
+.slide-track {
+    --page: 0;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: calc((100% - (var(--per) - 1) * var(--gap)) / var(--per));
+    gap: var(--gap);
+    transform: translateX(calc(var(--page) * (-100% - var(--gap))));
+    transition: transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Fewer cards across as the screen narrows */
+@media (max-width: 1100px) {
+    .slide-view {
+        --per: 3;
+    }
+}
+
+@media (max-width: 820px) {
+    .slide-view {
+        --per: 2;
+    }
+}
+
+@media (max-width: 560px) {
+    .slide-view {
+        --per: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .slide-track {
+        transition: none;
+    }
+}
+
+/* ==========================================================================
    NAV - sits over the top of the page. Items live in components/navbar.html.
    ========================================================================== */
 nav {

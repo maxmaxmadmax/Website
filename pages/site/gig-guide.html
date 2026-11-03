@@ -51,12 +51,12 @@ permalink: /gig-guide.html
   </script>
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="css/site.css?v=820">
-  <link rel="stylesheet" href="css/gig-card.css?v=820">
-  <link rel="stylesheet" href="css/gig-guide.css?v=820">
-  <script src="js/main.js?v=820" defer></script>
-  <script src="js/weekend.js?v=820" defer></script>
-  <script src="js/gig-guide.js?v=820" defer></script>
+  <link rel="stylesheet" href="css/site.css?v=821">
+  <link rel="stylesheet" href="css/gig-card.css?v=821">
+  <link rel="stylesheet" href="css/gig-guide.css?v=821">
+  <script src="js/main.js?v=821" defer></script>
+  <script src="js/weekend.js?v=821" defer></script>
+  <script src="js/gig-guide.js?v=821" defer></script>
 </head>
 
 <!-- the class is what gig-guide.css hangs the footer tweak off -->
@@ -110,12 +110,12 @@ permalink: /gig-guide.html
 
       <div class="gg-filter-row">
         <label class="gg-search">
-          <span class="gg-sr-only">Search events, artists, venues</span>
+          <span class="sr-only">Search events, artists, venues</span>
           <input type="search" id="gg-search" placeholder="Search events, artists, venues&hellip;">
         </label>
 
         <label class="gg-select">
-          <span class="gg-sr-only">When</span>
+          <span class="sr-only">When</span>
           <select id="gg-when">
             <option value="weekend">This Weekend</option>
             <option value="7">Next 7 Days</option>
@@ -125,7 +125,7 @@ permalink: /gig-guide.html
         </label>
 
         <label class="gg-select">
-          <span class="gg-sr-only">Where</span>
+          <span class="sr-only">Where</span>
           <select id="gg-where">
             <option value="all">All Locations</option>
             <option value="bowen">Bowen</option>
@@ -204,20 +204,20 @@ permalink: /gig-guide.html
 
         <!--  A div rather than a <nav>: style.css styles the bare nav
               element for the site menu, and that would land on this. -->
-        <div class="gg-arrows" role="group" aria-label="Scroll upcoming events">
-          <button type="button" class="gg-arrow" data-gg-page="-1"
+        <div class="slide-arrows" role="group" aria-label="Scroll upcoming events">
+          <button type="button" class="slide-arrow" data-gg-page="-1"
                   aria-label="Previous events">
             <span aria-hidden="true">&#8249;</span>
           </button>
-          <button type="button" class="gg-arrow" data-gg-page="1"
+          <button type="button" class="slide-arrow" data-gg-page="1"
                   aria-label="More events">
             <span aria-hidden="true">&#8250;</span>
           </button>
         </div>
       </div>
 
-      <div class="gg-view" id="gg-upcoming-view">
-        <div class="gg-track" id="gg-upcoming-grid"></div>
+      <div class="slide-view" id="gg-upcoming-view">
+        <div class="slide-track" id="gg-upcoming-grid"></div>
       </div>
 
       <p class="gg-empty" id="gg-upcoming-empty" hidden></p>

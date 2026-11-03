@@ -288,7 +288,7 @@ var GG_LISTINGS = [
 
     function perView() {
         if (!view) return 1;
-        var n = parseInt(window.getComputedStyle(view).getPropertyValue('--gg-per'), 10);
+        var n = parseInt(window.getComputedStyle(view).getPropertyValue('--per'), 10);
         return n > 0 ? n : 1;
     }
 
@@ -301,7 +301,7 @@ var GG_LISTINGS = [
         if (!upcomingGrid) return;
 
         var last = pages() - 1;
-        upcomingGrid.style.setProperty('--gg-page', upPage);
+        upcomingGrid.style.setProperty('--page', upPage);
 
         arrows.forEach(function (btn) {
             var dir = parseInt(btn.getAttribute('data-gg-page'), 10);

@@ -326,7 +326,7 @@
 
     function perView() {
         if (!view) return 1;
-        var n = parseInt(window.getComputedStyle(view).getPropertyValue('--ev-wk-per'), 10);
+        var n = parseInt(window.getComputedStyle(view).getPropertyValue('--per'), 10);
         return n > 0 ? n : 1;
     }
 
@@ -341,7 +341,7 @@
         if (page > last) page = last;
         if (page < 0) page = 0;
 
-        track.style.setProperty('--ev-wk-page', page);
+        track.style.setProperty('--page', page);
 
         arrows.forEach(function (btn) {
             var dir = parseInt(btn.getAttribute('data-ev-wk'), 10);
@@ -350,7 +350,7 @@
 
         /*  Both arrows off means one page, so hide them. */
         arrows.forEach(function (btn) {
-            btn.closest('.ev-wk-arrows').hidden = last === 0;
+            btn.closest('.slide-arrows').hidden = last === 0;
         });
     }
 

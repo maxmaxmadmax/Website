@@ -23,16 +23,16 @@ permalink: /events.html
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="css/site.css?v=820">
+  <link rel="stylesheet" href="css/site.css?v=821">
   <!-- The event card is shared with /gig-guide, so its styles live in their own file. -->
-  <link rel="stylesheet" href="css/gig-card.css?v=820">
-  <link rel="stylesheet" href="css/events.css?v=820">
-  <script src="js/main.js?v=820" defer></script>
+  <link rel="stylesheet" href="css/gig-card.css?v=821">
+  <link rel="stylesheet" href="css/events.css?v=821">
+  <script src="js/main.js?v=821" defer></script>
   <!-- roster.js names the DJs on the Friday Nights cards (same list as the entertainment page and admin). -->
-  <script src="js/roster.js?v=820" defer></script>
-  <script src="js/weekend.js?v=820" defer></script>
-  <script src="js/events.js?v=820" defer></script>
-  <script src="js/volunteer.js?v=820" defer></script>
+  <script src="js/roster.js?v=821" defer></script>
+  <script src="js/weekend.js?v=821" defer></script>
+  <script src="js/events.js?v=821" defer></script>
+  <script src="js/volunteer.js?v=821" defer></script>
 </head>
 
 <!-- the class is what events.css hangs the footer tweak off -->
@@ -245,12 +245,12 @@ permalink: /events.html
     <div class="ev-weekend-actions">
       <!--  A div rather than a <nav>: style.css styles the bare nav element
             for the site menu, and that would land on this.            -->
-      <div class="ev-wk-arrows" role="group" aria-label="Scroll this week's events">
-        <button type="button" class="ev-wk-arrow" data-ev-wk="-1"
+      <div class="slide-arrows" role="group" aria-label="Scroll this week's events">
+        <button type="button" class="slide-arrow" data-ev-wk="-1"
                 aria-label="Previous events">
           <span aria-hidden="true">&#8249;</span>
         </button>
-        <button type="button" class="ev-wk-arrow" data-ev-wk="1"
+        <button type="button" class="slide-arrow" data-ev-wk="1"
                 aria-label="More events">
           <span aria-hidden="true">&#8250;</span>
         </button>
@@ -263,8 +263,8 @@ permalink: /events.html
   </div>
 
   <!-- Pages four at a time, same as the annual row on /services. -->
-  <div class="ev-wk-view" id="ev-weekend-view">
-    <div class="ev-wk-track" id="ev-weekend-grid"></div>
+  <div class="slide-view" id="ev-weekend-view">
+    <div class="slide-track" id="ev-weekend-grid"></div>
   </div>
 
 </section>
