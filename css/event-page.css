@@ -1,19 +1,33 @@
 /* ==========================================================================
-   EVENT PAGE (for punters) - e.g. /eatz-beatz-halloween-2026
+   EVENT PAGE - the punter page for an event (event.html, built by
+   js/event-live.js, and the Halloween 2026 story page). On top of site.css.
+   Styled like the Eatz & Beatz poster: orange sunset, cream cards, chunky
+   poster type, a lime sticker. Everything is .ep-
 
-   Styled like the Eatz & Beatz poster:
-   orange sunset, cream cards, chunky poster lettering, a lime sticker.
-   At the bottom: the PRINT styles - the page prints as an A4 mini magazine.
+   TOKENS      colours and fonts
+   COVER       title, facts, buttons, the skeleton art and stickers
+   SECTIONS    headings and straps
+   FOOD        food vendor cards
+   MARKET      market stall tiles
+   ENTERTAINMENT   the band card and the tiles beside it
+   TIMES       the run sheet, with the poster beside it
+   FAQ         good to know
+   SPONSORS    the black logo strip
+   NOTICE      venue change / postponed / cancelled bar
+   LIVE        extras for the live page: poster in the cover, I'm coming
+   PRINT       the A4 mini magazine (four sheets)
    ========================================================================== */
 
+/* ==========================================================================
+   TOKENS
+   ========================================================================== */
 .event-page {
-    --ep-ink: #1d0d02; /* near-black brown, the poster's text   */
-    --ep-cream: #fff4e6; /* the cards                              */
-    --ep-orange: #f25a0c; /* labels, arrows                         */
-    --ep-lime: #d6f53b; /* the sticker                            */
+    --ep-ink: #1d0d02; /* near-black brown */
+    --ep-cream: #fff4e6; /* the cards */
+    --ep-orange: #f25a0c; /* labels, arrows */
+    --ep-lime: #d6f53b; /* the sticker */
     --ep-poster-font: 'Bowlby One', 'Arial Black', Impact, sans-serif;
     --ep-hand-font: 'Permanent Marker', 'Segoe Print', cursive;
-
     color: var(--ep-ink);
     background:
         radial-gradient(circle at 78% 6%, rgba(255, 226, 140, 0.75), transparent 28%),
@@ -21,7 +35,22 @@
     background-attachment: fixed;
 }
 
-/* ---- the cover ---- */
+/* Keep the palm and long stall links inside the screen edge */
+@media screen {
+    .ep-hero,
+    .ep-hero-art {
+        overflow-x: clip;
+    }
+
+    .ep-mt a {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+}
+
+/* ==========================================================================
+   COVER
+   ========================================================================== */
 .ep-hero-inner {
     max-width: var(--sg-max-width);
     margin: 0 auto;
@@ -30,6 +59,16 @@
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
     gap: 40px;
     align-items: center;
+}
+
+/* The Eatz & Beatz logo */
+.ep-logo {
+    display: block;
+    width: min(240px, 60%);
+    height: auto;
+    margin: 0 0 18px;
+    transform: rotate(-3deg);
+    filter: drop-shadow(4px 4px 0 rgba(29, 13, 2, 0.35));
 }
 
 .ep-kicker {
@@ -41,10 +80,18 @@
     margin: 0 0 12px;
 }
 
+/* "SOUNDZGOOD PRESENTS" */
+.ep-presents {
+    text-align: center;
+    font-size: 0.85rem;
+    letter-spacing: 0.4em;
+}
+
+/* "COME" / "HUNGRY." one word per line */
 .ep-title {
     font-family: var(--ep-poster-font);
     font-weight: 400;
-    font-size: clamp(3.4rem, 9vw, 6.6rem);
+    font-size: clamp(3rem, 7.2vw, 6.4rem);
     line-height: 0.88;
     text-transform: uppercase;
     color: #fffaf2;
@@ -54,7 +101,12 @@
     margin: 0;
 }
 
-/* "GOOD FOOD - LIVE MUSIC - LOCAL MARKETS" under the title */
+.ep-title span {
+    display: block;
+    white-space: nowrap;
+}
+
+/* "GOOD FOOD - LIVE MUSIC - LOCAL MARKETS" */
 .ep-subline {
     font-family: var(--ep-hand-font);
     font-size: 1.35rem;
@@ -75,6 +127,7 @@
     margin: 0 0 18px;
 }
 
+/* When / where / cost tiles */
 .ep-facts {
     list-style: none;
     padding: 0;
@@ -130,6 +183,7 @@
     background: transparent;
     color: var(--ep-ink);
 }
+
 .ep-btn-ghost:hover,
 .ep-btn-ghost:focus-visible {
     background: rgba(29, 13, 2, 0.1);
@@ -140,7 +194,7 @@
     font-size: 0.9rem;
 }
 
-/* ---- the Halloween art on the right of the cover ---- */
+/* The Halloween art on the right: skeleton, palms, bats, two stickers */
 .ep-hero-art {
     position: relative;
     align-self: end;
@@ -174,6 +228,7 @@
     width: 170px;
     height: 270px;
 }
+
 .ep-palm-2 {
     left: 0;
     width: 120px;
@@ -187,18 +242,21 @@
     z-index: 3;
     fill: var(--ep-ink);
 }
+
 .ep-bat-1 {
     top: 8%;
     left: 6%;
     width: 58px;
     transform: rotate(-10deg);
 }
+
 .ep-bat-2 {
     top: 20%;
     right: 2%;
     width: 42px;
     transform: rotate(12deg);
 }
+
 .ep-bat-3 {
     top: 46%;
     left: 2%;
@@ -206,7 +264,7 @@
     transform: rotate(-4deg);
 }
 
-/* the round lime "HALLOWEEN EDITION" sticker */
+/* Round lime "HALLOWEEN EDITION" sticker */
 .ep-badge-round {
     position: absolute;
     z-index: 3;
@@ -233,7 +291,7 @@
     font-weight: 400;
 }
 
-/* the "FREE ENTRY" tag */
+/* "FREE ENTRY" tag */
 .ep-badge-free {
     position: absolute;
     z-index: 3;
@@ -249,7 +307,104 @@
     box-shadow: 4px 4px 0 var(--ep-ink);
 }
 
-/* ---- sections ---- */
+/* Computer: logo top right above the skeleton, "presents" centred over the top */
+@media screen and (min-width: 901px) {
+    .ep-hero-inner {
+        position: relative;
+    }
+
+    .ep-presents {
+        position: absolute;
+        top: calc(var(--sg-nav-height, 88px) + 4px);
+        left: 0;
+        right: 0;
+        margin: 0;
+    }
+
+    .ep-logo {
+        position: absolute;
+        top: calc(var(--sg-nav-height, 88px) + 24px);
+        right: 6%;
+        z-index: 4;
+        width: 345px;
+        margin: 0;
+        transform: rotate(4deg);
+    }
+
+    .ep-hero-art {
+        padding-top: 305px; /* the skeleton sits under the logo */
+    }
+
+    .ep-skeleton {
+        width: min(100%, 336px);
+    }
+
+    .ep-badge-round {
+        top: 320px;
+        width: 130px;
+        height: 130px;
+        font-size: 1.1rem;
+    }
+
+    .ep-palm-1 {
+        width: 136px;
+        height: 216px;
+    }
+}
+
+/* Tablet: one column, art under the words */
+@media (max-width: 900px) {
+    .ep-hero-inner {
+        grid-template-columns: 1fr;
+        gap: 34px;
+    }
+
+    .ep-hero-art {
+        min-height: 0;
+        max-width: 460px;
+        width: 100%;
+        justify-self: center;
+    }
+
+    .ep-badge-round {
+        width: 120px;
+        height: 120px;
+        font-size: 1rem;
+    }
+}
+
+@media screen and (max-width: 900px) {
+    .ep-logo {
+        width: min(360px, 90%);
+    }
+
+    .ep-hero-art {
+        max-width: 368px;
+    }
+}
+
+@media (max-width: 600px) {
+    .ep-hero-inner {
+        padding: calc(var(--sg-nav-height, 78px) + 22px) 16px 30px;
+    }
+
+    .ep-title {
+        -webkit-text-stroke: 2px var(--ep-ink);
+        text-shadow: 4px 4px 0 var(--ep-ink);
+    }
+
+    .ep-facts {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .ep-btn {
+        flex: 1;
+    }
+}
+
+/* ==========================================================================
+   SECTIONS
+   ========================================================================== */
 .ep-section {
     max-width: var(--sg-max-width);
     margin: 0 auto;
@@ -282,6 +437,11 @@
     margin: 0;
 }
 
+/* Paper only */
+.ep-print-only {
+    display: none;
+}
+
 .ep-strap {
     font-family: var(--sg-font-accent);
     font-weight: bold;
@@ -297,7 +457,15 @@
     margin: 0 6px;
 }
 
-/* ---- food vendor cards ---- */
+@media (max-width: 600px) {
+    .ep-section {
+        padding: 36px 16px 0;
+    }
+}
+
+/* ==========================================================================
+   FOOD - photo left, words right, the whole card is the link
+   ========================================================================== */
 .ep-food {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -337,6 +505,18 @@ a.ep-fv:focus-visible {
     background: linear-gradient(135deg, #ffb36b, #e8662c);
 }
 
+/* A logo instead of a photo: shown whole, on white */
+.ep-fv-pic-logo {
+    background-size: contain !important;
+    background-repeat: no-repeat;
+    background-color: #fff;
+}
+
+/* A portrait photo: face first */
+.ep-fv-pic-top {
+    background-position: center top !important;
+}
+
 .ep-fv-text {
     flex: 1;
     min-width: 0;
@@ -370,6 +550,7 @@ a.ep-fv:focus-visible {
     color: #4a2a12;
 }
 
+/* The orange arrow */
 .ep-fv-go {
     position: absolute;
     right: 12px;
@@ -385,7 +566,25 @@ a.ep-fv:focus-visible {
     font-weight: bold;
 }
 
-/* ---- market panel ---- */
+@media (max-width: 700px) {
+    .ep-food {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .ep-fv {
+        min-height: 104px;
+    }
+
+    .ep-fv-pic {
+        width: 110px;
+    }
+}
+
+/* ==========================================================================
+   MARKET - big title left, tiles of stalls right
+   ========================================================================== */
 .ep-market-panel {
     display: grid;
     grid-template-columns: minmax(270px, 1fr) minmax(0, 3fr);
@@ -404,7 +603,7 @@ a.ep-fv:focus-visible {
     margin-right: 10px;
 }
 
-/* the big two-tone title with the lime swipe under it */
+/* Two-tone title with a lime swipe under it */
 .ep-big {
     position: relative;
     font-family: var(--ep-poster-font);
@@ -450,11 +649,11 @@ a.ep-fv:focus-visible {
 
 .ep-market {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr)); /* 3 across so names fit on one line */
+    grid-template-columns: repeat(3, minmax(0, 1fr)); /* names fit on one line */
     gap: 12px;
 }
 
-/* one tile: icon + heading in a row, then the vendors listed */
+/* One tile: icon and heading, then the stalls listed */
 .ep-mt {
     background: var(--ep-cream);
     border-radius: 12px;
@@ -494,8 +693,7 @@ a.ep-fv:focus-visible {
     display: grid;
     gap: 4px;
 }
-/* one business per line, bold capitals. The FULL name always
-   shows - a long one wraps onto a second line. */
+
 .ep-mt li {
     font-size: 0.78rem;
     font-weight: bold;
@@ -513,9 +711,27 @@ a.ep-fv:focus-visible {
     text-underline-offset: 2px;
 }
 
-/* ---- what's on ---- */
+@media (max-width: 900px) {
+    .ep-market-panel {
+        grid-template-columns: 1fr;
+    }
 
-/* ---- entertainment ---- */
+    .ep-market {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* ==========================================================================
+   ENTERTAINMENT - two tiles on top, then the band card big on the left
+   with the hosts, bingo, cricket and jumping castle tiles beside it
+   ========================================================================== */
+.ep-top2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 0 0 14px;
+}
+
 .ep-ent {
     display: grid;
     grid-template-columns: 1.4fr 1fr;
@@ -546,9 +762,34 @@ a.ep-fv:focus-visible {
     line-height: 1.45;
 }
 
-/* the band - the headline act: his photo on top, the bio underneath */
+/* Where each tile sits (the 860px rule below undoes this on a phone) */
 .ep-ent-band {
-    grid-row: span 3;
+    grid-column: 1;
+    grid-row: 1 / span 4 !important;
+}
+
+.ep-ent-hosts {
+    grid-column: 2;
+    grid-row: 1 !important;
+}
+
+.ep-ent-bingo {
+    grid-column: 2;
+    grid-row: 2 !important;
+}
+
+.ep-ent-cricket {
+    grid-column: 2;
+    grid-row: 3;
+}
+
+.ep-ent-castle {
+    grid-column: 2;
+    grid-row: 4 !important;
+}
+
+/* The band: photo on top, bio under it */
+.ep-ent-band {
     display: flex;
     flex-direction: column;
     padding: 0;
@@ -563,45 +804,54 @@ a.ep-fv:focus-visible {
     object-fit: cover;
     object-position: center 30%;
 }
+
 .ep-ent-band-text {
     padding: 22px 26px 26px;
 }
+
 .ep-ent-band h3 {
     font-size: clamp(2rem, 4.4vw, 3.2rem);
 }
+
 .ep-ent-band h3 span {
     display: block;
     font-size: 0.55em;
     color: var(--ep-lime);
     margin-top: 6px;
 }
+
 .ep-ent-band-text p:not(.ep-kicker) {
     margin: 0 0 12px;
     line-height: 1.5;
     color: #f3e3d0;
 }
+
 .ep-ent-link {
     color: var(--ep-lime);
     font-weight: bold;
 }
 
+/* Tile colours */
 .ep-ent-bingo {
     background: var(--ep-lime);
     color: var(--ep-ink);
 }
+
 .ep-ent-dress {
     background: var(--ep-cream);
     color: var(--ep-ink);
 }
+
 .ep-ent-treat {
     background: #2a1204;
     color: #fffaf2;
-} /* trick or treat - dark, spooky */
+}
+
 .ep-ent-treat h3 {
     color: var(--ep-orange);
 }
 
-/* the 'cash prize' stamp */
+/* "Cash prize" stamp */
 .ep-ent-badge {
     position: absolute;
     top: 18px;
@@ -617,32 +867,256 @@ a.ep-fv:focus-visible {
     box-shadow: 3px 3px 0 var(--ep-ink);
 }
 
-/* ---- sponsors: the poster's logo strip on black ---- */
-.ep-sponsors {
-    background: #000;
-    color: #fff;
-    border-radius: 16px;
-    padding: 22px 24px;
-    text-align: center;
-    box-shadow: 0 6px 0 rgba(29, 13, 2, 0.3);
+/* Hosts: photo left, names right */
+.ep-ent-hosts {
+    background: var(--ep-ink);
+    color: var(--ep-cream);
+    display: grid;
+    grid-template-columns: 45% 1fr;
+    align-items: center;
+    gap: 18px;
+    padding: 0 22px 0 0 !important;
 }
 
-.ep-sponsors .ep-h2 {
-    color: #fff;
-    font-size: clamp(1.4rem, 3vw, 2rem);
-    margin-bottom: 12px;
+.ep-ent-hosts-pic {
+    width: 100%;
+    height: 100%;
+    min-height: 150px;
+    object-fit: cover;
+    object-position: center 25%;
+    display: block;
 }
 
-/* same logo height as row 1 */
-.ep-sponsors p {
-    margin: 12px 0 0;
-}
-.ep-sponsors a {
+.ep-ent-hosts .ep-kicker {
     color: var(--ep-lime);
-    font-weight: bold;
 }
 
-/* ---- times + good to know ---- */
+.ep-ent-hosts h3 {
+    margin: 0;
+    font-size: clamp(1.3rem, 2.4vw, 1.9rem);
+}
+
+/* Cricket: Chargers v Dregernauts */
+.ep-ent-cricket {
+    background: #fff;
+    color: var(--ep-ink);
+    padding: 28px 30px;
+}
+
+.ep-ent-cricket .ep-kicker {
+    text-align: left;
+}
+
+.ep-vs {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 18px;
+    margin: 10px 0 16px;
+}
+
+.ep-vs img {
+    width: 100%;
+    height: 150px;
+    object-fit: contain;
+}
+
+.ep-vs span {
+    font-family: var(--ep-poster-font);
+    font-size: clamp(2.2rem, 4.2vw, 3rem);
+    line-height: 1;
+    color: var(--ep-orange);
+}
+
+/* Never split a team name - shrink instead */
+.ep-ent-cricket h3 {
+    font-size: clamp(1.5rem, 2.7vw, 2.3rem) !important;
+    line-height: 0.95;
+    margin: 0 0 12px;
+    overflow-wrap: normal !important;
+    word-break: keep-all !important;
+    hyphens: none;
+}
+
+.ep-ent-cricket p:last-child {
+    font-size: 1.05rem;
+    line-height: 1.45;
+}
+
+/* Jumping castle: picture left, words right */
+.ep-ent-castle {
+    background: #fff;
+    color: var(--ep-ink);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.ep-castle-pic {
+    flex: none;
+    width: 38%;
+    max-width: 170px;
+    height: auto;
+}
+
+.ep-castle-by {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 6px 0 0;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.ep-castle-by img {
+    height: 44px;
+    width: auto;
+    border-radius: 4px;
+}
+
+/* Live page: tiles built from the programme */
+.ep-ent-gen .ep-ent-side h3 {
+    font-size: clamp(1.3rem, 2.4vw, 1.9rem);
+}
+
+.ep-ent-gen .ep-ent-side h3 span {
+    display: block;
+    font-size: 0.62em;
+    margin-top: 4px;
+    color: var(--ep-orange);
+}
+
+.ep-ent-gen .ep-ent-hosts h3 span {
+    color: var(--ep-lime);
+}
+
+.ep-ent-gen .ep-ent-hosts p:not(.ep-kicker) {
+    margin: 8px 0 0;
+    font-size: 0.92rem;
+    line-height: 1.4;
+    color: #f3e3d0;
+}
+
+.ep-ent-gen .ep-ent-side .ep-ent-link {
+    color: inherit;
+    text-decoration: underline;
+    display: inline-block;
+    margin-top: 8px;
+}
+
+.ep-ent-gen .ep-ent-band h3 span {
+    display: block;
+}
+
+/* Computer: the four small tiles share the height, the band fills the left */
+@media screen and (min-width: 861px) {
+    .ep-ent {
+        grid-template-rows: repeat(4, 1fr) !important;
+        align-items: stretch;
+    }
+
+    .ep-ent-card:not(.ep-ent-band) {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .ep-ent-castle {
+        flex-direction: row !important;
+    }
+
+    .ep-ent-hosts {
+        display: grid !important;
+    }
+
+    .ep-ent-band .ep-ent-photo {
+        flex: 1 1 auto;
+        aspect-ratio: auto;
+        height: auto;
+        min-height: 0;
+        object-position: 30% 25%;
+    }
+
+    .ep-ent-band .ep-ent-band-text {
+        margin-top: auto;
+    }
+
+    /* Compact cricket tile */
+    .ep-ent-cricket {
+        padding: 20px 24px;
+    }
+
+    .ep-vs {
+        margin: 4px 0 10px;
+    }
+
+    .ep-vs img {
+        height: 84px;
+    }
+
+    .ep-vs span {
+        font-size: 2.2rem;
+    }
+
+    .ep-ent-cricket h3 {
+        font-size: clamp(1.35rem, 2.2vw, 1.9rem) !important;
+        margin: 0 0 8px;
+    }
+
+    .ep-ent-cricket p:last-child {
+        font-size: 0.95rem;
+        margin: 0;
+    }
+}
+
+/* Tablet and phone: one column, tiles in page order */
+@media (max-width: 900px) {
+    .ep-ent {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media screen and (max-width: 860px) {
+    .ep-top2 {
+        grid-template-columns: 1fr;
+    }
+
+    .ep-ent-band,
+    .ep-ent-hosts,
+    .ep-ent-bingo,
+    .ep-ent-cricket,
+    .ep-ent-castle {
+        grid-column: auto;
+        grid-row: auto !important;
+    }
+
+    .ep-ent-gen .ep-ent-card {
+        grid-column: auto !important;
+        grid-row: auto !important;
+    }
+}
+
+@media (max-width: 600px) {
+    .ep-ent-badge {
+        position: static;
+        display: inline-block;
+        margin-bottom: 10px;
+    }
+
+    .ep-vs img {
+        height: 110px;
+    }
+}
+
+/* ==========================================================================
+   TIMES - the run sheet, with the poster beside it
+   ========================================================================== */
+.ep-times-poster {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+    gap: 30px;
+    align-items: start;
+}
 
 .ep-times,
 .ep-know {
@@ -661,96 +1135,46 @@ a.ep-fv:focus-visible {
     box-shadow: 0 4px 0 rgba(29, 13, 2, 0.2);
 }
 
+/* time | what's on (small line under it) */
+.ep-times li {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+
 .ep-times b {
     display: inline-block;
-    min-width: 80px;
+    flex: none;
+    min-width: 130px;
     color: var(--ep-orange);
+    white-space: nowrap;
 }
 
-.ep-print-only {
+.ep-times span {
+    font-weight: bold;
+}
+
+.ep-times li > span {
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.ep-times small {
+    display: block;
+    font-weight: normal;
+    font-size: 0.85em;
+    color: #6b4524;
+    margin-top: 2px;
+}
+
+.ep-times li > span small {
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+/* The cover's copy of the times is for paper only */
+.ep-times-cover {
     display: none;
-}
-
-/* ---- tablet / phone ---- */
-@media (max-width: 900px) {
-    .ep-hero-inner {
-        grid-template-columns: 1fr;
-        gap: 34px;
-    }
-    .ep-hero-art {
-        min-height: 0;
-        max-width: 460px;
-        width: 100%;
-        justify-self: center;
-    }
-    .ep-badge-round {
-        width: 120px;
-        height: 120px;
-        font-size: 1rem;
-    }
-
-    .ep-market-panel {
-        grid-template-columns: 1fr;
-    }
-    .ep-market {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .ep-ent {
-        grid-template-columns: 1fr;
-    }
-    .ep-ent-band {
-        grid-row: auto;
-    }
-}
-
-@media (max-width: 700px) {
-    .ep-food,
-    .ep-two {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 600px) {
-    .ep-hero-inner {
-        padding: calc(var(--sg-nav-height, 78px) + 22px) 16px 30px;
-    }
-    .ep-section {
-        padding: 36px 16px 0;
-    }
-    .ep-title {
-        -webkit-text-stroke: 2px var(--ep-ink);
-        text-shadow: 4px 4px 0 var(--ep-ink);
-    }
-    .ep-fv {
-        min-height: 104px;
-    }
-    .ep-fv-pic {
-        width: 110px;
-    }
-    .ep-facts {
-        grid-template-columns: 1fr 1fr;
-    }
-    .ep-btn {
-        flex: 1;
-    }
-    .ep-ent-badge {
-        position: static;
-        display: inline-block;
-        margin-bottom: 10px;
-    }
-}
-
-/* the band card's photo runs edge to edge, on screen and on paper */
-.ep-ent-card.ep-ent-band {
-    padding: 0;
-}
-
-/* ---- times with the poster beside them ---- */
-.ep-times-poster {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
-    gap: 30px;
-    align-items: start;
 }
 
 .ep-poster {
@@ -772,757 +1196,10 @@ a.ep-fv:focus-visible {
     .ep-times-poster {
         grid-template-columns: 1fr;
     }
+
     .ep-poster {
         max-width: 320px;
         justify-self: center;
-    }
-}
-
-@media print {
-    /* ======================================================================
-       THE A4 MINI MAGAZINE
-       Four full sheets, orange to the edge, 12mm inside margin.
-       Page 1 cover | 2 food | 3 entertainment + times | 4 market, good to
-       know, sponsors (bottom third). Every page is exactly one A4 tall, so
-       nothing can spill onto a fifth.
-       ====================================================================== */
-    @page {
-        size: A4;
-        margin: 0;
-    }
-
-    html,
-    body.event-page {
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-        background: #f39243 !important;
-        font-size: 12pt;
-        margin: 0;
-    }
-
-    #navbar,
-    #footer,
-    .navbar,
-    .footer,
-    .ep-actions,
-    .ep-share-note,
-    .ep-fv-go,
-    .ep-ent-link,
-    .ep-poster-link {
-        display: none !important;
-    }
-
-    /* one sheet each */
-    .ep-page {
-        box-sizing: border-box;
-        height: 297mm;
-        padding: 12mm 13mm;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        break-after: page;
-        max-width: none;
-        margin: 0;
-    }
-    .ep-page-4 {
-        break-after: auto;
-    }
-    .ep-page > .ep-section {
-        max-width: none;
-        padding: 0;
-        margin: 0;
-    }
-    .ep-page.ep-section {
-        max-width: none;
-        margin: 0;
-        padding: 12mm 13mm;
-    } /* the food page is its own section */
-
-    /* no web shadows or hover lifts on paper */
-    .ep-fv,
-    .ep-mt,
-    .ep-card,
-    .ep-ent-card,
-    .ep-times li,
-    .ep-know li,
-    .ep-facts li,
-    .ep-sponsors {
-        box-shadow: none !important;
-        transform: none;
-    }
-
-    .ep-h2 {
-        font-size: 30pt;
-        margin: 0 0 6mm;
-    }
-    .ep-head {
-        margin: 0 0 6mm;
-    }
-    .ep-head .ep-h2 {
-        margin: 0;
-    }
-    .ep-strap {
-        font-size: 8.5pt;
-    }
-
-    /* ---------------- PAGE 1: THE COVER ---------------- */
-    .ep-hero {
-        padding: 12mm 13mm;
-    }
-    .ep-hero-inner {
-        display: grid;
-        grid-template-columns: 1fr 1.05fr;
-        grid-template-rows: auto auto auto auto 1fr; /* logo, kicker, title, subline, then the rest */
-        column-gap: 8mm;
-        padding: 0;
-        height: 100%;
-        max-width: none;
-    }
-    .ep-hero-body {
-        display: contents;
-    }
-    .ep-hero-body .ep-kicker {
-        grid-column: 1 / -1;
-        font-size: 10pt;
-        margin: 0 0 4mm;
-    }
-    .ep-title {
-        grid-column: 1 / -1;
-        font-size: 92pt;
-        line-height: 0.86;
-        -webkit-text-stroke: 4px var(--ep-ink);
-        text-shadow: 7px 7px 0 var(--ep-ink);
-    }
-    .ep-subline {
-        grid-column: 1 / -1;
-        font-size: 20pt;
-        margin: 6mm 0 4mm;
-    }
-    .ep-intro {
-        grid-column: 1;
-        grid-row: 5;
-        font-size: 13pt;
-        line-height: 1.5;
-        max-width: none;
-        margin: 4mm 0 0;
-        align-self: start;
-    }
-    .ep-facts {
-        grid-column: 1;
-        grid-row: 5;
-        align-self: end;
-        grid-template-columns: 1fr;
-        gap: 3mm;
-        max-width: none;
-        margin-bottom: 6mm;
-    }
-    .ep-facts li {
-        font-size: 14pt;
-        padding: 3.5mm 5mm;
-    }
-    .ep-facts b {
-        font-size: 8pt;
-    }
-    .ep-hero-art {
-        grid-column: 2;
-        grid-row: 5;
-        align-self: end;
-        min-height: 0;
-        margin: 0 -13mm -12mm 0;
-        width: auto;
-    }
-    .ep-skeleton {
-        width: 100%;
-        max-width: none;
-        filter: none;
-    }
-    .ep-palm-1 {
-        right: 2mm;
-        width: 42mm;
-        height: 66mm;
-    }
-    .ep-palm-2 {
-        left: -6mm;
-        width: 30mm;
-        height: 48mm;
-    }
-    .ep-badge-round {
-        width: 38mm;
-        height: 38mm;
-        font-size: 15pt;
-        top: 0;
-        left: -6mm;
-        box-shadow: 3px 3px 0 var(--ep-ink);
-    }
-    .ep-badge-free {
-        bottom: 22mm;
-        left: -14mm;
-        font-size: 17pt;
-        box-shadow: 3px 3px 0 var(--ep-ink);
-    }
-    .ep-bat-1 {
-        width: 16mm;
-    }
-    .ep-bat-2 {
-        width: 12mm;
-    }
-    .ep-bat-3 {
-        width: 10mm;
-    }
-
-    /* ---------------- PAGE 2: FOOD ---------------- */
-    .ep-food {
-        flex: 1;
-        grid-template-columns: 1fr 1fr;
-        grid-auto-rows: 1fr;
-        gap: 4mm;
-    }
-    .ep-fv {
-        min-height: 0;
-        border: none;
-    }
-    .ep-fv-pic {
-        width: 44%;
-        max-width: none;
-    }
-    .ep-fv-text {
-        padding: 4mm 5mm;
-        gap: 1.5mm;
-    }
-    .ep-fv-text small {
-        font-size: 8pt;
-    }
-    .ep-fv-text b {
-        font-size: 16pt;
-    }
-    .ep-fv-text span {
-        font-size: 10pt;
-        line-height: 1.4;
-    }
-
-    /* ---------------- PAGE 3: ENTERTAINMENT + TIMES ---------------- */
-    .ep-page-3 > .ep-section:first-child {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-    .ep-ent {
-        flex: 1;
-        grid-template-columns: 1.35fr 1fr;
-        grid-template-rows: 1fr 1fr 1fr;
-        gap: 4mm;
-    }
-    .ep-ent-band {
-        grid-row: 1 / span 3;
-    }
-    .ep-ent-photo {
-        aspect-ratio: auto;
-        flex: 1;
-        min-height: 0;
-        height: auto;
-    }
-    .ep-ent-band-text {
-        padding: 5mm 6mm 6mm;
-    }
-    .ep-ent-band h3 {
-        font-size: 26pt;
-    }
-    .ep-ent-band-text p:not(.ep-kicker) {
-        font-size: 10pt;
-        line-height: 1.45;
-        margin: 0;
-    }
-    .ep-ent-card:not(.ep-ent-band) {
-        padding: 5mm 6mm;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    .ep-ent-card h3 {
-        font-size: 21pt;
-        margin: 0 0 2mm;
-    }
-    .ep-ent-card p:last-child {
-        font-size: 10.5pt;
-    }
-    .ep-ent-card .ep-kicker {
-        font-size: 8pt;
-        margin-bottom: 2mm;
-    }
-    .ep-ent-badge {
-        position: absolute;
-        top: 4mm;
-        right: 4mm;
-        font-size: 11pt;
-        padding: 2mm 3.5mm;
-    }
-
-    .ep-times-poster {
-        display: grid;
-        grid-template-columns: 1fr 58mm;
-        gap: 8mm;
-        align-items: end;
-        margin-top: 7mm !important;
-    }
-    .ep-times-poster .ep-h2 {
-        margin-bottom: 4mm;
-    }
-    .ep-times {
-        gap: 3mm;
-    }
-    .ep-times li {
-        font-size: 13pt;
-        padding: 4mm 5mm;
-    }
-    .ep-times b {
-        min-width: 26mm;
-    }
-
-    .ep-poster {
-        width: 58mm;
-        transform: rotate(2deg);
-        border-width: 2px;
-        box-shadow: 3px 3px 0 var(--ep-ink) !important;
-    }
-
-    /* ---------------- PAGE 4: MARKET, GOOD TO KNOW, SPONSORS ---------------- */
-    /* title across the top (strap beside it), tiles full width under it */
-    .ep-market-panel {
-        grid-template-columns: 1fr;
-        gap: 6mm;
-    }
-    .ep-market-title {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        column-gap: 10mm;
-        align-items: end;
-    }
-    .ep-market-title .ep-kicker {
-        grid-column: 1 / -1;
-    }
-    .ep-big {
-        font-size: 30pt;
-        margin-bottom: 0;
-    }
-    .ep-market-strap {
-        font-size: 9pt;
-        margin-bottom: 2mm;
-    }
-    .ep-market {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 3.5mm;
-    }
-    .ep-big::after {
-        bottom: -12px;
-    }
-    .ep-mt {
-        padding: 3.5mm 4mm;
-    }
-    .ep-mt svg {
-        width: 9mm;
-        height: 9mm;
-    }
-    .ep-mt b {
-        font-size: 9pt;
-    }
-    .ep-mt li {
-        font-size: 8pt;
-    }
-    .ep-mt a {
-        text-decoration: none;
-    }
-
-    .ep-page-4 > .ep-section + .ep-section {
-        margin-top: 7mm;
-    }
-    .ep-page-4 .ep-h2 {
-        font-size: 24pt;
-        margin-bottom: 4mm;
-    }
-
-    .ep-page-4 > .ep-section + .ep-section:not(:has(.ep-sponsors)) {
-        margin-top: 6mm;
-    }
-
-    /* sponsors: the bottom third of the sheet */
-    .ep-page-4 > .ep-section:has(.ep-sponsors) {
-        margin-top: auto !important;
-        padding-top: 6mm;
-    }
-    .ep-sponsors {
-        height: 88mm;
-        box-sizing: border-box;
-        padding: 6mm 8mm;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    .ep-sponsors .ep-h2 {
-        font-size: 22pt;
-        margin-bottom: 5mm;
-        color: #fff;
-    }
-
-    .ep-sponsors p {
-        margin: 5mm 0 0;
-        font-size: 10pt;
-    }
-
-    .ep-print-only {
-        display: block;
-    }
-    .ep-print-url {
-        margin: 4mm 0 0;
-        text-align: center;
-        font-family: var(--sg-font-accent);
-        font-weight: bold;
-        font-size: 9pt;
-        letter-spacing: 0.1em;
-    }
-}
-
-/* ==========================================================================
-   MORE VENDORS, SAME 4 PAGES
-   js/event-page.js tags the food section and the page-4 wrapper with
-   data-size (s / m / l / xl / xxl) from how many paid vendors there are.
-   On paper the cards get more columns and smaller type as the list grows,
-   so nothing is ever cut off the bottom of a sheet.
-   ========================================================================== */
-
-/* on screen: long tile lists stay tidy */
-.ep-mt ul {
-    max-height: none;
-}
-
-@media print {
-    /* ---- FOOD (page 2) ---- */
-    #ep-food[data-size='m'] .ep-food {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 3.5mm;
-    }
-    #ep-food[data-size='m'] .ep-fv-pic {
-        width: 40%;
-    }
-    #ep-food[data-size='m'] .ep-fv-text {
-        padding: 3mm 3.5mm;
-    }
-    #ep-food[data-size='m'] .ep-fv-text b {
-        font-size: 12.5pt;
-    }
-    #ep-food[data-size='m'] .ep-fv-text span {
-        font-size: 8.5pt;
-    }
-
-    #ep-food[data-size='l'] .ep-food {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 3mm;
-    }
-    #ep-food[data-size='l'] .ep-fv-pic {
-        width: 36%;
-    }
-    #ep-food[data-size='l'] .ep-fv-text {
-        padding: 2mm 3mm;
-        gap: 1mm;
-    }
-    #ep-food[data-size='l'] .ep-fv-text small {
-        font-size: 6.5pt;
-    }
-    #ep-food[data-size='l'] .ep-fv-text b {
-        font-size: 11pt;
-    }
-    #ep-food[data-size='l'] .ep-fv-text span {
-        font-size: 7.5pt;
-        line-height: 1.3;
-    }
-
-    #ep-food[data-size='xl'] .ep-food,
-    #ep-food[data-size='xxl'] .ep-food {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 2.5mm;
-    }
-    #ep-food[data-size='xl'] .ep-fv-pic {
-        width: 34%;
-    }
-    #ep-food[data-size='xxl'] .ep-fv-pic {
-        display: none;
-    }
-    #ep-food[data-size='xl'] .ep-fv-text,
-    #ep-food[data-size='xxl'] .ep-fv-text {
-        padding: 2mm 2.5mm;
-        gap: 0.8mm;
-    }
-    #ep-food[data-size='xl'] .ep-fv-text small,
-    #ep-food[data-size='xxl'] .ep-fv-text small {
-        font-size: 6pt;
-    }
-    #ep-food[data-size='xl'] .ep-fv-text b,
-    #ep-food[data-size='xxl'] .ep-fv-text b {
-        font-size: 9.5pt;
-    }
-    #ep-food[data-size='xl'] .ep-fv-text span,
-    #ep-food[data-size='xxl'] .ep-fv-text span {
-        display: none;
-    }
-
-    /* ---- MARKET + GOOD TO KNOW (page 4) ---- */
-    .ep-page-4[data-size='m'] .ep-market,
-    .ep-page-4[data-size='l'] .ep-market {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 2.5mm;
-    }
-    .ep-page-4[data-size='m'] .ep-mt,
-    .ep-page-4[data-size='l'] .ep-mt {
-        padding: 2.5mm 3mm;
-    }
-    .ep-page-4[data-size='m'] .ep-mt-head,
-    .ep-page-4[data-size='l'] .ep-mt-head {
-        padding-bottom: 1.5mm;
-        margin-bottom: 1.5mm;
-        gap: 2mm;
-    }
-    .ep-page-4[data-size='m'] .ep-mt svg,
-    .ep-page-4[data-size='l'] .ep-mt svg {
-        width: 6mm;
-        height: 6mm;
-    }
-    .ep-page-4[data-size='m'] .ep-mt b {
-        font-size: 7.5pt;
-    }
-    .ep-page-4[data-size='l'] .ep-mt b {
-        font-size: 7pt;
-    }
-    .ep-page-4[data-size='m'] .ep-mt ul {
-        gap: 0.6mm;
-    }
-    .ep-page-4[data-size='l'] .ep-mt ul {
-        gap: 0.3mm;
-    }
-    .ep-page-4[data-size='m'] .ep-mt li {
-        font-size: 6.8pt;
-    }
-    .ep-page-4[data-size='l'] .ep-mt li {
-        font-size: 6.2pt;
-    }
-    .ep-page-4[data-size='m'] .ep-big,
-    .ep-page-4[data-size='l'] .ep-big {
-        font-size: 24pt;
-    }
-    .ep-page-4[data-size='m'] .ep-market-panel,
-    .ep-page-4[data-size='l'] .ep-market-panel {
-        gap: 4mm;
-    }
-
-    /* good to know folds into three short columns to make room */
-    .ep-page-4[data-size='m'] .ep-know,
-    .ep-page-4[data-size='m'] .ep-know li,
-    .ep-page-4[data-size='m'] .ep-h2,
-    .ep-page-4[data-size='l'] .ep-h2 {
-        font-size: 20pt;
-        margin-bottom: 2.5mm;
-    }
-    .ep-page-4[data-size='l'] .ep-sponsors {
-        height: 82mm;
-    }
-}
-
-/* the Eatz & Beatz logo at the top of the cover */
-.ep-logo {
-    display: block;
-    width: min(240px, 60%);
-    height: auto;
-    margin: 0 0 18px;
-    transform: rotate(-3deg);
-    filter: drop-shadow(4px 4px 0 rgba(29, 13, 2, 0.35));
-}
-
-/* a vendor photo that's really a logo: show it whole, on white */
-.ep-fv-pic-logo {
-    background-size: contain !important;
-    background-repeat: no-repeat;
-    background-color: #fff;
-}
-
-@media print {
-    .ep-logo {
-        grid-column: 1 / -1;
-        width: 52mm;
-        margin: 0 0 5mm;
-        filter: none;
-    }
-    .ep-title {
-        font-size: 78pt;
-    }
-    .ep-subline {
-        font-size: 18pt;
-        margin: 5mm 0 2mm;
-    }
-    .ep-facts {
-        grid-template-columns: 1fr 1fr !important;
-    }
-    .ep-facts li {
-        font-size: 12pt !important;
-        padding: 3mm 4mm !important;
-    }
-    .ep-intro {
-        font-size: 12.5pt !important;
-    }
-    .ep-badge-round {
-        top: 6mm !important;
-    }
-}
-
-/* the run sheet: time | what's on (+ a small line under it) */
-.ep-times li {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-}
-.ep-times b {
-    flex: none;
-    min-width: 130px;
-}
-.ep-times span {
-    font-weight: bold;
-}
-.ep-times small {
-    display: block;
-    font-weight: normal;
-    font-size: 0.85em;
-    color: #6b4524;
-    margin-top: 2px;
-}
-
-@media print {
-    .ep-times b {
-        min-width: 30mm;
-    }
-    .ep-times li {
-        font-size: 11.5pt !important;
-        padding: 3mm 4.5mm !important;
-    }
-    .ep-times small {
-        font-size: 8.5pt;
-    }
-    .ep-times {
-        gap: 2.2mm !important;
-    }
-}
-
-@media print {
-    /* page 3 holds the full run sheet, so the entertainment block gives up a little height */
-    .ep-page-3 > .ep-section:first-child {
-        flex: 1;
-        min-height: 0;
-    }
-    .ep-ent {
-        min-height: 0;
-    }
-    .ep-ent-photo {
-        flex: none !important;
-        height: 88mm !important;
-    }
-    .ep-ent-band-text p:not(.ep-kicker) {
-        font-size: 9.5pt;
-    }
-    .ep-ent-card:not(.ep-ent-band) p:last-child {
-        font-size: 9.5pt;
-    }
-    .ep-times-poster {
-        margin-top: 5mm !important;
-    }
-    .ep-times-poster .ep-h2 {
-        font-size: 24pt;
-        margin-bottom: 3mm;
-    }
-    .ep-poster {
-        width: 52mm !important;
-    }
-    .ep-times-poster {
-        grid-template-columns: 1fr 52mm !important;
-    }
-}
-
-/* "COME" / "HUNGRY." - one word per line, and the full stop never drops
-   onto a line of its own. Sized to the column. */
-.ep-title span {
-    display: block;
-    white-space: nowrap;
-}
-.ep-title {
-    font-size: clamp(3rem, 7.2vw, 6.4rem);
-}
-
-/* website: the Eatz & Beatz logo sits top right of the cover, above the
-   skeleton. Phones and the printout keep it at the top left. */
-@media screen and (min-width: 901px) {
-    .ep-hero-inner {
-        position: relative;
-    }
-    .ep-logo {
-        position: absolute;
-        top: calc(var(--sg-nav-height, 88px) + 24px);
-        right: 6%;
-        z-index: 4;
-        width: 230px;
-        margin: 0;
-        transform: rotate(4deg);
-    }
-}
-
-@media screen and (min-width: 901px) {
-    /* the skeleton sits under the logo, not behind it */
-    .ep-hero-art {
-        padding-top: 215px;
-    }
-    .ep-skeleton {
-        width: min(100%, 420px);
-    }
-    .ep-badge-round {
-        top: 250px;
-    }
-}
-
-/* PRINT: every A4 sheet gets the orange sunset gradient - also
-   keeps the cover title big (the screen size rule above would shrink it) */
-@media print {
-    .ep-page {
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-        /* a ready-made gradient picture, not a CSS gradient - prints the same on every printer */
-        background: #f39243 url('../images/events/print-bg-orange.jpg') center / 100% 100% no-repeat;
-    }
-    .ep-title {
-        font-size: 90pt;
-    }
-}
-
-/* "SOUNDZGOOD PRESENTS" centred across the top, like the poster */
-.ep-presents {
-    text-align: center;
-    font-size: 0.85rem;
-    letter-spacing: 0.4em;
-}
-
-@media screen and (min-width: 901px) {
-    .ep-presents {
-        position: absolute;
-        top: calc(var(--sg-nav-height, 88px) + 4px);
-        left: 0;
-        right: 0;
-        margin: 0;
-    }
-}
-
-@media print {
-    .ep-hero-body .ep-presents {
-        grid-column: 1 / -1;
-        grid-row: 1;
-        text-align: center;
-        font-size: 11pt;
-        margin: 0 0 3mm;
-    }
-    .ep-logo {
-        grid-row: 2;
     }
 }
 
@@ -1592,6 +1269,13 @@ a.ep-fv:focus-visible {
     width: 26px;
     height: 26px;
 }
+
+.ep-faq-ic b {
+    font-family: var(--ep-poster-font);
+    font-size: 22px;
+    font-weight: 400;
+}
+
 .ep-faq-item b {
     display: block;
     font-family: var(--ep-poster-font);
@@ -1600,6 +1284,7 @@ a.ep-fv:focus-visible {
     font-size: 1rem;
     margin-bottom: 3px;
 }
+
 .ep-faq-item p {
     margin: 0;
     font-size: 0.92rem;
@@ -1613,108 +1298,33 @@ a.ep-fv:focus-visible {
     }
 }
 
-@media print {
-    .ep-faq-head {
-        margin-bottom: 3mm;
-        display: flex;
-        align-items: baseline;
-        flex-wrap: wrap;
-        column-gap: 5mm;
-    }
-    .ep-faq-tag {
-        font-size: 12pt;
-        padding: 1mm 4mm;
-        margin: 0;
-        box-shadow: 2px 2px 0 var(--ep-ink);
-    }
-    .ep-faq-head .ep-h2 {
-        font-size: 22pt !important;
-        margin: 0 !important;
-    }
-    .ep-faq-sub {
-        flex-basis: 100%;
-        font-size: 8pt;
-        margin-top: 1mm;
-    }
-    .ep-faq {
-        gap: 2mm;
-    }
-    .ep-faq-item {
-        box-shadow: none;
-        padding: 2mm 3mm;
-        gap: 3mm;
-        break-inside: avoid;
-    }
-    .ep-faq-ic {
-        width: 8mm;
-        height: 8mm;
-    }
-    .ep-faq-ic svg {
-        width: 5mm;
-        height: 5mm;
-    }
-    .ep-faq-item b {
-        font-size: 8pt;
-        margin-bottom: 0.5mm;
-    }
-    .ep-faq-item p {
-        font-size: 7.5pt;
-        line-height: 1.3;
-    }
-}
-
-@media print {
-    /* page 4 carries market + FAQ + sponsors (bottom third): tighten the top two */
-    .ep-page-4 .ep-big {
-        font-size: 22pt !important;
-    }
-    .ep-page-4 .ep-market-panel {
-        gap: 3.5mm !important;
-    }
-    .ep-page-4 .ep-market {
-        gap: 2.5mm !important;
-    }
-    .ep-page-4 .ep-mt {
-        padding: 2.2mm 3mm !important;
-    }
-    .ep-page-4 .ep-mt-head {
-        padding-bottom: 1.5mm;
-        margin-bottom: 1.5mm;
-    }
-    .ep-page-4 .ep-mt svg {
-        width: 6.5mm;
-        height: 6.5mm;
-    }
-    .ep-page-4 > .ep-section + .ep-section:not(:has(.ep-sponsors)) {
-        margin-top: 4mm !important;
-    }
-    .ep-faq-item {
-        padding: 1.6mm 2.6mm !important;
-    }
-    .ep-faq {
-        gap: 1.6mm !important;
-    }
-    .ep-faq-ic {
-        width: 7mm;
-        height: 7mm;
-    }
-    .ep-faq-item p {
-        font-size: 7pt;
-    }
-    .ep-page-4 > .ep-section:has(.ep-sponsors) {
-        padding-top: 4mm !important;
-    }
-    .ep-sponsors {
-        height: 86mm !important;
-    }
-    .ep-print-url {
-        margin-top: 3mm !important;
-    }
-}
-
 /* ==========================================================================
-   SPONSORS: one tile per logo, evenly spaced
+   SPONSORS - the poster's logo strip on black, one tile per logo
    ========================================================================== */
+.ep-sponsors {
+    background: #000;
+    color: #fff;
+    border-radius: 16px;
+    padding: 22px 24px;
+    text-align: center;
+    box-shadow: 0 6px 0 rgba(29, 13, 2, 0.3);
+}
+
+.ep-sponsors .ep-h2 {
+    color: #fff;
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    margin-bottom: 12px;
+}
+
+.ep-sponsors p {
+    margin: 12px 0 0;
+}
+
+.ep-sponsors a {
+    color: var(--ep-lime);
+    font-weight: bold;
+}
+
 .ep-sponsor-grid {
     list-style: none;
     padding: 0;
@@ -1726,7 +1336,7 @@ a.ep-fv:focus-visible {
 }
 
 .ep-sponsor-grid li {
-    width: calc(20% - 18px); /* 5 across on a wide screen, 4 below */
+    width: calc(20% - 18px); /* five across, then four */
     height: 96px;
     display: grid;
     place-items: center;
@@ -1734,1539 +1344,24 @@ a.ep-fv:focus-visible {
     border-radius: 10px;
     padding: 10px 14px;
     box-sizing: border-box;
-}
-
-.ep-sponsor-grid img {
-    max-width: 100%;
-    max-height: 100%;
-    width: auto;
-    height: auto;
-    object-fit: contain;
-}
-
-@media (max-width: 700px) {
-    .ep-sponsor-grid li {
-        width: calc(33.33% - 15px);
-        height: 78px;
-        padding: 8px;
-    }
-}
-
-@media print {
-    .ep-sponsor-grid {
-        gap: 3mm 4mm;
-    }
-    .ep-sponsor-grid li {
-        width: calc(33.33% - 3mm);
-        height: 17mm;
-        padding: 2mm 4mm;
-        border-color: #333;
-    }
-    .ep-sponsors .ep-h2 {
-        margin-bottom: 4mm !important;
-    }
-}
-
-/* each logo is held to its tile (a % height doesn't hold inside the tile) */
-.ep-sponsor-grid li {
     overflow: hidden;
 }
+
 .ep-sponsor-grid img {
-    max-height: 74px;
-    max-width: 100%;
-}
-@media (max-width: 700px) {
-    .ep-sponsor-grid img {
-        max-height: 60px;
-    }
-}
-@media print {
-    .ep-sponsor-grid img {
-        max-height: 13mm;
-    }
-}
-
-@media print {
-    /* 5 + 4 like the website, bigger tiles so every logo reads */
-    .ep-sponsor-grid {
-        gap: 3mm;
-    }
-    .ep-sponsor-grid li {
-        width: calc(20% - 2.4mm);
-        height: 24mm;
-        padding: 1.5mm 2mm;
-    }
-    .ep-sponsor-grid img {
-        max-height: 20mm;
-    }
-}
-
-/* desktop cover: large logo, smaller skeleton */
-@media screen and (min-width: 901px) {
-    .ep-logo {
-        width: 345px;
-    }
-    .ep-hero-art {
-        padding-top: 305px;
-    }
-    .ep-skeleton {
-        width: min(100%, 336px);
-    }
-    .ep-badge-round {
-        top: 320px;
-        width: 130px;
-        height: 130px;
-        font-size: 1.1rem;
-    }
-    .ep-palm-1 {
-        width: 136px;
-        height: 216px;
-    }
-}
-@media screen and (max-width: 900px) {
-    .ep-logo {
-        width: min(360px, 90%);
-    }
-    .ep-hero-art {
-        max-width: 368px;
-    }
-}
-@media print {
-    .ep-logo {
-        width: 78mm !important;
-    }
-    .ep-hero-art {
-        margin-right: 0 !important;
-        justify-self: end;
-        width: 80% !important;
-    }
-}
-@media print {
-    .ep-logo {
-        width: 70mm !important;
-        margin-bottom: 2mm !important;
-    }
-    .ep-title {
-        font-size: 76pt !important;
-    }
-    .ep-subline {
-        margin: 3mm 0 1mm !important;
-    }
-    .ep-intro {
-        margin-top: 2mm !important;
-        font-size: 11.5pt !important;
-    }
-}
-
-/* ---- free jumping castle card ---- */
-.ep-ent {
-    grid-template-rows: auto auto auto auto;
-}
-.ep-ent-band {
-    grid-row: span 4;
-}
-.ep-ent-castle {
-    background: #fff;
-    color: var(--ep-ink);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-.ep-castle-pic {
-    flex: none;
-    width: 38%;
-    max-width: 170px;
-    height: auto;
-}
-.ep-castle-by {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 6px 0 0;
-    font-weight: bold;
-    font-size: 0.9rem;
-}
-.ep-castle-by img {
-    height: 44px;
     width: auto;
-    border-radius: 4px;
-}
-
-@media (max-width: 900px) {
-    .ep-ent-band {
-        grid-row: auto;
-    }
-}
-
-@media print {
-    .ep-ent {
-        grid-template-rows: 1fr 1fr 1fr 1fr !important;
-    }
-    .ep-ent-band {
-        grid-row: 1 / span 4 !important;
-    }
-    .ep-castle-pic {
-        width: 26mm;
-    }
-    .ep-castle-by {
-        font-size: 8.5pt;
-    }
-    .ep-castle-by img {
-        height: 9mm;
-    }
-    .ep-ent-card:not(.ep-ent-band) {
-        padding: 3.5mm 5mm !important;
-    }
-    .ep-ent-card:not(.ep-ent-band) h3 {
-        font-size: 17pt !important;
-        margin-bottom: 1mm !important;
-    }
-    .ep-ent-card .ep-kicker {
-        margin-bottom: 1mm !important;
-    }
-}
-@media print {
-    .ep-ent-card.ep-ent-castle {
-        flex-direction: row !important;
-        align-items: center !important;
-        justify-content: flex-start !important;
-        gap: 4mm;
-        overflow: hidden;
-    }
-    .ep-castle-pic {
-        width: 24mm !important;
-    }
-}
-
-@media print {
-    .ep-ent-castle .ep-kicker {
-        display: none;
-    }
-    .ep-castle-by {
-        margin-top: 1mm;
-    }
-}
-
-/* ==========================================================================
-   PRINT COVER: big logo, big title, no gaps - words stacked down the
-   left, skeleton tucked bottom right.
-   ========================================================================== */
-@media print {
-    .ep-hero-inner {
-        display: block !important;
-        position: relative;
-        height: 100%;
-    }
-    .ep-hero-body {
-        display: block !important;
-        position: relative;
-        z-index: 2;
-    }
-    .ep-hero-body .ep-presents {
-        margin: 0 0 4mm !important;
-        font-size: 10pt;
-    }
-    .ep-logo {
-        display: block;
-        width: 92mm !important;
-        margin: 0 0 5mm !important;
-        transform: rotate(-3deg);
-    }
-    .ep-title {
-        font-size: 98pt !important;
-        line-height: 0.86;
-        color: #fff3d6;
-        margin: 0;
-    }
-    .ep-subline {
-        font-size: 21pt !important;
-        margin: 5mm 0 6mm !important;
-    }
-    .ep-intro {
-        width: 112mm;
-        font-size: 12.5pt !important;
-        margin: 0 0 7mm !important;
-    }
-    .ep-facts {
-        width: 112mm;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 3.5mm !important;
-        margin: 0 !important;
-    }
-    .ep-facts li {
-        font-size: 13pt !important;
-        padding: 4mm 5mm !important;
-    }
-    .ep-hero-art {
-        position: absolute !important;
-        right: -13mm;
-        bottom: -12mm;
-        width: 92mm !important;
-        margin: 0 !important;
-        z-index: 1;
-    }
-    .ep-badge-round {
-        top: -4mm !important;
-        left: -10mm !important;
-        width: 36mm !important;
-        height: 36mm !important;
-    }
-    .ep-badge-free {
-        bottom: 16mm !important;
-        left: -16mm !important;
-    }
-}
-@media print {
-    .ep-hero-body {
-        display: flex !important;
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    .ep-hero-body .ep-presents {
-        order: -1;
-        align-self: stretch;
-        text-align: center;
-    }
-    .ep-intro {
-        width: auto !important;
-        max-width: 108mm !important;
-    }
-    .ep-hero-art {
-        width: 88mm !important;
-    }
-    .ep-badge-round {
-        top: -14mm !important;
-        left: auto !important;
-        right: 52mm;
-    }
-}
-@media print {
-    /* sponsors = a full third of the A4 */
-    .ep-sponsors {
-        height: 99mm !important;
-        padding: 5mm 6mm !important;
-    }
-    .ep-sponsors .ep-h2 {
-        font-size: 24pt !important;
-        margin-bottom: 4mm !important;
-    }
-    .ep-sponsor-grid {
-        gap: 3.5mm !important;
-    }
-    .ep-sponsor-grid li {
-        height: 29mm !important;
-        padding: 2mm !important;
-    }
-    .ep-sponsor-grid img {
-        max-height: 25mm !important;
-    }
-    .ep-sponsors p {
-        margin-top: 4mm !important;
-    }
-    .ep-print-url {
-        display: none !important;
-    }
-    .ep-page-4 > .ep-section:has(.ep-sponsors) {
-        padding-top: 3mm !important;
-    }
-    /* give the room back from market + FAQ */
-    .ep-page-4 .ep-big {
-        font-size: 20pt !important;
-    }
-    .ep-faq-head .ep-h2 {
-        font-size: 19pt !important;
-    }
-    .ep-faq-item {
-        padding: 1.3mm 2.4mm !important;
-    }
-    .ep-faq-item p {
-        font-size: 6.8pt !important;
-        line-height: 1.25 !important;
-    }
-    .ep-faq-item b {
-        font-size: 7.5pt !important;
-    }
-}
-@media print {
-    /* cover: facts sit left under the intro; sticker clear of the words */
-    .ep-facts {
-        align-self: flex-start !important;
-    }
-    .ep-intro {
-        max-width: 100mm !important;
-    }
-    .ep-badge-round {
-        top: -20mm !important;
-        right: auto !important;
-        left: 30mm !important;
-    }
-
-    /* page 4: the bottom third is one solid black band, edge to edge */
-    .ep-page-4 {
-        padding-bottom: 0 !important;
-    }
-    .ep-page-4 > .ep-section:has(.ep-sponsors) {
-        margin: auto -13mm 0 !important;
-        padding: 0 !important;
-    }
-    .ep-sponsors {
-        height: 99mm !important;
-        border-radius: 0 !important;
-        padding: 7mm 13mm 6mm !important;
-        display: flex !important;
-        flex-direction: column;
-        justify-content: space-between !important;
-        overflow: hidden;
-    }
-    .ep-sponsors .ep-h2 {
-        margin: 0 !important;
-        font-size: 26pt !important;
-    }
-    .ep-sponsor-grid {
-        gap: 3mm !important;
-        flex: 1;
-        align-content: center;
-        margin: 4mm 0 !important;
-    }
-    .ep-sponsor-grid li {
-        width: calc((100% - 12mm) / 5) !important;
-        height: 28mm !important;
-    }
-    .ep-sponsor-grid img {
-        max-height: 24mm !important;
-    }
-    .ep-sponsors p {
-        margin: 0 !important;
-        font-size: 10.5pt !important;
-    }
-}
-@media print {
-    .ep-badge-round {
-        top: 14mm !important;
-        left: auto !important;
-        right: 14mm !important;
-        width: 32mm !important;
-        height: 32mm !important;
-        font-size: 12pt !important;
-    }
-}
-@media print {
-    /* page 3: four even cards - same height, same padding, words centred */
-    .ep-ent {
-        grid-template-rows: repeat(4, 1fr) !important;
-        gap: 4mm !important;
-    }
-    .ep-ent-card:not(.ep-ent-band) {
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: center !important;
-        align-items: flex-start !important;
-        padding: 4mm 6mm !important;
-        min-height: 0;
-        overflow: hidden;
-    }
-    .ep-ent-card:not(.ep-ent-band) .ep-kicker {
-        margin: 0 0 1.5mm !important;
-        font-size: 7pt !important;
-    }
-    .ep-ent-card:not(.ep-ent-band) h3 {
-        font-size: 17pt !important;
-        line-height: 0.95;
-        margin: 0 0 1.5mm !important;
-    }
-    .ep-ent-card:not(.ep-ent-band) p:last-child {
-        font-size: 9pt !important;
-        line-height: 1.35;
-        margin: 0;
-    }
-    /* bingo: the stamp sits in the corner, clear of the words */
-    .ep-ent-bingo .ep-kicker {
-        padding-right: 30mm;
-    }
-    .ep-ent-badge {
-        position: absolute !important;
-        top: 3mm !important;
-        right: 3mm !important;
-        font-size: 9.5pt !important;
-        padding: 1.5mm 3mm !important;
-    }
-    /* castle: picture left, words right, everything centred */
-    .ep-ent-card.ep-ent-castle {
-        flex-direction: row !important;
-        align-items: center !important;
-        gap: 5mm !important;
-    }
-    .ep-castle-pic {
-        width: 24mm !important;
-    }
-    .ep-ent-castle h3 {
-        font-size: 15pt !important;
-    }
-
-    .ep-castle-by {
-        white-space: nowrap;
-        margin: 0 !important;
-        gap: 2mm;
-    }
-    .ep-castle-by img {
-        height: 8mm !important;
-    }
-    /* cover sticker: over the shirt, off the face */
-    .ep-badge-round {
-        top: 46mm !important;
-        right: 4mm !important;
-    }
-}
-@media print {
-    .ep-ent-bingo .ep-kicker {
-        padding-right: 24mm !important;
-        white-space: nowrap;
-    }
-    .ep-ent-badge {
-        font-size: 8.5pt !important;
-    }
-    .ep-times-poster {
-        margin-top: 7mm !important;
-    }
-}
-@media print {
-    /* FAQ readability: bigger, darker type */
-    .ep-faq {
-        gap: 2.2mm !important;
-    }
-    .ep-faq-item {
-        padding: 2.2mm 3.5mm !important;
-        gap: 3mm !important;
-        align-items: center;
-    }
-    .ep-faq-ic {
-        width: 8.5mm !important;
-        height: 8.5mm !important;
-    }
-    .ep-faq-ic svg {
-        width: 5.2mm !important;
-        height: 5.2mm !important;
-    }
-    .ep-faq-item b {
-        font-size: 9.5pt !important;
-        margin-bottom: 0.8mm !important;
-        letter-spacing: 0.01em;
-    }
-    .ep-faq-item p {
-        font-size: 8.6pt !important;
-        line-height: 1.3 !important;
-        color: #1d0d02 !important;
-    }
-    .ep-faq-head {
-        margin-bottom: 2.5mm !important;
-    }
-    .ep-faq-sub {
-        font-size: 8.5pt !important;
-    }
-    /* room for it: tighter market block */
-    .ep-page-4 .ep-market-panel {
-        gap: 2.5mm !important;
-    }
-    .ep-page-4 .ep-mt {
-        padding: 1.8mm 3mm !important;
-    }
-    .ep-page-4 .ep-mt-head {
-        padding-bottom: 1mm !important;
-        margin-bottom: 1mm !important;
-    }
-    .ep-page-4 .ep-mt ul {
-        gap: 0.4mm !important;
-    }
-    .ep-page-4 > .ep-section + .ep-section:not(:has(.ep-sponsors)) {
-        margin-top: 3.5mm !important;
-    }
-}
-@media print {
-    .ep-faq {
-        gap: 1.8mm !important;
-    }
-    .ep-faq-item {
-        padding: 1.7mm 3.2mm !important;
-    }
-    .ep-faq-item p {
-        font-size: 8.3pt !important;
-        line-height: 1.25 !important;
-    }
-    .ep-faq-item b {
-        font-size: 9.2pt !important;
-    }
-    .ep-page-4 .ep-big {
-        font-size: 18pt !important;
-    }
-    .ep-page-4 .ep-big::after {
-        height: 6px;
-        bottom: -8px;
-    }
-    .ep-sponsors {
-        padding: 5mm 13mm 5mm !important;
-    }
-    .ep-sponsors .ep-h2 {
-        font-size: 23pt !important;
-    }
-    .ep-sponsor-grid {
-        margin: 3mm 0 !important;
-    }
-    .ep-sponsor-grid li {
-        height: 26mm !important;
-    }
-    .ep-sponsor-grid img {
-        max-height: 22mm !important;
-    }
-}
-
-/* ---- HOSTS STRIP: the MCs, under the Entertainment heading ---- */
-
-/* page 3 with the hosts strip: win back the room it takes */
-@media print {
-    .ep-ent-photo {
-        height: 84mm !important;
-    }
-    .ep-ent-band-text {
-        padding: 4mm 5mm 5mm !important;
-    }
-    .ep-times li {
-        padding: 2.3mm 4.5mm !important;
-    }
-    .ep-times {
-        gap: 1.8mm !important;
-    }
-    .ep-times-poster {
-        margin-top: 4mm !important;
-    }
-}
-
-/* hosts strip with their photo on the left */
-
-@media print {
-    .ep-ent-photo {
-        height: 72mm !important;
-    }
-}
-@media print {
-    .ep-ent-photo {
-        height: 64mm !important;
-    }
-    .ep-ent-card:not(.ep-ent-band) {
-        padding: 3.5mm 5mm !important;
-    }
-    .ep-ent-card:not(.ep-ent-band) h3 {
-        font-size: 18pt !important;
-    }
-    .ep-ent {
-        gap: 3mm !important;
-    }
-}
-@media print {
-    .ep-times li {
-        padding: 1.8mm 4.5mm !important;
-    }
-    .ep-times-poster {
-        margin-top: 5mm !important;
-    }
-}
-
-/* ---- ENTERTAINMENT LAYOUT ----
-   top row: trick or treat | best dressed
-   grid:    Zed big on the left | hosts, Bottoms Bingo, jumping castle on the right */
-.ep-top2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin: 0 0 14px;
-}
-.ep-ent {
-    grid-template-rows: auto auto auto;
-}
-.ep-ent-band {
-    grid-column: 1;
-    grid-row: 1 / span 3;
-}
-.ep-ent-hosts {
-    grid-column: 2;
-    grid-row: 1;
-}
-.ep-ent-bingo {
-    grid-column: 2;
-    grid-row: 2;
-}
-.ep-ent-castle {
-    grid-column: 2;
-    grid-row: 3;
-}
-/* hosts card: photo on the left, names on the right (like the jumping castle card) */
-.ep-ent-hosts {
-    background: var(--ep-ink);
-    color: var(--ep-cream);
-    display: grid;
-    grid-template-columns: 45% 1fr;
-    align-items: center;
-    gap: 18px;
-    padding: 0 22px 0 0 !important;
-}
-.ep-ent-hosts-pic {
-    width: 100%;
-    height: 100%;
-    min-height: 150px;
-    object-fit: cover;
-    object-position: center 25%;
-    display: block;
-}
-.ep-ent-hosts .ep-kicker {
-    color: var(--ep-lime);
-}
-.ep-ent-hosts h3 {
-    margin: 0;
-}
-@media screen and (max-width: 860px) {
-    .ep-top2 {
-        grid-template-columns: 1fr;
-    }
-    .ep-ent-band,
-    .ep-ent-hosts,
-    .ep-ent-bingo,
-    .ep-ent-castle {
-        grid-column: auto;
-        grid-row: auto;
-    }
-}
-@media print {
-    .ep-top2 {
-        gap: 3mm;
-        margin: 0 0 3mm;
-    }
-    .ep-top2 .ep-ent-card {
-        padding: 3.5mm 5mm !important;
-    }
-    .ep-ent {
-        grid-template-rows: 1fr 1fr 1fr !important;
-    }
-    .ep-ent-hosts {
-        padding: 0 4mm 0 0 !important;
-        gap: 4mm;
-        display: grid !important;
-    }
-    .ep-ent-hosts-pic {
-        min-height: 0;
-    }
-    .ep-ent-photo {
-        height: 72mm !important;
-    }
-}
-.ep-ent-hosts h3 {
-    font-size: clamp(1.3rem, 2.4vw, 1.9rem);
-}
-@media print {
-    .ep-ent-hosts h3 {
-        font-size: 16pt !important;
-    }
-}
-@media print {
-    .ep-top2 {
-        grid-template-columns: 1fr 1fr !important;
-    }
-    .ep-ent-hosts {
-        align-items: stretch !important;
-        grid-template-columns: 42% 1fr !important;
-    }
-    .ep-ent-hosts > div {
-        align-self: center;
-    }
-    .ep-ent-hosts-pic {
-        height: 100% !important;
-        min-height: 22mm !important;
-    }
-    .ep-ent-photo {
-        height: 62mm !important;
-    }
-}
-@media print {
-    .ep-ent .ep-ent-card.ep-ent-hosts {
-        display: grid !important;
-        grid-template-columns: 40% 1fr !important;
-        grid-template-rows: 1fr !important;
-        align-items: stretch !important;
-        padding: 0 4mm 0 0 !important;
-    }
-    .ep-ent .ep-ent-hosts-pic {
-        grid-column: 1;
-        grid-row: 1;
-        height: 100% !important;
-        min-height: 0 !important;
-    }
-    .ep-ent .ep-ent-hosts > div {
-        grid-column: 2;
-        grid-row: 1;
-        align-self: center;
-    }
-}
-
-/* phones: keep the hero palm and long stall links inside the screen edge */
-@media screen {
-    .ep-hero,
-    .ep-hero-art {
-        overflow-x: clip;
-    }
-    .ep-mt a {
-        overflow-wrap: anywhere;
-        word-break: break-word;
-    }
-}
-
-/* ---- CRICKET TILE: Chargers v Dregernauts ---- */
-.ep-ent-band {
-    grid-row: 1 / span 4 !important;
-}
-.ep-ent-hosts {
-    grid-row: 1 !important;
-}
-.ep-ent-bingo {
-    grid-row: 2 !important;
-}
-.ep-ent-cricket {
-    grid-column: 2;
-    grid-row: 3;
-    background: #fff;
-    color: var(--ep-ink);
-}
-.ep-ent-castle {
-    grid-row: 4 !important;
-}
-.ep-vs {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    gap: 10px;
-    margin: 4px 0 12px;
-}
-.ep-vs img {
-    width: 100%;
-    height: 92px;
+    height: auto;
+    max-width: 100%;
+    max-height: 74px;
     object-fit: contain;
 }
-.ep-vs span {
-    font-family: var(--ep-poster-font);
-    font-size: 1.6rem;
-    color: var(--ep-orange);
-}
-.ep-ent-cricket h3 {
-    font-size: clamp(1.4rem, 2.6vw, 1.9rem) !important;
-}
-@media screen and (max-width: 860px) {
-    .ep-ent-band,
-    .ep-ent-hosts,
-    .ep-ent-bingo,
-    .ep-ent-cricket,
-    .ep-ent-castle {
-        grid-column: auto;
-        grid-row: auto !important;
-    }
-}
-@media print {
-    .ep-ent {
-        grid-template-rows: 1fr 1fr 1fr 1fr !important;
-    }
-    .ep-vs {
-        margin: 1mm 0 2mm;
-        gap: 3mm;
-    }
-    .ep-vs img {
-        height: 16mm;
-    }
-    .ep-vs span {
-        font-size: 14pt;
-    }
-    .ep-ent-cricket h3 {
-        font-size: 15pt !important;
-    }
-}
-/* print: cricket tile laid out sideways (logos left, words right) so 4 tiles fit beside Zed */
-@media print {
-    .ep-ent .ep-ent-card.ep-ent-cricket {
-        display: grid !important;
-        grid-template-columns: 30mm 1fr;
-        grid-template-rows: auto auto 1fr;
-        column-gap: 4mm;
-        padding: 3mm 5mm !important;
-        align-content: center;
-    }
-    .ep-ent-cricket .ep-vs {
-        grid-column: 1;
-        grid-row: 1 / span 3;
-        margin: 0;
-        gap: 1.5mm;
-    }
-    .ep-ent-cricket .ep-vs img {
-        height: 12mm;
-    }
-    .ep-ent-cricket .ep-vs span {
-        font-size: 10pt;
-    }
-    .ep-ent-cricket .ep-kicker {
-        grid-column: 2;
-        margin: 0 0 1mm !important;
-    }
-    .ep-ent-cricket h3 {
-        grid-column: 2;
-        font-size: 13pt !important;
-        margin: 0 0 1mm !important;
-    }
-    .ep-ent-cricket p:last-child {
-        grid-column: 2;
-        font-size: 8.5pt !important;
-        line-height: 1.3;
-        margin: 0;
-    }
-    .ep-ent-card:not(.ep-ent-band) {
-        padding: 3mm 5mm !important;
-    }
-    .ep-ent-card:not(.ep-ent-band) h3 {
-        font-size: 16pt !important;
-    }
-    .ep-ent-castle .ep-castle-pic {
-        max-height: 18mm;
-        width: auto;
-    }
-}
-@media print {
-    .ep-ent-cricket p:last-child {
-        display: none !important;
-    } /* print: logos + title only, it's a tight page */
-    .ep-ent-cricket .ep-vs img {
-        height: 14mm;
-    }
-    .ep-ent .ep-ent-card.ep-ent-cricket {
-        grid-template-columns: 34mm 1fr;
-        grid-template-rows: auto auto;
-    }
-    .ep-ent-cricket h3 {
-        font-size: 15pt !important;
-    }
-}
-@media print {
-    .ep-ent-cricket h3 {
-        font-size: 12.5pt !important;
-    }
-    .ep-ent .ep-ent-card.ep-ent-cricket {
-        grid-template-columns: 31mm 1fr;
-    }
-}
-/* print: stacked - time, small logos with VS, title on one line */
-@media print {
-    .ep-ent .ep-ent-card.ep-ent-cricket {
-        display: flex !important;
-        flex-direction: column;
-        justify-content: center;
-        padding: 3mm 5mm !important;
-    }
-    .ep-ent-cricket .ep-vs {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 4mm;
-        margin: 1mm 0 1.5mm;
-    }
-    .ep-ent-cricket .ep-vs img {
-        height: 11mm;
-        width: auto;
-    }
-    .ep-ent-cricket h3 {
-        font-size: 12pt !important;
-        white-space: nowrap;
-        text-align: center;
-        margin: 0 !important;
-    }
-    .ep-ent-cricket h3 br {
-        display: none;
-    }
-    .ep-ent-cricket .ep-kicker {
-        text-align: center;
-    }
-}
-@media print {
-    .ep-ent .ep-ent-card.ep-ent-cricket h3 {
-        font-size: 11.5pt !important;
-        white-space: nowrap;
-        text-align: center;
-        margin: 0 !important;
-    }
-}
 
-/* cricket tile on screen; print keeps its compact version */
-@media screen {
-    .ep-ent-cricket {
-        padding: 28px 30px !important;
-    }
-    .ep-ent-cricket .ep-kicker {
-        text-align: left;
-    }
-    .ep-vs {
-        grid-template-columns: 1fr auto 1fr;
-        gap: 18px;
-        margin: 10px 0 16px;
-    }
-    .ep-vs img {
-        height: 150px;
-    }
-    .ep-vs span {
-        font-size: clamp(2.2rem, 4.2vw, 3rem);
-        line-height: 1;
-    }
-    .ep-ent-cricket h3 {
-        font-size: clamp(1.9rem, 3.6vw, 2.7rem) !important;
-        line-height: 0.95;
-        margin: 0 0 12px;
-    }
-    .ep-ent-cricket p:last-child {
-        font-size: 1.05rem;
-        line-height: 1.45;
-    }
-}
-@media screen and (max-width: 600px) {
-    .ep-vs img {
-        height: 110px;
-    }
-}
-
-/* ==== ENTERTAINMENT TILES ====
-   website: the 4 small tiles on the right are all the same height; Zed is the
-   big one - his photo fills the top and his words sit at the bottom.
-   print: cricket keeps its description (sideways layout so it fits). */
-@media screen and (min-width: 861px) {
-    .ep-ent {
-        grid-template-rows: repeat(4, 1fr) !important;
-        align-items: stretch;
-    }
-    .ep-ent-card:not(.ep-ent-band) {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    .ep-ent-castle {
-        flex-direction: row !important;
-    }
-    .ep-ent-hosts {
-        display: grid !important;
-    }
-    .ep-ent-band .ep-ent-photo {
-        flex: 1 1 auto;
-        aspect-ratio: auto;
-        min-height: 260px;
-        height: auto;
-    }
-    .ep-ent-band .ep-ent-band-text {
-        margin-top: auto;
-    }
-    .ep-vs img {
-        height: 120px;
-    }
-}
-/* never split a word (DREGERNAUT-S) - shrink instead */
-.ep-ent-cricket h3 {
-    overflow-wrap: normal !important;
-    word-break: keep-all !important;
-    hyphens: none;
-}
-@media screen {
-    .ep-ent-cricket h3 {
-        font-size: clamp(1.5rem, 2.7vw, 2.3rem) !important;
-    }
-}
-
-@media print {
-    .ep-ent-cricket p:last-child {
-        display: block !important;
-    }
-    .ep-ent .ep-ent-card.ep-ent-cricket {
-        display: grid !important;
-        grid-template-columns: 30mm 1fr;
-        grid-template-rows: auto auto 1fr;
-        column-gap: 3.5mm;
-        align-content: center;
-        padding: 3mm 4.5mm !important;
-    }
-    .ep-ent-cricket .ep-vs {
-        grid-column: 1;
-        grid-row: 1 / span 3;
-        display: flex;
-        gap: 1.5mm;
-        margin: 0;
-        justify-content: center;
-    }
-    .ep-ent-cricket .ep-vs img {
-        height: 11mm;
-        width: auto;
-    }
-    .ep-ent-cricket .ep-vs span {
-        font-size: 10pt;
-    }
-    .ep-ent-cricket .ep-kicker {
-        grid-column: 2;
-        text-align: left;
-        margin: 0 0 0.8mm !important;
-        font-size: 7pt !important;
-    }
-    .ep-ent .ep-ent-card.ep-ent-cricket h3 {
-        grid-column: 2;
-        font-size: 10.5pt !important;
-        white-space: normal;
-        text-align: left;
-        margin: 0 0 0.8mm !important;
-    }
-    .ep-ent .ep-ent-card.ep-ent-cricket p:last-child {
-        grid-column: 2;
-        font-size: 7.8pt !important;
-        line-height: 1.3;
-        margin: 0;
-    }
-}
-/* compact cricket tile so all four right tiles stay a sensible height */
-@media screen and (min-width: 861px) {
-    .ep-ent-cricket {
-        padding: 20px 24px !important;
-    }
-    .ep-vs {
-        margin: 4px 0 10px !important;
-    }
-    .ep-vs img {
-        height: 84px !important;
-    }
-    .ep-vs span {
-        font-size: 2.2rem !important;
-    }
-    .ep-ent-cricket h3 {
-        font-size: clamp(1.35rem, 2.2vw, 1.9rem) !important;
-        margin: 0 0 8px !important;
-    }
-    .ep-ent-cricket p:last-child {
-        font-size: 0.95rem !important;
-        margin: 0;
-    }
-    .ep-ent-band .ep-ent-photo {
-        object-position: 30% 25%;
-        min-height: 0;
-    }
-}
-@media print {
-    .ep-ent-cricket .ep-kicker {
-        letter-spacing: 0.1em !important;
-        white-space: nowrap;
-    }
-    .ep-ent-cricket .ep-vs {
-        gap: 1mm !important;
-    }
-    .ep-ent-cricket .ep-vs img {
-        height: 9.5mm !important;
-    }
-    .ep-ent-cricket .ep-vs span {
-        font-size: 9pt !important;
-    }
-    .ep-ent .ep-ent-card.ep-ent-cricket {
-        grid-template-columns: 27mm 1fr !important;
-    }
-}
-@media print {
-    .ep-ent-cricket .ep-vs {
-        justify-content: flex-start !important;
-        overflow: visible;
-    }
-    .ep-ent .ep-ent-card.ep-ent-cricket {
-        padding-left: 5.5mm !important;
-    }
-}
-
-/* ==== A4: cricket as a full-width FIXTURE BANNER ====
-   Chargers big top-left, Dregernauts big bottom-right (breaking the edges
-   like a football fixture), VS + title + words in the middle. The right
-   column goes back to 3 roomy tiles: hosts, Bottoms Bingo, jumping castle. */
-@media print {
-    .ep-ent {
-        grid-template-rows: 1fr 1fr 1fr auto !important;
-    }
-    .ep-ent-band {
-        grid-row: 1 / span 3 !important;
-    }
-    .ep-ent-hosts {
-        grid-row: 1 !important;
-    }
-    .ep-ent-bingo {
-        grid-row: 2 !important;
-    }
-    .ep-ent-castle {
-        grid-row: 3 !important;
-    }
-    .ep-ent-photo {
-        height: 52mm !important;
-    }
-
-    .ep-ent .ep-ent-card.ep-ent-cricket {
-        grid-column: 1 / -1 !important;
-        grid-row: 4 !important;
-        display: grid !important;
-        grid-template-columns: 34mm 1fr 34mm !important;
-        grid-template-areas: 'a k b' 'a s b' 'a h b' 'a p b';
-        grid-template-rows: auto auto auto auto !important;
-        align-items: center;
-        column-gap: 4mm;
-        padding: 3mm 6mm !important;
-        overflow: visible;
-        margin-top: 3mm;
-    }
-    .ep-ent-cricket .ep-vs {
-        display: contents !important;
-    }
-    .ep-ent-cricket .ep-vs img:first-child {
-        grid-area: a;
-        align-self: start;
-        height: 27mm !important;
-        width: auto;
-        margin-top: -6mm;
-        justify-self: start;
-    }
-    .ep-ent-cricket .ep-vs img:last-child {
-        grid-area: b;
-        align-self: end;
-        height: 25mm !important;
-        width: auto;
-        margin-bottom: -6mm;
-        justify-self: end;
-    }
-    .ep-ent-cricket .ep-vs span {
-        grid-area: s;
-        justify-self: center;
-        font-size: 16pt !important;
-        line-height: 1;
-        margin: 0.5mm 0;
-    }
-    .ep-ent-cricket .ep-kicker {
-        grid-area: k;
-        text-align: center !important;
-        margin: 0 !important;
-        font-size: 7.5pt !important;
-    }
-    .ep-ent .ep-ent-card.ep-ent-cricket h3 {
-        grid-area: h;
-        text-align: center !important;
-        font-size: 15pt !important;
-        margin: 0.5mm 0 1mm !important;
-        white-space: nowrap;
-    }
-    .ep-ent .ep-ent-card.ep-ent-cricket h3 br {
-        display: none;
-    }
-    .ep-ent .ep-ent-card.ep-ent-cricket p:last-child {
-        grid-area: p;
-        text-align: center;
-        font-size: 9pt !important;
-        line-height: 1.35;
-        margin: 0;
-    }
-}
-/* A4: run sheet on one line per time (sub-line inline) to give the entertainment block room */
-@media print {
-    .ep-times small {
-        display: inline !important;
-        margin-left: 2.5mm;
-        font-size: 8.5pt !important;
-    }
-    .ep-times li {
-        padding: 1.6mm 4.5mm !important;
-    }
-    .ep-times {
-        gap: 1.4mm !important;
-    }
-    .ep-times-poster {
-        margin-top: 4mm !important;
-        grid-template-columns: 1fr 44mm !important;
-    }
-    .ep-poster {
-        width: 44mm !important;
-    }
-    .ep-times-poster .ep-h2 {
-        font-size: 20pt !important;
-        margin-bottom: 2mm !important;
-    }
-    .ep-ent-photo {
-        height: 56mm !important;
-    }
-}
-/* A4 banner: both logos inside, centred, big; slightly larger tile text */
-@media print {
-    .ep-ent-cricket .ep-vs img:first-child {
-        align-self: center !important;
-        margin: 0 !important;
-        height: 24mm !important;
-    }
-    .ep-ent-cricket .ep-vs img:last-child {
-        align-self: center !important;
-        margin: 0 !important;
-        height: 24mm !important;
-    }
-    .ep-ent .ep-ent-card.ep-ent-cricket {
-        overflow: hidden;
-        padding: 3.5mm 7mm !important;
-    }
-    .ep-ent .ep-ent-card.ep-ent-cricket h3 {
-        font-size: 16pt !important;
-    }
-    .ep-ent .ep-ent-card.ep-ent-cricket p:last-child {
-        font-size: 9.5pt !important;
-    }
-    .ep-ent-band-text p:not(.ep-kicker) {
-        font-size: 10pt !important;
-    }
-    .ep-ent-card:not(.ep-ent-band):not(.ep-ent-cricket) p:last-child {
-        font-size: 10pt !important;
-    }
-}
-/* A4: keep a clear gap between the right-hand tiles */
-@media print {
-    .ep-ent {
-        row-gap: 3.5mm !important;
-        column-gap: 3.5mm !important;
-    }
-    .ep-ent .ep-ent-bingo p:last-child {
-        font-size: 9.2pt !important;
-        line-height: 1.3;
-    }
-    .ep-ent .ep-ent-bingo h3 {
-        margin-bottom: 1mm !important;
-    }
-    .ep-ent .ep-ent-bingo {
-        padding-top: 2.5mm !important;
-        padding-bottom: 2.5mm !important;
-    }
-}
-/* A4 page 3: ONE spacing everywhere - 3.5mm between every tile, row and block */
-@media print {
-    .ep-page-3 {
-        --g: 3.5mm;
-    }
-    .ep-page-3 .ep-top2 {
-        gap: var(--g) !important;
-        margin: 0 0 var(--g) !important;
-    }
-    .ep-page-3 .ep-ent {
-        gap: var(--g) !important;
-        row-gap: var(--g) !important;
-        column-gap: var(--g) !important;
-    }
-    .ep-page-3 .ep-ent .ep-ent-card.ep-ent-cricket {
-        margin: 0 !important;
-    }
-    .ep-page-3 .ep-times-poster {
-        margin-top: var(--g) !important;
-        column-gap: var(--g) !important;
-        gap: var(--g) !important;
-        align-items: stretch !important;
-    }
-    .ep-page-3 .ep-times {
-        gap: var(--g) !important;
-    }
-    .ep-page-3 .ep-times li {
-        padding: 1.2mm 4.5mm !important;
-    }
-    .ep-page-3 .ep-head {
-        margin-bottom: var(--g) !important;
-    }
-    .ep-page-3 .ep-times-poster .ep-h2 {
-        margin-bottom: var(--g) !important;
-    }
-}
-
-/* A4 page 3: the schedule has 8 rows, so the rows are slimmer and Zed's
-   photo a little shorter to keep everything on the page */
-@media print {
-    .ep-page-3 .ep-times {
-        gap: 1.6mm !important;
-    }
-    .ep-page-3 .ep-times li {
-        padding: 0.9mm 4mm !important;
-        font-size: 9.6pt !important;
-        line-height: 1.15;
-    }
-    .ep-page-3 .ep-times b {
-        min-width: 19mm !important;
-    }
-    .ep-page-3 .ep-times small {
-        font-size: 7.2pt !important;
-        margin-left: 2mm;
-    }
-    .ep-page-3 .ep-times-poster {
-        margin-top: 3mm !important;
-    }
-    .ep-page-3 .ep-times-poster .ep-h2 {
-        font-size: 17pt !important;
-        margin-bottom: 1.5mm !important;
-    }
-    .ep-page-3 .ep-ent-photo {
-        height: 38mm !important;
-    }
-}
-@media print {
-    .ep-page-3 .ep-ent-band .ep-ent-photo {
-        flex: 1 1 auto !important;
-        height: auto !important;
-        min-height: 38mm !important;
-    }
-}
-
-/* a portrait photo that should show from the top of the card (face first) */
-.ep-fv-pic-top {
-    background-position: center top !important;
-}
-
-/* schedule headings in CAPITALS, descriptions as written */
-.ep-times li > span {
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-}
-.ep-times li > span small {
-    text-transform: none;
-    letter-spacing: 0;
-}
-.ep-times b {
-    white-space: nowrap;
-}
-@media print {
-    .ep-page-3 .ep-times li {
-        font-size: 9.2pt !important;
-    }
-    .ep-page-3 .ep-times li > span {
-        letter-spacing: 0 !important;
-    }
-    .ep-page-3 .ep-times small {
-        font-size: 7pt !important;
-        margin-left: 1.5mm !important;
-    }
-}
-
-/* ---- THE NOTICE: venue change, postponed, cancelled, update ---- */
-.ep-notice {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    background: var(--ep-ink);
-    color: #fff;
-}
-.ep-notice-in {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 16px 20px;
-}
-.ep-notice-k {
-    margin: 0 0 2px;
-    font-family: var(--sg-font-accent);
-    font-size: 0.7rem;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--ep-lime);
-}
-.ep-notice h2 {
-    margin: 0 0 6px;
-    font-family: var(--ep-poster-font);
-    font-size: clamp(1.3rem, 3.5vw, 2rem);
-    line-height: 1.05;
-}
-.ep-notice p {
-    margin: 0;
-    font-size: 1rem;
-    line-height: 1.5;
-    max-width: 70ch;
-}
-.ep-notice-now {
-    margin-top: 8px !important;
-    font-weight: bold;
-}
-.ep-notice-now small {
-    font-weight: normal;
-    opacity: 0.75;
-}
-.ep-notice.is-venue {
-    background: #0f3d2e;
-}
-.ep-notice.is-venue .ep-notice-k {
-    color: #9ff5c7;
-}
-.ep-notice.is-postponed {
-    background: #3a2a05;
-}
-.ep-notice.is-postponed .ep-notice-k {
-    color: #ffd76a;
-}
-.ep-notice.is-cancelled {
-    background: #5a1410;
-}
-.ep-notice.is-cancelled .ep-notice-k {
-    color: #ffb3ad;
-}
-.ep-notice.is-info {
-    background: #102a4a;
-}
-.ep-notice.is-info .ep-notice-k {
-    color: #a8d4ff;
-}
-.has-notice-cancelled .ep-hero-body {
-    opacity: 0.6;
-}
-@media print {
-    .ep-notice {
-        position: static;
-    }
-}
-
-/* ---- the live page: poster beside the cover words ---- */
-.ep-hero-live .ep-hero-inner {
-    display: grid;
-    grid-template-columns: 1.2fr 0.8fr;
-    gap: 30px;
-    align-items: center;
-}
-.ep-poster-hero {
-    display: block;
-    max-width: 420px;
-    margin: 0 auto;
-}
-.ep-poster-hero img {
-    width: 100%;
-    height: auto;
-    border-radius: 12px;
-    box-shadow: 0 18px 40px rgba(29, 13, 2, 0.35);
-}
-.ep-title-live {
-    font-size: clamp(2.4rem, 7vw, 4.6rem);
-}
-
-@media (max-width: 760px) {
-    .ep-hero-live .ep-hero-inner {
-        grid-template-columns: 1fr;
-    }
-    .ep-poster-hero {
-        max-width: 320px;
-    }
-}
-
-/* the live page: hidden means hidden, even for the poster link */
-.ep-poster-hero[hidden],
-.ep-poster[hidden] {
-    display: none;
-}
-/* entertainment cards built from the programme */
-
-.ep-faq-ic b {
-    font-family: var(--ep-poster-font);
-    font-size: 22px;
-    font-weight: 400;
-}
+/* Live page: a sponsor with no logo shows its name */
 .ep-sponsor-live li {
     display: flex;
     align-items: center;
     justify-content: center;
 }
+
 .ep-sponsor-name {
     font-family: var(--ep-poster-font);
     font-size: 1.05rem;
@@ -3275,270 +1370,138 @@ a.ep-fv:focus-visible {
     color: var(--ep-ink);
     text-align: center;
 }
-/* entertainment cards built from the programme: with a photo they are the dark band card, without one they alternate cream and lime */
 
-/* entertainment: the headline is the big card on the left, the rest tile beside it */
-
-/* PRINT: the Entertainment page always fits one A4 sheet - the headline plus five featured cards, nothing flows */
-@media print {
-    .ep-page-ent {
-        padding: 12mm 13mm;
-        display: flex;
-        flex-direction: column;
-    }
-    .ep-page-ent .ep-head {
-        flex: none;
-        margin-bottom: 6mm;
+@media (max-width: 700px) {
+    .ep-sponsor-grid li {
+        width: calc(33.33% - 15px);
+        height: 78px;
+        padding: 8px;
     }
 
-    .ep-page-ent .is-headline .ep-ent-photo {
-        height: 48%;
-    }
-
-    .ep-page-ent .is-headline h3 {
-        font-size: 24pt;
-    }
-
-    .ep-page-ent .is-headline p:not(.ep-kicker) {
-        -webkit-line-clamp: 9;
-    }
-    .ep-page-ent .ep-kicker {
-        font-size: 7.5pt;
-    }
-    .ep-page-3 .ep-times-poster {
-        display: grid;
-        grid-template-columns: 1.1fr 0.9fr;
-        gap: 10mm;
-        align-items: start;
-    }
-    .ep-page-3 .ep-poster img {
-        max-height: 230mm;
-        width: auto;
-        max-width: 100%;
-    }
-}
-/* the cover's copy of the times is for paper only */
-.ep-times-cover {
-    display: none;
-}
-@media print {
-    /* FOUR PAGES: cover (with the times and the poster), food, entertainment, market + FAQs + sponsors */
-    .ep-page-3 {
-        display: none !important;
-    }
-    .ep-hero-live {
-        padding: 12mm 13mm;
-    }
-    .ep-hero-live .ep-hero-inner {
-        display: grid !important;
-        grid-template-columns: 1.05fr 0.95fr;
-        gap: 10mm;
-        align-items: start;
-        height: 100%;
-    }
-    .ep-hero-live .ep-title {
-        font-size: 60pt;
-    }
-    .ep-hero-live .ep-facts {
-        max-width: none;
-    }
-    .ep-times-cover {
-        display: block !important;
-        margin: 8mm 0 0;
-    }
-    .ep-times-cover li {
-        padding: 2.2mm 0;
-        font-size: 9.5pt;
-    }
-    .ep-times-cover b {
-        min-width: 60px;
-        font-size: 9.5pt;
-    }
-    .ep-times-cover small {
-        font-size: 8pt;
-    }
-    .ep-poster-hero {
-        display: block !important;
-        max-width: none;
-        margin: 0;
-    }
-    .ep-poster-hero img {
-        width: 100%;
-        height: auto;
-        max-height: 260mm;
-        object-fit: contain;
-        border-radius: 4mm;
-        box-shadow: none;
-    }
-    /* entertainment: the headline down the left, six beside it in three rows */
-
-    .ep-page-ent .is-headline .ep-ent-photo {
-        height: 40%;
-    }
-
-    .ep-page-ent .is-headline p:not(.ep-kicker) {
-        -webkit-line-clamp: 10;
-    }
-}
-@media print {
-    /* cover: everything on the left column, the poster big on the right */
-    .ep-hero-live .ep-title {
-        font-size: 44pt !important;
-        line-height: 0.9;
-    }
-    .ep-hero-live .ep-subline {
-        font-size: 12pt;
-        margin: 2mm 0 3mm;
-    }
-    .ep-hero-live .ep-intro {
-        font-size: 9.5pt;
-        line-height: 1.4;
-        margin: 0 0 4mm;
-    }
-    .ep-hero-live .ep-facts {
-        gap: 2mm;
-    }
-    .ep-hero-live .ep-facts li {
-        padding: 2mm 3mm;
-        font-size: 9.5pt;
-        box-shadow: none;
-    }
-    .ep-times-cover {
-        margin: 5mm 0 0 !important;
-    }
-    .ep-times-cover li {
-        padding: 1.4mm 0 !important;
-        font-size: 8.5pt !important;
-    }
-    .ep-times-cover b {
-        min-width: 52px !important;
-        font-size: 8.5pt !important;
-    }
-    .ep-times-cover small {
-        font-size: 7.5pt !important;
-    }
-    .ep-hero-live .ep-poster-hero {
-        width: 100% !important;
-        max-width: none !important;
-        height: auto !important;
-    }
-    .ep-hero-live .ep-poster-hero img {
-        width: 100% !important;
-        height: auto !important;
-        max-height: 258mm;
-        object-fit: contain;
-    }
-}
-@media print {
-    .ep-hero-live .ep-hero-inner {
-        grid-template-columns: 0.9fr 1.1fr !important;
-    }
-    .ep-hero-live .ep-facts {
-        grid-template-columns: 1fr !important;
-    }
-    .ep-page-4 .ep-sponsors > p {
-        display: none;
+    .ep-sponsor-grid img {
+        max-height: 60px;
     }
 }
 
-/* the generated entertainment layout (live page) */
-.ep-ent-gen .ep-ent-side h3 {
-    font-size: clamp(1.3rem, 2.4vw, 1.9rem);
+/* ==========================================================================
+   NOTICE - venue change, postponed, cancelled, update (sticky bar)
+   ========================================================================== */
+.ep-notice {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--ep-ink);
+    color: #fff;
 }
-.ep-ent-gen .ep-ent-side h3 span {
-    display: block;
-    font-size: 0.62em;
-    margin-top: 4px;
-    color: var(--ep-orange);
+
+.ep-notice-in {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 16px 20px;
 }
-.ep-ent-gen .ep-ent-hosts h3 span {
+
+.ep-notice-k {
+    margin: 0 0 2px;
+    font-family: var(--sg-font-accent);
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
     color: var(--ep-lime);
 }
-.ep-ent-gen .ep-ent-hosts p:not(.ep-kicker) {
-    margin: 8px 0 0;
-    font-size: 0.92rem;
-    line-height: 1.4;
-    color: #f3e3d0;
-}
-.ep-ent-gen .ep-ent-side .ep-ent-link {
-    color: inherit;
-    text-decoration: underline;
-    display: inline-block;
-    margin-top: 8px;
-}
-.ep-ent-gen .ep-ent-band h3 span {
-    display: block;
-}
-@media screen and (max-width: 860px) {
-    .ep-ent-gen .ep-ent-card {
-        grid-column: auto !important;
-        grid-row: auto !important;
-    }
-}
-@media print {
-    /* the printed entertainment page: two on top, the headline down the left, four beside it - anything more stays on the web */
-    .ep-page-ent {
-        display: flex;
-        flex-direction: column;
-    }
-    .ep-page-ent .ep-ent-wrap {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-    }
-    .ep-page-ent .ep-ent-gen {
-        flex: 1;
-        grid-template-rows: repeat(4, 1fr) !important;
-        gap: 4mm !important;
-        min-height: 0;
-    }
-    .ep-page-ent .ep-ent-side:nth-of-type(n + 6) {
-        display: none !important;
-    }
-    .ep-page-ent .ep-ent-band {
-        grid-row: 1 / span 4 !important;
-        overflow: hidden;
-    }
-    .ep-page-ent .ep-ent-band .ep-ent-photo {
-        height: 62mm !important;
-    }
-    .ep-page-ent .ep-ent-band h3 {
-        font-size: 22pt !important;
-    }
-    .ep-page-ent .ep-ent-band p:not(.ep-kicker) {
-        font-size: 9.5pt !important;
-        display: -webkit-box;
-        -webkit-line-clamp: 8;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-    .ep-page-ent .ep-ent-side {
-        overflow: hidden;
-        min-height: 0;
-    }
-    .ep-page-ent .ep-ent-side h3 {
-        font-size: 15pt !important;
-    }
-    .ep-page-ent .ep-ent-side p:not(.ep-kicker) {
-        font-size: 9pt !important;
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-    .ep-page-ent .ep-ent-hosts {
-        grid-template-columns: 38% 1fr !important;
-    }
-    .ep-page-ent .ep-ent-hosts-pic {
-        height: 100% !important;
-    }
-    .ep-page-ent .ep-top2 .ep-ent-card p:not(.ep-kicker) {
-        font-size: 9pt !important;
-    }
+
+.ep-notice h2 {
+    margin: 0 0 6px;
+    font-family: var(--ep-poster-font);
+    font-size: clamp(1.3rem, 3.5vw, 2rem);
+    line-height: 1.05;
 }
 
-/* I'm coming */
+.ep-notice p {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.5;
+    max-width: 70ch;
+}
+
+.ep-notice-now {
+    margin-top: 8px !important;
+    font-weight: bold;
+}
+
+.ep-notice-now small {
+    font-weight: normal;
+    opacity: 0.75;
+}
+
+.ep-notice.is-venue {
+    background: #0f3d2e;
+}
+
+.ep-notice.is-venue .ep-notice-k {
+    color: #9ff5c7;
+}
+
+.ep-notice.is-postponed {
+    background: #3a2a05;
+}
+
+.ep-notice.is-postponed .ep-notice-k {
+    color: #ffd76a;
+}
+
+.ep-notice.is-cancelled {
+    background: #5a1410;
+}
+
+.ep-notice.is-cancelled .ep-notice-k {
+    color: #ffb3ad;
+}
+
+.ep-notice.is-info {
+    background: #102a4a;
+}
+
+.ep-notice.is-info .ep-notice-k {
+    color: #a8d4ff;
+}
+
+.has-notice-cancelled .ep-hero-body {
+    opacity: 0.6;
+}
+
+/* ==========================================================================
+   LIVE - event.html extras: poster beside the cover words, "I'm coming"
+   ========================================================================== */
+.ep-hero-live .ep-hero-inner {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 30px;
+    align-items: center;
+}
+
+.ep-poster-hero {
+    display: block;
+    max-width: 420px;
+    margin: 0 auto;
+}
+
+.ep-poster-hero img {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 18px 40px rgba(29, 13, 2, 0.35);
+}
+
+.ep-title-live {
+    font-size: clamp(2.4rem, 7vw, 4.6rem);
+}
+
+/* hidden means hidden, even for the poster link */
+.ep-poster-hero[hidden],
+.ep-poster[hidden] {
+    display: none;
+}
+
 .ep-going {
     display: flex;
     align-items: center;
@@ -3551,6 +1514,7 @@ a.ep-fv:focus-visible {
     font-weight: bold;
     font-size: 0.95rem;
 }
+
 .ep-going-ask {
     display: flex;
     align-items: center;
@@ -3558,10 +1522,12 @@ a.ep-fv:focus-visible {
     flex-wrap: wrap;
     width: 100%;
 }
+
 .ep-going-ask span {
     font-weight: bold;
     margin-right: 4px;
 }
+
 .ep-going-ask button {
     width: 42px;
     height: 42px;
@@ -3572,11 +1538,1339 @@ a.ep-fv:focus-visible {
     font-size: 1rem;
     cursor: pointer;
 }
+
 .ep-going-ask button:hover {
     background: var(--ep-ink);
     color: var(--ep-cream);
 }
+
+@media (max-width: 760px) {
+    .ep-hero-live .ep-hero-inner {
+        grid-template-columns: 1fr;
+    }
+
+    .ep-poster-hero {
+        max-width: 320px;
+    }
+}
+
+/* ==========================================================================
+   PRINT - the A4 mini magazine. Four sheets, orange to the edge, 12mm
+   margin: cover | food | entertainment | market + FAQ + sponsors.
+   Built up over many print runs, so the rules below are in the order they
+   were tuned: the later ones win. Check with Print preview after editing.
+   ========================================================================== */
 @media print {
+    @page {
+        size: A4;
+        margin: 0;
+    }
+
+    html,
+    body.event-page {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        background: #f39243 !important;
+        font-size: 12pt;
+        margin: 0;
+    }
+
+    #navbar,
+    #footer,
+    .navbar,
+    .footer,
+    .ep-actions,
+    .ep-share-note,
+    .ep-fv-go,
+    .ep-ent-link,
+    .ep-poster-link {
+        display: none !important;
+    }
+
+    .ep-page > .ep-section {
+        max-width: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .ep-page.ep-section {
+        max-width: none;
+        margin: 0;
+        padding: 12mm 13mm;
+    }
+
+    .ep-fv,
+    .ep-mt,
+    .ep-card,
+    .ep-ent-card,
+    .ep-times li,
+    .ep-know li,
+    .ep-facts li,
+    .ep-sponsors {
+        box-shadow: none !important;
+        transform: none;
+    }
+
+    .ep-h2 {
+        font-size: 30pt;
+        margin: 0 0 6mm;
+    }
+
+    .ep-head {
+        margin: 0 0 6mm;
+    }
+
+    .ep-head .ep-h2 {
+        margin: 0;
+    }
+
+    .ep-strap {
+        font-size: 8.5pt;
+    }
+
+    .ep-hero {
+        padding: 12mm 13mm;
+    }
+
+    .ep-hero-body .ep-kicker {
+        grid-column: 1 / -1;
+        font-size: 10pt;
+        margin: 0 0 4mm;
+    }
+
+    .ep-facts b {
+        font-size: 8pt;
+    }
+
+    .ep-skeleton {
+        width: 100%;
+        max-width: none;
+        filter: none;
+    }
+
+    .ep-palm-1 {
+        right: 2mm;
+        width: 42mm;
+        height: 66mm;
+    }
+
+    .ep-palm-2 {
+        left: -6mm;
+        width: 30mm;
+        height: 48mm;
+    }
+
+    .ep-bat-1 {
+        width: 16mm;
+    }
+
+    .ep-bat-2 {
+        width: 12mm;
+    }
+
+    .ep-bat-3 {
+        width: 10mm;
+    }
+
+    .ep-food {
+        flex: 1;
+        grid-template-columns: 1fr 1fr;
+        grid-auto-rows: 1fr;
+        gap: 4mm;
+    }
+
+    .ep-fv {
+        min-height: 0;
+        border: none;
+    }
+
+    .ep-fv-pic {
+        width: 44%;
+        max-width: none;
+    }
+
+    .ep-fv-text {
+        padding: 4mm 5mm;
+        gap: 1.5mm;
+    }
+
+    .ep-fv-text small {
+        font-size: 8pt;
+    }
+
+    .ep-fv-text b {
+        font-size: 16pt;
+    }
+
+    .ep-fv-text span {
+        font-size: 10pt;
+        line-height: 1.4;
+    }
+
+    .ep-ent-band h3 {
+        font-size: 26pt;
+    }
+
+    .ep-ent-card h3 {
+        font-size: 21pt;
+        margin: 0 0 2mm;
+    }
+
+    .ep-ent-card p:last-child {
+        font-size: 10.5pt;
+    }
+
+    .ep-market-panel {
+        grid-template-columns: 1fr;
+        gap: 6mm;
+    }
+
+    .ep-market-title {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        column-gap: 10mm;
+        align-items: end;
+    }
+
+    .ep-market-title .ep-kicker {
+        grid-column: 1 / -1;
+    }
+
+    .ep-big {
+        font-size: 30pt;
+        margin-bottom: 0;
+    }
+
+    .ep-market-strap {
+        font-size: 9pt;
+        margin-bottom: 2mm;
+    }
+
+    .ep-market {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 3.5mm;
+    }
+
+    .ep-big::after {
+        bottom: -12px;
+    }
+
+    .ep-mt {
+        padding: 3.5mm 4mm;
+    }
+
+    .ep-mt svg {
+        width: 9mm;
+        height: 9mm;
+    }
+
+    .ep-mt b {
+        font-size: 9pt;
+    }
+
+    .ep-mt li {
+        font-size: 8pt;
+    }
+
+    .ep-mt a {
+        text-decoration: none;
+    }
+
+    .ep-page-4 > .ep-section + .ep-section {
+        margin-top: 7mm;
+    }
+
+    .ep-page-4 .ep-h2 {
+        font-size: 24pt;
+        margin-bottom: 4mm;
+    }
+
+    .ep-print-only {
+        display: block;
+    }
+
+    #ep-food[data-size='m'] .ep-food {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 3.5mm;
+    }
+
+    #ep-food[data-size='m'] .ep-fv-pic {
+        width: 40%;
+    }
+
+    #ep-food[data-size='m'] .ep-fv-text {
+        padding: 3mm 3.5mm;
+    }
+
+    #ep-food[data-size='m'] .ep-fv-text b {
+        font-size: 12.5pt;
+    }
+
+    #ep-food[data-size='m'] .ep-fv-text span {
+        font-size: 8.5pt;
+    }
+
+    #ep-food[data-size='l'] .ep-food {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 3mm;
+    }
+
+    #ep-food[data-size='l'] .ep-fv-pic {
+        width: 36%;
+    }
+
+    #ep-food[data-size='l'] .ep-fv-text {
+        padding: 2mm 3mm;
+        gap: 1mm;
+    }
+
+    #ep-food[data-size='l'] .ep-fv-text small {
+        font-size: 6.5pt;
+    }
+
+    #ep-food[data-size='l'] .ep-fv-text b {
+        font-size: 11pt;
+    }
+
+    #ep-food[data-size='l'] .ep-fv-text span {
+        font-size: 7.5pt;
+        line-height: 1.3;
+    }
+
+    #ep-food[data-size='xl'] .ep-food,
+    #ep-food[data-size='xxl'] .ep-food {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 2.5mm;
+    }
+
+    #ep-food[data-size='xl'] .ep-fv-pic {
+        width: 34%;
+    }
+
+    #ep-food[data-size='xxl'] .ep-fv-pic {
+        display: none;
+    }
+
+    #ep-food[data-size='xl'] .ep-fv-text,
+    #ep-food[data-size='xxl'] .ep-fv-text {
+        padding: 2mm 2.5mm;
+        gap: 0.8mm;
+    }
+
+    #ep-food[data-size='xl'] .ep-fv-text small,
+    #ep-food[data-size='xxl'] .ep-fv-text small {
+        font-size: 6pt;
+    }
+
+    #ep-food[data-size='xl'] .ep-fv-text b,
+    #ep-food[data-size='xxl'] .ep-fv-text b {
+        font-size: 9.5pt;
+    }
+
+    #ep-food[data-size='xl'] .ep-fv-text span,
+    #ep-food[data-size='xxl'] .ep-fv-text span {
+        display: none;
+    }
+
+    .ep-page-4[data-size='m'] .ep-market,
+    .ep-page-4[data-size='l'] .ep-market {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 2.5mm;
+    }
+
+    .ep-page-4[data-size='m'] .ep-mt,
+    .ep-page-4[data-size='l'] .ep-mt {
+        padding: 2.5mm 3mm;
+    }
+
+    .ep-page-4[data-size='m'] .ep-mt-head,
+    .ep-page-4[data-size='l'] .ep-mt-head {
+        padding-bottom: 1.5mm;
+        margin-bottom: 1.5mm;
+        gap: 2mm;
+    }
+
+    .ep-page-4[data-size='m'] .ep-mt svg,
+    .ep-page-4[data-size='l'] .ep-mt svg {
+        width: 6mm;
+        height: 6mm;
+    }
+
+    .ep-page-4[data-size='m'] .ep-mt b {
+        font-size: 7.5pt;
+    }
+
+    .ep-page-4[data-size='l'] .ep-mt b {
+        font-size: 7pt;
+    }
+
+    .ep-page-4[data-size='m'] .ep-mt ul {
+        gap: 0.6mm;
+    }
+
+    .ep-page-4[data-size='l'] .ep-mt ul {
+        gap: 0.3mm;
+    }
+
+    .ep-page-4[data-size='m'] .ep-mt li {
+        font-size: 6.8pt;
+    }
+
+    .ep-page-4[data-size='l'] .ep-mt li {
+        font-size: 6.2pt;
+    }
+
+    .ep-page-4[data-size='m'] .ep-big,
+    .ep-page-4[data-size='l'] .ep-big {
+        font-size: 24pt;
+    }
+
+    .ep-page-4[data-size='m'] .ep-market-panel,
+    .ep-page-4[data-size='l'] .ep-market-panel {
+        gap: 4mm;
+    }
+
+    .ep-page-4[data-size='m'] .ep-know,
+    .ep-page-4[data-size='m'] .ep-know li,
+    .ep-page-4[data-size='m'] .ep-h2,
+    .ep-page-4[data-size='l'] .ep-h2 {
+        font-size: 20pt;
+        margin-bottom: 2.5mm;
+    }
+
+    .ep-page-4[data-size='l'] .ep-sponsors {
+        height: 82mm;
+    }
+
+    .ep-times b {
+        min-width: 30mm;
+    }
+
+    .ep-page-3 > .ep-section:first-child {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+    }
+
+    .ep-page {
+        box-sizing: border-box;
+        height: 297mm;
+        padding: 12mm 13mm;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        break-after: page;
+        max-width: none;
+        margin: 0;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        background: #f39243 url('../images/events/print-bg-orange.jpg') center / 100% 100% no-repeat;
+    }
+
+    .ep-faq-tag {
+        font-size: 12pt;
+        padding: 1mm 4mm;
+        margin: 0;
+        box-shadow: 2px 2px 0 var(--ep-ink);
+    }
+
+    .ep-page-4 .ep-market {
+        gap: 2.5mm !important;
+    }
+
+    .ep-page-4 .ep-mt svg {
+        width: 6.5mm;
+        height: 6.5mm;
+    }
+
+    .ep-ent-card .ep-kicker {
+        font-size: 8pt;
+        margin-bottom: 1mm !important;
+    }
+
+    .ep-ent-castle .ep-kicker {
+        display: none;
+    }
+
+    .ep-hero-inner {
+        grid-template-columns: 1fr 1.05fr;
+        grid-template-rows: auto auto auto auto 1fr;
+        column-gap: 8mm;
+        padding: 0;
+        max-width: none;
+        display: block !important;
+        position: relative;
+        height: 100%;
+    }
+
+    .ep-logo {
+        grid-column: 1 / -1;
+        filter: none;
+        grid-row: 2;
+        margin-bottom: 2mm !important;
+        display: block;
+        width: 92mm !important;
+        margin: 0 0 5mm !important;
+        transform: rotate(-3deg);
+    }
+
+    .ep-title {
+        grid-column: 1 / -1;
+        -webkit-text-stroke: 4px var(--ep-ink);
+        text-shadow: 7px 7px 0 var(--ep-ink);
+        font-size: 98pt !important;
+        line-height: 0.86;
+        color: #fff3d6;
+        margin: 0;
+    }
+
+    .ep-subline {
+        grid-column: 1 / -1;
+        font-size: 21pt !important;
+        margin: 5mm 0 6mm !important;
+    }
+
+    .ep-facts li {
+        font-size: 13pt !important;
+        padding: 4mm 5mm !important;
+    }
+
+    .ep-badge-free {
+        font-size: 17pt;
+        box-shadow: 3px 3px 0 var(--ep-ink);
+        bottom: 16mm !important;
+        left: -16mm !important;
+    }
+
+    .ep-hero-body {
+        position: relative;
+        z-index: 2;
+        display: flex !important;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .ep-hero-body .ep-presents {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        margin: 0 0 4mm !important;
+        font-size: 10pt;
+        order: -1;
+        align-self: stretch;
+        text-align: center;
+    }
+
+    .ep-hero-art {
+        grid-column: 2;
+        grid-row: 5;
+        align-self: end;
+        min-height: 0;
+        margin-right: 0 !important;
+        justify-self: end;
+        position: absolute !important;
+        right: -13mm;
+        bottom: -12mm;
+        margin: 0 !important;
+        z-index: 1;
+        width: 88mm !important;
+    }
+
+    .ep-print-url {
+        margin: 4mm 0 0;
+        text-align: center;
+        font-family: var(--sg-font-accent);
+        font-weight: bold;
+        font-size: 9pt;
+        letter-spacing: 0.1em;
+        margin-top: 3mm !important;
+        display: none !important;
+    }
+
+    .ep-faq-head .ep-h2 {
+        margin: 0 !important;
+        font-size: 19pt !important;
+    }
+
+    .ep-facts {
+        grid-column: 1;
+        grid-row: 5;
+        max-width: none;
+        margin-bottom: 6mm;
+        width: 112mm;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 3.5mm !important;
+        margin: 0 !important;
+        align-self: flex-start !important;
+    }
+
+    .ep-intro {
+        grid-column: 1;
+        grid-row: 5;
+        line-height: 1.5;
+        align-self: start;
+        margin-top: 2mm !important;
+        font-size: 12.5pt !important;
+        margin: 0 0 7mm !important;
+        width: auto !important;
+        max-width: 100mm !important;
+    }
+
+    .ep-page-4 {
+        break-after: auto;
+        padding-bottom: 0 !important;
+    }
+
+    .ep-page-4 > .ep-section:has(.ep-sponsors) {
+        margin-top: auto !important;
+        padding-top: 3mm !important;
+        margin: auto -13mm 0 !important;
+        padding: 0 !important;
+    }
+
+    .ep-sponsors p {
+        margin-top: 4mm !important;
+        margin: 0 !important;
+        font-size: 10.5pt !important;
+    }
+
+    .ep-ent-card:not(.ep-ent-band) .ep-kicker {
+        margin: 0 0 1.5mm !important;
+        font-size: 7pt !important;
+    }
+
+    .ep-ent-card:not(.ep-ent-band) p:last-child {
+        font-size: 9pt !important;
+        line-height: 1.35;
+        margin: 0;
+    }
+
+    .ep-ent-card.ep-ent-castle {
+        justify-content: flex-start !important;
+        overflow: hidden;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 5mm !important;
+    }
+
+    .ep-castle-pic {
+        width: 24mm !important;
+    }
+
+    .ep-ent-castle h3 {
+        font-size: 15pt !important;
+    }
+
+    .ep-castle-by {
+        font-size: 8.5pt;
+        margin-top: 1mm;
+        white-space: nowrap;
+        margin: 0 !important;
+        gap: 2mm;
+    }
+
+    .ep-castle-by img {
+        height: 8mm !important;
+    }
+
+    .ep-badge-round {
+        box-shadow: 3px 3px 0 var(--ep-ink);
+        left: auto !important;
+        width: 32mm !important;
+        height: 32mm !important;
+        font-size: 12pt !important;
+        top: 46mm !important;
+        right: 4mm !important;
+    }
+
+    .ep-ent-bingo .ep-kicker {
+        padding-right: 24mm !important;
+        white-space: nowrap;
+    }
+
+    .ep-ent-badge {
+        position: absolute !important;
+        top: 3mm !important;
+        right: 3mm !important;
+        padding: 1.5mm 3mm !important;
+        font-size: 8.5pt !important;
+    }
+
+    .ep-faq-ic {
+        width: 8.5mm !important;
+        height: 8.5mm !important;
+    }
+
+    .ep-faq-ic svg {
+        width: 5.2mm !important;
+        height: 5.2mm !important;
+    }
+
+    .ep-faq-head {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        column-gap: 5mm;
+        margin-bottom: 2.5mm !important;
+    }
+
+    .ep-faq-sub {
+        flex-basis: 100%;
+        margin-top: 1mm;
+        font-size: 8.5pt !important;
+    }
+
+    .ep-page-4 .ep-market-panel {
+        gap: 2.5mm !important;
+    }
+
+    .ep-page-4 .ep-mt {
+        padding: 1.8mm 3mm !important;
+    }
+
+    .ep-page-4 .ep-mt-head {
+        padding-bottom: 1mm !important;
+        margin-bottom: 1mm !important;
+    }
+
+    .ep-page-4 .ep-mt ul {
+        gap: 0.4mm !important;
+    }
+
+    .ep-page-4 > .ep-section + .ep-section:not(:has(.ep-sponsors)) {
+        margin-top: 3.5mm !important;
+    }
+
+    .ep-faq {
+        gap: 1.8mm !important;
+    }
+
+    .ep-faq-item {
+        box-shadow: none;
+        break-inside: avoid;
+        gap: 3mm !important;
+        align-items: center;
+        padding: 1.7mm 3.2mm !important;
+    }
+
+    .ep-faq-item p {
+        color: #1d0d02 !important;
+        font-size: 8.3pt !important;
+        line-height: 1.25 !important;
+    }
+
+    .ep-faq-item b {
+        margin-bottom: 0.8mm !important;
+        letter-spacing: 0.01em;
+        font-size: 9.2pt !important;
+    }
+
+    .ep-page-4 .ep-big {
+        font-size: 18pt !important;
+    }
+
+    .ep-page-4 .ep-big::after {
+        height: 6px;
+        bottom: -8px;
+    }
+
+    .ep-sponsors {
+        box-sizing: border-box;
+        height: 99mm !important;
+        border-radius: 0 !important;
+        display: flex !important;
+        flex-direction: column;
+        justify-content: space-between !important;
+        overflow: hidden;
+        padding: 5mm 13mm 5mm !important;
+    }
+
+    .ep-sponsors .ep-h2 {
+        color: #fff;
+        margin-bottom: 4mm !important;
+        margin: 0 !important;
+        font-size: 23pt !important;
+    }
+
+    .ep-sponsor-grid {
+        gap: 3mm !important;
+        flex: 1;
+        align-content: center;
+        margin: 3mm 0 !important;
+    }
+
+    .ep-sponsor-grid li {
+        border-color: #333;
+        padding: 2mm !important;
+        width: calc((100% - 12mm) / 5) !important;
+        height: 26mm !important;
+    }
+
+    .ep-sponsor-grid img {
+        max-height: 22mm !important;
+    }
+
+    .ep-ent-band-text {
+        padding: 4mm 5mm 5mm !important;
+    }
+
+    .ep-top2 .ep-ent-card {
+        padding: 3.5mm 5mm !important;
+    }
+
+    .ep-ent-hosts h3 {
+        font-size: 16pt !important;
+    }
+
+    .ep-top2 {
+        gap: 3mm;
+        margin: 0 0 3mm;
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .ep-ent-hosts > div {
+        align-self: center;
+    }
+
+    .ep-ent-hosts-pic {
+        height: 100% !important;
+        min-height: 22mm !important;
+    }
+
+    .ep-ent .ep-ent-card.ep-ent-hosts {
+        display: grid !important;
+        grid-template-columns: 40% 1fr !important;
+        grid-template-rows: 1fr !important;
+        align-items: stretch !important;
+        padding: 0 4mm 0 0 !important;
+    }
+
+    .ep-ent .ep-ent-hosts-pic {
+        grid-column: 1;
+        grid-row: 1;
+        height: 100% !important;
+        min-height: 0 !important;
+    }
+
+    .ep-ent .ep-ent-hosts > div {
+        grid-column: 2;
+        grid-row: 1;
+        align-self: center;
+    }
+
+    .ep-vs {
+        margin: 1mm 0 2mm;
+        gap: 3mm;
+    }
+
+    .ep-vs img {
+        height: 16mm;
+    }
+
+    .ep-vs span {
+        font-size: 14pt;
+    }
+
+    .ep-ent-card:not(.ep-ent-band) {
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: flex-start !important;
+        min-height: 0;
+        overflow: hidden;
+        padding: 3mm 5mm !important;
+    }
+
+    .ep-ent-card:not(.ep-ent-band) h3 {
+        margin-bottom: 1mm !important;
+        line-height: 0.95;
+        margin: 0 0 1.5mm !important;
+        font-size: 16pt !important;
+    }
+
+    .ep-ent-castle .ep-castle-pic {
+        max-height: 18mm;
+        width: auto;
+    }
+
+    .ep-ent-cricket h3 {
+        grid-column: 2;
+        font-size: 12pt !important;
+        white-space: nowrap;
+        text-align: center;
+        margin: 0 !important;
+    }
+
+    .ep-ent-cricket h3 br {
+        display: none;
+    }
+
+    .ep-ent-cricket p:last-child {
+        grid-column: 2;
+        font-size: 8.5pt !important;
+        line-height: 1.3;
+        margin: 0;
+        display: block !important;
+    }
+
+    .ep-ent-cricket .ep-vs img {
+        width: auto;
+        height: 9.5mm !important;
+    }
+
+    .ep-ent-band {
+        grid-row: 1 / span 3 !important;
+    }
+
+    .ep-ent-hosts {
+        padding: 0 4mm 0 0 !important;
+        gap: 4mm;
+        display: grid !important;
+        align-items: stretch !important;
+        grid-template-columns: 42% 1fr !important;
+        grid-row: 1 !important;
+    }
+
+    .ep-ent-bingo {
+        grid-row: 2 !important;
+    }
+
+    .ep-ent-castle {
+        grid-row: 3 !important;
+    }
+
+    .ep-ent-cricket .ep-vs {
+        align-items: center;
+        grid-column: 1;
+        grid-row: 1 / span 3;
+        margin: 0;
+        gap: 1mm !important;
+        justify-content: flex-start !important;
+        overflow: visible;
+        display: contents !important;
+    }
+
+    .ep-ent-cricket .ep-vs span {
+        grid-area: s;
+        justify-self: center;
+        font-size: 16pt !important;
+        line-height: 1;
+        margin: 0.5mm 0;
+    }
+
+    .ep-ent-cricket .ep-kicker {
+        grid-column: 2;
+        letter-spacing: 0.1em !important;
+        white-space: nowrap;
+        grid-area: k;
+        text-align: center !important;
+        margin: 0 !important;
+        font-size: 7.5pt !important;
+    }
+
+    .ep-ent .ep-ent-card.ep-ent-cricket h3 br {
+        display: none;
+    }
+
+    .ep-times small {
+        display: inline !important;
+        margin-left: 2.5mm;
+        font-size: 8.5pt !important;
+    }
+
+    .ep-times li {
+        font-size: 11.5pt !important;
+        padding: 1.6mm 4.5mm !important;
+    }
+
+    .ep-times {
+        gap: 1.4mm !important;
+    }
+
+    .ep-times-poster {
+        display: grid;
+        gap: 8mm;
+        align-items: end;
+        margin-top: 4mm !important;
+        grid-template-columns: 1fr 44mm !important;
+    }
+
+    .ep-poster {
+        transform: rotate(2deg);
+        border-width: 2px;
+        box-shadow: 3px 3px 0 var(--ep-ink) !important;
+        width: 44mm !important;
+    }
+
+    .ep-times-poster .ep-h2 {
+        font-size: 20pt !important;
+        margin-bottom: 2mm !important;
+    }
+
+    .ep-ent-photo {
+        aspect-ratio: auto;
+        min-height: 0;
+        flex: none !important;
+        height: 56mm !important;
+    }
+
+    .ep-ent-cricket .ep-vs img:first-child {
+        grid-area: a;
+        width: auto;
+        margin-top: -6mm;
+        justify-self: start;
+        align-self: center !important;
+        margin: 0 !important;
+        height: 24mm !important;
+    }
+
+    .ep-ent-cricket .ep-vs img:last-child {
+        grid-area: b;
+        width: auto;
+        margin-bottom: -6mm;
+        justify-self: end;
+        align-self: center !important;
+        margin: 0 !important;
+        height: 24mm !important;
+    }
+
+    .ep-ent .ep-ent-card.ep-ent-cricket {
+        flex-direction: column;
+        justify-content: center;
+        align-content: center;
+        padding-left: 5.5mm !important;
+        grid-column: 1 / -1 !important;
+        grid-row: 4 !important;
+        display: grid !important;
+        grid-template-columns: 34mm 1fr 34mm !important;
+        grid-template-areas: 'a k b' 'a s b' 'a h b' 'a p b';
+        grid-template-rows: auto auto auto auto !important;
+        align-items: center;
+        column-gap: 4mm;
+        margin-top: 3mm;
+        overflow: hidden;
+        padding: 3.5mm 7mm !important;
+    }
+
+    .ep-ent .ep-ent-card.ep-ent-cricket h3 {
+        grid-column: 2;
+        grid-area: h;
+        text-align: center !important;
+        margin: 0.5mm 0 1mm !important;
+        white-space: nowrap;
+        font-size: 16pt !important;
+    }
+
+    .ep-ent .ep-ent-card.ep-ent-cricket p:last-child {
+        grid-column: 2;
+        grid-area: p;
+        text-align: center;
+        line-height: 1.35;
+        margin: 0;
+        font-size: 9.5pt !important;
+    }
+
+    .ep-ent-band-text p:not(.ep-kicker) {
+        line-height: 1.45;
+        margin: 0;
+        font-size: 10pt !important;
+    }
+
+    .ep-ent-card:not(.ep-ent-band):not(.ep-ent-cricket) p:last-child {
+        font-size: 10pt !important;
+    }
+
+    .ep-ent {
+        flex: 1;
+        grid-template-columns: 1.35fr 1fr;
+        min-height: 0;
+        gap: 3mm !important;
+        grid-template-rows: 1fr 1fr 1fr auto !important;
+        row-gap: 3.5mm !important;
+        column-gap: 3.5mm !important;
+    }
+
+    .ep-ent .ep-ent-bingo p:last-child {
+        font-size: 9.2pt !important;
+        line-height: 1.3;
+    }
+
+    .ep-ent .ep-ent-bingo h3 {
+        margin-bottom: 1mm !important;
+    }
+
+    .ep-ent .ep-ent-bingo {
+        padding-top: 2.5mm !important;
+        padding-bottom: 2.5mm !important;
+    }
+
+    .ep-page-3 .ep-top2 {
+        gap: var(--g) !important;
+        margin: 0 0 var(--g) !important;
+    }
+
+    .ep-page-3 .ep-ent {
+        gap: var(--g) !important;
+        row-gap: var(--g) !important;
+        column-gap: var(--g) !important;
+    }
+
+    .ep-page-3 .ep-ent .ep-ent-card.ep-ent-cricket {
+        margin: 0 !important;
+    }
+
+    .ep-page-3 .ep-head {
+        margin-bottom: var(--g) !important;
+    }
+
+    .ep-page-3 .ep-times {
+        gap: 1.6mm !important;
+    }
+
+    .ep-page-3 .ep-times b {
+        min-width: 19mm !important;
+    }
+
+    .ep-page-3 .ep-times-poster .ep-h2 {
+        font-size: 17pt !important;
+        margin-bottom: 1.5mm !important;
+    }
+
+    .ep-page-3 .ep-ent-photo {
+        height: 38mm !important;
+    }
+
+    .ep-page-3 .ep-ent-band .ep-ent-photo {
+        flex: 1 1 auto !important;
+        height: auto !important;
+        min-height: 38mm !important;
+    }
+
+    .ep-page-3 .ep-times li {
+        padding: 0.9mm 4mm !important;
+        line-height: 1.15;
+        font-size: 9.2pt !important;
+    }
+
+    .ep-page-3 .ep-times li > span {
+        letter-spacing: 0 !important;
+    }
+
+    .ep-page-3 .ep-times small {
+        font-size: 7pt !important;
+        margin-left: 1.5mm !important;
+    }
+
+    .ep-notice {
+        position: static;
+    }
+
+    .ep-page-ent .ep-head {
+        flex: none;
+        margin-bottom: 6mm;
+    }
+
+    .ep-page-ent .is-headline h3 {
+        font-size: 24pt;
+    }
+
+    .ep-page-ent .ep-kicker {
+        font-size: 7.5pt;
+    }
+
+    .ep-page-3 .ep-times-poster {
+        column-gap: var(--g) !important;
+        gap: var(--g) !important;
+        align-items: stretch !important;
+        margin-top: 3mm !important;
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+    }
+
+    .ep-page-3 .ep-poster img {
+        max-height: 230mm;
+        width: auto;
+        max-width: 100%;
+    }
+
+    .ep-page-3 {
+        --g: 3.5mm;
+        display: none !important;
+    }
+
+    .ep-hero-live {
+        padding: 12mm 13mm;
+    }
+
+    .ep-poster-hero {
+        display: block !important;
+        max-width: none;
+        margin: 0;
+    }
+
+    .ep-poster-hero img {
+        width: 100%;
+        height: auto;
+        max-height: 260mm;
+        object-fit: contain;
+        border-radius: 4mm;
+        box-shadow: none;
+    }
+
+    .ep-page-ent .is-headline .ep-ent-photo {
+        height: 40%;
+    }
+
+    .ep-page-ent .is-headline p:not(.ep-kicker) {
+        -webkit-line-clamp: 10;
+    }
+
+    .ep-hero-live .ep-title {
+        font-size: 44pt !important;
+        line-height: 0.9;
+    }
+
+    .ep-hero-live .ep-subline {
+        font-size: 12pt;
+        margin: 2mm 0 3mm;
+    }
+
+    .ep-hero-live .ep-intro {
+        font-size: 9.5pt;
+        line-height: 1.4;
+        margin: 0 0 4mm;
+    }
+
+    .ep-hero-live .ep-facts li {
+        padding: 2mm 3mm;
+        font-size: 9.5pt;
+        box-shadow: none;
+    }
+
+    .ep-times-cover {
+        display: block !important;
+        margin: 5mm 0 0 !important;
+    }
+
+    .ep-times-cover li {
+        padding: 1.4mm 0 !important;
+        font-size: 8.5pt !important;
+    }
+
+    .ep-times-cover b {
+        min-width: 52px !important;
+        font-size: 8.5pt !important;
+    }
+
+    .ep-times-cover small {
+        font-size: 7.5pt !important;
+    }
+
+    .ep-hero-live .ep-poster-hero {
+        width: 100% !important;
+        max-width: none !important;
+        height: auto !important;
+    }
+
+    .ep-hero-live .ep-poster-hero img {
+        width: 100% !important;
+        height: auto !important;
+        max-height: 258mm;
+        object-fit: contain;
+    }
+
+    .ep-hero-live .ep-hero-inner {
+        display: grid !important;
+        gap: 10mm;
+        align-items: start;
+        height: 100%;
+        grid-template-columns: 0.9fr 1.1fr !important;
+    }
+
+    .ep-hero-live .ep-facts {
+        max-width: none;
+        gap: 2mm;
+        grid-template-columns: 1fr !important;
+    }
+
+    .ep-page-4 .ep-sponsors > p {
+        display: none;
+    }
+
+    .ep-page-ent {
+        padding: 12mm 13mm;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .ep-page-ent .ep-ent-wrap {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .ep-page-ent .ep-ent-gen {
+        flex: 1;
+        grid-template-rows: repeat(4, 1fr) !important;
+        gap: 4mm !important;
+        min-height: 0;
+    }
+
+    .ep-page-ent .ep-ent-side:nth-of-type(n + 6) {
+        display: none !important;
+    }
+
+    .ep-page-ent .ep-ent-band {
+        grid-row: 1 / span 4 !important;
+        overflow: hidden;
+    }
+
+    .ep-page-ent .ep-ent-band .ep-ent-photo {
+        height: 62mm !important;
+    }
+
+    .ep-page-ent .ep-ent-band h3 {
+        font-size: 22pt !important;
+    }
+
+    .ep-page-ent .ep-ent-band p:not(.ep-kicker) {
+        font-size: 9.5pt !important;
+        display: -webkit-box;
+        -webkit-line-clamp: 8;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .ep-page-ent .ep-ent-side {
+        overflow: hidden;
+        min-height: 0;
+    }
+
+    .ep-page-ent .ep-ent-side h3 {
+        font-size: 15pt !important;
+    }
+
+    .ep-page-ent .ep-ent-side p:not(.ep-kicker) {
+        font-size: 9pt !important;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .ep-page-ent .ep-ent-hosts {
+        grid-template-columns: 38% 1fr !important;
+    }
+
+    .ep-page-ent .ep-ent-hosts-pic {
+        height: 100% !important;
+    }
+
+    .ep-page-ent .ep-top2 .ep-ent-card p:not(.ep-kicker) {
+        font-size: 9pt !important;
+    }
+
     .ep-going {
         display: none !important;
     }
