@@ -14,11 +14,11 @@
       nothing saves and payment is blocked.
    -------------------------------------------------------------------------- */
 
-import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=822';
+import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=823';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=822';
-import { termBodyHtml } from './terms-data.js?v=822';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION } from './vendor-terms-data.js?v=822';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=823';
+import { termBodyHtml } from './terms-data.js?v=823';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION } from './vendor-terms-data.js?v=823';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -413,7 +413,7 @@ function renderEvents() {
     if (!host) return;
 
     if (!state.eventsLoaded) {
-        host.innerHTML = '<p class="vs-sr-only" role="status">Loading events&hellip;</p>' + eventSkeleton();
+        host.innerHTML = '<p class="sr-only" role="status">Loading events&hellip;</p>' + eventSkeleton();
         return;
     }
 

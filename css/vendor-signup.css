@@ -1,17 +1,55 @@
 /* ==========================================================================
-   VENDOR SIGNUP - page styles
+   VENDOR SIGNUP - vendor-signup.html, on top of site.css. Everything is .vs-
+   A white page (the site tokens are re-coloured below); only the hero stays dark.
 
-   Loaded after style.css. Everything is prefixed .vs- so it cannot leak
-   into other pages.
+   TOKENS      page colours and fonts
+   HERO        dark banner with cobwebs
+   RAIL        sticky step bar under the hero
+   LAYOUT      the one-page flow: sections down the middle, summary at the side
+   SECTIONS    a card per step: heading, number, lock, intro, actions
+   EVENTS      the event cards (js/vendor-signup.js builds them)
+   PICKED      the event you chose
+   TYPE        food van / market stall choice
+   CATEGORIES  food category chips
+   FIELDS      inputs, labels, documents, facts, FAQs, terms, waitlist
+   MAP         the site plan and its legend
+   SIDE        your application, sticky at the side
+   CHECKOUT    the review cards and pay button
+   CONFIRM     the all-done card
+   PHONE       keep last
    ========================================================================== */
 
+/* ==========================================================================
+   TOKENS
+   ========================================================================== */
 .vendor-signup {
-    /* Halloween accents, scoped to this page only */
+    /* The site tokens, re-coloured for a white page */
+    --sg-black: #f6f7f9;
+    --sg-panel: #ffffff;
+    --sg-panel-light: #f2f4f7;
+    --sg-border: #e3e6ec;
+    --sg-text: #12141a;
+    --sg-muted: #4b5262;
+    --sg-dim: #6b7280;
+    --sg-gold: #8a5f00; /* darker gold, reads on white */
+    --sg-grain: none; /* grain looks like dirt on white */
+
+    /* Poppins headings, Inter text, on this page only */
+    --sg-font: 'Inter', -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+    --sg-font-display: 'Poppins', 'Inter', -apple-system, 'Segoe UI', Arial, sans-serif;
+    --sg-font-accent: 'Inter', -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+
+    --vs-ink: #12141a;
+    --vs-line: #e3e6ec;
+    --vs-soft: #f6f7f9;
+
+    /* Halloween accents */
     --vs-purple: #6b3fa0;
     --vs-purple-deep: #3a1f5c;
     --vs-purple-light: #b98cff;
     --vs-slime: #8bc34a;
 
+    /* Site plan states (dark set, kept for the swatches' fallback) */
     --vs-available: #2e7d32;
     --vs-held: #c8860d;
     --vs-booked: #5a1f1f;
@@ -19,22 +57,38 @@
     --vs-mine: var(--sg-orange);
 }
 
-/* [hidden] must beat any display set below. KEEP THIS ABOVE everything
-   that sets display. */
+/* [hidden] must beat any display set below */
 .vendor-signup [hidden] {
     display: none !important;
 }
 
-/* --------------------------------------------------------------------------
-   HERO
-   -------------------------------------------------------------------------- */
-/* Gradients must be listed BEFORE the photo, or the photo covers them
-   and the headline becomes unreadable. */
+/* Headings: ink on white, no uppercase */
+.vendor-signup h2,
+.vendor-signup h3 {
+    color: var(--sg-text);
+}
+
+/* Inputs: white boxes with a visible edge */
+.vendor-signup input,
+.vendor-signup select,
+.vendor-signup textarea {
+    background: #fff;
+    color: var(--sg-text);
+    border-color: var(--sg-border);
+}
+
+.vendor-signup input::placeholder,
+.vendor-signup textarea::placeholder {
+    color: #9aa1ad;
+}
+
+/* ==========================================================================
+   HERO - gradients listed before the photo or the headline is unreadable
+   ========================================================================== */
 .vs-hero {
     position: relative;
     overflow: hidden;
     text-align: center;
-
     background:
         radial-gradient(120% 100% at 50% 0%, rgba(46, 16, 66, 0.82) 0%, rgba(10, 10, 10, 0.92) 62%),
         linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.65) 100%),
@@ -55,6 +109,17 @@
 .vs-hero > * {
     position: relative;
     z-index: 1;
+}
+
+/* The hero keeps the real gold and white type */
+.vendor-signup .vs-hero {
+    --sg-gold: #ffb700;
+}
+
+.vendor-signup .vs-hero,
+.vendor-signup .vs-hero h1,
+.vendor-signup .vs-hero p {
+    color: #fff;
 }
 
 .vs-hero-inner {
@@ -89,7 +154,7 @@
     margin-bottom: 20px;
 }
 
-/* Cobweb in the top corners of the hero */
+/* Cobwebs in the top corners */
 .vs-web {
     position: absolute;
     top: 0;
@@ -103,6 +168,7 @@
 .vs-web-left {
     left: 0;
 }
+
 .vs-web-right {
     right: 0;
     transform: scaleX(-1);
@@ -114,357 +180,7 @@
     stroke-width: 1.4;
 }
 
-/* --------------------------------------------------------------------------
-   DOCUMENTS
-   -------------------------------------------------------------------------- */
-.vs-doc-list {
-    list-style: none;
-    margin-top: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.vs-doc {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px 14px;
-    background: #ffffff;
-    border: 1px solid var(--sg-border);
-    border-radius: 10px;
-    padding: 12px 16px;
-}
-
-.vs-doc-type {
-    font-family: var(--sg-font-accent);
-    font-size: 0.72rem;
-    font-weight: bold;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--sg-gold);
-}
-
-.vs-doc-name {
-    flex: 1;
-    min-width: 120px;
-    word-break: break-word;
-}
-
-.vs-doc-size {
-    color: var(--sg-dim);
-    font-size: 0.85rem;
-}
-
-.vs-doc-empty {
-    color: var(--sg-dim);
-    font-size: 0.92rem;
-}
-
-.vs-link {
-    background: none;
-    border: none;
-    color: var(--sg-orange);
-    cursor: pointer;
-    font-size: 0.9rem;
-    text-decoration: underline;
-    padding: 4px;
-}
-
-.vs-file-row {
-    display: grid;
-    grid-template-columns: minmax(160px, 220px) 1fr;
-    gap: 14px;
-    align-items: end;
-}
-
-/* --------------------------------------------------------------------------
-   EVENT INFO AND FAQS
-   -------------------------------------------------------------------------- */
-.vs-facts {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 2px;
-    background: var(--sg-border);
-    border: 1px solid var(--sg-border);
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 30px;
-}
-
-.vs-facts > div {
-    background: #ffffff;
-    padding: 16px 18px;
-}
-
-.vs-facts dt {
-    font-family: var(--sg-font-accent);
-    font-size: 0.7rem;
-    font-weight: bold;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--sg-gold);
-    margin-bottom: 6px;
-}
-
-.vs-facts dd {
-    color: #12141a;
-    font-size: 0.95rem;
-}
-
-/* Native <details> accordions - they work even without JavaScript. */
-.vs-faqs {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.vs-faqs details {
-    background: #ffffff;
-    border: 1px solid var(--sg-border);
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.vs-faqs details[open] {
-    border-color: var(--vs-purple);
-}
-
-.vs-faqs summary {
-    padding: 16px 46px 16px 18px;
-    cursor: pointer;
-    position: relative;
-    font-weight: bold;
-    color: #12141a;
-    list-style: none;
-}
-
-.vs-faqs summary::-webkit-details-marker {
-    display: none;
-}
-
-.vs-faqs summary::after {
-    content: '+';
-    position: absolute;
-    right: 18px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-family: var(--sg-font-display);
-    font-size: 1.3rem;
-    line-height: 1;
-    color: var(--sg-orange);
-}
-
-.vs-faqs details[open] summary::after {
-    content: '\2013';
-}
-
-.vs-faqs summary:hover {
-    color: var(--sg-gold);
-}
-
-.vs-faqs details p {
-    padding: 0 18px 18px;
-    color: var(--sg-muted);
-    font-size: 0.94rem;
-    line-height: 1.7;
-}
-
-.vs-sec-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
-    margin-top: 28px;
-}
-
-.vs-error {
-    background: #4a1d1d;
-    border: 1px solid #7a2f2f;
-    color: #ffd9d9;
-    border-radius: 10px;
-    padding: 12px 16px;
-    margin-top: 18px;
-    font-size: 0.95rem;
-}
-
-.vs-busy {
-    color: var(--sg-gold);
-    font-family: var(--sg-font-accent);
-    font-size: 0.85rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-top: 16px;
-}
-
-.vs-muted {
-    color: var(--sg-dim);
-}
-
-/* --------------------------------------------------------------------------
-   FOOD CATEGORIES
-   -------------------------------------------------------------------------- */
-.vs-category-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-    gap: 12px;
-}
-
-.vs-category {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
-
-    background: #ffffff;
-    border: 2px solid var(--sg-border);
-    border-radius: 12px;
-    padding: 16px 18px;
-    color: #12141a;
-    text-align: left;
-    cursor: pointer;
-    transition:
-        border-color 0.2s,
-        transform 0.2s;
-}
-
-.vs-category:hover:not(:disabled) {
-    transform: translateY(-2px);
-    border-color: #4a2a06;
-}
-
-.vs-category.is-selected {
-    border-color: var(--sg-orange);
-    background: #170d02;
-}
-
-.vs-category-name {
-    font-family: var(--sg-font-display);
-    font-size: 1rem;
-    letter-spacing: -0.3px;
-    text-transform: uppercase;
-}
-
-.vs-category-count {
-    font-family: var(--sg-font-accent);
-    font-size: 0.78rem;
-    letter-spacing: 1px;
-    color: var(--sg-dim);
-}
-
-.vs-category.is-full {
-    opacity: 0.55;
-    cursor: not-allowed;
-    border-color: #3a1414;
-}
-
-.vs-category-full {
-    position: absolute;
-    top: 10px;
-    right: 12px;
-    font-family: var(--sg-font-accent);
-    font-size: 0.66rem;
-    font-weight: bold;
-    letter-spacing: 1.5px;
-    color: #ff8a8a;
-    background: #4a1d1d;
-    border-radius: 4px;
-    padding: 2px 6px;
-}
-
-/* --------------------------------------------------------------------------
-   ONE PAGE
-   -------------------------------------------------------------------------- */
-.vs-confirming,
-.vs-confirmed {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-/* --------------------------------------------------------------------------
-   FORM FIELDS - matches the existing contact form styling
-   -------------------------------------------------------------------------- */
-.vs-field-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 16px;
-}
-
-.vs-field {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-}
-
-.vs-field.is-wide {
-    grid-column: 1 / -1;
-}
-
-.vs-field label {
-    font-family: var(--sg-font-accent);
-    font-size: 0.74rem;
-    font-weight: bold;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--sg-gold);
-}
-
-.vs-field input,
-.vs-field select,
-.vs-field textarea {
-    padding: 14px;
-    border-radius: 8px;
-    background: #ffffff;
-    color: #12141a;
-    border: 1px solid var(--sg-border);
-    font-family: var(--sg-font);
-    font-size: 1rem;
-    width: 100%;
-}
-
-.vs-field textarea {
-    resize: vertical;
-}
-
-.vs-field-hint {
-    color: var(--sg-dim);
-    font-size: 0.82rem;
-}
-
-.vs-check {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--sg-muted);
-}
-
-/* Something the vendor must read before ticking the box under it */
-.vs-notice {
-    background: rgba(107, 63, 160, 0.14);
-    border: 1px solid var(--vs-purple);
-    border-left: 4px solid var(--vs-purple);
-    border-radius: 10px;
-    padding: 14px 18px;
-    margin-bottom: 12px;
-    color: var(--sg-muted);
-    font-size: 0.94rem;
-}
-
-.vs-notice strong {
-    color: #12141a;
-}
-
-.vs-check input {
-    width: 20px;
-    height: 20px;
-    flex: 0 0 auto;
-}
-
-/* --------------------------------------------------------------------------
-   PREVIEW BANNER
-   Shown only while Firebase has not been connected.
-   -------------------------------------------------------------------------- */
+/* Red banner shown only while Firebase is not connected */
 .vs-preview-banner {
     background: #4a1d1d;
     border-bottom: 2px solid #7a2f2f;
@@ -478,1460 +194,21 @@
     color: #12141a;
 }
 
-/* --------------------------------------------------------------------------
-   REVIEW AND CONFIRMATION
-   -------------------------------------------------------------------------- */
-.vs-summary-list {
-    display: grid;
-    gap: 1px;
-    background: var(--sg-border);
-    border: 1px solid var(--sg-border);
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.vs-summary-list > div {
-    display: grid;
-    grid-template-columns: minmax(120px, 200px) 1fr;
-    gap: 14px;
-    background: #ffffff;
-    padding: 13px 18px;
-}
-
-.vs-summary-list dt {
-    font-family: var(--sg-font-accent);
-    font-size: 0.74rem;
-    font-weight: bold;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--sg-gold);
-    align-self: center;
-}
-
-.vs-summary-list dd {
-    color: #12141a;
-    word-break: break-word;
-}
-
 /* ==========================================================================
-   REVIEW - THE CHECKOUT
-
-   One column of small cards, same layout at every width.
+   RAIL - the steps, sticky under the hero
    ========================================================================== */
-
-/* The checkout has its own cards, so the step panel drops its box. */
-.vs-sec.is-checkout {
-    background: none;
-    border: 0;
-    padding: 0;
-}
-
-/* Heading held to the same column as the cards. */
-.vs-sec.is-checkout > h2,
-.vs-sec.is-checkout > .vs-sec-intro,
-.vs-sec.is-checkout > .vs-busy,
-.vs-sec.is-checkout > .vs-error {
-    max-width: 560px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.vs-checkout {
-    /* White cards on the page's off-white. */
-    --vs-card: #fff;
-    --vs-line: #e3e6ec;
-
-    display: grid;
-    gap: 14px;
-    max-width: 560px;
-    margin: 0 auto;
-}
-
-.vs-card {
-    background: var(--vs-card);
-    border: 1px solid var(--vs-line);
-    border-radius: 16px;
-    padding: 20px;
-}
-
-.vs-card h3 {
-    margin: 0;
-    font-family: var(--sg-font-display);
-    font-size: 1.2rem;
-    letter-spacing: -0.3px;
-    color: #12141a;
-}
-
-.vs-card-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-}
-
-/* Event line sits under the whole header so long names wrap less. */
-.vs-card-sub {
-    margin: 8px 0 0;
-    color: var(--sg-muted);
-    font-size: 0.85rem;
-    line-height: 1.45;
-}
-
-/* ---- the Edit booking button ---- */
-.vs-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    flex: 0 0 auto;
-    padding: 8px 14px;
-    border-radius: 50px;
-    border: 1px solid var(--vs-line);
-    background: #eef0f4;
-    color: #12141a;
-    font-size: 0.82rem;
-    cursor: pointer;
-    transition:
-        border-color 0.2s,
-        color 0.2s;
-}
-
-.vs-pill:hover {
-    border-color: var(--sg-orange);
-    color: var(--sg-orange);
-}
-.vs-pill-ico {
-    width: 14px;
-    height: 14px;
-    fill: currentColor;
-}
-
-/* ---- the thing being bought ---- */
-.vs-lineitem {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-top: 18px;
-}
-
-.vs-lineitem-ico {
-    flex: 0 0 auto;
-    display: grid;
-    place-items: center;
-    width: 52px;
-    height: 52px;
-    border-radius: 12px;
-    background: rgba(255, 107, 0, 0.12);
-    color: var(--sg-orange);
-}
-
-.vs-lineitem-ico svg {
-    width: 30px;
-    height: 30px;
-    fill: currentColor;
-}
-
-.vs-lineitem-txt {
-    display: grid;
-    gap: 3px;
-    min-width: 0;
-}
-.vs-lineitem-txt strong {
-    color: #12141a;
-    font-size: 1rem;
-}
-.vs-lineitem-txt > span {
-    color: var(--sg-muted);
-    font-size: 0.85rem;
-}
-
-/* Price / qty / total across the foot of the booking card, in equal thirds. */
-.vs-figures {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin: 18px 0 0;
-    padding-top: 16px;
-    border-top: 1px solid var(--vs-line);
-}
-
-.vs-figures > div:nth-child(2) {
-    text-align: center;
-}
-.vs-figures > div:last-child {
-    text-align: right;
-}
-
-.vs-figures dt {
-    font-family: var(--sg-font-accent);
-    font-size: 0.66rem;
-    font-weight: bold;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--sg-dim);
-    margin-bottom: 5px;
-}
-
-.vs-figures dd {
-    margin: 0;
-    color: #12141a;
-    font-size: 0.95rem;
-}
-.vs-figures dd.is-strong {
-    font-weight: bold;
-}
-
-/* ---- what it comes to ---- */
-.vs-sum {
-    display: grid;
-    gap: 11px;
-    margin: 16px 0 0;
-}
-
-.vs-sum > div {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-}
-
-.vs-sum dt {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    color: var(--sg-muted);
-    font-size: 0.92rem;
-}
-
-.vs-sum dd {
-    margin: 0;
-    color: #12141a;
-    font-size: 0.92rem;
-}
-
-/* The (i) opens a line of text below - hover tooltips don't work on phones. */
-.vs-info {
-    width: 16px;
-    height: 16px;
-    padding: 0;
-    border-radius: 50%;
-    border: 1px solid var(--sg-dim);
-    background: none;
-    color: var(--sg-dim);
-    font-family: var(--sg-font-accent);
-    font-size: 0.62rem;
-    line-height: 1;
-    cursor: pointer;
-}
-
-.vs-info:hover {
-    border-color: var(--sg-orange);
-    color: var(--sg-orange);
-}
-
-.vs-info-note {
-    margin: 12px 0 0;
-    padding: 11px 13px;
-    border-radius: 9px;
-    background: #f6f7f9;
-    border: 1px solid var(--vs-line);
-    color: var(--sg-muted);
-    font-size: 0.82rem;
-    line-height: 1.6;
-}
-
-/* The total, ruled off from the lines it adds up. */
-.vs-sum-total {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
-    margin-top: 16px;
-    padding-top: 15px;
-    border-top: 1px solid var(--vs-line);
-}
-
-.vs-sum-total span {
-    font-family: var(--sg-font-display);
-    font-size: 1.05rem;
-    letter-spacing: -0.2px;
-    color: var(--sg-orange);
-}
-
-.vs-sum-total strong {
-    font-family: var(--sg-font-display);
-    font-size: 1.55rem;
-    letter-spacing: -0.5px;
-    color: var(--sg-orange);
-}
-
-/* ---- who takes the money ---- */
-.vs-secure-head {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-}
-
-.vs-secure-ico {
-    flex: 0 0 auto;
-    display: grid;
-    place-items: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    background: rgba(255, 107, 0, 0.12);
-    color: var(--sg-orange);
-}
-
-.vs-secure-ico svg {
-    width: 22px;
-    height: 22px;
-    fill: currentColor;
-}
-
-.vs-secure-head > span:last-child {
-    display: grid;
-    gap: 3px;
-}
-.vs-secure-head strong {
-    color: #12141a;
-    font-size: 0.95rem;
-}
-.vs-secure-head > span:last-child > span {
-    color: var(--sg-muted);
-    font-size: 0.84rem;
-}
-
-.vs-secure-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px 18px;
-    list-style: none;
-    margin: 16px 0 0;
-    padding: 16px 0 0;
-    border-top: 1px solid var(--vs-line);
-}
-
-.vs-secure-row li {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--sg-dim);
-    font-size: 0.78rem;
-}
-
-/* ---- their own answers, folded away ---- */
-.vs-yourdetails {
-    padding: 0;
-    overflow: hidden;
-}
-
-.vs-yourdetails summary {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 16px 20px;
-    cursor: pointer;
-    list-style: none;
-
-    font-family: var(--sg-font-accent);
-    font-size: 0.72rem;
-    font-weight: bold;
-    letter-spacing: 1.6px;
-    text-transform: uppercase;
-    color: var(--sg-gold);
-}
-
-.vs-yourdetails summary::-webkit-details-marker {
-    display: none;
-}
-.vs-yourdetails summary span {
-    margin-left: auto;
-    color: var(--sg-dim);
-    letter-spacing: 1px;
-}
-.vs-yourdetails summary::after {
-    content: '+';
-    color: var(--sg-dim);
-    font-size: 1.1rem;
-}
-.vs-yourdetails[open] summary::after {
-    content: '\2212';
-}
-
-.vs-yourdetails .vs-summary-list {
-    margin: 0;
-    border: 0;
-    border-top: 1px solid var(--vs-line);
-    border-radius: 0;
-}
-
-.vs-checkout-foot {
-    margin: 2px 0 0;
-    text-align: center;
-    color: var(--sg-dim);
-    font-size: 0.84rem;
-}
-
-.vs-help-link {
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--sg-orange);
-    font: inherit;
-    text-decoration: underline;
-    cursor: pointer;
-}
-
-/* THE PAY BAR - sits at the end of the page, not pinned. */
-.vs-paybar {
-    display: block;
-    max-width: 560px;
-    margin: 22px auto 0;
-}
-
-.vs-paybar .btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    max-width: none;
-}
-
-/*  The arrow only belongs on a button that can actually be pressed. */
-#vs-pay:not(:disabled)::after {
-    content: '\2192';
-    font-size: 1.1em;
-    line-height: 1;
-}
-
-.vs-confirming,
-.vs-confirmed {
-    max-width: 760px;
-    margin: auto;
-    text-align: center;
-}
-
-.vs-confirm-card {
-    background: var(--sg-panel);
-    border: 1px solid var(--sg-border);
-    border-top: 4px solid var(--vs-available);
-    border-radius: 18px;
-    padding: 40px 32px;
-    text-align: left;
-}
-
-.vs-eyebrow {
-    font-family: var(--sg-font-accent);
-    font-size: 0.76rem;
-    font-weight: bold;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--vs-slime);
-    margin-bottom: 10px;
-}
-
-.vs-confirm-card h2 {
-    text-align: left;
-    margin-bottom: 10px;
-}
-
-.vs-confirm-ref {
-    font-family: var(--sg-font-accent);
-    letter-spacing: 2px;
-    color: var(--sg-muted);
-    margin-bottom: 24px;
-}
-
-.vs-confirm-note {
-    color: var(--sg-muted);
-    margin-top: 22px;
-    font-size: 0.95rem;
-}
-
-.vs-spinner {
-    width: 42px;
-    height: 42px;
-    margin: 0 auto 20px;
-    border: 3px solid #2a2a2a;
-    border-top-color: var(--sg-orange);
-    border-radius: 50%;
-    animation: vs-spin 1s linear infinite;
-}
-
-@keyframes vs-spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* --------------------------------------------------------------------------
-   STEP PANELS
-   -------------------------------------------------------------------------- */
-.vs-sec {
-    background: var(--sg-panel);
-    border: 1px solid var(--sg-border);
-    border-radius: 18px;
-    padding: 34px 30px;
-}
-
-.vs-sec h2 {
-    text-align: left;
-    font-size: clamp(1.4rem, 3.4vw, 2rem);
-    margin-bottom: 8px;
-}
-
-.vs-sec-intro {
-    color: var(--sg-muted);
-    margin-bottom: 26px;
-}
-
-/* Subheading with a rule above, to split a shared step into parts. */
-.vs-sub {
-    font-family: var(--sg-font-display);
-    font-size: 1.15rem;
-    letter-spacing: -0.5px;
-    text-transform: uppercase;
-    margin: 38px 0 18px;
-    padding-top: 26px;
-    border-top: 1px solid var(--sg-border);
-}
-
-.vs-sec > .vs-sub:first-of-type {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: 0;
-}
-
-/* --------------------------------------------------------------------------
-   THE MAP
-   -------------------------------------------------------------------------- */
-.vs-map-wrap {
-    position: relative;
-    background: #0b0b0b;
-    border: 1px solid var(--sg-border);
-    border-radius: 14px;
-    padding: 14px;
-
-    /* The tall site plan scrolls inside this box, never the page. */
-    max-height: min(70vh, 780px);
-    overflow: auto;
-    overscroll-behavior: contain;
-}
-
-.vs-map {
-    /* Min width keeps each bay a 44px tap target (760 x 44 / 56 = 597px). */
-    min-width: 620px;
-}
-
-.vmap-svg {
-    display: block;
-    width: 100%;
-    height: auto;
-}
-
-.vs-map-hint {
-    color: var(--sg-dim);
-    font-size: 0.84rem;
-    margin-top: 8px;
-}
-
-/* fixed furniture */
-.vmap-landmark rect {
-    fill: #151515;
-    stroke: #2b2b2b;
-    stroke-width: 2;
-}
-
-.vmap-landmark-text {
-    fill: #8a8a8a;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 13px;
-    letter-spacing: 1.5px;
-}
-
-/* bookable sites */
-.vmap-site rect {
-    stroke-width: 2.5;
-    transition:
-        fill 0.15s,
-        stroke 0.15s;
-}
-
-.vmap-site-label {
-    fill: #fff;
-    font-family: 'Arial Black', Arial, sans-serif;
-    font-size: 17px;
-    pointer-events: none;
-}
-
-.vmap-site-sub {
-    fill: rgba(255, 255, 255, 0.72);
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 10px;
-    letter-spacing: 1px;
-    pointer-events: none;
-}
-
-.vmap-site.is-available rect {
-    fill: #12310f;
-    stroke: var(--vs-available);
-}
-.vmap-site.is-held rect {
-    fill: #33280a;
-    stroke: var(--vs-held);
-}
-.vmap-site.is-booked rect {
-    fill: #2a0f0f;
-    stroke: #8c3a3a;
-}
-.vmap-site.is-blocked rect {
-    fill: #161616;
-    stroke: #3a3a3a;
-}
-.vmap-site.is-mine rect {
-    fill: #3a1e00;
-    stroke: var(--vs-mine);
-}
-
-.vmap-site.is-selectable {
-    cursor: pointer;
-}
-
-.vmap-site.is-selectable:hover rect {
-    fill: #1b4a17;
-    stroke: #4caf50;
-}
-
-.vmap-site.is-selected rect {
-    fill: #4a2600;
-    stroke: var(--sg-orange);
-    stroke-width: 4;
-}
-
-.vmap-site.is-locked .vmap-site-label {
-    fill: rgba(255, 255, 255, 0.5);
-}
-
-/* Free but not released yet. Flatter than "booked" so it reads "not now",
-   not "gone". */
-.vmap-site.is-not-open rect {
-    fill: #101010;
-    stroke: #2c2c2c;
-    stroke-dasharray: 5 4;
-}
-
-.vmap-site.is-not-open .vmap-site-label,
-.vmap-site.is-not-open .vmap-site-sub {
-    fill: rgba(255, 255, 255, 0.3);
-}
-
-.vmap-site.is-wrong-type rect {
-    fill: #0f0f0f;
-    stroke: #242424;
-}
-
-.vmap-site.is-wrong-type .vmap-site-label,
-.vmap-site.is-wrong-type .vmap-site-sub {
-    fill: rgba(255, 255, 255, 0.24);
-}
-
-.vmap-site.is-selectable:focus-visible rect {
-    stroke: var(--sg-gold);
-    stroke-width: 4;
-}
-
-/* legend */
-.vs-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px 20px;
-    margin: 18px 0 6px;
-    list-style: none;
-}
-
-.vs-legend li {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--sg-muted);
-    font-size: 0.86rem;
-}
-
-.vs-swatch {
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
-    border: 2px solid;
-    flex: 0 0 auto;
-}
-
-.vs-swatch.is-available {
-    background: #12310f;
-    border-color: var(--vs-available);
-}
-.vs-swatch.is-held {
-    background: #33280a;
-    border-color: var(--vs-held);
-}
-.vs-swatch.is-booked {
-    background: #2a0f0f;
-    border-color: #8c3a3a;
-}
-.vs-swatch.is-blocked {
-    background: #161616;
-    border-color: #3a3a3a;
-}
-.vs-swatch.is-mine {
-    background: #3a1e00;
-    border-color: var(--vs-mine);
-}
-.vs-swatch.is-not-open {
-    background: #101010;
-    border-color: #2c2c2c;
-}
-
-/* Instructions above the plan. */
-.vs-map-intro {
-    margin: 14px 0 0;
-    color: var(--sg-muted);
-    font-size: 0.92rem;
-    line-height: 1.6;
-}
-
-.vs-map-intro strong {
-    color: var(--sg-gold);
-}
-
-.vs-map-intro-sub {
-    color: var(--sg-dim);
-    font-size: 0.86rem;
-}
-
-.vs-site-choice {
-    margin-top: 14px;
-    padding: 12px 16px;
-    border-radius: 10px;
-    background: #ffffff;
-    border: 1px solid var(--sg-border);
-    color: var(--sg-dim);
-}
-
-/* The panel that appears once a site is picked. */
-.vs-site-choice.is-chosen {
-    border-color: var(--sg-orange);
-    background: #fff7f0;
-    color: #12141a;
-}
-
-.vs-hold-timer {
-    margin-top: 10px;
-    font-family: var(--sg-font-accent);
-    font-size: 0.85rem;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--sg-gold);
-}
-
-.vs-hold-timer.is-expired {
-    color: #ff8a8a;
-}
-
-.vs-map-counts {
-    color: var(--sg-dim);
-    font-size: 0.88rem;
-    margin-top: 4px;
-}
-
-/* --------------------------------------------------------------------------
-   MOBILE
-   -------------------------------------------------------------------------- */
-@media (max-width: 768px) {
-    .vs-hero-inner {
-        padding: 100px 20px 54px;
-    }
-
-    .vs-sec {
-        padding: 20px 16px;
-        border-radius: 14px;
-    }
-
-    .vs-sec-actions .btn {
-        width: 100%;
-        max-width: none;
-    }
-
-    .vs-file-row {
-        grid-template-columns: 1fr;
-    }
-
-    .vs-summary-list > div {
-        grid-template-columns: 1fr;
-        gap: 4px;
-    }
-
-    /* Phone: a tighter checkout. */
-    .vs-checkout {
-        gap: 12px;
-    }
-
-    .vs-card {
-        padding: 16px;
-        border-radius: 14px;
-    }
-
-    /* Phone: the Edit button stays beside the heading. */
-    .vs-card-head {
-        gap: 10px;
-    }
-
-    .vs-pill {
-        padding: 7px 12px;
-        font-size: 0.78rem;
-    }
-
-    .vs-secure-row {
-        gap: 8px 14px;
-    }
-    .vs-secure-row li {
-        font-size: 0.74rem;
-    }
-
-    .vs-yourdetails summary {
-        padding: 14px 16px;
-    }
-
-    .vs-web {
-        width: 88px;
-        height: 88px;
-    }
-
-    .vs-sec-intro {
-        margin-bottom: 18px;
-    }
-
-    /* Phone: more padding on the steps. */
-    #vs-flow {
-        padding: 20px 5%;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .vs-spinner {
-        animation: none;
-    }
-    .vs-category:hover:not(:disabled) {
-        transform: none;
-    }
-}
-
-/* ==========================================================================
-   CHOOSING AN EVENT
-
-   Cards built by js/vendor-signup.js from the events collection.
-   ========================================================================== */
-.vs-events {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
-    gap: 18px;
-    margin-top: 24px;
-}
-
-.vs-events-loading {
-    color: var(--sg-dim);
-    padding: 26px 0;
-}
-
-.vs-event {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border: 1px solid var(--sg-border);
-    border-radius: 14px;
-    background: var(--sg-panel);
-    transition:
-        border-color 0.2s ease,
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
-}
-
-.vs-event:hover {
-    transform: translateY(-3px);
-    border-color: #3a3a3a;
-    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.45);
-}
-
-/* The chosen event lifts and warms, not just a border. */
-.vs-event.is-chosen {
-    border-color: var(--sg-orange);
-    box-shadow:
-        0 0 0 1px var(--sg-orange),
-        0 16px 34px rgba(0, 0, 0, 0.45);
-}
-
-/* Closed or not yet open: still listed, but visibly not an option. */
-.vs-event.is-shut {
-    opacity: 0.72;
-}
-.vs-event.is-shut:hover {
-    transform: none;
-    box-shadow: none;
-    border-color: var(--sg-border);
-}
-
-.vs-event-art {
-    position: relative;
-    aspect-ratio: 16 / 9;
-    background-color: #e9ecf1;
-    background-image: var(--vs-ev-art);
-    background-size: cover;
-    background-position: center;
-}
-
-/* Status badge sits over the picture. */
-.vs-event-status {
-    position: absolute;
-    left: 10px;
-    bottom: 10px;
-    padding: 5px 11px;
-    border-radius: 999px;
-    font-family: var(--sg-font-accent);
-    font-size: 0.6rem;
-    font-weight: bold;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-}
-
-.vs-event-status.is-open {
-    background: #1c6b3a;
-    color: #d8ffe8;
-}
-.vs-event-status.is-limited {
-    background: #7a5200;
-    color: #ffe9bd;
-}
-.vs-event-status.is-closed {
-    background: #2a2a2a;
-    color: #bdbdbd;
-}
-.vs-event-status.is-soon {
-    background: #23324a;
-    color: #cfe0ff;
-}
-
-.vs-event-body {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-    padding: 16px 16px 18px;
-    flex: 1;
-}
-
-.vs-event-body h3 {
-    font-family: var(--sg-font-display);
-    font-size: 1.05rem;
-    letter-spacing: -0.3px;
-    text-transform: uppercase;
-    margin: 0 0 2px;
-}
-
-.vs-event-when {
-    margin: 0;
-    color: var(--sg-gold);
-    font-size: 0.82rem;
-    font-weight: bold;
-}
-
-.vs-event-where {
-    margin: 0;
-    color: var(--sg-dim);
-    font-size: 0.82rem;
-}
-
-.vs-event-blurb {
-    margin: 4px 0 0;
-    color: var(--sg-dim);
-    font-size: 0.86rem;
-    line-height: 1.6;
-}
-
-/* Pushed to the bottom so the buttons line up across cards. */
-.vs-event-go {
-    margin-top: auto;
-    padding-top: 10px;
-    padding-bottom: 10px;
-    width: 100%;
-    text-align: center;
-    font-size: 0.72rem;
-}
-
-.vs-event-go.is-disabled {
-    border: 1px solid var(--sg-border);
-    background: #dfe3e9;
-    color: var(--sg-dim);
-    cursor: default;
-}
-
-/* ==========================================================================
-   CHOOSING AN EVENT - THE LIGHT STAGE
-
-   Its own small palette for dark type on white.
-   ========================================================================== */
-.vs-apply {
-    --pk-ink: #12141a;
-    --pk-muted: #606877;
-    --pk-line: #e3e6ec;
-    --pk-panel: #fff;
-
-    padding: clamp(28px, 4vw, 52px) 6% clamp(48px, 7vw, 84px);
-    background: var(--sg-black);
-    color: var(--pk-ink);
-}
-
-.vs-sec h2 {
-    font-family: var(--sg-font-display);
-    font-size: clamp(1.5rem, 3.4vw, 2.1rem);
-    letter-spacing: -0.7px;
-    color: var(--pk-ink);
-    text-align: left;
-    margin: 0 0 8px;
-}
-
-.vs-sec-intro {
-    margin: 0 0 26px;
-    color: var(--pk-muted);
-    font-size: 0.95rem;
-}
-
-/* The numbered step label. */
-.vs-secnum {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 0 0 14px;
-    color: var(--pk-ink);
-    font-family: var(--sg-font-accent);
-    font-size: 0.68rem;
-    font-weight: bold;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-}
-
-.vs-secnum span {
-    display: grid;
-    place-items: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: var(--pk-ink);
-    color: #fff;
-    font-family: var(--sg-font);
-    font-size: 0.72rem;
-    letter-spacing: 0;
-}
-
-.vs-lock {
-    display: grid;
-    place-items: center;
-    gap: 6px;
-    padding: 40px 20px;
-    border: 1px solid var(--pk-line);
-    border-radius: 14px;
-    background: var(--pk-panel);
-    text-align: center;
-}
-
-.vs-lock-head {
-    margin: 6px 0 0;
-    font-weight: bold;
-    color: var(--pk-ink);
-}
-
-.vs-lock-sub {
-    margin: 0;
-    color: var(--pk-muted);
-    font-size: 0.9rem;
-}
-
-/* ---- the cards, on white ---- */
-.vs-sec .vs-events {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr));
-    gap: 16px;
-    margin-top: 0;
-}
-
-.vs-sec .vs-events-loading {
-    color: var(--pk-muted);
-    padding: 24px 0;
-}
-
-.vs-sec .vs-event {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border: 1px solid var(--pk-line);
-    border-radius: 14px;
-    background: var(--pk-panel);
-    box-shadow:
-        0 1px 2px rgba(16, 24, 40, 0.04),
-        0 1px 3px rgba(16, 24, 40, 0.06);
-    transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease,
-        border-color 0.2s ease;
-}
-
-.vs-sec .vs-event:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 26px rgba(16, 24, 40, 0.12);
-}
-
-.vs-sec .vs-event.is-chosen {
-    border-color: var(--sg-orange);
-    box-shadow:
-        0 0 0 1px var(--sg-orange),
-        0 12px 26px rgba(16, 24, 40, 0.12);
-}
-
-.vs-sec .vs-event.is-shut {
-    opacity: 0.82;
-}
-.vs-sec .vs-event.is-shut:hover {
-    transform: none;
-    box-shadow: none;
-}
-
-.vs-sec .vs-event-art {
-    position: relative;
-    aspect-ratio: 16 / 9;
-    background-color: #e9ecf1;
-    background-image: var(--vs-ev-art);
-    background-size: cover;
-    background-position: center;
-}
-
-.vs-sec .vs-event-body {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
-    padding: 14px 14px 16px;
-    flex: 1;
-}
-
-.vs-sec .vs-event-body h3 {
-    font-family: var(--sg-font-display);
-    font-size: 1rem;
-    letter-spacing: -0.3px;
-    text-transform: none;
-    color: var(--pk-ink);
-    margin: 0 0 2px;
-}
-
-/* Date and place icons, drawn in CSS. */
-.vs-sec .vs-event-when,
-.vs-sec .vs-event-where {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    margin: 0;
-    color: var(--pk-muted);
-    font-size: 0.84rem;
-    font-weight: normal;
-}
-
-.vs-sec .vs-event-when::before,
-.vs-sec .vs-event-where::before {
-    content: '';
-    width: 13px;
-    height: 13px;
-    flex: 0 0 auto;
-    background-color: currentColor;
-    -webkit-mask: var(--pk-icon) center / contain no-repeat;
-    mask: var(--pk-icon) center / contain no-repeat;
-}
-
-.vs-sec .vs-event-when::before {
-    --pk-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10z'/%3E%3C/svg%3E");
-}
-
-.vs-sec .vs-event-where::before {
-    --pk-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z'/%3E%3C/svg%3E");
-}
-
-.vs-sec .vs-event-blurb {
-    margin: 6px 0 0;
-    color: var(--pk-muted);
-    font-size: 0.86rem;
-    line-height: 1.6;
-}
-
-/* Black full-width choose button (orange is kept for "buy"). */
-.vs-sec .vs-event-go {
-    margin-top: 14px;
-    width: 100%;
-    padding: 11px 14px;
-    border: 0;
-    border-radius: 10px;
-    background: var(--pk-ink);
-    color: #fff;
-    font-family: var(--sg-font-accent);
-    font-size: 0.68rem;
-    font-weight: bold;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    text-align: center;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-.vs-sec .vs-event-go:hover {
-    background: #000;
-}
-
-/* The chosen card's button wears the orange accent. */
-.vs-sec .vs-event.is-chosen .vs-event-go {
-    background: var(--sg-orange);
-    color: #12141a;
-}
-
-.vs-sec .vs-event.is-chosen .vs-event-go:hover {
-    background: #e66000;
-}
-
-.vs-sec .vs-event-go.is-disabled {
-    background: #dfe3e9;
-    color: #8b93a1;
-    cursor: default;
-}
-
-/* ---- the status badge, over the picture ---- */
-.vs-sec .vs-event-status {
-    position: absolute;
-    left: 9px;
-    bottom: 9px;
-    padding: 4px 9px;
-    border-radius: 6px;
-    font-family: var(--sg-font-accent);
-    font-size: 0.56rem;
-    font-weight: bold;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-}
-
-.vs-sec .vs-event-status.is-open {
-    background: #16a34a;
-    color: #fff;
-}
-.vs-sec .vs-event-status.is-limited {
-    background: #f5b83d;
-    color: #3a2600;
-}
-.vs-sec .vs-event-status.is-closed {
-    background: #12141a;
-    color: #fff;
-}
-.vs-sec .vs-event-status.is-soon {
-    background: #12141a;
-    color: #fff;
-}
-
-/* ==========================================================================
-   THE PAGE IS WHITE
-
-   Done by redefining the colour tokens, so the rules need no change.
-   The hero stays dark.
-   ========================================================================== */
-.vendor-signup {
-    --sg-black: #f6f7f9;
-    --sg-panel: #ffffff;
-    --sg-panel-light: #f2f4f7;
-    --sg-border: #e3e6ec;
-    --sg-text: #12141a;
-    --sg-muted: #4b5262;
-    --sg-dim: #6b7280;
-
-    /* The grain overlay is hidden on white (it looks like dirt). */
-    --sg-grain: none;
-}
-
-/* The flow band shows the light page through. */
-.vendor-signup .vs-apply {
-    color: var(--sg-text);
-}
-
-/* Headings: ink on white. */
-.vendor-signup h2,
-.vendor-signup h3,
-.vendor-signup .vs-sec h2 {
-    color: var(--sg-text);
-}
-
-/* Inputs: white boxes with a visible edge. */
-.vendor-signup input,
-.vendor-signup select,
-.vendor-signup textarea {
-    background: #fff;
-    color: var(--sg-text);
-    border-color: var(--sg-border);
-}
-
-.vendor-signup input::placeholder,
-.vendor-signup textarea::placeholder {
-    color: #9aa1ad;
-}
-
-/* The hero keeps its dark look. */
-.vendor-signup .vs-hero,
-.vendor-signup .vs-hero h1,
-.vendor-signup .vs-hero p {
-    color: #fff;
-}
-
-/* ==========================================================================
-   COLOURS THAT ONLY WORKED ON BLACK
-
-   Darker gold, button text and link orange so they read on white.
-   Dark areas keep the originals.
-   ========================================================================== */
-.vendor-signup {
-    /* Darker gold, readable on white (4.9 : 1). */
-    --sg-gold: #8a5f00;
-}
-
-/*  The three places that are still dark keep the real gold.           */
-.vendor-signup .vs-hero {
-    --sg-gold: #ffb700;
-}
-
-/* Outline button: dark text on white. Scoped to .btn-outline only -
-   any wider and it catches Continue too. */
-.vendor-signup .vs-apply .btn-outline {
-    color: #12141a;
-    border-color: #c9ced7;
-    background: #fff;
-}
-
-.vendor-signup .vs-apply .btn-outline:hover {
-    background: #12141a;
-    border-color: #12141a;
-    color: #fff;
-}
-
-/* Darker orange for text links on white. */
-.vendor-signup .vs-apply a:not(.btn) {
-    color: #b34700;
-}
-
-.vendor-signup .vs-apply a:not(.btn):hover {
-    color: #12141a;
-}
-
-/* ==========================================================================
-   THE ONE-PAGE LAYOUT
-
-   Five numbered sections down the middle, a sticky summary at the side.
-   On a phone the summary comes first and stops sticking.
-   ========================================================================== */
-.vs-apply-inner {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 290px;
-    align-items: start;
-    gap: clamp(20px, 3vw, 40px);
-    max-width: var(--sg-max-width);
-    margin: auto;
-}
-
-.vs-main {
-    display: flex;
-    flex-direction: column;
-    gap: clamp(16px, 2vw, 26px);
-    min-width: 0;
-}
-
-/* Each section is a card. */
-.vs-sec {
-    /* Clears the sticky rail when a section is jumped to. */
-    scroll-margin-top: 66px;
-}
-
-/* A locked section shows only its number and the reason. */
-/* h2 stays visible - the section number lives inside it. */
-.vs-sec.is-locked > *:not(h2):not(.vs-lock) {
-    display: none;
-}
-.vs-sec:not(.is-locked) > .vs-lock {
-    display: none;
-}
-
-/* The intro note under a subheading. */
-.vs-sub-note {
-    margin: -10px 0 18px;
-    color: var(--sg-muted);
-    font-size: 0.92rem;
-    line-height: 1.65;
-}
-
-/* The Continue button. */
-.vs-sec-actions {
-    margin-top: 26px;
-}
-
-/* ---- the summary ------------------------------------------------------- */
-/* align-self:stretch (not start) gives the sticky summary room to travel. */
-/* ==========================================================================
-   CONTRAST FIXES FOR THE WHITE PAGE
-   ========================================================================== */
-
-/* Darker orange for type on white. */
-.vs-sum-total,
-.vs-sum-total span,
-.vs-sum-total strong,
-.vs-help-link {
-    color: #b34700;
-}
-
-/* Darker green so white text reads on it. */
-.vs-sec .vs-event-status.is-open {
-    background: #15803d;
-}
-
-/* ==========================================================================
-   THE FORM DESIGN
-
-   Step rail across the top, a card per section, the booking down the side.
-   Poppins headings and Inter text - on this page only.
-   ========================================================================== */
-.vendor-signup {
-    --sg-font: 'Inter', -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-    --sg-font-display: 'Poppins', 'Inter', -apple-system, 'Segoe UI', Arial, sans-serif;
-
-    /* Plain accent font for labels. */
-    --sg-font-accent: 'Inter', -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-
-    --vs-ink: #12141a;
-    --vs-line: #e3e6ec;
-    --vs-soft: #f6f7f9;
-}
-
-/* Headings: no uppercase, lighter weight. */
-.vendor-signup .vs-apply h2,
-.vendor-signup .vs-apply h3,
-.vendor-signup .vs-rail {
-    text-transform: none;
-    letter-spacing: -0.4px;
-    font-weight: 600;
-}
-
-/* ---- the rail ---------------------------------------------------------- */
 .vs-rail {
     position: sticky;
     top: 0;
     z-index: 20;
     background: #0b0b0b;
     border-bottom: 1px solid #1e1e1e;
+}
+
+.vendor-signup .vs-rail {
+    text-transform: none;
+    letter-spacing: -0.4px;
+    font-weight: 600;
 }
 
 .vs-rail-list {
@@ -1950,7 +227,7 @@
     display: none;
 }
 
-/* The line between steps, drawn on the item so it cannot wrap alone. */
+/* The line between steps is drawn on the item so it cannot wrap alone */
 .vs-rail-list li {
     display: flex;
     align-items: center;
@@ -2006,7 +283,7 @@
 .vs-rail-list .is-here .vs-rail-num {
     background: var(--sg-orange);
     border-color: var(--sg-orange);
-    color: #12141a; /* same reason as .vs-secnum */
+    color: #12141a;
 }
 
 .vs-rail-list .is-done .vs-rail-num {
@@ -2019,20 +296,86 @@
     color: #d4d8de;
 }
 
-/* ---- section headings -------------------------------------------------- */
-.vs-sec-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 20px;
-    flex-wrap: wrap;
+/* ==========================================================================
+   LAYOUT - the flow band and its two columns
+   ========================================================================== */
+.vs-apply {
+    --pk-ink: #12141a;
+    --pk-muted: #606877;
+    --pk-line: #e3e6ec;
+    --pk-panel: #fff;
+    padding: clamp(28px, 4vw, 52px) 6% clamp(48px, 7vw, 84px);
+    background: var(--sg-black);
+    color: var(--pk-ink);
 }
 
-.vs-sec-aside {
-    flex: 0 0 auto;
-    margin-left: auto; /* stays right when it wraps to its own line */
+.vendor-signup .vs-apply {
+    color: var(--sg-text);
+}
+
+.vs-apply-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 290px;
+    align-items: start;
+    gap: clamp(20px, 3vw, 40px);
+    max-width: var(--sg-max-width);
+    margin: auto;
+}
+
+.vs-main {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(16px, 2vw, 26px);
+    min-width: 0;
+}
+
+/* Outline buttons and text links, dark on white */
+.vendor-signup .vs-apply .btn-outline {
+    color: #12141a;
+    border-color: #c9ced7;
+    background: #fff;
+}
+
+.vendor-signup .vs-apply .btn-outline:hover {
+    background: #12141a;
+    border-color: #12141a;
+    color: #fff;
+}
+
+.vendor-signup .vs-apply a:not(.btn) {
     color: #b34700;
-    font-size: 0.86rem;
+}
+
+.vendor-signup .vs-apply a:not(.btn):hover {
+    color: #12141a;
+}
+
+/* Headings in the flow: no uppercase, lighter weight */
+.vendor-signup .vs-apply h2,
+.vendor-signup .vs-apply h3 {
+    text-transform: none;
+    letter-spacing: -0.4px;
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   SECTIONS - one card per step
+   ========================================================================== */
+.vs-sec {
+    background: var(--sg-panel);
+    border: 1px solid var(--sg-border);
+    border-radius: 18px;
+    padding: 34px 30px;
+    scroll-margin-top: 66px; /* clears the rail when jumped to */
+}
+
+.vs-sec h2 {
+    font-family: var(--sg-font-display);
+    font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+    letter-spacing: -0.7px;
+    color: var(--sg-text);
+    text-align: left;
+    margin: 0 0 8px;
 }
 
 .vendor-signup .vs-apply h2 {
@@ -2043,22 +386,39 @@
     margin-bottom: 6px;
 }
 
-/* The number sits inside the heading. */
+.vs-sec-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.vs-sec-aside {
+    flex: 0 0 auto;
+    margin-left: auto; /* stays right when it wraps */
+    color: #b34700;
+    font-size: 0.86rem;
+}
+
+/* The step number, inside the heading */
 .vs-secnum {
     display: grid;
     place-items: center;
+    align-items: center;
+    gap: 10px;
     flex: 0 0 auto;
     width: 30px;
     height: 30px;
+    margin: 0 0 14px;
     border-radius: 50%;
     background: var(--sg-orange);
-
-    /* Dark number on orange - white on orange is too faint at this size. */
-    color: #12141a;
+    color: #12141a; /* white on orange is too faint at this size */
     font-family: var(--sg-font);
     font-size: 0.95rem;
     font-weight: bold;
     letter-spacing: 0;
+    text-transform: uppercase;
 }
 
 .vs-sec.is-locked .vs-secnum {
@@ -2066,10 +426,65 @@
     color: #6b7280;
 }
 
+.vs-sec-intro {
+    margin: 0 0 26px;
+    color: var(--pk-muted);
+    font-size: 0.95rem;
+}
+
 .vendor-signup .vs-sec-intro {
     margin: 0 0 22px 42px;
     color: var(--sg-muted);
     font-size: 0.94rem;
+}
+
+/* A locked step shows only its heading and the reason */
+.vs-sec.is-locked > *:not(h2):not(.vs-lock) {
+    display: none;
+}
+
+.vs-sec:not(.is-locked) > .vs-lock {
+    display: none;
+}
+
+.vs-lock {
+    display: grid;
+    place-items: center;
+    gap: 6px;
+    padding: 40px 20px;
+    border: 1px solid var(--pk-line);
+    border-radius: 14px;
+    background: var(--pk-panel);
+    text-align: center;
+}
+
+.vs-lock-head {
+    margin: 6px 0 0;
+    font-weight: bold;
+    color: var(--pk-ink);
+}
+
+.vs-lock-sub {
+    margin: 0;
+    color: var(--pk-muted);
+    font-size: 0.9rem;
+}
+
+/* Subheading with a rule above, splitting a step into parts */
+.vs-sub {
+    font-family: var(--sg-font-display);
+    font-size: 1.15rem;
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+    margin: 38px 0 18px;
+    padding-top: 26px;
+    border-top: 1px solid var(--sg-border);
+}
+
+.vs-sec > .vs-sub:first-of-type {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
 }
 
 .vendor-signup .vs-sub {
@@ -2079,7 +494,367 @@
     letter-spacing: -0.3px;
 }
 
-/* ---- the event you picked ---------------------------------------------- */
+.vs-sub-note {
+    margin: -10px 0 18px;
+    color: var(--sg-muted);
+    font-size: 0.92rem;
+    line-height: 1.65;
+}
+
+/* The Continue button row */
+.vs-sec-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 26px;
+}
+
+.vs-error {
+    background: #4a1d1d;
+    border: 1px solid #7a2f2f;
+    color: #ffd9d9;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-top: 18px;
+    font-size: 0.95rem;
+}
+
+.vs-busy {
+    color: var(--sg-gold);
+    font-family: var(--sg-font-accent);
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 16px;
+}
+
+.vs-muted {
+    color: var(--sg-dim);
+}
+
+/* ==========================================================================
+   EVENTS - the cards to choose from
+   ========================================================================== */
+.vs-sec .vs-events {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr));
+    gap: 16px;
+    margin-top: 0;
+}
+
+.vs-sec .vs-events-loading {
+    color: var(--pk-muted);
+    padding: 24px 0;
+}
+
+.vs-sec .vs-event {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--pk-line);
+    border-radius: 14px;
+    background: var(--pk-panel);
+    box-shadow:
+        0 1px 2px rgba(16, 24, 40, 0.04),
+        0 1px 3px rgba(16, 24, 40, 0.06);
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.vs-sec .vs-event:hover {
+    transform: translateY(-3px);
+    border-color: #3a3a3a;
+    box-shadow: 0 12px 26px rgba(16, 24, 40, 0.12);
+}
+
+.vs-sec .vs-event.is-chosen {
+    border-color: var(--sg-orange);
+    box-shadow:
+        0 0 0 1px var(--sg-orange),
+        0 12px 26px rgba(16, 24, 40, 0.12);
+}
+
+/* Closed or not open yet: listed, but not an option */
+.vs-sec .vs-event.is-shut {
+    opacity: 0.82;
+}
+
+.vs-sec .vs-event.is-shut:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: var(--sg-border);
+}
+
+.vs-sec .vs-event-art {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background-color: #e9ecf1;
+    background-image: var(--vs-ev-art);
+    background-size: cover;
+    background-position: center;
+}
+
+/* Status badge over the picture */
+.vs-sec .vs-event-status {
+    position: absolute;
+    left: 9px;
+    bottom: 9px;
+    padding: 4px 9px;
+    border-radius: 6px;
+    font-family: var(--sg-font-accent);
+    font-size: 0.56rem;
+    font-weight: bold;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.vs-sec .vs-event-status.is-open {
+    background: #15803d;
+    color: #fff;
+}
+
+.vs-sec .vs-event-status.is-limited {
+    background: #f5b83d;
+    color: #3a2600;
+}
+
+.vs-sec .vs-event-status.is-closed,
+.vs-sec .vs-event-status.is-soon {
+    background: #12141a;
+    color: #fff;
+}
+
+.vs-sec .vs-event-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    padding: 14px 14px 16px;
+    flex: 1;
+}
+
+.vs-sec .vs-event-body h3 {
+    font-family: var(--sg-font-display);
+    font-size: 1rem;
+    letter-spacing: -0.4px;
+    text-transform: none;
+    color: var(--pk-ink);
+    margin: 0 0 2px;
+}
+
+/* Date and place with icons in the text colour */
+.vs-sec .vs-event-when,
+.vs-sec .vs-event-where {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    color: var(--pk-muted);
+    font-size: 0.84rem;
+    font-weight: normal;
+}
+
+.vs-sec .vs-event-when::before,
+.vs-sec .vs-event-where::before {
+    content: '';
+    width: 13px;
+    height: 13px;
+    flex: 0 0 auto;
+    background-color: currentColor;
+    -webkit-mask: var(--pk-icon) center / contain no-repeat;
+    mask: var(--pk-icon) center / contain no-repeat;
+}
+
+.vs-sec .vs-event-when::before {
+    --pk-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10z'/%3E%3C/svg%3E");
+}
+
+.vs-sec .vs-event-where::before {
+    --pk-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z'/%3E%3C/svg%3E");
+}
+
+.vs-sec .vs-event-blurb {
+    margin: 6px 0 0;
+    color: var(--pk-muted);
+    font-size: 0.86rem;
+    line-height: 1.6;
+}
+
+/* Black choose button (orange is kept for "buy") */
+.vs-sec .vs-event-go {
+    margin-top: 14px;
+    width: 100%;
+    padding: 11px 14px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--pk-ink);
+    color: #fff;
+    font-family: var(--sg-font-accent);
+    font-size: 0.68rem;
+    font-weight: bold;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.vs-sec .vs-event-go:hover {
+    background: #000;
+}
+
+.vs-sec .vs-event.is-chosen .vs-event-go {
+    background: var(--sg-orange);
+    color: #12141a;
+}
+
+.vs-sec .vs-event.is-chosen .vs-event-go:hover {
+    background: #e66000;
+}
+
+.vs-sec .vs-event-go.is-disabled {
+    background: #dfe3e9;
+    color: #8b93a1;
+    cursor: default;
+}
+
+/* Share button under the poster */
+.vs-event-share {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    background: #fff;
+    color: var(--sg-ink, #111);
+    border: 2px solid #111;
+    font-size: 0.72rem !important;
+    padding: 12px 16px !important;
+    letter-spacing: 0.12em;
+}
+
+.vs-event-share:hover {
+    background: #111;
+    color: #fff;
+}
+
+/* No picture: the logo on the house gradient */
+.vs-event[data-noart] .vs-event-art,
+.vs-picked-art[data-noart],
+.vs-side-art[data-noart] {
+    background-color: #12141a;
+    background-image: url('/images/logowhite.png'), linear-gradient(135deg, #3a1c05 0%, #12141a 72%);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size:
+        36% auto,
+        cover;
+}
+
+/* A portrait poster shows whole, so the card grows taller */
+.vs-event[data-poster] .vs-event-art {
+    aspect-ratio: 900 / 1335;
+    background-size: cover;
+    background-position: center top;
+    background-color: #f39243;
+}
+
+.vs-event[data-poster] .vs-event-status {
+    top: calc(100% + 14px); /* under the poster, clear of the sponsor strip */
+    bottom: auto;
+    left: 16px;
+    z-index: 2;
+}
+
+.vs-event[data-poster] .vs-event-body {
+    padding-top: 52px;
+}
+
+/* "Food vans sold out" sticker over the poster */
+.vs-event-sticker {
+    position: absolute;
+    top: 38%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-8deg);
+    background: #e3141b;
+    color: #fff;
+    border: 3px solid #fff;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-family: 'Arial Black', Impact, sans-serif;
+    font-weight: 900;
+    font-size: 1.35rem;
+    line-height: 1.05;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+/* Grey placeholder cards while the events load */
+.vs-event.is-loading {
+    border-color: var(--pk-line);
+    box-shadow: none;
+    pointer-events: none;
+}
+
+.vs-event.is-loading:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.vs-event.is-loading .vs-event-art {
+    background-image: none;
+}
+
+.vs-event.is-loading .vs-event-art,
+.vs-skel {
+    background: #e9ecf1;
+    animation: vs-pulse 1.4s ease-in-out infinite;
+}
+
+.vs-skel {
+    display: block;
+    height: 11px;
+    border-radius: 5px;
+}
+
+.vs-skel-title {
+    width: 62%;
+    height: 15px;
+    margin-bottom: 6px;
+}
+
+.vs-skel-line {
+    width: 80%;
+}
+
+.vs-skel-line.is-short {
+    width: 52%;
+}
+
+.vs-skel-btn {
+    width: 100%;
+    height: 38px;
+    border-radius: 10px;
+    margin-top: 12px;
+}
+
+@keyframes vs-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.45;
+    }
+}
+
+/* ==========================================================================
+   PICKED - the event you chose, shown in the next step
+   ========================================================================== */
 .vs-picked {
     margin-top: 22px;
     border: 1px solid var(--sg-orange);
@@ -2154,7 +929,7 @@
     font-weight: bold;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: #6f6152; /* 5.4 : 1 contrast on the strip */
+    color: #6f6152;
 }
 
 .vs-picked-more-btn {
@@ -2176,6 +951,7 @@
     display: inline-block;
     transition: transform 0.2s ease;
 }
+
 .vs-picked-more-btn.is-open span {
     transform: rotate(180deg);
 }
@@ -2185,7 +961,9 @@
     border-top: 1px solid #f0d9c4;
 }
 
-/* ---- vendor type, on white --------------------------------------------- */
+/* ==========================================================================
+   TYPE - food van or market stall
+   ========================================================================== */
 .vs-type-grid {
     display: grid;
     gap: 16px;
@@ -2268,7 +1046,6 @@
     color: var(--sg-muted);
 }
 
-/* Booking fee and GST note - quiet, but shown before the checkout. */
 .vs-type-fees {
     margin-top: 2px;
     color: var(--sg-dim);
@@ -2281,7 +1058,7 @@
     line-height: 1.5;
 }
 
-/* The tick shows only on the chosen card. */
+/* Tick on the chosen card only */
 .vs-type-tick {
     position: absolute;
     top: 14px;
@@ -2300,9 +1077,166 @@
     display: grid;
 }
 
-/* ---- fields ------------------------------------------------------------ */
-/* Labels in sentence case. The asterisk comes from the input's required
-   attribute. */
+/* Sold out (automatic, from the site map): card greys, sticker stays bright */
+.vs-type.is-soldout {
+    cursor: not-allowed;
+}
+
+.vs-type.is-soldout:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.vs-type.is-soldout > *:not(.vs-type-soldout) {
+    opacity: 0.45;
+    filter: grayscale(1);
+}
+
+.vs-type-soldout {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    z-index: 2;
+    background: #e3141b;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-family: 'Arial Black', Impact, sans-serif;
+    font-weight: 900;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transform: rotate(6deg);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+}
+
+.vs-soldout-word {
+    color: #e3141b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* ==========================================================================
+   CATEGORIES - food category chips
+   ========================================================================== */
+.vs-category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 12px;
+}
+
+.vs-category {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    background: #ffffff;
+    border: 2px solid var(--sg-border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    color: #12141a;
+    text-align: left;
+    cursor: pointer;
+    transition:
+        border-color 0.2s,
+        transform 0.2s;
+}
+
+.vs-category:hover:not(:disabled) {
+    transform: translateY(-2px);
+    border-color: #4a2a06;
+}
+
+.vs-category.is-selected {
+    border-color: var(--sg-orange);
+    background: #fff9f4;
+}
+
+.vs-category.is-selected .vs-category-name {
+    color: #b34700;
+}
+
+.vs-category-name {
+    font-family: var(--sg-font-display);
+    font-size: 1rem;
+    letter-spacing: -0.3px;
+    text-transform: uppercase;
+}
+
+.vendor-signup .vs-category-name {
+    font-family: var(--sg-font-display);
+    font-size: 0.92rem;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: -0.2px;
+}
+
+.vs-category-count {
+    font-family: var(--sg-font-accent);
+    font-size: 0.78rem;
+    letter-spacing: 1px;
+    color: var(--sg-dim);
+}
+
+.vendor-signup .vs-category-count {
+    font-family: var(--sg-font);
+    letter-spacing: 0;
+}
+
+.vs-category.is-full {
+    opacity: 0.55;
+    cursor: not-allowed;
+    border-color: #3a1414;
+}
+
+.vs-category-full {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-family: var(--sg-font-accent);
+    font-size: 0.66rem;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    color: #ff8a8a;
+    background: #4a1d1d;
+    border-radius: 4px;
+    padding: 2px 6px;
+}
+
+/* ==========================================================================
+   FIELDS
+   ========================================================================== */
+.vs-field-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.vs-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.vs-field.is-wide {
+    grid-column: 1 / -1;
+}
+
+.vendor-signup .vs-field[hidden] {
+    display: none !important;
+}
+
+/* Labels in sentence case; the asterisk comes from the required attribute */
+.vs-field label {
+    font-family: var(--sg-font-accent);
+    font-size: 0.74rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--sg-gold);
+}
+
 .vendor-signup .vs-field label {
     font-family: var(--sg-font);
     font-size: 0.84rem;
@@ -2315,6 +1249,28 @@
 .vendor-signup .vs-field:has(input[required], select[required], textarea[required]) > label::after {
     content: ' *';
     color: #c0392b;
+}
+
+.vs-field input,
+.vs-field select,
+.vs-field textarea {
+    padding: 14px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #12141a;
+    border: 1px solid var(--sg-border);
+    font-family: var(--sg-font);
+    font-size: 1rem;
+    width: 100%;
+}
+
+.vs-field textarea {
+    resize: vertical;
+}
+
+.vs-field-hint {
+    color: var(--sg-dim);
+    font-size: 0.82rem;
 }
 
 .vendor-signup .vs-field-hint {
@@ -2330,33 +1286,598 @@
     font-size: 0.78rem;
 }
 
-/* The chosen category chip, on white. */
-.vs-category.is-selected {
-    border-color: var(--sg-orange);
-    background: #fff9f4;
+.vs-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--sg-muted);
 }
 
-.vs-category.is-selected .vs-category-name {
+.vs-check input {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+}
+
+/* Something to read before ticking the box under it */
+.vs-notice {
+    background: rgba(107, 63, 160, 0.14);
+    border: 1px solid var(--vs-purple);
+    border-left: 4px solid var(--vs-purple);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 12px;
+    color: var(--sg-muted);
+    font-size: 0.94rem;
+}
+
+.vs-notice strong {
+    color: #12141a;
+}
+
+/* A button inside a label, styled as a link */
+.vs-inline-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: #b34700;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.vs-inline-link:hover {
+    color: var(--vs-ink);
+}
+
+.vs-link {
+    background: none;
+    border: none;
+    color: var(--sg-orange);
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-decoration: underline;
+    padding: 4px;
+}
+
+/* Documents */
+.vs-file-row {
+    display: grid;
+    grid-template-columns: minmax(160px, 220px) 1fr;
+    gap: 14px;
+    align-items: end;
+}
+
+.vs-doc-list {
+    list-style: none;
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.vs-doc {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    background: #ffffff;
+    border: 1px solid var(--sg-border);
+    border-radius: 10px;
+    padding: 12px 16px;
+}
+
+.vs-doc-type {
+    font-family: var(--sg-font-accent);
+    font-size: 0.72rem;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--sg-gold);
+}
+
+.vs-doc-name {
+    flex: 1;
+    min-width: 120px;
+    word-break: break-word;
+}
+
+.vs-doc-size {
+    color: var(--sg-dim);
+    font-size: 0.85rem;
+}
+
+.vs-doc-empty {
+    color: var(--sg-dim);
+    font-size: 0.92rem;
+}
+
+/* Event facts */
+.vs-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2px;
+    background: var(--sg-border);
+    border: 1px solid var(--sg-border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+.vs-facts > div {
+    background: #ffffff;
+    padding: 16px 18px;
+}
+
+.vs-facts dt {
+    font-family: var(--sg-font-accent);
+    font-size: 0.7rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--sg-gold);
+    margin-bottom: 6px;
+}
+
+.vs-facts dd {
+    color: #12141a;
+    font-size: 0.95rem;
+}
+
+/* FAQs: native <details>, work without JavaScript */
+.vs-faqs {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vs-faqs details {
+    background: #ffffff;
+    border: 1px solid var(--sg-border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.vs-faqs details[open] {
+    border-color: var(--vs-purple);
+}
+
+.vs-faqs summary {
+    padding: 16px 46px 16px 18px;
+    cursor: pointer;
+    position: relative;
+    font-weight: bold;
+    color: #12141a;
+    list-style: none;
+}
+
+.vs-faqs summary::-webkit-details-marker {
+    display: none;
+}
+
+.vs-faqs summary::after {
+    content: '+';
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--sg-font-display);
+    font-size: 1.3rem;
+    line-height: 1;
+    color: var(--sg-orange);
+}
+
+.vs-faqs details[open] summary::after {
+    content: '\2013';
+}
+
+.vs-faqs summary:hover {
+    color: var(--sg-gold);
+}
+
+.vs-faqs details p {
+    padding: 0 18px 18px;
+    color: var(--sg-muted);
+    font-size: 0.94rem;
+    line-height: 1.7;
+}
+
+/* Terms and conditions */
+.vs-terms {
+    max-height: 420px;
+    overflow-y: auto;
+    padding: 4px 4px 4px 0;
+}
+
+.vs-terms h4 {
+    margin: 14px 0 4px;
+    font-size: 15px;
+}
+
+.vs-terms p,
+.vs-terms li {
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0 0 6px;
+}
+
+.vs-terms ul {
+    margin: 0 0 6px 18px;
+    padding: 0;
+}
+
+.vs-terms-ok {
+    margin: 14px 0 6px;
+}
+
+.vs-terms-read {
+    margin: 14px 0 0;
+    border: 1px solid #e3b341;
+    border-radius: 12px;
+    background: #fffaf0;
+    padding: 10px 14px;
+}
+
+.vs-terms-read summary {
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.vs-terms-read summary em {
+    display: block;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 12.5px;
+    opacity: 0.75;
+}
+
+.vs-terms-read .vs-terms {
+    margin-top: 10px;
+}
+
+.vs-terms-line {
+    margin: 0 0 12px;
+    font-size: 14px;
+}
+
+/* Waitlist, when a type is sold out */
+.vs-waitlist {
+    display: grid;
+    gap: 12px;
+    margin: 16px 0 0;
+}
+
+.vs-wl-card {
+    border: 1px solid rgba(255, 107, 0, 0.45);
+    background: rgba(255, 107, 0, 0.08);
+    border-radius: 14px;
+    padding: 16px 18px;
+}
+
+.vs-wl-card > b {
+    display: block;
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.vs-wl-card > p {
+    margin: 0 0 12px;
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+.vs-wl-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 12px;
+    margin-bottom: 12px;
+}
+
+.vs-wl-grid label {
+    display: grid;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.vs-wl-grid input {
+    font: inherit;
+    font-size: 15px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #e3c7b0;
+    background: #fff;
+    color: #111;
+}
+
+.vs-wl-grid input:focus {
+    outline: 2px solid #ff6b00;
+    outline-offset: 1px;
+    border-color: #ff6b00;
+}
+
+.vs-wl-wide {
+    grid-column: 1 / -1;
+}
+
+.vs-wl-msg {
+    margin: 8px 0 0;
+    color: #ff8a80;
+    font-size: 14px;
+}
+
+.vs-wl-done {
+    border-color: rgba(76, 175, 80, 0.6);
+    background: rgba(76, 175, 80, 0.12);
+}
+
+/* Orange banner at the top when a waitlist spot is claimed */
+.vs-claim-banner {
+    margin: 90px auto 0;
+    max-width: 1100px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    background: #ff6b00;
+    color: #fff;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.vs-claim-banner.is-bad {
+    background: #b3261e;
+}
+
+/* ==========================================================================
+   MAP - the site plan. Six states as inks on a light plan:
+     available green, held by you orange, on hold amber, booked red,
+     not available grey, opens later dashed grey
+   ========================================================================== */
+.vs-map-wrap {
+    position: relative;
+    background: #fbfcfd;
+    border: 1px solid var(--vs-line);
+    border-radius: 14px;
+    padding: 14px;
+    color: var(--vs-ink);
+    max-height: min(70vh, 780px); /* the tall plan scrolls inside, not the page */
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+
+.vs-map {
+    min-width: 620px; /* keeps each bay a 44px tap target */
+}
+
+.vmap-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.vs-map-hint {
+    color: var(--sg-dim);
+    font-size: 0.84rem;
+    margin-top: 8px;
+}
+
+/* Fixed furniture: stage, bar, walkway */
+.vmap-landmark rect {
+    fill: #eef0f4;
+    stroke: #d6dae1;
+    stroke-width: 2;
+}
+
+.vmap-landmark-text {
+    fill: #8a8a8a;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+}
+
+/* Bookable bays */
+.vmap-site rect {
+    stroke-width: 2.5;
+    transition:
+        fill 0.15s,
+        stroke 0.15s;
+}
+
+.vmap-site-label {
+    fill: #12141a;
+    font-family: 'Arial Black', Arial, sans-serif;
+    font-size: 17px;
+    pointer-events: none;
+}
+
+.vmap-site-sub {
+    fill: rgba(18, 20, 26, 0.6);
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    pointer-events: none;
+}
+
+.vmap-site.is-available rect {
+    fill: #e7f6ea;
+    stroke: #15803d;
+}
+
+.vmap-site.is-held rect {
+    fill: #fdf3d9;
+    stroke: #a16207;
+}
+
+.vmap-site.is-booked rect {
+    fill: #fdeaea;
+    stroke: #b91c1c;
+}
+
+.vmap-site.is-blocked rect {
+    fill: #f1f2f5;
+    stroke: #c9ced7;
+}
+
+.vmap-site.is-mine rect {
+    fill: #fff1e4;
+    stroke: #c2410c;
+}
+
+.vmap-site.is-selectable {
+    cursor: pointer;
+}
+
+.vmap-site.is-selectable:hover rect {
+    fill: #d4eeda;
+    stroke: #15803d;
+}
+
+.vmap-site.is-selected rect {
+    fill: #ffe6d2;
+    stroke: var(--sg-orange);
+    stroke-width: 4;
+}
+
+/* Free but not released yet: dashed, reads "not now" not "gone" */
+.vmap-site.is-not-open rect {
+    fill: #f7f8fa;
+    stroke: #c9ced7;
+    stroke-dasharray: 5 4;
+}
+
+.vmap-site.is-locked .vmap-site-label,
+.vmap-site.is-not-open .vmap-site-label,
+.vmap-site.is-not-open .vmap-site-sub {
+    fill: rgba(18, 20, 26, 0.42);
+}
+
+.vmap-site.is-wrong-type rect {
+    fill: #f7f8fa;
+    stroke: #e3e6ec;
+}
+
+.vmap-site.is-wrong-type .vmap-site-label,
+.vmap-site.is-wrong-type .vmap-site-sub {
+    fill: rgba(18, 20, 26, 0.3);
+}
+
+.vmap-site.is-selectable:focus-visible rect {
+    stroke: var(--sg-gold);
+    stroke-width: 4;
+}
+
+/* Legend - swatches must match the bays above */
+.vs-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    margin: 18px 0 6px;
+    list-style: none;
+}
+
+.vs-legend li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--sg-muted);
+    font-size: 0.86rem;
+}
+
+.vs-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 2px solid;
+    flex: 0 0 auto;
+}
+
+.vs-swatch.is-available {
+    background: #e7f6ea;
+    border-color: #15803d;
+}
+
+.vs-swatch.is-held {
+    background: #fdf3d9;
+    border-color: #a16207;
+}
+
+.vs-swatch.is-booked {
+    background: #fdeaea;
+    border-color: #b91c1c;
+}
+
+.vs-swatch.is-blocked {
+    background: #f1f2f5;
+    border-color: #c9ced7;
+}
+
+.vs-swatch.is-mine {
+    background: #fff1e4;
+    border-color: #c2410c;
+}
+
+.vs-swatch.is-not-open {
+    background: #f7f8fa;
+    border-color: #c9ced7;
+}
+
+/* Words above the plan */
+.vs-map-intro {
+    margin: 14px 0 0;
+    color: var(--sg-muted);
+    font-size: 0.92rem;
+    line-height: 1.6;
+}
+
+.vs-map-intro strong {
     color: #b34700;
 }
 
-.vendor-signup .vs-category-name {
-    font-family: var(--sg-font-display);
-    font-size: 0.92rem;
-    font-weight: 600;
-    text-transform: none;
-    letter-spacing: -0.2px;
+.vs-map-intro-sub {
+    color: var(--sg-dim);
+    font-size: 0.86rem;
 }
 
-.vendor-signup .vs-category-count {
-    font-family: var(--sg-font);
-    letter-spacing: 0;
+.vs-map-counts {
+    color: var(--sg-dim);
+    font-size: 0.88rem;
+    margin-top: 4px;
 }
 
-/* ---- your application, down the side ----------------------------------- */
+/* The bay you picked */
+.vs-site-choice {
+    margin-top: 14px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 1px solid var(--sg-border);
+    color: var(--sg-dim);
+}
+
+.vs-site-choice.is-chosen {
+    border-color: var(--sg-orange);
+    background: #fff7f0;
+    color: #12141a;
+}
+
+.vs-hold-timer {
+    margin-top: 10px;
+    font-family: var(--sg-font-accent);
+    font-size: 0.85rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--sg-gold);
+}
+
+.vs-hold-timer.is-expired {
+    color: #ff8a8a;
+}
+
+/* ==========================================================================
+   SIDE - your application, sticky beside the steps
+   ========================================================================== */
 .vs-side {
     min-width: 0;
-    align-self: stretch;
+    align-self: stretch; /* gives the sticky box room to travel */
 }
 
 .vs-side-inner {
@@ -2454,6 +1975,7 @@
     color: var(--vs-ink);
     font-size: 0.88rem;
 }
+
 .vs-side-wait {
     color: var(--vs-ink);
     font-size: 0.88rem;
@@ -2469,8 +1991,7 @@
     color: var(--sg-dim);
 }
 
-/* ---- what the total is made of ----------------------------------------- */
-/* Site, processing fee and GST lines above the total. */
+/* Site, fee and GST lines above the total */
 .vs-side-sum {
     display: grid;
     gap: 8px;
@@ -2494,14 +2015,12 @@
     color: var(--vs-ink);
 }
 
-/* The rate, small and grey, beside the charge name. */
 .vs-side-sum em {
     font-style: normal;
     color: var(--sg-dim);
     font-size: 0.92em;
 }
 
-/* The total sits right under its lines, so no extra rule. */
 .vs-side-sum + .vs-side-total {
     margin-top: 12px;
     padding-top: 12px;
@@ -2550,35 +2069,575 @@
     line-height: 1.55;
 }
 
+/* ==========================================================================
+   CHECKOUT - one column of small cards
+   ========================================================================== */
+.vs-sec.is-checkout {
+    background: none;
+    border: 0;
+    padding: 0;
+}
+
+.vs-sec.is-checkout > h2,
+.vs-sec.is-checkout > .vs-sec-intro,
+.vs-sec.is-checkout > .vs-busy,
+.vs-sec.is-checkout > .vs-error {
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.vs-checkout {
+    --vs-card: #fff;
+    --vs-line: #e3e6ec;
+    display: grid;
+    gap: 14px;
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+.vs-card {
+    background: var(--vs-card);
+    border: 1px solid var(--vs-line);
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.vs-card h3 {
+    margin: 0;
+    font-family: var(--sg-font-display);
+    font-size: 1.2rem;
+    letter-spacing: -0.4px;
+    color: #12141a;
+}
+
+.vs-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.vs-card-sub {
+    margin: 8px 0 0;
+    color: var(--sg-muted);
+    font-size: 0.85rem;
+    line-height: 1.45;
+}
+
+/* Edit booking button */
+.vs-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    flex: 0 0 auto;
+    padding: 8px 14px;
+    border-radius: 50px;
+    border: 1px solid var(--vs-line);
+    background: #eef0f4;
+    color: #12141a;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition:
+        border-color 0.2s,
+        color 0.2s;
+}
+
+.vs-pill:hover {
+    border-color: var(--sg-orange);
+    color: var(--sg-orange);
+}
+
+.vs-pill-ico {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+}
+
+/* What is being bought */
+.vs-lineitem {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 18px;
+}
+
+.vs-lineitem-ico {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    background: rgba(255, 107, 0, 0.12);
+    color: var(--sg-orange);
+}
+
+.vs-lineitem-ico svg {
+    width: 30px;
+    height: 30px;
+    fill: currentColor;
+}
+
+.vs-lineitem-txt {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.vs-lineitem-txt strong {
+    color: #12141a;
+    font-size: 1rem;
+}
+
+.vs-lineitem-txt > span {
+    color: var(--sg-muted);
+    font-size: 0.85rem;
+}
+
+/* Price / qty / total in thirds */
+.vs-figures {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 18px 0 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--vs-line);
+}
+
+.vs-figures > div:nth-child(2) {
+    text-align: center;
+}
+
+.vs-figures > div:last-child {
+    text-align: right;
+}
+
+.vs-figures dt {
+    font-family: var(--sg-font-accent);
+    font-size: 0.66rem;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--sg-dim);
+    margin-bottom: 5px;
+}
+
+.vs-figures dd {
+    margin: 0;
+    color: #12141a;
+    font-size: 0.95rem;
+}
+
+.vs-figures dd.is-strong {
+    font-weight: bold;
+}
+
+/* What it comes to */
+.vs-sum {
+    display: grid;
+    gap: 11px;
+    margin: 16px 0 0;
+}
+
+.vs-sum > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.vs-sum dt {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--sg-muted);
+    font-size: 0.92rem;
+}
+
+.vs-sum dd {
+    margin: 0;
+    color: #12141a;
+    font-size: 0.92rem;
+}
+
+/* The (i) opens a note below (hover tips do not work on phones) */
+.vs-info {
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid var(--sg-dim);
+    background: none;
+    color: var(--sg-dim);
+    font-family: var(--sg-font-accent);
+    font-size: 0.62rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.vs-info:hover {
+    border-color: var(--sg-orange);
+    color: var(--sg-orange);
+}
+
+.vs-info-note {
+    margin: 12px 0 0;
+    padding: 11px 13px;
+    border-radius: 9px;
+    background: #f6f7f9;
+    border: 1px solid var(--vs-line);
+    color: var(--sg-muted);
+    font-size: 0.82rem;
+    line-height: 1.6;
+}
+
+.vs-sum-total {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 16px;
+    padding-top: 15px;
+    border-top: 1px solid var(--vs-line);
+}
+
+.vs-sum-total span {
+    font-family: var(--sg-font-display);
+    font-size: 1.05rem;
+    letter-spacing: -0.2px;
+    color: var(--sg-orange);
+}
+
+.vs-sum-total strong {
+    font-family: var(--sg-font-display);
+    font-size: 1.55rem;
+    letter-spacing: -0.5px;
+    color: var(--sg-orange);
+}
+
+/* Who takes the money */
+.vs-secure-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.vs-secure-ico {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: rgba(255, 107, 0, 0.12);
+    color: var(--sg-orange);
+}
+
+.vs-secure-ico svg {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+}
+
+.vs-secure-head > span:last-child {
+    display: grid;
+    gap: 3px;
+}
+
+.vs-secure-head strong {
+    color: #12141a;
+    font-size: 0.95rem;
+}
+
+.vs-secure-head > span:last-child > span {
+    color: var(--sg-muted);
+    font-size: 0.84rem;
+}
+
+.vs-secure-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 16px 0 0;
+    border-top: 1px solid var(--vs-line);
+}
+
+.vs-secure-row li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--sg-dim);
+    font-size: 0.78rem;
+}
+
+/* Their answers, folded away */
+.vs-yourdetails {
+    padding: 0;
+    overflow: hidden;
+}
+
+.vs-yourdetails summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 20px;
+    cursor: pointer;
+    list-style: none;
+    font-family: var(--sg-font-accent);
+    font-size: 0.72rem;
+    font-weight: bold;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: var(--sg-gold);
+}
+
+.vs-yourdetails summary::-webkit-details-marker {
+    display: none;
+}
+
+.vs-yourdetails summary span {
+    margin-left: auto;
+    color: var(--sg-dim);
+    letter-spacing: 1px;
+}
+
+.vs-yourdetails summary::after {
+    content: '+';
+    color: var(--sg-dim);
+    font-size: 1.1rem;
+}
+
+.vs-yourdetails[open] summary::after {
+    content: '\2212';
+}
+
+.vs-summary-list {
+    display: grid;
+    gap: 1px;
+    background: var(--sg-border);
+    border: 1px solid var(--sg-border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.vs-summary-list > div {
+    display: grid;
+    grid-template-columns: minmax(120px, 200px) 1fr;
+    gap: 14px;
+    background: #ffffff;
+    padding: 13px 18px;
+}
+
+.vs-summary-list dt {
+    font-family: var(--sg-font-accent);
+    font-size: 0.74rem;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--sg-gold);
+    align-self: center;
+}
+
+.vs-summary-list dd {
+    color: #12141a;
+    word-break: break-word;
+}
+
+.vs-yourdetails .vs-summary-list {
+    margin: 0;
+    border: 0;
+    border-top: 1px solid var(--vs-line);
+    border-radius: 0;
+}
+
+.vs-checkout-foot {
+    margin: 2px 0 0;
+    text-align: center;
+    color: var(--sg-dim);
+    font-size: 0.84rem;
+}
+
+.vs-help-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--sg-orange);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* Darker orange so the total and link read on white */
+.vs-sum-total,
+.vs-sum-total span,
+.vs-sum-total strong,
+.vs-help-link {
+    color: #b34700;
+}
+
+/* The pay button, at the end of the page */
+.vs-paybar {
+    display: block;
+    max-width: 560px;
+    margin: 22px auto 0;
+}
+
+.vs-paybar .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    max-width: none;
+}
+
+#vs-pay:not(:disabled)::after {
+    content: '\2192';
+    font-size: 1.1em;
+    line-height: 1;
+}
+
+#vs-pay:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}
+
+/* ==========================================================================
+   CONFIRM - paying, then paid
+   ========================================================================== */
+.vs-confirming,
+.vs-confirmed {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 760px;
+    margin: auto;
+    text-align: center;
+}
+
+.vs-confirm-card {
+    background: var(--sg-panel);
+    border: 1px solid var(--sg-border);
+    border-top: 4px solid var(--vs-available);
+    border-radius: 18px;
+    padding: 40px 32px;
+    text-align: left;
+}
+
+.vs-eyebrow {
+    font-family: var(--sg-font-accent);
+    font-size: 0.76rem;
+    font-weight: bold;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--vs-slime);
+    margin-bottom: 10px;
+}
+
+.vs-confirm-card h2 {
+    text-align: left;
+    margin-bottom: 10px;
+}
+
+.vs-confirm-ref {
+    font-family: var(--sg-font-accent);
+    letter-spacing: 2px;
+    color: var(--sg-muted);
+    margin-bottom: 24px;
+}
+
+.vs-confirm-note {
+    color: var(--sg-muted);
+    margin-top: 22px;
+    font-size: 0.95rem;
+}
+
+.vs-spinner {
+    width: 42px;
+    height: 42px;
+    margin: 0 auto 20px;
+    border: 3px solid #2a2a2a;
+    border-top-color: var(--sg-orange);
+    border-radius: 50%;
+    animation: vs-spin 1s linear infinite;
+}
+
+@keyframes vs-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ==========================================================================
+   PHONE - keep last
+   ========================================================================== */
+
+/* Tablet: one column, summary first and no longer sticky */
 @media (max-width: 980px) {
     .vs-apply-inner {
         grid-template-columns: 1fr;
     }
 
-    /* Phone: the booking summary comes first and stops sticking. */
     .vs-side {
         order: -1;
     }
+
     .vs-side-inner {
         position: static;
     }
 }
 
 @media (max-width: 768px) {
+    .vs-hero-inner {
+        padding: 100px 20px 54px;
+    }
+
+    .vs-web {
+        width: 88px;
+        height: 88px;
+    }
+
+    #vs-flow {
+        padding: 20px 5%;
+    }
+
+    /* The rail shows numbers only */
     .vs-rail-list {
         padding: 10px 5%;
     }
 
-    /* Phone: the rail shows numbers only. */
     .vs-rail-label {
         display: none;
     }
+
     .vs-rail-list li {
         justify-content: center;
     }
 
+    .vs-sec {
+        padding: 20px 16px;
+        border-radius: 14px;
+    }
+
+    .vs-sec-intro {
+        margin-bottom: 18px;
+    }
+
     .vendor-signup .vs-sec-intro {
         margin-left: 0;
+    }
+
+    .vs-sec-actions .btn {
+        width: 100%;
+        max-width: none;
+    }
+
+    .vs-file-row {
+        grid-template-columns: 1fr;
     }
 
     .vs-picked-fact {
@@ -2588,492 +2647,62 @@
         padding-top: 10px;
         flex-basis: 100%;
     }
-}
 
-/* ==========================================================================
-   THE SITE PLAN, ON WHITE
-
-   Same six colours, as inks on a light plan:
-   
-     available     green        take it
-     held by you   orange       yours for the next ten minutes
-     on hold       amber        somebody else is mid-checkout
-     booked        red          gone
-     not available grey         never on offer
-     opens later   dashed grey  free, but not released yet
-   ========================================================================== */
-.vendor-signup .vs-map-wrap {
-    background: #fbfcfd;
-    border-color: var(--vs-line);
-    color: var(--vs-ink);
-}
-
-/* the fixed furniture - stage, bar, walkway */
-.vendor-signup .vmap-landmark rect {
-    fill: #eef0f4;
-    stroke: #d6dae1;
-}
-
-.vendor-signup .vmap-site-label {
-    fill: #12141a;
-}
-.vendor-signup .vmap-site-sub {
-    fill: rgba(18, 20, 26, 0.6);
-}
-
-.vendor-signup .vmap-site.is-available rect {
-    fill: #e7f6ea;
-    stroke: #15803d;
-}
-.vendor-signup .vmap-site.is-held rect {
-    fill: #fdf3d9;
-    stroke: #a16207;
-}
-.vendor-signup .vmap-site.is-booked rect {
-    fill: #fdeaea;
-    stroke: #b91c1c;
-}
-.vendor-signup .vmap-site.is-blocked rect {
-    fill: #f1f2f5;
-    stroke: #c9ced7;
-}
-.vendor-signup .vmap-site.is-mine rect {
-    fill: #fff1e4;
-    stroke: #c2410c;
-}
-
-.vendor-signup .vmap-site.is-selectable:hover rect {
-    fill: #d4eeda;
-    stroke: #15803d;
-}
-
-.vendor-signup .vmap-site.is-selected rect {
-    fill: #ffe6d2;
-    stroke: var(--sg-orange);
-    stroke-width: 4;
-}
-
-.vendor-signup .vmap-site.is-not-open rect {
-    fill: #f7f8fa;
-    stroke: #c9ced7;
-}
-
-.vendor-signup .vmap-site.is-locked .vmap-site-label,
-.vendor-signup .vmap-site.is-not-open .vmap-site-label,
-.vendor-signup .vmap-site.is-not-open .vmap-site-sub {
-    fill: rgba(18, 20, 26, 0.42);
-}
-
-.vendor-signup .vmap-site.is-wrong-type rect {
-    fill: #f7f8fa;
-    stroke: #e3e6ec;
-}
-
-.vendor-signup .vmap-site.is-wrong-type .vmap-site-label,
-.vendor-signup .vmap-site.is-wrong-type .vmap-site-sub {
-    fill: rgba(18, 20, 26, 0.3);
-}
-
-/* KEEP IN STEP: legend swatches must match the bays on the plan. */
-.vendor-signup .vs-swatch.is-available {
-    background: #e7f6ea;
-    border-color: #15803d;
-}
-.vendor-signup .vs-swatch.is-held {
-    background: #fdf3d9;
-    border-color: #a16207;
-}
-.vendor-signup .vs-swatch.is-booked {
-    background: #fdeaea;
-    border-color: #b91c1c;
-}
-.vendor-signup .vs-swatch.is-blocked {
-    background: #f1f2f5;
-    border-color: #c9ced7;
-}
-.vendor-signup .vs-swatch.is-mine {
-    background: #fff1e4;
-    border-color: #c2410c;
-}
-.vendor-signup .vs-swatch.is-not-open {
-    background: #f7f8fa;
-    border-color: #c9ced7;
-}
-
-/* The bold bit in "up to 8 bays" is orange on the plan. */
-.vendor-signup .vs-map-intro strong {
-    color: #b34700;
-}
-
-/* ==========================================================================
-   WAITING FOR THE EVENTS
-
-   Grey placeholder cards while Firestore loads.
-   ========================================================================== */
-.vs-event.is-loading {
-    border-color: var(--pk-line);
-    box-shadow: none;
-    pointer-events: none;
-}
-
-.vs-event.is-loading:hover {
-    transform: none;
-    box-shadow: none;
-}
-
-.vs-event.is-loading .vs-event-art {
-    background-image: none;
-}
-
-/* One animation on the whole card so the bars pulse together. */
-.vs-event.is-loading .vs-event-art,
-.vs-skel {
-    background: #e9ecf1;
-    animation: vs-pulse 1.4s ease-in-out infinite;
-}
-
-.vs-skel {
-    display: block;
-    height: 11px;
-    border-radius: 5px;
-}
-
-.vs-skel-title {
-    width: 62%;
-    height: 15px;
-    margin-bottom: 6px;
-}
-
-.vs-skel-line {
-    width: 80%;
-}
-.vs-skel-line.is-short {
-    width: 52%;
-}
-
-.vs-skel-btn {
-    width: 100%;
-    height: 38px;
-    border-radius: 10px;
-    margin-top: 12px;
-}
-
-@keyframes vs-pulse {
-    0%,
-    100% {
-        opacity: 1;
+    .vs-summary-list > div {
+        grid-template-columns: 1fr;
+        gap: 4px;
     }
-    50% {
-        opacity: 0.45;
+
+    /* A tighter checkout */
+    .vs-checkout {
+        gap: 12px;
+    }
+
+    .vs-card {
+        padding: 16px;
+        border-radius: 14px;
+    }
+
+    .vs-card-head {
+        gap: 10px;
+    }
+
+    .vs-pill {
+        padding: 7px 12px;
+        font-size: 0.78rem;
+    }
+
+    .vs-secure-row {
+        gap: 8px 14px;
+    }
+
+    .vs-secure-row li {
+        font-size: 0.74rem;
+    }
+
+    .vs-yourdetails summary {
+        padding: 14px 16px;
     }
 }
 
-/* Reduced motion: no pulse. */
-@media (prefers-reduced-motion: reduce) {
-    .vs-event.is-loading .vs-event-art,
-    .vs-skel {
-        animation: none;
-    }
-}
-
-/* Screen-reader text; role="status" announces the wait. */
-.vs-sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-    border: 0;
-}
-
-/* [hidden] must beat .vs-field's display:flex. */
-.vendor-signup .vs-field[hidden] {
-    display: none !important;
-}
-
-/* A button inside a label (so clicking won't tick the box), styled as a link. */
-.vs-inline-link {
-    padding: 0;
-    border: 0;
-    background: none;
-    font: inherit;
-    color: #b34700;
-    text-decoration: underline;
-    cursor: pointer;
-}
-
-.vs-inline-link:hover {
-    color: var(--vs-ink);
-}
-
-/* ==========================================================================
-   AN EVENT WITH NO PICTURE
-
-   The logo on the house gradient, so it doesn't look like a broken image.
-   ========================================================================== */
-/* Matches both the picture itself and a card's <article>. */
-.vs-event[data-noart] .vs-event-art,
-.vs-picked-art[data-noart],
-.vs-side-art[data-noart] {
-    background-color: #12141a;
-    background-image: url('/images/logowhite.png'), linear-gradient(135deg, #3a1c05 0%, #12141a 72%);
-    background-repeat: no-repeat;
-    background-position: center;
-
-    /* Percentage size keeps the logo in proportion at every size. */
-    background-size:
-        36% auto,
-        cover;
-}
-
-/* An event POSTER (portrait) shows whole - the card grows taller */
-.vs-event[data-poster] .vs-event-art {
-    aspect-ratio: 900 / 1335;
-    background-size: cover;
-    background-position: center top;
-    background-color: #f39243;
-}
-
-/* "Food vans sold out" sticker over the poster */
-.vs-event-sticker {
-    position: absolute;
-    top: 38%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(-8deg);
-    background: #e3141b;
-    color: #fff;
-    border: 3px solid #fff;
-    padding: 10px 18px;
-    border-radius: 10px;
-    font-family: 'Arial Black', Impact, sans-serif;
-    font-weight: 900;
-    font-size: 1.35rem;
-    line-height: 1.05;
-    text-align: center;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
-    white-space: nowrap;
-    pointer-events: none;
-}
-.vs-event-share {
-    display: block;
-    width: 100%;
-    margin-top: 10px;
-    background: #fff;
-    color: var(--sg-ink, #111);
-    border: 2px solid #111;
-}
-.vs-event-share:hover {
-    background: #111;
-    color: #fff;
-}
-.vs-event-share {
-    font-size: 0.72rem !important;
-    padding: 12px 16px !important;
-    letter-spacing: 0.12em;
-}
-/* poster cards: lift the "Accepting vendors" badge above the sponsor strip */
-.vs-event[data-poster] .vs-event-status {
-    top: calc(100% + 14px);
-    bottom: auto;
-    left: 16px;
-    z-index: 2;
-}
-.vs-event[data-poster] .vs-event-body {
-    padding-top: 52px;
-}
-
-/* SOLD OUT vendor types (automatic, from the site map) */
-.vs-type {
-    position: relative;
-}
-.vs-type.is-soldout {
-    opacity: 0.55;
-    cursor: not-allowed;
-    filter: grayscale(0.6);
-}
-.vs-type.is-soldout:hover {
-    transform: none;
-    box-shadow: none;
-}
-.vs-type-soldout {
-    position: absolute;
-    top: 14px;
-    right: 14px;
-    background: #e3141b;
-    color: #fff;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-family: 'Arial Black', Impact, sans-serif;
-    font-weight: 900;
-    font-size: 0.8rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    transform: rotate(6deg);
-}
-.vs-soldout-word {
-    color: #e3141b;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-.vs-type.is-soldout {
-    opacity: 1 !important;
-    filter: none !important;
-}
-.vs-type.is-soldout > *:not(.vs-type-soldout) {
-    opacity: 0.45;
-    filter: grayscale(1);
-}
-.vs-type-soldout {
-    top: -10px !important;
-    right: -6px !important;
-    font-size: 0.85rem !important;
-    padding: 6px 12px !important;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
-    z-index: 2;
-}
-.vs-type-soldout {
-    top: auto !important;
-    bottom: 16px !important;
-    right: 16px !important;
-}
-
-/* Vendor Terms & Conditions */
-.vs-terms {
-    max-height: 420px;
-    overflow-y: auto;
-    padding: 4px 4px 4px 0;
-}
-.vs-terms h4 {
-    margin: 14px 0 4px;
-    font-size: 15px;
-}
-.vs-terms p,
-.vs-terms li {
-    font-size: 14px;
-    line-height: 1.5;
-    margin: 0 0 6px;
-}
-.vs-terms ul {
-    margin: 0 0 6px 18px;
-    padding: 0;
-}
-.vs-terms-ok {
-    margin: 14px 0 6px;
-}
-#vs-pay:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-    filter: grayscale(1);
-}
-.vs-terms-read {
-    margin: 14px 0 0;
-    border: 1px solid #e3b341;
-    border-radius: 12px;
-    background: #fffaf0;
-    padding: 10px 14px;
-}
-.vs-terms-read summary {
-    cursor: pointer;
-    font-weight: 700;
-}
-.vs-terms-read summary em {
-    display: block;
-    font-weight: 400;
-    font-style: normal;
-    font-size: 12.5px;
-    opacity: 0.75;
-}
-.vs-terms-read .vs-terms {
-    margin-top: 10px;
-}
-.vs-terms-line {
-    margin: 0 0 12px;
-    font-size: 14px;
-}
-
-/* WAITLIST */
-.vs-waitlist {
-    display: grid;
-    gap: 12px;
-    margin: 16px 0 0;
-}
-.vs-wl-card {
-    border: 1px solid rgba(255, 107, 0, 0.45);
-    background: rgba(255, 107, 0, 0.08);
-    border-radius: 14px;
-    padding: 16px 18px;
-}
-.vs-wl-card > b {
-    display: block;
-    font-size: 16px;
-    margin-bottom: 4px;
-}
-.vs-wl-card > p {
-    margin: 0 0 12px;
-    font-size: 14px;
-    opacity: 0.85;
-}
-.vs-wl-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px 12px;
-    margin-bottom: 12px;
-}
-.vs-wl-grid label {
-    display: grid;
-    gap: 4px;
-    font-size: 13px;
-    font-weight: 600;
-}
-.vs-wl-grid input {
-    font: inherit;
-    font-size: 15px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    border: 1px solid #e3c7b0;
-    background: #fff;
-    color: #111;
-} /* white, not grey */
-.vs-wl-grid input:focus {
-    outline: 2px solid #ff6b00;
-    outline-offset: 1px;
-    border-color: #ff6b00;
-}
-.vs-wl-wide {
-    grid-column: 1 / -1;
-}
-.vs-wl-msg {
-    margin: 8px 0 0;
-    color: #ff8a80;
-    font-size: 14px;
-}
-.vs-wl-done {
-    border-color: rgba(76, 175, 80, 0.6);
-    background: rgba(76, 175, 80, 0.12);
-}
-.vs-claim-banner {
-    margin: 90px auto 0;
-    max-width: 1100px;
-    padding: 14px 18px;
-    border-radius: 12px;
-    background: #ff6b00;
-    color: #fff;
-    font-size: 15px;
-    line-height: 1.5;
-}
-.vs-claim-banner.is-bad {
-    background: #b3261e;
-}
 @media (max-width: 640px) {
     .vs-wl-grid {
         grid-template-columns: 1fr;
     }
+
     .vs-claim-banner {
         margin: 80px 12px 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vs-spinner,
+    .vs-event.is-loading .vs-event-art,
+    .vs-skel {
+        animation: none;
+    }
+
+    .vs-category:hover:not(:disabled) {
+        transform: none;
     }
 }
