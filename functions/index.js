@@ -5953,46 +5953,54 @@ const OSM_KINDS = {
   'fuel': 'amenity=fuel', 'servo': 'amenity=fuel', 'boat': 'shop=boat', 'marine': 'shop=boat', 'fishing': 'shop=fishing', 'bike': 'shop=bicycle',
   'builder': 'craft=builder', 'electrician': 'craft=electrician', 'plumber': 'craft=plumber', 'school': 'amenity=school', 'club': 'club', 'sports': 'leisure=sports_centre', 'farm': 'landuse=farmland',
 };
-const osmQuery = (q) => {
+const UA = 'SoundzGood admin (info@soundzgood.com.au)';
+const BOX = '147.90,-19.80,148.60,-20.30';   // the Bowen area: west,north,east,south
+const osmKind = (q) => {
   const s = q.toLowerCase().trim();
-  const hit = Object.keys(OSM_KINDS).sort((a, b) => b.length - a.length).find((k) => s.includes(k));
-  const around = `(around:20000,${BOWEN.lat},${BOWEN.lon})`;
-  const parts = [`nwr["name"~"${s.replace(/[^\w\s'&-]/g, '').replace(/\s+/g, '.*')}",i]${around};`];
-  if (hit) {
-    const [k, v] = OSM_KINDS[hit].split('=');
-    parts.push(v ? `nwr["${k}"="${v}"]${around};` : `nwr["${k}"]${around};`);
-  }
-  return `[out:json][timeout:20];(${parts.join('')});out center tags 60;`;
+  const hit = Object.keys(OSM_KINDS).sort((x, y) => y.length - x.length).find((k) => s.includes(k));
+  return hit ? OSM_KINDS[hit] : '';
 };
+const tidy = (t) => {
+  const name = String(t.name || '').trim();
+  const kind = t.shop || t.amenity || t.tourism || t.office || t.craft || t.leisure || t.healthcare || t.club || '';
+  const addr = [t['addr:housenumber'], t['addr:street'], t['addr:city'] || t['addr:suburb']].filter(Boolean).join(' ');
+  let website = String(t.website || t['contact:website'] || t.url || '').trim();
+  if (website && !/^https?:\/\//i.test(website)) website = 'https://' + website;
+  return {
+    business: name.slice(0, 120), kind: String(kind).replace(/_/g, ' ').slice(0, 40), address: addr.slice(0, 160),
+    website: website.slice(0, 200), phone: String(t.phone || t['contact:phone'] || '').slice(0, 40), email: String(t.email || t['contact:email'] || '').slice(0, 120),
+    facebook: String(t['contact:facebook'] || '').slice(0, 200), instagram: String(t['contact:instagram'] || '').slice(0, 200),
+  };
+};
+/* by category: Overpass, tags only (a name regex is far too slow there) */
+async function findByKind(kv) {
+  const [k, v] = kv.split('=');
+  const q = `[out:json][timeout:20];(nwr["${k}"${v ? '="' + v + '"' : ''}](around:20000,${BOWEN.lat},${BOWEN.lon}););out center tags 80;`;
+  const r = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', 'user-agent': UA }, body: 'data=' + encodeURIComponent(q), signal: AbortSignal.timeout(25000) });
+  if (!r.ok) return [];
+  const j = await r.json().catch(() => ({}));
+  return (j.elements || []).map((el) => tidy(el.tags || {}));
+}
+/* by name or words: Nominatim, boxed to the Bowen area */
+async function findByName(q) {
+  const u = 'https://nominatim.openstreetmap.org/search?format=jsonv2&extratags=1&limit=30&bounded=1&viewbox=' + BOX + '&q=' + encodeURIComponent(q);
+  const r = await fetch(u, { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(15000) });
+  if (!r.ok) return [];
+  const j = await r.json().catch(() => []);
+  return (Array.isArray(j) ? j : []).filter((x) => x.name).map((x) => tidy({ name: x.name, [x.category || 'shop']: x.type, 'addr:street': (x.address || {}).road, 'addr:city': (x.address || {}).town || (x.address || {}).city || (x.address || {}).village, ...(x.extratags || {}) }));
+}
 exports.findBusinesses = onCall({ timeoutSeconds: 60 }, async (request) => {
   requireAdmin(request);
   const q = String((request.data || {}).query || '').trim().slice(0, 60);
   if (q.length < 2) throw new HttpsError('invalid-argument', 'Type what to look for.');
-  const r = await fetch('https://overpass-api.de/api/interpreter', {
-    method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', 'user-agent': 'SoundzGood admin (info@soundzgood.com.au)' },
-    body: 'data=' + encodeURIComponent(osmQuery(q)), signal: AbortSignal.timeout(25000),
-  });
-  if (!r.ok) throw new HttpsError('unavailable', 'The map service is busy - try again in a minute.');
-  const j = await r.json();
+  const kind = osmKind(q);
+  const [byName, byKind] = await Promise.all([findByName(q).catch(() => []), kind ? findByKind(kind).catch(() => []) : []]);
   const seen = new Set();
   const out = [];
-  (j.elements || []).forEach((el) => {
-    const t = el.tags || {};
-    const name = String(t.name || '').trim();
-    if (!name || seen.has(name.toLowerCase())) return;
-    seen.add(name.toLowerCase());
-    const kind = t.shop || t.amenity || t.tourism || t.office || t.craft || t.leisure || t.healthcare || t.club || '';
-    const addr = [t['addr:housenumber'], t['addr:street'], t['addr:city'] || t['addr:suburb']].filter(Boolean).join(' ');
-    let website = String(t.website || t['contact:website'] || t.url || '').trim();
-    if (website && !/^https?:\/\//i.test(website)) website = 'https://' + website;
-    out.push({
-      business: name.slice(0, 120), kind: String(kind).replace(/_/g, ' ').slice(0, 40), address: addr.slice(0, 160),
-      website: website.slice(0, 200), phone: String(t.phone || t['contact:phone'] || '').slice(0, 40), email: String(t.email || t['contact:email'] || '').slice(0, 120),
-      facebook: String(t['contact:facebook'] || '').slice(0, 200), instagram: String(t['contact:instagram'] || '').slice(0, 200),
-    });
-  });
-  out.sort((a, b) => (b.website ? 1 : 0) - (a.website ? 1 : 0) || a.business.localeCompare(b.business));
-  return { results: out.slice(0, 40) };
+  byName.concat(byKind).forEach((x) => { const k = x.business.toLowerCase(); if (!x.business || seen.has(k)) return; seen.add(k); out.push(x); });
+  if (!out.length && !kind) throw new HttpsError('not-found', 'Nothing by that name on the map. Try a type of business (cafes, hotels, car dealers) or add it by hand.');
+  out.sort((x, y) => (y.website ? 1 : 0) - (x.website ? 1 : 0) || x.business.localeCompare(y.business));
+  return { results: out.slice(0, 50) };
 });
 
 exports.lookupBusiness = onCall({ timeoutSeconds: 30 }, async (request) => {
