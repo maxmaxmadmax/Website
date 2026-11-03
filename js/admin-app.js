@@ -21,15 +21,16 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=800';
+} from './firebase-config.js?v=801';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=800';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=800';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=800';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=800';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=800';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=800';
-import { expandKit } from './kit.js?v=800';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=801';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=801';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=801';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=801';
+import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=801';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=801';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=801';
+import { expandKit } from './kit.js?v=801';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -554,14 +555,14 @@ function wireChrome() {
    ------------------------------------------------------------------------- */
 const BUILT = ['dashboard', 'events', 'vendors', 'applications', 'map', 'entertainment',
                'settings', 'vendorEmail', 'inventory',
-               'quoteDocs', 'packages', 'resources', 'leads', 'leadRate', 'customers', 'event'];
+               'quoteDocs', 'packages', 'resources', 'leads', 'leadRate', 'customers', 'event', 'sponsorDir'];
 
 /*  The Dashboard is what you land on. */
 const HOME = 'dashboard';
 
 /*  Sidebar shortcuts into the event hub: #/sponsors and #/volunteers open
     the current event on that tab.                                        */
-const HUB_SHORTCUTS = ['sponsors', 'volunteers'];
+const HUB_SHORTCUTS = ['volunteers'];
 
 function routeFromHash() {
   const [want0, qs] = (location.hash.replace('#/', '') || HOME).split('?');
@@ -572,6 +573,7 @@ function routeFromHash() {
   const want = want0 || HOME;
   state.view = want;
   state.openBookingId = null;
+  if (want === 'sponsorDir') loadAllSponsors();
 
   // EVENT HUB: one event, in tabs. Opening another event switches the subscriptions.
   if (want === 'event') {
@@ -4655,7 +4657,7 @@ const sponsorStore = {
   async add(p) {
     const { collection, addDoc, serverTimestamp } = fb.f;
     await addDoc(collection(fb.db, 'sponsors'), { business: '', contactName: '', email: '', phone: '', source: 'manual', ...p,
-      eventId: state.activeEventId, status: 'todo', createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+      eventId: p.eventId || state.activeEventId, status: 'todo', createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
   },
   async update(id, p) {
     const { doc, updateDoc, serverTimestamp } = fb.f;
@@ -4832,6 +4834,23 @@ VIEWS.dashboard = {
 VIEWS.vendorEmail = {
   html() { return messagesHtml(msgCtx()); },
   wire() { wireMessages(msgCtx()); },
+};
+
+/*  SPONSORS DIRECTORY - every business across every event. Reads the whole
+    sponsors collection once, kept live while the admin is open.          */
+let sponsorsAllUnsub = null;
+function loadAllSponsors() {
+  if (sponsorsAllUnsub) return;
+  const { collection, onSnapshot } = fb.f;
+  sponsorsAllUnsub = onSnapshot(collection(fb.db, 'sponsors'), (snap) => {
+    state.sponsorsAll = [];
+    snap.forEach((d) => state.sponsorsAll.push({ id: d.id, ...d.data() }));
+    if (state.view === 'sponsorDir') render();
+  }, (err) => console.error('sponsorsAll', err));
+}
+VIEWS.sponsorDir = {
+  html() { return sponsorDirHtml(msgCtx()); },
+  wire() { wireSponsorDir(msgCtx()); },
 };
 
 /*  A value safe to drop inside a CSS attribute selector. Ids are Firestore's

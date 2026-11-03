@@ -16,7 +16,7 @@
    ctx = { state, h: { esc, attr }, call, render, money }
    ========================================================================== */
 
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=800';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=801';
 
 export const SEND_TIME = '9:35 am';
 
@@ -297,10 +297,10 @@ function sponsorCents(p) {
     proposal page (which uses their logo and colour).                     */
 const SP_COLS = ['todo', 'asked', 'interested', 'yes', 'no'];
 const SP_PALETTE = ['#ff6b00', '#0f9d58', '#4a7bd0', '#b25b00', '#7a3fd0', '#c5322b', '#0a8f8f', '#d0486b'];
-const spColor = (p) => (p.color && /^#[0-9a-f]{6}$/i.test(p.color)) ? p.color : SP_PALETTE[[...String(p.business || '')].reduce((t, c) => t + c.charCodeAt(0), 0) % SP_PALETTE.length];
+export const spColor = (p) => (p.color && /^#[0-9a-f]{6}$/i.test(p.color)) ? p.color : SP_PALETTE[[...String(p.business || '')].reduce((t, c) => t + c.charCodeAt(0), 0) % SP_PALETTE.length];
 const spInitials = (name) => String(name || '?').replace(/[^\w ]/g, '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || '?';
 const spLogoOk = (u) => /^(https:\/\/|\/)[^\s'"()<>\\]*$/.test(String(u || ''));
-const spAvatar = (h, p, big) => (p.logo && spLogoOk(p.logo)
+export const spAvatar = (h, p, big) => (p.logo && spLogoOk(p.logo)
   ? `<img class="sp-logo${big ? ' is-big' : ''}" src="${h.attr(p.logo)}" alt="">`
   : `<span class="sp-logo sp-initials${big ? ' is-big' : ''}" style="background:${h.attr(spColor(p))}">${h.esc(spInitials(p.business))}</span>`);
 const spLink = (evId, p) => '/sponsor?e=' + encodeURIComponent(evId) + (p.token ? '&t=' + encodeURIComponent(p.token) : '');
