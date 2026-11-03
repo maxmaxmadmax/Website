@@ -5972,14 +5972,73 @@ const tidy = (t) => {
     facebook: String(t['contact:facebook'] || '').slice(0, 200), instagram: String(t['contact:instagram'] || '').slice(0, 200),
   };
 };
+/* Overpass, with a second server when the main one is busy */
+async function overpass(q, ms) {
+  for (const host of ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter']) {
+    try {
+      const r = await fetch(host, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', 'user-agent': UA }, body: 'data=' + encodeURIComponent(q), signal: AbortSignal.timeout(ms) });
+      if (!r.ok) continue;
+      const j = await r.json().catch(() => null);
+      if (j && Array.isArray(j.elements)) return j.elements;
+    } catch (e) { /* next server */ }
+  }
+  throw new HttpsError('unavailable', 'The map service is busy - try again in a minute.');
+}
+const REGIONS = { bowen: '-20.30,147.90,-19.80,148.60', whitsundays: '-20.60,147.90,-19.80,149.05' };
+/* which industry a map tag belongs to, for one-sponsor-per-industry */
+const INDUSTRY_OF = [
+  [/^shop=(car|car_repair|car_parts|tyres|motorcycle)$/, 'Automotive'], [/^amenity=(fuel|car_wash|car_rental)$/, 'Automotive'],
+  [/^office=estate_agent$/, 'Real estate'], [/^(craft=|shop=(hardware|doityourself|trade|paint|electrical|glaziery))/, 'Building & trades'],
+  [/^office=(accountant|financial|tax_advisor)$|^amenity=bank$/, 'Finance & accounting'], [/^office=lawyer$/, 'Legal'], [/^office=insurance$/, 'Insurance'],
+  [/^(amenity=(pharmacy|dentist|doctors|clinic|hospital|veterinary)|healthcare=|shop=(chemist|optician|medical_supply))/, 'Health & medical'],
+  [/^shop=(hairdresser|beauty|massage|tattoo|cosmetics)$/, 'Beauty & hair'], [/^(leisure=(fitness_centre|sports_centre|golf_course|swimming_pool)|club=sport)/, 'Fitness & sport'],
+  [/^amenity=(pub|bar|nightclub)$|^club=/, 'Hospitality - pubs & clubs'], [/^amenity=(cafe|restaurant|fast_food|ice_cream|food_court)$|^shop=(coffee|tea)$/, 'Hospitality - cafes & restaurants'],
+  [/^(tourism=(hotel|motel|caravan_site|guest_house|apartment|chalet|camp_site|hostel|resort|attraction|museum|zoo|theme_park)|leisure=(resort|marina|water_park)|shop=travel_agency|amenity=(cinema|boat_rental))/, 'Accommodation & tourism'],
+  [/^shop=(supermarket|convenience|bakery|butcher|greengrocer|seafood|deli|alcohol|beverages|general|frozen_food|health_food)$/, 'Retail - groceries'],
+  [/^shop=(furniture|bed|kitchen|houseware|interior_decoration|curtain|carpet|appliance|electronics|hifi|computer|mobile_phone|garden_centre|florist|pet|storage_rental|department_store|mall|variety_store|second_hand|charity)$/, 'Retail - hardware & home'],
+  [/^shop=(clothes|shoes|fashion|jewelry|gift|toys|books|stationery|sports|outdoor|bag|boutique|fabric|craft|art|music|video_games|newsagent|photo|tobacco|e-cigarette|surf)$/, 'Retail - fashion & gifts'],
+  [/^shop=(copyshop|printing|frame)$|^craft=(signmaker|printer)$/, 'Printing & signage'], [/^office=(advertising_agency|it|newspaper|telecommunication)$|^shop=(radiotechnics)$/, 'Media & marketing'],
+  [/^shop=(agrarian|farm|fishing|garden)$|^landuse=/, 'Agriculture & fishing'], [/^shop=(boat|scuba_diving)$|^leisure=slipway$/, 'Marine & boating'],
+  [/^(office=(logistics|moving_company)|shop=(trailer|caravan|truck)|amenity=(taxi|bus_station|ferry_terminal))/, 'Transport & logistics'],
+  [/^amenity=(school|kindergarten|childcare|college|university|library|dancing_school|music_school|driving_school|language_school)$/, 'Education & childcare'],
+  [/^amenity=(townhall|courthouse|police|post_office|fire_station)$|^office=government$/, 'Government & council'],
+  [/^(amenity=(community_centre|social_facility|place_of_worship|social_centre)|office=(association|charity|ngo)|club=)/, 'Community & not-for-profit'],
+];
+const industryOf = (kv) => { const hit = INDUSTRY_OF.find(([re]) => re.test(kv)); return hit ? hit[1] : 'Other'; };
+// map things that are not businesses to sponsor
+const NOT_BIZ = /^(leisure=(park|nature_reserve|pitch|playground|picnic_table|beach_resort|track|dog_park|garden|common)|tourism=(viewpoint|information|artwork|picnic_site)|amenity=(parking|toilets|bench|shelter|drinking_water|waste_transfer_station|charging_station|recycling|grave_yard|bbq|atm|fountain|telephone|post_box|vending_machine|boat_ramp|shower)|club=)/;
+
+exports.importMapBusinesses = onCall({ timeoutSeconds: 120, memory: '512MiB' }, async (request) => {
+  requireAdmin(request);
+  const region = String((request.data || {}).region || 'bowen');
+  const bbox = REGIONS[region];
+  if (!bbox) throw new HttpsError('invalid-argument', 'Unknown region.');
+  const q = `[out:json][timeout:60][bbox:${bbox}];(nwr["name"]["shop"];nwr["name"]["amenity"];nwr["name"]["office"];nwr["name"]["craft"];nwr["name"]["tourism"];nwr["name"]["leisure"];nwr["name"]["healthcare"];nwr["name"]["club"];);out center tags 3000;`;
+  const els = await overpass(q, 90000);
+  const seen = new Set();
+  const out = [];
+  els.forEach((el) => {
+    const t = el.tags || {};
+    const kv = t.shop ? 'shop=' + t.shop : t.amenity ? 'amenity=' + t.amenity : t.office ? 'office=' + t.office : t.craft ? 'craft=' + t.craft : t.tourism ? 'tourism=' + t.tourism : t.leisure ? 'leisure=' + t.leisure : t.healthcare ? 'healthcare=' + t.healthcare : t.club ? 'club=' + t.club : '';
+    if (!kv || NOT_BIZ.test(kv)) return;
+    const b = tidy(t);
+    const k = b.business.toLowerCase();
+    if (!b.business || seen.has(k)) return;
+    seen.add(k);
+    b.industry = industryOf(kv);
+    b.local = region === 'bowen' || /bowen|queens beach|merinda|gumlu|guthalungra/i.test(b.address) ? 'bowen' : 'whitsundays';
+    out.push(b);
+  });
+  out.sort((x, y) => x.business.localeCompare(y.business));
+  return { results: out };
+});
+
 /* by category: Overpass, tags only (a name regex is far too slow there) */
 async function findByKind(kv) {
   const [k, v] = kv.split('=');
   const q = `[out:json][timeout:20];(nwr["${k}"${v ? '="' + v + '"' : ''}](around:20000,${BOWEN.lat},${BOWEN.lon}););out center tags 80;`;
-  const r = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', 'user-agent': UA }, body: 'data=' + encodeURIComponent(q), signal: AbortSignal.timeout(25000) });
-  if (!r.ok) return [];
-  const j = await r.json().catch(() => ({}));
-  return (j.elements || []).map((el) => tidy(el.tags || {}));
+  const els = await overpass(q, 40000);
+  return els.map((el) => tidy(el.tags || {}));
 }
 /* by name or words: Nominatim, boxed to the Bowen area */
 async function findByName(q) {

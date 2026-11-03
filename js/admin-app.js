@@ -21,16 +21,16 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=802';
+} from './firebase-config.js?v=803';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=802';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=802';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=802';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=802';
-import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=802';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=802';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=802';
-import { expandKit } from './kit.js?v=802';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=803';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=803';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=803';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=803';
+import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=803';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=803';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=803';
+import { expandKit } from './kit.js?v=803';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -4663,6 +4663,15 @@ const bizStore = {
   async update(id, p) {
     const { doc, updateDoc, serverTimestamp } = fb.f;
     await updateDoc(doc(fb.db, 'sponsorBiz', id), { ...p, updatedAt: serverTimestamp() });
+  },
+  /* many at once (imports) - 400 a batch */
+  async addMany(list) {
+    const { collection, doc, writeBatch, serverTimestamp } = fb.f;
+    for (let i = 0; i < list.length; i += 400) {
+      const batch = writeBatch(fb.db);
+      list.slice(i, i + 400).forEach((p) => batch.set(doc(collection(fb.db, 'sponsorBiz')), { business: '', industry: '', stage: 'idea', stars: 0, ...p, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
+      await batch.commit();
+    }
   },
   async remove(id) {
     const { doc, deleteDoc } = fb.f;

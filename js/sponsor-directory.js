@@ -10,7 +10,7 @@
     One sponsor per industry: once a business in an industry has said yes
     to the event picked, the others in that industry show "industry taken". */
 
-import { spAvatar, spColor } from './messages.js?v=802';
+import { spAvatar, spColor } from './messages.js?v=803';
 
 export const STAGES = [['idea', 'Idea'], ['research', 'Researching'], ['ready', 'Ready to ask'], ['asked', 'Asked'], ['sponsor', 'Sponsor'], ['no', 'Not now']];
 const STAGE = Object.fromEntries(STAGES);
@@ -116,6 +116,14 @@ export function sponsorDirHtml(ctx) {
         <div><h1>Sponsor directory</h1><p>${list.length} business${list.length === 1 ? '' : 'es'} &middot; ${sponsorsNow.length} sponsor${sponsorsNow.length === 1 ? '' : 's'} &middot; ${Object.keys(takenBy).length} industr${Object.keys(takenBy).length === 1 ? 'y' : 'ies'} taken. Research here; send the ask from the event's Sponsors tab.</p></div>
         <button type="button" class="ad-btn" data-spd-tag${tagList.length ? '' : ' disabled title="No sponsor socials yet"'} title="Copies every sponsor's handle for a post">&#128227; Tag our sponsors</button>
         <button type="button" class="ad-btn" data-spd-find>&#128269; Find businesses</button>
+        <span class="spd-import">
+          <button type="button" class="ad-btn" data-spd-importmenu>&#8681; Import &#9662;</button>
+          <span class="spd-import-menu"${state.spDirImportMenu ? '' : ' hidden'}>
+            <button type="button" data-spd-import="leads">From the Lead Generator (${(state.leads || []).length})</button>
+            <button type="button" data-spd-import="bowen">Every mapped business in Bowen</button>
+            <button type="button" data-spd-import="whitsundays">Every mapped business in the Whitsundays</button>
+          </span>
+        </span>
         <button type="button" class="ad-btn ad-btn-primary" data-spd-new>+ Add a business</button>
       </div>
       <div class="spd-tabs">
@@ -248,6 +256,30 @@ export function wireSponsorDir(ctx) {
     const op = e.target.closest('[data-spd-open]');
     if (op && !e.target.closest('a, button, input, label, select')) { state.spDirOpen = op.getAttribute('data-spd-open'); render(); return; }
     if (e.target.closest('[data-spd-find]')) { state.spDirFind = { q: '', results: null }; render(); return; }
+    if (e.target.closest('[data-spd-importmenu]')) { state.spDirImportMenu = !state.spDirImportMenu; render(); return; }
+    const imp = e.target.closest('[data-spd-import]');
+    if (imp) {
+      state.spDirImportMenu = false;
+      const what = imp.getAttribute('data-spd-import');
+      const have = new Set((state.sponsorBiz || []).map((b) => key(b.business)));
+      let list = [];
+      imp.disabled = true; imp.textContent = 'Fetching…';
+      try {
+        if (what === 'leads') {
+          list = (state.leads || []).filter((l) => l.title).map((l) => ({ business: String(l.title).slice(0, 120), industry: String(l.category || '').slice(0, 60), contactName: l.contactName || '', phone: l.phone || '', email: l.email || '', website: l.website || '', facebook: /facebook\.com/i.test(l.socials || '') ? String(l.socials).match(/https?:\/\/[^\s,]*facebook\.com[^\s,]*/i)[0] : '', instagram: /instagram\.com/i.test(l.socials || '') ? String(l.socials).match(/https?:\/\/[^\s,]*instagram\.com[^\s,]*/i)[0] : '', address: l.address || l.suburb || '', notes: l.notes || '', local: 'bowen', source: 'lead', leadId: l.id }));
+        } else {
+          const r = await call('importMapBusinesses', { region: what });
+          list = ((r && r.data && r.data.results) || []).map((b) => ({ ...b, kind: undefined, source: 'osm' }));
+          list.forEach((b) => { delete b.kind; });
+        }
+      } catch (err) { window.alert(err.message || 'Import failed.'); render(); return; }
+      const fresh = list.filter((b) => b.business && !have.has(key(b.business)));
+      if (!fresh.length) { window.alert('Nothing new - they are all in the directory already.'); render(); return; }
+      if (!window.confirm('Add ' + fresh.length + ' business' + (fresh.length === 1 ? '' : 'es') + ' to the directory? (' + (list.length - fresh.length) + ' already in.)')) { render(); return; }
+      await biz.addMany(fresh);
+      window.alert('Added ' + fresh.length + '. Open any of them and press "Fill from website" for logo, blurb and socials.');
+      return;
+    }
     if (e.target.closest('[data-spd-new]')) {
       const name = window.prompt('Business name');
       if (!name || !name.trim()) return;

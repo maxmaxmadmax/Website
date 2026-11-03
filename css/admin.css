@@ -5283,3 +5283,8 @@ a.ms-tab{ text-decoration:none; display:inline-flex; align-items:center; color:i
 .spd-find-acts{ display:flex; gap:10px; align-items:flex-end; }
 .spd-find-acts .sp-f{ flex:1; margin:0; }
 @media (max-width:1100px){ .spd.has-panel{ grid-template-columns:1fr; } .spd-panel{ position:static; max-height:none; } .spd-2{ grid-template-columns:1fr; } }
+.spd-import{ position:relative; }
+.spd-import-menu{ position:absolute; top:calc(100% + 6px); right:0; background:#fff; border:1px solid var(--ad-line); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.14); z-index:20; display:flex; flex-direction:column; min-width:280px; padding:6px; }
+.spd-import-menu[hidden]{ display:none; }
+.spd-import-menu button{ text-align:left; font:inherit; font-size:13px; padding:9px 12px; border-radius:8px; cursor:pointer; }
+.spd-import-menu button:hover{ background:var(--ad-orange-soft); }
