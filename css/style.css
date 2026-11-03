@@ -1269,13 +1269,13 @@ nav {
     background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0));
 }
 
-.Nav a {
+.nav-logo a {
     display: block;
     padding: 0; /* logo shouldn't inherit the menu link padding */
     border-bottom: none;
 }
 
-.Nav img {
+.nav-logo img {
     height: 45px;
     width: auto;
     display: block;
@@ -1826,7 +1826,7 @@ nav a.nav-cta.active {
 
     /*  The Contact button stays visible on a phone. */
 
-    .Nav img {
+    .nav-logo img {
         height: 28px;
     }
 
@@ -2202,7 +2202,7 @@ nav a.nav-cta.active {
         text-align: center;
     }
 
-    .Nav img {
+    .nav-logo img {
         height: 34px;
     }
 }
