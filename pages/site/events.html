@@ -23,15 +23,16 @@ permalink: /events.html
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="css/style.css?v=797">
+  <link rel="stylesheet" href="css/style.css?v=798">
   <!-- The event card is shared with /gig-guide, so its styles live in their own file. -->
-  <link rel="stylesheet" href="css/gig-card.css?v=797">
-  <link rel="stylesheet" href="css/events.css?v=797">
-  <script src="js/main.js?v=797" defer></script>
+  <link rel="stylesheet" href="css/gig-card.css?v=798">
+  <link rel="stylesheet" href="css/events.css?v=798">
+  <script src="js/main.js?v=798" defer></script>
   <!-- roster.js names the DJs on the Friday Nights cards (same list as the entertainment page and admin). -->
-  <script src="js/roster.js?v=797" defer></script>
-  <script src="js/weekend.js?v=797" defer></script>
-  <script src="js/events.js?v=797" defer></script>
+  <script src="js/roster.js?v=798" defer></script>
+  <script src="js/weekend.js?v=798" defer></script>
+  <script src="js/events.js?v=798" defer></script>
+  <script src="js/volunteer.js?v=798" defer></script>
 </head>
 
 <!-- the class is what events.css hangs the footer tweak off -->
@@ -266,6 +267,38 @@ permalink: /events.html
     <div class="ev-wk-track" id="ev-weekend-grid"></div>
   </div>
 
+</section>
+
+<!-- 2b. VOLUNTEER WITH US - goes to the volunteerApply function and lands in
+     the admin under the event > Volunteers. data-event is the event it is for. -->
+<section class="section ev-section ev-vol" id="volunteer" aria-labelledby="ev-vol-name">
+  <div class="ev-vol-panel">
+    <div class="ev-vol-text">
+      <p class="ev-feature-eyebrow">Volunteer with us</p>
+      <h2 class="ev-vol-name" id="ev-vol-name">Lend <span>a hand</span></h2>
+      <p class="ev-vol-strap">Community events run on good people. A couple of hours on the gate, the bar, setup or pack-down makes the whole night happen &ndash; and you'll have a great time doing it.</p>
+    </div>
+    <form class="ev-vol-form" id="ev-vol-form" data-event="eatz-beatz-halloween-2026">
+      <label>Your name<input name="name" required maxlength="120" autocomplete="name"></label>
+      <div class="ev-vol-2">
+        <label>Email<input name="email" type="email" required maxlength="200" autocomplete="email"></label>
+        <label>Phone<input name="phone" type="tel" required maxlength="40" autocomplete="tel"></label>
+      </div>
+      <fieldset class="ev-vol-roles"><legend>Happy to help with</legend>
+        <label><input type="checkbox" name="roles" value="setup"> Setup</label>
+        <label><input type="checkbox" name="roles" value="packdown"> Pack-down</label>
+        <label><input type="checkbox" name="roles" value="gate"> Gate &amp; welcome</label>
+        <label><input type="checkbox" name="roles" value="bar"> Bar</label>
+        <label><input type="checkbox" name="roles" value="runner"> Runner</label>
+        <label><input type="checkbox" name="roles" value="kids"> Kids' activities</label>
+        <label><input type="checkbox" name="roles" value="anything"> Anything!</label>
+      </fieldset>
+      <label>When are you free?<input name="availability" maxlength="200" placeholder="e.g. From 3pm, or just the pack-down"></label>
+      <label>Anything else?<textarea name="message" rows="2" maxlength="1000"></textarea></label>
+      <button type="submit" class="btn btn-ticket">Count me in &rarr;</button>
+      <p class="ev-vol-msg" id="ev-vol-msg" hidden></p>
+    </form>
+  </div>
 </section>
 
 

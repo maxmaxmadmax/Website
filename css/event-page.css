@@ -1783,20 +1783,4 @@ a.ep-fv:focus-visible{ transform:translateY(-3px); box-shadow:0 8px 0 rgba(29,13
 .ep-going-ask button:hover{ background:var(--ep-ink); color:var(--ep-cream); }
 @media print{ .ep-going{ display:none !important; } }
 
-/* volunteer with us */
-.ep-vol-panel{ display:grid; grid-template-columns:1fr 1.1fr; gap:28px; background:var(--ep-ink); color:var(--ep-cream); border-radius:18px; padding:30px; box-shadow:0 8px 0 rgba(29,13,2,.3); }
-.ep-vol-text .ep-big{ color:var(--ep-cream); }
-.ep-vol-text .ep-big span{ color:var(--ep-lime); }
-.ep-vol-text .ep-market-strap{ color:#f3e3d0; }
-.ep-vol-form label{ display:block; margin:0 0 10px; font-weight:bold; font-size:.9rem; }
-.ep-vol-form input, .ep-vol-form textarea{ display:block; width:100%; margin-top:4px; padding:10px 12px; border:0; border-radius:8px; font:inherit; font-size:1rem; color:var(--ep-ink); background:var(--ep-cream); box-sizing:border-box; }
-.ep-vol-2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.ep-vol-roles{ border:0; padding:0; margin:0 0 10px; display:flex; flex-wrap:wrap; gap:8px; }
-.ep-vol-roles legend{ font-weight:bold; font-size:.9rem; margin-bottom:6px; }
-.ep-vol-roles label{ display:inline-flex; align-items:center; gap:6px; margin:0; padding:8px 12px; border-radius:999px; background:rgba(255,244,230,.12); font-weight:normal; cursor:pointer; }
-.ep-vol-roles label:has(input:checked){ background:var(--ep-lime); color:var(--ep-ink); font-weight:bold; }
-.ep-vol-roles input{ display:none; }
-.ep-vol-form .ep-btn{ background:var(--ep-lime); color:var(--ep-ink); }
-.ep-vol-msg{ margin:10px 0 0; font-weight:bold; color:var(--ep-lime); }
-@media (max-width:760px){ .ep-vol-panel{ grid-template-columns:1fr; } .ep-vol-2{ grid-template-columns:1fr; } }
-@media print{ .ep-vol{ display:none !important; } }
+
