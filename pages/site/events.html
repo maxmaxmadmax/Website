@@ -23,16 +23,16 @@ permalink: /events.html
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="css/site.css?v=819">
+  <link rel="stylesheet" href="css/site.css?v=820">
   <!-- The event card is shared with /gig-guide, so its styles live in their own file. -->
-  <link rel="stylesheet" href="css/gig-card.css?v=819">
-  <link rel="stylesheet" href="css/events.css?v=819">
-  <script src="js/main.js?v=819" defer></script>
+  <link rel="stylesheet" href="css/gig-card.css?v=820">
+  <link rel="stylesheet" href="css/events.css?v=820">
+  <script src="js/main.js?v=820" defer></script>
   <!-- roster.js names the DJs on the Friday Nights cards (same list as the entertainment page and admin). -->
-  <script src="js/roster.js?v=819" defer></script>
-  <script src="js/weekend.js?v=819" defer></script>
-  <script src="js/events.js?v=819" defer></script>
-  <script src="js/volunteer.js?v=819" defer></script>
+  <script src="js/roster.js?v=820" defer></script>
+  <script src="js/weekend.js?v=820" defer></script>
+  <script src="js/events.js?v=820" defer></script>
+  <script src="js/volunteer.js?v=820" defer></script>
 </head>
 
 <!-- the class is what events.css hangs the footer tweak off -->
@@ -51,7 +51,7 @@ permalink: /events.html
        - past event       -> copy an <article class="ev-card"> block into
                              the .ev-grid in Previous Events
 
-     The badge is one line: <span class="ev-badge is-upcoming">Upcoming</span>
+     The badge is one line: <span class="badge is-upcoming">Upcoming</span>
      Swap is-upcoming for is-soon, is-past or is-soldout.
 
      Card artwork is set with a style="--ev-art:url(...)" on the card, so a
@@ -59,7 +59,7 @@ permalink: /events.html
      ========================================================================== -->
 
 <!-- Hidden heading for screen readers and search engines - says what the page is. -->
-<h1 class="ev-sr-only">Events</h1>
+<h1 class="sr-only">Events</h1>
 
 <!-- 2. UPCOMING - THE FEATURED EVENT ------------------------------------
      Halloween styling is kept to this section by .is-halloween.
@@ -77,7 +77,7 @@ permalink: /events.html
     <div class="ev-feature-body">
       <p class="ev-feature-eyebrow">Upcoming Events</p>
 
-      <span class="ev-badge is-upcoming">Upcoming</span>
+      <span class="badge is-upcoming">Upcoming</span>
 
       <h2 class="ev-feature-name" id="ev-feature-name">
         Eatz &amp; Beatz
@@ -309,7 +309,7 @@ permalink: /events.html
   <article class="ev-teaser" style="--ev-art:url('/images/events/soundzgood-2-0/soundzgood-2-0-banner.jpg')">
 
     <div class="ev-teaser-body">
-      <span class="ev-badge is-soon">Coming Soon</span>
+      <span class="badge is-soon">Coming Soon</span>
 
       <p class="ev-teaser-word">SoundzGood</p>
       <h2 class="ev-teaser-chapter">Next Chapter</h2>
@@ -348,7 +348,7 @@ permalink: /events.html
       <div class="ev-card-art" aria-hidden="true"></div>
 
       <div class="ev-card-body">
-        <span class="ev-badge is-past">Past Event</span>
+        <span class="badge is-past">Past Event</span>
 
         <h3>SoundzGood 2.0</h3>
 
@@ -378,7 +378,7 @@ permalink: /events.html
       <div class="ev-card-art is-logo" aria-hidden="true"></div>
 
       <div class="ev-card-body">
-        <span class="ev-badge is-past">Past Event</span>
+        <span class="badge is-past">Past Event</span>
 
         <h3>SoundzGood</h3>
 

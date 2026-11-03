@@ -105,6 +105,20 @@ a {
     overflow-wrap: break-word;
 }
 
+/* Visually hidden, still read by screen readers */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
 /* Keyboard focus ring */
 a:focus-visible,
 button:focus-visible,
@@ -252,12 +266,58 @@ textarea:focus-visible {
     box-shadow: 0 0 24px rgba(255, 140, 0, 0.45);
 }
 
+/* Archived: reads as a statement, not a button */
+.btn.is-done {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: var(--sg-dim);
+    cursor: default;
+}
+
 /* A row of buttons */
 .buttons {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     gap: 18px;
+}
+
+/* Status badge: upcoming / soon / past / soldout */
+.badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 50px;
+    border: 1px solid;
+    font-family: var(--sg-font-accent);
+    font-size: 0.7rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.badge.is-upcoming {
+    background: var(--sg-orange);
+    border-color: var(--sg-orange);
+    color: #0a0a0a;
+}
+
+.badge.is-soon {
+    background: transparent;
+    border-color: var(--sg-gold);
+    color: var(--sg-gold);
+}
+
+.badge.is-past {
+    background: #1a1a1a;
+    border-color: #333;
+    color: var(--sg-dim);
+}
+
+.badge.is-soldout {
+    background: #3a1414;
+    border-color: #8c3a3a;
+    color: #ff9d9d;
 }
 
 /* ==========================================================================

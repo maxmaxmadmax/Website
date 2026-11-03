@@ -1,81 +1,17 @@
 /* ==========================================================================
-   EVENTS PAGE
+   EVENTS PAGE - events.html, on top of site.css. Everything is .ev-
 
-   Loaded on top of style.css by events.html only. Everything is prefixed
-   .ev- so none of it can reach another page.
-
-   The page is a hub: one full-height feature panel for the next event, a
-   teaser for the one after it, then a grid of cards for everything that
-   has already happened.
+   FEATURE     full-height panel for the next event
+   COUNTDOWN   ticks down to doors (js/events.js)
+   VOLUNTEER   the sign-up form under the feature
+   TEASER      full-height panel for the event after next
+   RESIDENCY   Friday nights at the Grand View
+   WEEK        the what's-on strip (cards come from gig-card.css)
+   CARDS       grid of past events
+   PHONE       keep last
    ========================================================================== */
 
-/*  WHAT IS IN HERE
-      BASICS
-      SECTIONS
-      ARCHIVED STATE
-      CARDS
-      COUNTDOWN
-      FEATURE PANEL
-      TEASER
-      RESPONSIVE
-      FOOTER TWEAK
-
-    BASICS and SECTIONS come first and RESPONSIVE / footer last, because
-    order decides which rule wins. Do not re-sort rules inside a section. */
-
-/* ==========================================================================
-   BASICS
-
-   The screen-reader-only helper, the status badges and the date and
-   place line. Small pieces used all over the page.
-   ========================================================================== */
-.ev-sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    clip-path: inset(50%);
-    white-space: nowrap;
-    border: 0;
-}
-
-.ev-badge {
-    display: inline-block;
-    padding: 6px 14px;
-    border-radius: 50px;
-    border: 1px solid;
-    font-family: var(--sg-font-accent);
-    font-size: 0.7rem;
-    font-weight: bold;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
-.ev-badge.is-upcoming {
-    background: var(--sg-orange);
-    border-color: var(--sg-orange);
-    color: #0a0a0a;
-}
-.ev-badge.is-soon {
-    background: transparent;
-    border-color: var(--sg-gold);
-    color: var(--sg-gold);
-}
-.ev-badge.is-past {
-    background: #1a1a1a;
-    border-color: #333;
-    color: var(--sg-dim);
-}
-.ev-badge.is-soldout {
-    background: #3a1414;
-    border-color: #8c3a3a;
-    color: #ff9d9d;
-}
-
+/* Date and place line */
 .ev-meta {
     display: flex;
     flex-wrap: wrap;
@@ -90,16 +26,12 @@
     color: var(--sg-gold);
     font-weight: bold;
 }
+
 .ev-meta-place {
     color: var(--sg-dim);
 }
 
-/* ==========================================================================
-   SECTIONS
-
-   The generic wrapper and heading for a band of the page. Pinned above
-   the rest because the feature and teaser panels override it.
-   ========================================================================== */
+/* A band of the page */
 .ev-section {
     max-width: var(--sg-max-width);
     margin: auto;
@@ -110,251 +42,19 @@
 }
 
 /* ==========================================================================
-   ARCHIVED STATE
-
-   What the ticket bar and its button look like once an event has been
-   and gone.
-   ========================================================================== */
-/* Reads as a statement, not a button you can press */
-.btn.is-done {
-    background: #1a1a1a;
-    border: 1px solid #333;
-    color: var(--sg-dim);
-    cursor: default;
-}
-
-/* ==========================================================================
-   CARDS
-
-   The grid of past events. .is-nolink is for an event with nowhere to go
-   yet - it strips the hover and the button rather than offering a dead
-   link.
-   ========================================================================== */
-.ev-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 24px;
-    margin-top: 26px;
-}
-
-.ev-card {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border: 1px solid var(--sg-border);
-    border-radius: 18px;
-    background: var(--sg-panel);
-    transition:
-        transform 0.25s ease,
-        border-color 0.25s ease,
-        box-shadow 0.25s ease;
-}
-
-/*  One stretched link covers the whole card, so the entire card is
-    clickable while the page still has exactly one link per event.       */
-.ev-card-link {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-}
-
-.ev-card-art {
-    aspect-ratio: 16 / 9;
-    background-image: var(--ev-art);
-    background-size: cover;
-    background-position: center;
-    /* Past events sit back: dimmer and less saturated than an upcoming one */
-    filter: brightness(0.62) saturate(0.72);
-    transition:
-        filter 0.25s ease,
-        transform 0.45s ease;
-}
-
-/*  For a card with only a logo rather than event artwork. Contained, not
-    cropped, on a dark tile.                                              */
-.ev-card-art.is-logo {
-    background-size: min(56%, 190px);
-    background-repeat: no-repeat;
-    background-color: #141414;
-    filter: brightness(0.75);
-}
-
-.ev-card-body {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 22px 22px 24px;
-    flex: 1;
-}
-
-.ev-card-body h3 {
-    font-family: var(--sg-font-display);
-    font-size: 1.5rem;
-    letter-spacing: -0.5px;
-    text-transform: uppercase;
-}
-
-.ev-card-artists {
-    color: var(--sg-dim);
-    font-size: 0.92rem;
-    line-height: 1.65;
-}
-
-/*  Pushed to the bottom so the buttons line up across cards of different
-    heights.                                                              */
-.ev-card-btn {
-    margin-top: auto;
-    pointer-events: none; /* the stretched link above does the clicking */
-    transition:
-        background-color 0.25s ease,
-        color 0.25s ease,
-        border-color 0.25s ease;
-}
-
-.ev-card:hover {
-    transform: translateY(-4px);
-    border-color: #3a3a3a;
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
-}
-
-.ev-card:hover .ev-card-art {
-    filter: brightness(0.86) saturate(0.95);
-    transform: scale(1.04);
-}
-
-.ev-card:hover .ev-card-btn {
-    background: var(--sg-orange);
-    border-color: var(--sg-orange);
-    color: #0a0a0a;
-}
-
-.ev-card:focus-within {
-    border-color: var(--sg-orange);
-}
-
-/*  A past event with no archive page yet. The card still shows - it just
-    does not pretend to go anywhere.                                      */
-.ev-card.is-nolink .ev-card-link {
-    display: none;
-}
-.ev-card.is-nolink {
-    cursor: default;
-}
-.ev-card.is-nolink:hover {
-    transform: none;
-    box-shadow: none;
-}
-.ev-card.is-nolink .ev-card-btn {
-    opacity: 0.45;
-}
-.ev-card.is-nolink:hover .ev-card-btn {
-    background: transparent;
-    color: var(--sg-orange);
-    border-color: var(--sg-orange);
-}
-
-/* ==========================================================================
-   COUNTDOWN
-
-   Ticks down to the doors time in the data-doors attribute on the
-   markup. One value drives both the numbers and the line of text
-   underneath. When it reaches zero .is-open swaps the wording.
-   ========================================================================== */
-.ev-countdown {
-    margin-top: 34px;
-}
-
-.ev-countdown-label {
-    font-family: var(--sg-font-accent);
-    font-size: 0.72rem;
-    font-weight: bold;
-    letter-spacing: 0.28em;
-    text-transform: uppercase;
-    color: var(--sg-gold);
-    margin-bottom: 14px;
-}
-
-.ev-countdown-units {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    list-style: none;
-    margin: 0 0 12px;
-    padding: 0;
-}
-
-.ev-countdown-units li {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-
-    min-width: 74px;
-    padding: 12px 10px;
-
-    background: rgba(0, 0, 0, 0.42);
-    border: 1px solid var(--sg-border);
-    border-radius: 12px;
-}
-
-.ev-countdown-units b {
-    font-family: var(--sg-font-display);
-    font-size: clamp(1.5rem, 3.4vw, 2.2rem);
-    line-height: 1;
-    color: #fff;
-    /*  Tabular figures, so the seconds do not jog the box about as the
-        digits change width.                                             */
-    font-variant-numeric: tabular-nums;
-}
-
-.ev-countdown-units span {
-    font-family: var(--sg-font-accent);
-    font-size: 0.62rem;
-    font-weight: bold;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--sg-dim);
-}
-
-.ev-countdown-when {
-    color: var(--sg-muted);
-    font-size: 0.9rem;
-}
-
-/* once the doors are open there is nothing left to count */
-.ev-countdown.is-open .ev-countdown-label {
-    color: var(--sg-orange);
-    font-size: 0.9rem;
-    letter-spacing: 0.2em;
-}
-
-/*  Full height, edge to edge, to pair with the featured event above it. */
-
-/* ==========================================================================
-   FEATURE PANEL
-
-   The full-height panel for the next event. .is-halloween adds the
-   purple and the cobwebs, and it is scoped to this one panel so the
-   theme cannot leak into the rest of the page.
+   FEATURE
    ========================================================================== */
 .ev-feature {
     position: relative;
     overflow: hidden;
-
-    /*  svh rather than vh so the address bar appearing on a phone does not
-        leave the bottom of the hero cut off.                             */
     min-height: 100vh;
-    min-height: 100svh;
-
+    min-height: 100svh; /* phone address bar does not cut the bottom off */
     display: flex;
     align-items: center;
     border-bottom: 1px solid var(--sg-border);
 }
 
-/*  Halloween treatment, kept to the section carrying .is-halloween. The
-    rest of the site stays exactly as it is.                              */
+/* Halloween look, scoped to this panel */
 .ev-feature.is-halloween {
     background: radial-gradient(80% 90% at 88% 18%, #3a1f5c 0%, transparent 58%), linear-gradient(150deg, #1b0d02 0%, #0b0b0b 62%);
 }
@@ -376,13 +76,13 @@
     max-width: var(--sg-max-width);
     margin: 0 auto;
     padding: calc(var(--sg-nav-height, 88px) + 40px) 6% 70px;
-
     display: grid;
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
     align-items: center;
     gap: 40px;
 }
 
+/* Cobweb in the corner */
 .ev-web {
     position: absolute;
     top: 0;
@@ -439,7 +139,7 @@
     margin-top: 34px;
 }
 
-/*  The event poster sits on the right. Tapping it opens it full size.  */
+/* Poster on the right, tap to open full size */
 .ev-feature-art {
     position: relative;
     z-index: 1;
@@ -471,10 +171,201 @@
 }
 
 /* ==========================================================================
-   TEASER
+   COUNTDOWN
+   ========================================================================== */
+.ev-countdown {
+    margin-top: 34px;
+}
 
-   The full-height panel for the event after next, deliberately quieter
-   than the feature panel above it.
+.ev-countdown-label {
+    font-family: var(--sg-font-accent);
+    font-size: 0.72rem;
+    font-weight: bold;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--sg-gold);
+    margin-bottom: 14px;
+}
+
+.ev-countdown-units {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    list-style: none;
+    margin: 0 0 12px;
+    padding: 0;
+}
+
+.ev-countdown-units li {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 74px;
+    padding: 12px 10px;
+    background: rgba(0, 0, 0, 0.42);
+    border: 1px solid var(--sg-border);
+    border-radius: 12px;
+}
+
+.ev-countdown-units b {
+    font-family: var(--sg-font-display);
+    font-size: clamp(1.5rem, 3.4vw, 2.2rem);
+    line-height: 1;
+    color: #fff;
+    font-variant-numeric: tabular-nums; /* digits do not jog about */
+}
+
+.ev-countdown-units span {
+    font-family: var(--sg-font-accent);
+    font-size: 0.62rem;
+    font-weight: bold;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--sg-dim);
+}
+
+.ev-countdown-when {
+    color: var(--sg-muted);
+    font-size: 0.9rem;
+}
+
+/* Doors open: nothing left to count */
+.ev-countdown.is-open .ev-countdown-label {
+    color: var(--sg-orange);
+    font-size: 0.9rem;
+    letter-spacing: 0.2em;
+}
+
+/* ==========================================================================
+   VOLUNTEER
+   ========================================================================== */
+.ev-vol {
+    background: var(--sg-black);
+}
+
+.ev-vol-panel {
+    display: grid;
+    grid-template-columns: 1fr 1.1fr;
+    gap: 40px;
+    max-width: 1100px;
+    margin: 0 auto;
+    background: var(--sg-panel);
+    border: 1px solid #222;
+    border-radius: 22px;
+    padding: 40px;
+}
+
+.ev-vol-name {
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    line-height: 0.95;
+    text-transform: uppercase;
+    font-weight: 900;
+    color: #fff;
+    margin: 0 0 18px;
+}
+
+.ev-vol-name span {
+    color: var(--sg-orange-bright);
+}
+
+.ev-vol-strap {
+    color: #cfcfcf;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    max-width: 40ch;
+}
+
+.ev-vol-form label {
+    display: block;
+    margin: 0 0 14px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: #eee;
+}
+
+.ev-vol-form input,
+.ev-vol-form textarea {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    padding: 12px 14px;
+    border: 1px solid #333;
+    border-radius: 10px;
+    font: inherit;
+    font-size: 1rem;
+    color: #fff;
+    background: #1a1a1a;
+    box-sizing: border-box;
+}
+
+.ev-vol-form input:focus,
+.ev-vol-form textarea:focus {
+    outline: none;
+    border-color: var(--sg-orange-bright);
+}
+
+.ev-vol-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* Role chips */
+.ev-vol-roles {
+    border: 0;
+    padding: 0;
+    margin: 0 0 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ev-vol-roles legend {
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: #eee;
+    margin-bottom: 8px;
+}
+
+.ev-vol-roles label {
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: #222;
+    border: 1px solid #333;
+    font-weight: normal;
+    color: #ddd;
+    cursor: pointer;
+}
+
+.ev-vol-roles label:has(input:checked) {
+    background: var(--sg-orange-bright);
+    border-color: var(--sg-orange-bright);
+    color: #000;
+    font-weight: bold;
+}
+
+.ev-vol-roles input {
+    display: none;
+}
+
+.ev-vol-form .btn-ticket {
+    font-size: 1rem;
+    padding: 14px 34px;
+    cursor: pointer;
+}
+
+.ev-vol-msg {
+    margin: 12px 0 0;
+    font-weight: bold;
+    color: var(--sg-gold);
+}
+
+/* ==========================================================================
+   TEASER
    ========================================================================== */
 .ev-teaser-wrap {
     padding: 0;
@@ -490,15 +381,13 @@
     border-radius: 0;
     text-align: center;
     isolation: isolate;
-
     min-height: 100vh;
     min-height: 100svh;
     display: flex;
     align-items: center;
 }
 
-/*  The blurred artwork. Scaled up past the edges so the blur has no soft
-    border, and dimmed hard so the type stays the loudest thing here.     */
+/* Blurred artwork behind, dimmed hard */
 .ev-teaser::before {
     content: '';
     position: absolute;
@@ -527,8 +416,7 @@
     margin: auto;
 }
 
-/*  SOUNDZGOOD must never break across lines; the size follows the screen
-    width so it shrinks to fit instead.                                   */
+/* SOUNDZGOOD never wraps - it shrinks to fit */
 .ev-teaser-word {
     font-family: var(--sg-font-display);
     font-size: min(5.6rem, 11vw);
@@ -582,12 +470,9 @@
     color: var(--sg-orange);
 }
 
-/*  auto-fit (not auto-fill) so two events spread across the row. */
-
 /* ==========================================================================
-   FRIDAY NIGHTS RESIDENCY - the weekly night at the Grand View Hotel.
-   Taken down by the `hidden` attribute on its section in events.html.
-   Never set `display` on .ev-residency itself, or `hidden` stops working.
+   RESIDENCY - hidden with the `hidden` attribute on its section.
+   Never set display on .ev-residency itself or `hidden` stops working.
    ========================================================================== */
 .events-page [hidden] {
     display: none !important;
@@ -598,8 +483,7 @@
     border-top: 1px solid var(--ev-res-line);
 }
 
-/* ---- the banner ---- */
-/*  The gradient sits behind the video, not on the scrim above it. */
+/* Banner: video behind, scrim on top, words on the left */
 .ev-res-hero {
     position: relative;
     overflow: hidden;
@@ -609,10 +493,6 @@
     background: linear-gradient(120deg, #2a1436, #0a0a0a 70%);
 }
 
-/*  The photo is a background rather than an <img>, so a file that is not
-    there yet leaves the gradient showing instead of a broken image. Swap
-    the url in --ev-art when you have one. */
-/*  The reel behind the banner, cropped to fill it. */
 .ev-res-video {
     position: absolute;
     inset: 0;
@@ -621,8 +501,6 @@
     object-fit: cover;
 }
 
-/*  The scrim: dark on the left behind the words, clearer on the right.
-    The gradient also shows before the clip starts, or if it will not play. */
 .ev-res-hero-media {
     position: absolute;
     inset: 0;
@@ -666,8 +544,7 @@
     margin-bottom: 14px;
 }
 
-/*  The three facts. Sized to their content rather than stretched, so the
-    long label and the short one still line their icons up.              */
+/* The three facts with icons */
 .ev-res-facts {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, max-content));
@@ -720,8 +597,7 @@
     color: #140800;
 }
 
-/*  The handwritten line in the corner. Decorative (aria-hidden); hidden
-    when there is no room.                                              */
+/* Handwritten line in the corner (decorative) */
 .ev-res-script {
     position: absolute;
     right: 5%;
@@ -736,23 +612,19 @@
     pointer-events: none;
 }
 
-/* ---- line up and venue ---- */
+/* Line-up left, venue card right */
 .ev-res-body {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 300px;
     gap: 26px;
     align-items: start;
-
-    /*  width:100% is needed: margin:auto on a flex column item would also
-        shrink it to its content.                                       */
     width: 100%;
     max-width: var(--sg-max-width);
     margin: auto;
     padding: 18px 6%;
 }
 
-/*  Four across, fixed (auto-fit dropped the fourth card because the venue
-    card shares the row). Two across on a phone.                          */
+/* DJ cards: four across on a computer, two on a phone */
 .ev-fri-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -760,14 +632,7 @@
     margin-bottom: 12px;
 }
 
-@media (min-width: 901px) {
-    .ev-fri-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-}
-
-/*  THE PHOTO IS THE CARD - the name sits on it over a gradient.
-    A card with no DJ named yet shows the purple gradient with the date. */
+/* The photo is the card */
 .ev-fri {
     position: relative;
     aspect-ratio: 3 / 4;
@@ -787,8 +652,6 @@
     transform: translateY(-3px);
 }
 
-/*  Kept as its own element: the date tab is positioned against it, and
-    js/events.js builds every card the same way.                        */
 .ev-fri-art {
     position: absolute;
     inset: 0;
@@ -798,13 +661,11 @@
     position: absolute;
     top: 10px;
     left: 10px;
-
     padding: 5px 9px;
     border-radius: 5px;
     background: rgba(0, 0, 0, 0.72);
     border: 1px solid var(--sg-gold);
     color: var(--sg-gold);
-
     font-family: var(--sg-font-accent);
     font-size: 0.6rem;
     font-weight: bold;
@@ -812,8 +673,6 @@
     text-transform: uppercase;
 }
 
-/*  The name on the picture. The gradient is on this element so it can
-    never cover the words.                                               */
 .ev-fri-body {
     position: absolute;
     inset: auto 0 0 0;
@@ -835,7 +694,6 @@
     gap: 8px;
     padding-bottom: 4px;
     border-bottom: 1px solid var(--sg-dim);
-
     color: #fff;
     font-family: var(--sg-font-accent);
     font-size: 0.66rem;
@@ -849,6 +707,7 @@
     border-bottom-color: var(--sg-gold);
 }
 
+/* Venue card */
 .ev-venue {
     background: #121212;
     border: 1px solid var(--ev-res-line);
@@ -857,8 +716,6 @@
     overflow: hidden;
 }
 
-/*  The pub itself. The gradient stays underneath as the fallback, so
-    this still looks like a card if the photograph ever goes missing. */
 .ev-venue-art {
     height: 120px;
     background: url('../images/venues/grand-view-hotel.jpg'), linear-gradient(140deg, #33184a, #0d0d0d 72%);
@@ -882,14 +739,11 @@
     line-height: 1.65;
 }
 
-/*  Link to the pub's own site - underlined, not a button, because it
-    leaves our site.                                                    */
 .ev-venue-link {
     display: inline-flex;
     align-items: center;
     gap: 7px;
     margin: 0 16px 16px;
-
     color: var(--sg-gold);
     font-family: var(--sg-font-accent);
     font-size: 0.66rem;
@@ -909,14 +763,13 @@
     border-color: #fff;
 }
 
-/* ---- book a DJ ---- */
+/* Book a DJ strip */
 .ev-res-cta {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 24px;
-
     padding: 18px 6%;
     background: #0b0b0b;
     border-top: 1px solid var(--ev-res-line);
@@ -939,152 +792,8 @@
     color: var(--sg-muted);
 }
 
-/*  ONE SCREEN
-    On desktop the residency fits exactly one screen height. The line up and
-    button keep their size; the banner (flex:1) takes what is left.
-    dvh so a phone's address bar does not push it over; min-height stops it
-    collapsing on a very short window.                                   */
-@media (min-width: 901px) {
-    .ev-residency {
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        height: 100dvh;
-        min-height: 600px;
-    }
-
-    .ev-res-hero {
-        flex: 1 1 auto;
-        min-height: 250px;
-    }
-
-    .ev-res-body,
-    .ev-res-cta {
-        flex: 0 0 auto;
-    }
-}
-
-/*  SHORT WINDOWS (e.g. a 1366x768 laptop): the banner drops its paragraph,
-    pictures shrink and padding comes in, so it still fits one screen.   */
-@media (min-width: 901px) and (max-height: 840px) {
-    .ev-res-hero-inner {
-        padding: 16px 6%;
-    }
-
-    .ev-res-name {
-        font-size: clamp(1.7rem, 3.2vw, 2.3rem);
-    }
-    .ev-res-venue {
-        margin-bottom: 10px;
-    }
-    .ev-res-facts {
-        margin-bottom: 0;
-    }
-
-    .ev-res-body {
-        padding: 12px 6%;
-    }
-    .ev-fri-body {
-        padding: 22px 12px 12px;
-    }
-
-    .ev-venue-art {
-        height: 92px;
-        margin-bottom: 10px;
-    }
-    .ev-venue > p {
-        margin-bottom: 10px;
-    }
-    .ev-res-cta {
-        padding: 12px 6%;
-    }
-}
-
-/*  Tablet and down: the venue card drops under the line up rather than
-    squeezing beside it. */
-@media (max-width: 900px) {
-    .ev-res-body {
-        grid-template-columns: 1fr;
-    }
-    .ev-res-script {
-        display: none;
-    }
-}
-
 /* ==========================================================================
-   RESPONSIVE
-
-   Pinned last - these override everything above them.
-   ========================================================================== */
-/* Tablet: the hero stops being side by side */
-@media (max-width: 900px) {
-    .ev-feature-inner {
-        grid-template-columns: 1fr;
-        gap: 28px;
-        padding-bottom: 56px;
-    }
-
-    /* the poster goes under the words, so the countdown is seen first */
-    .ev-poster {
-        width: min(100%, 360px);
-        transform: none;
-    }
-}
-
-/* Phone */
-@media (max-width: 600px) {
-    /* one card per row, and never narrower than the screen */
-    .ev-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .ev-teaser-body {
-        padding: calc(var(--sg-nav-height, 78px) + 26px) 18px 46px;
-    }
-
-    /* full width buttons are easier to hit with a thumb */
-    .ev-actions .btn {
-        width: 100%;
-        text-align: center;
-    }
-
-    /*  Four boxes across a phone leaves them too narrow for the numbers,
-        so they go two by two.                                           */
-    .ev-countdown-units li {
-        flex: 1 1 calc(50% - 5px);
-        min-width: 0;
-    }
-
-    .ev-feature-inner {
-        padding-bottom: 44px;
-    }
-
-    .ev-card-body {
-        padding: 18px 18px 20px;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .ev-card,
-    .ev-card-art,
-    .ev-card-btn {
-        transition: none;
-    }
-
-    .ev-card:hover {
-        transform: none;
-    }
-    .ev-card:hover .ev-card-art {
-        transform: none;
-    }
-}
-
-/* ==========================================================================
-   WHAT'S ON THIS WEEK
-
-   The strip under Friday Nights. The cards themselves are not styled here
-   - they are shared with /gig-guide and live in gig-card.css. This is the
-   heading, the arrows and the window the cards page across.
+   WEEK - heading, arrows and the window the cards slide across
    ========================================================================== */
 .ev-weekend {
     --ev-wk-per: 4;
@@ -1106,7 +815,6 @@
     margin: 0;
 }
 
-/*  The dates the heading means, written in by js/events.js. */
 .ev-weekend-head .section-intro {
     margin: 6px 0 0;
     text-align: left;
@@ -1147,7 +855,6 @@
     color: #0a0a0a;
 }
 
-/*  Dimmed (not hidden) at the ends so the row does not jump. */
 .ev-wk-arrow:disabled {
     opacity: 0.28;
     cursor: default;
@@ -1155,13 +862,11 @@
 
 .ev-wk-view {
     overflow: hidden;
-    /*  Room for the hover lift so it is not clipped. */
-    padding: 8px 0;
+    padding: 8px 0; /* room for the hover lift */
     margin: -8px 0;
 }
 
-/*  The track is one window wide, so one page is exactly -100%. The script
-    sets a number; no width is measured.                                 */
+/* One page is exactly -100%; js sets --ev-wk-page */
 .ev-wk-track {
     --ev-wk-page: 0;
     display: grid;
@@ -1172,15 +877,271 @@
     transition: transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
+/* ==========================================================================
+   CARDS - past events. .is-nolink = no archive page yet
+   ========================================================================== */
+.ev-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+    margin-top: 26px;
+}
+
+.ev-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--sg-border);
+    border-radius: 18px;
+    background: var(--sg-panel);
+    transition:
+        transform 0.25s ease,
+        border-color 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+/* One stretched link makes the whole card clickable */
+.ev-card-link {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+}
+
+.ev-card-art {
+    aspect-ratio: 16 / 9;
+    background-image: var(--ev-art);
+    background-size: cover;
+    background-position: center;
+    filter: brightness(0.62) saturate(0.72); /* past events sit back */
+    transition:
+        filter 0.25s ease,
+        transform 0.45s ease;
+}
+
+/* Logo instead of artwork: contained on a dark tile */
+.ev-card-art.is-logo {
+    background-size: min(56%, 190px);
+    background-repeat: no-repeat;
+    background-color: #141414;
+    filter: brightness(0.75);
+}
+
+.ev-card-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 22px 22px 24px;
+    flex: 1;
+}
+
+.ev-card-body h3 {
+    font-family: var(--sg-font-display);
+    font-size: 1.5rem;
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+}
+
+.ev-card-artists {
+    color: var(--sg-dim);
+    font-size: 0.92rem;
+    line-height: 1.65;
+}
+
+.ev-card-btn {
+    margin-top: auto; /* buttons line up across cards */
+    pointer-events: none; /* the stretched link does the clicking */
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        border-color 0.25s ease;
+}
+
+.ev-card:hover {
+    transform: translateY(-4px);
+    border-color: #3a3a3a;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+}
+
+.ev-card:hover .ev-card-art {
+    filter: brightness(0.86) saturate(0.95);
+    transform: scale(1.04);
+}
+
+.ev-card:hover .ev-card-btn {
+    background: var(--sg-orange);
+    border-color: var(--sg-orange);
+    color: #0a0a0a;
+}
+
+.ev-card:focus-within {
+    border-color: var(--sg-orange);
+}
+
+.ev-card.is-nolink .ev-card-link {
+    display: none;
+}
+
+.ev-card.is-nolink {
+    cursor: default;
+}
+
+.ev-card.is-nolink:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.ev-card.is-nolink .ev-card-btn {
+    opacity: 0.45;
+}
+
+.ev-card.is-nolink:hover .ev-card-btn {
+    background: transparent;
+    color: var(--sg-orange);
+    border-color: var(--sg-orange);
+}
+
+/* ==========================================================================
+   PHONE - and the one-screen residency on a computer. Keep last.
+   ========================================================================== */
+
+/* Computer: four DJ cards across, residency fits one screen */
+@media (min-width: 901px) {
+    .ev-fri-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .ev-residency {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        height: 100dvh;
+        min-height: 600px;
+    }
+
+    .ev-res-hero {
+        flex: 1 1 auto;
+        min-height: 250px;
+    }
+
+    .ev-res-body,
+    .ev-res-cta {
+        flex: 0 0 auto;
+    }
+}
+
+/* Short laptop screens: tighter so it still fits one screen */
+@media (min-width: 901px) and (max-height: 840px) {
+    .ev-res-hero-inner {
+        padding: 16px 6%;
+    }
+
+    .ev-res-name {
+        font-size: clamp(1.7rem, 3.2vw, 2.3rem);
+    }
+
+    .ev-res-venue {
+        margin-bottom: 10px;
+    }
+
+    .ev-res-facts {
+        margin-bottom: 0;
+    }
+
+    .ev-res-body {
+        padding: 12px 6%;
+    }
+
+    .ev-fri-body {
+        padding: 22px 12px 12px;
+    }
+
+    .ev-venue-art {
+        height: 92px;
+        margin-bottom: 10px;
+    }
+
+    .ev-venue > p {
+        margin-bottom: 10px;
+    }
+
+    .ev-res-cta {
+        padding: 12px 6%;
+    }
+}
+
 @media (max-width: 1100px) {
     .ev-weekend {
         --ev-wk-per: 3;
     }
 }
 
+/* Tablet */
+@media (max-width: 900px) {
+    .ev-res-body {
+        grid-template-columns: 1fr;
+    }
+
+    .ev-res-script {
+        display: none;
+    }
+
+    .ev-feature-inner {
+        grid-template-columns: 1fr;
+        gap: 28px;
+        padding-bottom: 56px;
+    }
+
+    .ev-poster {
+        width: min(100%, 360px);
+        transform: none;
+    }
+}
+
 @media (max-width: 820px) {
     .ev-weekend {
         --ev-wk-per: 2;
+    }
+}
+
+@media (max-width: 760px) {
+    .ev-vol-panel {
+        grid-template-columns: 1fr;
+        padding: 26px 20px;
+    }
+
+    .ev-vol-2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Phone */
+@media (max-width: 600px) {
+    .ev-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ev-teaser-body {
+        padding: calc(var(--sg-nav-height, 78px) + 26px) 18px 46px;
+    }
+
+    .ev-actions .btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .ev-countdown-units li {
+        flex: 1 1 calc(50% - 5px); /* two by two */
+        min-width: 0;
+    }
+
+    .ev-feature-inner {
+        padding-bottom: 44px;
+    }
+
+    .ev-card-body {
+        padding: 18px 18px 20px;
     }
 }
 
@@ -1192,127 +1153,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .ev-card,
+    .ev-card-art,
+    .ev-card-btn,
     .ev-wk-track {
         transition: none;
     }
-}
 
-/* =========================================================================
-   VOLUNTEER WITH US - under the featured event
-   ========================================================================= */
-.ev-vol {
-    background: var(--sg-black);
-}
-.ev-vol-panel {
-    display: grid;
-    grid-template-columns: 1fr 1.1fr;
-    gap: 40px;
-    max-width: 1100px;
-    margin: 0 auto;
-    background: var(--sg-panel);
-    border: 1px solid #222;
-    border-radius: 22px;
-    padding: 40px;
-}
-.ev-vol-name {
-    font-size: clamp(2.4rem, 6vw, 4rem);
-    line-height: 0.95;
-    text-transform: uppercase;
-    font-weight: 900;
-    color: #fff;
-    margin: 0 0 18px;
-}
-.ev-vol-name span {
-    color: var(--sg-orange-bright);
-}
-.ev-vol-strap {
-    color: #cfcfcf;
-    font-size: 1.05rem;
-    line-height: 1.6;
-    max-width: 40ch;
-}
-.ev-vol-form label {
-    display: block;
-    margin: 0 0 14px;
-    font-weight: bold;
-    font-size: 0.9rem;
-    color: #eee;
-}
-.ev-vol-form input,
-.ev-vol-form textarea {
-    display: block;
-    width: 100%;
-    margin-top: 6px;
-    padding: 12px 14px;
-    border: 1px solid #333;
-    border-radius: 10px;
-    font: inherit;
-    font-size: 1rem;
-    color: #fff;
-    background: #1a1a1a;
-    box-sizing: border-box;
-}
-.ev-vol-form input:focus,
-.ev-vol-form textarea:focus {
-    outline: none;
-    border-color: var(--sg-orange-bright);
-}
-.ev-vol-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-}
-.ev-vol-roles {
-    border: 0;
-    padding: 0;
-    margin: 0 0 14px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-.ev-vol-roles legend {
-    font-weight: bold;
-    font-size: 0.9rem;
-    color: #eee;
-    margin-bottom: 8px;
-}
-.ev-vol-roles label {
-    display: inline-flex;
-    align-items: center;
-    margin: 0;
-    padding: 9px 14px;
-    border-radius: 999px;
-    background: #222;
-    border: 1px solid #333;
-    font-weight: normal;
-    color: #ddd;
-    cursor: pointer;
-}
-.ev-vol-roles label:has(input:checked) {
-    background: var(--sg-orange-bright);
-    border-color: var(--sg-orange-bright);
-    color: #000;
-    font-weight: bold;
-}
-.ev-vol-roles input {
-    display: none;
-}
-.ev-vol-form .btn-ticket {
-    font-size: 1rem;
-    padding: 14px 34px;
-    cursor: pointer;
-}
-.ev-vol-msg {
-    margin: 12px 0 0;
-    font-weight: bold;
-    color: var(--sg-gold);
-}
-@media (max-width: 760px) {
-    .ev-vol-panel {
-        grid-template-columns: 1fr;
-        padding: 26px 20px;
-    }
-    .ev-vol-2 {
-        grid-template-columns: 1fr;
+    .ev-card:hover,
+    .ev-card:hover .ev-card-art {
+        transform: none;
     }
 }
