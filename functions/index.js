@@ -6072,11 +6072,15 @@ exports.lookupBusiness = onCall({ timeoutSeconds: 30 }, async (request) => {
   let html = '';
   try {
     const r = await fetch(u.origin + '/', { headers: { 'user-agent': 'Mozilla/5.0 (compatible; SoundzGood admin)' }, redirect: 'follow', signal: AbortSignal.timeout(10000) });
-    html = (await r.text()).slice(0, 400000);
+    const buf = Buffer.from(await r.arrayBuffer());
+    const cs = (/charset=([\w-]+)/i.exec(r.headers.get('content-type') || '') || /<meta[^>]+charset=["']?([\w-]+)/i.exec(buf.toString('latin1').slice(0, 4000)) || [])[1] || 'utf-8';
+    try { html = new TextDecoder(cs).decode(buf).slice(0, 400000); } catch (e) { html = buf.toString('utf8').slice(0, 400000); }
   } catch (e) { throw new HttpsError('unavailable', 'Could not reach their website.'); }
   const meta = (names) => { for (const n of names) { const m = new RegExp(`<meta[^>]+(?:property|name)=["']${n}["'][^>]+content=["']([^"']+)["']`, 'i').exec(html) || new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${n}["']`, 'i').exec(html); if (m) return m[1]; } return ''; };
   const abs = (href) => { try { return new URL(href, u.origin).href; } catch (e) { return ''; } };
-  const unent = (s) => String(s || '').replace(/&amp;/g, '&').replace(/&#39;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+  // entities, then the usual mis-read UTF-8 (a site that says latin1 but isn't)
+  const unent = (s) => String(s || '').replace(/&#(\d+);/g, (m, n) => String.fromCodePoint(+n)).replace(/&amp;/g, '&').replace(/&apos;/g, "'").replace(/&quot;/g, '"').replace(/&nbsp;/g, ' ')
+    .replace(/â€™/g, '’').replace(/â€˜/g, '‘').replace(/â€œ/g, '“').replace(/â€\u009d|â€/g, '”').replace(/â€“/g, '–').replace(/â€”/g, '—').replace(/Ã©/g, 'é').replace(/Â/g, '').replace(/\s+/g, ' ').trim();
   const title = unent((/<title[^>]*>([^<]*)<\/title>/i.exec(html) || [])[1] || '').split(/\s[|\-–]\s/)[0];
   const blurb = unent(meta(['og:description', 'description', 'twitter:description'])).slice(0, 300);
   const ogImage = meta(['og:image', 'twitter:image']);

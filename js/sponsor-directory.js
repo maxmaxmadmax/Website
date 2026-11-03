@@ -10,8 +10,8 @@
     One sponsor per industry: once a business in an industry has said yes
     to the event picked, the others in that industry show "industry taken". */
 
-import { spAvatar, spColor } from './messages.js?v=808';
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=808';
+import { spAvatar, spColor } from './messages.js?v=809';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=809';
 
 /* what to ask for, from the score */
 const ASK = { 5: 'gold', 4: 'silver', 3: 'bronze', 2: 'supporter', 1: 'supporter' };
@@ -106,29 +106,28 @@ export function sponsorDirHtml(ctx) {
     .sort((a, b) => b.score - a.score || (b.hist.backed - a.hist.backed) || String(a.business).localeCompare(String(b.business)));
   const industries = [...new Set(INDUSTRIES.concat(list.map((b) => b.industry).filter(Boolean)))];
 
-  const card = (b) => {
+  const row = (b) => {
     const t = taken(b);
-    return `<article class="spd-biz${state.spDirOpen === b.id ? ' is-open' : ''}${t ? ' is-taken' : ''}" data-spd-open="${h.attr(b.id)}" style="--sp-brand:${h.attr(spColor(b))}">
-      <div class="spd-biz-top">${spAvatar(h, b, true)}
-        <div class="spd-biz-head"><b>${h.esc(b.business)}</b>
-          <span>${h.esc(b.industry || 'No industry yet')}</span>
-          ${stars(b.score)}${b.stars ? '' : '<i class="spd-sugg" title="Suggested from the facts - set your own stars in the profile">suggested</i>'}
-        </div>
-        <span class="spd-stage is-${h.attr(t ? 'taken' : (b.stage || 'idea'))}">${t ? 'Industry taken' : h.esc(STAGE[b.stage || 'idea'] || 'Idea')}</span>
-      </div>
-      ${b.blurb ? `<p class="spd-blurb">${h.esc(b.blurb.length > 120 ? b.blurb.slice(0, 117) + '…' : b.blurb)}</p>` : ''}
-      <ul class="spd-facts">
-        ${b.contactName || b.phone ? `<li>&#128100; ${h.esc([b.contactName, b.phone].filter(Boolean).join(' · '))}</li>` : ''}
-        ${b.gives ? `<li>&#127873; ${h.esc(GIVES[b.gives] || b.gives)}${b.givesWhat ? ' - ' + h.esc(b.givesWhat) : ''}</li>` : ''}
-        ${b.hist.last ? `<li class="is-gave">&#128176; Gave <b>${money0(b.hist.last.amountCents)}</b> to ${h.esc(b.hist.last.event)}${b.hist.last.year ? ' ' + b.hist.last.year : ''}${b.hist.deals.length > 1 ? ' · ' + b.hist.deals.length + ' deals known' : ''}</li>` : b.hist.deals.length ? `<li>&#128176; Sponsored ${h.esc(b.hist.deals[0].event)}${b.hist.deals[0].year ? ' ' + b.hist.deals[0].year : ''} (amount unknown)</li>` : ''}
-        <li>&#128197; ${b.hist.backed ? `Backed ${b.hist.backed} event${b.hist.backed === 1 ? '' : 's'}${b.hist.cents ? ', ' + money0(b.hist.cents) : ''}` : 'Never sponsored us'}${b.hist.lastAsked || b.lastAskedAt ? ' · last asked ' + h.esc(niceDate(b.hist.lastAsked || b.lastAskedAt)) : ''}</li>
-        ${t ? `<li class="is-warn">&#9888; ${h.esc(t)} already sponsors this industry</li>` : ''}
-      </ul>
-      <div class="spd-biz-foot">
-        ${b.facebook ? `<a href="${h.attr(b.facebook)}" target="_blank" rel="noopener" title="Facebook">f</a>` : ''}${b.instagram ? `<a href="${h.attr(b.instagram)}" target="_blank" rel="noopener" title="Instagram">&#9711;</a>` : ''}${b.website ? `<a href="${h.attr(b.website)}" target="_blank" rel="noopener" title="Website">&#127760;</a>` : ''}
-        ${b.shared ? '<em title="They shared our event">&#128227; shared</em>' : ''}
-      </div>
-    </article>`;
+    const h2 = b.hist || {};
+    return `<tr class="spd-row${state.spDirOpen === b.id ? ' is-open' : ''}${t ? ' is-taken' : ''}" data-spd-open="${h.attr(b.id)}" style="--sp-brand:${h.attr(spColor(b))}">
+      <td class="spd-c-biz"><span class="spd-biz-in">${spAvatar(h, b)}<span><b>${h.esc(b.business)}</b>${b.address ? `<small>${h.esc(b.address)}</small>` : ''}</span></span></td>
+      <td class="spd-c-val">${stars(b.score)}${b.stars ? '' : '<small class="spd-sugg">suggested</small>'}</td>
+      <td><span class="spd-stage is-${h.attr(t ? 'taken' : (b.stage || 'idea'))}">${t ? 'Industry taken' : h.esc(STAGE[b.stage || 'idea'] || 'Idea')}</span></td>
+      <td class="spd-c-contact">${b.contactName ? `<b>${h.esc(b.contactName)}</b>` : ''}${b.phone ? `<small>${h.esc(b.phone)}</small>` : ''}${b.email ? `<small>${h.esc(b.email)}</small>` : ''}${!b.contactName && !b.phone && !b.email ? '<small class="is-dim">no contact yet</small>' : ''}</td>
+      <td class="spd-c-hist">${h2.last ? `<b>${money0(h2.last.amountCents)}</b><small>${h.esc(h2.last.event)}${h2.last.year ? ' ' + h2.last.year : ''}</small>` : (h2.deals && h2.deals.length) ? `<small>${h.esc(h2.deals[0].event)} (amount unknown)</small>` : '<small class="is-dim">nothing known</small>'}</td>
+      <td class="spd-c-ask"><b>${suggestedAsk(b).cents ? money0(suggestedAsk(b).cents) : '—'}</b><small>${h.esc(suggestedAsk(b).label)}</small></td>
+      <td class="spd-c-gives">${b.gives ? h.esc(GIVES[b.gives] || b.gives) : '<small class="is-dim">—</small>'}${b.givesWhat ? `<small>${h.esc(b.givesWhat)}</small>` : ''}</td>
+      <td class="spd-c-soc">${b.facebook ? `<a href="${h.attr(b.facebook)}" target="_blank" rel="noopener" title="Facebook">f</a>` : ''}${b.instagram ? `<a href="${h.attr(b.instagram)}" target="_blank" rel="noopener" title="Instagram">&#9711;</a>` : ''}${b.website ? `<a href="${h.attr(b.website)}" target="_blank" rel="noopener" title="Website">&#127760;</a>` : ''}${b.shared ? '<em title="They shared our event">&#128227;</em>' : ''}</td>
+    </tr>`;
+  };
+  const tableHtml = () => {
+    const groups = {};
+    rows.forEach((b) => { const k = b.industry || 'No industry yet'; (groups[k] = groups[k] || []).push(b); });
+    const names = Object.keys(groups).sort((x, y) => (x === 'No industry yet') - (y === 'No industry yet') || x.localeCompare(y));
+    return `<div class="ad-card spd-tablewrap"><table class="spd-table spd-list">
+      <thead><tr><th>Business</th><th>Value</th><th>Stage</th><th>Contact</th><th>Last gave</th><th>Suggested ask</th><th>Usually gives</th><th>Links</th></tr></thead>
+      <tbody>${names.map((n) => { const t = takenBy[key(n)]; return `<tr class="spd-group"><td colspan="8"><b>${h.esc(n)}</b><span>${groups[n].length}</span>${t ? `<em>&#10003; taken by ${h.esc(t)}</em>` : '<em class="is-open">open</em>'}</td></tr>` + groups[n].map(row).join(''); }).join('')}</tbody>
+    </table></div>`;
   };
 
   /* POTENTIAL: per open industry, the best business we have not asked yet */
@@ -203,7 +202,7 @@ export function sponsorDirHtml(ctx) {
         <select class="ad-select" data-spd-f="stage">${opt('', 'Stage: All', f.stage)}${STAGES.map(([k, l]) => opt(k, l, f.stage)).join('')}</select>
         <select class="ad-select" data-spd-f="industry">${opt('', 'Industry: All', f.industry)}${industries.map((i) => opt(i, i, f.industry)).join('')}</select>
       </div>
-      ${rows.length ? `<div class="spd-grid">${rows.map(card).join('')}</div>` : `<p class="ad-empty">${q || f.stage || f.industry ? 'No business matches that.' : 'Nothing here yet. Add a business, or press Find businesses.'}</p>`}`}
+      ${rows.length ? tableHtml() : `<p class="ad-empty">${q || f.stage || f.industry ? 'No business matches that.' : 'Nothing here yet. Add a business, or press Find businesses.'}</p>`}`}
     </div>
     ${state.spDirOpen ? panelHtml(ctx, list, evOf, taken) : ''}
     ${state.spDirFind ? findHtml(ctx, list) : ''}

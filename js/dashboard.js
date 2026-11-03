@@ -10,9 +10,9 @@
    counts in the month it was last paid (lastPaidAt / paidAt / acceptedAt).
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=808';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=808';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=808';
+import { isBooked, pickLineProgress } from './stock.js?v=809';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=809';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=809';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
