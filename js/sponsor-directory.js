@@ -10,7 +10,7 @@
     One sponsor per industry: once a business in an industry has said yes
     to the event picked, the others in that industry show "industry taken". */
 
-import { spAvatar, spColor } from './messages.js?v=804';
+import { spAvatar, spColor } from './messages.js?v=805';
 
 export const STAGES = [['idea', 'Idea'], ['research', 'Researching'], ['ready', 'Ready to ask'], ['asked', 'Asked'], ['sponsor', 'Sponsor'], ['no', 'Not now']];
 const STAGE = Object.fromEntries(STAGES);
@@ -236,7 +236,7 @@ export function wireSponsorDir(ctx) {
   const toCents = (v) => Math.max(0, Math.round(Number(String(v).replace(/[^0-9.]/g, '')) * 100) || 0);
   const lookup = async (b) => {
     const r = await call('lookupBusiness', { website: b.website });
-    const d = (r && r.data) || {};
+    const d = r || {};
     const patch = {};
     if (d.logo && !b.logo) patch.logo = d.logo;
     if (d.blurb && !b.blurb) patch.blurb = d.blurb;
@@ -268,7 +268,7 @@ export function wireSponsorDir(ctx) {
           list = (state.leads || []).filter((l) => l.title).map((l) => ({ business: String(l.title).slice(0, 120), industry: String(l.category || '').slice(0, 60), contactName: l.contactName || '', phone: l.phone || '', email: l.email || '', website: l.website || '', facebook: /facebook\.com/i.test(l.socials || '') ? String(l.socials).match(/https?:\/\/[^\s,]*facebook\.com[^\s,]*/i)[0] : '', instagram: /instagram\.com/i.test(l.socials || '') ? String(l.socials).match(/https?:\/\/[^\s,]*instagram\.com[^\s,]*/i)[0] : '', address: l.address || l.suburb || '', notes: l.notes || '', local: 'bowen', source: 'lead', leadId: l.id }));
         } else {
           const r = await call('importMapBusinesses', { region: what });
-          list = ((r && r.data && r.data.results) || []).map((b) => ({ ...b, kind: undefined, source: 'osm' }));
+          list = ((r && r.results) || []).map((b) => ({ ...b, kind: undefined, source: 'osm' }));
           list.forEach((b) => { delete b.kind; });
         }
       } catch (err) { window.alert(err.message || 'Import failed.'); render(); return; }
@@ -334,7 +334,7 @@ export function wireSponsorDir(ctx) {
     fd.q = String((root.querySelector('[data-spd-findq]') || {}).value || '').trim();
     if (fd.q.length < 2) return;
     fd.busy = true; fd.error = ''; render();
-    try { const r = await call('findBusinesses', { query: fd.q }); fd.results = (r && r.data && r.data.results) || []; }
+    try { const r = await call('findBusinesses', { query: fd.q }); fd.results = (r && r.results) || []; }
     catch (err) { fd.error = err.message || 'Search failed.'; fd.results = null; }
     fd.busy = false; render();
   });
