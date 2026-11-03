@@ -21,15 +21,15 @@ import {
   functionsRegion,
   eventId as defaultEventId,
   isFirebaseConfigured,
-} from './firebase-config.js?v=798';
+} from './firebase-config.js?v=799';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=798';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=798';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=798';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=798';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=798';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=798';
-import { expandKit } from './kit.js?v=798';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=799';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=799';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=799';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=799';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=799';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=799';
+import { expandKit } from './kit.js?v=799';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 

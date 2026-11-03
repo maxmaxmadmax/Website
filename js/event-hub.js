@@ -9,7 +9,7 @@
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=798';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=799';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 
@@ -486,7 +486,7 @@ function volunteersHtml(ctx) {
     <div class="ev-grid ev-grid-3">
       ${card('Put their hand up', String(list.length), n('new') ? n('new') + ' new to look at' : 'nobody new')}
       ${card('Confirmed', String(n('yes')), n('maybe') ? n('maybe') + ' maybe' : '')}
-      ${card('The form', 'Live', `on the event page &middot; <a href="/event?e=${attr(ev.id)}#volunteer" target="_blank" rel="noopener">open it &#8599;</a>`)}
+      ${card('The form', 'Live', `on the Events page &middot; <a href="/events#volunteer" target="_blank" rel="noopener">open it &#8599;</a>`)}
     </div>
     <div class="ad-card ms-card">
       <table class="ms-table"><thead><tr><th>Who</th><th>Happy to help with</th><th>When / notes</th><th>Status</th><th></th></tr></thead>
