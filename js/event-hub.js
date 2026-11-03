@@ -9,7 +9,7 @@
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=794';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=795';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 
@@ -422,7 +422,7 @@ function attendingHtml(ctx) {
   const catName = Object.fromEntries((ctx.categories || []).map((c) => [c.id, c.name || '']));
   const all = (ctx.bookings || []).filter((b) => b.eventId === ev.id && b.status !== 'cancelled');
   // by site number (F1, F2 ... M1, M2 ...), the ones with no site last
-  const siteKey = (b) => { const m = /^([A-Za-z]+)s*(d+)/.exec(String(b.siteLabel || '')); return m ? [0, m[1].toUpperCase(), +m[2]] : [1, '', 0]; };
+  const siteKey = (b) => { const m = /^([A-Za-z]+)\s*(\d+)/.exec(String(b.siteLabel || '')); return m ? [0, m[1].toUpperCase(), +m[2]] : [1, '', 0]; };
   const coming = all.filter(paid).sort((a, b) => { const x = siteKey(a), y = siteKey(b); return x[0] - y[0] || x[1].localeCompare(y[1]) || x[2] - y[2] || String((a.business || {}).name || '').localeCompare(String((b.business || {}).name || '')); });
   const pending = all.length - coming.length;
   const card = (b) => {

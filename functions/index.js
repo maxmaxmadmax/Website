@@ -3587,10 +3587,13 @@ exports.eventLineup = onRequest({ cors: true }, async (req, res) => {
       if (!name || seen.has(name.toLowerCase())) return;   // one line per business
       seen.add(name.toLowerCase());
       const list = b.vendorType === 'food' ? out.food : out.market;
-      list.push({ name, category: String(catName[b.categoryId] || '').slice(0, 40), categoryId: String(b.categoryId || '').slice(0, 40), blurb: lineupBlurb(b.business && b.business.description), link: lineupLink(b.business && b.business.socials) });
+      list.push({ name, site: String(b.siteLabel || '').slice(0, 10), category: String(catName[b.categoryId] || '').slice(0, 40), categoryId: String(b.categoryId || '').slice(0, 40), blurb: lineupBlurb(b.business && b.business.description), link: lineupLink(b.business && b.business.socials) });
     });
-    out.food.sort((a, b) => a.name.localeCompare(b.name));
-    out.market.sort((a, b) => a.name.localeCompare(b.name));
+    // in site order (F1, F2 ... M1, M2 ...), the ones with no site last
+    const siteKey = (v) => { const m = /^([A-Za-z]+)\s*(\d+)/.exec(v.site); return m ? [0, m[1].toUpperCase(), +m[2]] : [1, '', 0]; };
+    const bySite = (a, b) => { const x = siteKey(a), y = siteKey(b); return x[0] - y[0] || x[1].localeCompare(y[1]) || x[2] - y[2] || a.name.localeCompare(b.name); };
+    out.food.sort(bySite);
+    out.market.sort(bySite);
 
     // THE EVENT: only what a punter may see
     const ev = evSnap.data();

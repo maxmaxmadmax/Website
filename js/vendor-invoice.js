@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=794';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=794';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=794';
+import { termBodyHtml } from './terms-data.js?v=795';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=795';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=795';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
