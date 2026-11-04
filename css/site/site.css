@@ -82,6 +82,11 @@ html {
     scroll-behavior: smooth;
 }
 
+/* hidden means hidden, whatever display a page gives the element */
+[hidden] {
+    display: none !important;
+}
+
 body {
     background: var(--sg-night);
     color: var(--sg-white);

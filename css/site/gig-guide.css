@@ -8,11 +8,6 @@
    PHONE      keep last
    ========================================================================== */
 
-/* [hidden] must beat the display rules below */
-#sg-gig-guide [hidden] {
-    display: none !important;
-}
-
 #sg-gig-guide {
     background: var(--sg-night);
 }

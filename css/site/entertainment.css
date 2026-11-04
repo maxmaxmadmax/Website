@@ -10,15 +10,8 @@
    HEAD       section heading rule and blurb, count, empty state
    CARDS      the talent cards
    PANEL      the artist pop-up
-   PHONE      keep last
+   Each section carries its own phone rules.
    ========================================================================== */
-#sg-ent-page {
-}
-
-/* [hidden] must beat the display rules below */
-#sg-ent-page [hidden] {
-    display: none !important;
-}
 
 /* ==========================================================================
    HERO
@@ -167,6 +160,14 @@
     border-radius: 4px;
 }
 
+@media (max-width: 900px) {
+    /* the type bar scrolls sideways instead of squeezing seven cells */
+    .ent-types {
+        grid-auto-columns: minmax(108px, auto);
+        justify-content: start;
+    }
+}
+
 /* ==========================================================================
    BANDS - photo behind (as a background, so a missing file shows the gradient)
    ========================================================================== */
@@ -277,6 +278,26 @@
     line-height: 2.1;
 }
 
+@media (max-width: 900px) {
+    .ent-occasions {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .ent-occasions li:nth-child(3n) {
+        border-right: 0;
+    }
+
+    .ent-pillars {
+        text-align: left;
+    }
+}
+
+@media (max-width: 768px) {
+    .ent-band {
+        padding: 40px 5%;
+    }
+}
+
 /* ==========================================================================
    FILTERS - inputs from site.css .form; the select gets a drawn chevron
    ========================================================================== */
@@ -324,6 +345,12 @@
 
 .ent-search input {
     padding-left: 40px;
+}
+
+@media (max-width: 768px) {
+    .ent-select {
+        flex: 1 1 140px;
+    }
 }
 
 /* ==========================================================================
@@ -378,6 +405,16 @@
 
 .ent-empty a {
     color: var(--sg-orange);
+}
+
+@media (max-width: 768px) {
+    .ent-section {
+        padding: 40px 5%;
+    }
+
+    .ent-pager {
+        margin-left: 0;
+    }
 }
 
 /* ==========================================================================
@@ -541,6 +578,27 @@
     margin-top: auto;
 }
 
+@media (max-width: 768px) {
+    .ent-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 12px;
+    }
+
+    .ent-card {
+        min-height: 250px;
+    }
+
+    .ent-card-media {
+        padding-bottom: 80px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ent-card:hover {
+        transform: none;
+    }
+}
+
 /* ==========================================================================
    PANEL - the artist pop-up
    ========================================================================== */
@@ -617,61 +675,4 @@
 .ent-panel-body p {
     color: var(--sg-muted);
     margin-bottom: 16px;
-}
-
-/* ==========================================================================
-   PHONE
-   ========================================================================== */
-@media (max-width: 900px) {
-    /* The type bar scrolls sideways instead of squeezing seven cells */
-    .ent-types {
-        grid-auto-columns: minmax(108px, auto);
-        justify-content: start;
-    }
-
-    .ent-occasions {
-        grid-template-columns: repeat(3, 1fr);
-    }
-
-    .ent-occasions li:nth-child(3n) {
-        border-right: 0;
-    }
-
-    .ent-pillars {
-        text-align: left;
-    }
-}
-
-@media (max-width: 768px) {
-    .ent-section,
-    .ent-band {
-        padding: 40px 5%;
-    }
-
-    .ent-grid {
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-        gap: 12px;
-    }
-
-    .ent-card {
-        min-height: 250px;
-    }
-
-    .ent-card-media {
-        padding-bottom: 80px;
-    }
-
-    .ent-select {
-        flex: 1 1 140px;
-    }
-
-    .ent-pager {
-        margin-left: 0;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .ent-card:hover {
-        transform: none;
-    }
 }

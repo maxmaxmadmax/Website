@@ -1491,10 +1491,6 @@ a.ep-fv:focus-visible {
 }
 
 /* hidden means hidden, even for the poster link */
-.ep-poster-hero[hidden],
-.ep-poster[hidden] {
-    display: none;
-}
 
 .ep-going {
     display: flex;

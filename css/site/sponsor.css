@@ -475,10 +475,6 @@
     margin-top: 6px;
 }
 
-#dt-form .dt-info-text[hidden] {
-    display: none;
-}
-
 #dt-form .dt-help {
     display: block;
     margin-top: 5px;

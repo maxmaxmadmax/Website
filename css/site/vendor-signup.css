@@ -53,11 +53,6 @@
     --vs-mine: var(--sg-orange);
 }
 
-/* [hidden] must beat any display set below */
-.vendor-signup [hidden] {
-    display: none !important;
-}
-
 /* Headings: ink on white, no uppercase */
 .vendor-signup h2,
 .vendor-signup h3 {
@@ -1213,10 +1208,6 @@
 
 .vs-field.is-wide {
     grid-column: 1 / -1;
-}
-
-.vendor-signup .vs-field[hidden] {
-    display: none !important;
 }
 
 /* Labels in sentence case; the asterisk comes from the required attribute */

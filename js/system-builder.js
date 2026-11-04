@@ -14,7 +14,7 @@
 
    Pure HTML + wiring; the admin (js/admin/) hands in the items and does the saving.
    ========================================================================== */
-import { expandKit, resolveTotals } from './kit.js?v=851';
+import { expandKit, resolveTotals } from './kit.js?v=852';
 
 /* the working copy of the system being built */
 export function sysDraftFrom(item, type) {

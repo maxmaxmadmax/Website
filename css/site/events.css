@@ -419,9 +419,6 @@
    RESIDENCY - hidden with the `hidden` attribute on its section.
    Never set display on .ev-residency itself or `hidden` stops working.
    ========================================================================== */
-.events-page [hidden] {
-    display: none !important;
-}
 
 .ev-residency {
     border-top: 1px solid var(--sg-border);
