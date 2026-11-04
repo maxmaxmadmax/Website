@@ -5,6 +5,9 @@
    ========================================================================== */
 .lead-detail .inv-detail-body {
     display: block;
+    flex: none;
+    overflow: visible;
+    padding: 4px 18px 8px;
 }
 
 /* email composer — a light modal over the leads view */
@@ -109,6 +112,7 @@
     gap: 4px;
     overflow-x: auto;
     scrollbar-width: thin;
+    grid-template-columns: repeat(12, minmax(70px, 1fr));
 }
 .lead-cal-m {
     display: flex;
@@ -119,6 +123,10 @@
     background: transparent;
     font: inherit;
     color: var(--ad-ink);
+    cursor: default;
+    min-height: 0;
+    padding: 6px 4px;
+    gap: 0;
 }
 .lead-cal-m.is-now {
     border-color: var(--ad-orange);
@@ -198,15 +206,6 @@
 }
 
 /* ---- Leads calendar: 4 week rows under each month (exact dates only) ---- */
-.lead-cal-track {
-    grid-template-columns: repeat(12, minmax(70px, 1fr));
-}
-.lead-cal-m {
-    cursor: default;
-    min-height: 0;
-    padding: 6px 4px;
-    gap: 0;
-}
 .lead-cal-m:hover {
     background: transparent;
 }
@@ -336,6 +335,7 @@
     display: flex;
     gap: 14px;
     align-items: center;
+    flex-wrap: wrap;
 }
 .lead-sorts label {
     font-size: 0.82rem;
@@ -361,6 +361,7 @@
 }
 .lead-table {
     width: 100%;
+    table-layout: fixed;
 }
 .lead-table th {
     white-space: nowrap;
@@ -386,6 +387,11 @@
 .lead-ev-name {
     font-weight: 700;
     color: var(--ad-ink);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.3;
 }
 .lead-ev-org {
     font-size: 0.8rem;
@@ -394,6 +400,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 380px;
 }
 .lead-flag {
     align-self: flex-start;
@@ -438,6 +448,7 @@
     justify-content: center;
     background: linear-gradient(135deg, var(--lc1), var(--lc2));
     box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+    position: relative;
 }
 .lc-race {
     --lc1: var(--ad-amber);
@@ -586,16 +597,12 @@
     color: var(--ad-faint);
     padding: 0 2px;
 }
-.lead-detail .inv-detail-body {
-    flex: none;
-    overflow: visible;
-    padding: 4px 18px 8px;
-}
 .lead-detail .inv-detail-foot {
     position: sticky;
     bottom: 0;
     background: var(--ad-white);
     z-index: 2;
+    padding: 10px 16px;
 }
 .lead-hero {
     position: relative;
@@ -606,9 +613,11 @@
     justify-content: center;
     background:
         radial-gradient(circle at 20% 110%, rgba(255, 255, 255, 0.18), transparent 55%), linear-gradient(135deg, var(--lc1), var(--lc2));
+    height: 50px;
 }
 .lead-hero-ico {
     filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
+    font-size: 28px;
 }
 .lead-prio {
     position: absolute;
@@ -617,6 +626,10 @@
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--ad-white);
+    left: 12px;
+    padding: 3px 8px;
+    font-size: 0.66rem;
+    bottom: 7px;
 }
 .lead-prio.is-medium {
     background: var(--ad-blue);
@@ -630,6 +643,11 @@
     line-height: 1;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    top: 8px;
+    right: 8px;
+    width: 26px;
+    height: 26px;
+    font-size: 1.05rem;
 }
 .lead-dhead h2 {
     margin: 0;
@@ -642,11 +660,19 @@
     display: flex;
     margin: 6px 0 0;
     color: var(--ad-muted);
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 2px 12px;
+    margin-top: 3px;
+    font-size: 0.8rem;
 }
 .lead-dtags {
     display: flex;
     flex-wrap: wrap;
     margin: 10px 0 0;
+    align-items: center;
+    margin-top: 6px;
+    gap: 4px;
 }
 .lead-dtags .lead-flag {
     margin-top: 0;
@@ -668,6 +694,7 @@
     font-size: 0.82rem;
     font-weight: 700;
     color: var(--ad-ink);
+    padding: 7px 8px;
 }
 .lead-act:hover:not(:disabled) {
     border-color: var(--ad-line-strong);
@@ -780,9 +807,6 @@
 }
 
 /* the Showing / Sort pair wraps on narrow screens instead of widening the page */
-.lead-sorts {
-    flex-wrap: wrap;
-}
 @media (max-width: 760px) {
     .lead-sorts {
         width: 100%;
@@ -797,13 +821,6 @@
     .lead-cta {
         align-self: flex-start;
     }
-}
-
-.lead-ev-org {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    max-width: 380px;
 }
 
 .lead-ev-icons {
@@ -905,11 +922,9 @@
 }
 .lead-dtitle h2 {
     line-height: 1.25;
+    font-size: 1.12rem;
 }
 
-.lead-dtags {
-    align-items: center;
-}
 .lead-win {
     font-size: 0.75rem;
     color: var(--ad-muted);
@@ -941,6 +956,7 @@
     color: var(--ad-muted);
     border-bottom: 2px solid transparent;
     margin-bottom: -1px;
+    padding: 8px 8px 7px;
 }
 .lead-tab:hover {
     color: var(--ad-ink);
@@ -964,15 +980,19 @@
     padding: 0;
     margin: 0 0 10px;
     grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 6px;
 }
 .lead-actions-row {
     grid-column: 1 / -1;
     display: grid;
     grid-template-columns: 1fr 1fr auto;
+    gap: 6px;
 }
 .lead-act-more {
     width: 40px;
     letter-spacing: 1px;
+    padding: 7px 0;
 }
 .lead-act-wide {
     width: 100%;
@@ -1025,6 +1045,8 @@
     font-size: 0.82rem;
     line-height: 1.4;
     color: var(--ad-ink);
+    padding: 6px 10px;
+    margin-bottom: 6px;
 }
 .lead-next strong {
     margin-bottom: 1px;
@@ -1034,15 +1056,19 @@
     font-size: 0.9rem;
     font-weight: 800;
     color: var(--ad-ink);
+    margin: 6px 0 4px;
 }
 .lead-ov-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    gap: 0 12px;
 }
 .lead-ov-item {
     display: flex;
     align-items: flex-start;
     min-width: 0;
+    gap: 7px;
+    padding: 2px 0;
 }
 .lead-ov-ico {
     flex: 0 0 18px;
@@ -1065,6 +1091,7 @@
     font-weight: 700;
     color: var(--ad-ink);
     overflow-wrap: anywhere;
+    line-height: 1.25;
 }
 .lead-ov-txt strong a {
     color: var(--ad-blue);
@@ -1077,6 +1104,8 @@
 .lead-ov-txt em {
     font-style: normal;
     color: var(--ad-faint);
+    font-size: 0.7rem;
+    line-height: 1.2;
 }
 .lead-ov-none {
     color: var(--ad-faint);
@@ -1094,6 +1123,7 @@
     padding: 0;
     display: grid;
     grid-template-columns: 1fr 1fr;
+    gap: 4px 12px;
 }
 .lead-fit li {
     display: flex;
@@ -1118,6 +1148,7 @@
     font-size: 0.8rem;
     color: var(--ad-muted);
     line-height: 1.4;
+    margin-top: 4px;
 }
 
 .lead-pane .lead-ev-icons {
@@ -1139,46 +1170,6 @@
     margin-right: auto;
 }
 
-.lead-prio {
-    left: 12px;
-    padding: 3px 8px;
-    font-size: 0.66rem;
-}
-.lead-hero-close {
-    top: 8px;
-    right: 8px;
-    width: 26px;
-    height: 26px;
-    font-size: 1.05rem;
-}
-.lead-tab {
-    padding: 8px 8px 7px;
-}
-.lead-pane .lead-actions {
-    gap: 6px;
-}
-.lead-actions-row {
-    gap: 6px;
-}
-.lead-act {
-    padding: 7px 8px;
-}
-.lead-act-more {
-    padding: 7px 0;
-}
-.lead-ov-item {
-    gap: 7px;
-}
-.lead-ov-txt strong {
-    line-height: 1.25;
-}
-.lead-ov-txt em {
-    font-size: 0.7rem;
-    line-height: 1.2;
-}
-.lead-fit {
-    gap: 4px 12px;
-}
 .lead-research-pill {
     border: 0;
     cursor: pointer;
@@ -1285,6 +1276,7 @@
     .ad-desk.is-leads .lead-top {
         margin: 0 0 10px;
         align-items: center;
+        margin-bottom: 8px;
     }
     .ad-desk.is-leads .lead-tagline {
         margin-top: 1px;
@@ -1301,6 +1293,7 @@
     /* chips and Showing/Sort share one line; the chips scroll sideways if tight */
     .ad-desk.is-leads .lead-chipbar {
         flex-wrap: nowrap;
+        margin-bottom: 8px;
     }
     .ad-desk.is-leads .lead-chips {
         flex: 1 1 auto;
@@ -1326,9 +1319,6 @@
 
 /* one-screen layout, tightened so ~5 leads show at once on a laptop */
 @media (min-width: 900px) {
-    .ad-desk.is-leads .lead-top {
-        margin-bottom: 8px;
-    }
     .ad-desk.is-leads .lead-top h1 {
         font-size: 1.35rem;
     }
@@ -1348,9 +1338,6 @@
     }
 
     .ad-desk.is-leads .lead-cal-legend {
-        margin-bottom: 8px;
-    }
-    .ad-desk.is-leads .lead-chipbar {
         margin-bottom: 8px;
     }
 
@@ -1377,6 +1364,8 @@
     }
     .ad-desk.is-leads .lead-table td {
         padding: 8px 14px;
+        padding-top: 7px;
+        padding-bottom: 7px;
     }
     .ad-desk.is-leads .lead-tile {
         width: 46px;
@@ -1595,6 +1584,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: flex-start;
+    gap: 0;
+    padding-bottom: 5px;
 }
 .lead-wslot:hover {
     background: var(--ad-desk);
@@ -1720,6 +1712,9 @@
 
 .lead-next p {
     margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .lead-next p + p {
     margin-top: 3px;
@@ -1741,6 +1736,12 @@
     margin: 0 0 8px;
     line-height: 1.45;
     color: var(--ad-ink);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 6px;
+    font-size: 0.8rem;
 }
 
 .lead-sub {
@@ -1926,65 +1927,23 @@
     }
 }
 
-.lead-hero-ico {
-    font-size: 28px;
-}
-.lead-prio {
-    bottom: 7px;
-}
 .lead-dhead {
     padding: 8px 16px 6px;
-}
-.lead-dtitle h2 {
-    font-size: 1.12rem;
-}
-.lead-dmeta {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 2px 12px;
-    margin-top: 3px;
-    font-size: 0.8rem;
-}
-.lead-dtags {
-    margin-top: 6px;
-    gap: 4px;
 }
 
 .lead-panes {
     padding: 8px 16px 6px;
-}
-.lead-next {
-    padding: 6px 10px;
-    margin-bottom: 6px;
 }
 .lead-next-note {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-.lead-about {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    margin-bottom: 6px;
-    font-size: 0.8rem;
-}
-.lead-ov-grid {
-    gap: 0 12px;
-}
-.lead-ov-item {
-    padding: 2px 0;
-}
 .lead-ov-txt strong {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-}
-
-.lead-detail .inv-detail-foot {
-    padding: 10px 16px;
 }
 
 .lead-ev {
@@ -1998,13 +1957,6 @@
     height: 34px;
     font-size: 17px;
     margin-top: 0;
-}
-.lead-ev-name {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    line-height: 1.3;
 }
 .lead-where {
     max-width: 210px;
@@ -2022,6 +1974,7 @@
     font-size: 0.74rem;
     font-weight: 600;
     color: var(--ad-muted);
+    white-space: nowrap;
 }
 .lead-fitr {
     display: inline-flex;
@@ -2072,17 +2025,9 @@
     outline: 2px solid var(--ad-orange);
     outline-offset: 1px;
 }
-@media (min-width: 900px) {
-    .ad-desk.is-leads .lead-table td {
-        padding-top: 7px;
-        padding-bottom: 7px;
-    }
-}
 .lead-when {
     white-space: nowrap;
-}
-.lead-km {
-    white-space: nowrap;
+    vertical-align: top;
 }
 
 /* table: organiser + web/social icons under the event name; start times under the date */
@@ -2120,9 +2065,6 @@
     width: 13px;
     height: 13px;
 }
-.lead-when {
-    vertical-align: top;
-}
 .lead-time {
     display: block;
     margin-top: 3px;
@@ -2134,6 +2076,7 @@
 }
 .lead-table td {
     vertical-align: top;
+    overflow-wrap: anywhere;
 }
 .lead-table td.ad-cell-right {
     vertical-align: middle;
@@ -2173,10 +2116,6 @@
 }
 
 /* calendar: week number on top of each week slot, circles along the bottom */
-.lead-wslot {
-    justify-content: flex-start;
-    gap: 0;
-}
 .lead-wslot-no {
     font-size: 8.5px;
     font-weight: 600;
@@ -2186,12 +2125,16 @@
 }
 .lead-wslot.is-today .lead-wslot-no {
     font-weight: 800;
+    color: var(--ad-green);
 }
 .lead-wslot-dots {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 2px;
+    margin-top: 3px;
+    padding-top: 0;
+    position: relative;
 }
 
 /* calendar lanes: an empty lane keeps its space so the colours line up */
@@ -2199,18 +2142,14 @@
     background: transparent;
     box-shadow: none;
 }
-.lead-wslot-dots {
-    margin-top: 3px;
-    padding-top: 0;
-}
 
 /* linked event photos: fill the tile / banner; a broken link falls back to the category tile + a badge */
-.lead-tile {
-    position: relative;
-}
 .lead-tile.has-img {
     overflow: hidden;
     background: var(--ad-line);
+    width: 112px;
+    height: 64px;
+    border-radius: 8px;
 }
 .lead-tile img {
     position: absolute;
@@ -2273,11 +2212,14 @@
     margin: 6px 0 0;
     font-size: 0.76rem;
     color: var(--ad-muted);
+    gap: 2px 10px;
+    margin-top: 4px;
 }
 .lead-facts span {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: calc(50% - 5px);
 }
 .lead-facts .is-power-generator {
     color: var(--ad-orange-dark);
@@ -2297,39 +2239,8 @@
 .lead-lastyr p + p {
     margin-top: 3px;
 }
-.lead-next p {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.lead-facts {
-    gap: 2px 10px;
-}
-.lead-facts span {
-    max-width: calc(50% - 5px);
-}
-.lead-hero {
-    height: 50px;
-}
-.lead-sec {
-    margin: 6px 0 4px;
-}
-.lead-fit-why {
-    margin-top: 4px;
-}
-.lead-pane .lead-actions {
-    margin-bottom: 6px;
-}
-.lead-facts {
-    margin-top: 4px;
-}
 
 /* event photos: table thumbnails + panel banner when a photo exists */
-.lead-tile.has-img {
-    width: 112px;
-    height: 64px;
-    border-radius: 8px;
-}
 .ad-desk.is-leads .lead-tile.has-img {
     width: 112px;
     height: 64px;
@@ -2359,9 +2270,6 @@
     min-height: 38px;
 }
 /* fixed column widths so spare room can't pile up in one column */
-.lead-table {
-    table-layout: fixed;
-}
 .lead-table thead th:nth-child(1) {
     width: 300px;
 }
@@ -2373,9 +2281,6 @@
 }
 .lead-table thead th:nth-child(4) {
     width: 130px;
-}
-.lead-table td {
-    overflow-wrap: anywhere;
 }
 /* row "More" button */
 .lead-table thead th:nth-child(8) {
@@ -2408,9 +2313,6 @@
     color: var(--ad-white);
 }
 /* won jobs: a small gold trophy riding on top of the week's dots */
-.lead-wslot-dots {
-    position: relative;
-}
 .lead-ctrophy {
     position: absolute;
     top: -11px;
@@ -2504,10 +2406,14 @@
 .rt-hint {
     text-align: center;
     font-size: 0.76rem;
+    margin-top: 4px;
+    display: none;
+    margin: 4px 0 0;
 }
 .rt-empty {
     padding: 40px 12px;
     text-align: center;
+    color: var(--ad-muted);
 }
 .rt-list {
     list-style: none;
@@ -2523,6 +2429,9 @@
     border-radius: 12px;
     border: 1px solid var(--ad-ink-line);
     cursor: pointer;
+    background: var(--ad-white);
+    border-color: var(--ad-desk);
+    color: var(--ad-ink);
 }
 .rt-li-t {
     display: block;
@@ -2533,6 +2442,7 @@
     display: block;
     font-size: 0.75rem;
     margin-top: 2px;
+    color: var(--ad-muted);
 }
 
 @media (max-width: 520px) {
@@ -2574,6 +2484,20 @@
     min-height: 0;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
+    position: relative;
+    background: var(--ad-white);
+    border: 1px solid var(--ad-desk);
+    border-radius: 22px;
+    padding: 8px;
+    box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.06),
+        0 8px 0 -3px var(--ad-soft),
+        0 8px 0 -2px var(--ad-line),
+        0 16px 0 -7px var(--ad-soft),
+        0 16px 0 -6px var(--ad-line);
+    margin-bottom: 14px;
+    overflow-y: auto;
+    transition: none;
 }
 .rt-main > .rt-rate,
 .rt-main > .rt-acts,
@@ -2592,9 +2516,6 @@
     display: none;
 }
 
-.rt-hint {
-    margin-top: 4px;
-}
 @media (max-width: 760px) {
     body.ad-rate-app {
         overflow: hidden;
@@ -2612,6 +2533,7 @@
         border-radius: 0;
         box-shadow: none;
         padding: calc(env(safe-area-inset-top) + 8px) 10px calc(env(safe-area-inset-bottom) + 8px);
+        padding-bottom: calc(env(safe-area-inset-bottom) + 4px);
     }
     .rt-exit {
         display: flex;
@@ -2689,19 +2611,7 @@ body.ad-rate-app .rt-wrap {
 
 /* white card with a stacked-deck edge behind it */
 .rt-main > .rt-card {
-    position: relative;
-    background: var(--ad-white);
-    border: 1px solid var(--ad-desk);
-    border-radius: 22px;
-    padding: 8px;
-    box-shadow:
-        0 1px 2px rgba(15, 23, 42, 0.06),
-        0 8px 0 -3px var(--ad-soft),
-        0 8px 0 -2px var(--ad-line),
-        0 16px 0 -7px var(--ad-soft),
-        0 16px 0 -6px var(--ad-line);
-    margin-bottom: 14px;
-    overflow-y: auto;
+    touch-action: pan-y;
 }
 
 .rt-about b,
@@ -2715,17 +2625,7 @@ body.ad-rate-app .rt-wrap {
 }
 .rt-hint.is-bad {
     color: var(--ad-red);
-}
-.rt-empty {
-    color: var(--ad-muted);
-}
-.rt-list button {
-    background: var(--ad-white);
-    border-color: var(--ad-desk);
-    color: var(--ad-ink);
-}
-.rt-li-m {
-    color: var(--ad-muted);
+    display: block;
 }
 /* how fresh a lead's info is */
 .lead-fresh {
@@ -2805,6 +2705,7 @@ body.ad-rate-app .rt-wrap {
 @media (max-width: 760px) {
     .lead-table-wrap {
         overflow-x: hidden;
+        display: none !important;
     }
     .lead-table {
         min-width: 0 !important;
@@ -2867,9 +2768,6 @@ body.ad-rate-app .rt-wrap {
     display: none;
 }
 @media (max-width: 760px) {
-    .lead-table-wrap {
-        display: none !important;
-    }
     .lead-mcards {
         display: grid;
         gap: 14px;
@@ -3081,9 +2979,6 @@ body.ad-rate-app .rt-wrap {
 }
 
 /* browse the deck by swiping */
-.rt-main > .rt-card {
-    touch-action: pan-y;
-}
 .rt-card.is-in-right {
     animation: rtInRight 0.2s ease;
 }
@@ -3102,19 +2997,6 @@ body.ad-rate-app .rt-wrap {
 
 /* ===== Lead Rating: more room - no headings, colour-coded 1-5 ===== */
 
-.rt-hint {
-    display: none;
-    margin: 4px 0 0;
-}
-.rt-hint.is-bad {
-    display: block;
-}
-
-@media (max-width: 760px) {
-    body.ad-rate-app .rt-phone {
-        padding-bottom: calc(env(safe-area-inset-bottom) + 4px);
-    }
-}
 /* header: close / back on the left, menu on the right; tabs + progress + Scout live in the menu */
 .rt-top-fill {
     flex: 1;
@@ -3195,9 +3077,6 @@ body.ad-rate-app .rt-wrap {
     border-radius: 0 0 22px 22px;
 }
 
-.rt-main > .rt-card {
-    transition: none;
-}
 .lc-fest {
     --lc1: var(--ad-blue);
     --lc2: var(--ad-pink);
@@ -3237,6 +3116,9 @@ body.ad-rate-app .rt-wrap {
         0 1px 2px rgba(15, 23, 42, 0.06),
         0 8px 0 -3px var(--ad-soft),
         0 8px 0 -2px var(--ad-line);
+    flex: 0 1 auto;
+    margin-top: auto;
+    margin-bottom: auto;
 }
 .r2-photo {
     position: relative;
@@ -3375,6 +3257,7 @@ body.ad-rate-app .rt-wrap {
     background: rgba(15, 23, 42, 0.35);
     border-radius: inherit;
     z-index: 5;
+    position: fixed;
 }
 .r2-sheet {
     z-index: 6;
@@ -3384,6 +3267,13 @@ body.ad-rate-app .rt-wrap {
     display: grid;
     gap: 10px;
     box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.15);
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: var(--r2-kb, 0px);
+    max-height: calc(100dvh - var(--r2-kb, 0px) - 20px);
+    overflow-y: auto;
+    transition: bottom 0.15s ease;
 }
 .r2-sheet-top {
     display: flex;
@@ -3677,11 +3567,6 @@ body.ad-rate-app .rt-wrap {
 .rt-main > .r2-card::after {
     display: none;
 }
-.rt-main > .r2-card {
-    flex: 0 1 auto;
-    margin-top: auto;
-    margin-bottom: auto;
-}
 /* Won lane - gold */
 .lead-dot.is-won,
 .lead-cdot.is-won {
@@ -3737,18 +3622,6 @@ body.ad-rate-app .rt-wrap {
     color: var(--ad-red);
 }
 /* the note sheet sits on top of the phone keyboard and never runs off-screen */
-.r2-sheet {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: var(--r2-kb, 0px);
-    max-height: calc(100dvh - var(--r2-kb, 0px) - 20px);
-    overflow-y: auto;
-    transition: bottom 0.15s ease;
-}
-.r2-sheet-bg {
-    position: fixed;
-}
 @media (min-width: 761px) {
     .r2-sheet {
         left: 50%;
@@ -3801,9 +3674,6 @@ body.ad-rate-app .rt-wrap {
 
 /* GIG OPPORTUNITIES calendar: selected / this week in light green, with room
    at the bottom so the last (Skip) dot is never covered */
-.lead-wslot {
-    padding-bottom: 5px;
-}
 .lead-wslot.is-today,
 .lead-wslot.is-sel,
 .lead-wslot.is-today.is-sel {
@@ -3813,9 +3683,6 @@ body.ad-rate-app .rt-wrap {
 .lead-wslot.is-sel {
     background: var(--ad-green-bg);
     box-shadow: inset 0 0 0 2px var(--ad-green);
-}
-.lead-wslot.is-today .lead-wslot-no {
-    color: var(--ad-green);
 }
 .lead-cal-m.is-now .lead-wslot.is-today .lead-cdot,
 .lead-wslot.is-sel .lead-cdot {

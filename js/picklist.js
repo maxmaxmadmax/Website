@@ -19,7 +19,7 @@
      SAVING       a tick saves straight away; the 20-second refresh
      START        load, and the local test hook
    ========================================================================== */
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=845';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=846';
 
 /* ---- SETUP ---- */
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';

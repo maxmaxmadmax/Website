@@ -24,9 +24,9 @@
 
 /* ---------- 1  Setup ---------- */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=845';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=845'; // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=845';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=846';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=846'; // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=846';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
