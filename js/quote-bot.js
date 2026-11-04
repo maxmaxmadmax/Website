@@ -15,7 +15,7 @@
    still runs but cannot send - it says so and points at the contact page.
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=826';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=827';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
