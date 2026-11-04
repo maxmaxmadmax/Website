@@ -87,14 +87,12 @@ async function syncGigs(db) {
         });
     });
 
-    let written = 0;
     for (let i = 0; i < writes.length; i += BATCH_LIMIT) {
         const batch = db.batch();
 
         writes.slice(i, i + BATCH_LIMIT).forEach((job) => {
             if (job.kind === 'delete') batch.delete(job.ref);
             else batch.set(job.ref, job.data, { merge: true });
-            written++;
         });
 
         await batch.commit();
