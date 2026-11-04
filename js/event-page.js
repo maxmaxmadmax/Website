@@ -1,7 +1,17 @@
 /* ==========================================================================
-   EVENT PAGE - the share and print buttons, and the food vendors and market
-   stalls (from the eventLineup function: confirmed, paid vendors only; no
-   vendors, or a failed call, and the sections stay hidden).
+   EVENT PAGE  -  share and print buttons, food vendors and market stalls
+
+   Vendors come from the eventLineup function (confirmed, paid vendors only).
+   No vendors, or a failed call, and the sections stay hidden.
+
+   CONTENTS
+     1. SHARE         share sheet, else copy the link
+     2. PRINT         the print button, and ?print=1
+     3. VENDOR DATA   food photos, the words on each card, market icons
+     4. CARDS         food cards and market tiles
+     5. SIZES         how crowded the A4 print is
+     6. TEST MODE     pretend vendors on localhost (?demo=)
+     7. LOAD          fetch the line-up and fill the sections
    ========================================================================== */
 (function () {
     'use strict';
@@ -30,24 +40,26 @@
 
     /* ---- 2. Print ---- */
     var print = document.getElementById('ep-print');
-    if (print)
+    if (print) {
         print.addEventListener('click', function () {
             window.print();
         });
+    }
     // ?print=1 opens the print / save-as-PDF box straight away (link from the vendor invoice page)
-    if (/[?&]print=1/.test(location.search))
+    if (/[?&]print=1/.test(location.search)) {
         window.addEventListener('load', function () {
             setTimeout(function () {
                 window.print();
             }, 800);
         });
+    }
 
-    /* ---- 3. Vendors ---- */
+    /* ---- 3. Vendor data ---- */
     var food = document.getElementById('ep-food');
     var market = document.getElementById('ep-market');
     if (!food) return;
 
-    var URL =
+    var LINEUP_URL =
         'https://australia-southeast1-soundzgood-8c86f.cloudfunctions.net/eventLineup?event=' +
         encodeURIComponent(food.getAttribute('data-event'));
 
@@ -86,6 +98,7 @@
         photo = the vendor's OWN photo (images/vendors/<file>)
         link  = a better link than the one they typed
         logo  = true when that photo is a logo: shown whole on white, not cropped
+        top   = true to keep the top of the photo (a face) in the card
         Keyed by the business name exactly as they typed it. A vendor with
         no line here gets the first sentence of their own description.  */
     var WORDS = {
@@ -109,14 +122,14 @@
             cat: 'lollies-fairy-floss',
             photo: 'images/vendors/sweet-wheels.webp',
             top: true
-        }, // top: keeps the face in the card
+        },
         'Tropical Blendz': {
             tag: 'Drinks',
             line: 'Fresh drinks and smoothies.',
             cat: 'drinks-juice-smoothies',
-            photo: 'images/vendors/tropical-blendz.webp',
+            photo: 'images/vendors/tropical-blendz.webp', // their logo
             logo: true
-        }, // their logo
+        },
         'Tropical Pizza': { tag: 'Pizza', line: 'Pizza, wings and soft drinks.', photo: 'images/vendors/tropical-pizza.webp' }, // photo from their truck
         'Vandito Viesta': {
             tag: 'Mexican',
@@ -127,8 +140,8 @@
 
         'Pretty Girl Ave': {
             cat: 'gifts-novelty', // booked as Other
-            link: 'https://pretty-girl-ave.deed.page/'
-        }, // their page
+            link: 'https://pretty-girl-ave.deed.page/' // their page
+        },
 
         // booked under Plants / Garden, but they sell sweets
         "Sian's Sugar Shack": { cat: 'local-produce-packaged', label: 'Sweets & Treats' }
@@ -163,32 +176,53 @@
             ' d="M8 11a3 3 0 100-6 3 3 0 000 6zM16 11a3 3 0 100-6 3 3 0 000 6zM2 20c0-3 3-6 6-6s6 3 6 6M12 20c0-3 2-6 4-6 3 0 6 3 6 6"/>',
         'local-produce-packaged': '<path ' + P + ' d="M6 9a6 6 0 0112 0v1H6zM5 10h14l-2 11H7zM12 3v3"/>'
     };
-    var BAG = '<path ' + P + ' d="M5 8h14l-1 13H6zM9 8V6a3 3 0 016 0v2"/>';
+    var BAG = '<path ' + P + ' d="M5 8h14l-1 13H6zM9 8V6a3 3 0 016 0v2"/>'; // any other kind of stall
+
+    /* ---- 4. Cards ---- */
+    function wordsOf(r) {
+        return WORDS[r.name] || {};
+    }
+
+    /* the kind of stall a market vendor goes under */
+    function marketCat(r) {
+        return wordsOf(r).cat || r.categoryId || 'other-market';
+    }
 
     function linkOf(r) {
-        var w = WORDS[r.name] || {};
-        var l = w.link || r.link; // a link Max gave us beats the one they typed
+        var l = wordsOf(r).link || r.link; // a link Max gave us beats the one they typed
         return l && /^https?:\/\//i.test(l) ? l : '';
     }
 
+    /*  The vendor's own link (checked server side: http/https only).
+        Opens in a new tab; nofollow because we don't vouch for it. */
+    function vendorLink(link, inner, cls) {
+        return (
+            '<a' +
+            (cls ? ' class="' + cls + '"' : '') +
+            ' href="' +
+            esc(link) +
+            '" target="_blank" rel="noopener nofollow ugc">' +
+            inner +
+            '</a>'
+        );
+    }
+
+    /* the vendor's own photo first, else the generic one for their kind of food */
+    function foodPic(w, cat) {
+        var img = w.photo || (PHOTOS.indexOf(cat) >= 0 ? 'images/vendor-cats/' + cat + '.webp' : '');
+        if (!img) return '<span class="ep-fv-pic ep-fv-pic-none" aria-hidden="true"></span>';
+        var cls = 'ep-fv-pic' + (w.logo ? ' ep-fv-pic-logo' : '') + (w.top ? ' ep-fv-pic-top' : '');
+        return '<span class="' + cls + '" style="background-image:url(\'' + img + '\')"></span>';
+    }
+
     function foodCard(r) {
-        var w = WORDS[r.name] || {};
+        var w = wordsOf(r);
         var cat = w.cat || r.categoryId || '';
         var tag = w.tag || (r.category && !/^other/i.test(r.category) ? r.category.split(' / ')[0] : 'Food');
         var line = w.line || r.blurb || '';
         var link = linkOf(r);
-        // the vendor's own photo first, else the generic one for their kind of food
-        var img = w.photo || (PHOTOS.indexOf(cat) >= 0 ? 'images/vendor-cats/' + cat + '.webp' : '');
-        var pic = img
-            ? '<span class="ep-fv-pic' +
-              (w.logo ? ' ep-fv-pic-logo' : '') +
-              (w.top ? ' ep-fv-pic-top' : '') +
-              '" style="background-image:url(\'' +
-              img +
-              '\')"></span>'
-            : '<span class="ep-fv-pic ep-fv-pic-none" aria-hidden="true"></span>';
         var inner =
-            pic +
+            foodPic(w, cat) +
             '<span class="ep-fv-text">' +
             '<small>' +
             esc(tag) +
@@ -199,89 +233,79 @@
             (line ? '<span>' + esc(line) + '</span>' : '') +
             '</span>' +
             (link ? '<i class="ep-fv-go" aria-hidden="true">&rarr;</i>' : '');
-        /*  The vendor's own link (checked server side: http/https only).
-            Opens in a new tab; nofollow because we don't vouch for it. */
-        return link
-            ? '<a class="ep-fv" href="' +
-                  esc(link).replace(/"/g, '&quot;') +
-                  '" target="_blank" rel="noopener nofollow ugc">' +
-                  inner +
-                  '</a>'
-            : '<div class="ep-fv">' + inner + '</div>';
+        return link ? vendorLink(link, inner, 'ep-fv') : '<div class="ep-fv">' + inner + '</div>';
     }
 
     /*  MARKET STALLS: one tile per kind of stall, with every vendor of that
-        kind listed on it.                                             */
+        kind listed on it, tiles A-Z.                                  */
     function marketTiles(rows) {
-        var groups = [],
-            byCat = {};
+        var groups = [];
+        var byCat = {};
         rows.forEach(function (r) {
-            var w = WORDS[r.name] || {};
-            var cat = w.cat || r.categoryId || 'other-market';
-            var label = w.label || (r.category && !/^other/i.test(r.category) ? r.category : 'Other stalls');
+            var w = wordsOf(r);
+            var cat = marketCat(r);
             if (!byCat[cat]) {
+                var label = w.label || (r.category && !/^other/i.test(r.category) ? r.category : 'Other stalls');
                 byCat[cat] = { cat: cat, label: label, names: [] };
                 groups.push(byCat[cat]);
             }
             var link = linkOf(r);
-            byCat[cat].names.push(
-                link
-                    ? '<a href="' +
-                          esc(link).replace(/"/g, '&quot;') +
-                          '" target="_blank" rel="noopener nofollow ugc">' +
-                          esc(r.name) +
-                          '</a>'
-                    : esc(r.name)
-            );
+            byCat[cat].names.push(link ? vendorLink(link, esc(r.name)) : esc(r.name));
         });
         groups.sort(function (a, b) {
             return a.label.localeCompare(b.label);
         });
-        return groups
-            .map(function (g) {
-                return (
-                    '<div class="ep-mt">' +
-                    '<div class="ep-mt-head">' +
-                    '<svg viewBox="0 0 24 24" aria-hidden="true">' +
-                    (ICON[g.cat] || BAG) +
-                    '</svg>' +
-                    '<b>' +
-                    esc(g.label.replace(/ \/ /g, ' & ')) +
-                    '</b>' +
-                    '</div>' +
-                    '<ul><li>' +
-                    g.names.join('</li><li>') +
-                    '</li></ul>' +
-                    '</div>'
-                );
-            })
-            .join('');
+        return groups.map(marketTile).join('');
     }
 
-    /*  HOW CROWDED IS IT?
-        The A4 print has to stay 4 pages however many vendors pay, so the
+    function marketTile(g) {
+        return (
+            '<div class="ep-mt">' +
+            '<div class="ep-mt-head">' +
+            '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+            (ICON[g.cat] || BAG) +
+            '</svg>' +
+            '<b>' +
+            esc(g.label.replace(/ \/ /g, ' & ')) +
+            '</b>' +
+            '</div>' +
+            '<ul><li>' +
+            g.names.join('</li><li>') +
+            '</li></ul>' +
+            '</div>'
+        );
+    }
+
+    /* ---- 5. Sizes ---- */
+    /*  The A4 print has to stay 4 pages however many vendors pay, so the
         food and market sections are tagged with a size and the print
         styles add columns / shrink text to match:
           food:   s <=10  m <=15  l <=24  xl <=32  xxl more
           market: s (<=15 names, <=6 kinds)  m (<=30 names)  l (more)  */
     function foodSize(n) {
-        return n <= 10 ? 's' : n <= 15 ? 'm' : n <= 24 ? 'l' : n <= 32 ? 'xl' : 'xxl';
+        if (n <= 10) return 's';
+        if (n <= 15) return 'm';
+        if (n <= 24) return 'l';
+        if (n <= 32) return 'xl';
+        return 'xxl';
     }
 
     function marketSize(rows) {
         var kinds = {};
         rows.forEach(function (r) {
-            var w = WORDS[r.name] || {};
-            kinds[w.cat || r.categoryId || 'other-market'] = 1;
+            kinds[marketCat(r)] = 1;
         });
-        var k = Object.keys(kinds).length,
-            n = rows.length;
-        return n <= 15 && k <= 6 ? 's' : n <= 30 ? 'm' : 'l';
+        var k = Object.keys(kinds).length;
+        var n = rows.length;
+        if (n <= 15 && k <= 6) return 's';
+        if (n <= 30) return 'm';
+        return 'l';
     }
 
-    /*  TEST MODE - only on the local preview (localhost), never live:
-        add ?demo=10,50 (food, market) or ?demo=50 to fill the page with pretend
-        vendors and check the layout and the A4 print still hold up.   */
+    /* ---- 6. Test mode ---- */
+    /*  Only on the local preview (localhost), never live: add ?demo=10,50
+        (food, market) or ?demo=50 to fill the page with pretend vendors
+        and check the layout and the A4 print still hold up.           */
     function demo(n, nMarket) {
         var foodCats = [
             'burgers-fries-american',
@@ -331,14 +355,20 @@
         return d;
     }
 
-    var demoN = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && (location.search.match(/[?&]demo=([\d,]+)/) || [])[1];
+    /* ---- 7. Load ---- */
+    function lineup() {
+        var isLocal = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+        var demoN = isLocal && (location.search.match(/[?&]demo=([\d,]+)/) || [])[1];
+        if (demoN) {
+            var parts = demoN.split(',');
+            return Promise.resolve(demo(+parts[0], parts[1] != null ? +parts[1] : null));
+        }
+        return fetch(LINEUP_URL).then(function (r) {
+            return r.ok ? r.json() : null;
+        });
+    }
 
-    (demoN
-        ? Promise.resolve(demo(+demoN.split(',')[0], demoN.split(',')[1] != null ? +demoN.split(',')[1] : null))
-        : fetch(URL).then(function (r) {
-              return r.ok ? r.json() : null;
-          })
-    )
+    lineup()
         .then(function (d) {
             if (!d) return;
             if (d.food && d.food.length) {

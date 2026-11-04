@@ -1,13 +1,21 @@
 /* ==========================================================================
-   THE GIG GUIDE
+   GIG GUIDE - one list of events, and everything on the page built from it.
+   Our own listings are below; the rest come from the database (filled daily
+   by syncGigGuide) via js/weekend.js and are merged here, so a bad sync can
+   never touch our own. If the database is unreachable the page still shows
+   the hand-written list. The slider is window.SGSlider from js/main.js.
 
-   One list of events, and everything on the page built from it.
+   LISTINGS    our own events - the only part to edit
+   DATES       midnight today, ISO day parsing
+   THE LIST    repeating events expanded to dates, found events added
+   FILTERING   search, type, place and when
+   DRAWING     the weekend row and the highlights slider
+   CONTROLS    pills and menus kept in step, subscribe box, hero clip
+   START       draw now, redraw when the found events arrive
+   ========================================================================== */
 
-   ==========================================================================
-   ADDING AN EVENT - this is the only part you need
-   ==========================================================================
-
-   Copy a block in LISTINGS below and change the words.
+/* ==========================================================================
+   LISTINGS - copy a block and change the words. Only real events.
 
        name    what it is called
        date    'YYYY-MM-DD'. Leave it null if the date is not out yet and
@@ -25,11 +33,9 @@
        tags    the words printed on the card. Usually the same as cats,
                written out properly.
        img     optional photo, e.g. 'images/gigs/eatz-beatz.jpg'. Without
-               one the card shows its dark tile, which is fine.
+               one the card shows its dark tile.
        big     true puts it in Upcoming Highlights rather than the weekend
                row, whatever the date says.
-
-   Only list real events - never made-up ones to fill the page.
    ========================================================================== */
 var GG_LISTINGS = [
     {
@@ -67,16 +73,6 @@ var GG_LISTINGS = [
     }
 ];
 
-/* ==========================================================================
-   Everything below builds the page. You should not have to touch it to add
-   an event.
-
-   The other events come from the database, filled once a day by the
-   syncGigGuide function (see functions/lib/gig-sources.js). They are merged
-   here, not in the database, so a bad sync can never touch our own listings.
-
-   If the database is unreachable the page still shows the hand written list.
-   ========================================================================== */
 (function () {
     'use strict';
 
@@ -84,17 +80,16 @@ var GG_LISTINGS = [
     if (!page) return;
 
     var DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    var REPEAT_WEEKS = 12; // how far ahead a repeating event is worked out
 
-    /*  How many weeks ahead a repeating event is worked out to. */
-    var REPEAT_WEEKS = 12;
+    var W = window.SGWeekend; // shared with /events: weekend range, found gigs, card
+    var weekendRange = W.weekendRange;
 
     var filters = { text: '', cat: 'all', place: 'all', when: 'all' };
 
-    /* ----------------------------------------------------------------------
-       DATES
-       Everything is worked out from midnight today in local time, so an
-       event on this afternoon is still "today" rather than already past.
-       ---------------------------------------------------------------------- */
+    /* ======================================================================
+       DATES - from midnight today, so an event this afternoon is still today
+       ====================================================================== */
     function midnight(d) {
         return new Date(d.getFullYear(), d.getMonth(), d.getDate());
     }
@@ -106,14 +101,9 @@ var GG_LISTINGS = [
 
     var today = midnight(new Date());
 
-    /*  Both come from js/weekend.js, which /events uses as well. */
-    var weekendRange = window.SGWeekend.weekendRange;
-
-    /* ----------------------------------------------------------------------
-       THE LIST
-       Repeating events are expanded into real dates here, once, so that
-       everything past this point is dealing with one shape of thing.
-       ---------------------------------------------------------------------- */
+    /* ======================================================================
+       THE LIST - every event in one shape, repeats expanded to real dates
+       ====================================================================== */
     function expand() {
         var out = [];
 
@@ -138,15 +128,15 @@ var GG_LISTINGS = [
             out.push(occurrence(ev, ev.date ? parseDay(ev.date) : null));
         });
 
-        /*  Undated events last. */
-        out.sort(function (a, b) {
-            if (!a.day && !b.day) return 0;
-            if (!a.day) return 1;
-            if (!b.day) return -1;
-            return a.day - b.day;
-        });
+        return out.sort(byDay);
+    }
 
-        return out;
+    /* Soonest first, undated last */
+    function byDay(a, b) {
+        if (!a.day && !b.day) return 0;
+        if (!a.day) return 1;
+        if (!b.day) return -1;
+        return a.day - b.day;
     }
 
     function occurrence(ev, day) {
@@ -169,28 +159,19 @@ var GG_LISTINGS = [
 
     var events = expand();
 
-    /* ----------------------------------------------------------------------
-       THE FOUND EVENTS
-
-       Everything the syncGigGuide function found overnight, read from
-       Firestore by js/weekend.js - the same call the This Weekend strip on
-       /events makes, so the two pages can never show different listings.
-       ---------------------------------------------------------------------- */
+    /* The same call the This Weekend strip on /events makes. A source that
+       publishes no categories only matches the All pill. */
     function loadFound() {
-        return window.SGWeekend.loadGigs().then(function (rows) {
+        return W.loadGigs().then(function (rows) {
             return rows.map(function (r) {
-                /*  No categories from a source that does not publish any - they
-                    only match the All pill.                             */
                 return occurrence(r, r.day);
             });
         });
     }
 
-    var loadStatus = window.SGWeekend.loadStatus;
-
-    /* ----------------------------------------------------------------------
+    /* ======================================================================
        FILTERING
-       ---------------------------------------------------------------------- */
+       ====================================================================== */
     function matches(ev) {
         if (filters.cat !== 'all' && ev.cats.indexOf(filters.cat) < 0) return false;
         if (filters.place !== 'all' && ev.area !== filters.place) return false;
@@ -201,8 +182,7 @@ var GG_LISTINGS = [
         }
 
         if (filters.when !== 'all') {
-            /*  An undated event drops out of any dated view. */
-            if (!ev.day) return false;
+            if (!ev.day) return false; // undated events drop out of any dated view
 
             if (filters.when === 'weekend') {
                 var w = weekendRange();
@@ -214,40 +194,35 @@ var GG_LISTINGS = [
             }
         }
 
-        /* nothing that has already been */
-        if (ev.day && ev.day < today) return false;
+        if (ev.day && ev.day < today) return false; // already been
 
         return true;
     }
 
-    /* ----------------------------------------------------------------------
+    /* ======================================================================
        DRAWING
-       ---------------------------------------------------------------------- */
-    /*  Drawing a card is shared with /events - see js/weekend.js. */
-    var card = window.SGWeekend.card;
-
+       ====================================================================== */
     var weekendGrid = document.getElementById('gg-weekend-grid');
     var weekendEmpty = document.getElementById('gg-weekend-empty');
     var upcomingGrid = document.getElementById('gg-upcoming-grid');
     var upcomingEmpty = document.getElementById('gg-upcoming-empty');
 
+    var slider = upcomingGrid ? window.SGSlider(upcomingGrid, Array.prototype.slice.call(page.querySelectorAll('[data-slide]'))) : null;
+
+    /* Two rows from one list: the weekend row is the next few days; the
+       highlights row is everything else, plus anything marked big */
     function draw() {
         var showing = events.filter(matches);
         var w = weekendRange();
 
-        /*  Two rows out of one list: the weekend row is the next few days;
-            the highlights row is everything else, plus anything marked big. */
         var weekend = showing.filter(function (ev) {
             return !ev.big && ev.day && ev.day >= w.start && ev.day <= w.end;
         });
 
-        var upcoming = showing.filter(function (ev) {
-            return weekend.indexOf(ev) < 0;
-        });
-
-        /*  Only one Friday Nights in the highlights row, not twelve. */
+        // One Friday Nights in the highlights row, not twelve
         var seen = {};
-        upcoming = upcoming.filter(function (ev) {
+        var upcoming = showing.filter(function (ev) {
+            if (weekend.indexOf(ev) >= 0) return false;
             if (!ev.src.every) return true;
             if (seen[ev.name]) return false;
             seen[ev.name] = true;
@@ -255,16 +230,15 @@ var GG_LISTINGS = [
         });
 
         fill(weekendGrid, weekendEmpty, weekend, 'Nothing listed for this weekend yet.');
-
         fill(upcomingGrid, upcomingEmpty, upcoming, 'Nothing else listed just now.');
 
-        paintPage();
+        if (slider) slider.paint();
     }
 
     function fill(grid, empty, list, message) {
         if (!grid) return;
 
-        grid.innerHTML = list.map(card).join('');
+        grid.innerHTML = list.map(W.card).join('');
 
         if (empty) {
             empty.textContent = message;
@@ -272,24 +246,9 @@ var GG_LISTINGS = [
         }
     }
 
-    /* ----------------------------------------------------------------------
-       PAGING THE HIGHLIGHTS ROW - the shared slider in js/main.js
-       ---------------------------------------------------------------------- */
-    var slider =
-        upcomingGrid && window.SGSlider
-            ? window.SGSlider(upcomingGrid, Array.prototype.slice.call(page.querySelectorAll('[data-slide]')))
-            : null;
-
-    function paintPage() {
-        if (slider) slider.paint();
-    }
-
-    /* ----------------------------------------------------------------------
-       THE CONTROLS
-
-       The pills and the two menus are the same three filters, so touching
-       one brings the others into line.
-       ---------------------------------------------------------------------- */
+    /* ======================================================================
+       CONTROLS - the pills and the menus are the same filters, kept in step
+       ====================================================================== */
     var search = document.getElementById('gg-search');
     var whenSel = document.getElementById('gg-when');
     var whereSel = document.getElementById('gg-where');
@@ -343,8 +302,7 @@ var GG_LISTINGS = [
         });
     });
 
-    /*  The subscribe box has nothing behind it, so it carries the address
-        to the contact page as a message.                                */
+    // The subscribe box has no list behind it, so it carries the address to the contact page
     var sub = document.getElementById('gg-subscribe');
     if (sub) {
         sub.addEventListener('submit', function (ev) {
@@ -355,7 +313,7 @@ var GG_LISTINGS = [
         });
     }
 
-    /*  The hero clip, on a big screen only - a phone never downloads it. */
+    // The hero clip, on a big screen only - a phone never downloads it
     var video = document.getElementById('gg-hero-video');
     if (video && window.innerWidth > 900 && !window.matchMedia('(hover: none)').matches) {
         video.src = video.getAttribute('data-src');
@@ -363,25 +321,17 @@ var GG_LISTINGS = [
         if (playing && playing.catch) playing.catch(function () {});
     }
 
-    /*  The hand written list is drawn first, then redrawn once the found
-        events arrive. If that call fails the page keeps what it has.   */
+    /* ======================================================================
+       START - our list now, redrawn once the found events arrive
+       ====================================================================== */
     draw();
 
     loadFound()
         .then(function (found) {
             if (!found.length) return;
-
-            events = expand()
-                .concat(found)
-                .sort(function (a, b) {
-                    if (!a.day && !b.day) return 0;
-                    if (!a.day) return 1;
-                    if (!b.day) return -1;
-                    return a.day - b.day;
-                });
-
+            events = expand().concat(found).sort(byDay);
             draw();
-            return loadStatus();
+            return W.loadStatus();
         })
         .then(function (status) {
             if (!status || !status.ranAt) return;
@@ -404,7 +354,7 @@ var GG_LISTINGS = [
             note.hidden = false;
         })
         .catch(function (err) {
-            /*  The hand written listings are already on screen. */
+            // our own listings are already on screen
             if (window.console) console.warn('gig guide: found events unavailable', err);
         });
 })();

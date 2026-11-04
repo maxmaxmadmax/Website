@@ -1,27 +1,34 @@
 /* ==========================================================================
-   CREW PICK LIST  -  picklist.html?t=<crewToken>
+   CREW PICK LIST  -  picklist.html?t=<crewToken>[&v=gear]
 
    Shows a booked job's gear (no prices) grouped by category, with Packed and
    Returned ticks. Each tick saves straight away, so admin and everyone on
    the crew link see the same list. Refreshes itself every 20 seconds.
+   &v=gear is the band / crew gear list: no ticks, no money flags.
+   Data: getPickList / setPickTick / addPickExtra / removePickExtra.
+
+   CONTENTS
+     SETUP        Firebase callables and the page state
+     FORMATTING   escaping, dates, times, phone links
+     CATEGORIES   category order and the quote-style sections
+     TICKS        which lines get ticks, the counts, the progress bars
+     RENDER       the whole page
+     BRIEF        the DJ gig brief
+     EXTRA GEAR   gear the crew add: search, add, remove
+     PHOTOS       tap an item to see its photo
+     SAVING       a tick saves straight away; the 20-second refresh
+     START        load, and the local test hook
    ========================================================================== */
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=837';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=838';
 
+/* ---- SETUP ---- */
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
-
-function esc(v) {
-    return String(v == null ? '' : v)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
 const token = () => new URLSearchParams(location.search).get('t') || '';
 
-let callable = null; // { get, tick } once Firebase is up
+let GEAR_VIEW = new URLSearchParams(location.search).get('v') === 'gear';
+let callable = null; // the Firebase callables once loaded
 let data = null; // the last pick list loaded
-let busy = 0; // ticks still saving - don't refresh over them
+let busy = 0; // saves still running - don't refresh over them
 
 async function initFns() {
     const [{ initializeApp }, functions] = await Promise.all([import(`${SDK}/firebase-app.js`), import(`${SDK}/firebase-functions.js`)]);
@@ -35,6 +42,16 @@ async function initFns() {
     };
 }
 
+/* ---- FORMATTING ---- */
+function esc(v) {
+    return String(v == null ? '' : v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 /* "2026-10-20" -> "Tue 20 Oct 2026" */
 function niceDay(iso) {
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
@@ -44,7 +61,36 @@ function niceDay(iso) {
         .replace(/,/g, '');
 }
 
-/* the order categories appear in (anything else after, A-Z) */
+/* "18:30" -> "6:30pm" (the details form stores 24-hour time). Anything else is shown as-is. */
+function niceTime(v) {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(String(v || '').trim());
+    if (!m) return String(v || '');
+    const h = +m[1];
+    return (h % 12 || 12) + ':' + m[2] + (h < 12 ? 'am' : 'pm');
+}
+
+/* "6:30pm – 11pm", escaped */
+function timeRange(start, finish) {
+    return esc([niceTime(start), niceTime(finish)].filter(Boolean).join(' – '));
+}
+
+/* a phone number as a tap-to-call link */
+function phoneLink(phone) {
+    return `<a href="tel:${esc(phone.replace(/[^\d+]/g, ''))}">${esc(phone)}</a>`;
+}
+
+/* free text, escaped, with the first phone number in it made tappable */
+function telLinks(text) {
+    return esc(text).replace(/(\+?\d[\d\s]{7,}\d)/, (n) => '<a href="tel:' + n.replace(/\s/g, '') + '">' + n + '</a>');
+}
+
+/* one line of a details list; nothing when there's no value */
+function info(label, value) {
+    return value ? `<div><dt>${label}</dt><dd>${value}</dd></div>` : '';
+}
+
+/* ---- CATEGORIES ---- */
+/* the order categories appear in on older jobs (anything else after, A-Z) */
 const CAT_ORDER = [
     'Packages',
     'Kits',
@@ -68,10 +114,10 @@ const CAT_ORDER = [
     'Vision',
     'Other'
 ];
-const catRank = (c) => {
+function catRank(c) {
     const i = CAT_ORDER.findIndex((x) => x.toLowerCase() === String(c).toLowerCase());
     return i < 0 ? 50 : i;
-};
+}
 
 /*  Sections like the quote. KEEP IN STEP with COST_GROUP in
     js/quote-view.js: inventory category -> the heading it sits under.  */
@@ -100,26 +146,40 @@ const COST_GROUP = {
     power: 'Audio'
 };
 const COST_GROUP_ORDER = ['Audio', 'Backline', 'Lighting', 'Staging', 'DJ equipment', 'Vision', 'Other'];
-const sectionOf = (r) =>
-    r.custom
-        ? 'Other'
-        : COST_GROUP[
-              String(r.category || '')
-                  .trim()
-                  .toLowerCase()
-          ] || 'Audio';
-const catLabel = (r) => {
+
+function sectionOf(r) {
+    if (r.custom) return 'Other';
+    const cat = String(r.category || '')
+        .trim()
+        .toLowerCase();
+    return COST_GROUP[cat] || 'Audio';
+}
+
+function catLabel(r) {
     const c = String(r.category || '').trim();
     return c ? c.charAt(0).toUpperCase() + c.slice(1) : 'Other';
-};
+}
 
-/*  The lines that get ticks: the quote-style rows, or (older jobs) the totals. */
-const tickLines = () => (data.rows || data.items || []).concat(GEAR_VIEW ? [] : data.extras || []); // + extra gear
-/*  A line's ticks - its own, or the ones saved before per item. */
-const ticksOf = (r) => {
+/* an item's included parts: a kit's own order first, then category A-Z, then name */
+function byPartOrder(a, b) {
+    return (
+        (a.sysOrder != null ? a.sysOrder : 1e9) - (b.sysOrder != null ? b.sysOrder : 1e9) ||
+        catLabel(a).localeCompare(catLabel(b)) ||
+        a.name.localeCompare(b.name, undefined, { numeric: true })
+    );
+}
+
+/* ---- TICKS ---- */
+/* the lines that get ticks: the quote-style rows (or the totals on older jobs), plus extra gear */
+function tickLines() {
+    return (data.rows || data.items || []).concat(GEAR_VIEW ? [] : data.extras || []);
+}
+
+/* a line's ticks - its own, or the ones saved before per item */
+function ticksOf(r) {
     const t = data.ticks || {};
     return t[r.key] || (r.itemKey && t[r.itemKey]) || {};
-};
+}
 
 function counts() {
     const items = tickLines();
@@ -140,123 +200,141 @@ function progressHtml() {
     return bar(c.packed, 'Packed', 'is-packed') + bar(c.returned, 'Returned', 'is-returned');
 }
 
-// &v=gear - the band / crew gear list: no ticks, no money flags
-let GEAR_VIEW = new URLSearchParams(location.search).get('v') === 'gear';
-
-/*  "18:30" -> "6:30pm" (the details form stores 24-hour time). Anything else is shown as-is. */
-function niceTime(v) {
-    const m = /^(\d{1,2}):(\d{2})$/.exec(String(v || '').trim());
-    if (!m) return String(v || '');
-    const h = +m[1];
-    return (h % 12 || 12) + ':' + m[2] + (h < 12 ? 'am' : 'pm');
-}
-
-function render() {
-    const d = data;
-    const t = d.ticks || {};
-    const range = d.hire.startDate
-        ? niceDay(d.hire.startDate) + (d.hire.endDate && d.hire.endDate !== d.hire.startDate ? ' &ndash; ' + niceDay(d.hire.endDate) : '')
-        : esc(d.eventDate || '');
-    const groups = {};
-    (d.items || []).forEach((i) => {
-        (groups[i.category || 'Other'] = groups[i.category || 'Other'] || []).push(i);
-    });
-    const cats = Object.keys(groups).sort((a, b) => catRank(a) - catRank(b) || a.localeCompare(b));
-    const c = counts();
-    const box = (i, field, label) => `
+/* ---- RENDER ---- */
+function tickBox(i, field, label) {
+    return `
     <label class="pl-box${ticksOf(i)[field] ? ' is-on' : ''}">
       <input type="checkbox" data-key="${esc(i.key)}" data-field="${field}"${ticksOf(i)[field] ? ' checked' : ''}>
       <span aria-hidden="true">&#10003;</span><em>${label}</em>
     </label>`;
-    const info = (label, value) => (value ? `<div><dt>${label}</dt><dd>${value}</dd></div>` : '');
-    const contact =
-        [d.contact.name, d.contact.business].filter(Boolean).map(esc).join(' &middot; ') +
-        (d.contact.phone ? `<br><a href="tel:${esc(d.contact.phone.replace(/[^\d+]/g, ''))}">${esc(d.contact.phone)}</a>` : '');
-    const times =
-        d.times.start || d.times.finish ? esc([niceTime(d.times.start), niceTime(d.times.finish)].filter(Boolean).join(' – ')) : '';
-    // venue with a tap-for-directions link (falls back to the customer's address / town)
-    const where = d.venue
-        ? `${esc(d.venue)}<br><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.venue)}" target="_blank" rel="noopener">Directions &rarr;</a>`
-        : esc(d.contact.address || d.town || '');
+}
 
-    const row = (i, sub, kit) => `
+/* the item name; with a photo, the name and a thumbnail both open it */
+function itemNameHtml(i) {
+    if (!i.photo) return esc(i.name);
+    const pic = `<button type="button" class="pl-pic" data-photo="${esc(i.photo)}" data-name="${esc(i.name)}" aria-label="See a photo of ${esc(i.name)}"><img src="${esc(i.photo)}" alt="" loading="lazy"></button>`;
+    const name = `<button type="button" class="pl-picname" data-photo="${esc(i.photo)}" data-name="${esc(i.name)}">${esc(i.name)}</button>`;
+    return pic + name;
+}
+
+/* one gear line: sub = an included part, kit = an item with its own parts list */
+function rowHtml(i, sub, kit) {
+    const arrow = sub ? '<span class="pl-arrow">&#9492;</span>' : '';
+    const kitTag = kit ? ' <span class="pl-kit">Kit</span>' : '';
+    const ticks = GEAR_VIEW ? '' : `<span class="pl-ticks">${tickBox(i, 'packed', 'Packed')}${tickBox(i, 'returned', 'Returned')}</span>`;
+    return `
             <div class="pl-row${sub ? ' pl-sub' : ''}${ticksOf(i).packed ? ' is-packed' : ''}">
               <span class="pl-qty">${esc(i.qty)}&times;</span>
-              <span class="pl-name">${sub ? '<span class="pl-arrow">&#9492;</span>' : ''}${i.photo ? `<button type="button" class="pl-pic" data-photo="${esc(i.photo)}" data-name="${esc(i.name)}" aria-label="See a photo of ${esc(i.name)}"><img src="${esc(i.photo)}" alt="" loading="lazy"></button>` : ''}${i.photo ? `<button type="button" class="pl-picname" data-photo="${esc(i.photo)}" data-name="${esc(i.name)}">${esc(i.name)}</button>` : esc(i.name)}${kit ? ' <span class="pl-kit">Kit</span>' : ''}</span>
-              ${GEAR_VIEW ? '' : `<span class="pl-ticks">${box(i, 'packed', 'Packed')}${box(i, 'returned', 'Returned')}</span>`}
+              <span class="pl-name">${arrow}${itemNameHtml(i)}${kitTag}</span>
+              ${ticks}
             </div>`;
+}
 
-    /*  Like the quote: Audio / Backline / Lighting... each item with its
-      included parts under it (small category headings, A-Z).            */
-    function quoteStyleList() {
-        const units = [];
-        d.rows.forEach((r) => {
-            if (r.sub && units.length) units[units.length - 1].push(r);
-            else units.push([r]);
-        });
-        units.forEach((u) => {
-            const parts = u
-                .slice(1)
-                .sort(
-                    (a, b) =>
-                        (a.sysOrder != null ? a.sysOrder : 1e9) - (b.sysOrder != null ? b.sysOrder : 1e9) ||
-                        catLabel(a).localeCompare(catLabel(b)) ||
-                        a.name.localeCompare(b.name, undefined, { numeric: true })
-                );
-            u.splice(1, u.length - 1, ...parts);
-        });
-        const bySec = {};
-        units.forEach((u) => {
-            (bySec[sectionOf(u[0])] = bySec[sectionOf(u[0])] || []).push(u);
-        });
-        return COST_GROUP_ORDER.filter((k) => bySec[k])
-            .map(
-                (k) => `
+/* an item and its included parts, with small category headings between parts */
+function unitHtml(u) {
+    const isKit = u.some((p) => p.sub && p.sysOrder != null);
+    const parts = u.slice(1).map((p, j) => {
+        const prev = j ? u[j] : null; // the part before this one
+        // a kit's own parts keep the kit's order with no headings (like the quote builder)
+        const head = p.sysOrder != null || (prev && catLabel(prev) === catLabel(p)) ? '' : `<p class="pl-subhead">${esc(catLabel(p))}</p>`;
+        return head + rowHtml(p, true);
+    });
+    return rowHtml(u[0], false, isKit) + parts.join('');
+}
+
+/*  Like the quote: Audio / Backline / Lighting... each item with its
+    included parts under it (small category headings, A-Z).            */
+function quoteStyleList(rows) {
+    const units = [];
+    rows.forEach((r) => {
+        if (r.sub && units.length) units[units.length - 1].push(r);
+        else units.push([r]);
+    });
+    units.forEach((u) => {
+        u.splice(1, u.length - 1, ...u.slice(1).sort(byPartOrder));
+    });
+    const bySec = {};
+    units.forEach((u) => {
+        const sec = sectionOf(u[0]);
+        (bySec[sec] = bySec[sec] || []).push(u);
+    });
+    return COST_GROUP_ORDER.filter((k) => bySec[k])
+        .map(
+            (k) => `
         <div class="pl-cat">
           <h3>${esc(k)}</h3>
-          ${bySec[k]
-              .map(
-                  (u) =>
-                      row(
-                          u[0],
-                          false,
-                          u.some((p) => p.sub && p.sysOrder != null)
-                      ) +
-                      u
-                          .slice(1)
-                          .map((p, j) => {
-                              const prev = j ? u[j] : null;
-                              // a kit's own parts keep the kit's order with no headings (like the quote builder)
-                              const head =
-                                  p.sysOrder != null || (prev && catLabel(prev) === catLabel(p))
-                                      ? ''
-                                      : `<p class="pl-subhead">${esc(catLabel(p))}</p>`;
-                              return head + row(p, true);
-                          })
-                          .join('')
-              )
-              .join('')}
+          ${bySec[k].map((u) => unitHtml(u)).join('')}
         </div>`
-            )
-            .join('');
-    }
-    // older jobs: the totals by category
-    function oldList() {
-        return cats
-            .map(
-                (cat) => `
+        )
+        .join('');
+}
+
+/* older jobs: the totals by category */
+function oldList(items) {
+    const groups = {};
+    items.forEach((i) => {
+        const cat = i.category || 'Other';
+        (groups[cat] = groups[cat] || []).push(i);
+    });
+    const cats = Object.keys(groups).sort((a, b) => catRank(a) - catRank(b) || a.localeCompare(b));
+    return cats
+        .map(
+            (cat) => `
         <div class="pl-cat">
           <h3>${esc(cat)}</h3>
-          ${groups[cat].map((i) => row(i, false)).join('')}
+          ${groups[cat].map((i) => rowHtml(i, false)).join('')}
         </div>`
-            )
-            .join('');
-    }
+        )
+        .join('');
+}
 
+function pageHeading(d, gearLines) {
+    if (!GEAR_VIEW) return 'Pick list';
+    if (!d.brief) return 'Gear list';
+    return 'Gig brief' + (gearLines ? ' &amp; gear' : '');
+}
+
+function hireRange(d) {
+    if (!d.hire.startDate) return esc(d.eventDate || '');
+    const end = d.hire.endDate && d.hire.endDate !== d.hire.startDate ? ' &ndash; ' + niceDay(d.hire.endDate) : '';
+    return niceDay(d.hire.startDate) + end;
+}
+
+/* venue with a tap-for-directions link (falls back to the customer's address / town) */
+function venueHtml(d) {
+    if (!d.venue) return esc(d.contact.address || d.town || '');
+    const maps = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(d.venue);
+    return `${esc(d.venue)}<br><a href="${maps}" target="_blank" rel="noopener">Directions &rarr;</a>`;
+}
+
+function contactHtml(d) {
+    const who = [d.contact.name, d.contact.business].filter(Boolean).map(esc).join(' &middot; ');
+    return who + (d.contact.phone ? '<br>' + phoneLink(d.contact.phone) : '');
+}
+
+function assignedHtml(d) {
+    return (d.assigned || []).map((x) => esc(x.name) + (x.phone ? ' <small>' + phoneLink(x.phone) + '</small>' : '')).join('<br>');
+}
+
+function crewHtml(d) {
+    return d.crew.map((x) => esc(x.name) + (x.note ? ' <small>' + esc(x.note) + '</small>' : '')).join('<br>');
+}
+
+/* the gear-list note, or the money flag on a pick list */
+function jobFlagHtml(d) {
+    if (GEAR_VIEW)
+        return '<p class="pl-notes">This is the gear SoundzGood Whitsundays is supplying. Anything missing? Call Max on 0422 393 022.</p>';
+    if (d.paidInFull) return '';
+    return '<p class="pl-flag">Balance still owing on this job &mdash; check with Max before handing over gear.</p>';
+}
+
+function render() {
+    const d = data;
+    const c = counts();
     document.getElementById('pl-root').innerHTML = `
     <header class="pl-head">
       <img src="/images/logo-quote.png" alt="SoundzGood Whitsundays" class="pl-logo">
-      <div class="pl-head-r"><h1>${GEAR_VIEW ? (d.brief ? 'Gig brief' + (c.total ? ' &amp; gear' : '') : 'Gear list') : 'Pick list'}</h1><p>${esc(d.number)}</p></div>
+      <div class="pl-head-r"><h1>${pageHeading(d, c.total)}</h1><p>${esc(d.number)}</p></div>
     </header>
 
     <section class="pl-job">
@@ -264,18 +342,18 @@ function render() {
       <dl class="pl-info">
         ${info('Event date', esc(d.eventDate || ''))}
         ${d.times.soundcheck ? info('Soundcheck', esc(niceTime(d.times.soundcheck))) : ''}
-        ${info('Event starts', times)}
-        ${info('Venue', where)}
-        ${info('Hire dates', range)}
+        ${info('Event starts', timeRange(d.times.start, d.times.finish))}
+        ${info('Venue', venueHtml(d))}
+        ${info('Hire dates', hireRange(d))}
         ${info('Getting there', esc(d.delivery))}
-        ${info('Event day contact', d.dayContact ? esc(d.dayContact).replace(/(\+?\d[\d\s]{7,}\d)/, (n) => '<a href="tel:' + n.replace(/\s/g, '') + '">' + n + '</a>') : '')}
-        ${info(d.dayContact ? 'Customer' : 'On-site contact', contact)}
-        ${info('Working it', (d.assigned || []).map((x) => esc(x.name) + (x.phone ? ' <small><a href="tel:' + esc(x.phone.replace(/[^\d+]/g, '')) + '">' + esc(x.phone) + '</a></small>' : '')).join('<br>'))}
-        ${info('Crew', d.crew.map((x) => esc(x.name) + (x.note ? ' <small>' + esc(x.note) + '</small>' : '')).join('<br>'))}
+        ${info('Event day contact', d.dayContact ? telLinks(d.dayContact) : '')}
+        ${info(d.dayContact ? 'Customer' : 'On-site contact', contactHtml(d))}
+        ${info('Working it', assignedHtml(d))}
+        ${info('Crew', crewHtml(d))}
       </dl>
       ${d.customerNotes ? `<p class="pl-notes"><b>From the customer:</b> ${esc(d.customerNotes)}</p>` : ''}
       ${d.notes ? `<p class="pl-notes"><b>Notes:</b> ${esc(d.notes)}</p>` : ''}
-      ${GEAR_VIEW ? '<p class="pl-notes">This is the gear SoundzGood Whitsundays is supplying. Anything missing? Call Max on 0422 393 022.</p>' : d.paidInFull ? '' : '<p class="pl-flag">Balance still owing on this job &mdash; check with Max before handing over gear.</p>'}
+      ${jobFlagHtml(d)}
     </section>
 
     ${d.brief ? briefHtml(d.brief, c.total) : ''}
@@ -284,10 +362,10 @@ function render() {
 
     <section class="pl-list"${d.brief && !c.total ? ' hidden' : ''}>
       <p class="pl-count">${c.total} line${c.total === 1 ? '' : 's'} &middot; ${c.pieces} piece${c.pieces === 1 ? '' : 's'} in total</p>
-      ${d.rows ? quoteStyleList() : oldList()}
+      ${d.rows ? quoteStyleList(d.rows) : oldList(d.items || [])}
     </section>
 
-    ${GEAR_VIEW ? '' : extrasHtml(row)}
+    ${GEAR_VIEW ? '' : extrasHtml()}
 
     <footer class="pl-foot">
       <button type="button" class="pl-btn" id="pl-print">Print</button>
@@ -298,22 +376,20 @@ function render() {
     document.getElementById('pl-print').addEventListener('click', () => window.print());
 }
 
-/*  THE BRIEF for a DJ gig: set times, the booking notes and the venue's
-    notes, address and contact. No SoundzGood gear on the job = the venue
+/* ---- BRIEF ---- */
+/*  For a DJ gig: set times, the booking notes and the venue's notes,
+    address and contact. No SoundzGood gear on the job = the venue
     supplies it, and that's said plainly.                              */
 function briefHtml(b, gearLines) {
-    const tel = (t) => esc(t).replace(/(\+?\d[\d\s]{7,}\d)/, (n) => '<a href="tel:' + n.replace(/\s/g, '') + '">' + n + '</a>');
-    const set = b.start || b.finish ? esc([niceTime(b.start), niceTime(b.finish)].filter(Boolean).join(' – ')) : '';
-    const row = (k, v) => (v ? '<div><dt>' + esc(k) + '</dt><dd>' + v + '</dd></div>' : '');
     return `
     <section class="pl-job pl-brief">
       <h2>The brief</h2>
       <dl class="pl-info">
-        ${row('DJ', esc(b.dj))}
-        ${row('Set times', set)}
-        ${row('Venue address', esc(b.address))}
-        ${row('Venue contact', b.venueContact ? tel(b.venueContact) : '')}
-        ${row('Your deck', esc(b.deck))}
+        ${info('DJ', esc(b.dj))}
+        ${info('Set times', timeRange(b.start, b.finish))}
+        ${info('Venue address', esc(b.address))}
+        ${info('Venue contact', b.venueContact ? telLinks(b.venueContact) : '')}
+        ${info('Your deck', esc(b.deck))}
       </dl>
       ${b.notes ? '<p class="pl-notes"><b>About the gig:</b>\n' + esc(b.notes) + '</p>' : ''}
       ${b.venueNotes ? '<p class="pl-notes"><b>Venue notes:</b>\n' + esc(b.venueNotes) + '</p>' : ''}
@@ -321,53 +397,75 @@ function briefHtml(b, gearLines) {
     </section>`;
 }
 
-/*  EXTRA GEAR: gear going out that isn't on the quote - the crew add it
-    here so it gets ticked out and back. No prices, and it never changes
-    the quote. Pick from our inventory or type anything.               */
-/* the × to take an extra off, at the end of its row (after the ticks) */
+/* ---- EXTRA GEAR ---- */
+/*  Gear going out that isn't on the quote - the crew add it here so it
+    gets ticked out and back. No prices, and it never changes the quote.
+    Pick from our inventory or type anything.                          */
+function extrasHtml() {
+    const list = data.extras || [];
+    return `
+    <section class="pl-list pl-extras">
+      <h3 class="pl-extras-h">Extra gear <small>not on the quote &middot; added by the crew</small></h3>
+      ${list.map((x) => withDel(rowHtml(x, false, false), x)).join('')}
+      <div class="pl-addx">
+        <div class="pl-x-search">
+          <input type="text" id="pl-x-name" maxlength="120" placeholder="Add gear - start typing, e.g. lead" autocomplete="off">
+          <div class="pl-x-results" id="pl-x-results" hidden></div>
+        </div>
+        <input type="number" id="pl-x-qty" min="1" max="99" value="1" aria-label="How many">
+        <button type="button" class="pl-btn" id="pl-x-add">Add</button>
+      </div>
+    </section>`;
+}
+
+/* the × to take an extra off, at the end of its row (inside the ticks, after them) */
 function withDel(html, x) {
     const btn =
         '<button type="button" class="pl-xdel" data-x-del="' + esc(x.key) + '" aria-label="Remove ' + esc(x.name) + '">&times;</button>';
     const at = html.lastIndexOf('</span>');
-    return at < 0 ? html + btn : html.slice(0, at) + btn + html.slice(at); // inside the ticks, at the end
+    return at < 0 ? html + btn : html.slice(0, at) + btn + html.slice(at);
 }
-/*  Inventory matches as you type (every word has to match), best first. */
+
+/* inventory matches as you type (every word has to match), best first */
 function invMatches(q) {
     const words = String(q || '')
         .toLowerCase()
         .split(/\s+/)
         .filter(Boolean);
     if (!words.length) return [];
+    const startsRank = (it) => (it.name.toLowerCase().startsWith(words[0]) ? 0 : 1);
     return (data.inventory || [])
         .filter((it) => words.every((w) => it.name.toLowerCase().includes(w)))
-        .sort(
-            (a, b) =>
-                (a.name.toLowerCase().startsWith(words[0]) ? 0 : 1) - (b.name.toLowerCase().startsWith(words[0]) ? 0 : 1) ||
-                a.name.length - b.name.length
-        )
+        .sort((a, b) => startsRank(a) - startsRank(b) || a.name.length - b.name.length)
         .slice(0, 6);
 }
+
+function matchHtml(it) {
+    const pic = it.photo ? '<img src="' + esc(it.photo) + '" alt="">' : '<span class="pl-x-noimg"></span>';
+    return (
+        '<button type="button" class="pl-x-res" data-pick-id="' +
+        esc(it.id) +
+        '" data-pick-name="' +
+        esc(it.name) +
+        '">' +
+        pic +
+        '<span>' +
+        esc(it.name) +
+        '</span></button>'
+    );
+}
+
+// typing in the box: show the matches
 document.addEventListener('input', (e) => {
     if (e.target.id !== 'pl-x-name') return;
     e.target.removeAttribute('data-item');
     const box = document.getElementById('pl-x-results');
     const m = invMatches(e.target.value);
     box.hidden = !m.length;
-    box.innerHTML = m
-        .map(
-            (it) =>
-                '<button type="button" class="pl-x-res" data-pick-id="' +
-                esc(it.id) +
-                '" data-pick-name="' +
-                esc(it.name) +
-                '">' +
-                (it.photo ? '<img src="' + esc(it.photo) + '" alt="">' : '<span class="pl-x-noimg"></span>') +
-                '<span>' +
-                esc(it.name) +
-                '</span></button>'
-        )
-        .join('');
+    box.innerHTML = m.map(matchHtml).join('');
 });
+
+// picking a match fills the box; clicking anywhere else closes the matches
 document.addEventListener('click', (e) => {
     const pick = e.target.closest('[data-pick-id]');
     const box = document.getElementById('pl-x-results');
@@ -381,22 +479,8 @@ document.addEventListener('click', (e) => {
     }
     if (box && !e.target.closest('.pl-x-search')) box.hidden = true;
 });
-function extrasHtml(row) {
-    const list = data.extras || [];
-    return `
-    <section class="pl-list pl-extras">
-      <h3 class="pl-extras-h">Extra gear <small>not on the quote &middot; added by the crew</small></h3>
-      ${list.map((x) => withDel(row(x, false, false), x)).join('')}
-      <div class="pl-addx">
-        <div class="pl-x-search">
-          <input type="text" id="pl-x-name" maxlength="120" placeholder="Add gear - start typing, e.g. lead" autocomplete="off">
-          <div class="pl-x-results" id="pl-x-results" hidden></div>
-        </div>
-        <input type="number" id="pl-x-qty" min="1" max="99" value="1" aria-label="How many">
-        <button type="button" class="pl-btn" id="pl-x-add">Add</button>
-      </div>
-    </section>`;
-}
+
+// Add and × buttons: save, then reload the list
 document.addEventListener('click', async (e) => {
     const add = e.target.closest('#pl-x-add');
     const del = e.target.closest('[data-x-del]');
@@ -422,9 +506,10 @@ document.addEventListener('click', async (e) => {
             });
             if (msg) msg.textContent = 'Added ' + name;
         } else {
-            const x = (data.extras || []).find((r) => r.key === del.getAttribute('data-x-del'));
+            const key = del.getAttribute('data-x-del');
+            const x = (data.extras || []).find((r) => r.key === key);
             if (!window.confirm('Remove ' + ((x && x.name) || 'this') + ' from the extra gear?')) return;
-            await callable.removeExtra({ token: token(), key: del.getAttribute('data-x-del') });
+            await callable.removeExtra({ token: token(), key });
         }
     } catch (err) {
         if (msg) msg.textContent = (err && err.message) || 'Could not save that - check your signal and try again.';
@@ -434,8 +519,9 @@ document.addEventListener('click', async (e) => {
     await refresh();
 });
 
-/*  ITEM PHOTOS: tap an item (or its little picture) to see its photo
-    from Inventory, big. Tap anywhere to close.                         */
+/* ---- PHOTOS ---- */
+/*  Tap an item (or its little picture) to see its photo from Inventory,
+    big. Tap anywhere, or press Escape, to close.                      */
 document.addEventListener('click', (e) => {
     const b = e.target.closest('[data-photo]');
     const open = document.querySelector('.pl-lightbox');
@@ -454,13 +540,14 @@ document.addEventListener('click', (e) => {
         '<small>Tap anywhere to close</small></figcaption></figure>';
     document.body.appendChild(box);
 });
+
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        const o = document.querySelector('.pl-lightbox');
-        if (o) o.remove();
-    }
+    if (e.key !== 'Escape') return;
+    const open = document.querySelector('.pl-lightbox');
+    if (open) open.remove();
 });
 
+/* ---- SAVING ---- */
 /* a tick: show it straight away, save it, undo it if the save fails */
 async function onTick(e) {
     const inp = e.target.closest('input[data-key]');
@@ -490,6 +577,7 @@ async function onTick(e) {
     }
 }
 
+/* reload the list, keeping the scroll position; skipped while saving or hidden */
 async function refresh() {
     if (busy || document.hidden) return;
     try {
@@ -504,6 +592,7 @@ async function refresh() {
     }
 }
 
+/* ---- START ---- */
 function fail(text) {
     document.getElementById('pl-root').innerHTML = `<p class="pl-loading">${esc(text)}</p>`;
 }

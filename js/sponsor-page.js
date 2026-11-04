@@ -6,20 +6,33 @@
    "Download the sponsor pack" prints the same page as A4 (sponsor.css).
    A personal link from the sponsorship email (&t=) fills in their details.
    Data: getSponsorInfo / sponsorInterest (functions/index.js).
+
+   CONTENTS
+     SETUP      Firebase, the link, money and poster helpers
+     LEVELS     one card per sponsor level
+     PAGE       the whole page, with the "prepared for" banner on a personal link
+     FORM       print button, level buttons, the "I'm interested" form
+     START      load the event
    ========================================================================== */
 
-import { SPONSOR_LEVELS, EVENT_COSTS } from './sponsor-data.js?v=837';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured, eventId as defaultEventId } from './firebase-config.js?v=837';
+import { SPONSOR_LEVELS, EVENT_COSTS } from './sponsor-data.js?v=838';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured, eventId as defaultEventId } from './firebase-config.js?v=838';
 
+/* ---- SETUP ---- */
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
-const esc = (v) =>
-    String(v == null ? '' : v)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+const esc = window.SG.esc;
+
+const params = new URLSearchParams(location.search);
+const EVENT_ID = params.get('e') || defaultEventId;
+const TOKEN = params.get('t') || '';
+let fns = null;
+
+const call = (name, payload) => fns.httpsCallable(fns.fns, name)(payload);
+
+/* cents -> "$1,500" */
 const dollars = (c) => '$' + Math.round((c || 0) / 100).toLocaleString('en-AU');
 
+/* the event's own image, else a known poster for it */
 const EVENT_POSTERS = [
     {
         match: (ev) => /eatz/i.test(ev.name || '') && String(ev.dateISO || '').startsWith('2026-10-31'),
@@ -28,20 +41,53 @@ const EVENT_POSTERS = [
 ];
 const posterOf = (ev) => ev.image || (EVENT_POSTERS.find((p) => p.match(ev)) || {}).url || '';
 
-const params = new URLSearchParams(location.search);
-const EVENT_ID = params.get('e') || defaultEventId;
-const TOKEN = params.get('t') || '';
-let fns = null;
-
+/* ---- LEVELS ---- */
+/* a level with no price is "name your support"; a priced one with no spots left is taken */
 function levelCard(l, left) {
     const named = !l.priceCents;
     const out = !named && left <= 0;
     return `<div class="spn-level${out ? ' is-out' : ''}${l.key === 'platinum' ? ' is-top' : ''}">
     <p class="spn-level-name">${esc(l.name)}</p>
     <p class="spn-level-price">${named ? 'Name your support' : dollars(l.priceCents) + '<small> + GST</small>'}</p>
-    <p class="spn-level-left">${named ? 'Cash or in-kind' : out ? 'Taken - thank you!' : left + ' of ' + l.spots + ' available'}</p>
+    <p class="spn-level-left">${levelLeft(l, left, named, out)}</p>
     <ul>${l.perks.map((p) => '<li>' + esc(p) + '</li>').join('')}</ul>
     ${out ? '' : `<button type="button" class="spn-btn" data-level="${l.key}">I&rsquo;m interested</button>`}
+  </div>`;
+}
+
+function levelLeft(l, left, named, out) {
+    if (named) return 'Cash or in-kind';
+    if (out) return 'Taken - thank you!';
+    return left + ' of ' + l.spots + ' available';
+}
+
+function levelOption(l) {
+    return `<option value="${l.key}">${esc(l.name)}${l.priceCents ? ' - ' + dollars(l.priceCents) + ' + GST' : ''}</option>`;
+}
+
+/* ---- PAGE ---- */
+/* "Bowen Fish & Chips" -> "BF" */
+function initials(name) {
+    return String(name)
+        .replace(/[^\w ]/g, '')
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((w) => w[0].toUpperCase())
+        .join('');
+}
+
+/* the "A proposal prepared for" banner: event poster x their logo (or initials) */
+function preparedForHtml(p, poster) {
+    if (!p.business) return '';
+    // only logo links from our Firebase storage or www.google.com
+    const logoOk = /^https:\/\/(firebasestorage\.googleapis\.com|www\.google\.com)\/[^\s'"()<>]*$/.test(String(p.logo || ''));
+    const logo = logoOk
+        ? `<img class="spn-for-logo" src="${esc(p.logo)}" alt="${esc(p.business)}">`
+        : `<span class="spn-for-initials">${esc(initials(p.business))}</span>`;
+    return `<div class="spn-for">
+    <div class="spn-for-lockup">${poster ? `<img class="spn-for-ev" src="${esc(poster)}" alt="">` : ''}<span class="spn-for-x">&times;</span>${logo}</div>
+    <div><p class="spn-eyebrow">A proposal prepared for</p><h2>${esc(p.business)}</h2>${p.contactName ? `<p>For ${esc(p.contactName)}</p>` : ''}</div>
   </div>`;
 }
 
@@ -52,29 +98,10 @@ function render(d) {
     const p = d.prospect || {};
     const poster = posterOf(ev);
     document.title = 'Become a Sponsor - ' + (ev.name || 'Eatz & Beatz') + ' | SoundzGood';
+    // a personal link can carry their brand colour
     if (p.color && /^#[0-9a-f]{6}$/i.test(p.color)) document.documentElement.style.setProperty('--spn-brand', p.color);
-    const logoOk = /^https:\/\/(firebasestorage\.googleapis\.com|www\.google\.com)\/[^\s'"()<>]*$/.test(String(p.logo || ''));
     document.getElementById('spn-root').innerHTML = `
-  ${
-      p.business
-          ? `<div class="spn-for">
-    <div class="spn-for-lockup">${poster ? `<img class="spn-for-ev" src="${esc(poster)}" alt="">` : ''}<span class="spn-for-x">&times;</span>${
-        logoOk
-            ? `<img class="spn-for-logo" src="${esc(p.logo)}" alt="${esc(p.business)}">`
-            : `<span class="spn-for-initials">${esc(
-                  String(p.business)
-                      .replace(/[^\w ]/g, '')
-                      .split(/\s+/)
-                      .filter(Boolean)
-                      .slice(0, 2)
-                      .map((w) => w[0].toUpperCase())
-                      .join('')
-              )}</span>`
-    }</div>
-    <div><p class="spn-eyebrow">A proposal prepared for</p><h2>${esc(p.business)}</h2>${p.contactName ? `<p>For ${esc(p.contactName)}</p>` : ''}</div>
-  </div>`
-          : ''
-  }
+  ${preparedForHtml(p, poster)}
   <section class="spn-hero">
     ${poster ? `<img class="spn-poster" src="${esc(poster)}" alt="${esc(ev.name)} poster">` : ''}
     <div class="spn-hero-text">
@@ -118,7 +145,7 @@ function render(d) {
       <label>Your name<input name="contactName" required value="${esc(p.contactName || '')}" autocomplete="name"></label>
       <label>Email<input name="email" type="email" required value="${esc(p.email || '')}" autocomplete="email"></label>
       <label>Phone<input name="phone" type="tel" value="${esc(p.phone || '')}" autocomplete="tel"></label>
-      <label class="spn-wide">Level<select name="level">${SPONSOR_LEVELS.map((l) => `<option value="${l.key}">${esc(l.name)}${l.priceCents ? ' - ' + dollars(l.priceCents) + ' + GST' : ''}</option>`).join('')}</select></label>
+      <label class="spn-wide">Level<select name="level">${SPONSOR_LEVELS.map(levelOption).join('')}</select></label>
       <label class="spn-wide">Anything you&rsquo;d like to tell us? <span>(optional)</span><textarea name="message" rows="3"></textarea></label>
       <button type="submit" class="spn-btn">Send &mdash; I&rsquo;m interested</button>
       <p class="spn-msg" id="spn-msg" hidden></p>
@@ -132,8 +159,11 @@ function render(d) {
     wire();
 }
 
+/* ---- FORM ---- */
 function wire() {
     document.querySelectorAll('[data-print]').forEach((b) => b.addEventListener('click', () => window.print()));
+
+    // "I'm interested" on a level card picks that level and jumps to the form
     document.querySelectorAll('[data-level]').forEach((b) =>
         b.addEventListener('click', () => {
             const sel = document.querySelector('#spn-form-el select[name="level"]');
@@ -141,38 +171,38 @@ function wire() {
             document.getElementById('spn-form').scrollIntoView({ behavior: 'smooth' });
         })
     );
+
     const form = document.getElementById('spn-form-el');
-    if (form)
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const msg = document.getElementById('spn-msg');
-            const btn = form.querySelector('button[type="submit"]');
-            const v = (n) => (form.querySelector('[name="' + n + '"]') || {}).value || '';
-            btn.disabled = true;
-            try {
-                await fns.httpsCallable(
-                    fns.fns,
-                    'sponsorInterest'
-                )({
-                    eventId: EVENT_ID,
-                    token: TOKEN,
-                    business: v('business'),
-                    contactName: v('contactName'),
-                    email: v('email'),
-                    phone: v('phone'),
-                    level: v('level'),
-                    message: v('message')
-                });
-                form.innerHTML =
-                    '<div class="spn-done"><b>Thank you!</b><p>We&rsquo;ve got your details and will be in touch soon to talk it through.</p></div>';
-            } catch (err) {
-                btn.disabled = false;
-                msg.hidden = false;
-                msg.textContent = (err && err.message) || 'Could not send. Please try again, or email info@soundzgood.com.au.';
-            }
-        });
+    if (form) form.addEventListener('submit', (e) => onSubmit(e, form));
 }
 
+async function onSubmit(e, form) {
+    e.preventDefault();
+    const msg = document.getElementById('spn-msg');
+    const btn = form.querySelector('button[type="submit"]');
+    const v = (n) => (form.querySelector('[name="' + n + '"]') || {}).value || '';
+    btn.disabled = true;
+    try {
+        await call('sponsorInterest', {
+            eventId: EVENT_ID,
+            token: TOKEN,
+            business: v('business'),
+            contactName: v('contactName'),
+            email: v('email'),
+            phone: v('phone'),
+            level: v('level'),
+            message: v('message')
+        });
+        form.innerHTML =
+            '<div class="spn-done"><b>Thank you!</b><p>We&rsquo;ve got your details and will be in touch soon to talk it through.</p></div>';
+    } catch (err) {
+        btn.disabled = false;
+        msg.hidden = false;
+        msg.textContent = (err && err.message) || 'Could not send. Please try again, or email info@soundzgood.com.au.';
+    }
+}
+
+/* ---- START ---- */
 async function load() {
     const root = document.getElementById('spn-root');
     if (!isFirebaseConfigured) {
@@ -185,7 +215,7 @@ async function load() {
             import(`${SDK}/firebase-functions.js`)
         ]);
         fns = { fns: functions.getFunctions(initializeApp(firebaseConfig), functionsRegion), httpsCallable: functions.httpsCallable };
-        const res = await fns.httpsCallable(fns.fns, 'getSponsorInfo')({ eventId: EVENT_ID, token: TOKEN });
+        const res = await call('getSponsorInfo', { eventId: EVENT_ID, token: TOKEN });
         render(res.data);
     } catch (err) {
         root.innerHTML = '<p class="spn-loading">Sorry - this page could not load. Please email info@soundzgood.com.au.</p>';

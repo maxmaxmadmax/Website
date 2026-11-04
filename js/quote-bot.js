@@ -1,35 +1,27 @@
 /* ==========================================================================
-   ESTIMATE BOT  -  the quote assistant on the services page
+   ESTIMATE BOT - the price-guide chat on the services, hire and event-story
+   pages. A button-led chat: event type, size, venue, days, times, town,
+   access, extras and support, then contact details and a price range.
 
-   A guided, button-led chat: the visitor taps their way through event type,
-   location, size, what they need and how long, sees a live price RANGE, and
-   leaves their details. Nothing is typed except the contact fields.
+   The browser never prices anything: submitBotQuote (server) matches a
+   package, prices it and saves the estimate for review. Without Firebase
+   the bot still runs but says it cannot price and points at /contact.
 
-   HOW THE PRICE STAYS HONEST
-   The browser never prices anything. submitBotQuote (server) matches a
-   package from Inventory, prices it from the real gear, labour and delivery,
-   and saves an estimate for Max to review.
-
-   NO FIREBASE, NO PROBLEM
-   If the config placeholders are unfilled or the SDK fails to load, the bot
-   still runs but cannot send - it says so and points at the contact page.
+   STATE       the answers and the fixed option lists
+   FIREBASE    loads the SDK and the package list for the event-type menu
+   CHAT        bot and visitor bubbles, chip and text-entry docks
+   FLOW        one function per question, in order
+   SUBMIT      checks the contact form and sends it
+   MOUNT       the floating launcher and the chat panel
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=837';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=838';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
+const esc = window.SG.esc;
 
-/*  All matching and pricing runs in the submitBotQuote function, so the
-    page ships only the little UI below.  */
-const dollars = (cents) => '$' + Math.round((cents || 0) / 100).toLocaleString('en-AU');
-
-/*  The date input hands back yyyy-mm-dd; store it as a friendly string so it
-    reads well on the quote (e.g. "Sat 4 Apr 2027"). */
-function formatEventDate(s) {
-    if (!s) return '';
-    const d = new Date(s + 'T00:00:00');
-    if (isNaN(d)) return s;
-    return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+function dollars(cents) {
+    return '$' + Math.round((cents || 0) / 100).toLocaleString('en-AU');
 }
 
 function rangeLabel(est) {
@@ -38,9 +30,17 @@ function rangeLabel(est) {
     return lo === hi ? lo : lo + ' – ' + hi;
 }
 
-/* -------------------------------------------------------------------------
-   State
-   ------------------------------------------------------------------------- */
+/* yyyy-mm-dd from the date input -> "Sat 4 Apr 2027" for the quote */
+function formatEventDate(s) {
+    if (!s) return '';
+    const d = new Date(s + 'T00:00:00');
+    if (isNaN(d)) return s;
+    return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+/* ==========================================================================
+   STATE
+   ========================================================================== */
 const answers = {
     eventType: '',
     guests: 0,
@@ -59,11 +59,12 @@ const answers = {
     eventDate: '',
     message: ''
 };
-let packages = []; // {name, eventType, maxGuests} summaries, for the event-type menu
+let packages = []; // {name, eventType, maxGuests}, for the event-type menu
 let fb = null; // { submit } once the SDK is up
 let stream; // the messages column
 let dock; // where the current choices sit
 
+const FALLBACK_EVENT_TYPES = ['Wedding', 'Party', 'Corporate', 'Live Music'];
 const GUEST_OPTS = [
     { label: 'Up to 50', guests: 50 },
     { label: '50–100', guests: 100 },
@@ -86,8 +87,6 @@ const DAY_OPTS = [
     { label: '2 days', days: 2 },
     { label: '3 days', days: 3 }
 ];
-const START_OPTS = ['Morning', 'Midday', 'Afternoon', 'Evening'];
-const FINISH_OPTS = ['Afternoon', 'Early evening', 'Late (10pm–12am)', 'After midnight'];
 const TOWN_OPTS = ['Bowen (local)', 'Proserpine', 'Airlie Beach', 'Cannonvale', 'Collinsville', 'Ayr', 'Home Hill', 'Mackay', 'Townsville'];
 const ACCESS_OPTS = [
     { label: 'Easy — ground level, close to parking', value: 'easy' },
@@ -108,9 +107,9 @@ const SUPPORT_OPTS = [
     { label: 'I’ll collect from Bowen', value: 'pickup' }
 ];
 
-/* -------------------------------------------------------------------------
-   Firebase - loaded lazily, only what the bot needs
-   ------------------------------------------------------------------------- */
+/* ==========================================================================
+   FIREBASE
+   ========================================================================== */
 async function initFirebase() {
     if (!isFirebaseConfigured) return;
     try {
@@ -124,44 +123,48 @@ async function initFirebase() {
         const db = firestore.getFirestore(app);
         const fns = functions.getFunctions(app, functionsRegion);
 
-        fb = {
-            submit: functions.httpsCallable(fns, 'submitBotQuote')
-        };
+        fb = { submit: functions.httpsCallable(fns, 'submitBotQuote') };
 
-        // Just the package summaries for the event-type menu - the gear, prices
-        // and matching all live server-side, so nothing bulky ships to the page.
-        try {
-            const snap = await firestore.getDocs(firestore.collection(db, 'packages'));
-            const rows = [];
-            snap.forEach((d) => {
-                const x = d.data() || {};
-                if (x.active !== false && !x.migratedTo)
-                    rows.push({ name: x.name || '', eventType: x.eventType || '', maxGuests: x.maxGuests || 0 });
-            });
-            // packages built in Inventory and ticked "offer on the instant estimate"
-            try {
-                const inv = await firestore.getDocs(
-                    firestore.query(firestore.collection(db, 'inventory'), firestore.where('botOffer', '==', true))
-                );
-                inv.forEach((d) => {
-                    const x = d.data() || {};
-                    if (x.isSystem && x.bundleType === 'package')
-                        rows.push({ name: x.name || '', eventType: x.eventType || '', maxGuests: x.maxGuests || 0 });
-                });
-            } catch (e) {
-                /* old packages still work */
-            }
-            if (rows.length) packages = rows;
-        } catch (err) {
-            /* keep the fallback event-type list */
-        }
+        await loadPackages(firestore, db);
     } catch (err) {
         fb = null; // the bot still runs, it just cannot send
     }
 }
 
-/*  The event types offered, taken from the active packages (falls back to a
-    sensible default before any package is read). */
+/* Only the package summaries - the gear and prices stay server-side */
+async function loadPackages(firestore, db) {
+    try {
+        const snap = await firestore.getDocs(firestore.collection(db, 'packages'));
+        const rows = [];
+        snap.forEach((d) => {
+            const x = d.data() || {};
+            if (x.active !== false && !x.migratedTo) rows.push(packageSummary(x));
+        });
+
+        // Inventory packages ticked "offer on the instant estimate"
+        try {
+            const inv = await firestore.getDocs(
+                firestore.query(firestore.collection(db, 'inventory'), firestore.where('botOffer', '==', true))
+            );
+            inv.forEach((d) => {
+                const x = d.data() || {};
+                if (x.isSystem && x.bundleType === 'package') rows.push(packageSummary(x));
+            });
+        } catch (e) {
+            /* the packages collection is enough */
+        }
+
+        if (rows.length) packages = rows;
+    } catch (err) {
+        /* keep the fallback event types */
+    }
+}
+
+function packageSummary(x) {
+    return { name: x.name || '', eventType: x.eventType || '', maxGuests: x.maxGuests || 0 };
+}
+
+/* The event types from the packages, without repeats */
 function eventTypeOptions() {
     const seen = new Set();
     const out = [];
@@ -172,27 +175,17 @@ function eventTypeOptions() {
             out.push(t);
         }
     });
-    return out.length ? out : ['Wedding', 'Party', 'Corporate', 'Live Music'];
+    return out.length ? out : FALLBACK_EVENT_TYPES;
 }
 
-/* -------------------------------------------------------------------------
-   Rendering helpers
-   ------------------------------------------------------------------------- */
-function esc(value) {
-    return String(value == null ? '' : value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
-
+/* ==========================================================================
+   CHAT
+   ========================================================================== */
 function scrollDown() {
     if (stream) stream.scrollTop = stream.scrollHeight;
 }
 
-/*  A message from the bot. Appears after a short "typing" beat so it feels
-    like a reply and not a page dump.                                      */
+/* A bot message, after a short "typing" beat */
 function botSay(html, delay = 350) {
     return new Promise((resolve) => {
         const typing = document.createElement('div');
@@ -211,7 +204,7 @@ function botSay(html, delay = 350) {
     });
 }
 
-/*  A choice the visitor made, shown on the right as their reply.          */
+/* The visitor's choice, shown on the right */
 function meSay(text) {
     const row = document.createElement('div');
     row.className = 'sgq-row sgq-row-me';
@@ -220,11 +213,18 @@ function meSay(text) {
     scrollDown();
 }
 
-/*  Clear the choice dock and fill it with buttons. `onPick` gets the option.
-    Returns nothing - each button wires itself.                            */
-function offerChips(options, onPick) {
+function clearDock() {
     dock.innerHTML = '';
-    dock.className = 'sgq-dock';
+}
+
+function resetDock(className) {
+    dock.innerHTML = '';
+    dock.className = className;
+}
+
+/* One button per option; onPick gets the option tapped */
+function offerChips(options, onPick) {
+    resetDock('sgq-dock');
     options.forEach((opt) => {
         const b = document.createElement('button');
         b.type = 'button';
@@ -236,13 +236,29 @@ function offerChips(options, onPick) {
     scrollDown();
 }
 
-function clearDock() {
-    dock.innerHTML = '';
+/* One input plus an OK button; Enter also sends. onSubmit gets the input. */
+function offerTextEntry(inputHtml, onSubmit) {
+    resetDock('sgq-dock');
+    const row = document.createElement('div');
+    row.className = 'sgq-numrow';
+    row.innerHTML = inputHtml + '<button type="button" class="sgq-chip sgq-chip-go">OK →</button>';
+    const input = row.querySelector('input');
+    const send = () => onSubmit(input);
+    row.querySelector('button').addEventListener('click', send);
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            send();
+        }
+    });
+    dock.appendChild(row);
+    input.focus();
+    scrollDown();
 }
 
-/* -------------------------------------------------------------------------
-   The flow
-   ------------------------------------------------------------------------- */
+/* ==========================================================================
+   FLOW
+   ========================================================================== */
 async function start() {
     await botSay(
         'Hi! I’m the SoundzGood estimate assistant. A few quick questions and ' +
@@ -267,14 +283,12 @@ async function askEventType() {
 async function askGuests() {
     clearDock();
     await botSay('Roughly how many guests?');
-    offerChips(
-        GUEST_OPTS.map((g) => ({ label: g.label, value: g.guests })),
-        (o) => {
-            answers.guests = o.value;
-            meSay(o.label);
-            askVenue();
-        }
-    );
+    const opts = GUEST_OPTS.map((g) => ({ label: g.label, value: g.guests }));
+    offerChips(opts, (o) => {
+        answers.guests = o.value;
+        meSay(o.label);
+        askVenue();
+    });
 }
 
 async function askVenue() {
@@ -284,9 +298,11 @@ async function askVenue() {
         answers.indoor = o.value;
         meSay(o.label);
         if (o.value === 'indoor') {
-            answers.power = 'yes';
+            answers.power = 'yes'; // indoors always has power, so skip the question
             askDays();
-        } else askPower();
+        } else {
+            askPower();
+        }
     });
 }
 
@@ -303,84 +319,49 @@ async function askPower() {
 async function askDays() {
     clearDock();
     await botSay('How many days do you need us for?');
-    const opts = DAY_OPTS.map((d) => ({ label: d.label, value: d.days })).concat([{ label: 'Other', value: 'other' }]);
+    const opts = DAY_OPTS.map((d) => ({ label: d.label, value: d.days }));
+    opts.push({ label: 'Other', value: 'other' });
     offerChips(opts, (o) => {
+        meSay(o.label);
         if (o.value === 'other') {
-            meSay('Other');
             askDaysOther();
             return;
         }
         answers.days = o.value;
-        meSay(o.label);
         askTimes();
     });
 }
 
-/*  "Other" days: a quick number entry for longer / custom hires. */
+/* "Other" days: a number box for longer hires */
 function askDaysOther() {
-    dock.innerHTML = '';
-    dock.className = 'sgq-dock';
-    const row = document.createElement('div');
-    row.className = 'sgq-numrow';
-    row.innerHTML =
-        '<input type="number" min="1" step="1" class="sgq-numin" placeholder="How many days?">' +
-        '<button type="button" class="sgq-chip sgq-chip-go">OK →</button>';
-    const input = row.querySelector('input');
-    const submit = () => {
+    offerTextEntry('<input type="number" min="1" step="1" class="sgq-numin" placeholder="How many days?">', (input) => {
         const n = Math.max(1, Math.round(Number(input.value) || 1));
         answers.days = n;
         meSay(n + ' day' + (n === 1 ? '' : 's'));
         askTimes();
-    };
-    row.querySelector('button').addEventListener('click', submit);
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            submit();
-        }
     });
-    dock.appendChild(row);
-    input.focus();
-    scrollDown();
 }
 
 async function askTimes() {
     clearDock();
     await botSay('What are the event times? Let us know what time doors open.');
-    dock.className = 'sgq-dock';
-    dock.innerHTML = '';
-    const row = document.createElement('div');
-    row.className = 'sgq-numrow';
-    row.innerHTML =
-        '<input type="text" class="sgq-numin" placeholder="e.g. Doors 6pm, finish midnight">' +
-        '<button type="button" class="sgq-chip sgq-chip-go">OK →</button>';
-    const input = row.querySelector('input');
-    const submit = () => {
+    offerTextEntry('<input type="text" class="sgq-numin" placeholder="e.g. Doors 6pm, finish midnight">', (input) => {
         const v = input.value.trim();
         answers.startTime = v;
         answers.finishTime = '';
         meSay(v || 'Not sure yet');
         askTown();
-    };
-    row.querySelector('button').addEventListener('click', submit);
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            submit();
-        }
     });
-    dock.appendChild(row);
-    input.focus();
-    scrollDown();
 }
 
 async function askTown() {
     clearDock();
     await botSay('Where’s the venue?');
-    const opts = TOWN_OPTS.map((t) => ({ label: t, value: t })).concat([{ label: 'Somewhere else', value: '' }]);
+    const opts = TOWN_OPTS.map((t) => ({ label: t, value: t }));
+    opts.push({ label: 'Somewhere else', value: '' });
     offerChips(opts, (o) => {
         answers.town = o.value;
-        meSay(o.label || 'Somewhere else');
+        meSay(o.label);
         askAccess();
     });
 }
@@ -395,7 +376,7 @@ async function askAccess() {
     });
 }
 
-/*  Extras is the one multi-select step: tap any that apply, then Done. */
+/* The one multi-select step: tap any that apply, then Done */
 async function askExtras() {
     clearDock();
     await botSay('Anything to add on top of the standard kit? Tap any that apply.');
@@ -403,8 +384,7 @@ async function askExtras() {
 }
 
 function renderExtraChips() {
-    dock.innerHTML = '';
-    dock.className = 'sgq-dock sgq-dock-multi';
+    resetDock('sgq-dock sgq-dock-multi');
     EXTRA_OPTS.forEach((x) => {
         const on = answers.extras.includes(x.key);
         const b = document.createElement('button');
@@ -420,6 +400,7 @@ function renderExtraChips() {
         });
         dock.appendChild(b);
     });
+
     const done = document.createElement('button');
     done.type = 'button';
     done.className = 'sgq-chip sgq-chip-go';
@@ -443,8 +424,7 @@ async function askSupport() {
     });
 }
 
-/*  The contact form sits inside the scrolling chat, not the fixed dock,
-    so it never covers the estimate. */
+/* The form goes in the scrolling chat, not the dock, so it never covers the estimate */
 async function askContact() {
     clearDock();
     await botSay('Great — last step. Pop your details in and I’ll work out your estimate.');
@@ -494,6 +474,9 @@ async function askContact() {
     scrollDown();
 }
 
+/* ==========================================================================
+   SUBMIT
+   ========================================================================== */
 async function submit(form) {
     const err = form.querySelector('.sgq-err');
     const btn = form.querySelector('.sgq-submit');
@@ -502,9 +485,7 @@ async function submit(form) {
     const name = val('name');
     const email = val('email');
     if (!name) return showErr(err, 'Please add your name.');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return showErr(err, 'That email doesn’t look right.');
-    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showErr(err, 'That email doesn’t look right.');
 
     answers.name = name;
     answers.email = email;
@@ -519,8 +500,7 @@ async function submit(form) {
 
     const card = form.closest('.sgq-formwrap');
 
-    /*  No Firebase (preview or a load failure): the bot cannot price, so it
-      says so plainly and hands the visitor the contact page.              */
+    // No Firebase (preview or a load failure): cannot price, so point at the contact page
     if (!fb) {
         if (card) card.remove();
         meSay(`${name} — ${email}`);
@@ -539,7 +519,7 @@ async function submit(form) {
         if (d.lowCents != null) {
             await botSay(`Thanks ${esc(name)}! For a ${esc(answers.eventType)} like yours, we’re looking at roughly:`);
             await botSay(
-                `<span class="sgq-range">${rangeLabel({ lowCents: d.lowCents, highCents: d.highCents })}</span>
+                `<span class="sgq-range">${rangeLabel(d)}</span>
         <span class="sgq-range-note">Estimate only — our team will confirm the details and email your formal quote${d.packageName ? ` (based on our ${esc(d.packageName)})` : ''}. Nothing’s booked until a deposit is paid.</span>`,
                 250
             );
@@ -560,13 +540,12 @@ function showErr(el, msg) {
     scrollDown();
 }
 
-/* -------------------------------------------------------------------------
-   Mount  -  a floating launcher, bottom right, that opens the chat panel
-   ------------------------------------------------------------------------- */
-let started = false; // the chat flow only kicks off the first time it opens
+/* ==========================================================================
+   MOUNT - on <body> so nothing on the page can clip it; the panel stays
+   hidden until the launcher (or any [data-open-quote-bot]) is tapped
+   ========================================================================== */
+let started = false; // the chat only starts the first time it opens
 
-/*  Build the launcher bubble and the panel, appended to <body> so nothing on
-    the page can clip them. The panel is hidden until the bubble is tapped. */
 function mount() {
     const wrap = document.createElement('div');
     wrap.className = 'sgq-fab-wrap';
@@ -606,24 +585,22 @@ function mount() {
     const fab = wrap.querySelector('#sgq-fab');
     const close = wrap.querySelector('#sgq-close');
 
-    const setOpen = (open) => {
+    function setOpen(open) {
         panel.hidden = !open;
         wrap.classList.toggle('is-open', open);
         fab.setAttribute('aria-expanded', open ? 'true' : 'false');
-        // Start the conversation the first time it is opened, so the greeting
-        // types out live rather than sitting there answered.
+        // Start on first open, so the greeting types out live
         if (open && !started) {
             started = true;
             start();
         }
         if (open) scrollDown();
-    };
+    }
 
     fab.addEventListener('click', () => setOpen(panel.hidden));
     close.addEventListener('click', () => setOpen(false));
 
-    // Any in-page button can open it - delegated on the document, so buttons
-    // rendered later (e.g. the hire catalogue's Enquire buttons) work too.
+    // Delegated, so buttons drawn later (the hire catalogue's Enquire) work too
     document.addEventListener('click', (e) => {
         if (e.target.closest('[data-open-quote-bot]')) {
             e.preventDefault();
@@ -637,11 +614,9 @@ function mount() {
 }
 
 function init() {
-    if (document.getElementById('sgq-fab')) return; // guard against double-mount
+    if (document.getElementById('sgq-fab')) return; // already mounted
     mount();
-    // Prices and inventory load quietly in the background, ready well before
-    // the visitor opens the bubble and reaches a priced choice.
-    initFirebase();
+    initFirebase(); // loads quietly, well before a visitor reaches the form
 }
 
 if (document.readyState === 'loading') {

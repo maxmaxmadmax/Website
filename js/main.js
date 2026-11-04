@@ -296,7 +296,7 @@ function initEnquiryPrefill() {
    The CSS does the movement: the script sets --page on the track and reads
    --per (cards across) from the view, so breakpoints need no JS changes.
 
-   window.SGSlider(track, arrows, options) -> { paint, page }
+   window.SGSlider(track, arrows, options) -> { paint, goTo }
      track    the .slide-track
      arrows   the [data-slide="-1|1"] buttons
      options.count()           how many cards (default: the track's children)

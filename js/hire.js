@@ -1,36 +1,33 @@
 /* ==========================================================================
-   EQUIPMENT HIRE  -  the public catalogue
+   EQUIPMENT HIRE - the public catalogue. Reads the same `inventory`
+   collection the admin manages and the estimate bot prices from. A category
+   filter narrows the grid; each card's Enquire button opens the estimate bot
+   (js/quote-bot.js, via data-open-quote-bot). Read only. Without Firebase
+   the page shows a friendly empty state.
 
-   Reads the same `inventory` collection the admin manages and the estimate
-   bot prices from, so the gear and prices shown here are always in step. A
-   category filter narrows the grid; every card's "Enquire" button opens the
-   estimate bot (js/quote-bot.js, via data-open-quote-bot).
-
-   Public read only - nothing here writes. If Firebase is not configured the
-   page shows a friendly empty state rather than throwing.
+   HELPERS    money, category colours
+   LOAD       reads the inventory once
+   RENDER     category pills, the grid, the empty state
    ========================================================================== */
 
-import { firebaseConfig, isFirebaseConfigured } from './firebase-config.js?v=837';
+import { firebaseConfig, isFirebaseConfigured } from './firebase-config.js?v=838';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
+const esc = window.SG.esc;
 
 let items = [];
 let activeCat = 'all';
 
-const money = (cents) => '$' + Math.round((cents || 0) / 100).toLocaleString('en-AU');
-
-function esc(value) {
-    return String(value == null ? '' : value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+/* ==========================================================================
+   HELPERS
+   ========================================================================== */
+function money(cents) {
+    return '$' + Math.round((cents || 0) / 100).toLocaleString('en-AU');
 }
 
-/*  Category pills get a stable colour from the name - same idea as the admin
-    table, so "Audio" reads the same everywhere.                           */
+/* A stable colour per category name, like the admin table */
 const CAT_CLASSES = ['hc1', 'hc2', 'hc3', 'hc4', 'hc5', 'hc6'];
+
 function catClass(cat) {
     if (!cat) return 'hc0';
     let h = 0;
@@ -38,6 +35,9 @@ function catClass(cat) {
     return CAT_CLASSES[h % CAT_CLASSES.length];
 }
 
+/* ==========================================================================
+   LOAD
+   ========================================================================== */
 async function load() {
     if (!isFirebaseConfigured) return renderEmpty('The catalogue is not connected yet.');
 
@@ -62,13 +62,16 @@ async function load() {
     }
 }
 
+/* ==========================================================================
+   RENDER
+   ========================================================================== */
 function categories() {
-    const set = [];
+    const list = [];
     items.forEach((it) => {
         const c = (it.category || '').trim();
-        if (c && !set.includes(c)) set.push(c);
+        if (c && !list.includes(c)) list.push(c);
     });
-    return set.sort((a, b) => a.localeCompare(b));
+    return list.sort((a, b) => a.localeCompare(b));
 }
 
 function renderFilters() {
@@ -113,9 +116,10 @@ function renderGrid() {
 
 function card(it) {
     const cls = catClass(it.category);
+    const initial = (it.category || it.name || '?').trim().charAt(0).toUpperCase();
     const media = it.photoUrl
         ? `<img src="${esc(it.photoUrl)}" alt="${esc(it.name)}" loading="lazy">`
-        : `<span class="hire-noimg ${cls}" aria-hidden="true">${esc((it.category || it.name || '?').trim().charAt(0).toUpperCase())}</span>`;
+        : `<span class="hire-noimg ${cls}" aria-hidden="true">${esc(initial)}</span>`;
 
     const price = it.priceCents ? `<p class="hire-price">${money(it.priceCents)} <span>/ day</span></p>` : '';
 
@@ -136,7 +140,7 @@ function card(it) {
 
 function renderEmpty(msg) {
     const host = document.getElementById('hire-grid');
-    if (host) host.innerHTML = `<p class="hire-empty">${esc(msg)} ` + '<a href="/contact">Contact us</a> and we’ll help.</p>';
+    if (host) host.innerHTML = `<p class="hire-empty">${esc(msg)} <a href="/contact">Contact us</a> and we’ll help.</p>`;
 }
 
 if (document.readyState === 'loading') {

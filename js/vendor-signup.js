@@ -1,38 +1,54 @@
 /* --------------------------------------------------------------------------
    Vendor signup
 
-   One page, five sections, and you scroll: select event -> vendor type ->
-   your details -> choose site -> review and pay. (The error lines are still
-   called "step" errors in the markup, hence setStepError.)
+   One page, scrolled top to bottom: select event -> event info -> vendor
+   type -> your details -> choose site -> review and pay.
 
-   1. Nothing here decides anything that matters. Holding a site, checking a
-      food category is not full, and marking a booking paid all happen in
-      Cloud Functions. This file asks; the server answers.
+   Nothing here decides anything that matters. Holding a site, checking a
+   food category is not full, and marking a booking paid all happen in
+   Cloud Functions. This file asks; the server answers.
 
-   2. If js/firebase-config.js still has its placeholder values the page runs
-      in PREVIEW mode - every screen works so the page can be reviewed, but
-      nothing saves and payment is blocked.
+   If js/firebase-config.js still has its placeholder values the page runs
+   in PREVIEW mode: every screen works so the page can be reviewed, but
+   nothing saves and payment is blocked.
+
+   Contents
+     1.  Settings
+     2.  State
+     3.  Prices
+     4.  Boot and Firebase
+     5.  Firestore REST (public reads without the SDK)
+     6.  Events
+     7.  Sold out and waitlist
+     8.  Auth
+     9.  Live event data
+     10. Map and site holds
+     11. Booking document
+     12. Documents
+     13. Sections, rail and scrolling
+     14. Rendering
+     15. Form wiring and validation
+     16. Checkout and confirmation
+     17. Helpers
    -------------------------------------------------------------------------- */
 
-import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=837';
+import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=838';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=837';
-import { termBodyHtml } from './terms-data.js?v=837';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION } from './vendor-terms-data.js?v=837';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=838';
+import { termBodyHtml } from './terms-data.js?v=838';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION } from './vendor-terms-data.js?v=838';
+
+/* ---------------------------------------------------------------- 1. Settings */
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
-/*  SPEED: ask for the event list the moment this script runs, before the
-    page has even finished building. loadEventsFast() picks it up. */
+/* Ask for the event list the moment this script runs; loadEventsFast() picks it up. */
 const EARLY_EVENTS =
     isFirebaseConfigured && !new URLSearchParams(location.search).has('preview') ? restList('events').catch(() => null) : null;
 
-/* Prices shown before the server confirms them. The server prices from the
-   event document; these are only for display.
-
-   A food van is a flat fee for its 6 m x 3 m site. A market stall is sold
-   by the 3 m x 3 m bay - between one and eight of them joined up,
-   in whatever shape they make. */
+/* Display prices only - the server prices from the event document.
+   A food van is a flat fee for its 6 m x 3 m site; a market stall is
+   sold by the 3 m x 3 m bay, one to eight of them joined up. */
 const PRICE = {
     foodCents: 10000,
     marketPerBayCents: 5000
@@ -40,53 +56,149 @@ const PRICE = {
 
 const MAX_BAYS = 8;
 
-/*  HOW MANY BAYS - worked out from the sites, never stored (a hold only
-    lasts ten minutes, so a stored count goes stale). The server prices
-    from booking.siteIds.length. The floor of 1 is the indicative price
-    before any bay is picked. */
-function bayCount() {
-    if (state.vendorType !== 'market') return 1;
+/* Keep in step with feeBreakdown() in functions/index.js, which decides the real charge. */
+const FEE_PERCENT = 0.04;
+const FEE_FIXED_CENTS = 99;
+const GST_RATE = 0.1;
 
-    /*  Held first, then picked-but-not-held, so this agrees with the price
-      under the map. Zero when neither: no bays, nothing owed. */
-    return state.siteIds.length || pendingSites().length;
-}
+const DESC_MAX = 300;
 
-/*  Used on the confirmation screen and in the side column. */
 const VENDOR_LABEL = {
     food: 'Food Vendor',
     market: 'Market Stall'
 };
 
-/*  Is there a site yet - picked on the plan, or held?  */
+const TYPE_WORD = { food: 'Food vans', market: 'Market stalls' };
+
+/* The statuses a vendor may see (draft and archived are ours). Closed and
+   coming-soon events still show; only canApply events take applications. */
+const EVENT_STATUS = {
+    open: { label: 'Accepting Vendors', tone: 'is-open', canApply: true },
+    limited: { label: 'Limited Spots', tone: 'is-limited', canApply: true },
+    closed: { label: 'Applications Closed', tone: 'is-closed', canApply: false },
+    soon: { label: 'Coming Soon', tone: 'is-soon', canApply: false }
+};
+
+/* Posters for events with no card image set in admin. */
+const EVENT_POSTERS = [
+    {
+        match: (ev) => /eatz/i.test(ev.name || '') && String(ev.dateISO || '').startsWith('2026-10-31'),
+        url: '/images/events/eatz-beatz-halloween-2026-v3.webp'
+    }
+];
+
+/* The page sections, in order. What you sell comes before the map, so a
+   full category stops somebody before they get attached to a site. */
+const SECTIONS = [
+    { id: 'event', label: 'Select Event' },
+    { id: 'info', label: 'Event Info' },
+    { id: 'type', label: 'Vendor Type' },
+    { id: 'details', label: 'Your Details' },
+    { id: 'site', label: 'Choose Site' },
+    { id: 'review', label: 'Review & Pay' }
+];
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/* Wait after the last tap on the map before holding, so a three-bay shape is one call. */
+const HOLD_SETTLE_MS = 650;
+
+/* Share links:
+     /vendor-signup?event=<id>             opens with that event picked
+     /vendor-signup?event=<id>&waitlist=1  ...and jumps to the waitlist form */
+const LINK = new URLSearchParams(location.search);
+
+/* Line-item icons on the review card. Inline so they take the text colour. */
+const ITEM_ICONS = {
+    food: `<svg viewBox="0 0 120 80" aria-hidden="true">
+           <path d="M14 54V30h48l14 12v12z"/>
+           <path d="M62 30h10l14 12H62z"/>
+           <circle cx="34" cy="58" r="6"/>
+           <circle cx="76" cy="58" r="6"/>
+           <path d="M10 26h60l-4-8H14z"/>
+         </svg>`,
+    market: `<svg viewBox="0 0 120 80" aria-hidden="true">
+             <path d="M18 34h84v30H18z"/>
+             <path d="M14 18h92l10 16H4z"/>
+             <path d="M34 44h24v20H34z"/>
+           </svg>`
+};
+
+/* ------------------------------------------------------------------- 2. State */
+
+const state = {
+    eventId: null,
+    event: null, // the chosen event document
+    events: [],
+    eventsLoaded: false, // the list has come back (it may still be empty)
+    preview: !isFirebaseConfigured,
+
+    vendorType: null,
+    business: {},
+    categoryId: null,
+    categoryName: null,
+    setup: {},
+    documents: [],
+    siteId: null,
+    siteIds: [],
+    siteLabel: null,
+
+    bookingId: null,
+    holdExpiresAt: null,
+    user: null,
+    confirmed: null
+};
+
+let fb = null; // Firebase handles once loaded
+let fbReadyResolve;
+const fbReady = new Promise((r) => {
+    fbReadyResolve = r;
+}); // resolves when fb is set
+
+let map = null;
+let categories = [];
+let sitesUnsub = null;
+let categoriesUnsub = null;
+
+let holdCountdown = null; // the 1 s "held for m:ss" ticker
+let holdSettleTimer = null; // the wait after the last tap
+let holdInFlight = false;
+let holdAgain = false; // the selection changed while a hold call was running
+
+let signingIn = false;
+let railOn = 'event'; // the section on screen, for the rail
+let linkEventDone = false;
+let linkWaitlistDone = false;
+
+/* ------------------------------------------------------------------ 3. Prices */
+
+/* Bays in a market stall: held first, then picked. Worked out, never stored,
+   because a hold only lasts ten minutes. */
+function bayCount() {
+    if (state.vendorType !== 'market') return 1;
+    return state.siteIds.length || pendingSites().length;
+}
+
+/* A site picked on the plan, or held. */
 function hasSite() {
     return Boolean(state.siteId) || pendingSites().length > 0;
 }
 
+/* Nothing is owed until a site is chosen, even for a flat-fee food van. */
 function priceCents() {
-    /*  Nothing is owed until a site is chosen - no price is shown before
-      then, even for a flat-fee food van. */
     if (!hasSite()) return 0;
-
     if (state.vendorType === 'food') return PRICE.foodCents;
-    if (state.vendorType === 'market') {
-        return PRICE.marketPerBayCents * bayCount();
-    }
+    if (state.vendorType === 'market') return PRICE.marketPerBayCents * bayCount();
     return 0;
 }
 
-/*  WHAT THEY ACTUALLY PAY - shown before they commit to anything.
-    KEEP IN STEP with feeBreakdown() in functions/index.js, which decides
-    the real charge; this only decides what the page says.
+/* The price of what is picked on the plan right now (one bay before any is picked). */
+function pendingPriceCents() {
+    const n = pendingSites().length || 1;
+    return state.vendorType === 'food' ? PRICE.foodCents : PRICE.marketPerBayCents * n;
+}
 
-        fee   = 4% of the site price, plus 99c
-        GST   = 10% of (site + fee)
-
-    A free site stays free - no fee, no GST. */
-const FEE_PERCENT = 0.04;
-const FEE_FIXED_CENTS = 99;
-const GST_RATE = 0.1;
-
+/* fee = 4% of the site price + 99c; GST = 10% of (site + fee). A free site stays free. */
 function feeBreakdown(siteCents) {
     const site = Math.max(0, Math.round(Number(siteCents) || 0));
     if (site === 0) {
@@ -104,87 +216,24 @@ function feeBreakdown(siteCents) {
     };
 }
 
-/*  Whole dollars where it is round, cents where it is not - $100 rather
-    than $100.00, but $115.49 rather than $115. Right for a headline price
-    on a card. */
+/* Headline price: $100 when round, $115.49 when not. */
 function money(cents) {
     if (cents === 0) return 'Free';
     return cents % 100 === 0 ? `$${(cents / 100).toFixed(0)}` : `$${(cents / 100).toFixed(2)}`;
 }
 
-/*  Always two decimals, for the cost breakdown, so the figures line up
-    under each other. */
+/* Always two decimals, so breakdown figures line up. */
 function exact(cents) {
     return `$${((cents || 0) / 100).toFixed(2)}`;
 }
 
-/*  The same, but a dash when there is nothing owed yet. "$0.00" next to
-    the word Total reads as free rather than as not-yet-priced.       */
+/* A dash when nothing is owed yet - "$0.00" would read as free. */
 function exactOrDash(cents) {
     return cents ? exact(cents) : '&mdash;';
 }
 
-/*  What a vendor is allowed to see, and what each status says to them.
-    draft and archived are deliberately absent - those are ours.
+/* ------------------------------------------------------- 4. Boot and Firebase */
 
-    canApply decides whether the button works. An event with applications
-    closed or not yet open still shows, because "we run this every year and
-    it opens in March" is worth knowing.                                */
-const EVENT_STATUS = {
-    open: { label: 'Accepting Vendors', tone: 'is-open', canApply: true },
-    limited: { label: 'Limited Spots', tone: 'is-limited', canApply: true },
-    closed: { label: 'Applications Closed', tone: 'is-closed', canApply: false },
-    soon: { label: 'Coming Soon', tone: 'is-soon', canApply: false }
-};
-
-/* -------------------------------------------------------------------------
-   State
-   ------------------------------------------------------------------------- */
-const state = {
-    /*  Set when a vendor picks an event. Everything that reads an event
-      reads this. */
-    eventId: null,
-    events: [],
-
-    /*  Whether the events have come back yet - not the same as whether there
-      are any, so "no events" is not shown while the list is still loading. */
-    eventsLoaded: false,
-    preview: !isFirebaseConfigured,
-
-    vendorType: null,
-    business: {},
-    categoryId: null,
-    categoryName: null,
-    setup: {},
-    documents: [],
-    siteId: null,
-    siteIds: [],
-    siteLabel: null,
-
-    bookingId: null,
-    holdExpiresAt: null,
-    user: null,
-    confirmed: null,
-
-    /* the event document, so the review step can name the event they are
-     buying into rather than repeating it in the markup */
-    event: null
-};
-
-let fb = null; // firebase handles once loaded
-let fbReadyResolve;
-const fbReady = new Promise((r) => {
-    fbReadyResolve = r;
-}); // resolves when fb is set
-let map = null;
-let categories = [];
-let sitesUnsub = null;
-let categoriesUnsub = null;
-let holdTimer = null;
-
-/* -------------------------------------------------------------------------
-   Boot
-   ------------------------------------------------------------------------- */
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
@@ -196,8 +245,7 @@ async function init() {
         return;
     }
 
-    /*  SPEED: the map and the event cards do not wait for Firebase. The
-      events come straight from Firestore's web address (they are public). */
+    // The map and event cards do not wait for Firebase.
     buildMap();
     loadEventsFast();
 
@@ -215,412 +263,14 @@ async function init() {
 
     await handleReturnFromStripe();
 
-    /*  Sites and categories belong to an event, so nothing is subscribed
-      until one is chosen.                                             */
     if (state.eventId) subscribeToEvent();
 
     render();
     if (!state.eventsLoaded) loadEvents(); // the quick way failed - use Firebase
 }
 
-/*  Everything that hangs off the chosen event, in one place so that
-    choosing a different one can tear the old one down first.          */
-function subscribeToEvent() {
-    if (!fb || !state.eventId) return;
-    subscribeSites();
-    subscribeCategories();
-}
-
-/* -------------------------------------------------------------------------
-   Choosing an event
-
-   The event is the first thing asked; the sites, categories, prices and
-   booking all belong to whichever one was picked.
-   ------------------------------------------------------------------------- */
-
-/*  Every event a vendor is allowed to see, soonest first. Read once rather
-    than watched: the list changes when we add an event, not while somebody
-    is part way through a form.                                          */
-/*  Firestore's REST answer -> plain values. Timestamps keep toMillis() so
-    siteFree() works the same as with the SDK. */
-function restValue(v) {
-    if (!v) return null;
-    if ('stringValue' in v) return v.stringValue;
-    if ('integerValue' in v) return Number(v.integerValue);
-    if ('doubleValue' in v) return v.doubleValue;
-    if ('booleanValue' in v) return v.booleanValue;
-    if ('nullValue' in v) return null;
-    if ('timestampValue' in v) {
-        const ms = Date.parse(v.timestampValue);
-        return { toMillis: () => ms, toDate: () => new Date(ms) };
-    }
-    if ('mapValue' in v) return restFields((v.mapValue && v.mapValue.fields) || {});
-    if ('arrayValue' in v) return ((v.arrayValue && v.arrayValue.values) || []).map(restValue);
-    return null;
-}
-function restFields(fields) {
-    const out = {};
-    Object.keys(fields).forEach((k) => {
-        out[k] = restValue(fields[k]);
-    });
-    return out;
-}
-async function restList(path) {
-    const url =
-        'https://firestore.googleapis.com/v1/projects/' +
-        firebaseConfig.projectId +
-        '/databases/(default)/documents/' +
-        path +
-        '?pageSize=500&key=' +
-        firebaseConfig.apiKey;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('REST ' + res.status);
-    const data = await res.json();
-    return (data.documents || []).map((d) => ({ id: d.name.split('/').pop(), ...restFields(d.fields || {}) }));
-}
-
-/*  The event cards without waiting for Firebase. If this fails for any
-    reason, init() falls back to loadEvents() below. */
-async function loadEventsFast() {
-    if (state.preview) return;
-    try {
-        const rows = (await EARLY_EVENTS) || (await restList('events'));
-        if (state.eventsLoaded) return;
-        state.events = rows
-            .filter((ev) => EVENT_STATUS[ev.status])
-            .sort((a, b) => String(a.dateISO || '').localeCompare(String(b.dateISO || '')));
-        state.eventsLoaded = true;
-        renderEvents();
-        followEventLink();
-
-        // sold-out stickers, the same quick way
-        Promise.all(
-            state.events
-                .filter((ev) => ev.status === 'open')
-                .map(async (ev) => {
-                    try {
-                        ev.soldOut = soldOutOf(await restList('events/' + ev.id + '/sites'));
-                    } catch (e) {
-                        /* no sticker */
-                    }
-                })
-        ).then(() => renderEvents());
-    } catch (err) {
-        console.warn('quick event list failed - using Firebase', err && err.message);
-    }
-}
-
-async function loadEvents() {
-    if (state.preview) {
-        state.events = [
-            {
-                id: defaultEventId,
-                name: 'Eatz & Beatz',
-                subtitle: 'Halloween Edition',
-                dateLabel: 'Saturday 31 October 2026',
-                dateISO: '2026-10-31',
-                venue: 'Bowen Sports Complex',
-                location: 'Bowen, Queensland',
-                status: 'open'
-            }
-        ];
-        state.eventsLoaded = true;
-        renderEvents();
-        followEventLink();
-        return;
-    }
-
-    try {
-        const { collection, getDocs } = fb.f;
-        const snap = await getDocs(collection(fb.db, 'events'));
-
-        const rows = [];
-        snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
-
-        /*  Only the statuses a vendor should see. draft and archived are ours. */
-        state.events = rows
-            .filter((ev) => EVENT_STATUS[ev.status])
-            .sort((a, b) => String(a.dateISO || '').localeCompare(String(b.dateISO || '')));
-
-        state.eventsLoaded = true;
-        renderEvents();
-        followEventLink();
-
-        // which vendor types have sold out, per open event (for the poster sticker)
-        Promise.all(
-            state.events
-                .filter((ev) => ev.status === 'open')
-                .map(async (ev) => {
-                    try {
-                        const ss = await getDocs(collection(fb.db, 'events', ev.id, 'sites'));
-                        const sites = [];
-                        ss.forEach((d) => sites.push(d.data()));
-                        ev.soldOut = soldOutOf(sites);
-                    } catch (e) {
-                        /* no sticker */
-                    }
-                })
-        ).then(() => renderEvents());
-    } catch (err) {
-        console.error('events', err);
-
-        /*  Loaded, in the sense that waiting longer will not help. Leaving it
-        false would spin the skeleton for ever.                        */
-        state.eventsLoaded = true;
-
-        const host = document.getElementById('vs-events');
-        if (host) {
-            host.innerHTML =
-                '<p class="vs-events-loading">Could not load the events just now. ' +
-                'Please refresh, or email info@soundzgood.com.au.</p>';
-        }
-    }
-}
-
-/*  Three cards' worth of grey while we wait, so the cards land where the
-    grey was and the page does not jump. */
-function eventSkeleton() {
-    return (
-        '<article class="vs-event is-loading" aria-hidden="true">' +
-        '<div class="vs-event-art"></div>' +
-        '<div class="vs-event-body">' +
-        '<span class="vs-skel vs-skel-title"></span>' +
-        '<span class="vs-skel vs-skel-line"></span>' +
-        '<span class="vs-skel vs-skel-line is-short"></span>' +
-        '<span class="vs-skel vs-skel-btn"></span>' +
-        '</div>' +
-        '</article>'
-    ).repeat(3);
-}
-
-/*  SHARE LINKS:
-      /vendor-signup?event=<id>             opens with that event picked
-      /vendor-signup?event=<id>&waitlist=1  ...and jumps to the waitlist form
-    so Max can text vendors who keep asking if they can come.             */
-const LINK = new URLSearchParams(location.search);
-let linkEventDone = false;
-let linkWaitlistDone = false;
-function followEventLink() {
-    if (linkEventDone || !LINK.get('event')) return;
-    const ev = (state.events || []).find((e) => e.id === LINK.get('event'));
-    if (!ev) return;
-    linkEventDone = true;
-    if (state.eventId !== ev.id) chooseEvent(ev.id);
-}
-
-function renderEvents() {
-    const host = document.getElementById('vs-events');
-    if (!host) return;
-
-    if (!state.eventsLoaded) {
-        host.innerHTML = '<p class="sr-only" role="status">Loading events&hellip;</p>' + eventSkeleton();
-        return;
-    }
-
-    if (!state.events.length) {
-        host.innerHTML = '<p class="vs-events-loading">No events are taking vendor applications ' + 'at the moment. Check back soon.</p>';
-        return;
-    }
-
-    host.innerHTML = state.events.map(eventCard).join('');
-
-    host.querySelectorAll('[data-share-event]').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-            const url = 'https://www.soundzgood.com.au/vendor-signup';
-            const text =
-                'Market stalls are open for Eatz & Beatz Halloween Edition - Sat 31 Oct, Bowen Sports Complex. Food vans have sold out!';
-            try {
-                if (navigator.share) {
-                    await navigator.share({ title: 'Eatz & Beatz - market stalls', text, url });
-                    return;
-                }
-                await navigator.clipboard.writeText(url);
-                btn.textContent = 'Link copied!';
-                setTimeout(() => {
-                    btn.textContent = 'Share with other vendors';
-                }, 2500);
-            } catch (e) {
-                if (e && e.name !== 'AbortError') window.prompt('Copy this link to share:', url);
-            }
-        });
-    });
-    host.querySelectorAll('[data-choose-event]').forEach((btn) => {
-        btn.addEventListener('click', () => chooseEvent(btn.getAttribute('data-choose-event')));
-    });
-}
-
-/*  THE PICTURE FOR AN EVENT
-
-    Its own if it has one, and a marker for the CSS to dress if it does
-    not. A data attribute rather than a class so it cannot collide with
-    the state classes these same elements carry.                    */
-/*  EVENT POSTERS: an event with no card image set in
-    admin shows its poster instead, full height, when we have one here.  */
-const EVENT_POSTERS = [
-    {
-        match: (ev) => /eatz/i.test(ev.name || '') && String(ev.dateISO || '').startsWith('2026-10-31'),
-        url: '/images/events/eatz-beatz-halloween-2026-v3.webp'
-    }
-];
-
-/*  SOLD OUT, AUTOMATICALLY. A vendor type is sold out
-    when the event has sites of that type and none is free - every one is
-    booked or closed. A site on a hold that has run out counts as free
-    again. Holds still running don't make it "sold out" (they may let go). */
-function siteFree(site) {
-    const st = site.status || 'available';
-    if (st === 'available') return true;
-    if (st === 'held') {
-        const e = site.holdExpiresAt;
-        const ms = e && typeof e.toMillis === 'function' ? e.toMillis() : typeof e === 'number' ? e : null;
-        return ms !== null && ms <= Date.now();
-    }
-    return false;
-}
-function soldOutOf(sites) {
-    const out = {};
-    ['food', 'market'].forEach((t) => {
-        const of = (sites || []).filter((x) => x.type === t);
-        out[t] = of.length > 0 && !of.some((x) => siteFree(x) || (x.status === 'held' && !x.waitlistHold));
-    });
-    return out;
-}
-const TYPE_WORD = { food: 'Food vans', market: 'Market stalls' };
-function eventSticker(ev) {
-    const so = (ev && ev.soldOut) || {};
-    if (so.food && so.market) return '<span class="vs-event-sticker">Sold out</span>';
-    const t = so.food ? 'food' : so.market ? 'market' : '';
-    return t ? '<span class="vs-event-sticker">' + TYPE_WORD[t] + '<br>sold out</span>' : '';
-}
-function eventArt(ev) {
-    if (ev && ev.image)
-        return ' style="--vs-ev-art:url(\'' + escapeHtml(/^(https?:|\/|data:)/.test(ev.image) ? ev.image : '/' + ev.image) + '\')"';
-    const p = ev && EVENT_POSTERS.find((x) => x.match(ev));
-    if (p) return ' data-poster style="--vs-ev-art:url(\'' + escapeHtml(p.url) + '\')"';
-    return ' data-noart';
-}
-
-function eventCard(ev) {
-    const st = EVENT_STATUS[ev.status] || EVENT_STATUS.soon;
-    const chosen = state.eventId === ev.id;
-
-    /*  The photo is a variable on the card, the way every other card on this
-      site does it, so an event without one shows its gradient rather than
-      a broken picture.                                                  */
-    const art = eventArt(ev);
-
-    const action = st.canApply
-        ? '<button type="button" class="btn btn-ticket vs-event-go" ' +
-          'data-choose-event="' +
-          escapeHtml(ev.id) +
-          '">' +
-          (chosen ? 'Selected' : 'Apply for this event') +
-          ' <span aria-hidden="true">&#8594;</span></button>'
-        : '<span class="btn vs-event-go is-disabled" aria-disabled="true">' +
-          (ev.status === 'soon' ? 'Applications open soon' : 'Applications closed') +
-          '</span>';
-
-    return (
-        '' +
-        '<article class="vs-event' +
-        (chosen ? ' is-chosen' : '') +
-        (st.canApply ? '' : ' is-shut') +
-        '"' +
-        art +
-        '>' +
-        '<div class="vs-event-art" aria-hidden="true">' +
-        '<span class="vs-event-status ' +
-        st.tone +
-        '">' +
-        escapeHtml(st.label) +
-        '</span>' +
-        eventSticker(ev) +
-        '</div>' +
-        '<div class="vs-event-body">' +
-        '<h3>' +
-        escapeHtml(ev.name || ev.id) +
-        '</h3>' +
-        '<p class="vs-event-when">' +
-        escapeHtml(ev.dateLabel || ev.dateISO || 'Date to be announced') +
-        '</p>' +
-        '<p class="vs-event-where">' +
-        escapeHtml(ev.venue || ev.location || '') +
-        '</p>' +
-        (ev.subtitle ? '<p class="vs-event-blurb">' + escapeHtml(ev.subtitle) + '</p>' : '') +
-        action +
-        // SHARE - phone share sheet, or copy the link on a computer
-        (st.canApply
-            ? '<button type="button" class="btn vs-event-share" data-share-event="' +
-              escapeHtml(ev.id) +
-              '">Share with other vendors</button>'
-            : '') +
-        '</div>' +
-        '</article>'
-    );
-}
-
-/*  Picking one. Changing event after starting throws the part-filled
-    application away - a site and a food category belong to their event. */
-function chooseEvent(id) {
-    const ev = state.events.find((e) => e.id === id);
-    if (!ev) return;
-
-    if (state.eventId && state.eventId !== id) {
-        const ok = window.confirm(
-            'Start a new application for ' + (ev.name || id) + '?\n\n' + 'Anything filled in for the other event will be cleared.'
-        );
-        if (!ok) return;
-        resetForNewEvent();
-    }
-
-    state.eventId = id;
-    state.event = ev;
-
-    if (!state.preview) subscribeToEvent();
-
-    render();
-
-    /*  Straight to the step immediately after the cards, whatever it is
-      called (do not name a section here - they move). */
-    goToSection(SECTIONS[1].id);
-}
-
-/*  Back to a blank application with the vendor still signed in. Used when
-    somebody swaps events, and when they apply for a second one after
-    finishing the first.                                                 */
-function resetForNewEvent() {
-    if (sitesUnsub) {
-        sitesUnsub();
-        sitesUnsub = null;
-    }
-    if (categoriesUnsub) {
-        categoriesUnsub();
-        categoriesUnsub = null;
-    }
-
-    state.bookingId = null;
-    state.vendorType = null;
-    state.categoryId = null;
-    state.siteIds = [];
-    state.siteId = null;
-    state.confirmed = false;
-    categories = [];
-}
-
-/*  The event this application is for, above every step after the first.
-    Hidden on the choosing step itself, where it would be telling somebody
-    what they are already looking at.                                    */
-function startPreview() {
-    categories = previewCategories();
-    if (!map) buildMap();
-    const layout = previewLayout();
-    map.setLayout(layout);
-    render();
-}
-
-/*  SPEED: only what the first screen needs (app, auth, firestore) is
-    loaded up front. Storage and functions follow in the background - every
-    place that uses them calls `await fbMore()` first. */
+/* App, auth and Firestore up front; storage and functions follow in the
+   background - anything that uses them awaits fbMore() first. */
 async function loadFirebase() {
     const [{ initializeApp }, auth, firestore] = await Promise.all([
         import(`${SDK}/firebase-app.js`),
@@ -648,15 +298,25 @@ async function loadFirebase() {
     return handles;
 }
 
-/*  Wait for storage + functions (and Firebase itself, if a vendor is quick). */
+/* Wait for storage + functions (and Firebase itself, if a vendor is quick). */
 async function fbMore() {
     if (!fb) await fbReady;
     await fb.more;
 }
 
-/* -------------------------------------------------------------------------
-   Preview banner
-   ------------------------------------------------------------------------- */
+/* Call a Cloud Function by name. */
+async function callFunction(name, data) {
+    await fbMore();
+    return fb.fn.httpsCallable(fb.fns, name)(data);
+}
+
+function startPreview() {
+    categories = previewCategories();
+    if (!map) buildMap();
+    map.setLayout(previewLayout());
+    render();
+}
+
 function showPreviewBanner(message) {
     const el = document.getElementById('vs-preview-banner');
     if (!el) return;
@@ -667,18 +327,546 @@ function showPreviewBanner(message) {
     el.hidden = false;
 }
 
-/* -------------------------------------------------------------------------
-   Auth
-   ------------------------------------------------------------------------- */
-/*  NOBODY MAKES AN ACCOUNT TO PAY.
+/* ------------------------------------------ 5. Firestore REST (public reads) */
 
-    The browser signs in anonymously and silently on load. Firebase still
-    issues a real uid, so Cloud Function auth, Firestore rules and site
-    holds all still work per person.
+/* Firestore's REST answer -> plain values. Timestamps keep toMillis() so they
+   behave like SDK timestamps. */
+function restValue(v) {
+    if (!v) return null;
+    if ('stringValue' in v) return v.stringValue;
+    if ('integerValue' in v) return Number(v.integerValue);
+    if ('doubleValue' in v) return v.doubleValue;
+    if ('booleanValue' in v) return v.booleanValue;
+    if ('nullValue' in v) return null;
+    if ('timestampValue' in v) {
+        const ms = Date.parse(v.timestampValue);
+        return { toMillis: () => ms, toDate: () => new Date(ms) };
+    }
+    if ('mapValue' in v) return restFields((v.mapValue && v.mapValue.fields) || {});
+    if ('arrayValue' in v) return ((v.arrayValue && v.arrayValue.values) || []).map(restValue);
+    return null;
+}
 
-    The catch: the identity lives in this browser. That is why the
-    reference number is shown at the end, the email is on the record, and
-    staff can always find bookings in /admin. */
+function restFields(fields) {
+    const out = {};
+    Object.keys(fields).forEach((k) => {
+        out[k] = restValue(fields[k]);
+    });
+    return out;
+}
+
+async function restList(path) {
+    const url =
+        'https://firestore.googleapis.com/v1/projects/' +
+        firebaseConfig.projectId +
+        '/databases/(default)/documents/' +
+        path +
+        '?pageSize=500&key=' +
+        firebaseConfig.apiKey;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('REST ' + res.status);
+    const data = await res.json();
+    return (data.documents || []).map((d) => ({ id: d.name.split('/').pop(), ...restFields(d.fields || {}) }));
+}
+
+/* ------------------------------------------------------------------ 6. Events */
+
+/* The event cards without waiting for Firebase. If this fails, init() falls back to loadEvents(). */
+async function loadEventsFast() {
+    if (state.preview) return;
+    try {
+        const rows = (await EARLY_EVENTS) || (await restList('events'));
+        if (state.eventsLoaded) return;
+        showEvents(rows);
+        loadSoldOutStickers((id) => restList('events/' + id + '/sites'));
+    } catch (err) {
+        console.warn('quick event list failed - using Firebase', err && err.message);
+    }
+}
+
+/* Read once rather than watched: the list changes when we add an event,
+   not while somebody is part way through a form. */
+async function loadEvents() {
+    if (state.preview) {
+        showEvents([
+            {
+                id: defaultEventId,
+                name: 'Eatz & Beatz',
+                subtitle: 'Halloween Edition',
+                dateLabel: 'Saturday 31 October 2026',
+                dateISO: '2026-10-31',
+                venue: 'Bowen Sports Complex',
+                location: 'Bowen, Queensland',
+                status: 'open'
+            }
+        ]);
+        return;
+    }
+
+    try {
+        const { collection, getDocs } = fb.f;
+        const snap = await getDocs(collection(fb.db, 'events'));
+
+        const rows = [];
+        snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
+        showEvents(rows);
+
+        loadSoldOutStickers(async (id) => {
+            const ss = await getDocs(collection(fb.db, 'events', id, 'sites'));
+            const sites = [];
+            ss.forEach((d) => sites.push(d.data()));
+            return sites;
+        });
+    } catch (err) {
+        console.error('events', err);
+
+        // Loaded in the sense that waiting longer will not help - stops the skeleton.
+        state.eventsLoaded = true;
+
+        const host = document.getElementById('vs-events');
+        if (host) {
+            host.innerHTML =
+                '<p class="vs-events-loading">Could not load the events just now. ' +
+                'Please refresh, or email info@soundzgood.com.au.</p>';
+        }
+    }
+}
+
+/* Keep the vendor-visible events, soonest first, and draw them. */
+function showEvents(rows) {
+    state.events = rows
+        .filter((ev) => EVENT_STATUS[ev.status])
+        .sort((a, b) => String(a.dateISO || '').localeCompare(String(b.dateISO || '')));
+    state.eventsLoaded = true;
+    renderEvents();
+    followEventLink();
+}
+
+/* Sold-out stickers for each open event, then redraw the cards. */
+function loadSoldOutStickers(readSites) {
+    Promise.all(
+        state.events
+            .filter((ev) => ev.status === 'open')
+            .map(async (ev) => {
+                try {
+                    ev.soldOut = soldOutOf(await readSites(ev.id));
+                } catch (e) {
+                    /* no sticker */
+                }
+            })
+    ).then(() => renderEvents());
+}
+
+function followEventLink() {
+    if (linkEventDone || !LINK.get('event')) return;
+    const ev = (state.events || []).find((e) => e.id === LINK.get('event'));
+    if (!ev) return;
+    linkEventDone = true;
+    if (state.eventId !== ev.id) chooseEvent(ev.id);
+}
+
+function renderEvents() {
+    const host = document.getElementById('vs-events');
+    if (!host) return;
+
+    if (!state.eventsLoaded) {
+        host.innerHTML = '<p class="sr-only" role="status">Loading events&hellip;</p>' + eventSkeleton();
+        return;
+    }
+
+    if (!state.events.length) {
+        host.innerHTML = '<p class="vs-events-loading">No events are taking vendor applications ' + 'at the moment. Check back soon.</p>';
+        return;
+    }
+
+    host.innerHTML = state.events.map(eventCard).join('');
+
+    host.querySelectorAll('[data-share-event]').forEach((btn) => {
+        btn.addEventListener('click', () => shareEvent(btn));
+    });
+    host.querySelectorAll('[data-choose-event]').forEach((btn) => {
+        btn.addEventListener('click', () => chooseEvent(btn.getAttribute('data-choose-event')));
+    });
+}
+
+/* Phone share sheet, or copy the link on a computer. */
+async function shareEvent(btn) {
+    const url = 'https://www.soundzgood.com.au/vendor-signup';
+    const text = 'Market stalls are open for Eatz & Beatz Halloween Edition - Sat 31 Oct, Bowen Sports Complex. Food vans have sold out!';
+    try {
+        if (navigator.share) {
+            await navigator.share({ title: 'Eatz & Beatz - market stalls', text, url });
+            return;
+        }
+        await navigator.clipboard.writeText(url);
+        btn.textContent = 'Link copied!';
+        setTimeout(() => {
+            btn.textContent = 'Share with other vendors';
+        }, 2500);
+    } catch (e) {
+        if (e && e.name !== 'AbortError') window.prompt('Copy this link to share:', url);
+    }
+}
+
+/* Three grey cards while loading, so the real ones land in place. */
+function eventSkeleton() {
+    return (
+        '<article class="vs-event is-loading" aria-hidden="true">' +
+        '<div class="vs-event-art"></div>' +
+        '<div class="vs-event-body">' +
+        '<span class="vs-skel vs-skel-title"></span>' +
+        '<span class="vs-skel vs-skel-line"></span>' +
+        '<span class="vs-skel vs-skel-line is-short"></span>' +
+        '<span class="vs-skel vs-skel-btn"></span>' +
+        '</div>' +
+        '</article>'
+    ).repeat(3);
+}
+
+/* The art attribute(s) for an event: its own image, a known poster, or a
+   data-noart marker for the CSS to dress. */
+function eventArt(ev) {
+    if (ev && ev.image) {
+        return ' style="--vs-ev-art:url(\'' + escapeHtml(/^(https?:|\/|data:)/.test(ev.image) ? ev.image : '/' + ev.image) + '\')"';
+    }
+    const p = ev && EVENT_POSTERS.find((x) => x.match(ev));
+    if (p) return ' data-poster style="--vs-ev-art:url(\'' + escapeHtml(p.url) + '\')"';
+    return ' data-noart';
+}
+
+function eventCard(ev) {
+    const st = EVENT_STATUS[ev.status] || EVENT_STATUS.soon;
+    const chosen = state.eventId === ev.id;
+
+    const action = st.canApply
+        ? '<button type="button" class="btn btn-ticket vs-event-go" ' +
+          'data-choose-event="' +
+          escapeHtml(ev.id) +
+          '">' +
+          (chosen ? 'Selected' : 'Apply for this event') +
+          ' <span aria-hidden="true">&#8594;</span></button>'
+        : '<span class="btn vs-event-go is-disabled" aria-disabled="true">' +
+          (ev.status === 'soon' ? 'Applications open soon' : 'Applications closed') +
+          '</span>';
+
+    const share = st.canApply
+        ? '<button type="button" class="btn vs-event-share" data-share-event="' + escapeHtml(ev.id) + '">Share with other vendors</button>'
+        : '';
+
+    return (
+        '<article class="vs-event' +
+        (chosen ? ' is-chosen' : '') +
+        (st.canApply ? '' : ' is-shut') +
+        '"' +
+        eventArt(ev) +
+        '>' +
+        '<div class="vs-event-art" aria-hidden="true">' +
+        '<span class="vs-event-status ' +
+        st.tone +
+        '">' +
+        escapeHtml(st.label) +
+        '</span>' +
+        eventSticker(ev) +
+        '</div>' +
+        '<div class="vs-event-body">' +
+        '<h3>' +
+        escapeHtml(ev.name || ev.id) +
+        '</h3>' +
+        '<p class="vs-event-when">' +
+        escapeHtml(ev.dateLabel || ev.dateISO || 'Date to be announced') +
+        '</p>' +
+        '<p class="vs-event-where">' +
+        escapeHtml(ev.venue || ev.location || '') +
+        '</p>' +
+        (ev.subtitle ? '<p class="vs-event-blurb">' + escapeHtml(ev.subtitle) + '</p>' : '') +
+        action +
+        share +
+        '</div>' +
+        '</article>'
+    );
+}
+
+/* Changing event after starting clears the part-filled application -
+   a site and a food category belong to their event. */
+function chooseEvent(id) {
+    const ev = state.events.find((e) => e.id === id);
+    if (!ev) return;
+
+    if (state.eventId && state.eventId !== id) {
+        const ok = window.confirm(
+            'Start a new application for ' + (ev.name || id) + '?\n\n' + 'Anything filled in for the other event will be cleared.'
+        );
+        if (!ok) return;
+        resetForNewEvent();
+    }
+
+    state.eventId = id;
+    state.event = ev;
+
+    if (!state.preview) subscribeToEvent();
+
+    render();
+
+    // The step straight after the cards, whatever it is.
+    goToSection(SECTIONS[1].id);
+}
+
+/* Back to a blank application, still signed in. */
+function resetForNewEvent() {
+    stopEventListeners();
+
+    state.bookingId = null;
+    state.vendorType = null;
+    state.categoryId = null;
+    state.siteIds = [];
+    state.siteId = null;
+    state.confirmed = false;
+    categories = [];
+}
+
+/* --------------------------------------------------- 7. Sold out and waitlist */
+
+/* Free, or on a hold that has run out. */
+function siteFree(site) {
+    const st = site.status || 'available';
+    if (st === 'available') return true;
+    if (st === 'held') {
+        const ms = timeInMs(site.holdExpiresAt);
+        return ms !== null && ms <= Date.now();
+    }
+    return false;
+}
+
+/* A type is sold out when the event has sites of that type and none is free.
+   Holds still running don't count (they may let go), except waitlist holds. */
+function soldOutOf(sites) {
+    const out = {};
+    ['food', 'market'].forEach((t) => {
+        const of = (sites || []).filter((x) => x.type === t);
+        out[t] = of.length > 0 && !of.some((x) => siteFree(x) || (x.status === 'held' && !x.waitlistHold));
+    });
+    return out;
+}
+
+/* The type this visitor claimed from a waitlist email is never sold out to them. */
+function isClaimedType(type) {
+    return Boolean(state.claim && state.claim.vendorType === type);
+}
+
+function isSoldOut(type) {
+    return Boolean((state.soldOut || {})[type]) && !isClaimedType(type);
+}
+
+function eventSticker(ev) {
+    const so = (ev && ev.soldOut) || {};
+    if (so.food && so.market) return '<span class="vs-event-sticker">Sold out</span>';
+
+    let type = '';
+    if (so.food) type = 'food';
+    else if (so.market) type = 'market';
+
+    return type ? '<span class="vs-event-sticker">' + TYPE_WORD[type] + '<br>sold out</span>' : '';
+}
+
+/* Stamp sold-out vendor-type cards and disable them; clear a sold-out
+   choice unless the vendor already holds a site. */
+function renderSoldOut() {
+    document.querySelectorAll('[data-vendor-type]').forEach((btn) => {
+        const out = isSoldOut(btn.getAttribute('data-vendor-type'));
+        btn.classList.toggle('is-soldout', out);
+        btn.disabled = out;
+        btn.setAttribute('aria-disabled', out ? 'true' : 'false');
+        let stamp = btn.querySelector('.vs-type-soldout');
+        if (out && !stamp) {
+            stamp = document.createElement('span');
+            stamp.className = 'vs-type-soldout';
+            stamp.textContent = 'Sold out';
+            btn.appendChild(stamp);
+        } else if (!out && stamp) {
+            stamp.remove();
+        }
+    });
+
+    if (state.vendorType && isSoldOut(state.vendorType) && !(state.siteIds && state.siteIds.length)) {
+        state.vendorType = null;
+        document.querySelectorAll('[data-vendor-type]').forEach((b) => b.classList.remove('is-selected'));
+    }
+    renderWaitlist();
+}
+
+/* A waitlist form under each sold-out type. When a spot opens the first
+   person is emailed and gets 4 hours to claim it. */
+function renderWaitlist() {
+    const host = document.getElementById('vs-waitlist');
+    if (!host) return;
+    const types = ['food', 'market'].filter(isSoldOut);
+    host.hidden = !types.length || !state.eventId;
+    if (host.hidden) {
+        host.innerHTML = '';
+        return;
+    }
+    state.wlDone = state.wlDone || {};
+
+    // Keep what someone is typing if the page redraws.
+    if (host.querySelector('form') && types.every((t) => host.querySelector('[data-wl-type="' + t + '"]'))) return;
+
+    host.innerHTML = types.map((t) => (state.wlDone[t] ? waitlistDoneCard(t) : waitlistForm(t))).join('');
+
+    if (LINK.get('waitlist') && !linkWaitlistDone) {
+        linkWaitlistDone = true;
+        setTimeout(() => {
+            const top = Math.max(0, host.getBoundingClientRect().top + window.scrollY - railHeight() - 20);
+            window.scrollTo({ top, behavior: 'smooth' });
+            setTimeout(() => {
+                if (Math.abs(window.scrollY - top) > 40) window.scrollTo(0, top);
+            }, 900); // jump if smooth scroll didn't happen
+            const first = host.querySelector('input');
+            if (first) first.focus({ preventScroll: true });
+        }, 700);
+    }
+}
+
+function waitlistDoneCard(type) {
+    const position = state.wlDone[type];
+    return (
+        '<div class="vs-wl-card vs-wl-done" data-wl-type="' +
+        type +
+        '"><b>You&rsquo;re on the ' +
+        TYPE_WORD[type].toLowerCase() +
+        ' waitlist' +
+        (position > 0 ? ' (#' + position + ')' : '') +
+        '.</b>' +
+        '<p>We&rsquo;ll email you the moment a spot opens. You&rsquo;ll have 4 hours to claim it, and it&rsquo;s yours once you pay.</p></div>'
+    );
+}
+
+function waitlistForm(type) {
+    return (
+        '<form class="vs-wl-card" data-wl-type="' +
+        type +
+        '">' +
+        '<b>' +
+        TYPE_WORD[type] +
+        ' are sold out &mdash; join the waitlist</b>' +
+        '<p>If a spot opens we&rsquo;ll email you straight away. You&rsquo;ll have 4 hours to claim it.</p>' +
+        '<div class="vs-wl-grid">' +
+        '<label>Business name<input name="name" required autocomplete="organization"></label>' +
+        '<label>Your name<input name="contactName" required autocomplete="name"></label>' +
+        '<label>Email<input name="email" type="email" required autocomplete="email"></label>' +
+        '<label>Phone<input name="phone" type="tel" autocomplete="tel"></label>' +
+        '<label class="vs-wl-wide">What do you sell?<input name="description" maxlength="300"></label>' +
+        '</div><button type="submit" class="btn">Join the waitlist</button><p class="vs-wl-msg" hidden></p></form>'
+    );
+}
+
+async function joinWaitlist(form) {
+    const t = form.getAttribute('data-wl-type');
+    const v = (n) => (form.querySelector('[name="' + n + '"]') || {}).value || '';
+    const msg = form.querySelector('.vs-wl-msg');
+    const btn = form.querySelector('button');
+    btn.disabled = true;
+    try {
+        if (!fb) throw new Error('Still getting set up - try again in a moment.');
+        const res = await callFunction('joinWaitlist', {
+            eventId: state.eventId,
+            vendorType: t,
+            name: v('name'),
+            contactName: v('contactName'),
+            email: v('email'),
+            phone: v('phone'),
+            description: v('description')
+        });
+        state.wlDone = state.wlDone || {};
+        state.wlDone[t] = (res.data && res.data.position) || -1;
+        const host = document.getElementById('vs-waitlist');
+        if (host) host.innerHTML = '';
+        renderWaitlist();
+    } catch (err) {
+        btn.disabled = false;
+        if (msg) {
+            msg.hidden = false;
+            msg.textContent = (err && err.message) || 'Could not join the waitlist. Please try again.';
+        }
+    }
+}
+
+/* From the waitlist email: /vendor-signup?claim=<token>. The held site moves
+   to this visitor, their details are filled in, and they book and pay as
+   normal. The spot is only theirs once payment is received. */
+async function claimFromWaitlist() {
+    const token = new URLSearchParams(window.location.search).get('claim');
+    if (!token || state.claimTried || !fb || !state.user) return;
+    state.claimTried = true;
+    try {
+        const res = await callFunction('claimWaitlist', { token });
+        const c = res.data;
+        state.claim = c;
+
+        // Wait for the events list, then open theirs.
+        for (let i = 0; i < 40 && !(state.events || []).some((e) => e.id === c.eventId); i++) await new Promise((r) => setTimeout(r, 250));
+        if (state.eventId !== c.eventId) chooseEvent(c.eventId);
+
+        const fill = {
+            'vs-biz-name': c.name,
+            'vs-biz-contact': c.contactName,
+            'vs-biz-email': c.email,
+            'vs-biz-phone': c.phone,
+            'vs-biz-desc': c.description
+        };
+        Object.keys(fill).forEach((id) => {
+            const el = document.getElementById(id);
+            if (el && !el.value && fill[id]) {
+                el.value = fill[id];
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        });
+
+        renderSoldOut();
+        const typeBtn = document.querySelector('[data-vendor-type="' + c.vendorType + '"]');
+        if (typeBtn) {
+            typeBtn.disabled = false;
+            typeBtn.click();
+        }
+
+        const until = new Date(c.expiresAt).toLocaleString('en-AU', {
+            weekday: 'short',
+            day: 'numeric',
+            month: 'short',
+            hour: 'numeric',
+            minute: '2-digit'
+        });
+        showClaimBanner(
+            '<b>Your waitlist spot: site ' +
+                escapeHtml(c.siteLabel) +
+                '</b> is held for you until ' +
+                escapeHtml(until) +
+                '. Check your details, choose site ' +
+                escapeHtml(c.siteLabel) +
+                ' on the map and pay to secure it &mdash; it&rsquo;s only yours once payment is received.'
+        );
+    } catch (err) {
+        showClaimBanner((err && err.message) || 'Sorry - this offer is no longer available.', true);
+    }
+}
+
+function showClaimBanner(html, bad) {
+    let el = document.getElementById('vs-claim-banner');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'vs-claim-banner';
+        const main = document.querySelector('main') || document.body;
+        main.insertBefore(el, main.firstChild);
+    }
+    el.className = 'vs-claim-banner' + (bad ? ' is-bad' : '');
+    el.innerHTML = html;
+}
+
+/* -------------------------------------------------------------------- 8. Auth */
+
+/* Nobody makes an account to pay. The browser signs in anonymously on load;
+   the uid still drives Cloud Function auth, Firestore rules and site holds.
+   That identity lives in this browser, so the reference number is shown at
+   the end and staff can always find bookings in /admin. */
 function watchAuth() {
     fb.a.onAuthStateChanged(fb.auth, (user) => {
         state.user = user;
@@ -691,8 +879,6 @@ function watchAuth() {
     });
 }
 
-let signingIn = false;
-
 async function signInQuietly() {
     if (signingIn) return;
     signingIn = true;
@@ -700,9 +886,7 @@ async function signInQuietly() {
     try {
         await fb.a.signInAnonymously(fb.auth);
     } catch (err) {
-        /*  The one failure a vendor could actually hit: anonymous sign-in
-        turned off on the project. Say something, rather than leaving the
-        Hold button quietly doing nothing forever. */
+        // Most likely anonymous sign-in is turned off on the project.
         console.error('anonymous sign-in failed', err);
         setStepError('site', 'Something went wrong getting you started. Please refresh and try again.');
     } finally {
@@ -710,14 +894,31 @@ async function signInQuietly() {
     }
 }
 
-/* -------------------------------------------------------------------------
-   Live data
-   ------------------------------------------------------------------------- */
+/* --------------------------------------------------------- 9. Live event data */
+
+/* Sites and categories belong to an event, so nothing is watched until one is chosen. */
+function subscribeToEvent() {
+    if (!fb || !state.eventId) return;
+    subscribeSites();
+    subscribeCategories();
+}
+
+function stopEventListeners() {
+    if (sitesUnsub) {
+        sitesUnsub();
+        sitesUnsub = null;
+    }
+    if (categoriesUnsub) {
+        categoriesUnsub();
+        categoriesUnsub = null;
+    }
+}
+
 function subscribeSites() {
     if (!fb) return;
     const { collection, onSnapshot, doc } = fb.f;
 
-    // event doc: map size and landmarks
+    // The event document: map size, landmarks and prices.
     onSnapshot(doc(fb.db, 'events', state.eventId), (snap) => {
         if (!snap.exists()) return;
         const ev = snap.data();
@@ -726,7 +927,7 @@ function subscribeSites() {
             mapSize: ev.map || { width: 1000, height: 700 },
             landmarks: ev.landmarks || []
         });
-        paintEventHeader(ev);
+        paintEventPrices(ev);
     });
 
     sitesUnsub = onSnapshot(
@@ -741,8 +942,6 @@ function subscribeSites() {
             renderPicked();
             map.setLayout({ sites });
             renderMapMeta();
-
-            /*  Redraw anything measured from the bays once the bays land. */
             renderSiteChoice();
             renderSide();
             renderReview();
@@ -767,7 +966,8 @@ function subscribeCategories() {
     );
 }
 
-function paintEventHeader(ev) {
+/* The event's own prices into any [data-price] slot in the markup. */
+function paintEventPrices(ev) {
     if (!ev.pricing) return;
 
     const shown = {
@@ -781,28 +981,20 @@ function paintEventHeader(ev) {
     });
 }
 
-/* -------------------------------------------------------------------------
-   Map
-   ------------------------------------------------------------------------- */
+/* ----------------------------------------------------- 10. Map and site holds */
+
 function buildMap() {
     const host = document.getElementById('vs-map');
     if (!host) return;
 
     map = new VendorMap(host, {
         maxBays: MAX_BAYS,
-        // Clicking only builds up the shape on screen. Nothing is held until
-        // the vendor confirms, so they can try sizes without locking bays away
-        // from anyone else.
+        // Taps build the shape on screen; the hold follows shortly after the tapping stops.
         onSelect: () => {
             renderSiteChoice();
             renderMapMeta();
-
-            /*  The price follows the bays as they are tapped. */
             renderSide();
             renderReview();
-
-            /*  And the hold follows the bays. No button: what is lit up on the
-          plan is what gets held, a moment after the tapping stops.   */
             scheduleHoldSync();
         }
     });
@@ -827,42 +1019,9 @@ function renderMapMeta() {
     legend.textContent = parts.join(' · ');
 }
 
-/* What the vendor has clicked but not yet confirmed. */
+/* What is lit up on the plan. */
 function pendingSites() {
     return map ? map.selectedSites() : [];
-}
-
-/*  The bays this booking is for: held (restored from the booking) wins,
-    otherwise what is lit up on the plan. Used to measure the stall, so a
-    vendor who reloads still sees its size. */
-function chosenSites() {
-    if (state.siteIds.length && map) {
-        const held = state.siteIds.map((id) => map.byId.get(id)).filter(Boolean);
-        if (held.length) return held;
-    }
-    return pendingSites();
-}
-
-/*  HOW BIG THE STALL ACTUALLY IS
-    Bays are measured (3 m each). A shape that fills its bounding box is a
-    rectangle and gets frontage x depth; anything else (e.g. an L) is
-    described by the bay count alone. */
-/*  " · 6 m x 3 m", or nothing at all for a shape that has no size to
-    quote. Kept apart from the size itself so the two callers can each
-    punctuate their own line.                                          */
-function sizeSuffix(size) {
-    return size ? ' · ' + size : '';
-}
-
-function marketFootprint(bays) {
-    if (!bays.length) return '';
-
-    const columns = new Set(bays.map((b) => b.x)).size;
-    const rows = new Set(bays.map((b) => b.y)).size;
-
-    if (columns * rows !== bays.length) return '';
-
-    return `${rows * 3} m x ${columns * 3} m`;
 }
 
 function pendingLabel() {
@@ -871,41 +1030,55 @@ function pendingLabel() {
         .join(' + ');
 }
 
-function pendingPriceCents() {
-    const n = pendingSites().length || 1;
-    return state.vendorType === 'food' ? PRICE.foodCents : PRICE.marketPerBayCents * n;
+/* The bays this booking is for: held wins, otherwise what is lit up.
+   So a vendor who reloads still sees the stall's size. */
+function chosenSites() {
+    if (state.siteIds.length && map) {
+        const held = state.siteIds.map((id) => map.byId.get(id)).filter(Boolean);
+        if (held.length) return held;
+    }
+    return pendingSites();
 }
 
-/* Take the bays the vendor has picked. One call for the whole group, so
-   the server allocates them together or not at all. */
-/*  HOLDING FOLLOWS THE MAP
+/* Frontage and depth in metres when the bays make a rectangle (3 m each);
+   null for anything else, such as an L. */
+function stallRectangle(bays) {
+    if (!bays.length) return null;
 
-    A short wait after the last tap, so building a three bay shape is one
-    call rather than three. Anything tapped during a call in flight is
-    picked up by the re-run at the end of it, so the last thing a vendor
-    did is always what ends up held.                                    */
-const HOLD_SETTLE_MS = 650;
+    const columns = new Set(bays.map((b) => b.x)).size;
+    const rows = new Set(bays.map((b) => b.y)).size;
+    if (columns * rows !== bays.length) return null;
 
-let holdTimer2 = null; // the settle timer
-let holdInFlight = false;
-let holdAgain = false; // something changed while we were talking
+    return { frontage: rows * 3, depth: columns * 3 };
+}
+
+/* "6 m x 3 m", or '' for a shape with no simple size. */
+function marketFootprint(bays) {
+    const rect = stallRectangle(bays);
+    return rect ? `${rect.frontage} m x ${rect.depth} m` : '';
+}
+
+function sizeSuffix(size) {
+    return size ? ' · ' + size : '';
+}
 
 function sameIds(a, b) {
     return a.length === b.length && a.every((id, i) => id === b[i]);
 }
 
 function scheduleHoldSync() {
-    clearTimeout(holdTimer2);
-    holdTimer2 = setTimeout(syncHold, HOLD_SETTLE_MS);
+    clearTimeout(holdSettleTimer);
+    holdSettleTimer = setTimeout(syncHold, HOLD_SETTLE_MS);
 }
 
-/*  Run whatever is waiting, now. Used by the Continue button so that
-    pressing it immediately after a tap cannot race the hold.         */
+/* Run the pending hold now, so Continue straight after a tap cannot race it. */
 async function flushHoldSync() {
-    clearTimeout(holdTimer2);
+    clearTimeout(holdSettleTimer);
     await syncHold();
 }
 
+/* Make the hold match the plan. Changes made during a call are picked up by
+   a re-run at the end, so the last thing tapped is what ends up held. */
 async function syncHold() {
     if (holdInFlight) {
         holdAgain = true;
@@ -930,51 +1103,12 @@ async function syncHold() {
     }
 }
 
-/*  Tapped every bay off again. Give them back rather than leaving a
-    vendor's abandoned shape held for the full ten minutes.          */
-async function releaseHeldSites() {
-    const ids = state.siteIds.slice();
-    if (!ids.length) return;
-
-    const forget = () => {
-        state.siteId = null;
-        state.siteIds = [];
-        state.siteLabel = null;
-        state.holdExpiresAt = null;
-        stopHoldCountdown();
-        renderSiteChoice();
-        renderSide();
-        renderReview();
-        renderRail();
-    };
-
-    if (state.preview || !state.user || !fb) {
-        forget();
-        return;
-    }
-
-    setBusy('site', true);
-    try {
-        await fbMore();
-        const call = fb.fn.httpsCallable(fb.fns, 'releaseHold');
-        await call({ eventId: state.eventId, siteIds: ids });
-        forget();
-    } catch (err) {
-        /*  Not worth stopping them over: the hold runs out on its own in ten
-        minutes, and expireHolds sweeps it up.                       */
-        console.warn('Could not release the hold', err);
-        forget();
-    } finally {
-        setBusy('site', false);
-    }
-}
-
+/* One call for the whole group, so the server allocates them together or not at all. */
 async function holdChosenSites() {
     const chosen = pendingSites();
     if (!chosen.length) return;
 
-    /*  Whatever is in the form, saved before the hold, so a vendor who
-      leaves after taking a site keeps their details. */
+    // Save the form first, so a vendor who leaves after taking a site keeps their details.
     collectForm();
 
     const ids = chosen.map((s) => s.id);
@@ -987,7 +1121,6 @@ async function holdChosenSites() {
         return;
     }
 
-    /*  Anonymous sign-in has not come back yet (or failed). Nudge it along. */
     if (!state.user) {
         setStepError('site', 'Still getting set up - give it a second and try again.');
         signInQuietly();
@@ -999,14 +1132,9 @@ async function holdChosenSites() {
 
     try {
         await ensureBookingDoc();
-
-        /*  The form goes up with the hold. collectForm() above put it into
-        state; this is what actually writes it to the booking.       */
         await saveDraft();
 
-        await fbMore();
-        const call = fb.fn.httpsCallable(fb.fns, 'holdSite');
-        const res = await call({ eventId: state.eventId, siteIds: ids, bookingId: state.bookingId });
+        const res = await callFunction('holdSite', { eventId: state.eventId, siteIds: ids, bookingId: state.bookingId });
 
         state.siteIds = res.data.siteIds || ids;
         state.siteId = state.siteIds[0];
@@ -1015,15 +1143,56 @@ async function holdChosenSites() {
 
         map.setSelected(state.siteIds);
         startHoldCountdown();
-        renderSiteChoice();
-        renderSide();
-        renderReview();
-        renderRail();
+        renderSiteViews();
     } catch (err) {
         setStepError('site', friendlyError(err));
     } finally {
         setBusy('site', false);
     }
+}
+
+/* Every bay tapped off again: give them back rather than holding an
+   abandoned shape for the full ten minutes. */
+async function releaseHeldSites() {
+    const ids = state.siteIds.slice();
+    if (!ids.length) return;
+
+    if (state.preview || !state.user || !fb) {
+        forgetHold();
+        return;
+    }
+
+    setBusy('site', true);
+    try {
+        // A failed release is not worth stopping them over: the hold runs out on its own.
+        await callFunction('releaseHold', { eventId: state.eventId, siteIds: ids }).catch((err) => {
+            console.warn('Could not release the hold', err);
+        });
+        forgetHold();
+    } finally {
+        setBusy('site', false);
+    }
+}
+
+function clearHeldSite() {
+    state.siteId = null;
+    state.siteIds = [];
+    state.siteLabel = null;
+    state.holdExpiresAt = null;
+}
+
+function forgetHold() {
+    clearHeldSite();
+    stopHoldCountdown();
+    renderSiteViews();
+}
+
+/* Everything that shows the held site. */
+function renderSiteViews() {
+    renderSiteChoice();
+    renderSide();
+    renderReview();
+    renderRail();
 }
 
 function startHoldCountdown() {
@@ -1035,22 +1204,15 @@ function startHoldCountdown() {
         const left = state.holdExpiresAt - Date.now();
 
         if (left <= 0) {
-            state.siteId = null;
-            state.siteIds = [];
-            state.siteLabel = null;
-            state.holdExpiresAt = null;
+            clearHeldSite();
             map.setSelected(null);
 
-            /*  Stop first, then say so: stopHoldCountdown clears this line,
-          so writing the message before it wiped the message.      */
+            // Stop first: stopHoldCountdown clears the line this writes.
             stopHoldCountdown();
             el.textContent = 'Your hold has expired. Choose a site again.';
             el.classList.add('is-expired');
 
-            renderSiteChoice();
-            renderSide();
-            renderReview();
-            renderRail();
+            renderSiteViews();
             return;
         }
 
@@ -1061,15 +1223,13 @@ function startHoldCountdown() {
     };
 
     tick();
-    holdTimer = setInterval(tick, 1000);
+    holdCountdown = setInterval(tick, 1000);
 }
 
 function stopHoldCountdown() {
-    if (holdTimer) clearInterval(holdTimer);
-    holdTimer = null;
+    if (holdCountdown) clearInterval(holdCountdown);
+    holdCountdown = null;
 
-    /*  And clear the line it was writing, so a released bay does not still
-      claim to be held. */
     const el = document.getElementById('vs-hold-timer');
     if (el) {
         el.textContent = '';
@@ -1077,9 +1237,13 @@ function stopHoldCountdown() {
     }
 }
 
-/* -------------------------------------------------------------------------
-   Booking document
-   ------------------------------------------------------------------------- */
+/* ------------------------------------------------------- 11. Booking document */
+
+function readBooking(id) {
+    const { doc, getDoc } = fb.f;
+    return getDoc(doc(fb.db, 'bookings', id));
+}
+
 async function ensureBookingDoc() {
     if (state.bookingId) return state.bookingId;
 
@@ -1121,13 +1285,13 @@ async function saveDraft() {
     });
 }
 
+/* Pick up this browser's unfinished booking (or show it confirmed). */
 async function loadExistingBooking() {
     const saved = localStorage.getItem('sg-vendor-booking');
     if (!saved || !fb) return;
 
     try {
-        const { doc, getDoc } = fb.f;
-        const snap = await getDoc(doc(fb.db, 'bookings', saved));
+        const snap = await readBooking(saved);
         if (!snap.exists()) return;
 
         const b = snap.data();
@@ -1141,18 +1305,16 @@ async function loadExistingBooking() {
 
         state.bookingId = snap.id;
 
-        /*  The event first, because everything else in the booking belongs to
-        it - otherwise the rail shows ticks against locked steps. */
+        // The event first - everything else in the booking belongs to it.
         if (b.eventId && b.eventId !== state.eventId) {
             state.eventId = b.eventId;
             state.event = state.events.find((e) => e.id === b.eventId) || null;
 
             if (!state.event) {
-                /*  The event list is read in parallel with this and may not have
-            landed yet, so the one event we need is read directly.    */
+                // The event list may not have landed yet, so read this one directly.
                 try {
-                    const { doc: docRef, getDoc: get } = fb.f;
-                    const evSnap = await get(docRef(fb.db, 'events', b.eventId));
+                    const { doc, getDoc } = fb.f;
+                    const evSnap = await getDoc(doc(fb.db, 'events', b.eventId));
                     if (evSnap.exists()) state.event = { id: evSnap.id, ...evSnap.data() };
                 } catch (evErr) {
                     console.warn('Could not read the event for a restored booking', evErr);
@@ -1183,15 +1345,9 @@ async function loadExistingBooking() {
     }
 }
 
-/*  Write what we restored back into the form.
-
-    Only fields that are empty are filled, so this can never overwrite
-    something the vendor has already typed - loadExistingBooking runs after
-    sign-in comes back, which can land after somebody has started.
-
-    The category chips are drawn from the categories collection, which
-    arrives on its own schedule; renderCategories() reads state.categoryId
-    every time it draws, so the chosen one lights up whenever that is. */
+/* Write a restored booking back into the form. Only empty fields are filled,
+   so nothing the vendor has already typed is overwritten. Category chips
+   light up from state.categoryId whenever the categories arrive. */
 function fillFormFromState() {
     const put = (id, value) => {
         const el = document.getElementById(id);
@@ -1212,29 +1368,20 @@ function fillFormFromState() {
     put('vs-setup-own-power', setup.ownPower);
     put('vs-setup-notes', setup.notes);
 
-    const tick = (id, on) => {
-        const el = document.getElementById(id);
-        if (el && on) el.checked = true;
-    };
-    tick('vs-setup-faqs', setup.readFaqs);
+    const faqs = document.getElementById('vs-setup-faqs');
+    if (faqs && setup.readFaqs) faqs.checked = true;
 
-    /*  The vendor type card. state.vendorType decides the price and which
-      sites are selectable, so a page that has one and does not show it is
-      telling the vendor something different from what it will charge. */
+    // The vendor type decides the price, so its card must show as chosen.
     document.querySelectorAll('[data-vendor-type]').forEach((btn) => {
         btn.classList.toggle('is-selected', btn.getAttribute('data-vendor-type') === state.vendorType);
     });
 
-    /*  The counter under the description, which is wired to the input event
-      and so does not know anything arrived.                          */
-    const desc = document.getElementById('vs-biz-desc');
-    const count = document.getElementById('vs-biz-desc-count');
-    if (desc && count) count.textContent = desc.value.length + '/300';
+    // Setting .value does not fire input, so update the counter by hand.
+    renderDescCount();
 }
 
-/* -------------------------------------------------------------------------
-   Documents
-   ------------------------------------------------------------------------- */
+/* -------------------------------------------------------------- 12. Documents */
+
 async function uploadDocument(file, docType) {
     if (state.preview) {
         state.documents.push({
@@ -1259,8 +1406,7 @@ async function uploadDocument(file, docType) {
         return;
     }
 
-    const allowed = ['application/pdf'];
-    if (!allowed.includes(file.type) && !file.type.startsWith('image/')) {
+    if (file.type !== 'application/pdf' && !file.type.startsWith('image/')) {
         setStepError('documents', 'Please upload a PDF or an image.');
         return;
     }
@@ -1328,266 +1474,16 @@ function renderDocumentList() {
     });
 }
 
-/* -------------------------------------------------------------------------
-   Checkout
-   ------------------------------------------------------------------------- */
-/*  The Vendor Terms tick. The pay button stays grey until it is ticked, and
-    createCheckout refuses without it too (functions/index.js).          */
-function termsAgreed() {
-    const box = document.getElementById('vs-terms-ok');
-    return !!(box && box.checked);
-}
-function syncPayButton() {
-    const payBtn = document.getElementById('vs-pay');
-    if (payBtn) payBtn.disabled = !termsAgreed();
-}
-function renderVendorTerms() {
-    const html =
-        termBodyHtml(VENDOR_TERMS_INTRO, escapeHtml) +
-        VENDOR_TERMS.map(([title, lines], i) => `<h4>${i + 1}. ${escapeHtml(title)}</h4>` + termBodyHtml(lines, escapeHtml)).join('') +
-        termBodyHtml(VENDOR_TERMS_OUTRO, escapeHtml);
-    document.querySelectorAll('[data-terms-body]').forEach((el) => {
-        el.innerHTML = html;
-    });
-}
+/* -------------------------------------------- 13. Sections, rail and scrolling */
 
-async function payAndBook() {
-    if (state.preview) {
-        setStepError('review', 'Preview mode - payments are switched off until Firebase and Stripe are connected.');
-        return;
-    }
-
-    /*  Say what is missing, put the message on the step it belongs to AND
-      beside the pay button, then go there. Leaving it only on the step
-      means somebody who has scrolled to the bottom sees the page move
-      and never learns why.                                          */
-    if (!termsAgreed()) {
-        setStepError('review', 'Please tick the box to agree to the Vendor Terms & Conditions.');
-        return;
-    }
-
-    const missing = firstIncomplete();
-    if (missing) {
-        const label = (SECTIONS.find((sec) => sec.id === missing) || {}).label || 'an earlier step';
-        setStepError('review', 'Finish ' + label + ' first - we have highlighted what is missing.');
-        goToSection(missing);
-        return;
-    }
-
-    setStepError('review', '');
-    collectForm();
-
-    setBusy('review', true);
-    setStepError('review', '');
-
-    try {
-        await saveDraft();
-
-        await fbMore();
-        const call = fb.fn.httpsCallable(fb.fns, 'createCheckout');
-        const res = await call({
-            bookingId: state.bookingId,
-            termsAccepted: true,
-            termsVersion: VENDOR_TERMS_VERSION
-        });
-
-        if (res.data.free || res.data.alreadyConfirmed) {
-            await refreshConfirmed();
-            return;
-        }
-
-        if (res.data.url) {
-            window.location.assign(res.data.url);
-            return;
-        }
-
-        setStepError('review', 'Could not start checkout. Please try again.');
-    } catch (err) {
-        setStepError('review', friendlyError(err));
-    } finally {
-        setBusy('review', false);
-    }
-}
-
-/* Stripe sends people back here. The redirect is only a hint - the booking
-   is not treated as paid until the webhook has written it, so this polls
-   the booking rather than believing the URL. */
-/*  Coming back from Stripe, paid or cancelled. The event is read back
-    off the booking first, so its sites and categories can load. */
-async function handleReturnFromStripe() {
-    const params = new URLSearchParams(window.location.search);
-    const bookingId = params.get('booking');
-
-    if (!bookingId) return;
-
-    state.bookingId = bookingId;
-    localStorage.setItem('sg-vendor-booking', bookingId);
-
-    if (fb) {
-        try {
-            const { doc, getDoc } = fb.f;
-            const snap = await getDoc(doc(fb.db, 'bookings', bookingId));
-            if (snap.exists()) {
-                const b = snap.data();
-                if (b.eventId) state.eventId = b.eventId;
-            }
-        } catch (err) {
-            console.error('could not read the booking on return', err);
-        }
-    }
-
-    if (params.get('cancelled')) {
-        setStepError('review', 'Checkout was cancelled. Your site is still held for a few minutes.');
-        goToSection('review');
-        return;
-    }
-
-    if (params.get('paid')) {
-        showWaitingForPayment();
-        pollForConfirmation(bookingId);
-    }
-}
-
-function showWaitingForPayment() {
-    const el = document.getElementById('vs-confirming');
-    if (el) el.hidden = false;
-    document.querySelectorAll('.vs-sec').forEach((el) => {
-        el.hidden = true;
-    });
-    document.querySelector('.vs-side')?.setAttribute('hidden', '');
-}
-
-async function pollForConfirmation(bookingId, attempt = 0) {
-    if (!fb) return;
-
-    const { doc, getDoc } = fb.f;
-
-    try {
-        const snap = await getDoc(doc(fb.db, 'bookings', bookingId));
-
-        if (snap.exists() && snap.data().status === 'confirmed') {
-            state.confirmed = { id: snap.id, ...snap.data() };
-            showConfirmation();
-            return;
-        }
-
-        if (snap.exists() && snap.data().status === 'needs_attention') {
-            const el = document.getElementById('vs-confirming');
-            if (el) {
-                el.innerHTML = `
-          <h2>We need to sort something out</h2>
-          <p>Your payment went through, but the site was taken while you were
-             paying. Nothing further is needed from you right now - we will be
-             in touch to move you to another site or refund you.</p>
-          <p><a class="btn" href="/contact">Contact SoundzGood</a></p>`;
-            }
-            return;
-        }
-    } catch (err) {
-        console.warn('Still waiting on the webhook', err);
-    }
-
-    // Webhooks are usually instant but can lag a little. Back off, and after
-    // about a minute tell them it is safe to leave.
-    if (attempt < 20) {
-        setTimeout(() => pollForConfirmation(bookingId, attempt + 1), 3000);
-    } else {
-        const el = document.getElementById('vs-confirming');
-        if (el) {
-            const p = el.querySelector('[data-confirming-note]');
-            if (p) {
-                p.textContent =
-                    'This is taking longer than usual. Your payment is safe and your ' +
-                    'booking will be confirmed by email. You can close this page.';
-            }
-        }
-    }
-}
-
-async function refreshConfirmed() {
-    const { doc, getDoc } = fb.f;
-    const snap = await getDoc(doc(fb.db, 'bookings', state.bookingId));
-    if (snap.exists()) {
-        state.confirmed = { id: snap.id, ...snap.data() };
-        showConfirmation();
-    }
-}
-
-function showConfirmation() {
-    const wrap = document.getElementById('vs-confirmed');
-    const confirming = document.getElementById('vs-confirming');
-
-    if (confirming) confirming.hidden = true;
-    document.querySelectorAll('.vs-sec').forEach((el) => {
-        el.hidden = true;
-    });
-    document.querySelector('.vs-side')?.setAttribute('hidden', '');
-
-    if (!wrap) return;
-    const b = state.confirmed || {};
-
-    wrap.hidden = false;
-    wrap.innerHTML = `
-    <div class="vs-confirm-card">
-      <p class="vs-eyebrow">Booking confirmed</p>
-      <h2>You're in.</h2>
-      <p class="vs-confirm-ref">Reference <strong>${escapeHtml(b.reference || b.id || '')}</strong></p>
-
-      <dl class="vs-summary-list">
-        <div><dt>Vendor</dt><dd>${escapeHtml(b.business?.name || '')}</dd></div>
-        <div><dt>Type</dt><dd>${escapeHtml(VENDOR_LABEL[b.vendorType] || b.vendorType || '')}</dd></div>
-        ${b.categoryName ? `<div><dt>Category</dt><dd>${escapeHtml(b.categoryName)}</dd></div>` : ''}
-        <div><dt>Site</dt><dd>${escapeHtml(b.siteLabel || '')}</dd></div>
-        <div><dt>Paid</dt><dd>${
-            b.amountPaidCents != null ? '$' + (b.amountPaidCents / 100).toFixed(2) : b.paymentStatus === 'free' ? 'Free' : '-'
-        }</dd></div>
-      </dl>
-
-      <p class="vs-confirm-note">
-        Eatz &amp; Beatz Halloween Edition &middot; Saturday 31 October 2026 &middot;
-        Bowen Sports Complex. We'll email your bump-in time and site details closer
-        to the date.
-      </p>
-
-      <div class="buttons">
-        <a class="btn" href="/events">Back to Events</a>
-        <a class="btn btn-outline" href="/contact">Contact Us</a>
-      </div>
-    </div>
-  `;
-}
-
-/* -------------------------------------------------------------------------
-   Sections
-
-   The form is one page: five sections, stacked. Each section is asked
-   whether it has what it needs (the side summary reports the same).
-
-   Order matters: what you sell comes before the map, so a full category
-   stops somebody before they get attached to a site.
-   ------------------------------------------------------------------------- */
-const SECTIONS = [
-    { id: 'event', label: 'Select Event' },
-    { id: 'info', label: 'Event Info' },
-    { id: 'type', label: 'Vendor Type' },
-    { id: 'details', label: 'Your Details' },
-    { id: 'site', label: 'Choose Site' },
-    { id: 'review', label: 'Review & Pay' }
-];
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/*  Has this section got everything it needs? Read live from the fields,
-    so the rail keeps up with the typing. */
+/* Has this section got what it needs? Read live from the fields so the rail
+   keeps up with the typing. */
 function sectionDone(id) {
     const ticked = (elId) => !!document.getElementById(elId)?.checked;
 
     switch (id) {
         case 'event':
-            return !!state.eventId;
-
-        /*  Nothing to fill in here, so it is done once an event is chosen. */
-        case 'info':
+        case 'info': // nothing to fill in, so done once an event is chosen
             return !!state.eventId;
 
         case 'type':
@@ -1616,10 +1512,23 @@ function sectionDone(id) {
     }
 }
 
-/*  Scrolls a section to just under the rail. Measures the rail, because
-    its height changes with screen width. */
-/*  Take somebody to the questions and open them. Called from the tick in
-    Your details and from the line at the foot of the review. */
+function railHeight() {
+    const rail = document.getElementById('vs-rail');
+    return rail ? rail.getBoundingClientRect().height : 0;
+}
+
+/* Scroll a section to just under the sticky rail. */
+function goToSection(id) {
+    const el = document.getElementById('sec-' + id);
+    if (!el) return;
+
+    const clear = railHeight() + 14;
+    const top = el.getBoundingClientRect().top + window.scrollY - clear;
+
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+}
+
+/* Open the event details and FAQs panel and go to it. */
 function openFaqs() {
     const panel = document.getElementById('vs-picked-more');
     const btn = document.querySelector('.vs-picked-more-btn');
@@ -1635,55 +1544,8 @@ function openFaqs() {
     goToSection('info');
 }
 
-function goToSection(id) {
-    const el = document.getElementById('sec-' + id);
-    if (!el) return;
-
-    const rail = document.getElementById('vs-rail');
-    const clear = (rail ? rail.getBoundingClientRect().height : 0) + 14;
-    const top = el.getBoundingClientRect().top + window.scrollY - clear;
-
-    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-}
-
-function render() {
-    if (state.confirmed) return;
-
-    /*  Everything after choosing an event is locked until one is chosen -
-      the prices, the categories and the sites all belong to a single
-      event, so there is nothing truthful to show before then.         */
-    const chosen = !!state.eventId;
-    document.querySelectorAll('.vs-sec').forEach((el) => {
-        if (el.getAttribute('data-sec') === 'event') return;
-        el.classList.toggle('is-locked', !chosen);
-    });
-
-    renderEvents();
-    renderPicked();
-    renderSide();
-    renderRail();
-    if (!chosen) return;
-
-    renderCategories();
-    renderSizeFields();
-    if (map) map.setVendorType(state.vendorType);
-    renderSiteChoice();
-    renderMapMeta();
-    renderDocumentList();
-    renderReview();
-}
-
-/*  THE STEP RAIL
-    Five steps across the top, sticky. A step is ticked when its section
-    is complete; the highlighted one is whichever section is on screen.
-    Clicking one scrolls to it. The rail reports, it does not lock. */
-let railOn = 'event';
-
-function onFormChange() {
-    renderSide();
-    renderRail();
-}
-
+/* The sticky step rail: ticked when a section is complete, highlighted for
+   the one on screen. It reports; it does not lock. */
 function renderRail() {
     const host = document.getElementById('vs-rail');
     if (!host) return;
@@ -1695,7 +1557,6 @@ function renderRail() {
             const here = sec.id === railOn;
 
             return (
-                '' +
                 '<li class="' +
                 (done ? 'is-done ' : '') +
                 (here ? 'is-here' : '') +
@@ -1720,9 +1581,7 @@ function renderRail() {
     });
 }
 
-/*  Which section is on screen, for the rail. Whatever crosses a third of
-    the way down the window - not the very top, where a section is only
-    just arriving and does not yet have anybody's attention.            */
+/* The section on screen is the last one whose top has crossed a third of the way down. */
 function watchScroll() {
     let queued = false;
 
@@ -1755,8 +1614,39 @@ function watchScroll() {
     check();
 }
 
-/*  THE EVENT YOU PICKED - sits under the cards once one is chosen, with
-    the two prices and the power situation. */
+/* --------------------------------------------------------------- 14. Rendering */
+
+function render() {
+    if (state.confirmed) return;
+
+    // Everything after choosing an event belongs to that event, so it is locked until one is chosen.
+    const chosen = !!state.eventId;
+    document.querySelectorAll('.vs-sec').forEach((el) => {
+        if (el.getAttribute('data-sec') === 'event') return;
+        el.classList.toggle('is-locked', !chosen);
+    });
+
+    renderEvents();
+    renderPicked();
+    renderSide();
+    renderRail();
+    if (!chosen) return;
+
+    renderCategories();
+    renderSizeFields();
+    if (map) map.setVendorType(state.vendorType);
+    renderSiteChoice();
+    renderMapMeta();
+    renderDocumentList();
+    renderReview();
+}
+
+function onFormChange() {
+    renderSide();
+    renderRail();
+}
+
+/* The chosen event, under the cards, with the two prices and the power situation. */
 function renderPicked() {
     const wrap = document.getElementById('vs-picked');
     const head = document.getElementById('vs-picked-head');
@@ -1768,13 +1658,12 @@ function renderPicked() {
         return;
     }
 
-    const art = eventArt(ev);
+    const soldOut = state.soldOut || {};
 
     wrap.hidden = false;
     head.innerHTML =
-        '' +
         '<span class="vs-picked-art"' +
-        art +
+        eventArt(ev) +
         ' aria-hidden="true">' +
         '<span class="vs-picked-tick">&#10003;</span>' +
         '</span>' +
@@ -1792,14 +1681,12 @@ function renderPicked() {
         '</div>' +
         '<div class="vs-picked-fact">' +
         '<p class="vs-picked-label">Food vendor</p>' +
-        ((state.soldOut || {}).food
-            ? '<strong class="vs-soldout-word">Sold out</strong>'
-            : '<strong>' + money(PRICE.foodCents) + ' / bay</strong>') +
+        (soldOut.food ? '<strong class="vs-soldout-word">Sold out</strong>' : '<strong>' + money(PRICE.foodCents) + ' / bay</strong>') +
         '<span>6 m &times; 3 m per bay</span>' +
         '</div>' +
         '<div class="vs-picked-fact">' +
         '<p class="vs-picked-label">Market stall</p>' +
-        ((state.soldOut || {}).market
+        (soldOut.market
             ? '<strong class="vs-soldout-word">Sold out</strong>'
             : '<strong>' + money(PRICE.marketPerBayCents) + ' / bay</strong>') +
         '<span>3 m &times; 3 m per bay<br>(up to 8 adjoining bays)</span>' +
@@ -1823,8 +1710,7 @@ function renderPicked() {
     }
 }
 
-/*  YOUR APPLICATION - the booking as it stands, down the side: which
-    event, which kind of vendor, which site, and what it comes to. */
+/* "Your application" down the side: event, vendor type, site and what it comes to. */
 function renderSide() {
     const host = document.getElementById('vs-chosen');
     if (!host) return;
@@ -1838,8 +1724,6 @@ function renderSide() {
             'build up here as you go.</p>';
         return;
     }
-
-    const art = eventArt(ev);
 
     const b = feeBreakdown(priceCents());
 
@@ -1861,15 +1745,47 @@ function renderSide() {
         ? '<strong>' + escapeHtml(state.siteLabel) + '</strong>' + '<span>Held for you while you finish.</span>'
         : '<span class="vs-side-wait">Not selected yet</span>' + '<span>Choose your site on the map below.</span>';
 
+    // Itemised, so vendors see which line is the site, which is the fee and which is tax.
+    const breakdown = b.totalCents
+        ? '<div class="vs-side-sum">' +
+          '<div>' +
+          '<span>' +
+          escapeHtml(siteLine) +
+          '</span>' +
+          '<span>' +
+          exact(b.siteCents) +
+          '</span>' +
+          '</div>' +
+          '<div>' +
+          '<span>Booking fee <em>4% + $0.99</em></span>' +
+          '<span>' +
+          exact(b.bookingFeeCents) +
+          '</span>' +
+          '</div>' +
+          '<div>' +
+          '<span>GST <em>(10%)</em></span>' +
+          '<span>' +
+          exact(b.gstCents) +
+          '</span>' +
+          '</div>' +
+          '</div>'
+        : '';
+
+    // A total of nothing says why, or it reads as free.
+    const finePrint = b.totalCents
+        ? ''
+        : '<p class="vs-side-fineprint">' +
+          (!state.vendorType ? 'Choose a vendor type to see your total' : 'Choose your site to see your total') +
+          '</p>';
+
     host.innerHTML =
-        '' +
         '<div class="vs-side-top">' +
         '<h3 class="vs-side-head">Your application</h3>' +
         '<button type="button" class="vs-side-change" data-change-event>Edit event</button>' +
         '</div>' +
         '<div class="vs-side-card">' +
         '<span class="vs-side-art"' +
-        art +
+        eventArt(ev) +
         ' aria-hidden="true"></span>' +
         '<span class="vs-side-card-text">' +
         '<strong>' +
@@ -1891,45 +1807,14 @@ function renderSide() {
         '<p class="vs-side-label">Site selection</p>' +
         siteRow +
         '</div>' +
-        /*  Itemised, so vendors see which line is ours, which is the payment
-        processor's and which is tax. The bays line is spelled out for market
-        stalls because the site total moves with the map. */
-        (b.totalCents
-            ? '<div class="vs-side-sum">' +
-              '<div>' +
-              '<span>' +
-              escapeHtml(siteLine) +
-              '</span>' +
-              '<span>' +
-              exact(b.siteCents) +
-              '</span>' +
-              '</div>' +
-              '<div>' +
-              '<span>Booking fee <em>4% + $0.99</em></span>' +
-              '<span>' +
-              exact(b.bookingFeeCents) +
-              '</span>' +
-              '</div>' +
-              '<div>' +
-              '<span>GST <em>(10%)</em></span>' +
-              '<span>' +
-              exact(b.gstCents) +
-              '</span>' +
-              '</div>' +
-              '</div>'
-            : '') +
+        breakdown +
         '<div class="vs-side-total">' +
         '<span>Total</span>' +
         '<strong>' +
         exactOrDash(b.totalCents) +
         '</strong>' +
         '</div>' +
-        /*  A total of nothing needs to say why, or it reads as free.      */
-        (b.totalCents
-            ? ''
-            : '<p class="vs-side-fineprint">' +
-              (!state.vendorType ? 'Choose a vendor type to see your total' : 'Choose your site to see your total') +
-              '</p>') +
+        finePrint +
         '<button type="button" class="btn vs-side-go" data-side-go>' +
         'Continue to next step <span aria-hidden="true">&#8594;</span>' +
         '</button>' +
@@ -1941,8 +1826,7 @@ function renderSide() {
     const change = host.querySelector('[data-change-event]');
     if (change) change.addEventListener('click', () => goToSection('event'));
 
-    /*  One button that always points at the first thing still to do, so it
-      works wherever somebody has scrolled to.                         */
+    // Always points at the first thing still to do.
     const go = host.querySelector('[data-side-go]');
     if (go) {
         const next = SECTIONS.find((sec) => !sectionDone(sec.id)) || SECTIONS[SECTIONS.length - 1];
@@ -1950,20 +1834,14 @@ function renderSide() {
     }
 }
 
-/*  Frontage and depth are a food van question.
-
-    A market stall is however many 3 m x 3 m bays it takes, so the map has
-    already answered this by the time anybody reaches the form - asking
-    again invites a different answer, and then two records of one stall's
-    size that can disagree.                                            */
+/* Frontage and depth are a food van question; a market stall's size is the bays it picks. */
 function renderSizeFields() {
     const market = state.vendorType === 'market';
 
     document.querySelectorAll('[data-size-field]').forEach((el) => {
         el.hidden = market;
 
-        /*  Not required while they are not on screen, or the form refuses to
-        submit over a field nobody can see.                          */
+        // Not required while hidden, or the form refuses to submit over a field nobody can see.
         el.querySelectorAll('select').forEach((sel) => {
             sel.required = !market;
         });
@@ -1977,11 +1855,11 @@ function renderSizeFields() {
     }
 }
 
+/* Category chips for the chosen vendor type; a full one cannot be picked. */
 function renderCategories() {
     const host = document.getElementById('vs-categories');
     if (!host) return;
 
-    // Food vendors see food categories, market stalls see market ones.
     const mine = categories.filter((c) => c.appliesTo === state.vendorType);
 
     const heading = document.getElementById('vs-category-heading');
@@ -2029,19 +1907,16 @@ function renderCategories() {
     });
 }
 
+/* The line under the map. Site fee only: the fee and GST are the same
+   whichever site they pick, and the review spells out the whole lot. */
 function renderSiteChoice() {
     const out = document.getElementById('vs-site-choice');
     if (!out) return;
 
     const chosen = pendingSites();
     const held = Boolean(state.siteLabel);
-    const heldIds = state.siteIds.join(',');
-    const sameAsHeld = held && chosen.map((s) => s.id).join(',') === heldIds;
+    const sameAsHeld = held && chosen.map((s) => s.id).join(',') === state.siteIds.join(',');
 
-    /*  Site fee here, not the total. This line is about comparing one site
-      against another while they are picking, and the fee and GST are the
-      same whichever they choose - the review step spells the whole lot
-      out before they pay. */
     if (sameAsHeld) {
         out.textContent = `Held for you: site ${state.siteLabel} · ${money(priceCents())} site fee`;
     } else if (chosen.length) {
@@ -2059,34 +1934,28 @@ function renderSiteChoice() {
     }
 
     out.classList.toggle('is-chosen', sameAsHeld || chosen.length > 0);
-
-    /*  The selection is the hold (no Hold button). renderSiteChoice above
-      says which state we are in. */
 }
 
-/*  THE REVIEW STEP
-    A stack of small cards, one idea each: what you are buying, what it
-    costs, and who takes the money. One column at every width.
-    ------------------------------------------------------------------------- */
+/* "Site M11" / "Sites M12 + M13", or a generic name before a site is chosen. */
+function reviewItemName(named, bays, isMarket) {
+    if (named) return `Site${bays > 1 ? 's' : ''} ${named}`;
+    return isMarket ? 'Market bay' : 'Food vendor site';
+}
 
-/*  The little glyph in front of the line item. Drawn rather than loaded -
-    two icons are not worth an image request, and these inherit the text
-    colour so they never look pasted on. */
-const ITEM_ICONS = {
-    food: `<svg viewBox="0 0 120 80" aria-hidden="true">
-           <path d="M14 54V30h48l14 12v12z"/>
-           <path d="M62 30h10l14 12H62z"/>
-           <circle cx="34" cy="58" r="6"/>
-           <circle cx="76" cy="58" r="6"/>
-           <path d="M10 26h60l-4-8H14z"/>
-         </svg>`,
-    market: `<svg viewBox="0 0 120 80" aria-hidden="true">
-             <path d="M18 34h84v30H18z"/>
-             <path d="M14 18h92l10 16H4z"/>
-             <path d="M34 44h24v20H34z"/>
-           </svg>`
-};
+/* No site is not a price, so it shows a dash; free is a price an admin set. */
+function totalToPayHtml(b) {
+    if (!hasSite()) return '&mdash;';
+    if (b.totalCents === 0) return 'Free';
+    return exact(b.totalCents);
+}
 
+function payButtonText(b) {
+    if (!hasSite()) return 'Pay and Book';
+    if (b.totalCents === 0) return 'Confirm booking';
+    return `Pay ${exact(b.totalCents)} AUD`;
+}
+
+/* The review step: what you are buying, what it costs, and who takes the money. */
 function renderReview() {
     const host = document.getElementById('vs-review');
     if (!host) return;
@@ -2096,19 +1965,12 @@ function renderReview() {
     const isMarket = state.vendorType === 'market';
     const bays = bayCount();
 
-    /*  Priced per bay so the sum is visible: two bays at $50 reads as
-      2 x $50.00 = $100.00 rather than an unexplained $100. */
+    // Priced per bay so the sum shows: 2 x $50.00 = $100.00.
     const perBay = bays > 1 ? Math.round(b.siteCents / bays) : b.siteCents;
 
-    /*  The bays by name - "Site M11", or "Sites M12 + M13" - because that
-      is the thing being bought. Before a site is chosen it says so
-      rather than naming a stall that does not exist yet.             */
     const named = state.siteLabel || pendingLabel();
+    const itemName = reviewItemName(named, bays, isMarket);
 
-    const itemName = named ? `Site${bays > 1 ? 's' : ''} ${named}` : isMarket ? 'Market bay' : 'Food vendor site';
-
-    /*  How big it is, then what they sell. Measured for a market stall,
-      fixed for a food van.                                           */
     const measured = isMarket ? marketFootprint(chosenSites()) : '6 m x 3 m';
 
     const itemSub = named
@@ -2118,7 +1980,6 @@ function renderReview() {
               .join(' &middot; ')
         : 'No site chosen yet';
 
-    /*  The event line under the card title. */
     const eventLine = [ev.name || 'Eatz & Beatz', ev.dateLabel].filter(Boolean).map(escapeHtml).join(' &middot; ');
 
     const details = [
@@ -2192,7 +2053,7 @@ function renderReview() {
 
         <div class="vs-sum-total">
           <span>Total to pay</span>
-          <strong>${!hasSite() ? '&mdash;' : b.totalCents === 0 ? 'Free' : exact(b.totalCents)}</strong>
+          <strong>${totalToPayHtml(b)}</strong>
         </div>
       </section>
 
@@ -2242,8 +2103,7 @@ function renderReview() {
     </div>
   `;
 
-    /*  Wired here rather than in wireStaticControls because this markup is
-      rebuilt on every render. */
+    // Rebuilt on every render, so wired here rather than in wireStaticControls.
     host.querySelectorAll('[data-scroll-to]').forEach((btn) => {
         btn.addEventListener('click', () => goToSection(btn.getAttribute('data-scroll-to')));
     });
@@ -2252,8 +2112,7 @@ function renderReview() {
         btn.addEventListener('click', openFaqs);
     });
 
-    /*  The (i) beside the booking fee. A tooltip would be unreachable on a
-      phone, so it opens a line of text instead. */
+    // The (i) beside the booking fee opens a line of text (a tooltip is unreachable on a phone).
     const info = host.querySelector('[data-info]');
     const note = host.querySelector('[data-info-note]');
     if (info && note) {
@@ -2265,250 +2124,65 @@ function renderReview() {
 
     const payBtn = document.getElementById('vs-pay');
     if (payBtn) {
-        /*  Free is a price an admin set. No site is not a price at all, so
-        the button keeps its plain wording until there is one.       */
-        payBtn.textContent = !hasSite() ? 'Pay and Book' : b.totalCents === 0 ? 'Confirm booking' : `Pay ${exact(b.totalCents)} AUD`;
-        /*  Grey until the Vendor Terms are ticked. After
-        that it is live, and pressing it says what else is still needed. */
-        payBtn.disabled = !termsAgreed();
+        payBtn.textContent = payButtonText(b);
+        payBtn.disabled = !termsAgreed(); // grey until the Vendor Terms are ticked
     }
 }
 
-/* -------------------------------------------------------------------------
-   Static wiring
-   ------------------------------------------------------------------------- */
-/*  The vendor-type cards: a sold-out type is stamped SOLD OUT and can't be
-    chosen. If it was already chosen (a returning vendor), it is cleared.  */
-function renderSoldOut() {
-    const so = state.soldOut || {};
-    document.querySelectorAll('[data-vendor-type]').forEach((btn) => {
-        const t = btn.getAttribute('data-vendor-type');
-        const out = !!so[t] && !(state.claim && state.claim.vendorType === t);
-        btn.classList.toggle('is-soldout', out);
-        btn.disabled = out;
-        btn.setAttribute('aria-disabled', out ? 'true' : 'false');
-        let stamp = btn.querySelector('.vs-type-soldout');
-        if (out && !stamp) {
-            stamp = document.createElement('span');
-            stamp.className = 'vs-type-soldout';
-            stamp.textContent = 'Sold out';
-            btn.appendChild(stamp);
-        } else if (!out && stamp) stamp.remove();
+/* Every [data-terms-body] slot gets the Vendor Terms. */
+function renderVendorTerms() {
+    const html =
+        termBodyHtml(VENDOR_TERMS_INTRO, escapeHtml) +
+        VENDOR_TERMS.map(([title, lines], i) => `<h4>${i + 1}. ${escapeHtml(title)}</h4>` + termBodyHtml(lines, escapeHtml)).join('') +
+        termBodyHtml(VENDOR_TERMS_OUTRO, escapeHtml);
+    document.querySelectorAll('[data-terms-body]').forEach((el) => {
+        el.innerHTML = html;
     });
-    if (
-        state.vendorType &&
-        so[state.vendorType] &&
-        !(state.claim && state.claim.vendorType === state.vendorType) &&
-        !(state.siteIds && state.siteIds.length)
-    ) {
-        state.vendorType = null;
-        document.querySelectorAll('[data-vendor-type]').forEach((b) => b.classList.remove('is-selected'));
-    }
-    renderWaitlist(so);
 }
 
-/*  JOIN THE WAITLIST: under each sold-out type. When a
-    spot opens the first person is emailed and gets 4 hours to claim it. */
-const WL_WORD = { food: 'Food vans', market: 'Market stalls' };
-function renderWaitlist(so) {
-    const host = document.getElementById('vs-waitlist');
-    if (!host) return;
-    const types = ['food', 'market'].filter((t) => so[t] && !(state.claim && state.claim.vendorType === t));
-    host.hidden = !types.length || !state.eventId;
-    if (host.hidden) {
-        host.innerHTML = '';
-        return;
-    }
-    state.wlDone = state.wlDone || {};
-    // keep what someone is typing if the page redraws
-    if (host.querySelector('form') && types.every((t) => host.querySelector('[data-wl-type="' + t + '"]'))) return;
-    host.innerHTML = types
-        .map((t) =>
-            state.wlDone[t]
-                ? '<div class="vs-wl-card vs-wl-done" data-wl-type="' +
-                  t +
-                  '"><b>You&rsquo;re on the ' +
-                  WL_WORD[t].toLowerCase() +
-                  ' waitlist' +
-                  (state.wlDone[t] > 0 ? ' (#' + state.wlDone[t] + ')' : '') +
-                  '.</b>' +
-                  '<p>We&rsquo;ll email you the moment a spot opens. You&rsquo;ll have 4 hours to claim it, and it&rsquo;s yours once you pay.</p></div>'
-                : '<form class="vs-wl-card" data-wl-type="' +
-                  t +
-                  '">' +
-                  '<b>' +
-                  WL_WORD[t] +
-                  ' are sold out &mdash; join the waitlist</b>' +
-                  '<p>If a spot opens we&rsquo;ll email you straight away. You&rsquo;ll have 4 hours to claim it.</p>' +
-                  '<div class="vs-wl-grid">' +
-                  '<label>Business name<input name="name" required autocomplete="organization"></label>' +
-                  '<label>Your name<input name="contactName" required autocomplete="name"></label>' +
-                  '<label>Email<input name="email" type="email" required autocomplete="email"></label>' +
-                  '<label>Phone<input name="phone" type="tel" autocomplete="tel"></label>' +
-                  '<label class="vs-wl-wide">What do you sell?<input name="description" maxlength="300"></label>' +
-                  '</div><button type="submit" class="btn">Join the waitlist</button><p class="vs-wl-msg" hidden></p></form>'
-        )
-        .join('');
-    if (LINK.get('waitlist') && !linkWaitlistDone) {
-        linkWaitlistDone = true;
-        setTimeout(() => {
-            const rail = document.getElementById('vs-rail');
-            const top = Math.max(
-                0,
-                host.getBoundingClientRect().top + window.scrollY - (rail ? rail.getBoundingClientRect().height : 0) - 20
-            );
-            window.scrollTo({ top, behavior: 'smooth' });
-            setTimeout(() => {
-                if (Math.abs(window.scrollY - top) > 40) window.scrollTo(0, top);
-            }, 900); // jump if smooth scroll didn't happen
-            const first = host.querySelector('input');
-            if (first) first.focus({ preventScroll: true });
-        }, 700);
-    }
+/* "N/300" under "What do you sell?". */
+function renderDescCount() {
+    const desc = document.getElementById('vs-biz-desc');
+    const count = document.getElementById('vs-biz-desc-count');
+    if (desc && count) count.textContent = desc.value.length + '/' + DESC_MAX;
 }
 
-async function joinWaitlist(form) {
-    const t = form.getAttribute('data-wl-type');
-    const v = (n) => (form.querySelector('[name="' + n + '"]') || {}).value || '';
-    const msg = form.querySelector('.vs-wl-msg');
-    const btn = form.querySelector('button');
-    btn.disabled = true;
-    try {
-        if (!fb) throw new Error('Still getting set up - try again in a moment.');
-        await fbMore();
-        const call = fb.fn.httpsCallable(fb.fns, 'joinWaitlist');
-        const res = await call({
-            eventId: state.eventId,
-            vendorType: t,
-            name: v('name'),
-            contactName: v('contactName'),
-            email: v('email'),
-            phone: v('phone'),
-            description: v('description')
-        });
-        state.wlDone = state.wlDone || {};
-        state.wlDone[t] = (res.data && res.data.position) || -1;
-        const host = document.getElementById('vs-waitlist');
-        if (host) host.innerHTML = '';
-        renderWaitlist(state.soldOut || {});
-    } catch (err) {
-        btn.disabled = false;
-        if (msg) {
-            msg.hidden = false;
-            msg.textContent = (err && err.message) || 'Could not join the waitlist. Please try again.';
-        }
-    }
-}
-
-/*  ACCEPT FROM THE WAITLIST EMAIL: /vendor-signup?claim=<token>. The held site
-    moves to this visitor, their details are filled in, and they book + pay as
-    normal. The spot is only theirs once payment is received.            */
-async function claimFromWaitlist() {
-    const token = new URLSearchParams(window.location.search).get('claim');
-    if (!token || state.claimTried || !fb || !state.user) return;
-    state.claimTried = true;
-    try {
-        await fbMore();
-        const res = await fb.fn.httpsCallable(fb.fns, 'claimWaitlist')({ token });
-        const c = res.data;
-        state.claim = c;
-        // wait for the events list, then open theirs
-        for (let i = 0; i < 40 && !(state.events || []).some((e) => e.id === c.eventId); i++) await new Promise((r) => setTimeout(r, 250));
-        if (state.eventId !== c.eventId) chooseEvent(c.eventId);
-        const fill = {
-            'vs-biz-name': c.name,
-            'vs-biz-contact': c.contactName,
-            'vs-biz-email': c.email,
-            'vs-biz-phone': c.phone,
-            'vs-biz-desc': c.description
-        };
-        Object.keys(fill).forEach((id) => {
-            const el = document.getElementById(id);
-            if (el && !el.value && fill[id]) {
-                el.value = fill[id];
-                el.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-        });
-        renderSoldOut();
-        const typeBtn = document.querySelector('[data-vendor-type="' + c.vendorType + '"]');
-        if (typeBtn) {
-            typeBtn.disabled = false;
-            typeBtn.click();
-        }
-        const until = new Date(c.expiresAt).toLocaleString('en-AU', {
-            weekday: 'short',
-            day: 'numeric',
-            month: 'short',
-            hour: 'numeric',
-            minute: '2-digit'
-        });
-        showClaimBanner(
-            '<b>Your waitlist spot: site ' +
-                escapeHtml(c.siteLabel) +
-                '</b> is held for you until ' +
-                escapeHtml(until) +
-                '. Check your details, choose site ' +
-                escapeHtml(c.siteLabel) +
-                ' on the map and pay to secure it &mdash; it&rsquo;s only yours once payment is received.'
-        );
-    } catch (err) {
-        showClaimBanner((err && err.message) || 'Sorry - this offer is no longer available.', true);
-    }
-}
-function showClaimBanner(html, bad) {
-    let el = document.getElementById('vs-claim-banner');
-    if (!el) {
-        el = document.createElement('div');
-        el.id = 'vs-claim-banner';
-        const main = document.querySelector('main') || document.body;
-        main.insertBefore(el, main.firstChild);
-    }
-    el.className = 'vs-claim-banner' + (bad ? ' is-bad' : '');
-    el.innerHTML = html;
-}
+/* ---------------------------------------------- 15. Form wiring and validation */
 
 function wireStaticControls() {
-    // the waitlist forms (drawn by renderWaitlist)
+    // The waitlist forms (drawn by renderWaitlist).
     const wl = document.getElementById('vs-waitlist');
-    if (wl)
+    if (wl) {
         wl.addEventListener('submit', (e) => {
             e.preventDefault();
             joinWaitlist(e.target);
         });
+    }
 
-    // vendor type
+    // Vendor type. No jump: the page re-renders where it stands.
     document.querySelectorAll('[data-vendor-type]').forEach((btn) => {
         btn.addEventListener('click', () => {
             const vt = btn.getAttribute('data-vendor-type');
-            if ((state.soldOut || {})[vt] && !(state.claim && state.claim.vendorType === vt)) return; // sold out
-            state.vendorType = btn.getAttribute('data-vendor-type');
+            if (isSoldOut(vt)) return;
+            state.vendorType = vt;
 
             document.querySelectorAll('[data-vendor-type]').forEach((b) => {
                 b.classList.toggle('is-selected', b === btn);
             });
 
             setStepError('type', '');
-
-            /* Size is not asked here - a market stall is the bays picked on the map. */
             if (map) map.setVendorType(state.vendorType);
-
-            /*  No jump. The price and the map both follow from this, so the
-            page is re-rendered where it stands and the vendor carries on
-            down the same section.                                     */
             render();
         });
     });
 
-    /*  Continue. It checks its own section, keeps what is in it and takes
-      you to the next one - it is a scroll, not a screen change, so the
-      section you just filled in stays on the page behind you.        */
+    // Continue: check this section, keep what is in it, scroll to the next.
     document.querySelectorAll('[data-go]').forEach((btn) => {
         btn.addEventListener('click', async () => {
             const sec = btn.closest('.vs-sec');
             const from = sec ? sec.getAttribute('data-sec') : null;
 
-            /*  If they tapped a bay and went straight for Continue, hold it now
-          rather than letting the settle timer lose the race.        */
+            // A bay tapped just before Continue is held now, not after the settle timer.
             if (from === 'site') await flushHoldSync();
 
             if (from && !validateSection(from)) return;
@@ -2520,16 +2194,14 @@ function wireStaticControls() {
         });
     });
 
-    /*  The rail and the side column follow the typing. One listener on the
-      whole form rather than one per field, so fields added later are
-      covered without anybody remembering to wire them.              */
+    // One listener on the whole form keeps the rail and side column in step with typing.
     const form = document.getElementById('vs-flow');
     if (form) {
         form.addEventListener('input', onFormChange);
         form.addEventListener('change', onFormChange);
     }
 
-    // documents
+    // Documents.
     const fileInput = document.getElementById('vs-file');
     if (fileInput) {
         fileInput.addEventListener('change', () => {
@@ -2540,9 +2212,7 @@ function wireStaticControls() {
         });
     }
 
-    /*  The link inside the "I have read the FAQs" tick. Static markup, so
-      it is wired once here - and the click must not toggle the checkbox
-      it sits inside, which is what a button in a <label> would do.  */
+    // The FAQs link inside the "I have read the FAQs" label must not toggle the checkbox.
     document.querySelectorAll('.vs-check [data-open-faqs]').forEach((btn) => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -2551,15 +2221,13 @@ function wireStaticControls() {
         });
     });
 
-    /*  The 0/300 under "What do you sell?". It is what we put in the
-      marketing, so the limit is real and worth showing rather than
-      cutting somebody off at the end.                              */
+    // The description is capped at DESC_MAX characters, with a live counter.
     const desc = document.getElementById('vs-biz-desc');
     const count = document.getElementById('vs-biz-desc-count');
     if (desc && count) {
         const tick = () => {
-            if (desc.value.length > 300) desc.value = desc.value.slice(0, 300);
-            count.textContent = desc.value.length + '/300';
+            if (desc.value.length > DESC_MAX) desc.value = desc.value.slice(0, DESC_MAX);
+            renderDescCount();
         };
         desc.addEventListener('input', tick);
         tick();
@@ -2567,40 +2235,28 @@ function wireStaticControls() {
 
     watchScroll();
 
-    // pay
+    // Pay and the Vendor Terms.
     const payBtn = document.getElementById('vs-pay');
     if (payBtn) payBtn.addEventListener('click', payAndBook);
     renderVendorTerms();
+
     const termsBox = document.getElementById('vs-terms-ok');
-    if (termsBox)
+    if (termsBox) {
         termsBox.addEventListener('change', () => {
             syncPayButton();
             if (termsAgreed()) setStepError('review', '');
         });
+    }
+
     document.querySelectorAll('[data-open-terms]').forEach((link) => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            const inReview = !!link.closest('[data-sec="review"]');
-            if (inReview) {
-                // the review step has its own copy right there
-                const box2 = document.getElementById('vs-terms-box2');
-                if (box2) {
-                    box2.open = true;
-                    box2.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-                return;
-            }
-            openFaqs();
-            const box = document.getElementById('vs-terms-box');
-            if (box) {
-                box.open = true;
-                setTimeout(() => box.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
-            }
+            openTerms(link);
         });
     });
 
-    // jump to the flow from the hero
+    // The hero button jumps to the form.
     document.querySelectorAll('[data-start]').forEach((btn) => {
         btn.addEventListener('click', () => {
             const anchor = document.getElementById('vs-flow');
@@ -2609,6 +2265,27 @@ function wireStaticControls() {
     });
 }
 
+/* Open the terms nearest the link: the review step has its own copy;
+   anywhere else uses the one in the FAQs panel. */
+function openTerms(link) {
+    if (link.closest('[data-sec="review"]')) {
+        const reviewBox = document.getElementById('vs-terms-box2');
+        if (reviewBox) {
+            reviewBox.open = true;
+            reviewBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+    }
+
+    openFaqs();
+    const box = document.getElementById('vs-terms-box');
+    if (box) {
+        box.open = true;
+        setTimeout(() => box.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+    }
+}
+
+/* Form fields -> state. */
 function collectForm() {
     state.business = {
         name: val('vs-biz-name'),
@@ -2619,35 +2296,26 @@ function collectForm() {
         description: val('vs-biz-desc')
     };
 
-    /*  For a market stall the size is the bays, so it is measured rather
-      than asked. A run or a block gives a real frontage and depth for the
-      run sheet; an L has neither, and is left blank - the site label
-      names every bay either way.                                     */
+    // A market stall's size is measured from its bays; an L-shape has none and is left blank.
     let frontage = val('vs-setup-frontage');
     let depth = val('vs-setup-depth');
 
     if (state.vendorType === 'market') {
-        const bays = chosenSites();
-        const columns = new Set(bays.map((b) => b.x)).size;
-        const rows = new Set(bays.map((b) => b.y)).size;
-
-        const rectangular = bays.length > 0 && columns * rows === bays.length;
-        frontage = rectangular ? String(rows * 3) : '';
-        depth = rectangular ? String(columns * 3) : '';
+        const rect = stallRectangle(chosenSites());
+        frontage = rect ? String(rect.frontage) : '';
+        depth = rect ? String(rect.depth) : '';
     }
 
     state.setup = {
         frontage,
         depth,
-        /* All vendors run off their own power and water at this event, so what
-       we record is what they are bringing, not what they want from us.
-       Loud generators get placed away from the stage. */
-        ownPower: val('vs-setup-own-power'),
+        ownPower: val('vs-setup-own-power'), // what they bring - no power is supplied
         readFaqs: document.getElementById('vs-setup-faqs')?.checked || false,
         notes: val('vs-setup-notes')
     };
 }
 
+/* Check a section, show what is missing, and say whether it passed. */
 function validateSection(id) {
     if (id === 'type') {
         setStepError('type', '');
@@ -2658,10 +2326,7 @@ function validateSection(id) {
         return true;
     }
 
-    /*  Business, what you sell and your setup are one section now, so they
-      are checked in the order they appear on the page and the first thing
-      missing is scrolled to - on a long section a message at the bottom
-      can sit off screen and look like nothing happened.                */
+    // Checked in page order; the first thing missing is scrolled to.
     if (id === 'details') {
         setStepError('details', '');
         setStepError('category', '');
@@ -2681,8 +2346,6 @@ function validateSection(id) {
         if (!state.categoryId) {
             return fail('category', 'Please choose a category.', 'vs-categories');
         }
-        /*  Market stalls are sized by the bays they take, so the fields are
-        not on screen and there is nothing to check.                 */
         if (state.vendorType !== 'market' && (!val('vs-setup-frontage') || !val('vs-setup-depth'))) {
             return fail('setup', 'Please choose your frontage and depth.', 'vs-setup-frontage');
         }
@@ -2690,9 +2353,6 @@ function validateSection(id) {
             return fail('setup', 'Please tell us what power you are bringing.', 'vs-setup-own-power');
         }
 
-        /* There is a lot in the FAQs that costs money to find out late - no
-       power, no bar, the ten minute hold - so we ask them to say they have
-       read it. */
         const ack = document.getElementById('vs-setup-faqs');
         if (ack && !ack.checked) {
             return fail('setup', 'Please confirm you have read the frequently asked questions.', 'vs-setup-faqs');
@@ -2714,9 +2374,7 @@ function validateSection(id) {
     return true;
 }
 
-/*  Everything, in order, for the pay button. It has to check the sections
-    above it because on one page nobody is forced to walk through them -
-    you can scroll straight past a half-filled one to the bottom.       */
+/* For the pay button: nobody is forced through the sections in order. */
 function firstIncomplete() {
     return ['type', 'details', 'site'].find((id) => !validateSection(id)) || null;
 }
@@ -2734,19 +2392,233 @@ function fail(where, message, focusId) {
     return false;
 }
 
-/* -------------------------------------------------------------------------
-   Small helpers
-   ------------------------------------------------------------------------- */
+/* ------------------------------------------------ 16. Checkout and confirmation */
+
+/* createCheckout refuses without the terms too (functions/index.js). */
+function termsAgreed() {
+    const box = document.getElementById('vs-terms-ok');
+    return !!(box && box.checked);
+}
+
+function syncPayButton() {
+    const payBtn = document.getElementById('vs-pay');
+    if (payBtn) payBtn.disabled = !termsAgreed();
+}
+
+async function payAndBook() {
+    if (state.preview) {
+        setStepError('review', 'Preview mode - payments are switched off until Firebase and Stripe are connected.');
+        return;
+    }
+
+    if (!termsAgreed()) {
+        setStepError('review', 'Please tick the box to agree to the Vendor Terms & Conditions.');
+        return;
+    }
+
+    // Say what is missing beside the pay button as well as on its step, then go there.
+    const missing = firstIncomplete();
+    if (missing) {
+        const label = (SECTIONS.find((sec) => sec.id === missing) || {}).label || 'an earlier step';
+        setStepError('review', 'Finish ' + label + ' first - we have highlighted what is missing.');
+        goToSection(missing);
+        return;
+    }
+
+    setStepError('review', '');
+    collectForm();
+    setBusy('review', true);
+
+    try {
+        await saveDraft();
+
+        const res = await callFunction('createCheckout', {
+            bookingId: state.bookingId,
+            termsAccepted: true,
+            termsVersion: VENDOR_TERMS_VERSION
+        });
+
+        if (res.data.free || res.data.alreadyConfirmed) {
+            await refreshConfirmed();
+            return;
+        }
+
+        if (res.data.url) {
+            window.location.assign(res.data.url);
+            return;
+        }
+
+        setStepError('review', 'Could not start checkout. Please try again.');
+    } catch (err) {
+        setStepError('review', friendlyError(err));
+    } finally {
+        setBusy('review', false);
+    }
+}
+
+/* Back from Stripe, paid or cancelled. The redirect is only a hint: the
+   booking is not treated as paid until the webhook has written it. The
+   event is read off the booking first so its sites and categories load. */
+async function handleReturnFromStripe() {
+    const params = new URLSearchParams(window.location.search);
+    const bookingId = params.get('booking');
+
+    if (!bookingId) return;
+
+    state.bookingId = bookingId;
+    localStorage.setItem('sg-vendor-booking', bookingId);
+
+    if (fb) {
+        try {
+            const snap = await readBooking(bookingId);
+            if (snap.exists()) {
+                const b = snap.data();
+                if (b.eventId) state.eventId = b.eventId;
+            }
+        } catch (err) {
+            console.error('could not read the booking on return', err);
+        }
+    }
+
+    if (params.get('cancelled')) {
+        setStepError('review', 'Checkout was cancelled. Your site is still held for a few minutes.');
+        goToSection('review');
+        return;
+    }
+
+    if (params.get('paid')) {
+        showWaitingForPayment();
+        pollForConfirmation(bookingId);
+    }
+}
+
+/* Hide the form sections and the side column. */
+function hideFlow() {
+    document.querySelectorAll('.vs-sec').forEach((el) => {
+        el.hidden = true;
+    });
+    document.querySelector('.vs-side')?.setAttribute('hidden', '');
+}
+
+function showWaitingForPayment() {
+    const el = document.getElementById('vs-confirming');
+    if (el) el.hidden = false;
+    hideFlow();
+}
+
+/* Poll every 3 s; after about a minute, say it is safe to leave. */
+async function pollForConfirmation(bookingId, attempt = 0) {
+    if (!fb) return;
+
+    try {
+        const snap = await readBooking(bookingId);
+        const status = snap.exists() ? snap.data().status : null;
+
+        if (status === 'confirmed') {
+            state.confirmed = { id: snap.id, ...snap.data() };
+            showConfirmation();
+            return;
+        }
+
+        if (status === 'needs_attention') {
+            const el = document.getElementById('vs-confirming');
+            if (el) {
+                el.innerHTML = `
+          <h2>We need to sort something out</h2>
+          <p>Your payment went through, but the site was taken while you were
+             paying. Nothing further is needed from you right now - we will be
+             in touch to move you to another site or refund you.</p>
+          <p><a class="btn" href="/contact">Contact SoundzGood</a></p>`;
+            }
+            return;
+        }
+    } catch (err) {
+        console.warn('Still waiting on the webhook', err);
+    }
+
+    if (attempt < 20) {
+        setTimeout(() => pollForConfirmation(bookingId, attempt + 1), 3000);
+        return;
+    }
+
+    const note = document.querySelector('#vs-confirming [data-confirming-note]');
+    if (note) {
+        note.textContent =
+            'This is taking longer than usual. Your payment is safe and your ' +
+            'booking will be confirmed by email. You can close this page.';
+    }
+}
+
+async function refreshConfirmed() {
+    const snap = await readBooking(state.bookingId);
+    if (snap.exists()) {
+        state.confirmed = { id: snap.id, ...snap.data() };
+        showConfirmation();
+    }
+}
+
+function paidLabel(b) {
+    if (b.amountPaidCents != null) return '$' + (b.amountPaidCents / 100).toFixed(2);
+    return b.paymentStatus === 'free' ? 'Free' : '-';
+}
+
+function showConfirmation() {
+    const wrap = document.getElementById('vs-confirmed');
+    const confirming = document.getElementById('vs-confirming');
+
+    if (confirming) confirming.hidden = true;
+    hideFlow();
+
+    if (!wrap) return;
+    const b = state.confirmed || {};
+
+    wrap.hidden = false;
+    wrap.innerHTML = `
+    <div class="vs-confirm-card">
+      <p class="vs-eyebrow">Booking confirmed</p>
+      <h2>You're in.</h2>
+      <p class="vs-confirm-ref">Reference <strong>${escapeHtml(b.reference || b.id || '')}</strong></p>
+
+      <dl class="vs-summary-list">
+        <div><dt>Vendor</dt><dd>${escapeHtml(b.business?.name || '')}</dd></div>
+        <div><dt>Type</dt><dd>${escapeHtml(VENDOR_LABEL[b.vendorType] || b.vendorType || '')}</dd></div>
+        ${b.categoryName ? `<div><dt>Category</dt><dd>${escapeHtml(b.categoryName)}</dd></div>` : ''}
+        <div><dt>Site</dt><dd>${escapeHtml(b.siteLabel || '')}</dd></div>
+        <div><dt>Paid</dt><dd>${paidLabel(b)}</dd></div>
+      </dl>
+
+      <p class="vs-confirm-note">
+        Eatz &amp; Beatz Halloween Edition &middot; Saturday 31 October 2026 &middot;
+        Bowen Sports Complex. We'll email your bump-in time and site details closer
+        to the date.
+      </p>
+
+      <div class="buttons">
+        <a class="btn" href="/events">Back to Events</a>
+        <a class="btn btn-outline" href="/contact">Contact Us</a>
+      </div>
+    </div>
+  `;
+}
+
+/* ----------------------------------------------------------------- 17. Helpers */
+
 function val(id) {
     const el = document.getElementById(id);
     return el ? el.value.trim() : '';
 }
 
+/* A Firestore timestamp or a number -> ms, or null. */
+function timeInMs(t) {
+    if (t && typeof t.toMillis === 'function') return t.toMillis();
+    if (typeof t === 'number') return t;
+    return null;
+}
+
+/* Show (or clear) the message in [data-error="<step>"]; warn if the slot is missing. */
 function setStepError(step, message) {
     const el = document.querySelector(`[data-error="${step}"]`);
 
-    /*  Warn in the console if the error slot is missing, so a lost message
-      gets noticed. */
     if (!el) {
         if (message) console.warn(`No [data-error="${step}"] to show: ${message}`);
         return;
@@ -2756,17 +2628,17 @@ function setStepError(step, message) {
     el.hidden = !message;
 }
 
+/* Show the section's spinner and disable its buttons, so nothing starts twice. */
 function setBusy(step, busy) {
     const el = document.querySelector(`[data-busy="${step}"]`);
     if (el) el.hidden = !busy;
 
-    /*  The buttons in the section that is busy, disabled so a second click
-      cannot start an upload or checkout twice. */
     const sec = document.querySelector(`.vs-sec[data-sec="${step}"]`);
-    if (sec)
+    if (sec) {
         sec.querySelectorAll('button').forEach((b) => {
             b.disabled = busy;
         });
+    }
 }
 
 function friendlyError(err) {
@@ -2777,8 +2649,7 @@ function friendlyError(err) {
     if (code.includes('invalid-email')) return 'That email address does not look right.';
     if (code.includes('permission-denied')) return 'You do not have permission to do that.';
 
-    /*  These mean the silent anonymous sign-in has not landed - so the
-      advice is to refresh, not "sign in". */
+    // The silent anonymous sign-in has not landed, so the advice is to refresh.
     if (code.includes('unauthenticated') || code.includes('admin-restricted-operation')) {
         return 'Lost your place for a moment. Please refresh the page and try again.';
     }
@@ -2793,18 +2664,13 @@ function formatSize(bytes) {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/* The shared escape helper from js/main.js (loaded first on this page). */
 function escapeHtml(value) {
-    return String(value == null ? '' : value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+    return window.SG.esc(value);
 }
 
 /* Tidy up listeners if the page is left. */
 window.addEventListener('beforeunload', () => {
-    if (sitesUnsub) sitesUnsub();
-    if (categoriesUnsub) categoriesUnsub();
+    stopEventListeners();
     stopHoldCountdown();
 });
