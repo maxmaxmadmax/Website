@@ -1,8 +1,8 @@
 /* ==========================================================================
-   GIG GUIDE - gig-guide.html, on top of site.css + gig-card.css. Everything is .gg-
+   GIG GUIDE - gig-guide.html, on top of site.css + gig-card.css. The banner,
+   pills, inputs, section heads and cards come from site.css. Everything is .gg-
 
-   HERO       video banner
-   FILTERS    search, when, where, pills
+   FILTERS    the filter band and the row of places
    BANDS      the rows of cards (slider from site.css)
    CLOSING    book-us band at the bottom
    PHONE      keep last
@@ -15,98 +15,6 @@
 
 #sg-gig-guide {
     background: #0a0a0a;
-}
-
-/* ==========================================================================
-   HERO
-   ========================================================================== */
-.gg-hero {
-    position: relative;
-    display: flex;
-    align-items: flex-end;
-    min-height: min(62vh, 560px);
-    padding: calc(var(--sg-nav-height, 80px) + 40px) 20px 44px;
-    overflow: hidden;
-    background: linear-gradient(120deg, #2a1403 0%, #0a0a0a 64%); /* shows until the video plays */
-}
-
-.gg-hero-video {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: 0;
-}
-
-.gg-hero-scrim {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    background:
-        linear-gradient(90deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.55) 52%, rgba(0, 0, 0, 0.7) 100%),
-        linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.2) 40%, #0a0a0a 100%);
-}
-
-.gg-hero-inner {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 30px;
-    width: 100%;
-    max-width: var(--sg-max-width);
-    margin: auto;
-}
-
-.gg-eyebrow {
-    color: var(--sg-gold);
-    font-family: var(--sg-font-accent);
-    font-size: 0.72rem;
-    font-weight: bold;
-    letter-spacing: 0.28em;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-}
-
-.gg-title {
-    font-family: var(--sg-font-display);
-    font-size: clamp(2.6rem, 7vw, 5rem);
-    line-height: 0.9;
-    letter-spacing: -2px;
-    text-transform: uppercase;
-    margin: 0;
-}
-
-.gg-title span {
-    color: var(--sg-gold);
-}
-
-.gg-lead {
-    margin-top: 18px;
-    color: #ddd;
-    line-height: 1.65;
-}
-
-/* Handwritten line (decorative) */
-.gg-script {
-    font-family: var(--sg-font-script);
-    font-size: clamp(1.1rem, 2vw, 1.6rem);
-    line-height: 1.15;
-    text-align: right;
-    color: #fff;
-    flex-shrink: 0;
-}
-
-.gg-script::after {
-    content: '';
-    display: block;
-    width: 54px;
-    height: 3px;
-    margin: 10px 0 0 auto;
-    border-radius: 2px;
-    background: var(--sg-gold);
 }
 
 /* ==========================================================================
@@ -134,26 +42,8 @@
     min-width: 0;
 }
 
-.gg-search input,
-.gg-select select {
-    width: 100%;
-    padding: 13px 16px;
-    border: 1px solid var(--sg-border);
-    border-radius: 10px;
-    background: var(--sg-panel);
-    color: #fff;
-    font-family: var(--sg-font);
-    font-size: 0.92rem;
-}
-
 .gg-select {
     flex: 0 1 210px;
-}
-
-.gg-search input:focus,
-.gg-select select:focus {
-    outline: none;
-    border-color: var(--sg-orange);
 }
 
 .gg-pills,
@@ -163,35 +53,6 @@
     align-items: center;
     gap: 8px;
     margin-top: 16px;
-}
-
-.gg-pill {
-    padding: 9px 18px;
-    border: 1px solid var(--sg-border);
-    border-radius: 999px;
-    background: var(--sg-panel);
-    color: #ccc;
-    font-family: var(--sg-font);
-    font-size: 0.76rem;
-    font-weight: bold;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition:
-        background-color 0.2s ease,
-        color 0.2s ease,
-        border-color 0.2s ease;
-}
-
-.gg-pill:hover {
-    border-color: #444;
-    color: #fff;
-}
-
-.gg-pill.is-on {
-    background: var(--sg-gold);
-    border-color: var(--sg-gold);
-    color: #0a0a0a;
 }
 
 .gg-places-label {
@@ -243,30 +104,6 @@
     max-width: var(--sg-max-width);
     margin: auto;
     padding: 0 20px;
-}
-
-.gg-band-head {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 20px;
-    flex-wrap: wrap;
-    margin-bottom: 26px;
-}
-
-.gg-band-head h2 {
-    font-family: var(--sg-font-display);
-    font-size: clamp(1.7rem, 3.4vw, 2.4rem);
-    letter-spacing: -1px;
-    text-transform: uppercase;
-    text-align: left;
-    margin: 0;
-}
-
-.gg-band-sub {
-    margin-top: 6px;
-    color: var(--sg-dim);
-    font-size: 0.92rem;
 }
 
 /* This weekend: a plain grid that wraps so every event shows */
@@ -324,12 +161,6 @@
 /* ==========================================================================
    PHONE
    ========================================================================== */
-@media (max-width: 900px) {
-    .gg-script {
-        display: none;
-    }
-}
-
 @media (max-width: 820px) {
     .gg-select {
         flex: 1 1 160px;

@@ -51,12 +51,12 @@ permalink: /gig-guide.html
   </script>
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="css/site.css?v=829">
-  <link rel="stylesheet" href="css/gig-card.css?v=829">
-  <link rel="stylesheet" href="css/gig-guide.css?v=829">
-  <script src="js/main.js?v=829" defer></script>
-  <script src="js/weekend.js?v=829" defer></script>
-  <script src="js/gig-guide.js?v=829" defer></script>
+  <link rel="stylesheet" href="css/site.css?v=830">
+  <link rel="stylesheet" href="css/gig-card.css?v=830">
+  <link rel="stylesheet" href="css/gig-guide.css?v=830">
+  <script src="js/main.js?v=830" defer></script>
+  <script src="js/weekend.js?v=830" defer></script>
+  <script src="js/gig-guide.js?v=830" defer></script>
 </head>
 
 <!-- the class is what gig-guide.css hangs the footer tweak off -->
@@ -74,29 +74,29 @@ permalink: /gig-guide.html
 <main id="sg-gig-guide">
 
   <!-- 1. HERO ------------------------------------------------------------ -->
-  <section class="gg-hero">
+  <section class="banner">
 
     <!-- Same clip as the home page hero (already cached). -->
-    <video class="gg-hero-video" id="gg-hero-video"
+    <video class="banner-video" id="gg-hero-video"
            data-src="videos/hero-1080.mp4"
            muted loop playsinline preload="none" aria-hidden="true"></video>
 
-    <div class="gg-hero-scrim"></div>
+    <div class="banner-scrim"></div>
 
-    <div class="gg-hero-inner">
-      <div class="gg-hero-body">
-        <p class="gg-eyebrow">The Whitsundays Gig Guide</p>
+    <div class="banner-inner">
+      <div class="banner-text">
+        <p class="eyebrow">The Whitsundays Gig Guide</p>
 
-        <h1 class="gg-title">What&rsquo;s On<br><span>In The Whitsundays</span></h1>
+        <h1 class="h-hero">What&rsquo;s On<br><span>In The Whitsundays</span></h1>
 
-        <p class="gg-lead">
+        <p class="lead">
           Live music, markets, festivals and community events across Airlie
           Beach, Bowen, Proserpine and the Whitsunday Islands.<br>
           Updated every morning.
         </p>
       </div>
 
-      <p class="gg-script" aria-hidden="true">Good<br>Events<br>Brighter<br>People</p>
+      <p class="banner-script" aria-hidden="true">Good<br>Events<br>Brighter<br>People</p>
     </div>
 
   </section>
@@ -108,7 +108,7 @@ permalink: /gig-guide.html
 
     <div class="gg-filters-inner">
 
-      <div class="gg-filter-row">
+      <div class="gg-filter-row form">
         <label class="gg-search">
           <span class="sr-only">Search events, artists, venues</span>
           <input type="search" id="gg-search" placeholder="Search events, artists, venues&hellip;">
@@ -140,16 +140,16 @@ permalink: /gig-guide.html
 
       <!-- The pills and the two menus are the same three filters - the script keeps them in step. -->
       <div class="gg-pills" role="group" aria-label="Event type">
-        <button type="button" class="gg-pill is-on" data-gg-cat="all">All</button>
-        <button type="button" class="gg-pill" data-gg-cat="live">Live Music</button>
-        <button type="button" class="gg-pill" data-gg-cat="dj">DJ</button>
-        <button type="button" class="gg-pill" data-gg-cat="family">Family</button>
-        <button type="button" class="gg-pill" data-gg-cat="markets">Markets</button>
-        <button type="button" class="gg-pill" data-gg-cat="festivals">Festivals</button>
-        <button type="button" class="gg-pill" data-gg-cat="sport">Sport</button>
-        <button type="button" class="gg-pill" data-gg-cat="community">Community</button>
-        <button type="button" class="gg-pill" data-gg-cat="food">Food &amp; Drink</button>
-        <button type="button" class="gg-pill" data-gg-cat="arts">Arts &amp; Culture</button>
+        <button type="button" class="pill is-on" data-gg-cat="all">All</button>
+        <button type="button" class="pill" data-gg-cat="live">Live Music</button>
+        <button type="button" class="pill" data-gg-cat="dj">DJ</button>
+        <button type="button" class="pill" data-gg-cat="family">Family</button>
+        <button type="button" class="pill" data-gg-cat="markets">Markets</button>
+        <button type="button" class="pill" data-gg-cat="festivals">Festivals</button>
+        <button type="button" class="pill" data-gg-cat="sport">Sport</button>
+        <button type="button" class="pill" data-gg-cat="community">Community</button>
+        <button type="button" class="pill" data-gg-cat="food">Food &amp; Drink</button>
+        <button type="button" class="pill" data-gg-cat="arts">Arts &amp; Culture</button>
       </div>
 
       <div class="gg-places" role="group" aria-label="Location">
@@ -172,10 +172,10 @@ permalink: /gig-guide.html
   <section class="gg-band" aria-labelledby="gg-weekend-h">
     <div class="gg-band-inner">
 
-      <div class="gg-band-head">
+      <div class="section-head">
         <div>
           <h2 id="gg-weekend-h">This Weekend</h2>
-          <p class="gg-band-sub">The best gigs and events happening soon.</p>
+          <p class="section-sub">The best gigs and events happening soon.</p>
         </div>
 
         <!-- No calendar page yet. When there is, add: <a class="gg-more" href="/calendar">View Full Calendar</a> -->
@@ -196,10 +196,10 @@ permalink: /gig-guide.html
   <section class="gg-band is-alt" aria-labelledby="gg-upcoming-h">
     <div class="gg-band-inner">
 
-      <div class="gg-band-head">
+      <div class="section-head">
         <div>
           <h2 id="gg-upcoming-h">Upcoming Highlights</h2>
-          <p class="gg-band-sub">A few bigger events on the horizon.</p>
+          <p class="section-sub">A few bigger events on the horizon.</p>
         </div>
 
         <!--  A div rather than a <nav>: style.css styles the bare nav

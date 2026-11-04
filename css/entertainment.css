@@ -1,12 +1,13 @@
 /* ==========================================================================
    ENTERTAINMENT - entertainment.html, the talent roster (js/entertainment.js
-   builds the cards). On top of site.css. Everything is .ent-
+   builds the cards). On top of site.css: the banner, section head, slider
+   arrows, inputs and buttons come from there. Everything is .ent-
 
-   HERO       video banner with the play button
+   HERO       the type lines and play button in the banner
    TYPES      the act type bar
    BANDS      recommend and production bands
    FILTERS    search and selects
-   HEAD       section heading, pager arrows, count, empty state
+   HEAD       section heading rule and blurb, count, empty state
    CARDS      the talent cards
    PANEL      the artist pop-up
    PHONE      keep last
@@ -22,46 +23,10 @@
 }
 
 /* ==========================================================================
-   HERO - gradient behind the video, scrim on top, words on the left
+   HERO
    ========================================================================== */
 .ent-hero {
-    position: relative;
-    overflow: hidden;
-    min-height: min(58vh, 460px);
-    display: flex;
-    align-items: center;
-    background: linear-gradient(120deg, #3a1a02, #0a0a0a 72%);
-}
-
-.ent-hero-video {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.ent-hero-media {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, rgba(5, 5, 5, 0.94) 26%, rgba(5, 5, 5, 0.35) 78%);
-}
-
-.ent-hero-inner {
-    position: relative;
-    width: 100%;
-    max-width: var(--sg-max-width);
-    margin: auto;
-    padding: 64px 6%;
-}
-
-.ent-hero h1 {
-    font-family: var(--sg-font-display);
-    font-size: clamp(2.1rem, 6vw, 4.2rem);
-    line-height: 0.98;
-    letter-spacing: -1.5px;
-    text-transform: uppercase;
-    margin-bottom: 22px;
+    --banner-tint: #3a1a02;
 }
 
 .ent-hero-types {
@@ -71,44 +36,13 @@
     letter-spacing: 2px;
     text-transform: uppercase;
     color: #fff;
-    margin-bottom: 6px;
-}
-
-.ent-hero-kicker {
-    font-family: var(--sg-font-accent);
-    font-size: clamp(0.66rem, 1.5vw, 0.78rem);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--sg-muted);
-    margin-bottom: 28px;
-}
-
-/* Handwritten line in the corner (decorative) */
-.ent-hero-script {
-    position: absolute;
-    right: 5%;
-    bottom: 12%;
-    margin: 0;
-    font-family: var(--sg-font-script);
-    font-size: clamp(1.3rem, 2.6vw, 2.1rem);
-    line-height: 1.25;
-    text-align: center;
-    color: #fff;
-    opacity: 0.92;
-    pointer-events: none;
+    margin: 22px 0 6px;
 }
 
 .ent-btn {
     display: inline-flex;
     align-items: center;
     gap: 10px;
-}
-
-.ent-hero-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 18px 26px;
 }
 
 /* Play the reel: a ring and text, so "browse the talent" stays the main button */
@@ -346,7 +280,7 @@
 }
 
 /* ==========================================================================
-   FILTERS
+   FILTERS - inputs from site.css .form; the select gets a drawn chevron
    ========================================================================== */
 .ent-filters {
     display: flex;
@@ -355,23 +289,10 @@
     margin-bottom: 28px;
 }
 
-.ent-select select,
-.ent-search input {
-    width: 100%;
-    padding: 12px 14px;
-    background: #101010;
-    border: 1px solid var(--ent-line);
-    border-radius: 10px;
-    color: #fff;
-    font-family: var(--sg-font);
-    font-size: 0.9rem;
-}
-
 .ent-select {
     flex: 0 1 190px;
 }
 
-/* The chevron, drawn rather than loaded */
 .ent-select select {
     cursor: pointer;
     appearance: none;
@@ -407,12 +328,6 @@
     padding-left: 40px;
 }
 
-.ent-select select:focus,
-.ent-search input:focus {
-    outline: none;
-    border-color: var(--sg-orange);
-}
-
 /* ==========================================================================
    HEAD
    ========================================================================== */
@@ -423,18 +338,7 @@
 }
 
 .ent-head {
-    display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: 14px 24px;
-    margin-bottom: 26px;
-}
-
-.ent-head h2 {
-    text-align: left;
-    margin: 0;
-    font-size: clamp(1.7rem, 4vw, 2.6rem);
-    text-transform: uppercase;
 }
 
 .ent-head-rule {
@@ -456,37 +360,7 @@
 }
 
 .ent-pager {
-    display: flex;
-    gap: 8px;
     margin-left: auto;
-}
-
-.ent-arrow {
-    width: 38px;
-    height: 38px;
-    display: grid;
-    place-items: center;
-    background: none;
-    border: 1px solid var(--ent-line);
-    border-radius: 50%;
-    color: #fff;
-    font-size: 1.2rem;
-    line-height: 1;
-    cursor: pointer;
-    transition:
-        border-color 0.2s,
-        color 0.2s,
-        opacity 0.2s;
-}
-
-.ent-arrow:hover:not(:disabled) {
-    border-color: var(--sg-orange);
-    color: var(--sg-orange);
-}
-
-.ent-arrow:disabled {
-    opacity: 0.35;
-    cursor: default;
 }
 
 .ent-count {
@@ -640,7 +514,7 @@
     width: 13px;
     height: 13px;
     fill: none;
-    stroke: #ff6b00;
+    stroke: var(--sg-orange);
     stroke-width: 2;
     flex: none;
 }
@@ -663,36 +537,10 @@
     opacity: 0.75;
 }
 
-/* The enquiry link, as a block button */
+/* The enquiry button fills the bottom of the card */
 .ent-view {
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
     width: 100%;
     margin-top: auto;
-    padding: 11px 14px;
-    background: #1c1c1c;
-    border: 1px solid var(--ent-line);
-    border-radius: 9px;
-    color: #fff;
-    font-family: var(--sg-font-accent);
-    font-size: 0.68rem;
-    font-weight: bold;
-    letter-spacing: 1.4px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition:
-        background 0.2s,
-        border-color 0.2s,
-        color 0.2s;
-}
-
-.ent-view:hover {
-    background: var(--sg-orange);
-    border-color: var(--sg-orange);
-    color: #140800;
 }
 
 /* ==========================================================================
@@ -796,21 +644,9 @@
 }
 
 @media (max-width: 768px) {
-    .ent-hero-script {
-        display: none;
-    }
-
-    .ent-hero-inner,
     .ent-section,
     .ent-band {
-        padding-left: 5%;
-        padding-right: 5%;
-    }
-
-    .ent-section,
-    .ent-band {
-        padding-top: 40px;
-        padding-bottom: 40px;
+        padding: 40px 5%;
     }
 
     .ent-grid {

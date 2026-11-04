@@ -23,11 +23,11 @@ permalink: /entertainment.html
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="css/site.css?v=829">
-  <link rel="stylesheet" href="css/entertainment.css?v=829">
-  <script src="js/main.js?v=829" defer></script>
-  <script src="js/roster.js?v=829" defer></script>
-  <script src="js/entertainment.js?v=829" defer></script>
+  <link rel="stylesheet" href="css/site.css?v=830">
+  <link rel="stylesheet" href="css/entertainment.css?v=830">
+  <script src="js/main.js?v=830" defer></script>
+  <script src="js/roster.js?v=830" defer></script>
+  <script src="js/entertainment.js?v=830" defer></script>
 </head>
 
 <body>
@@ -45,26 +45,27 @@ permalink: /entertainment.html
 <main id="sg-ent-page">
 
   <!-- HERO ------------------------------------------------------------- -->
-  <header class="ent-hero">
+  <header class="banner ent-hero">
 
     <!-- Hero reel - same files, breakpoint and poster as the homepage, so it is already cached.
          preload="none" lets the poster show first. -->
-    <video class="ent-hero-video" id="ent-hero-video" aria-hidden="true"
+    <video class="banner-video" id="ent-hero-video" aria-hidden="true"
            autoplay muted loop playsinline preload="none"
            poster="images/places/bowen.jpeg">
       <source src="videos/hero-720.mp4" type="video/mp4" media="(max-width: 900px)">
       <source src="videos/hero-1080.mp4" type="video/mp4">
     </video>
 
-    <div class="ent-hero-media" aria-hidden="true"></div>
+    <div class="banner-scrim" aria-hidden="true"></div>
 
-    <div class="ent-hero-inner">
-      <h1>Entertainment<br>for every<br>occasion.</h1>
+    <div class="banner-inner">
+      <div class="banner-text">
+      <h1 class="h-hero">Entertainment<br>for every<br>occasion.</h1>
 
       <p class="ent-hero-types" id="ent-hero-types"></p>
-      <p class="ent-hero-kicker">Local talent. Unforgettable events.</p>
+      <p class="eyebrow is-dim">Local talent. Unforgettable events.</p>
 
-      <div class="ent-hero-actions">
+      <div class="banner-actions">
         <a class="btn ent-btn" href="#ent-talent">Browse the Talent <span aria-hidden="true">&#8594;</span></a>
 
         <!-- Plays videos/hero-720.mp4 (the smaller cut, fine for a box). -->
@@ -76,8 +77,8 @@ permalink: /entertainment.html
         </button>
       </div>
     </div>
-
-    <p class="ent-hero-script" aria-hidden="true">Good Music<br>Brings People<br>Together</p>
+    <p class="banner-script" aria-hidden="true">Good Music<br>Brings People<br>Together</p>
+    </div>
   </header>
 
   <!-- ACT TYPE BAR - built by js/entertainment.js; a tab only shows for act types on the roster.
@@ -88,7 +89,7 @@ permalink: /entertainment.html
   <!-- THE ROSTER ------------------------------------------------------- -->
   <section class="ent-section" id="ent-talent">
 
-    <div class="ent-head">
+    <div class="section-head ent-head">
       <h2>Meet the Talent</h2>
       <span class="ent-head-rule" aria-hidden="true"></span>
 
@@ -98,17 +99,17 @@ permalink: /entertainment.html
         Filter by category or event type to find the perfect fit.
       </p>
 
-      <div class="ent-pager">
-        <button type="button" class="ent-arrow" id="ent-prev" aria-label="Previous page of talent">
+      <div class="slide-arrows ent-pager">
+        <button type="button" class="slide-arrow" id="ent-prev" aria-label="Previous page of talent">
           <span aria-hidden="true">&#8249;</span>
         </button>
-        <button type="button" class="ent-arrow" id="ent-next" aria-label="Next page of talent">
+        <button type="button" class="slide-arrow" id="ent-next" aria-label="Next page of talent">
           <span aria-hidden="true">&#8250;</span>
         </button>
       </div>
     </div>
 
-    <div class="ent-filters">
+    <div class="ent-filters form">
       <label class="ent-select">
         <span class="sr-only">Act type</span>
         <select id="ent-filter-act"><option value="all">All Act Types</option></select>

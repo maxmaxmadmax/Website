@@ -181,7 +181,7 @@
                       '</p>'
                     : '') +
                 /*  A link to the contact form; js/main.js fills in the act's name. */
-                '<a class="ent-view" href="/contact?about=' +
+                '<a class="btn btn-outline btn-small ent-view" href="/contact?about=' +
                 encodeURIComponent(t.name) +
                 '">' +
                 'Make Enquiry <span aria-hidden="true">&#8594;</span>' +

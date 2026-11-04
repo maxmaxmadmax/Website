@@ -1,29 +1,8 @@
 /* ==========================================================================
-   GIG CARD - one event card. Used by /gig-guide and the what's-on strip on
-   /events, so both look the same. Everything is .gg-
+   GIG CARD - one event card, used by /gig-guide and the what's-on strip on
+   /events. The card itself is site.css .card; this is the photo, the date
+   chip and the where / when lines. Everything is .gg-
    ========================================================================== */
-
-/* Photo on top with the date chip over it, words underneath */
-.gg-card {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border: 1px solid var(--sg-border);
-    border-radius: 14px;
-    background: var(--sg-panel);
-    transition:
-        transform 0.25s ease,
-        border-color 0.25s ease,
-        box-shadow 0.25s ease;
-}
-
-.gg-card:hover {
-    transform: translateY(-4px);
-    border-color: #3a3a3a;
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
-}
-
 .gg-card-art {
     aspect-ratio: 16 / 10;
     background-color: #161616;
@@ -38,7 +17,7 @@
     filter: brightness(1);
 }
 
-/* Date chip */
+/* Date chip over the photo */
 .gg-chip {
     position: absolute;
     top: 12px;
@@ -74,24 +53,6 @@
     font-size: 0.95rem;
     margin: 0;
     color: var(--sg-gold);
-}
-
-.gg-card-body {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 7px;
-    padding: 16px 16px 18px;
-    flex: 1;
-}
-
-.gg-card-body h3 {
-    font-family: var(--sg-font-display);
-    font-size: 1.02rem;
-    line-height: 1.2;
-    letter-spacing: -0.3px;
-    text-transform: uppercase;
-    margin: 0 0 2px;
 }
 
 /* Where and when, with pin and clock icons in the text colour */
@@ -131,7 +92,6 @@
     --gg-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm1-13h-2v6l5 3 1-1.7-4-2.3z'/%3E%3C/svg%3E");
 }
 
-/* Tags */
 .gg-tags {
     display: flex;
     flex-wrap: wrap;
@@ -139,18 +99,6 @@
     list-style: none;
     margin: 8px 0 0;
     padding: 0;
-}
-
-.gg-tags li {
-    padding: 5px 10px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.05);
-    color: #ccc;
-    font-size: 0.6rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    white-space: nowrap;
 }
 
 /* Source link and "last checked" line, kept quiet */
@@ -180,12 +128,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .gg-card,
     .gg-card-art {
         transition: none;
-    }
-
-    .gg-card:hover {
-        transform: none;
     }
 }

@@ -186,13 +186,13 @@
 
         return (
             '' +
-            '<article class="gg-card"' +
+            '<article class="card gg-card"' +
             art +
             '>' +
             '<div class="gg-card-art" aria-hidden="true"></div>' +
             chip(ev) +
-            '<div class="gg-card-body">' +
-            '<h3>' +
+            '<div class="card-body">' +
+            '<h3 class="h-card">' +
             esc(ev.name) +
             '</h3>' +
             (ev.venue ? '<p class="gg-where">' + esc(ev.venue) + '</p>' : '') +
@@ -201,7 +201,7 @@
                 ? '<ul class="gg-tags">' +
                   ev.tags
                       .map(function (t) {
-                          return '<li>' + esc(t) + '</li>';
+                          return '<li class="tag">' + esc(t) + '</li>';
                       })
                       .join('') +
                   '</ul>'

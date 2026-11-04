@@ -4,8 +4,14 @@
 
    TOKENS      colours, fonts, widths
    BASE        reset and plain elements
-   LAYOUT      sections, page headers, feature grid
+   TYPE        the type scale: eyebrow, headings, lead, meta
+   LAYOUT      sections, section heads, page headers, feature grid
+   BANNER      the video banner at the top of a page
    BUTTONS     .btn and friends
+   CARDS       card, tile
+   FORMS       inputs, labels
+   PILLS       filter pills, tags, badges
+   SLIDER      a row of cards that pages sideways
    NAV         the top menu (components/navbar.html)
    FOOTER      components/footer.html
    HOME        hero video and the next-event panel (index only)
@@ -130,6 +136,66 @@ textarea:focus-visible {
 }
 
 /* ==========================================================================
+   TYPE - one scale for the whole site. Pages only set sizes for one-offs.
+   ========================================================================== */
+
+/* The small line above a heading: GIG GUIDE, WHAT WE DO ... */
+.eyebrow {
+    font-family: var(--sg-font-accent);
+    font-size: 0.72rem;
+    font-weight: bold;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--sg-gold);
+    margin: 0 0 14px;
+}
+
+.eyebrow.is-dim {
+    color: var(--sg-dim);
+}
+
+/* The big heading at the top of a page */
+.h-hero {
+    font-family: var(--sg-font-display);
+    font-size: clamp(2.5rem, 6.5vw, 4.8rem);
+    line-height: 0.92;
+    letter-spacing: -2px;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+.h-hero span {
+    color: var(--sg-gold);
+}
+
+/* A heading inside a card or tile */
+.h-card {
+    font-family: var(--sg-font-display);
+    font-size: 1.05rem;
+    line-height: 1.2;
+    letter-spacing: -0.3px;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+/* Bigger body copy under a heading */
+.lead {
+    max-width: 56ch;
+    color: #ddd;
+    font-size: 1.05rem;
+    line-height: 1.7;
+}
+
+/* Small uppercase facts: a date, a place, a label */
+.meta {
+    font-family: var(--sg-font-accent);
+    font-size: 0.82rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--sg-dim);
+}
+
+/* ==========================================================================
    LAYOUT
    ========================================================================== */
 .section {
@@ -149,6 +215,31 @@ textarea:focus-visible {
     margin: 0 auto 50px;
     text-align: center;
     color: var(--sg-muted);
+}
+
+/* Heading on the left, a line of words (and maybe arrows) on the right */
+.section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 14px 24px;
+    margin-bottom: 26px;
+}
+
+.section-head h2 {
+    text-align: left;
+    margin: 0;
+    font-size: clamp(1.7rem, 3.4vw, 2.4rem);
+    letter-spacing: -1px;
+    text-transform: uppercase;
+}
+
+.section-sub {
+    margin: 6px 0 0;
+    color: var(--sg-dim);
+    font-size: 0.92rem;
+    text-align: left;
 }
 
 .dark {
@@ -214,6 +305,95 @@ textarea:focus-visible {
 
 .feature p {
     color: var(--sg-muted);
+}
+
+/* ==========================================================================
+   BANNER - the video banner at the top of a page. --banner-tint sets the
+   colour that shows until the video plays.
+   ========================================================================== */
+.banner {
+    --banner-tint: #2a1403;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    min-height: min(62vh, 560px);
+    padding: calc(var(--sg-nav-height, 80px) + 40px) 20px 44px;
+    overflow: hidden;
+    background: linear-gradient(120deg, var(--banner-tint) 0%, #0a0a0a 64%);
+}
+
+.banner-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+}
+
+/* Dark on the left behind the words, fading into the page at the bottom */
+.banner-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+        linear-gradient(90deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.55) 52%, rgba(0, 0, 0, 0.7) 100%),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.2) 40%, #0a0a0a 100%);
+}
+
+/* Words on the left, the handwritten line on the right */
+.banner-inner {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 30px;
+    width: 100%;
+    max-width: var(--sg-max-width);
+    margin: auto;
+}
+
+.banner-text {
+    min-width: 0;
+}
+
+.banner-inner .lead {
+    margin-top: 18px;
+}
+
+.banner-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 26px;
+    margin-top: 28px;
+}
+
+/* Handwritten line (decorative, aria-hidden), with a short gold rule under it */
+.banner-script {
+    font-family: var(--sg-font-script);
+    font-size: clamp(1.1rem, 2vw, 1.6rem);
+    line-height: 1.15;
+    text-align: right;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.banner-script::after {
+    content: '';
+    display: block;
+    width: 54px;
+    height: 3px;
+    margin: 10px 0 0 auto;
+    border-radius: 2px;
+    background: var(--sg-gold);
+}
+
+@media (max-width: 900px) {
+    .banner-script {
+        display: none;
+    }
 }
 
 /* ==========================================================================
@@ -318,6 +498,174 @@ textarea:focus-visible {
     background: #3a1414;
     border-color: #8c3a3a;
     color: #ff9d9d;
+}
+
+/* Gold version */
+.btn-gold {
+    background: var(--sg-gold);
+    border-color: var(--sg-gold);
+    color: #140800;
+}
+
+.btn-gold:hover,
+.btn-gold:focus-visible {
+    background: #ffc933;
+    border-color: #ffc933;
+}
+
+/* Smaller, for inside a card */
+.btn-small {
+    padding: 10px 18px;
+    min-height: 0;
+    font-size: 0.8rem;
+}
+
+/* ==========================================================================
+   CARDS
+   ========================================================================== */
+
+/* A card: dark panel, rounded, lifts on hover */
+.card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--sg-border);
+    border-radius: 14px;
+    background: var(--sg-panel);
+    transition:
+        transform 0.25s ease,
+        border-color 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    border-color: #3a3a3a;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+}
+
+.card-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 16px;
+    flex: 1;
+}
+
+/* A tile: the same box with padding, and no hover lift */
+.tile {
+    padding: 22px;
+    border: 1px solid var(--sg-border);
+    border-radius: 14px;
+    background: var(--sg-panel);
+}
+
+.tile p {
+    margin: 0;
+    color: var(--sg-dim);
+    font-size: 0.92rem;
+    line-height: 1.65;
+}
+
+.tile .h-card {
+    margin-bottom: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card {
+        transition: none;
+    }
+
+    .card:hover {
+        transform: none;
+    }
+}
+
+/* ==========================================================================
+   FORMS - put .form on the form or the filter row
+   ========================================================================== */
+.form input,
+.form select,
+.form textarea {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1px solid var(--sg-border);
+    border-radius: 10px;
+    background: var(--sg-panel);
+    color: #fff;
+    font-family: var(--sg-font);
+    font-size: 0.95rem;
+}
+
+.form textarea {
+    resize: vertical;
+}
+
+.form input:focus,
+.form select:focus,
+.form textarea:focus {
+    outline: none;
+    border-color: var(--sg-orange);
+}
+
+.form label {
+    font-family: var(--sg-font-accent);
+    font-size: 0.74rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--sg-gold);
+}
+
+/* ==========================================================================
+   PILLS - a filter pill (.is-on when chosen), a small tag, a status badge
+   ========================================================================== */
+.pill {
+    padding: 9px 18px;
+    border: 1px solid var(--sg-border);
+    border-radius: 999px;
+    background: var(--sg-panel);
+    color: #ccc;
+    font-family: var(--sg-font);
+    font-size: 0.76rem;
+    font-weight: bold;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.pill:hover {
+    border-color: #444;
+    color: #fff;
+}
+
+.pill.is-on,
+.pill:has(input:checked) {
+    background: var(--sg-gold);
+    border-color: var(--sg-gold);
+    color: #0a0a0a;
+}
+
+.pill input {
+    display: none;
+}
+
+.tag {
+    padding: 5px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #ccc;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
 }
 
 /* ==========================================================================
