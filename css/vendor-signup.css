@@ -39,10 +39,6 @@
     --sg-font-display: 'Poppins', 'Inter', -apple-system, 'Segoe UI', Arial, sans-serif;
     --sg-font-accent: 'Inter', -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
 
-    --vs-ink: #12141a;
-    --vs-line: #e3e6ec;
-    --vs-soft: #f6f7f9;
-
     /* Halloween accents */
     --vs-purple: #6b3fa0;
     --vs-purple-deep: #3a1f5c;
@@ -300,13 +296,9 @@
    LAYOUT - the flow band and its two columns
    ========================================================================== */
 .vs-apply {
-    --pk-ink: #12141a;
-    --pk-muted: #606877;
-    --pk-line: #e3e6ec;
-    --pk-panel: #fff;
     padding: clamp(28px, 4vw, 52px) 6% clamp(48px, 7vw, 84px);
     background: var(--sg-black);
-    color: var(--pk-ink);
+    color: var(--sg-ink);
 }
 
 .vendor-signup .vs-apply {
@@ -428,7 +420,7 @@
 
 .vs-sec-intro {
     margin: 0 0 26px;
-    color: var(--pk-muted);
+    color: var(--sg-ink-muted);
     font-size: 0.95rem;
 }
 
@@ -452,21 +444,21 @@
     place-items: center;
     gap: 6px;
     padding: 40px 20px;
-    border: 1px solid var(--pk-line);
+    border: 1px solid var(--sg-paper-line);
     border-radius: 14px;
-    background: var(--pk-panel);
+    background: var(--sg-paper);
     text-align: center;
 }
 
 .vs-lock-head {
     margin: 6px 0 0;
     font-weight: bold;
-    color: var(--pk-ink);
+    color: var(--sg-ink);
 }
 
 .vs-lock-sub {
     margin: 0;
-    color: var(--pk-muted);
+    color: var(--sg-ink-muted);
     font-size: 0.9rem;
 }
 
@@ -543,7 +535,7 @@
 }
 
 .vs-sec .vs-events-loading {
-    color: var(--pk-muted);
+    color: var(--sg-ink-muted);
     padding: 24px 0;
 }
 
@@ -551,9 +543,9 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid var(--pk-line);
+    border: 1px solid var(--sg-paper-line);
     border-radius: 14px;
-    background: var(--pk-panel);
+    background: var(--sg-paper);
     box-shadow:
         0 1px 2px rgba(16, 24, 40, 0.04),
         0 1px 3px rgba(16, 24, 40, 0.06);
@@ -640,7 +632,7 @@
     font-size: 1rem;
     letter-spacing: -0.4px;
     text-transform: none;
-    color: var(--pk-ink);
+    color: var(--sg-ink);
     margin: 0 0 2px;
 }
 
@@ -651,7 +643,7 @@
     align-items: center;
     gap: 7px;
     margin: 0;
-    color: var(--pk-muted);
+    color: var(--sg-ink-muted);
     font-size: 0.84rem;
     font-weight: normal;
 }
@@ -677,7 +669,7 @@
 
 .vs-sec .vs-event-blurb {
     margin: 6px 0 0;
-    color: var(--pk-muted);
+    color: var(--sg-ink-muted);
     font-size: 0.86rem;
     line-height: 1.6;
 }
@@ -689,7 +681,7 @@
     padding: 11px 14px;
     border: 0;
     border-radius: 10px;
-    background: var(--pk-ink);
+    background: var(--sg-ink);
     color: #fff;
     font-family: var(--sg-font-accent);
     font-size: 0.68rem;
@@ -795,7 +787,7 @@
 
 /* Grey placeholder cards while the events load */
 .vs-event.is-loading {
-    border-color: var(--pk-line);
+    border-color: var(--sg-paper-line);
     box-shadow: none;
     pointer-events: none;
 }
@@ -919,7 +911,7 @@
 
 .vs-picked-what strong,
 .vs-picked-fact strong {
-    color: var(--vs-ink);
+    color: var(--sg-ink);
     font-size: 0.95rem;
 }
 
@@ -938,10 +930,10 @@
     gap: 8px;
     flex: 0 0 auto;
     padding: 9px 14px;
-    border: 1px solid var(--vs-line);
+    border: 1px solid var(--sg-paper-line);
     border-radius: 9px;
     background: #fff;
-    color: var(--vs-ink);
+    color: var(--sg-ink);
     font: inherit;
     font-size: 0.84rem;
     cursor: pointer;
@@ -979,7 +971,7 @@
     align-items: flex-start;
     gap: 16px;
     padding: 20px;
-    border: 2px solid var(--vs-line);
+    border: 2px solid var(--sg-paper-line);
     border-radius: 14px;
     background: #fff;
     text-align: left;
@@ -1004,7 +996,7 @@
     width: 54px;
     height: 40px;
     fill: none;
-    stroke: var(--vs-ink);
+    stroke: var(--sg-ink);
     stroke-width: 2;
     stroke-linejoin: round;
 }
@@ -1024,7 +1016,7 @@
     font-family: var(--sg-font-display);
     font-size: 1.02rem;
     font-weight: 600;
-    color: var(--vs-ink);
+    color: var(--sg-ink);
 }
 
 .vs-type-desc {
@@ -1037,7 +1029,7 @@
     font-family: var(--sg-font-display);
     font-size: 1.55rem;
     font-weight: 600;
-    color: var(--vs-ink);
+    color: var(--sg-ink);
 }
 
 .vs-type-per {
@@ -1327,7 +1319,7 @@
 }
 
 .vs-inline-link:hover {
-    color: var(--vs-ink);
+    color: var(--sg-ink);
 }
 
 .vs-link {
@@ -1635,10 +1627,10 @@
 .vs-map-wrap {
     position: relative;
     background: #fbfcfd;
-    border: 1px solid var(--vs-line);
+    border: 1px solid var(--sg-paper-line);
     border-radius: 14px;
     padding: 14px;
-    color: var(--vs-ink);
+    color: var(--sg-ink);
     max-height: min(70vh, 780px); /* the tall plan scrolls inside, not the page */
     overflow: auto;
     overscroll-behavior: contain;
@@ -1883,7 +1875,7 @@
 .vs-side-inner {
     position: sticky;
     top: 76px; /* clears the rail */
-    border: 1px solid var(--vs-line);
+    border: 1px solid var(--sg-paper-line);
     border-radius: 16px;
     background: #fff;
     padding: 18px;
@@ -1905,7 +1897,7 @@
     font-weight: 600;
     letter-spacing: -0.3px;
     text-transform: none;
-    color: var(--vs-ink);
+    color: var(--sg-ink);
     margin: 0;
 }
 
@@ -1955,7 +1947,7 @@
 }
 
 .vs-side-card-text strong {
-    color: var(--vs-ink);
+    color: var(--sg-ink);
     font-size: 0.88rem;
 }
 
@@ -1965,19 +1957,19 @@
     gap: 2px;
     margin-top: 16px;
     padding-top: 14px;
-    border-top: 1px solid var(--vs-line);
+    border-top: 1px solid var(--sg-paper-line);
     font-size: 0.8rem;
     color: var(--sg-muted);
     line-height: 1.45;
 }
 
 .vs-side-row strong {
-    color: var(--vs-ink);
+    color: var(--sg-ink);
     font-size: 0.88rem;
 }
 
 .vs-side-wait {
-    color: var(--vs-ink);
+    color: var(--sg-ink);
     font-size: 0.88rem;
     font-weight: 600;
 }
@@ -1997,7 +1989,7 @@
     gap: 8px;
     margin-top: 16px;
     padding-top: 14px;
-    border-top: 1px solid var(--vs-line);
+    border-top: 1px solid var(--sg-paper-line);
 }
 
 .vs-side-sum > div {
@@ -2012,7 +2004,7 @@
 .vs-side-sum > div > span:last-child {
     flex: 0 0 auto;
     font-variant-numeric: tabular-nums;
-    color: var(--vs-ink);
+    color: var(--sg-ink);
 }
 
 .vs-side-sum em {
@@ -2033,11 +2025,11 @@
     gap: 12px;
     margin-top: 16px;
     padding-top: 14px;
-    border-top: 1px solid var(--vs-line);
+    border-top: 1px solid var(--sg-paper-line);
     font-family: var(--sg-font-display);
     font-size: 1.05rem;
     font-weight: 600;
-    color: var(--vs-ink);
+    color: var(--sg-ink);
 }
 
 .vs-side-total strong {
@@ -2063,7 +2055,7 @@
     margin: 14px 0 0;
     padding: 12px;
     border-radius: 10px;
-    background: var(--vs-soft);
+    background: var(--sg-paper-soft);
     color: var(--sg-muted);
     font-size: 0.76rem;
     line-height: 1.55;
@@ -2088,8 +2080,6 @@
 }
 
 .vs-checkout {
-    --vs-card: #fff;
-    --vs-line: #e3e6ec;
     display: grid;
     gap: 14px;
     max-width: 560px;
@@ -2097,8 +2087,8 @@
 }
 
 .vs-card {
-    background: var(--vs-card);
-    border: 1px solid var(--vs-line);
+    background: var(--sg-paper);
+    border: 1px solid var(--sg-paper-line);
     border-radius: 16px;
     padding: 20px;
 }
@@ -2133,7 +2123,7 @@
     flex: 0 0 auto;
     padding: 8px 14px;
     border-radius: 50px;
-    border: 1px solid var(--vs-line);
+    border: 1px solid var(--sg-paper-line);
     background: #eef0f4;
     color: #12141a;
     font-size: 0.82rem;
@@ -2202,7 +2192,7 @@
     gap: 10px;
     margin: 18px 0 0;
     padding-top: 16px;
-    border-top: 1px solid var(--vs-line);
+    border-top: 1px solid var(--sg-paper-line);
 }
 
 .vs-figures > div:nth-child(2) {
@@ -2286,7 +2276,7 @@
     padding: 11px 13px;
     border-radius: 9px;
     background: #f6f7f9;
-    border: 1px solid var(--vs-line);
+    border: 1px solid var(--sg-paper-line);
     color: var(--sg-muted);
     font-size: 0.82rem;
     line-height: 1.6;
@@ -2299,7 +2289,7 @@
     gap: 16px;
     margin-top: 16px;
     padding-top: 15px;
-    border-top: 1px solid var(--vs-line);
+    border-top: 1px solid var(--sg-paper-line);
 }
 
 .vs-sum-total span {
@@ -2362,7 +2352,7 @@
     list-style: none;
     margin: 16px 0 0;
     padding: 16px 0 0;
-    border-top: 1px solid var(--vs-line);
+    border-top: 1px solid var(--sg-paper-line);
 }
 
 .vs-secure-row li {
@@ -2449,7 +2439,7 @@
 .vs-yourdetails .vs-summary-list {
     margin: 0;
     border: 0;
-    border-top: 1px solid var(--vs-line);
+    border-top: 1px solid var(--sg-paper-line);
     border-radius: 0;
 }
 

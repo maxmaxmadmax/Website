@@ -51,6 +51,26 @@
     --sg-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
 
     --sg-max-width: 1200px;
+
+    /* Status */
+    --sg-green: #15803d;
+    --sg-red: #b3261e;
+
+    /* Light pages (vendor signup, quote, sponsor pack): dark ink on white */
+    --sg-ink: #12141a;
+    --sg-ink-muted: #606877;
+    --sg-paper: #fff;
+    --sg-paper-line: #e3e6ec;
+    --sg-paper-soft: #f6f7f9;
+
+    /* The Eatz & Beatz poster look (event pages) */
+    --sg-poster-ink: #1d0d02;
+    --sg-poster-cream: #fff4e6;
+    --sg-poster-orange: #f25a0c;
+    --sg-lime: #d6f53b;
+    --sg-font-poster: 'Bowlby One', 'Arial Black', Impact, sans-serif;
+    --sg-font-hand: 'Permanent Marker', 'Segoe Print', cursive;
+    --sg-font-cond: 'Oswald', 'Arial Narrow', Arial, sans-serif;
 }
 
 /* ==========================================================================

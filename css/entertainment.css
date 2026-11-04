@@ -13,8 +13,6 @@
    PHONE      keep last
    ========================================================================== */
 #sg-ent-page {
-    --ent-line: #242424;
-    --ent-card: #141414;
 }
 
 /* [hidden] must beat the display rules below */
@@ -115,8 +113,8 @@
     grid-auto-flow: column;
     grid-auto-columns: 1fr;
     background: #0c0c0c;
-    border-top: 1px solid var(--ent-line);
-    border-bottom: 1px solid var(--ent-line);
+    border-top: 1px solid var(--sg-border);
+    border-bottom: 1px solid var(--sg-border);
     overflow-x: auto;
 }
 
@@ -130,7 +128,7 @@
     padding: 20px 12px;
     background: none;
     border: 0;
-    border-right: 1px solid var(--ent-line);
+    border-right: 1px solid var(--sg-border);
     border-top: 2px solid transparent;
     border-bottom: 2px solid transparent;
     color: var(--sg-dim);
@@ -176,7 +174,7 @@
     position: relative;
     overflow: hidden;
     padding: 56px 6%;
-    border-top: 1px solid var(--ent-line);
+    border-top: 1px solid var(--sg-border);
 }
 
 .ent-band-media {
@@ -233,7 +231,7 @@
     list-style: none;
     margin: 0;
     background: rgba(10, 10, 10, 0.72);
-    border: 1px solid var(--ent-line);
+    border: 1px solid var(--sg-border);
     border-radius: 12px;
     overflow: hidden;
 }
@@ -245,7 +243,7 @@
     justify-content: center;
     gap: 9px;
     padding: 20px 10px;
-    border-right: 1px solid var(--ent-line);
+    border-right: 1px solid var(--sg-border);
     color: var(--sg-muted);
     font-family: var(--sg-font-accent);
     font-size: 0.66rem;
@@ -374,7 +372,7 @@
     text-align: center;
     color: var(--sg-muted);
     background: #101010;
-    border: 1px solid var(--ent-line);
+    border: 1px solid var(--sg-border);
     border-radius: 14px;
 }
 
@@ -400,7 +398,7 @@
     background: var(--ent-img, none), linear-gradient(140deg, #2b1a3d, #0d0d0d 72%);
     background-size: cover;
     background-position: center 18%; /* keeps the head in frame */
-    border: 1px solid var(--ent-line);
+    border: 1px solid var(--sg-border);
     border-radius: 14px;
     overflow: hidden;
     transition:
@@ -549,9 +547,9 @@
 .ent-panel {
     width: min(560px, 92vw);
     padding: 0;
-    border: 1px solid var(--ent-line);
+    border: 1px solid var(--sg-border);
     border-radius: 16px;
-    background: var(--ent-card);
+    background: var(--sg-panel-light);
     color: #fff;
     overflow: hidden;
 }
@@ -570,7 +568,7 @@
     display: grid;
     place-items: center;
     background: rgba(0, 0, 0, 0.55);
-    border: 1px solid var(--ent-line);
+    border: 1px solid var(--sg-border);
     border-radius: 50%;
     color: #fff;
     font-size: 1.3rem;

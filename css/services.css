@@ -10,12 +10,9 @@
    CLOSING     the ask over a photo, three assurances
    ========================================================================== */
 #sg-services-page {
-    --sgs-yellow: #ffb700;
-    --sgs-shell: #000;
-    --sgs-ink: #fff;
     display: block;
-    background: var(--sgs-shell);
-    color: var(--sgs-ink);
+    background: var(--sg-black);
+    color: var(--sg-text);
     overflow-x: hidden; /* nothing may push the page sideways */
 }
 
@@ -40,7 +37,7 @@
 }
 
 .sgs-track:focus-visible {
-    outline: 2px solid var(--sgs-yellow);
+    outline: 2px solid var(--sg-gold);
     outline-offset: -4px;
 }
 
@@ -140,7 +137,7 @@
     font-weight: bold;
     letter-spacing: 0.42em;
     text-transform: uppercase;
-    color: var(--sgs-yellow);
+    color: var(--sg-gold);
     margin-bottom: 14px;
     text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9);
 }
@@ -223,13 +220,13 @@
 }
 
 .sgs-arrow:hover {
-    background: var(--sgs-yellow);
-    border-color: var(--sgs-yellow);
+    background: var(--sg-gold);
+    border-color: var(--sg-gold);
     color: #0a0a0a;
 }
 
 .sgs-arrow:focus-visible {
-    outline: 3px solid var(--sgs-yellow);
+    outline: 3px solid var(--sg-gold);
     outline-offset: 3px;
 }
 
@@ -284,11 +281,11 @@
 }
 
 .sgs-nav-list button[aria-current='true'] {
-    color: var(--sgs-yellow);
+    color: var(--sg-gold);
 }
 
 .sgs-nav-list button:focus-visible {
-    outline: 2px solid var(--sgs-yellow);
+    outline: 2px solid var(--sg-gold);
     outline-offset: 3px;
 }
 
@@ -305,7 +302,7 @@
 }
 
 .sgs-nav-compact b {
-    color: var(--sgs-yellow);
+    color: var(--sg-gold);
     font-weight: bold;
 }
 
@@ -320,7 +317,7 @@
     display: block;
     height: 100%;
     width: 11.111%; /* one slide of nine, until the script runs */
-    background: var(--sgs-yellow);
+    background: var(--sg-gold);
     transition:
         width 0.35s ease,
         transform 0.35s ease;
@@ -526,7 +523,7 @@
 }
 
 .sgs-caps li:hover .sgs-cap-icon {
-    stroke: var(--sgs-yellow);
+    stroke: var(--sg-gold);
     transform: translateY(-3px);
 }
 
@@ -767,7 +764,7 @@
     height: 5px;
     flex: 0 0 auto;
     border-radius: 50%;
-    background: var(--sgs-yellow);
+    background: var(--sg-gold);
 }
 
 /* ==========================================================================
@@ -1119,7 +1116,7 @@
     height: 22px;
     flex: 0 0 auto;
     fill: none;
-    stroke: var(--sgs-yellow);
+    stroke: var(--sg-gold);
     stroke-width: 1.8;
     stroke-linejoin: round;
     stroke-linecap: round;

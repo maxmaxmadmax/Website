@@ -22,13 +22,7 @@
    TOKENS
    ========================================================================== */
 .event-page {
-    --ep-ink: #1d0d02; /* near-black brown */
-    --ep-cream: #fff4e6; /* the cards */
-    --ep-orange: #f25a0c; /* labels, arrows */
-    --ep-lime: #d6f53b; /* the sticker */
-    --ep-poster-font: 'Bowlby One', 'Arial Black', Impact, sans-serif;
-    --ep-hand-font: 'Permanent Marker', 'Segoe Print', cursive;
-    color: var(--ep-ink);
+    color: var(--sg-poster-ink);
     background:
         radial-gradient(circle at 78% 6%, rgba(255, 226, 140, 0.75), transparent 28%),
         linear-gradient(180deg, #f9b45a 0%, #f39243 30%, #ee7a35 60%, #e8662c 100%);
@@ -89,15 +83,15 @@
 
 /* "COME" / "HUNGRY." one word per line */
 .ep-title {
-    font-family: var(--ep-poster-font);
+    font-family: var(--sg-font-poster);
     font-weight: 400;
     font-size: clamp(3rem, 7.2vw, 6.4rem);
     line-height: 0.88;
     text-transform: uppercase;
     color: #fffaf2;
-    -webkit-text-stroke: 3px var(--ep-ink);
+    -webkit-text-stroke: 3px var(--sg-poster-ink);
     paint-order: stroke fill;
-    text-shadow: 6px 6px 0 var(--ep-ink);
+    text-shadow: 6px 6px 0 var(--sg-poster-ink);
     margin: 0;
 }
 
@@ -108,7 +102,7 @@
 
 /* "GOOD FOOD - LIVE MUSIC - LOCAL MARKETS" */
 .ep-subline {
-    font-family: var(--ep-hand-font);
+    font-family: var(--sg-font-hand);
     font-size: 1.35rem;
     text-transform: uppercase;
     margin: 14px 0 14px;
@@ -139,7 +133,7 @@
 }
 
 .ep-facts li {
-    background: var(--ep-cream);
+    background: var(--sg-poster-cream);
     border-radius: 10px;
     padding: 10px 14px;
     font-weight: bold;
@@ -152,7 +146,7 @@
     font-size: 0.7rem;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: var(--ep-orange);
+    color: var(--sg-poster-orange);
 }
 
 .ep-actions {
@@ -167,8 +161,8 @@
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: #fff;
-    background: var(--ep-ink);
-    border: 2px solid var(--ep-ink);
+    background: var(--sg-poster-ink);
+    border: 2px solid var(--sg-poster-ink);
     border-radius: 999px;
     padding: 14px 24px;
     cursor: pointer;
@@ -181,7 +175,7 @@
 
 .ep-btn-ghost {
     background: transparent;
-    color: var(--ep-ink);
+    color: var(--sg-poster-ink);
 }
 
 .ep-btn-ghost:hover,
@@ -217,7 +211,7 @@
     bottom: 0;
     z-index: 1;
     fill: none;
-    stroke: var(--ep-ink);
+    stroke: var(--sg-poster-ink);
     stroke-width: 5;
     stroke-linecap: round;
     opacity: 0.85;
@@ -240,7 +234,7 @@
 .ep-bat {
     position: absolute;
     z-index: 3;
-    fill: var(--ep-ink);
+    fill: var(--sg-poster-ink);
 }
 
 .ep-bat-1 {
@@ -275,15 +269,15 @@
     display: grid;
     place-content: center;
     text-align: center;
-    font-family: var(--ep-hand-font);
+    font-family: var(--sg-font-hand);
     font-size: 1.25rem;
     line-height: 1.05;
     text-transform: uppercase;
-    color: var(--ep-ink);
-    background: var(--ep-lime);
+    color: var(--sg-poster-ink);
+    background: var(--sg-lime);
     border-radius: 50%;
     transform: rotate(-12deg);
-    box-shadow: 4px 4px 0 var(--ep-ink);
+    box-shadow: 4px 4px 0 var(--sg-poster-ink);
 }
 
 .ep-badge-round b {
@@ -297,14 +291,14 @@
     z-index: 3;
     bottom: 70px;
     left: 0;
-    font-family: var(--ep-poster-font);
+    font-family: var(--sg-font-poster);
     font-size: 1.3rem;
     text-transform: uppercase;
-    color: var(--ep-ink);
-    background: var(--ep-lime);
+    color: var(--sg-poster-ink);
+    background: var(--sg-lime);
     padding: 10px 18px;
     transform: rotate(-5deg);
-    box-shadow: 4px 4px 0 var(--ep-ink);
+    box-shadow: 4px 4px 0 var(--sg-poster-ink);
 }
 
 /* Computer: logo top right above the skeleton, "presents" centred over the top */
@@ -389,8 +383,8 @@
     }
 
     .ep-title {
-        -webkit-text-stroke: 2px var(--ep-ink);
-        text-shadow: 4px 4px 0 var(--ep-ink);
+        -webkit-text-stroke: 2px var(--sg-poster-ink);
+        text-shadow: 4px 4px 0 var(--sg-poster-ink);
     }
 
     .ep-facts {
@@ -425,7 +419,7 @@
 }
 
 .ep-h2 {
-    font-family: var(--ep-poster-font);
+    font-family: var(--sg-font-poster);
     font-weight: 400;
     font-size: clamp(1.9rem, 4.2vw, 3rem);
     line-height: 0.95;
@@ -476,10 +470,10 @@
     position: relative;
     display: flex;
     min-height: 118px;
-    background: var(--ep-cream);
+    background: var(--sg-poster-cream);
     border-radius: 12px;
     overflow: hidden;
-    color: var(--ep-ink);
+    color: var(--sg-poster-ink);
     text-decoration: none;
     box-shadow: 0 5px 0 rgba(29, 13, 2, 0.25);
     transition:
@@ -533,11 +527,11 @@ a.ep-fv:focus-visible {
     font-size: 0.72rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--ep-orange);
+    color: var(--sg-poster-orange);
 }
 
 .ep-fv-text b {
-    font-family: var(--ep-poster-font);
+    font-family: var(--sg-font-poster);
     font-weight: 400;
     font-size: 1.2rem;
     line-height: 1.05;
@@ -560,7 +554,7 @@ a.ep-fv:focus-visible {
     display: grid;
     place-items: center;
     border-radius: 50%;
-    background: var(--ep-orange);
+    background: var(--sg-poster-orange);
     color: #fff;
     font-style: normal;
     font-weight: bold;
@@ -598,7 +592,7 @@ a.ep-fv:focus-visible {
     display: inline-block;
     width: 34px;
     height: 2px;
-    background: var(--ep-ink);
+    background: var(--sg-poster-ink);
     vertical-align: middle;
     margin-right: 10px;
 }
@@ -606,7 +600,7 @@ a.ep-fv:focus-visible {
 /* Two-tone title with a lime swipe under it */
 .ep-big {
     position: relative;
-    font-family: var(--ep-poster-font);
+    font-family: var(--sg-font-poster);
     font-weight: 400;
     font-size: clamp(1.8rem, 2.7vw, 2.3rem);
     line-height: 0.92;
@@ -620,9 +614,9 @@ a.ep-fv:focus-visible {
     display: block;
     font-size: 1.3em;
     color: #fffaf2;
-    -webkit-text-stroke: 2px var(--ep-ink);
+    -webkit-text-stroke: 2px var(--sg-poster-ink);
     paint-order: stroke fill;
-    text-shadow: 4px 4px 0 var(--ep-ink);
+    text-shadow: 4px 4px 0 var(--sg-poster-ink);
 }
 
 .ep-big::after {
@@ -632,7 +626,7 @@ a.ep-fv:focus-visible {
     bottom: -16px;
     width: 70%;
     height: 10px;
-    background: var(--ep-lime);
+    background: var(--sg-lime);
     border-radius: 10px 4px 12px 3px;
     transform: rotate(-3deg);
 }
@@ -655,7 +649,7 @@ a.ep-fv:focus-visible {
 
 /* One tile: icon and heading, then the stalls listed */
 .ep-mt {
-    background: var(--ep-cream);
+    background: var(--sg-poster-cream);
     border-radius: 12px;
     padding: 14px 16px 16px;
     box-shadow: 0 5px 0 rgba(29, 13, 2, 0.25);
@@ -674,11 +668,11 @@ a.ep-fv:focus-visible {
     flex: none;
     width: 34px;
     height: 34px;
-    color: var(--ep-ink);
+    color: var(--sg-poster-ink);
 }
 
 .ep-mt b {
-    font-family: var(--ep-poster-font);
+    font-family: var(--sg-font-poster);
     font-weight: 400;
     font-size: 0.8rem;
     line-height: 1.1;
@@ -707,7 +701,7 @@ a.ep-fv:focus-visible {
 .ep-mt a {
     color: inherit;
     text-decoration: underline;
-    text-decoration-color: var(--ep-orange);
+    text-decoration-color: var(--sg-poster-orange);
     text-underline-offset: 2px;
 }
 
@@ -748,7 +742,7 @@ a.ep-fv:focus-visible {
 }
 
 .ep-ent-card h3 {
-    font-family: var(--ep-poster-font);
+    font-family: var(--sg-font-poster);
     font-weight: 400;
     text-transform: uppercase;
     line-height: 0.95;
@@ -816,7 +810,7 @@ a.ep-fv:focus-visible {
 .ep-ent-band h3 span {
     display: block;
     font-size: 0.55em;
-    color: var(--ep-lime);
+    color: var(--sg-lime);
     margin-top: 6px;
 }
 
@@ -827,19 +821,19 @@ a.ep-fv:focus-visible {
 }
 
 .ep-ent-link {
-    color: var(--ep-lime);
+    color: var(--sg-lime);
     font-weight: bold;
 }
 
 /* Tile colours */
 .ep-ent-bingo {
-    background: var(--ep-lime);
-    color: var(--ep-ink);
+    background: var(--sg-lime);
+    color: var(--sg-poster-ink);
 }
 
 .ep-ent-dress {
-    background: var(--ep-cream);
-    color: var(--ep-ink);
+    background: var(--sg-poster-cream);
+    color: var(--sg-poster-ink);
 }
 
 .ep-ent-treat {
@@ -848,7 +842,7 @@ a.ep-fv:focus-visible {
 }
 
 .ep-ent-treat h3 {
-    color: var(--ep-orange);
+    color: var(--sg-poster-orange);
 }
 
 /* "Cash prize" stamp */
@@ -856,21 +850,21 @@ a.ep-fv:focus-visible {
     position: absolute;
     top: 18px;
     right: 18px;
-    font-family: var(--ep-hand-font);
+    font-family: var(--sg-font-hand);
     font-size: 1.1rem;
     text-transform: uppercase;
     color: #fff;
-    background: var(--ep-orange);
+    background: var(--sg-poster-orange);
     padding: 8px 14px;
     border-radius: 8px;
     transform: rotate(6deg);
-    box-shadow: 3px 3px 0 var(--ep-ink);
+    box-shadow: 3px 3px 0 var(--sg-poster-ink);
 }
 
 /* Hosts: photo left, names right */
 .ep-ent-hosts {
-    background: var(--ep-ink);
-    color: var(--ep-cream);
+    background: var(--sg-poster-ink);
+    color: var(--sg-poster-cream);
     display: grid;
     grid-template-columns: 45% 1fr;
     align-items: center;
@@ -888,7 +882,7 @@ a.ep-fv:focus-visible {
 }
 
 .ep-ent-hosts .ep-kicker {
-    color: var(--ep-lime);
+    color: var(--sg-lime);
 }
 
 .ep-ent-hosts h3 {
@@ -899,7 +893,7 @@ a.ep-fv:focus-visible {
 /* Cricket: Chargers v Dregernauts */
 .ep-ent-cricket {
     background: #fff;
-    color: var(--ep-ink);
+    color: var(--sg-poster-ink);
     padding: 28px 30px;
 }
 
@@ -922,10 +916,10 @@ a.ep-fv:focus-visible {
 }
 
 .ep-vs span {
-    font-family: var(--ep-poster-font);
+    font-family: var(--sg-font-poster);
     font-size: clamp(2.2rem, 4.2vw, 3rem);
     line-height: 1;
-    color: var(--ep-orange);
+    color: var(--sg-poster-orange);
 }
 
 /* Never split a team name - shrink instead */
@@ -946,7 +940,7 @@ a.ep-fv:focus-visible {
 /* Jumping castle: picture left, words right */
 .ep-ent-castle {
     background: #fff;
-    color: var(--ep-ink);
+    color: var(--sg-poster-ink);
     display: flex;
     align-items: center;
     gap: 16px;
@@ -983,11 +977,11 @@ a.ep-fv:focus-visible {
     display: block;
     font-size: 0.62em;
     margin-top: 4px;
-    color: var(--ep-orange);
+    color: var(--sg-poster-orange);
 }
 
 .ep-ent-gen .ep-ent-hosts h3 span {
-    color: var(--ep-lime);
+    color: var(--sg-lime);
 }
 
 .ep-ent-gen .ep-ent-hosts p:not(.ep-kicker) {
@@ -1129,7 +1123,7 @@ a.ep-fv:focus-visible {
 
 .ep-times li,
 .ep-know li {
-    background: var(--ep-cream);
+    background: var(--sg-poster-cream);
     border-radius: 10px;
     padding: 12px 16px;
     box-shadow: 0 4px 0 rgba(29, 13, 2, 0.2);
@@ -1146,7 +1140,7 @@ a.ep-fv:focus-visible {
     display: inline-block;
     flex: none;
     min-width: 130px;
-    color: var(--ep-orange);
+    color: var(--sg-poster-orange);
     white-space: nowrap;
 }
 
@@ -1181,8 +1175,8 @@ a.ep-fv:focus-visible {
     display: block;
     border-radius: 12px;
     overflow: hidden;
-    border: 3px solid var(--ep-ink);
-    box-shadow: 6px 6px 0 var(--ep-ink);
+    border: 3px solid var(--sg-poster-ink);
+    box-shadow: 6px 6px 0 var(--sg-poster-ink);
     transform: rotate(2deg);
 }
 
@@ -1212,13 +1206,13 @@ a.ep-fv:focus-visible {
 
 .ep-faq-tag {
     display: inline-block;
-    font-family: var(--ep-hand-font);
+    font-family: var(--sg-font-hand);
     font-size: 1.6rem;
     text-transform: uppercase;
-    background: var(--ep-lime);
+    background: var(--sg-lime);
     padding: 4px 18px;
     transform: rotate(-4deg);
-    box-shadow: 3px 3px 0 var(--ep-ink);
+    box-shadow: 3px 3px 0 var(--sg-poster-ink);
     margin-bottom: 10px;
 }
 
@@ -1228,7 +1222,7 @@ a.ep-fv:focus-visible {
 }
 
 .ep-faq-sub {
-    font-family: var(--ep-poster-font);
+    font-family: var(--sg-font-poster);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     font-size: clamp(0.95rem, 1.8vw, 1.2rem);
@@ -1248,7 +1242,7 @@ a.ep-fv:focus-visible {
     display: flex;
     align-items: center;
     gap: 14px;
-    background: var(--ep-cream);
+    background: var(--sg-poster-cream);
     border-radius: 12px;
     padding: 14px 16px;
     box-shadow: 0 5px 0 rgba(29, 13, 2, 0.25);
@@ -1259,8 +1253,8 @@ a.ep-fv:focus-visible {
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: var(--ep-ink);
-    color: var(--ep-orange);
+    background: var(--sg-poster-ink);
+    color: var(--sg-poster-orange);
     display: grid;
     place-items: center;
 }
@@ -1271,14 +1265,14 @@ a.ep-fv:focus-visible {
 }
 
 .ep-faq-ic b {
-    font-family: var(--ep-poster-font);
+    font-family: var(--sg-font-poster);
     font-size: 22px;
     font-weight: 400;
 }
 
 .ep-faq-item b {
     display: block;
-    font-family: var(--ep-poster-font);
+    font-family: var(--sg-font-poster);
     font-weight: 400;
     text-transform: uppercase;
     font-size: 1rem;
@@ -1321,7 +1315,7 @@ a.ep-fv:focus-visible {
 }
 
 .ep-sponsors a {
-    color: var(--ep-lime);
+    color: var(--sg-lime);
     font-weight: bold;
 }
 
@@ -1363,11 +1357,11 @@ a.ep-fv:focus-visible {
 }
 
 .ep-sponsor-name {
-    font-family: var(--ep-poster-font);
+    font-family: var(--sg-font-poster);
     font-size: 1.05rem;
     text-transform: uppercase;
     letter-spacing: 0.02em;
-    color: var(--ep-ink);
+    color: var(--sg-poster-ink);
     text-align: center;
 }
 
@@ -1390,7 +1384,7 @@ a.ep-fv:focus-visible {
     position: sticky;
     top: 0;
     z-index: 50;
-    background: var(--ep-ink);
+    background: var(--sg-poster-ink);
     color: #fff;
 }
 
@@ -1406,12 +1400,12 @@ a.ep-fv:focus-visible {
     font-size: 0.7rem;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: var(--ep-lime);
+    color: var(--sg-lime);
 }
 
 .ep-notice h2 {
     margin: 0 0 6px;
-    font-family: var(--ep-poster-font);
+    font-family: var(--sg-font-poster);
     font-size: clamp(1.3rem, 3.5vw, 2rem);
     line-height: 1.05;
 }
@@ -1532,16 +1526,16 @@ a.ep-fv:focus-visible {
     width: 42px;
     height: 42px;
     border-radius: 50%;
-    border: 2px solid var(--ep-ink);
-    background: var(--ep-cream);
+    border: 2px solid var(--sg-poster-ink);
+    background: var(--sg-poster-cream);
     font-weight: bold;
     font-size: 1rem;
     cursor: pointer;
 }
 
 .ep-going-ask button:hover {
-    background: var(--ep-ink);
-    color: var(--ep-cream);
+    background: var(--sg-poster-ink);
+    color: var(--sg-poster-cream);
 }
 
 @media (max-width: 760px) {
@@ -1972,7 +1966,7 @@ a.ep-fv:focus-visible {
         font-size: 12pt;
         padding: 1mm 4mm;
         margin: 0;
-        box-shadow: 2px 2px 0 var(--ep-ink);
+        box-shadow: 2px 2px 0 var(--sg-poster-ink);
     }
 
     .ep-page-4 .ep-market {
@@ -2017,8 +2011,8 @@ a.ep-fv:focus-visible {
 
     .ep-title {
         grid-column: 1 / -1;
-        -webkit-text-stroke: 4px var(--ep-ink);
-        text-shadow: 7px 7px 0 var(--ep-ink);
+        -webkit-text-stroke: 4px var(--sg-poster-ink);
+        text-shadow: 7px 7px 0 var(--sg-poster-ink);
         font-size: 98pt !important;
         line-height: 0.86;
         color: #fff3d6;
@@ -2038,7 +2032,7 @@ a.ep-fv:focus-visible {
 
     .ep-badge-free {
         font-size: 17pt;
-        box-shadow: 3px 3px 0 var(--ep-ink);
+        box-shadow: 3px 3px 0 var(--sg-poster-ink);
         bottom: 16mm !important;
         left: -16mm !important;
     }
@@ -2174,7 +2168,7 @@ a.ep-fv:focus-visible {
     }
 
     .ep-badge-round {
-        box-shadow: 3px 3px 0 var(--ep-ink);
+        box-shadow: 3px 3px 0 var(--sg-poster-ink);
         left: auto !important;
         width: 32mm !important;
         height: 32mm !important;
@@ -2498,7 +2492,7 @@ a.ep-fv:focus-visible {
     .ep-poster {
         transform: rotate(2deg);
         border-width: 2px;
-        box-shadow: 3px 3px 0 var(--ep-ink) !important;
+        box-shadow: 3px 3px 0 var(--sg-poster-ink) !important;
         width: 44mm !important;
     }
 
