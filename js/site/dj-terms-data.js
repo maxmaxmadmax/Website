@@ -1,7 +1,7 @@
 // SOUNDZGOOD ENTERTAINMENT BOOKING TERMS & CONDITIONS
 // Shown on DJ / entertainment quotes
 // (js/site/quote-view.js) and the /dj-terms page. Production quotes keep the
-// main terms in js/data/terms-data.js.
+// main terms in js/site/terms-data.js.
 //
 // How to edit - same as terms-data.js:
 //   - each clause is [title, [lines]]

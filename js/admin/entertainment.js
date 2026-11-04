@@ -2029,7 +2029,7 @@ function wireEntertainment() {
             btn.disabled = true;
 
             try {
-                /*  An act that exists only in js/data/roster.js has no row to delete,
+                /*  An act that exists only in js/site/roster.js has no row to delete,
             so it is marked hidden and the merge there drops it.        */
                 await fb.f.setDoc(
                     fb.f.doc(fb.db, 'talent', slug),

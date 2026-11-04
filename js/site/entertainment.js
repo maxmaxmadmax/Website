@@ -2,7 +2,7 @@
    ENTERTAINMENT - the talent roster page. Everything is scoped to
    #sg-ent-page, so nothing here can reach another page.
 
-   The acts come from js/data/roster.js (window.SG_ROSTER_READY): the built-in
+   The acts come from js/site/roster.js (window.SG_ROSTER_READY): the built-in
    list with Admin -> Entertainment merged over it. `act` must be one of
    the ACT_TYPES keys. An act with no `photo` shows its gradient and glyph;
    cards crop portraits from 18% down, so frame the face in the upper third.

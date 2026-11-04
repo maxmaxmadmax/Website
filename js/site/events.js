@@ -113,7 +113,7 @@
 
 /* ==========================================================================
    FRIDAYS - who is playing comes from Admin > Entertainment (gigNights),
-   falling back to SG_FRIDAY_SEED in js/data/roster.js. The dates roll forward
+   falling back to SG_FRIDAY_SEED in js/site/roster.js. The dates roll forward
    from today, four Fridays ahead.
    ========================================================================== */
 (function () {

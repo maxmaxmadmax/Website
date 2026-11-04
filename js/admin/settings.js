@@ -13,7 +13,7 @@
    Who is playing where, a month at a glance, with the roster underneath.
 
    WHERE IT IS KEPT
-     talent/{slug}                  an act (merged with js/data/roster.js)
+     talent/{slug}                  an act (merged with js/site/roster.js)
      talentSchedule/{date__slug}    one booking. Same act + same night =
                                     same id, so it edits, not duplicates.
 

@@ -11,10 +11,10 @@ permalink: /dj-terms.html
     <meta name="description" content="Terms & Conditions for DJs and entertainers booked through SoundzGood Whitsundays.">
 
     <link rel="icon" href="images/logo.png">
-    <link rel="stylesheet" href="css/site/site.css?v=856">
-    <script src="js/site/main.js?v=856" defer></script>
+    <link rel="stylesheet" href="css/site/site.css?v=855">
+    <script src="js/site/main.js?v=855" defer></script>
 
-    <!-- Terms page only. The words themselves live in js/data/dj-terms-data.js,
+    <!-- Terms page only. The words themselves live in js/site/dj-terms-data.js,
          the same file the quote / proposal page uses, so they never drift. -->
     <style>
         .tc-wrap { max-width: 820px; margin: 0 auto; line-height: 1.65; }
@@ -69,8 +69,8 @@ permalink: /dj-terms.html
 <div id="footer"></div>
 
 <script type="module">
-    import { termBodyHtml } from './js/data/terms-data.js?v=856';
-    import { DJ_TERMS as TERMS, DJ_TERMS_INTRO as TERMS_INTRO, DJ_TERMS_UPDATED as TERMS_UPDATED } from './js/data/dj-terms-data.js?v=856';
+    import { termBodyHtml } from './js/site/terms-data.js?v=855';
+    import { DJ_TERMS as TERMS, DJ_TERMS_INTRO as TERMS_INTRO, DJ_TERMS_UPDATED as TERMS_UPDATED } from './js/site/dj-terms-data.js?v=855';
 
     const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
