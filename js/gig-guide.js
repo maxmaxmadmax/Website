@@ -302,17 +302,6 @@ var GG_LISTINGS = [
         });
     });
 
-    // The subscribe box has no list behind it, so it carries the address to the contact page
-    var sub = document.getElementById('gg-subscribe');
-    if (sub) {
-        sub.addEventListener('submit', function (ev) {
-            ev.preventDefault();
-            var email = document.getElementById('gg-email');
-            var note = 'Please add me to the weekend gig guide list.';
-            window.location.href = '/contact?note=' + encodeURIComponent(note) + '&email=' + encodeURIComponent(email ? email.value : '');
-        });
-    }
-
     // The hero clip, on a big screen only - a phone never downloads it
     var video = document.getElementById('gg-hero-video');
     if (video && window.innerWidth > 900 && !window.matchMedia('(hover: none)').matches) {

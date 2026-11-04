@@ -5,7 +5,7 @@
    FRESH PAGE   reloads the page once when a newer version has been deployed
    COMPONENTS   drops the menu and footer in, highlights the current page
    MENU         burger, dropdowns, the home page tuck, the measured height
-   CONTACT      pre-fills the contact form from ?about= / ?note= / ?email=
+   CONTACT      pre-fills the contact form from ?about= / ?note=
    SLIDER       pages a row of cards (window.SGSlider, used by other scripts)
    ========================================================================== */
 
@@ -265,7 +265,7 @@ function trackNavHeight() {
 
 /* ==========================================================================
    CONTACT - ?about= is an artist's name, ?note= a full sentence from
-   another page, ?email= their address. Only fills boxes that are empty.
+   another page. Only fills boxes that are empty.
    ========================================================================== */
 function initEnquiryPrefill() {
     var form = document.querySelector('.contact-form');
@@ -274,7 +274,6 @@ function initEnquiryPrefill() {
     var params = new URLSearchParams(window.location.search);
     var about = params.get('about');
     var note = params.get('note');
-    var email = params.get('email');
 
     var message = form.querySelector('[name="message"]');
     if (message && message.value.trim() === '') {
@@ -283,11 +282,6 @@ function initEnquiryPrefill() {
         } else if (about) {
             message.value = 'I would like to enquire about booking ' + about + '.';
         }
-    }
-
-    if (email) {
-        var box = form.querySelector('[name="email"]');
-        if (box && box.value.trim() === '') box.value = email;
     }
 }
 
