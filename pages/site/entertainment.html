@@ -16,18 +16,18 @@ permalink: /entertainment.html
   <meta property="og:title" content="SoundzGood Entertainment | DJs, Bands &amp; Live Music">
   <meta property="og:description" content="A curated line up of DJs, musicians, bands and performers ready to bring your event to life.">
   <meta property="og:url" content="https://www.soundzgood.com.au/entertainment">
-  <meta property="og:image" content="https://www.soundzgood.com.au/images/og-soundzgood.png">
+  <meta property="og:image" content="https://www.soundzgood.com.au/data/images/og-soundzgood.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="SoundzGood Whitsundays">
   <meta name="twitter:card" content="summary_large_image">
 
-  <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="css/site/site.css?v=855">
-  <link rel="stylesheet" href="css/site/entertainment.css?v=855">
-  <script src="js/site/main.js?v=855" defer></script>
-  <script src="js/site/roster.js?v=855" defer></script>
-  <script src="js/site/entertainment.js?v=855" defer></script>
+  <link rel="icon" href="data/images/logo.png">
+  <link rel="stylesheet" href="css/site/site.css?v=856">
+  <link rel="stylesheet" href="css/site/entertainment.css?v=856">
+  <script src="js/site/main.js?v=856" defer></script>
+  <script src="js/site/roster.js?v=856" defer></script>
+  <script src="js/site/entertainment.js?v=856" defer></script>
 </head>
 
 <body>
@@ -39,7 +39,7 @@ permalink: /entertainment.html
      Everything below lives inside #sg-ent-page; entertainment.css and
      js/site/entertainment.js are scoped to that id.
      THE ROSTER is one array at the top of js/site/entertainment.js - add an act there.
-     PHOTOS: set photo: 'images/talent/name.webp' on the act (portrait, ~900px wide).
+     PHOTOS: set photo: 'data/images/talent/name.webp' on the act (portrait, ~900px wide).
      No photo yet shows a gradient instead.
      ========================================================================== -->
 <main id="sg-ent-page">
@@ -51,9 +51,9 @@ permalink: /entertainment.html
          preload="none" lets the poster show first. -->
     <video class="banner-video" id="ent-hero-video" aria-hidden="true"
            autoplay muted loop playsinline preload="none"
-           poster="images/places/bowen.jpeg">
-      <source src="videos/hero-720.mp4" type="video/mp4" media="(max-width: 900px)">
-      <source src="videos/hero-1080.mp4" type="video/mp4">
+           poster="data/images/places/bowen.jpeg">
+      <source src="data/videos/hero-720.mp4" type="video/mp4" media="(max-width: 900px)">
+      <source src="data/videos/hero-1080.mp4" type="video/mp4">
     </video>
 
     <div class="banner-scrim" aria-hidden="true"></div>
@@ -68,7 +68,7 @@ permalink: /entertainment.html
       <div class="banner-actions">
         <a class="btn ent-btn" href="#ent-talent">Browse the Talent <span aria-hidden="true">&#8594;</span></a>
 
-        <!-- Plays videos/hero-720.mp4 (the smaller cut, fine for a box). -->
+        <!-- Plays data/videos/hero-720.mp4 (the smaller cut, fine for a box). -->
         <button type="button" class="ent-play" id="ent-play">
           <span class="ent-play-ring" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M9 6.5v11l9-5.5z"/></svg>
@@ -223,8 +223,8 @@ permalink: /entertainment.html
       <span aria-hidden="true">&times;</span>
     </button>
     <video id="ent-video-el" controls playsinline preload="none">
-      <source src="videos/hero-720.mp4" type="video/mp4" media="(max-width: 900px)">
-      <source src="videos/hero-1080.mp4" type="video/mp4">
+      <source src="data/videos/hero-720.mp4" type="video/mp4" media="(max-width: 900px)">
+      <source src="data/videos/hero-1080.mp4" type="video/mp4">
     </video>
   </dialog>
 

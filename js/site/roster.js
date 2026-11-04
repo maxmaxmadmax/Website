@@ -21,29 +21,29 @@
             events: ['Clubs', 'Festivals', 'Weddings'],              */
     var TALENT = [
         /* ---- DJs ---- */
-        { slug: 'maxzi', name: 'MAXZI', act: 'dj', genres: [], events: [], photo: 'images/talent/maxzi.jpg' },
-        { slug: 'lucas', name: 'Lucas', act: 'dj', genres: [], events: [], photo: 'images/talent/lucas.jpg' },
-        { slug: 'dj-karma', name: 'DJ Karma', act: 'dj', genres: [], events: [], photo: 'images/talent/dj-karma.jpg' },
-        { slug: 'nina-sinclair', name: 'Nina Sinclair', act: 'dj', genres: [], events: [], photo: 'images/talent/nina-sinclair.jpg' },
+        { slug: 'maxzi', name: 'MAXZI', act: 'dj', genres: [], events: [], photo: 'data/images/talent/maxzi.jpg' },
+        { slug: 'lucas', name: 'Lucas', act: 'dj', genres: [], events: [], photo: 'data/images/talent/lucas.jpg' },
+        { slug: 'dj-karma', name: 'DJ Karma', act: 'dj', genres: [], events: [], photo: 'data/images/talent/dj-karma.jpg' },
+        { slug: 'nina-sinclair', name: 'Nina Sinclair', act: 'dj', genres: [], events: [], photo: 'data/images/talent/nina-sinclair.jpg' },
         {
             slug: 'dj-charly-templar',
             name: 'DJ Charly Templar',
             act: 'dj',
             genres: [],
             events: [],
-            photo: 'images/talent/dj-charly-templar.jpg'
+            photo: 'data/images/talent/dj-charly-templar.jpg'
         },
-        { slug: 'kriss-kross', name: 'Kriss Kross', act: 'dj', genres: [], events: [], photo: 'images/talent/kriss-kross.jpg' },
-        { slug: 'alex-emrik', name: 'Alex Emrik', act: 'dj', genres: [], events: [], photo: 'images/talent/alex-emrik.jpg' },
-        { slug: 'dj-powerboi', name: 'DJ PowerBoi', act: 'dj', genres: [], events: [], photo: 'images/talent/dj-powerboi.jpg' },
-        { slug: 'dougie', name: 'Dougie', act: 'dj', genres: ['R&B'], events: [], photo: 'images/talent/dougie.jpg' },
+        { slug: 'kriss-kross', name: 'Kriss Kross', act: 'dj', genres: [], events: [], photo: 'data/images/talent/kriss-kross.jpg' },
+        { slug: 'alex-emrik', name: 'Alex Emrik', act: 'dj', genres: [], events: [], photo: 'data/images/talent/alex-emrik.jpg' },
+        { slug: 'dj-powerboi', name: 'DJ PowerBoi', act: 'dj', genres: [], events: [], photo: 'data/images/talent/dj-powerboi.jpg' },
+        { slug: 'dougie', name: 'Dougie', act: 'dj', genres: ['R&B'], events: [], photo: 'data/images/talent/dougie.jpg' },
         {
             slug: 'mosh-mechanix',
             name: 'Mosh Mechanix',
             act: 'dj',
             genres: ['Drum & Bass', 'Commercial'],
             events: [],
-            photo: 'images/talent/mosh-mechanix.jpg'
+            photo: 'data/images/talent/mosh-mechanix.jpg'
         }
 
         /*  PARKED: solo artists and bands. Take the comment marks off and they

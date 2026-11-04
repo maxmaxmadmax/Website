@@ -24,9 +24,9 @@
 
 /* ---------- 1  Setup ---------- */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=855';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=855'; // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=855';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=856';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=856'; // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=856';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -70,6 +70,11 @@ function esc(v) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+/*  A picture address saved in a quote before images/ moved into data/ (old quotes keep working). */
+function media(p) {
+    return String(p == null ? '' : p).replace(/^(\/?)(images|videos)\//, '$1data/$2/');
 }
 
 function token() {
@@ -680,7 +685,7 @@ function render(q) {
       ${statusBanner(q, isInvoice)}
       <div class="qv-top">
         <div class="qv-brand">
-          <img src="/images/logo-quote.png" alt="SoundzGood Whitsundays" class="qv-logo">
+          <img src="/data/images/logo-quote.png" alt="SoundzGood Whitsundays" class="qv-logo">
           <p class="qv-legal">${esc(SELLER.legal)}<br>ABN ${esc(SELLER.abn)}</p>
         </div>
         <div class="qv-meta">
@@ -863,7 +868,9 @@ function djFeatureHtml(dj) {
     if (!dj) return '';
     return (
         '<div class="qp-djf">' +
-        (dj.photo ? '<img class="qp-djf-img" src="/' + esc(dj.photo) + '" alt="' + esc(dj.name) + '" onerror="this.remove()">' : '') +
+        (dj.photo
+            ? '<img class="qp-djf-img" src="/' + esc(media(dj.photo)) + '" alt="' + esc(dj.name) + '" onerror="this.remove()">'
+            : '') +
         '<div class="qp-djf-text"><p class="qp-mini">Your DJ</p><h3>' +
         esc(dj.name) +
         '</h3>' +
@@ -1027,12 +1034,14 @@ function proposalTop(q, days, totals) {
     const tiles = proposalTiles(p);
     const rows = investmentRows(p);
     const discountRow = applyDiscount(q, rows);
-    const photo = poster ? esc(poster) : '/images/services/' + (isDj && dj && dj.photo ? 'trailer-stage.webp' : HERO_PHOTO[p.type]);
+    const photo = poster
+        ? esc(media(poster))
+        : '/data/images/services/' + (isDj && dj && dj.photo ? 'trailer-stage.webp' : HERO_PHOTO[p.type]);
 
     return `
     <section class="qp-hero">
       <div class="qp-hero-photo${isDj ? ' is-dj is-stage' : ''}${poster ? ' is-custom' : ''}" style="--qp-photo:url('${photo}')">
-        ${poster ? '<div class="qp-hero-blur"></div><img class="qp-hero-img" src="' + esc(poster) + '" alt="">' : ''}
+        ${poster ? '<div class="qp-hero-blur"></div><img class="qp-hero-img" src="' + esc(media(poster)) + '" alt="">' : ''}
         <div class="qp-hero-in">
           <p class="qp-eyebrow">${isDj ? esc(venueName || 'Entertainment booking') : 'Event production proposal'}</p>
           <h1>${isDj ? 'SoundzGood Entertainment' : esc(p.event)}</h1>

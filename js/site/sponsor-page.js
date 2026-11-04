@@ -15,8 +15,8 @@
      START      load the event
    ========================================================================== */
 
-import { SPONSOR_LEVELS, EVENT_COSTS } from './sponsor-data.js?v=855';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured, eventId as defaultEventId } from './firebase-config.js?v=855';
+import { SPONSOR_LEVELS, EVENT_COSTS } from './sponsor-data.js?v=856';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured, eventId as defaultEventId } from './firebase-config.js?v=856';
 
 /* ---- SETUP ---- */
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
@@ -36,7 +36,7 @@ const dollars = (c) => '$' + Math.round((c || 0) / 100).toLocaleString('en-AU');
 const EVENT_POSTERS = [
     {
         match: (ev) => /eatz/i.test(ev.name || '') && String(ev.dateISO || '').startsWith('2026-10-31'),
-        url: '/images/events/eatz-beatz-halloween-2026-v3.webp'
+        url: '/data/images/events/eatz-beatz-halloween-2026-v3.webp'
     }
 ];
 const posterOf = (ev) => ev.image || (EVENT_POSTERS.find((p) => p.match(ev)) || {}).url || '';

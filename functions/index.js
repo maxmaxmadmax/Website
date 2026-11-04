@@ -6848,7 +6848,7 @@ async function gigSync(bookingId, opts = {}) {
     // who played - shown on the entertainment-style quote / invoice
     const gigDj = {
         name,
-        photo: (t.exists && t.data().photo) || 'images/talent/' + b.slug + '.jpg',
+        photo: (t.exists && t.data().photo) || 'data/images/talent/' + b.slug + '.jpg',
         start,
         finish,
         hours,
@@ -7094,7 +7094,7 @@ async function gigDjFor(bookingId) {
         const r = await db.collection('actRates').doc(x.slug).get();
         return {
             name: (t.exists && t.data().name) || slugName,
-            photo: (t.exists && t.data().photo) || 'images/talent/' + x.slug + '.jpg',
+            photo: (t.exists && t.data().photo) || 'data/images/talent/' + x.slug + '.jpg',
             start,
             finish,
             hours: gigHours(start, finish),

@@ -902,7 +902,7 @@ function quoteBuilderHtml() {
 
         <div class="qb-lh">
           <div class="qb-brand">
-            <img src="/images/logo.png" alt="SoundzGood" class="qb-logo">
+            <img src="/data/images/logo.png" alt="SoundzGood" class="qb-logo">
             <div class="qb-seller">
               ABN 49 700 595 348<br>
               34a Williams St, Bowen QLD 4805<br>

@@ -681,7 +681,7 @@
 
 .ev-venue-art {
     height: 120px;
-    background: url('../../images/venues/grand-view-hotel.jpg'), linear-gradient(140deg, #33184a, #0d0d0d 72%);
+    background: url('../../data/images/venues/grand-view-hotel.jpg'), linear-gradient(140deg, #33184a, #0d0d0d 72%);
     background-size: cover;
     background-position: center 62%;
     margin-bottom: 12px;

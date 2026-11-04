@@ -688,7 +688,7 @@ function eventForm() {
           <input id="ad-ev-venue" maxlength="120" value="${attr(ev.venue || '')}">
 
           <!--  Shown on the event card on the vendor signup page. A path
-                to a file in the site, like images/events/eatz-beatz.jpg.
+                to a file in the site, like data/images/events/eatz-beatz.jpg.
                 Left blank, the card shows its gradient.            -->
           <label for="ad-ev-image">Poster</label>
           <div class="ad-ev-poster">

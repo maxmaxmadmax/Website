@@ -23,9 +23,9 @@
 
 /* ---------- 1  Setup ---------- */
 
-import { termBodyHtml } from './terms-data.js?v=855';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=855';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=855';
+import { termBodyHtml } from './terms-data.js?v=856';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=856';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=856';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -66,7 +66,7 @@ const RULES = [
 const EVENT_POSTERS = [
     {
         match: (ev) => /eatz/i.test(ev.name || '') && String(ev.dateISO || '').startsWith('2026-10-31'),
-        url: '/images/events/eatz-beatz-halloween-2026-v3.webp'
+        url: '/data/images/events/eatz-beatz-halloween-2026-v3.webp'
     }
 ];
 
@@ -83,7 +83,7 @@ const SHARE_VENDORS = {
 };
 
 /*  Printables for their stall: the poster and the A4 program. */
-const POSTER_URL = '/images/events/eatz-beatz-halloween-2026-v3.webp';
+const POSTER_URL = '/data/images/events/eatz-beatz-halloween-2026-v3.webp';
 const PROGRAM_URL = '/eatz-beatz-halloween-2026?print=1';
 const INSTAGRAM_URL = 'https://www.instagram.com/soundzgood_events/';
 
@@ -228,7 +228,7 @@ function paperHtml(d) {
       <div class="qv-banner qv-ok">${d.free ? 'Confirmed &mdash; thank you!' : 'Paid in full &mdash; thank you!'}</div>
       <div class="qv-top">
         <div class="qv-brand">
-          <img src="/images/logo-quote.png" alt="SoundzGood Whitsundays" class="qv-logo">
+          <img src="/data/images/logo-quote.png" alt="SoundzGood Whitsundays" class="qv-logo">
           <p class="qv-legal">${esc(s.legal)}${s.legal ? '<br>' : ''}${s.abn ? 'ABN ' + esc(s.abn) : ''}</p>
         </div>
         <div class="qv-meta">

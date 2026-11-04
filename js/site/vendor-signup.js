@@ -32,11 +32,11 @@
      17. Helpers
    -------------------------------------------------------------------------- */
 
-import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=855';
+import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=856';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=855';
-import { termBodyHtml } from './terms-data.js?v=855';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION } from './vendor-terms-data.js?v=855';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=856';
+import { termBodyHtml } from './terms-data.js?v=856';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION } from './vendor-terms-data.js?v=856';
 
 /* ---------------------------------------------------------------- 1. Settings */
 
@@ -83,7 +83,7 @@ const EVENT_STATUS = {
 const EVENT_POSTERS = [
     {
         match: (ev) => /eatz/i.test(ev.name || '') && String(ev.dateISO || '').startsWith('2026-10-31'),
-        url: '/images/events/eatz-beatz-halloween-2026-v3.webp'
+        url: '/data/images/events/eatz-beatz-halloween-2026-v3.webp'
     }
 ];
 

@@ -9,7 +9,7 @@
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from '../site/sponsor-data.js?v=855';
+import { SPONSOR_LEVELS } from '../site/sponsor-data.js?v=856';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 
@@ -329,7 +329,7 @@ function websiteHtml(ctx) {
 const EVENT_POSTERS = [
     {
         match: (ev) => /eatz/i.test(ev.name || '') && String(ev.dateISO || '').startsWith('2026-10-31'),
-        url: '/images/events/eatz-beatz-halloween-2026-v3.webp'
+        url: '/data/images/events/eatz-beatz-halloween-2026-v3.webp'
     }
 ];
 function posterOf(ev) {

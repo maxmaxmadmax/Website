@@ -382,7 +382,7 @@ function djDetailHtml() {
         <label class="ad-field"><span>Act</span><select class="ad-select" id="dj-f-act">${Object.keys(ACT_LABELS)
             .map((k) => `<option value="${attr(k)}"${(t.act || 'dj') === k ? ' selected' : ''}>${esc(ACT_LABELS[k])}</option>`)
             .join('')}</select></label>
-        <label class="ad-field"><span>Photo (on the website)</span><input class="ad-input" id="dj-f-photo" value="${attr(t.photo || '')}" placeholder="images/talent/name.jpg"></label>
+        <label class="ad-field"><span>Photo (on the website)</span><input class="ad-input" id="dj-f-photo" value="${attr(t.photo || '')}" placeholder="data/images/talent/name.jpg"></label>
         <div class="ent-2col">
           <label class="ad-field"><span>Rate per hour ($)</span><input class="ad-input" type="number" min="0" step="1" id="dj-f-rate" value="${attr(d(r.hourlyRateCents))}"${r.onRequest ? ' placeholder="On request"' : ''}></label>
           <label class="ad-field"><span>Location (where they live)</span><select class="ad-select" id="dj-f-loc">${djTownOptions(r.location || '')}</select></label>
@@ -616,7 +616,7 @@ function bookingPanel(b) {
         return `
       <section class="ad-card ad-book-panel">
         <div class="ad-book-photo" aria-hidden="true"
-             style="background-image:url('/images/venues/grand-view-hotel.jpg')"></div>
+             style="background-image:url('/data/images/venues/grand-view-hotel.jpg')"></div>
         <div class="ad-book-inner">
           <h3>Nothing booked yet</h3>
           <p class="ad-cell-muted">
@@ -1214,7 +1214,7 @@ function mailtoFor(b, act) {
 
 /*  A photograph of the venue, where we have one. */
 const VENUE_PHOTOS = {
-    'grand view': 'images/venues/grand-view-hotel.jpg'
+    'grand view': 'data/images/venues/grand-view-hotel.jpg'
 };
 
 function venuePhoto(venue) {

@@ -61,7 +61,7 @@
         break-after: page;
         max-width: none;
         margin: 0;
-        background: #f39243 url('../../images/events/print-bg-orange.jpg') center / 100% 100% no-repeat;
+        background: #f39243 url('../../data/images/events/print-bg-orange.jpg') center / 100% 100% no-repeat;
     }
 
     .ep-page-4 {

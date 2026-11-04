@@ -148,7 +148,7 @@
     /* gradients first, photo last, or the words become unreadable */
     background:
         linear-gradient(90deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.58) 40%, rgba(0, 0, 0, 0.18) 70%, rgba(0, 0, 0, 0.3) 100%),
-        url('../../images/services/trailer-stage.webp') 50% 75% / cover no-repeat,
+        url('../../data/images/services/trailer-stage.webp') 50% 75% / cover no-repeat,
         linear-gradient(120deg, #2a1403 0%, #0a0a0a 64%);
 }
 

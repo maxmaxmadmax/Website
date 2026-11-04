@@ -19,7 +19,7 @@
      SAVING       a tick saves straight away; the 20-second refresh
      START        load, and the local test hook
    ========================================================================== */
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=855';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=856';
 
 /* ---- SETUP ---- */
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
@@ -333,7 +333,7 @@ function render() {
     const c = counts();
     document.getElementById('pl-root').innerHTML = `
     <header class="pl-head">
-      <img src="/images/logo-quote.png" alt="SoundzGood Whitsundays" class="pl-logo">
+      <img src="/data/images/logo-quote.png" alt="SoundzGood Whitsundays" class="pl-logo">
       <div class="pl-head-r"><h1>${pageHeading(d, c.total)}</h1><p>${esc(d.number)}</p></div>
     </header>
 

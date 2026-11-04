@@ -83,7 +83,7 @@
     background:
         radial-gradient(120% 100% at 50% 0%, rgba(46, 16, 66, 0.82) 0%, rgba(10, 10, 10, 0.92) 62%),
         linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.65) 100%),
-        url('../../images/services/festivals.webp') center 62% / cover no-repeat,
+        url('../../data/images/services/festivals.webp') center 62% / cover no-repeat,
         var(--sg-night);
 }
 
@@ -766,7 +766,7 @@
 .vs-picked-art[data-noart],
 .vs-side-art[data-noart] {
     background-color: var(--sg-ink);
-    background-image: url('/images/logowhite.png'), linear-gradient(135deg, #3a1c05 0%, #12141a 72%);
+    background-image: url('/data/images/logowhite.png'), linear-gradient(135deg, #3a1c05 0%, #12141a 72%);
     background-repeat: no-repeat;
     background-position: center;
     background-size:

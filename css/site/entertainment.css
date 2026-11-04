@@ -189,11 +189,11 @@
 }
 
 .ent-recommend .ent-band-media {
-    --ent-img: url('../../images/entertainment/recommend.webp');
+    --ent-img: url('../../data/images/entertainment/recommend.webp');
 }
 
 .ent-production .ent-band-media {
-    --ent-img: url('../../images/entertainment/production.webp');
+    --ent-img: url('../../data/images/entertainment/production.webp');
 }
 
 .ent-band-inner {

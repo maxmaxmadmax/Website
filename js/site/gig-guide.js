@@ -32,7 +32,7 @@
                food arts       (this is what the type pills match)
        tags    the words printed on the card. Usually the same as cats,
                written out properly.
-       img     optional photo, e.g. 'images/gigs/eatz-beatz.jpg'. Without
+       img     optional photo, e.g. 'data/images/gigs/eatz-beatz.jpg'. Without
                one the card shows its dark tile.
        big     true puts it in Upcoming Highlights rather than the weekend
                row, whatever the date says.

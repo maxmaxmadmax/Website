@@ -66,7 +66,7 @@
     var esc = window.SG.esc;
 
     /*  FOOD PHOTOS - one per kind of food, free Unsplash pictures in
-        images/vendor-cats/ (see CREDITS.txt there). A vendor's own photo
+        data/images/vendor-cats/ (see CREDITS.txt there). A vendor's own photo
         can replace one later: same file name.                         */
     var PHOTOS = [
         'burgers-fries-american',
@@ -95,7 +95,7 @@
         cat   = a better category, where theirs didn't fit
         label = the market tile name for that better category
         name  = how to show their name, if it differs from how they typed it
-        photo = the vendor's OWN photo (images/vendors/<file>)
+        photo = the vendor's OWN photo (data/images/vendors/<file>)
         link  = a better link than the one they typed
         logo  = true when that photo is a logo: shown whole on white, not cropped
         top   = true to keep the top of the photo (a face) in the card
@@ -110,7 +110,7 @@
             line: 'Pork belly bites, crispy wings, loaded fries and chicken burgers.',
             cat: 'chicken-wings'
         },
-        'Grumpy Mas': { tag: 'Burgers', line: 'Hearty food.' /* their own words */, photo: 'images/vendors/grumpy-mas.webp' },
+        'Grumpy Mas': { tag: 'Burgers', line: 'Hearty food.' /* their own words */, photo: 'data/images/vendors/grumpy-mas.webp' },
         'Loopy Scoops': {
             tag: 'Ice cream',
             line: 'Soft serve, premium scooped ice cream and snow cones.',
@@ -120,21 +120,21 @@
             tag: 'Sweet treats',
             line: 'Sweet treats from the red food van.',
             cat: 'lollies-fairy-floss',
-            photo: 'images/vendors/sweet-wheels.webp',
+            photo: 'data/images/vendors/sweet-wheels.webp',
             top: true
         },
         'Tropical Blendz': {
             tag: 'Drinks',
             line: 'Fresh drinks and smoothies.',
             cat: 'drinks-juice-smoothies',
-            photo: 'images/vendors/tropical-blendz.webp', // their logo
+            photo: 'data/images/vendors/tropical-blendz.webp', // their logo
             logo: true
         },
-        'Tropical Pizza': { tag: 'Pizza', line: 'Pizza, wings and soft drinks.', photo: 'images/vendors/tropical-pizza.webp' }, // photo from their truck
+        'Tropical Pizza': { tag: 'Pizza', line: 'Pizza, wings and soft drinks.', photo: 'data/images/vendors/tropical-pizza.webp' }, // photo from their truck
         'Vandito Viesta': {
             tag: 'Mexican',
             line: 'Nachos and tacos - beef, chicken, pulled pork and beans.',
-            photo: 'images/vendors/vandito-viesta.webp',
+            photo: 'data/images/vendors/vandito-viesta.webp',
             link: 'https://www.facebook.com/p/Vandito-Viesta-61586241928820/'
         },
 
@@ -209,7 +209,7 @@
 
     /* the vendor's own photo first, else the generic one for their kind of food */
     function foodPic(w, cat) {
-        var img = w.photo || (PHOTOS.indexOf(cat) >= 0 ? 'images/vendor-cats/' + cat + '.webp' : '');
+        var img = w.photo || (PHOTOS.indexOf(cat) >= 0 ? 'data/images/vendor-cats/' + cat + '.webp' : '');
         if (!img) return '<span class="ep-fv-pic ep-fv-pic-none" aria-hidden="true"></span>';
         var cls = 'ep-fv-pic' + (w.logo ? ' ep-fv-pic-logo' : '') + (w.top ? ' ep-fv-pic-top' : '');
         return '<span class="' + cls + '" style="background-image:url(\'' + img + '\')"></span>';
