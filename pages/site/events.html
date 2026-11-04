@@ -1,46 +1,53 @@
 ---
 permalink: /events.html
 ---
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Our Events | Live Music &amp; Festivals in Bowen</title>
-  <meta name="description" content="See what we have worked on - SoundzGood live events, Eatz &amp; Beatz, festivals and the events we run every year across Bowen and the Whitsundays.">
+        <title>Our Events | Live Music &amp; Festivals in Bowen</title>
+        <meta
+            name="description"
+            content="See what we have worked on - SoundzGood live events, Eatz &amp; Beatz, festivals and the events we run every year across Bowen and the Whitsundays."
+        />
 
-  <!-- Facebook / Messenger sharing -->
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="SoundzGood Whitsundays">
-  <meta property="og:title" content="SoundzGood Events | Live Music &amp; Festivals in Bowen">
-  <meta property="og:description" content="Upcoming events, festivals, live music and community events from SoundzGood Whitsundays.">
-  <meta property="og:url" content="https://www.soundzgood.com.au/events">
-  <meta property="og:image" content="https://www.soundzgood.com.au/data/images/og-soundzgood.png">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="SoundzGood Whitsundays">
-  <meta name="twitter:card" content="summary_large_image">
+        <!-- Facebook / Messenger sharing -->
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="SoundzGood Whitsundays" />
+        <meta property="og:title" content="SoundzGood Events | Live Music &amp; Festivals in Bowen" />
+        <meta
+            property="og:description"
+            content="Upcoming events, festivals, live music and community events from SoundzGood Whitsundays."
+        />
+        <meta property="og:url" content="https://www.soundzgood.com.au/events" />
+        <meta property="og:image" content="https://www.soundzgood.com.au/data/images/og-soundzgood.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="SoundzGood Whitsundays" />
+        <meta name="twitter:card" content="summary_large_image" />
 
-  <link rel="icon" href="data/images/logo.png">
-  <link rel="stylesheet" href="css/site/site.css?v=856">
-  <!-- The event card is shared with /gig-guide, so its styles live in their own file. -->
-  <link rel="stylesheet" href="css/site/gig-card.css?v=856">
-  <link rel="stylesheet" href="css/site/events.css?v=856">
-  <script src="js/site/main.js?v=856" defer></script>
-  <!-- roster.js names the DJs on the Friday Nights cards (same list as the entertainment page and admin). -->
-  <script src="js/site/roster.js?v=856" defer></script>
-  <script src="js/site/weekend.js?v=856" defer></script>
-  <script src="js/site/events.js?v=856" defer></script>
-  <script src="js/site/volunteer.js?v=856" defer></script>
-</head>
+        <link rel="icon" href="data/images/logo.png" />
+        <link rel="stylesheet" href="css/site/site.css?v=857" />
+        <!-- The event card is shared with /gig-guide, so its styles live in their own file. -->
+        <link rel="stylesheet" href="css/site/gig-card.css?v=857" />
+        <link rel="stylesheet" href="css/site/events.css?v=857" />
+        <script src="js/site/main.js?v=857" defer></script>
+        <script src="js/site/old-pictures.js?v=857" defer></script>
+        <!-- roster.js names the DJs on the Friday Nights cards (same list as the entertainment page and admin). -->
+        <script src="js/site/roster.js?v=857" defer></script>
+        <script src="js/site/weekend.js?v=857" defer></script>
+        <script src="js/site/events.js?v=857" defer></script>
+        <script src="js/site/volunteer.js?v=857" defer></script>
+    </head>
 
-<!-- the class is what events.css hangs the footer tweak off -->
-<body class="events-page">
+    <!-- the class is what events.css hangs the footer tweak off -->
+    <body class="events-page">
+        <div id="navbar"></div>
 
-<div id="navbar"></div>
-
-<!-- ==========================================================================
+        <!-- ==========================================================================
      EVENTS HUB
 
      ADDING A NEW EVENT
@@ -58,346 +65,343 @@ permalink: /events.html
      card with no photo yet still looks finished.
      ========================================================================== -->
 
-<!-- Hidden heading for screen readers and search engines - says what the page is. -->
-<h1 class="sr-only">Events</h1>
+        <!-- Hidden heading for screen readers and search engines - says what the page is. -->
+        <h1 class="sr-only">Events</h1>
 
-<!-- 2. UPCOMING - THE FEATURED EVENT ------------------------------------
+        <!-- 2. UPCOMING - THE FEATURED EVENT ------------------------------------
      Halloween styling is kept to this section by .is-halloween.
      The countdown runs off data-doors below (Queensland time, +10:00). -->
-<section class="ev-feature is-halloween" aria-labelledby="ev-feature-name">
+        <section class="ev-feature is-halloween" aria-labelledby="ev-feature-name">
+            <!-- cobwebs, drawn in code -->
+            <svg class="ev-web" viewBox="0 0 100 100" aria-hidden="true">
+                <path d="M0 0 L100 100 M0 0 L100 60 M0 0 L60 100 M0 0 L100 20 M0 0 L20 100" />
+                <path d="M22 0 Q14 14 0 22 M42 0 Q28 28 0 42 M62 0 Q40 40 0 62 M82 0 Q54 54 0 82" />
+            </svg>
 
-  <!-- cobwebs, drawn in code -->
-  <svg class="ev-web" viewBox="0 0 100 100" aria-hidden="true">
-    <path d="M0 0 L100 100 M0 0 L100 60 M0 0 L60 100 M0 0 L100 20 M0 0 L20 100"/>
-    <path d="M22 0 Q14 14 0 22 M42 0 Q28 28 0 42 M62 0 Q40 40 0 62 M82 0 Q54 54 0 82"/>
-  </svg>
+            <div class="ev-feature-inner">
+                <div class="ev-feature-body">
+                    <p class="eyebrow is-dim">Upcoming Events</p>
 
-  <div class="ev-feature-inner">
+                    <span class="badge is-upcoming">Upcoming</span>
 
-    <div class="ev-feature-body">
-      <p class="eyebrow is-dim">Upcoming Events</p>
+                    <h2 class="ev-feature-name" id="ev-feature-name">
+                        Eatz &amp; Beatz
+                        <span>Halloween Edition</span>
+                    </h2>
 
-      <span class="badge is-upcoming">Upcoming</span>
+                    <p class="meta ev-meta">
+                        <span class="ev-meta-date">31 October 2026</span>
+                        <span class="ev-meta-place">Bowen Sports Complex</span>
+                    </p>
 
-      <h2 class="ev-feature-name" id="ev-feature-name">
-        Eatz &amp; Beatz
-        <span>Halloween Edition</span>
-      </h2>
+                    <p class="ev-feature-desc">Food &bull; Market Stalls &bull; Music &bull; Halloween</p>
 
-      <p class="meta ev-meta">
-        <span class="ev-meta-date">31 October 2026</span>
-        <span class="ev-meta-place">Bowen Sports Complex</span>
-      </p>
-
-      <p class="ev-feature-desc">Food &bull; Market Stalls &bull; Music &bull; Halloween</p>
-
-      <!--  CHANGE THE DOORS TIME HERE. 4:30 pm is from the poster - if it moves, put the
+                    <!--  CHANGE THE DOORS TIME HERE. 4:30 pm is from the poster - if it moves, put the
             real one in and both the countdown and the line underneath it
             follow. Format: YYYY-MM-DDTHH:MM:SS+10:00                    -->
-      <div class="ev-countdown" id="ev-countdown" data-doors="2026-10-31T16:30:00+10:00">
-        <p class="ev-countdown-label">Doors open in</p>
+                    <div class="ev-countdown" id="ev-countdown" data-doors="2026-10-31T16:30:00+10:00">
+                        <p class="ev-countdown-label">Doors open in</p>
 
-        <ol class="ev-countdown-units" aria-hidden="true">
-          <li><b data-cd="days">--</b><span>Days</span></li>
-          <li><b data-cd="hours">--</b><span>Hrs</span></li>
-          <li><b data-cd="mins">--</b><span>Min</span></li>
-          <li><b data-cd="secs">--</b><span>Sec</span></li>
-        </ol>
+                        <ol class="ev-countdown-units" aria-hidden="true">
+                            <li><b data-cd="days">--</b><span>Days</span></li>
+                            <li><b data-cd="hours">--</b><span>Hrs</span></li>
+                            <li><b data-cd="mins">--</b><span>Min</span></li>
+                            <li><b data-cd="secs">--</b><span>Sec</span></li>
+                        </ol>
 
-        <p class="ev-countdown-when" data-cd="when"></p>
-      </div>
+                        <p class="ev-countdown-when" data-cd="when"></p>
+                    </div>
 
-      <div class="ev-actions">
-        <!--  About This Event = the page for punters (what to expect).
+                    <div class="ev-actions">
+                        <!--  About This Event = the page for punters (what to expect).
               Vendor Applications = the page for stallholders.        -->
-        <a href="/eatz-beatz-halloween-2026" class="btn btn-ticket">About This Event</a>
-        <a href="/vendor-signup" class="btn btn-outline">Vendor Applications</a>
-      </div>
-    </div>
+                        <a href="/eatz-beatz-halloween-2026" class="btn btn-ticket">About This Event</a>
+                        <a href="/vendor-signup" class="btn btn-outline">Vendor Applications</a>
+                    </div>
+                </div>
 
-    <!--  THE POSTER. To swap it, drop the new image in data/images/events/ and
+                <!--  THE POSTER. To swap it, drop the new image in data/images/events/ and
           change the two addresses below (the link opens it full size).  -->
-    <div class="ev-feature-art">
-      <a class="ev-poster" href="/data/images/events/eatz-beatz-halloween-2026-v3.webp" target="_blank" rel="noopener">
-        <img src="/data/images/events/eatz-beatz-halloween-2026-v3.webp" width="900" height="1335"
-             alt="Eatz &amp; Beatz Halloween Edition poster - Sat 31 Oct, Bowen Sports Complex, 4:30pm to 9:30pm, free entry, entertainment by Zed Charles&rsquo; Bo&rsquo; River Band">
-      </a>
-    </div>
+                <div class="ev-feature-art">
+                    <a class="ev-poster" href="/data/images/events/eatz-beatz-halloween-2026-v3.webp" target="_blank" rel="noopener">
+                        <img
+                            src="/data/images/events/eatz-beatz-halloween-2026-v3.webp"
+                            width="900"
+                            height="1335"
+                            alt="Eatz &amp; Beatz Halloween Edition poster - Sat 31 Oct, Bowen Sports Complex, 4:30pm to 9:30pm, free entry, entertainment by Zed Charles&rsquo; Bo&rsquo; River Band"
+                        />
+                    </a>
+                </div>
+            </div>
+        </section>
 
-  </div>
-
-</section>
-
-
-<!-- ==========================================================================
+        <!-- ==========================================================================
      2b. FRIDAY NIGHTS RESIDENCY - THE GRAND VIEW HOTEL
 
      To take the whole thing down, put `hidden` on the <section> below.
      The Friday cards are built by js/site/events.js (see the line up below).
      To drop just the line up, put `hidden` on the .ev-fri-lineup block.
      ========================================================================== -->
-<section class="ev-residency" aria-labelledby="ev-res-name">
-
-  <!-- THE BANNER -->
-  <div class="ev-res-hero">
-
-    <!-- Same files, breakpoint and poster as the homepage hero, so it is already cached.
+        <section class="ev-residency" aria-labelledby="ev-res-name">
+            <!-- THE BANNER -->
+            <div class="ev-res-hero">
+                <!-- Same files, breakpoint and poster as the homepage hero, so it is already cached.
          preload="none" lets the poster show first. -->
-    <video class="ev-res-video" id="ev-res-video" aria-hidden="true"
-           autoplay muted loop playsinline preload="none"
-           poster="data/images/places/bowen.jpeg">
-      <source src="data/videos/hero-720.mp4" type="video/mp4" media="(max-width: 900px)">
-      <source src="data/videos/hero-1080.mp4" type="video/mp4">
-    </video>
+                <video
+                    class="ev-res-video"
+                    id="ev-res-video"
+                    aria-hidden="true"
+                    autoplay
+                    muted
+                    loop
+                    playsinline
+                    preload="none"
+                    poster="data/images/places/bowen.jpeg"
+                >
+                    <source src="data/videos/hero-720.mp4" type="video/mp4" media="(max-width: 900px)" />
+                    <source src="data/videos/hero-1080.mp4" type="video/mp4" />
+                </video>
 
-    <div class="ev-res-hero-media" aria-hidden="true"></div>
+                <div class="ev-res-hero-media" aria-hidden="true"></div>
 
-    <div class="ev-res-hero-inner">
-      <p class="eyebrow">Weekly Residency</p>
+                <div class="ev-res-hero-inner">
+                    <p class="eyebrow">Weekly Residency</p>
 
-      <h2 class="ev-res-name" id="ev-res-name">Friday<br>Nights</h2>
-      <p class="ev-res-venue">at the Grand View Hotel</p>
+                    <h2 class="ev-res-name" id="ev-res-name">Friday<br />Nights</h2>
+                    <p class="ev-res-venue">at the Grand View Hotel</p>
 
-      <ul class="ev-res-facts">
-        <li>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-          <span><b>Every Friday Night</b>9:30pm &ndash; late</span>
-        </li>
-        <li>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-7.6 7-12a7 7 0 10-14 0c0 4.4 7 12 7 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2.5"/></svg>
-          <span><b>Grand View Hotel</b>Bowen, QLD</span>
-        </li>
-        <li>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16l-8 8z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 12v8M8 20h8" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-          <span><b>Good Music</b>Better people</span>
-        </li>
-      </ul>
+                    <ul class="ev-res-facts">
+                        <li>
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <rect x="3.5" y="5" width="17" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
+                                <path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" />
+                            </svg>
+                            <span><b>Every Friday Night</b>9:30pm &ndash; late</span>
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path
+                                    d="M12 22s7-7.6 7-12a7 7 0 10-14 0c0 4.4 7 12 7 12z"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                />
+                                <circle cx="12" cy="10" r="2.5" />
+                            </svg>
+                            <span><b>Grand View Hotel</b>Bowen, QLD</span>
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M4 4h16l-8 8z" fill="none" stroke="currentColor" stroke-width="2" />
+                                <path d="M12 12v8M8 20h8" fill="none" stroke="currentColor" stroke-width="2" />
+                            </svg>
+                            <span><b>Good Music</b>Better people</span>
+                        </li>
+                    </ul>
+                </div>
 
-    </div>
+                <p class="ev-res-script" aria-hidden="true">See Our<br />DJs in<br />Action</p>
+            </div>
 
-    <p class="ev-res-script" aria-hidden="true">See Our<br>DJs in<br>Action</p>
-  </div>
+            <!-- THE LINE UP AND THE VENUE -->
+            <div class="ev-res-body">
+                <div class="ev-fri-lineup" id="ev-fri-lineup">
+                    <p class="eyebrow">Upcoming Friday Line Up</p>
 
-  <!-- THE LINE UP AND THE VENUE -->
-  <div class="ev-res-body">
-
-    <div class="ev-fri-lineup" id="ev-fri-lineup">
-      <p class="eyebrow">Upcoming Friday Line Up</p>
-
-      <!-- BUILT BY js/site/events.js, NOT TYPED IN HERE
+                    <!-- BUILT BY js/site/events.js, NOT TYPED IN HERE
            The four Fridays are worked out from today. DJs come from Admin > Settings,
            then the fallback list at the top of js/site/events.js, else "to be announced". -->
-      <div class="ev-fri-grid" id="ev-fri-grid"></div>
+                    <div class="ev-fri-grid" id="ev-fri-grid"></div>
 
-      <a class="ev-res-link" href="/entertainment">
-        View Our Full DJ Roster <span aria-hidden="true">&#8594;</span>
-      </a>
-    </div>
+                    <a class="ev-res-link" href="/entertainment"> View Our Full DJ Roster <span aria-hidden="true">&#8594;</span> </a>
+                </div>
 
-    <!--  THE VENUE
+                <!--  THE VENUE
           The photo goes on the element below as --ev-art. Until there is
           one it shows its gradient, the same as every other card here. -->
-    <aside class="ev-venue">
-      <div class="ev-venue-art" aria-hidden="true"></div>
+                <aside class="ev-venue">
+                    <div class="ev-venue-art" aria-hidden="true"></div>
 
-      <h3>The Grand View Hotel</h3>
-      <p>Bowen&rsquo;s iconic local.</p>
+                    <h3>The Grand View Hotel</h3>
+                    <p>Bowen&rsquo;s iconic local.</p>
 
-      <a class="ev-venue-link" href="https://www.grandviewhotelbowen.com.au/"
-         target="_blank" rel="noopener">
-        Visit the Grand View <span aria-hidden="true">&#8599;</span>
-      </a>
-    </aside>
-  </div>
+                    <a class="ev-venue-link" href="https://www.grandviewhotelbowen.com.au/" target="_blank" rel="noopener">
+                        Visit the Grand View <span aria-hidden="true">&#8599;</span>
+                    </a>
+                </aside>
+            </div>
 
-  <!-- BOOK A DJ -->
-  <div class="ev-res-cta">
-    <div>
-      <p class="eyebrow">Planning an event?</p>
-      <h3>Book one of our DJs</h3>
-      <p class="ev-res-cta-copy">
-        Bring the SoundzGood vibe to your next event. Weddings, parties,
-        corporate and more.
-      </p>
-    </div>
+            <!-- BOOK A DJ -->
+            <div class="ev-res-cta">
+                <div>
+                    <p class="eyebrow">Planning an event?</p>
+                    <h3>Book one of our DJs</h3>
+                    <p class="ev-res-cta-copy">Bring the SoundzGood vibe to your next event. Weddings, parties, corporate and more.</p>
+                </div>
 
-    <a class="btn btn-gold ev-res-btn" href="/entertainment">
-      Browse Our DJs <span aria-hidden="true">&#8594;</span>
-    </a>
-  </div>
+                <a class="btn btn-gold ev-res-btn" href="/entertainment"> Browse Our DJs <span aria-hidden="true">&#8594;</span> </a>
+            </div>
+        </section>
 
-</section>
-
-
-<!-- 2c. WHAT'S ON THIS WEEK -------------------------------------------------
+        <!-- 2c. WHAT'S ON THIS WEEK -------------------------------------------------
      Next seven days of listings, same as /gig-guide (cards drawn by js/site/weekend.js).
      Found overnight by the syncGigGuide function - nothing typed in.
      If there is nothing on, js/site/events.js hides the whole section. -->
-<section class="section ev-section ev-weekend" id="ev-weekend" hidden
-         aria-labelledby="ev-weekend-h">
+        <section class="section ev-section ev-weekend" id="ev-weekend" hidden aria-labelledby="ev-weekend-h">
+            <div class="section-head">
+                <div>
+                    <h2 id="ev-weekend-h">What&rsquo;s On This Week</h2>
+                    <p class="section-sub" id="ev-weekend-when"></p>
+                </div>
 
-  <div class="section-head">
-    <div>
-      <h2 id="ev-weekend-h">What&rsquo;s On This Week</h2>
-      <p class="section-sub" id="ev-weekend-when"></p>
-    </div>
-
-    <div class="ev-weekend-actions">
-      <!--  A div rather than a <nav>: style.css styles the bare nav element
+                <div class="ev-weekend-actions">
+                    <!--  A div rather than a <nav>: style.css styles the bare nav element
             for the site menu, and that would land on this.            -->
-      <div class="slide-arrows" role="group" aria-label="Scroll this week's events">
-        <button type="button" class="slide-arrow" data-slide="-1"
-                aria-label="Previous events">
-          <span aria-hidden="true">&#8249;</span>
-        </button>
-        <button type="button" class="slide-arrow" data-slide="1"
-                aria-label="More events">
-          <span aria-hidden="true">&#8250;</span>
-        </button>
-      </div>
+                    <div class="slide-arrows" role="group" aria-label="Scroll this week's events">
+                        <button type="button" class="slide-arrow" data-slide="-1" aria-label="Previous events">
+                            <span aria-hidden="true">&#8249;</span>
+                        </button>
+                        <button type="button" class="slide-arrow" data-slide="1" aria-label="More events">
+                            <span aria-hidden="true">&#8250;</span>
+                        </button>
+                    </div>
 
-      <a class="btn btn-outline ev-weekend-more" href="/gig-guide">
-        Full Gig Guide
-      </a>
-    </div>
-  </div>
+                    <a class="btn btn-outline ev-weekend-more" href="/gig-guide"> Full Gig Guide </a>
+                </div>
+            </div>
 
-  <!-- Pages four at a time, same as the annual row on /services. -->
-  <div class="slide-view" id="ev-weekend-view">
-    <div class="slide-track" id="ev-weekend-grid"></div>
-  </div>
+            <!-- Pages four at a time, same as the annual row on /services. -->
+            <div class="slide-view" id="ev-weekend-view">
+                <div class="slide-track" id="ev-weekend-grid"></div>
+            </div>
+        </section>
 
-</section>
-
-<!-- 2b. VOLUNTEER WITH US - goes to the volunteerApply function and lands in
+        <!-- 2b. VOLUNTEER WITH US - goes to the volunteerApply function and lands in
      the admin under the event > Volunteers. data-event is the event it is for. -->
-<section class="section ev-section ev-vol" id="volunteer" aria-labelledby="ev-vol-name">
-  <div class="ev-vol-panel">
-    <div class="ev-vol-text">
-      <p class="eyebrow">Volunteer with us</p>
-      <h2 class="ev-vol-name" id="ev-vol-name">Lend <span>a hand</span></h2>
-      <p class="ev-vol-strap">Community events run on good people. A couple of hours on the gate, the bar, setup or pack-down makes the whole night happen &ndash; and you'll have a great time doing it.</p>
-    </div>
-    <form class="form ev-vol-form" id="ev-vol-form" data-event="eatz-beatz-halloween-2026">
-      <label>Your name<input name="name" required maxlength="120" autocomplete="name"></label>
-      <div class="ev-vol-2">
-        <label>Email<input name="email" type="email" required maxlength="200" autocomplete="email"></label>
-        <label>Phone<input name="phone" type="tel" required maxlength="40" autocomplete="tel"></label>
-      </div>
-      <fieldset class="ev-vol-roles"><legend>Happy to help with</legend>
-        <label class="pill"><input type="checkbox" name="roles" value="setup"> Setup</label>
-        <label class="pill"><input type="checkbox" name="roles" value="packdown"> Pack-down</label>
-        <label class="pill"><input type="checkbox" name="roles" value="gate"> Gate &amp; welcome</label>
-        <label class="pill"><input type="checkbox" name="roles" value="bar"> Bar</label>
-        <label class="pill"><input type="checkbox" name="roles" value="runner"> Runner</label>
-        <label class="pill"><input type="checkbox" name="roles" value="kids"> Kids' activities</label>
-        <label class="pill"><input type="checkbox" name="roles" value="anything"> Anything!</label>
-      </fieldset>
-      <label>When are you free?<input name="availability" maxlength="200" placeholder="e.g. From 3pm, or just the pack-down"></label>
-      <label>Anything else?<textarea name="message" rows="2" maxlength="1000"></textarea></label>
-      <button type="submit" class="btn btn-ticket">Count me in &rarr;</button>
-      <p class="ev-vol-msg" id="ev-vol-msg" hidden></p>
-    </form>
-  </div>
-</section>
+        <section class="section ev-section ev-vol" id="volunteer" aria-labelledby="ev-vol-name">
+            <div class="ev-vol-panel">
+                <div class="ev-vol-text">
+                    <p class="eyebrow">Volunteer with us</p>
+                    <h2 class="ev-vol-name" id="ev-vol-name">Lend <span>a hand</span></h2>
+                    <p class="ev-vol-strap">
+                        Community events run on good people. A couple of hours on the gate, the bar, setup or pack-down makes the whole
+                        night happen &ndash; and you'll have a great time doing it.
+                    </p>
+                </div>
+                <form class="form ev-vol-form" id="ev-vol-form" data-event="eatz-beatz-halloween-2026">
+                    <label>Your name<input name="name" required maxlength="120" autocomplete="name" /></label>
+                    <div class="ev-vol-2">
+                        <label>Email<input name="email" type="email" required maxlength="200" autocomplete="email" /></label>
+                        <label>Phone<input name="phone" type="tel" required maxlength="40" autocomplete="tel" /></label>
+                    </div>
+                    <fieldset class="ev-vol-roles">
+                        <legend>Happy to help with</legend>
+                        <label class="pill"><input type="checkbox" name="roles" value="setup" /> Setup</label>
+                        <label class="pill"><input type="checkbox" name="roles" value="packdown" /> Pack-down</label>
+                        <label class="pill"><input type="checkbox" name="roles" value="gate" /> Gate &amp; welcome</label>
+                        <label class="pill"><input type="checkbox" name="roles" value="bar" /> Bar</label>
+                        <label class="pill"><input type="checkbox" name="roles" value="runner" /> Runner</label>
+                        <label class="pill"><input type="checkbox" name="roles" value="kids" /> Kids' activities</label>
+                        <label class="pill"><input type="checkbox" name="roles" value="anything" /> Anything!</label>
+                    </fieldset>
+                    <label
+                        >When are you free?<input name="availability" maxlength="200" placeholder="e.g. From 3pm, or just the pack-down"
+                    /></label>
+                    <label>Anything else?<textarea name="message" rows="2" maxlength="1000"></textarea></label>
+                    <button type="submit" class="btn btn-ticket">Count me in &rarr;</button>
+                    <p class="ev-vol-msg" id="ev-vol-msg" hidden></p>
+                </form>
+            </div>
+        </section>
 
+        <!-- 3. NEXT SOUNDZGOOD - TEASER ------------------------------------------ -->
+        <section class="ev-teaser-wrap">
+            <!-- Blurred artwork is the SoundzGood 2.0 banner. Swap the file in the style below for the next one. -->
+            <article class="ev-teaser" style="--ev-art: url('/data/images/events/soundzgood-2-0/soundzgood-2-0-banner.jpg')">
+                <div class="ev-teaser-body">
+                    <span class="badge is-soon">Coming Soon</span>
 
-<!-- 3. NEXT SOUNDZGOOD - TEASER ------------------------------------------ -->
-<section class="ev-teaser-wrap">
+                    <p class="ev-teaser-word">SoundzGood</p>
+                    <h2 class="ev-teaser-chapter">Next Chapter</h2>
 
-  <!-- Blurred artwork is the SoundzGood 2.0 banner. Swap the file in the style below for the next one. -->
-  <article class="ev-teaser" style="--ev-art:url('/data/images/events/soundzgood-2-0/soundzgood-2-0-banner.jpg')">
+                    <p class="ev-teaser-meta">
+                        <span>2027</span>
+                        <span>Bowen, QLD</span>
+                    </p>
 
-    <div class="ev-teaser-body">
-      <span class="badge is-soon">Coming Soon</span>
+                    <p class="ev-teaser-copy">
+                        We&rsquo;re working on the next SoundzGood.<br />
+                        New lineup. New experience. Same SoundzGood energy.
+                    </p>
 
-      <p class="ev-teaser-word">SoundzGood</p>
-      <h2 class="ev-teaser-chapter">Next Chapter</h2>
+                    <p class="ev-teaser-status">Announcement Coming Soon</p>
+                </div>
+            </article>
+        </section>
 
-      <p class="ev-teaser-meta">
-        <span>2027</span>
-        <span>Bowen, QLD</span>
-      </p>
+        <!-- 4. PREVIOUS EVENTS ---------------------------------------------------- -->
+        <section class="section ev-section">
+            <h2>Previous Events</h2>
+            <p class="section-intro">Where we have been so far.</p>
 
-      <p class="ev-teaser-copy">
-        We&rsquo;re working on the next SoundzGood.<br>
-        New lineup. New experience. Same SoundzGood energy.
-      </p>
+            <div class="ev-grid">
+                <!-- SOUNDZGOOD 2.0 -->
+                <article class="card ev-card is-past" style="--ev-art: url('/data/images/events/soundzgood-2-0/soundzgood-2-0-banner.jpg')">
+                    <a
+                        class="ev-card-link"
+                        href="/events/pastevents/soundzgood2.0/"
+                        aria-label="SoundzGood 2.0, 22 August 2026 - view event"
+                    ></a>
 
-      <p class="ev-teaser-status">Announcement Coming Soon</p>
-    </div>
+                    <div class="ev-card-art" aria-hidden="true"></div>
 
-  </article>
+                    <div class="card-body">
+                        <span class="badge is-past">Past Event</span>
 
-</section>
+                        <h3>SoundzGood 2.0</h3>
 
+                        <p class="meta ev-meta">
+                            <span class="ev-meta-date">22 August 2026</span>
+                            <span class="ev-meta-place">Bowen Sporting Complex</span>
+                        </p>
 
-<!-- 4. PREVIOUS EVENTS ---------------------------------------------------- -->
-<section class="section ev-section">
+                        <p class="ev-card-artists">
+                            Rossco &bull; Jacob Biermann &bull; DJ Henasi &bull; Nina Sinclair &bull; Pluto Tango &bull; Flaw Clinic
+                        </p>
 
-  <h2>Previous Events</h2>
-  <p class="section-intro">Where we have been so far.</p>
+                        <span class="btn btn-outline ev-card-btn">View Event</span>
+                    </div>
+                </article>
 
-  <div class="ev-grid">
-
-    <!-- SOUNDZGOOD 2.0 -->
-    <article class="card ev-card is-past" style="--ev-art:url('/data/images/events/soundzgood-2-0/soundzgood-2-0-banner.jpg')">
-      <a class="ev-card-link" href="/events/pastevents/soundzgood2.0/"
-         aria-label="SoundzGood 2.0, 22 August 2026 - view event"></a>
-
-      <div class="ev-card-art" aria-hidden="true"></div>
-
-      <div class="card-body">
-        <span class="badge is-past">Past Event</span>
-
-        <h3>SoundzGood 2.0</h3>
-
-        <p class="meta ev-meta">
-          <span class="ev-meta-date">22 August 2026</span>
-          <span class="ev-meta-place">Bowen Sporting Complex</span>
-        </p>
-
-        <p class="ev-card-artists">
-          Rossco &bull; Jacob Biermann &bull; DJ Henasi &bull; Nina Sinclair
-          &bull; Pluto Tango &bull; Flaw Clinic
-        </p>
-
-        <span class="btn btn-outline ev-card-btn">View Event</span>
-      </div>
-    </article>
-
-    <!-- THE FIRST SOUNDZGOOD -----------------------------------------------
+                <!-- THE FIRST SOUNDZGOOD -----------------------------------------------
          There is no archive page for this one yet. When you build it, save it
          as soundzgood-2025.html and change the two places marked below:
            1. the href on the <a class="ev-card-link"> line
            2. delete class="is-nolink" from the <article>
          Until then the card shows but does not go anywhere.              -->
-    <article class="card ev-card is-past is-nolink" style="--ev-art:url('/data/images/logowhite.png')">
-      <a class="ev-card-link" href="#" aria-label="SoundzGood, 28 March 2025"></a>
+                <article class="card ev-card is-past is-nolink" style="--ev-art: url('/data/images/logowhite.png')">
+                    <a class="ev-card-link" href="#" aria-label="SoundzGood, 28 March 2025"></a>
 
-      <div class="ev-card-art is-logo" aria-hidden="true"></div>
+                    <div class="ev-card-art is-logo" aria-hidden="true"></div>
 
-      <div class="card-body">
-        <span class="badge is-past">Past Event</span>
+                    <div class="card-body">
+                        <span class="badge is-past">Past Event</span>
 
-        <h3>SoundzGood</h3>
+                        <h3>SoundzGood</h3>
 
-        <p class="meta ev-meta">
-          <span class="ev-meta-date">28 March 2025</span>
-          <span class="ev-meta-place">Bowen</span>
-        </p>
+                        <p class="meta ev-meta">
+                            <span class="ev-meta-date">28 March 2025</span>
+                            <span class="ev-meta-place">Bowen</span>
+                        </p>
 
-        <p class="ev-card-artists">The one that started it.</p>
+                        <p class="ev-card-artists">The one that started it.</p>
 
-        <span class="btn btn-outline ev-card-btn">View Event</span>
-      </div>
-    </article>
+                        <span class="btn btn-outline ev-card-btn">View Event</span>
+                    </div>
+                </article>
+            </div>
+        </section>
 
-  </div>
-
-</section>
-
-<div id="footer"></div>
-
-</body>
+        <div id="footer"></div>
+    </body>
 </html>

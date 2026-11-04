@@ -1,130 +1,135 @@
 ---
 permalink: /event.html
 ---
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Event | SoundzGood Whitsundays</title>
-  <meta name="description" content="A SoundzGood event in the Whitsundays - the programme, food vendors, market stalls and everything you need to know.">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="SoundzGood Whitsundays">
-  <meta name="robots" content="noindex">
-  <link rel="icon" href="data/images/logo.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Permanent+Marker&display=swap">
-  <link rel="stylesheet" href="css/site/site.css?v=856">
-  <link rel="stylesheet" href="css/site/event-page.css?v=856">
-<link media="print" rel="stylesheet" href="css/site/event-print.css?v=856">
-  <script src="js/site/main.js?v=856" defer></script>
-  <script src="js/site/event-page.js?v=856" defer></script>
-  <script src="js/site/event-live.js?v=856" defer></script>
-</head>
-<body class="event-page" data-ev-title>
-<div id="navbar"></div>
-<div id="ep-notice" class="ep-notice" hidden></div>
 
-<!-- ==========================================================================
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Event | SoundzGood Whitsundays</title>
+        <meta
+            name="description"
+            content="A SoundzGood event in the Whitsundays - the programme, food vendors, market stalls and everything you need to know."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="SoundzGood Whitsundays" />
+        <meta name="robots" content="noindex" />
+        <link rel="icon" href="data/images/logo.png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Permanent+Marker&display=swap" />
+        <link rel="stylesheet" href="css/site/site.css?v=857" />
+        <link rel="stylesheet" href="css/site/event-page.css?v=857" />
+        <link media="print" rel="stylesheet" href="css/site/event-print.css?v=857" />
+        <script src="js/site/main.js?v=857" defer></script>
+        <script src="js/site/old-pictures.js?v=857" defer></script>
+        <script src="js/site/event-page.js?v=857" defer></script>
+        <script src="js/site/event-live.js?v=857" defer></script>
+    </head>
+    <body class="event-page" data-ev-title>
+        <div id="navbar"></div>
+        <div id="ep-notice" class="ep-notice" hidden></div>
+
+        <!-- ==========================================================================
      THE LIVE EVENT PAGE  -  /event?e=<event id>
      Everything on it comes from Admin > Events: the poster, the facts, the
      notice, the programme, the paid vendors and the sponsors.
      ========================================================================== -->
 
-<!-- THE COVER -->
-<section class="ep-hero ep-page ep-hero-live">
-  <div class="ep-hero-inner">
-    <div class="ep-hero-body">
-      <p class="ep-kicker ep-presents">SoundzGood presents</p>
-      <h1 class="ep-title ep-title-live" data-ev="name">Loading&hellip;</h1>
-      <p class="ep-subline" data-ev="subtitle"></p>
-      <p class="ep-intro" data-ev="intro"></p>
-      <ul class="ep-facts">
-        <li><b>When</b> <span data-ev="when">&mdash;</span></li>
-        <li><b>Time</b> <span data-ev="time">See the programme</span></li>
-        <li><b>Where</b> <span data-ev="where">&mdash;</span></li>
-        <li><b>Entry</b> <span data-ev="entry">Free &middot; Family event</span></li>
-      </ul>
-      <ul class="ep-times ep-times-cover" id="ep-programme-cover" hidden></ul>
-      <div class="ep-actions">
-        <button type="button" class="ep-btn" id="ep-share">Share with friends &rarr;</button>
-        <button type="button" class="ep-btn ep-btn-ghost" id="ep-print">Print A4</button>
-      </div>
-      <p class="ep-share-note" id="ep-share-note" hidden>Link copied - paste it anywhere.</p>
-    </div>
-    <a class="ep-poster ep-poster-hero" data-ev-poster href="#" target="_blank" rel="noopener" hidden>
-      <img src="" alt="Event poster" width="900" height="1335">
-    </a>
-  </div>
-</section>
+        <!-- THE COVER -->
+        <section class="ep-hero ep-page ep-hero-live">
+            <div class="ep-hero-inner">
+                <div class="ep-hero-body">
+                    <p class="ep-kicker ep-presents">SoundzGood presents</p>
+                    <h1 class="ep-title ep-title-live" data-ev="name">Loading&hellip;</h1>
+                    <p class="ep-subline" data-ev="subtitle"></p>
+                    <p class="ep-intro" data-ev="intro"></p>
+                    <ul class="ep-facts">
+                        <li><b>When</b> <span data-ev="when">&mdash;</span></li>
+                        <li><b>Time</b> <span data-ev="time">See the programme</span></li>
+                        <li><b>Where</b> <span data-ev="where">&mdash;</span></li>
+                        <li><b>Entry</b> <span data-ev="entry">Free &middot; Family event</span></li>
+                    </ul>
+                    <ul class="ep-times ep-times-cover" id="ep-programme-cover" hidden></ul>
+                    <div class="ep-actions">
+                        <button type="button" class="ep-btn" id="ep-share">Share with friends &rarr;</button>
+                        <button type="button" class="ep-btn ep-btn-ghost" id="ep-print">Print A4</button>
+                    </div>
+                    <p class="ep-share-note" id="ep-share-note" hidden>Link copied - paste it anywhere.</p>
+                </div>
+                <a class="ep-poster ep-poster-hero" data-ev-poster href="#" target="_blank" rel="noopener" hidden>
+                    <img src="" alt="Event poster" width="900" height="1335" />
+                </a>
+            </div>
+        </section>
 
-<!-- FOOD - filled in by js/site/event-page.js -->
-<section class="ep-section ep-page" id="ep-food" data-event="" hidden>
-  <div class="ep-head">
-    <h2 class="ep-h2">Food vendors</h2>
-    <p class="ep-strap">Local flavours <i>/</i> Great food <i>/</i> Good vibes</p>
-  </div>
-  <div class="ep-food"></div>
-</section>
-<script>
-  // which event: /event?e=<id>. Set before the deferred scripts run.
-  (function () {
-    var id = (new URLSearchParams(location.search).get('e') || '').replace(/[^a-z0-9-]/g, '').slice(0, 80);
-    document.getElementById('ep-food').setAttribute('data-event', id);
-    if (!id) document.querySelector('[data-ev="name"]').textContent = 'No event picked';
-  }());
-</script>
+        <!-- FOOD - filled in by js/site/event-page.js -->
+        <section class="ep-section ep-page" id="ep-food" data-event="" hidden>
+            <div class="ep-head">
+                <h2 class="ep-h2">Food vendors</h2>
+                <p class="ep-strap">Local flavours <i>/</i> Great food <i>/</i> Good vibes</p>
+            </div>
+            <div class="ep-food"></div>
+        </section>
+        <script>
+            // which event: /event?e=<id>. Set before the deferred scripts run.
+            (function () {
+                var id = (new URLSearchParams(location.search).get('e') || '').replace(/[^a-z0-9-]/g, '').slice(0, 80);
+                document.getElementById('ep-food').setAttribute('data-event', id);
+                if (!id) document.querySelector('[data-ev="name"]').textContent = 'No event picked';
+            })();
+        </script>
 
-<!-- ENTERTAINMENT + THE PROGRAMME - from Admin > Events > Programme -->
-<section class="ep-section ep-page ep-page-ent" data-ep-ent hidden>
-  <div class="ep-head">
-    <h2 class="ep-h2">Entertainment</h2>
-    <p class="ep-strap">On the night <i>/</i> For everyone</p>
-  </div>
-  <div class="ep-ent-wrap" id="ep-ent"></div>
-</section>
-<div class="ep-page ep-page-3">
-  <section class="ep-section ep-times-poster" data-ep-programme hidden>
-    <div>
-      <h2 class="ep-h2">Times</h2>
-      <ul class="ep-times" id="ep-programme"></ul>
-    </div>
-    <a class="ep-poster" data-ev-poster href="#" target="_blank" rel="noopener" hidden>
-      <img src="" alt="Event poster" width="900" height="1335">
-    </a>
-  </section>
-</div>
+        <!-- ENTERTAINMENT + THE PROGRAMME - from Admin > Events > Programme -->
+        <section class="ep-section ep-page ep-page-ent" data-ep-ent hidden>
+            <div class="ep-head">
+                <h2 class="ep-h2">Entertainment</h2>
+                <p class="ep-strap">On the night <i>/</i> For everyone</p>
+            </div>
+            <div class="ep-ent-wrap" id="ep-ent"></div>
+        </section>
+        <div class="ep-page ep-page-3">
+            <section class="ep-section ep-times-poster" data-ep-programme hidden>
+                <div>
+                    <h2 class="ep-h2">Times</h2>
+                    <ul class="ep-times" id="ep-programme"></ul>
+                </div>
+                <a class="ep-poster" data-ev-poster href="#" target="_blank" rel="noopener" hidden>
+                    <img src="" alt="Event poster" width="900" height="1335" />
+                </a>
+            </section>
+        </div>
 
-<!-- MARKET + SPONSORS -->
-<div class="ep-page ep-page-4">
-  <section class="ep-section" id="ep-market" hidden>
-    <div class="ep-market-panel">
-      <div class="ep-market-title">
-        <p class="ep-kicker ep-kicker-line">Market stalls</p>
-        <h2 class="ep-big"><span>Local</span> Makers &amp; Creators</h2>
-        <p class="ep-market-strap">Shop local, support small business and discover something special.</p>
-      </div>
-      <div class="ep-market"></div>
-    </div>
-  </section>
-  <section class="ep-section" data-ep-faq hidden>
-    <div class="ep-faq-head">
-      <span class="ep-faq-tag">FAQs</span>
-      <h2 class="ep-h2">Good to know.</h2>
-      <p class="ep-faq-sub">Everything you need before you roll in.</p>
-    </div>
-    <ul class="ep-faq" id="ep-faq"></ul>
-  </section>
-  <section class="ep-section" data-ep-sponsors hidden>
-    <div class="ep-sponsors">
-      <h2 class="ep-h2">Thanks to our sponsors</h2>
-      <ul class="ep-sponsor-grid ep-sponsor-live" id="ep-sponsors-live"></ul>
-      <p>Want your business on the next one? <a href="/contact">Become a sponsor &rarr;</a></p>
-    </div>
-  </section>
-</div>
+        <!-- MARKET + SPONSORS -->
+        <div class="ep-page ep-page-4">
+            <section class="ep-section" id="ep-market" hidden>
+                <div class="ep-market-panel">
+                    <div class="ep-market-title">
+                        <p class="ep-kicker ep-kicker-line">Market stalls</p>
+                        <h2 class="ep-big"><span>Local</span> Makers &amp; Creators</h2>
+                        <p class="ep-market-strap">Shop local, support small business and discover something special.</p>
+                    </div>
+                    <div class="ep-market"></div>
+                </div>
+            </section>
+            <section class="ep-section" data-ep-faq hidden>
+                <div class="ep-faq-head">
+                    <span class="ep-faq-tag">FAQs</span>
+                    <h2 class="ep-h2">Good to know.</h2>
+                    <p class="ep-faq-sub">Everything you need before you roll in.</p>
+                </div>
+                <ul class="ep-faq" id="ep-faq"></ul>
+            </section>
+            <section class="ep-section" data-ep-sponsors hidden>
+                <div class="ep-sponsors">
+                    <h2 class="ep-h2">Thanks to our sponsors</h2>
+                    <ul class="ep-sponsor-grid ep-sponsor-live" id="ep-sponsors-live"></ul>
+                    <p>Want your business on the next one? <a href="/contact">Become a sponsor &rarr;</a></p>
+                </div>
+            </section>
+        </div>
 
-<div id="footer"></div>
-</body>
+        <div id="footer"></div>
+    </body>
 </html>
