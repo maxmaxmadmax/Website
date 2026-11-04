@@ -90,12 +90,15 @@ function requireAuth(request) {
    flooding the database or using the estimate bot to email strangers.
    Counts per visitor (by hashed IP - no IPs are stored) per form, in a
    fixed window. rateLimits/ is closed to browsers. */
+/* The visitor's address: the LAST x-forwarded-for entry is the one Google adds;
+   anything before it the visitor can type in themselves, so it is ignored. */
 function callerIp(request) {
     const r = request.rawRequest || {};
     const fwd = String((r.headers && r.headers['x-forwarded-for']) || '')
-        .split(',')[0]
-        .trim();
-    return String(r.ip || fwd || 'unknown');
+        .split(',')
+        .map((x) => x.trim())
+        .filter(Boolean);
+    return String(fwd[fwd.length - 1] || (r.socket && r.socket.remoteAddress) || 'unknown');
 }
 async function rateLimit(key, max, windowMins) {
     const ref = db.collection('rateLimits').doc(crypto.createHash('sha256').update(key).digest('hex').slice(0, 40));
@@ -336,6 +339,9 @@ function holdHasExpired(site, now) {
    ------------------------------------------------------------------------- */
 exports.holdSite = onCall(async (request) => {
     const uid = requireAuth(request);
+    // a script cannot keep re-holding every site: 30 holds an hour per visitor, 20 per account
+    await limitIp(request, 'hold', 30, 60);
+    await rateLimit('hold|uid|' + uid, 20, 60);
     const { eventId, siteId, siteIds, bookingId } = request.data || {};
 
     // Accepts one siteId or a list of siteIds.
@@ -3389,6 +3395,7 @@ function botFindItem(inv, kws) {
 
 exports.submitBotQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
     await limitIp(request, 'bot', 10, 60); // 10 estimates an hour per visitor
+    await rateLimit('bot|all', 300, 1440); // and 300 a day across the whole site, so the mail account cannot be flooded
     const d = request.data || {};
     if (String(d.website || d.company_url || '').trim()) return { ok: true }; // honeypot
 
@@ -7305,12 +7312,10 @@ exports.adminOptimisePhotos = onCall({ memory: '1GiB', timeoutSeconds: 540 }, as
                 d.id.slice(0, 8);
             const path = 'inventory/' + slug + '.webp';
             const token = crypto.randomUUID();
-            await bucket
-                .file(path)
-                .save(small, {
-                    contentType: 'image/webp',
-                    metadata: { cacheControl: 'public, max-age=31536000', metadata: { firebaseStorageDownloadTokens: token } }
-                });
+            await bucket.file(path).save(small, {
+                contentType: 'image/webp',
+                metadata: { cacheControl: 'public, max-age=31536000', metadata: { firebaseStorageDownloadTokens: token } }
+            });
             const url =
                 'https://firebasestorage.googleapis.com/v0/b/' +
                 bucket.name +
