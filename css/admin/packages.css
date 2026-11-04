@@ -31,7 +31,7 @@
     white-space: nowrap;
 }
 .pkg-tab:hover {
-    color: var(--ad-text);
+    color: var(--ad-ink);
 }
 .pkg-tab.is-on {
     color: var(--ad-orange);
@@ -45,7 +45,7 @@
     margin: 6px 0 10px;
     font-size: 0.9rem;
     font-weight: 700;
-    color: var(--ad-text);
+    color: var(--ad-ink);
 }
 .pkg-sec-h:not(:first-child) {
     margin-top: 22px;
@@ -104,7 +104,7 @@
     grid-template-columns: 1fr 84px 60px 64px 24px;
     gap: 8px;
     align-items: center;
-    background: #fff;
+    background: var(--ad-white);
     border: 1px solid var(--ad-line);
     border-radius: 10px;
     padding: 7px 8px;
@@ -116,7 +116,7 @@
     min-width: 0;
     font-size: 0.86rem;
     font-weight: 600;
-    color: var(--ad-text);
+    color: var(--ad-ink);
 }
 .pkg-gear-name span {
     overflow: hidden;
@@ -128,7 +128,7 @@
     height: 36px;
     border-radius: 8px;
     overflow: hidden;
-    background: #fff;
+    background: var(--ad-white);
     border: 1px solid var(--ad-line);
     display: flex;
     align-items: center;
@@ -152,12 +152,12 @@
     width: 22px;
     height: 22px;
     border: 1px solid var(--ad-line);
-    background: #fff;
+    background: var(--ad-white);
     border-radius: 6px;
     cursor: pointer;
     font-size: 1rem;
     line-height: 1;
-    color: var(--ad-text);
+    color: var(--ad-ink);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -222,20 +222,20 @@
     justify-content: space-between;
     font-size: 0.9rem;
     padding: 5px 0;
-    color: var(--ad-text);
+    color: var(--ad-ink);
 }
 .pkg-priceline span:first-child {
     color: var(--ad-muted);
 }
 .pkg-pricecust {
-    border-top: 2px solid var(--ad-text);
+    border-top: 2px solid var(--ad-ink);
     margin-top: 6px;
     padding-top: 10px;
     font-weight: 800;
     font-size: 1.15rem;
 }
 .pkg-pricecust span:first-child {
-    color: var(--ad-text);
+    color: var(--ad-ink);
 }
 .pkg-pricecust span:last-child {
     color: var(--ad-orange);
@@ -247,7 +247,7 @@
 }
 .pkg-discinput .qb-num-total {
     max-width: 78px;
-    background: #fff;
+    background: var(--ad-white);
 }
 .pkg-savechip {
     margin: 10px 0 0;
@@ -299,7 +299,7 @@
     margin: 0;
     padding-left: 18px;
     font-size: 0.9rem;
-    color: var(--ad-text);
+    color: var(--ad-ink);
 }
 .pkg-preview li {
     padding: 2px 0;

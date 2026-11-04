@@ -17,32 +17,37 @@
 }
 
 :root {
-    --ad-orange: #ff6b00;
-    --ad-orange-soft: #fff2e8;
-
-    --ad-ink: #12141a; /* the rail */
-    --ad-ink-2: #1b1e26; /* raised things on the rail */
-    --ad-ink-line: #282c37;
-
-    --ad-desk: #f4f5f7; /* the working area */
-    --ad-card: #fff;
+    /* The admin palette: every colour on every admin page is one of these */
+    --ad-white: #ffffff;
+    --ad-soft: #fafbfc;
+    --ad-desk: #f2f3f6;
     --ad-line: #e4e6eb;
-
-    --ad-text: #171a21;
-    --ad-muted: #6b7280;
+    --ad-line-strong: #cfd4dc;
     --ad-faint: #9aa1ac;
-    --ad-text-soft: #374151; /* softer body text */
-    --ad-soft: #fafbfc; /* light panel fill */
-
-    --ad-green: #0f9d58;
+    --ad-muted: #6b7280;
+    --ad-text-soft: #374151;
+    --ad-ink: #12141a;
+    --ad-ink-2: #1b1e26;
+    --ad-ink-line: #282c37;
+    --ad-rail-text: #c7ccd6;
+    --ad-orange: #ff6b00;
+    --ad-orange-dark: #c2410c;
+    --ad-orange-line: #fed7aa;
+    --ad-orange-soft: #fff2e8;
+    --ad-green: #15803d;
+    --ad-green-line: #bbf7d0;
     --ad-green-bg: #e7f6ee;
-    --ad-amber: #b26a00;
-    --ad-amber-bg: #fdf0dc;
     --ad-red: #c5322b;
+    --ad-red-line: #f2c6c3;
     --ad-red-bg: #fdecea;
+    --ad-amber: #b26a00;
+    --ad-gold: #f5a623;
     --ad-blue: #2563eb;
     --ad-blue-bg: #e8effd;
-    --ad-grey-bg: #eef0f3;
+    --ad-purple: #7c3aed;
+    --ad-purple-bg: #ede9fe;
+    --ad-pink: #d6246e;
+    --ad-teal: #0f766e;
 
     --ad-rail-w: 236px;
     --ad-radius: 12px;
@@ -59,7 +64,7 @@ body {
     font-family: var(--ad-font);
     font-size: 14px;
     line-height: 1.5;
-    color: var(--ad-text);
+    color: var(--ad-ink);
     background: var(--ad-desk);
     -webkit-font-smoothing: antialiased;
 }
@@ -79,7 +84,7 @@ body {
 /* ---- the rail ---- */
 .ad-rail {
     background: var(--ad-ink);
-    color: #fff;
+    color: var(--ad-white);
     display: flex;
     flex-direction: column;
     position: sticky;
@@ -134,7 +139,7 @@ body {
     border: 0;
     border-radius: 9px;
     background: none;
-    color: #c7ccd6;
+    color: var(--ad-rail-text);
     font: inherit;
     font-size: 0.875rem;
     text-align: left;
@@ -146,7 +151,7 @@ body {
 
 .ad-nav-item:hover {
     background: var(--ad-ink-2);
-    color: #fff;
+    color: var(--ad-white);
 }
 .ad-nav-badge {
     margin-left: auto;
@@ -155,7 +160,7 @@ body {
     padding: 0 5px;
     border-radius: 999px;
     background: var(--ad-orange);
-    color: #fff;
+    color: var(--ad-white);
     font-size: 0.68rem;
     font-weight: 800;
     display: inline-flex;
@@ -177,7 +182,7 @@ body {
 
 .ad-nav-item.is-active {
     background: var(--ad-orange);
-    color: #fff;
+    color: var(--ad-white);
     font-weight: 600;
 }
 
@@ -193,10 +198,10 @@ body {
 }
 
 .ad-nav-item[data-soon] {
-    color: #7f8797;
+    color: var(--ad-muted);
 }
 .ad-nav-item[data-soon]:hover {
-    color: #c7ccd6;
+    color: var(--ad-rail-text);
 }
 
 .ad-rail-foot {
@@ -215,7 +220,7 @@ body {
     height: 32px;
     border-radius: 50%;
     background: var(--ad-orange);
-    color: #fff;
+    color: var(--ad-white);
     display: grid;
     place-items: center;
     font-weight: 700;
@@ -246,7 +251,7 @@ body {
     border: 1px solid var(--ad-ink-line);
     border-radius: 8px;
     background: none;
-    color: #c7ccd6;
+    color: var(--ad-rail-text);
     font: inherit;
     font-size: 0.8rem;
     cursor: pointer;
@@ -254,7 +259,7 @@ body {
 
 .ad-signout:hover {
     background: var(--ad-ink-2);
-    color: #fff;
+    color: var(--ad-white);
 }
 
 /* ---- main column ---- */
@@ -269,7 +274,7 @@ body {
     align-items: center;
     gap: 14px;
     padding: 12px 24px;
-    background: var(--ad-card);
+    background: var(--ad-white);
     border-bottom: 1px solid var(--ad-line);
     position: sticky;
     top: 0;
@@ -279,7 +284,7 @@ body {
 .ad-rail-toggle {
     display: none;
     border: 1px solid var(--ad-line);
-    background: #fff;
+    background: var(--ad-white);
     border-radius: 8px;
     padding: 7px 11px;
     font-size: 1rem;
@@ -329,8 +334,8 @@ body {
     padding: 9px 15px;
     border: 1px solid var(--ad-line);
     border-radius: 9px;
-    background: #fff;
-    color: var(--ad-text);
+    background: var(--ad-white);
+    color: var(--ad-ink);
     font: inherit;
     font-size: 0.85rem;
     font-weight: 600;
@@ -340,7 +345,7 @@ body {
 }
 
 .ad-btn:hover {
-    background: #f8f9fb;
+    background: var(--ad-soft);
 }
 .ad-btn:disabled {
     opacity: 0.5;
@@ -350,32 +355,32 @@ body {
 .ad-btn-primary {
     background: var(--ad-ink);
     border-color: var(--ad-ink);
-    color: #fff;
+    color: var(--ad-white);
 }
 .ad-btn-primary:hover {
-    background: #000;
+    background: var(--ad-ink);
 }
 
 .ad-btn-orange {
     background: var(--ad-orange);
     border-color: var(--ad-orange);
-    color: #fff;
+    color: var(--ad-white);
 }
 .ad-btn-orange:hover {
-    background: #e85f00;
+    background: var(--ad-orange);
 }
 
 .ad-btn-danger {
     color: var(--ad-red);
-    border-color: #f2c6c3;
-    background: #fff;
+    border-color: var(--ad-red-line);
+    background: var(--ad-white);
 }
 .ad-btn-danger:hover {
     background: var(--ad-red-bg);
 }
 
 .ad-card {
-    background: var(--ad-card);
+    background: var(--ad-white);
     border: 1px solid var(--ad-line);
     border-radius: var(--ad-radius);
 }
@@ -383,7 +388,7 @@ body {
 .ad-error {
     background: var(--ad-red-bg);
     color: var(--ad-red);
-    border: 1px solid #f2c6c3;
+    border: 1px solid var(--ad-red-line);
     border-radius: 9px;
     padding: 10px 13px;
     margin: 14px 0 0;
@@ -411,7 +416,7 @@ body {
     color: var(--ad-green);
 }
 .ad-pill-amber {
-    background: var(--ad-amber-bg);
+    background: var(--ad-orange-soft);
     color: var(--ad-amber);
 }
 .ad-pill-red {
@@ -423,7 +428,7 @@ body {
     color: var(--ad-blue);
 }
 .ad-pill-grey {
-    background: var(--ad-grey-bg);
+    background: var(--ad-desk);
     color: var(--ad-muted);
 }
 
@@ -480,7 +485,7 @@ body {
     right: 0;
     bottom: 0;
     width: min(520px, 100vw);
-    background: var(--ad-card);
+    background: var(--ad-white);
     z-index: 51;
     display: flex;
     flex-direction: column;
@@ -533,7 +538,7 @@ body {
 }
 
 .ad-drawer-close:hover {
-    color: var(--ad-text);
+    color: var(--ad-ink);
 }
 
 .ad-drawer-body {
@@ -652,7 +657,7 @@ body {
     padding: 8px 11px;
     border-radius: 8px;
     font-size: 0.82rem;
-    background: var(--ad-grey-bg);
+    background: var(--ad-desk);
     color: var(--ad-muted);
 }
 
@@ -673,7 +678,7 @@ body {
     padding: 6px;
     border: 1px solid var(--ad-line);
     border-radius: 9px;
-    background: #fff;
+    background: var(--ad-white);
 }
 
 .ad-seat select:focus {
@@ -723,8 +728,8 @@ body {
     border-radius: 9px;
     resize: vertical;
     margin-bottom: 8px;
-    background: #fff;
-    color: var(--ad-text);
+    background: var(--ad-white);
+    color: var(--ad-ink);
 }
 
 .ad-note-form textarea:focus {
@@ -761,8 +766,8 @@ body {
     padding: 8px 11px;
     border: 1px solid var(--ad-line);
     border-radius: 9px;
-    background: #fff;
-    color: var(--ad-text);
+    background: var(--ad-white);
+    color: var(--ad-ink);
 }
 
 .ad-search {
@@ -794,7 +799,7 @@ body {
     transform: translate(-50%, -50%);
     width: min(520px, calc(100vw - 32px));
     max-height: calc(100vh - 48px);
-    background: var(--ad-card);
+    background: var(--ad-white);
     border-radius: 14px;
     box-shadow: 0 30px 70px rgba(0, 0, 0, 0.32);
     z-index: 51;
@@ -850,8 +855,8 @@ body {
     padding: 9px 11px;
     border: 1px solid var(--ad-line);
     border-radius: 9px;
-    background: #fff;
-    color: var(--ad-text);
+    background: var(--ad-white);
+    color: var(--ad-ink);
     resize: vertical;
 }
 
@@ -915,8 +920,8 @@ body {
     padding: 6px 8px;
     border: 1px solid var(--ad-line);
     border-radius: 7px;
-    background: #fff;
-    color: var(--ad-text);
+    background: var(--ad-white);
+    color: var(--ad-ink);
 }
 
 .ad-limit:focus {
@@ -993,13 +998,13 @@ body {
     display: grid;
     place-items: center;
     padding: 24px;
-    background: radial-gradient(90% 70% at 50% 0%, #23262f 0%, var(--ad-ink) 70%);
+    background: radial-gradient(90% 70% at 50% 0%, var(--ad-ink-line) 0%, var(--ad-ink) 70%);
 }
 
 .ad-gate-card {
     width: 100%;
     max-width: 380px;
-    background: var(--ad-card);
+    background: var(--ad-white);
     border-radius: 16px;
     padding: 34px 30px;
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
@@ -1039,8 +1044,8 @@ body {
     border: 1px solid var(--ad-line);
     border-radius: 9px;
     font: inherit;
-    background: #fff;
-    color: var(--ad-text);
+    background: var(--ad-white);
+    color: var(--ad-ink);
 }
 
 .ad-gate-card input:focus {
@@ -1067,7 +1072,7 @@ body {
 }
 
 .ad-stat {
-    background: var(--ad-card);
+    background: var(--ad-white);
     border: 1px solid var(--ad-line);
     border-radius: var(--ad-radius);
     padding: 15px 16px;
@@ -1245,7 +1250,7 @@ body {
 .ad-action-msg.is-bad {
     color: var(--ad-red);
     background: var(--ad-red-bg);
-    border: 1px solid #f3c2c2;
+    border: 1px solid var(--ad-red-line);
     border-radius: 8px;
     padding: 10px 12px;
 
@@ -1264,8 +1269,8 @@ body {
     padding: 8px 10px;
     border: 1px solid var(--ad-line);
     border-radius: 8px;
-    background: #fff;
-    color: var(--ad-text);
+    background: var(--ad-white);
+    color: var(--ad-ink);
     font: inherit;
     font-size: 0.88rem;
 }

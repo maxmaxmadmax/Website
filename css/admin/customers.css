@@ -11,7 +11,7 @@
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #8a8a94;
+    color: var(--ad-faint);
     margin: 0 0 2px;
 }
 .cust-q {
@@ -22,7 +22,7 @@
     text-align: left;
     font: inherit;
     background: var(--ad-soft);
-    border: 1px solid #ececf0;
+    border: 1px solid var(--ad-line);
     border-radius: 8px;
     padding: 8px 10px;
     cursor: pointer;
@@ -34,11 +34,11 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: #555;
+    color: var(--ad-text-soft);
 }
 .cust-q-amt {
     font-weight: 600;
-    color: #222 !important;
+    color: var(--ad-ink-2) !important;
 }
 .cust-quotes .ad-btn {
     justify-self: start;

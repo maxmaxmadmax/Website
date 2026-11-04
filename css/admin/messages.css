@@ -31,7 +31,7 @@
 }
 .ms-tab {
     border: 1px solid var(--ad-line);
-    background: #fff;
+    background: var(--ad-white);
     border-radius: 999px;
     padding: 7px 16px;
     font: inherit;
@@ -40,9 +40,9 @@
     cursor: pointer;
 }
 .ms-tab.is-on {
-    background: var(--ad-text);
-    color: #fff;
-    border-color: var(--ad-text);
+    background: var(--ad-ink);
+    color: var(--ad-white);
+    border-color: var(--ad-ink);
 }
 .ms-tab:disabled {
     opacity: 0.45;
@@ -71,7 +71,7 @@
 }
 .ms-table td {
     padding: 14px 16px;
-    border-bottom: 1px solid #f1f2f4;
+    border-bottom: 1px solid var(--ad-desk);
     vertical-align: top;
 }
 .ms-table tbody tr {
@@ -106,8 +106,8 @@
     font-weight: 700;
     padding: 1px 7px;
     border-radius: 999px;
-    background: #f1f2f4;
-    color: #555;
+    background: var(--ad-desk);
+    color: var(--ad-text-soft);
 }
 .ms-chip {
     display: inline-block;
@@ -118,20 +118,20 @@
     white-space: nowrap;
 }
 .ms-grey {
-    background: #f1f2f4;
-    color: #555;
+    background: var(--ad-desk);
+    color: var(--ad-text-soft);
 }
 .ms-amber {
-    background: #fff3d6;
-    color: #9a6200;
+    background: var(--ad-orange-soft);
+    color: var(--ad-amber);
 }
 .ms-green {
-    background: #e3f5ea;
+    background: var(--ad-green-bg);
     color: var(--ad-green);
 }
 .ms-blue {
-    background: #e5efff;
-    color: #2251b8;
+    background: var(--ad-blue-bg);
+    color: var(--ad-blue);
 }
 .ms-key {
     margin: 12px 2px;
@@ -160,8 +160,8 @@
     font-size: 13px;
 }
 .ms-sentence {
-    background: #fff7ef;
-    border: 1px solid #ffd9b3;
+    background: var(--ad-orange-soft);
+    border: 1px solid var(--ad-orange-line);
     border-radius: 12px;
     padding: 14px 18px;
     font-size: 15px;
@@ -187,7 +187,7 @@
     display: block;
     font-size: 12px;
     font-weight: 700;
-    color: #444;
+    color: var(--ad-text-soft);
     margin-bottom: 4px;
 }
 .ms-f .ad-input,
@@ -230,7 +230,7 @@
 }
 .ms-list li {
     padding: 7px 10px;
-    border-bottom: 1px solid #f1f2f4;
+    border-bottom: 1px solid var(--ad-desk);
 }
 .ms-list li span {
     color: var(--ad-muted);
@@ -256,7 +256,7 @@
     cursor: pointer;
 }
 .ms-chips button:hover {
-    background: #fff3e8;
+    background: var(--ad-orange-soft);
 }
 .ms-check {
     display: flex;
@@ -272,7 +272,7 @@
 }
 .ms-approve {
     background: var(--ad-green) !important;
-    color: #fff !important;
+    color: var(--ad-white) !important;
     border-color: var(--ad-green) !important;
 }
 .ms-del {
@@ -282,7 +282,7 @@
 .ms-note {
     margin: 10px 0 0;
     font-size: 13px;
-    color: #9a6200;
+    color: var(--ad-amber);
 }
 .ms-msg {
     margin: 12px 0 0;
@@ -294,8 +294,8 @@
 }
 .ms-failed {
     margin-top: 16px;
-    border: 1px solid #f3c9c4;
-    background: #fff6f5;
+    border: 1px solid var(--ad-red-line);
+    background: var(--ad-soft);
     border-radius: 10px;
     padding: 12px 14px;
 }
@@ -309,7 +309,7 @@
     gap: 10px;
     align-items: center;
     padding: 6px 0;
-    border-top: 1px solid #f3dcd9;
+    border-top: 1px solid var(--ad-red-bg);
     font-size: 13px;
 }
 .ms-failed em {
@@ -330,10 +330,10 @@
     border: 1px solid var(--ad-line);
     border-radius: 10px;
     overflow: hidden;
-    background: #fff;
+    background: var(--ad-white);
 }
 .ms-mail-top {
-    background: var(--ad-text);
+    background: var(--ad-ink);
     color: var(--ad-orange);
     font-size: 11px;
     letter-spacing: 2px;
@@ -365,7 +365,7 @@
     text-decoration: none;
     display: inline-block;
     background: var(--ad-orange);
-    color: #fff;
+    color: var(--ad-white);
     font-weight: 700;
     padding: 10px 18px;
     border-radius: 8px;
@@ -373,10 +373,10 @@
 }
 .ms-mail-foot {
     background: var(--ad-soft);
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--ad-desk);
     padding: 10px 16px;
     font-size: 11px;
-    color: #888;
+    color: var(--ad-faint);
 }
 .ms-table tbody tr.ms-fixed {
     cursor: default;
@@ -384,21 +384,21 @@
 .ms-fixed-when {
     margin: 0 0 14px;
     padding: 10px 12px;
-    background: #f6f7f9;
+    background: var(--ad-soft);
     border-radius: 8px;
     font-size: 13px;
 }
 .ms-mail-top b {
     display: block;
-    color: #fff;
+    color: var(--ad-white);
     font-size: 16px;
     letter-spacing: 0;
     margin-top: 4px;
 }
 .ms-mail-total {
     text-align: center;
-    background: #fff7ef;
-    border: 1px solid #ffd9b3;
+    background: var(--ad-orange-soft);
+    border: 1px solid var(--ad-orange-line);
     border-radius: 8px;
     padding: 10px;
     margin: 4px 0 12px;
@@ -406,7 +406,7 @@
 .ms-mail-total small {
     display: block;
     font-size: 10px;
-    color: #b25b00;
+    color: var(--ad-amber);
     letter-spacing: 1px;
 }
 .ms-mail-total b {
@@ -415,7 +415,7 @@
 }
 .ms-mail-total span {
     font-size: 12px;
-    color: #666;
+    color: var(--ad-muted);
 }
 
 /* late payment charges in the Sales Pipeline */
@@ -431,8 +431,8 @@
     margin-left: auto;
 }
 .ms-red {
-    background: #fdecec;
-    color: #b3261e;
+    background: var(--ad-red-bg);
+    color: var(--ad-red);
 }
 .ms-log-bar {
     display: flex;
@@ -458,20 +458,20 @@
     }
 }
 .ms-table tbody tr.is-sel td {
-    background: #fff7ef;
+    background: var(--ad-orange-soft);
 }
 .ms-log-meta {
     font-size: 13px;
     line-height: 1.6;
     margin: 4px 0 10px;
-    color: #444;
+    color: var(--ad-text-soft);
 }
 .ms-log-frame {
     width: 100%;
     height: 720px;
     border: 1px solid var(--ad-line);
     border-radius: 10px;
-    background: #f4f4f5;
+    background: var(--ad-desk);
 }
 /* Messages fills the page: wider editor + preview, roomier table */
 .ms .ms-grid {
@@ -508,15 +508,15 @@
 .ms-wl-head em {
     font-style: normal;
     font-size: 13px;
-    color: #9a6200;
+    color: var(--ad-amber);
     margin-left: auto;
 }
 .ms-mail-btn2 {
     display: inline-block;
     margin-left: 6px;
-    border: 2px solid var(--ad-text);
-    color: var(--ad-text) !important;
-    background: #fff !important;
+    border: 2px solid var(--ad-ink);
+    color: var(--ad-ink) !important;
+    background: var(--ad-white) !important;
     font-weight: 700;
     padding: 8px 16px !important;
     border-radius: 8px;
@@ -525,7 +525,7 @@
 .ms-mail-note {
     text-align: center;
     font-size: 12px;
-    color: #777;
+    color: var(--ad-muted);
 }
 
 /* SIDEBAR: logo pinned at the top, your name + Log out pinned at the bottom,
@@ -549,15 +549,15 @@
     flex: 1 1 240px;
     height: 12px;
     border-radius: 999px;
-    background: #eceef1;
+    background: var(--ad-desk);
     overflow: hidden;
     display: flex;
 }
 .ms-sp-bar span {
-    background: #1f9d55;
+    background: var(--ad-green);
 }
 .ms-sp-bar i {
-    background: #f5b041;
+    background: var(--ad-gold);
 }
 .ms-sp {
     margin-top: 14px;
@@ -643,7 +643,7 @@
     max-width: 420px;
 }
 .sp-details-tag {
-    background: #e3f5ea !important;
+    background: var(--ad-green-bg) !important;
     color: var(--ad-green) !important;
 }
 /* Messages > Reminders */

@@ -75,7 +75,7 @@
     overflow: hidden;
     border: 1px solid var(--ad-line);
     border-radius: 7px;
-    background: #fff;
+    background: var(--ad-white);
 }
 
 .ad-cal-day.is-empty {
@@ -86,10 +86,10 @@
 /*  A day with something on it is a button in all but name, so it says so. */
 .ad-cal-day.has-booking {
     cursor: pointer;
-    border-color: #cfd4dc;
+    border-color: var(--ad-line-strong);
 }
 .ad-cal-day.has-booking:hover {
-    background: #f8f9fb;
+    background: var(--ad-soft);
 }
 
 .ad-cal-day.is-today {
@@ -120,7 +120,7 @@
 }
 
 .ad-cal-act.is-pending {
-    background: var(--ad-amber-bg);
+    background: var(--ad-orange-soft);
     color: var(--ad-amber);
 }
 
@@ -230,7 +230,7 @@
     padding: 8px 10px;
     border: 1px solid var(--ad-line);
     border-radius: 8px;
-    background: #fff;
+    background: var(--ad-white);
     color: var(--ad-ink);
     font: inherit;
     font-size: 0.88rem;
@@ -281,14 +281,14 @@
 }
 
 .ad-tab:hover {
-    background: #f4f5f8;
+    background: var(--ad-desk);
     color: var(--ad-ink);
 }
 
 .ad-tab.is-on {
     background: var(--ad-ink);
     border-color: var(--ad-ink);
-    color: #fff;
+    color: var(--ad-white);
 }
 
 .ad-book-search {
@@ -352,7 +352,7 @@ body.ad-fit .ad-main {
 .ad-desk.is-bookings .ad-card,
 .ad-desk.is-bookings .ad-bstat {
     border-radius: 14px;
-    border-color: #eceef2;
+    border-color: var(--ad-desk);
     box-shadow:
         0 1px 2px rgba(16, 24, 40, 0.05),
         0 1px 3px rgba(16, 24, 40, 0.06);
@@ -370,7 +370,7 @@ body.ad-fit .ad-main {
 }
 .ad-desk.is-bookings .ad-cal-num {
     font-size: 0.75rem;
-    color: #3f4350;
+    color: var(--ad-text-soft);
 }
 .ad-desk.is-bookings .ad-cal-name {
     font-size: 0.66rem;
@@ -379,7 +379,7 @@ body.ad-fit .ad-main {
 
 /* Days outside this month are drawn, not left blank. */
 .ad-desk.is-bookings .ad-cal-day.is-empty {
-    border-color: #f2f3f6;
+    border-color: var(--ad-desk);
     background: var(--ad-soft);
 }
 
@@ -404,20 +404,20 @@ body.ad-fit .ad-main {
     flex-wrap: wrap;
     padding: 12px 16px;
     margin-bottom: 14px;
-    border: 1px solid #fde3b8;
+    border: 1px solid var(--ad-orange-line);
     border-radius: 12px;
-    background: var(--ad-amber-bg);
+    background: var(--ad-orange-soft);
 }
 
 .ad-import p {
     margin: 0;
-    color: #7a4a00;
+    color: var(--ad-amber);
     font-size: 0.88rem;
     line-height: 1.5;
 }
 
 .ad-import strong {
-    color: #5c3800;
+    color: var(--ad-amber);
 }
 
 /* The event an application belongs to, under its status pills. */
@@ -430,7 +430,7 @@ body.ad-fit .ad-main {
 /* ENTERTAINMENT - styled like Crew & Vehicles */
 .ent-tabs {
     display: inline-flex;
-    background: var(--ad-grey-bg);
+    background: var(--ad-desk);
     border-radius: 10px;
     padding: 3px;
     margin-right: 8px;
@@ -447,8 +447,8 @@ body.ad-fit .ad-main {
     cursor: pointer;
 }
 .ent-tab.is-on {
-    background: #fff;
-    color: var(--ad-text);
+    background: var(--ad-white);
+    color: var(--ad-ink);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 .ent-split {
@@ -479,7 +479,7 @@ body.ad-fit .ad-main {
     width: 9px;
     height: 9px;
     border-radius: 50%;
-    background: #dfe2e8;
+    background: var(--ad-line);
 }
 .ent-dots i.is-on {
     background: var(--ad-green);
@@ -501,7 +501,7 @@ body.ad-fit .ad-main {
 .ent-trail > b {
     flex: 1;
     height: 2px;
-    background: #dfe2e8;
+    background: var(--ad-line);
     margin-top: 11px;
 }
 .ent-step {
@@ -515,9 +515,9 @@ body.ad-fit .ad-main {
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    border: 2px solid #dfe2e8;
-    background: #fff;
-    color: #fff;
+    border: 2px solid var(--ad-line);
+    background: var(--ad-white);
+    color: var(--ad-white);
     font-size: 12px;
     font-weight: 800;
     display: flex;
@@ -533,7 +533,7 @@ body.ad-fit .ad-main {
     color: var(--ad-muted);
 }
 .ent-step.is-on em {
-    color: var(--ad-text);
+    color: var(--ad-ink);
     font-weight: 700;
 }
 .ent-next {
@@ -556,7 +556,7 @@ body.ad-fit .ad-main {
 .ent-djphoto {
     height: 140px;
     border-radius: 12px;
-    background: #eee center/cover;
+    background: var(--ad-desk) center/cover;
     margin-bottom: 12px;
 }
 .ent-2col {
@@ -595,7 +595,7 @@ body.ad-fit .ad-main {
     white-space: nowrap;
 }
 .ent-open td {
-    background: repeating-linear-gradient(135deg, #fff 0 9px, #fdf1f0 9px 18px);
+    background: repeating-linear-gradient(135deg, var(--ad-white) 0 9px, var(--ad-red-bg) 9px 18px);
 }
 .ent-book {
     padding: 6px 12px;
@@ -605,7 +605,7 @@ body.ad-fit .ad-main {
     margin: 0 0 8px;
     font-size: 13px;
     padding: 8px 10px;
-    background: var(--ad-amber-bg);
+    background: var(--ad-orange-soft);
     color: var(--ad-amber);
     border-radius: 8px;
     width: 100%;
@@ -621,8 +621,8 @@ body.ad-fit .ad-main {
     accent-color: var(--ad-orange);
 }
 .ent-add-venue {
-    border: 1px dashed #c9ccd6;
-    color: #5b6070;
+    border: 1px dashed var(--ad-rail-text);
+    color: var(--ad-muted);
 } /* + Add venue */
 /* Gigs: list left, calendar / open gig right */
 .ent-split {
@@ -646,9 +646,9 @@ body.ad-fit .ad-main {
     font-weight: 600;
     padding: 3px 9px;
     border-radius: 20px;
-    border: 1px dashed #854f0b;
-    color: #633806;
-    background: #faeeda;
+    border: 1px dashed var(--ad-amber);
+    color: var(--ad-amber);
+    background: var(--ad-orange-soft);
     white-space: nowrap;
 }
 .ent-sent {
@@ -658,14 +658,14 @@ body.ad-fit .ad-main {
     font-weight: 600;
     padding: 2px 8px;
     border-radius: 20px;
-    color: #0f6e3d;
-    background: #e3f4ea;
+    color: var(--ad-green);
+    background: var(--ad-green-bg);
     white-space: nowrap;
     vertical-align: middle;
 }
 .ent-sent.is-not {
     color: var(--ad-muted);
-    background: #f1f2f4;
+    background: var(--ad-desk);
 }
 .ent-check {
     display: flex;
@@ -726,11 +726,11 @@ body.ad-fit .ad-main {
     min-width: 4px;
 }
 .ent-djok {
-    border-color: #b9dfc6;
-    color: #0f6e3d;
+    border-color: var(--ad-green-line);
+    color: var(--ad-green);
 } /* Mark DJ confirmed */
 .ent-djok.is-on {
-    background: #e8f4ec;
+    background: var(--ad-green-bg);
 }
 .ent-loading {
     padding: 22px 16px !important;

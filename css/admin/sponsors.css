@@ -37,7 +37,7 @@
     gap: 6px;
     padding: 6px 10px;
     border-radius: 999px;
-    background: var(--ad-grey-bg);
+    background: var(--ad-desk);
     font-size: 12px;
     font-weight: 600;
 }
@@ -45,16 +45,16 @@
     font-size: 13px;
 }
 .sp-slot.is-platinum {
-    background: #eef0f5;
+    background: var(--ad-desk);
 }
 .sp-slot.is-gold {
-    background: #fff3cf;
+    background: var(--ad-orange-soft);
 }
 .sp-slot.is-silver {
-    background: #f0f0f0;
+    background: var(--ad-desk);
 }
 .sp-slot.is-bronze {
-    background: #f7e3d1;
+    background: var(--ad-orange-soft);
 }
 .sp-slot.is-full {
     background: var(--ad-green-bg);
@@ -89,7 +89,7 @@
     overflow-x: auto;
 }
 .sp-col {
-    background: var(--ad-grey-bg);
+    background: var(--ad-desk);
     border-radius: 14px;
     padding: 8px;
     min-height: 120px;
@@ -114,10 +114,10 @@
     color: var(--ad-green);
 }
 .sp-col.is-interested header b {
-    color: #b25b00;
+    color: var(--ad-amber);
 }
 .sp-col.is-asked header b {
-    color: #2f5fb3;
+    color: var(--ad-blue);
 }
 .sp-col.is-no header b {
     color: var(--ad-muted);
@@ -131,13 +131,13 @@
     margin: 0;
     padding: 10px;
     text-align: center;
-    color: #bbb;
+    color: var(--ad-rail-text);
 }
 .sp-card {
     display: flex;
     align-items: center;
     gap: 10px;
-    background: #fff;
+    background: var(--ad-white);
     border: 1px solid var(--ad-line);
     border-radius: 12px;
     padding: 10px 10px 10px 12px;
@@ -162,7 +162,7 @@
     height: 40px;
     border-radius: 10px;
     object-fit: contain;
-    background: #fff;
+    background: var(--ad-white);
     border: 1px solid var(--ad-line);
     flex: 0 0 auto;
 }
@@ -175,7 +175,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #fff;
+    color: var(--ad-white);
     font-weight: 800;
     font-size: 14px;
     border: 0;
@@ -210,19 +210,19 @@
     font-weight: 700;
     padding: 2px 8px;
     border-radius: 999px;
-    background: var(--ad-grey-bg);
+    background: var(--ad-desk);
 }
 .sp-lvl.is-platinum {
-    background: #eef0f5;
+    background: var(--ad-desk);
 }
 .sp-lvl.is-gold {
-    background: #fff3cf;
+    background: var(--ad-orange-soft);
 }
 .sp-lvl.is-silver {
-    background: #f0f0f0;
+    background: var(--ad-desk);
 }
 .sp-lvl.is-bronze {
-    background: #f7e3d1;
+    background: var(--ad-orange-soft);
 }
 .sp-lvl.is-supporter {
     background: var(--ad-green-bg);
@@ -252,7 +252,7 @@
     right: 0;
     bottom: 0;
     width: min(460px, 100%);
-    background: #fff;
+    background: var(--ad-white);
     z-index: 61;
     display: flex;
     flex-direction: column;
@@ -264,7 +264,7 @@
     gap: 14px;
     padding: 18px 18px 14px;
     border-bottom: 1px solid var(--ad-line);
-    background: linear-gradient(90deg, color-mix(in srgb, var(--sp-brand) 14%, #fff), #fff);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--sp-brand) 14%, var(--ad-white)), var(--ad-white));
 }
 .sp-drawer-brandbtns {
     display: flex;
@@ -312,14 +312,14 @@
     border: 1px solid var(--ad-line);
     border-radius: 8px;
     padding: 2px;
-    background: #fff;
+    background: var(--ad-white);
 }
 .sp-color code {
     font-size: 12px;
     color: var(--ad-muted);
 }
 .sp-theirs {
-    background: var(--ad-grey-bg);
+    background: var(--ad-desk);
     border-radius: 10px;
     padding: 10px 12px;
     margin: 6px 0 10px;
@@ -419,7 +419,7 @@ a.ms-tab {
 }
 
 .spd-stars {
-    color: #f5a623;
+    color: var(--ad-gold);
     font-size: 14px;
     letter-spacing: 1px;
 }
@@ -440,34 +440,34 @@ a.ms-tab {
     font-weight: 700;
     padding: 3px 9px;
     border-radius: 999px;
-    background: #f1f2f4;
-    color: #555;
+    background: var(--ad-desk);
+    color: var(--ad-text-soft);
     white-space: nowrap;
     font-style: normal;
 }
 .spd-stage.is-research {
-    background: #e5efff;
-    color: #2251b8;
+    background: var(--ad-blue-bg);
+    color: var(--ad-blue);
 }
 .spd-stage.is-ready {
-    background: #fff3d6;
-    color: #9a6200;
+    background: var(--ad-orange-soft);
+    color: var(--ad-amber);
 }
 .spd-stage.is-asked {
-    background: #efe6ff;
-    color: #5b2fb0;
+    background: var(--ad-purple-bg);
+    color: var(--ad-blue);
 }
 .spd-stage.is-sponsor {
-    background: #e3f5ea;
+    background: var(--ad-green-bg);
     color: var(--ad-green);
 }
 .spd-stage.is-no {
-    background: #f6e3e3;
-    color: #8a2b2b;
+    background: var(--ad-red-bg);
+    color: var(--ad-red);
 }
 .spd-stage.is-taken {
-    background: #f6e3e3;
-    color: #8a2b2b;
+    background: var(--ad-red-bg);
+    color: var(--ad-red);
 }
 
 /* industries */
@@ -477,14 +477,14 @@ a.ms-tab {
     gap: 14px;
 }
 .spd-ind {
-    background: var(--ad-card);
+    background: var(--ad-white);
     border: 1px solid var(--ad-line);
     border-radius: var(--ad-radius);
     padding: 12px 14px;
 }
 .spd-ind.is-taken {
-    border-color: #bfe3c9;
-    background: #f6fcf8;
+    border-color: var(--ad-green-line);
+    background: var(--ad-soft);
 }
 .spd-ind header {
     display: flex;
@@ -549,7 +549,7 @@ a.ms-tab {
 .spd-panel {
     position: sticky;
     top: 14px;
-    background: var(--ad-card);
+    background: var(--ad-white);
     border: 1px solid var(--ad-line);
     border-radius: var(--ad-radius);
     max-height: calc(100vh - 28px);
@@ -571,7 +571,7 @@ a.ms-tab {
     gap: 14px;
     padding: 14px;
     border-bottom: 1px solid var(--ad-line);
-    background: linear-gradient(90deg, var(--ad-orange-soft), #fff 70%);
+    background: linear-gradient(90deg, var(--ad-orange-soft), var(--ad-white) 70%);
 }
 .spd-panel-logo {
     display: flex;
@@ -609,19 +609,19 @@ a.ms-tab {
 }
 .spd-starpick button {
     font-size: 20px;
-    color: #d9dbe0;
+    color: var(--ad-line-strong);
     line-height: 1;
     padding: 0 1px;
     cursor: pointer;
 }
 .spd-starpick button.is-on {
-    color: #f5a623;
+    color: var(--ad-gold);
 }
 .spd-starpick:hover button {
-    color: #f5a623;
+    color: var(--ad-gold);
 }
 .spd-starpick button:hover ~ button {
-    color: #d9dbe0;
+    color: var(--ad-line-strong);
 }
 .spd-panel-body {
     padding: 12px 14px;
@@ -669,13 +669,13 @@ a.ms-tab {
     padding: 6px 10px;
     border-radius: 999px;
     border: 1px solid var(--ad-line);
-    background: #fff;
+    background: var(--ad-white);
     cursor: pointer;
 }
 .spd-stageline button.is-on {
     background: var(--ad-orange);
     border-color: var(--ad-orange);
-    color: #fff;
+    color: var(--ad-white);
 }
 .spd-check {
     display: flex;
@@ -700,7 +700,7 @@ a.ms-tab {
 }
 .spd-evlist li a {
     font-weight: 600;
-    color: var(--ad-text);
+    color: var(--ad-ink);
 }
 .spd-evlist li em {
     font-style: normal;
@@ -726,7 +726,7 @@ a.ms-tab {
     transform: translate(-50%, -50%);
     width: min(640px, calc(100% - 32px));
     max-height: calc(100vh - 40px);
-    background: #fff;
+    background: var(--ad-white);
     border-radius: 16px;
     z-index: 61;
     display: flex;
@@ -818,7 +818,7 @@ a.ms-tab {
     position: absolute;
     top: calc(100% + 6px);
     right: 0;
-    background: #fff;
+    background: var(--ad-white);
     border: 1px solid var(--ad-line);
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
@@ -854,7 +854,7 @@ a.ms-tab {
     display: flex;
     align-items: center;
     gap: 12px;
-    background: var(--ad-card);
+    background: var(--ad-white);
     border: 1px solid var(--ad-line);
     border-radius: var(--ad-radius);
     padding: 14px 16px;
@@ -864,10 +864,10 @@ a.ms-tab {
     border-top-color: var(--ad-orange);
 }
 .spd-stat.is-yes {
-    border-top-color: #2e9e5b;
+    border-top-color: var(--ad-green);
 }
 .spd-stat.is-got {
-    border-top-color: #2251b8;
+    border-top-color: var(--ad-blue);
 }
 .spd-stat-ico {
     width: 36px;
@@ -925,7 +925,7 @@ a.ms-tab {
     cursor: pointer;
 }
 .spd-row:hover td {
-    background: #fcfcfd;
+    background: var(--ad-soft);
 }
 .spd-biz-in {
     display: inline-flex;
@@ -967,7 +967,7 @@ a.ms-tab {
     margin-left: 6px;
 }
 .spd-ask b {
-    color: var(--ad-text);
+    color: var(--ad-ink);
 }
 /* sponsorship history */
 .spd-deals h3 small {
@@ -999,7 +999,7 @@ a.ms-tab {
 .spd-ours {
     font-style: normal;
     font-size: 10px;
-    background: #e3f5ea;
+    background: var(--ad-green-bg);
     color: var(--ad-green);
     padding: 1px 6px;
     border-radius: 999px;
@@ -1067,7 +1067,7 @@ a.ms-tab {
     height: 26px;
     border-radius: 50%;
     background: var(--ad-desk);
-    color: var(--ad-text);
+    color: var(--ad-ink);
     text-decoration: none;
     font-weight: 700;
     font-size: 12px;
@@ -1084,7 +1084,7 @@ a.ms-tab {
 .spd-group td span {
     margin-left: 8px;
     font-size: 11px;
-    background: #fff;
+    background: var(--ad-white);
     border: 1px solid var(--ad-line);
     border-radius: 999px;
     padding: 0 7px;

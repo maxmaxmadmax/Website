@@ -47,8 +47,8 @@
     border-radius: 6px 6px 0 0;
 }
 .ev-tab:hover {
-    color: var(--ad-text);
-    background: var(--ad-grey-bg);
+    color: var(--ad-ink);
+    background: var(--ad-desk);
 }
 .ev-tab.is-on {
     color: var(--ad-orange);
@@ -96,7 +96,7 @@
     color: var(--ad-muted);
 }
 .ev-card.is-good .ev-card-big {
-    color: var(--ad-green, #1a7f37);
+    color: var(--ad-green, var(--ad-green));
 }
 .ev-card.is-bad .ev-card-big {
     color: var(--ad-red);
@@ -144,7 +144,7 @@
     letter-spacing: 1px;
     text-transform: uppercase;
     color: var(--ad-muted);
-    background: var(--ad-grey-bg);
+    background: var(--ad-desk);
     padding: 0 12px;
 }
 .ev-bud th:first-child {
@@ -154,13 +154,13 @@
     vertical-align: middle;
 }
 .ev-bud-h th:first-child {
-    color: var(--ad-text);
+    color: var(--ad-ink);
     font-size: 14px;
     letter-spacing: 0;
     text-transform: none;
 }
 .ev-bud tbody + tbody .ev-bud-h th {
-    border-top: 2px solid var(--ad-text);
+    border-top: 2px solid var(--ad-ink);
 }
 .ev-bud td:nth-child(2),
 .ev-bud td:nth-child(3),
@@ -195,10 +195,10 @@
 .ev-bud input.ad-input:focus {
     outline: 2px solid var(--ad-orange);
     outline-offset: -2px;
-    background: #fff7ef;
+    background: var(--ad-orange-soft);
 }
 .ev-bud tr:nth-child(even) td {
-    background: #fcfcfd;
+    background: var(--ad-soft);
 }
 .ev-bud-name {
     min-width: 220px;
@@ -209,7 +209,7 @@
     line-height: 38px;
     font-weight: 600;
     color: var(--ad-muted);
-    background: var(--ad-grey-bg);
+    background: var(--ad-desk);
 }
 .ev-bud-auto small {
     font-weight: 600;
@@ -231,7 +231,7 @@
 }
 .ev-bud-tot td {
     font-weight: 800;
-    background: var(--ad-grey-bg) !important;
+    background: var(--ad-desk) !important;
     padding: 0 12px;
 }
 .ev-bud-x button {
@@ -284,7 +284,7 @@
 .ev-banner-art {
     position: relative;
     overflow: hidden;
-    background: #15151a !important;
+    background: var(--ad-ink) !important;
 }
 .ev-banner-art .ev-poster {
     position: absolute;
@@ -298,12 +298,12 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    color: #999;
+    color: var(--ad-faint);
     font-size: 14px;
-    background: var(--ad-grey-bg);
+    background: var(--ad-desk);
 }
 .ev-banner-art.is-blank small {
-    color: #aaa;
+    color: var(--ad-faint);
 }
 .ev-banner-main {
     padding: 24px 28px 22px;
@@ -347,7 +347,7 @@
     gap: 10px;
 }
 .ev-stat {
-    background: var(--ad-grey-bg);
+    background: var(--ad-desk);
     border-radius: 10px;
     padding: 10px 12px;
 }
@@ -477,7 +477,7 @@
     top: 46px;
     transform: translate(-50%, -50%);
     text-decoration: none;
-    color: var(--ad-text);
+    color: var(--ad-ink);
     text-align: center;
     width: 120px;
 }
@@ -486,7 +486,7 @@
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: #fff;
+    background: var(--ad-white);
     border: 3px solid var(--ad-muted);
     margin: 0 auto;
     box-sizing: border-box;
@@ -520,10 +520,10 @@
     transform: translateX(-50%);
     font-size: 11px;
     white-space: nowrap;
-    color: var(--ad-text);
+    color: var(--ad-ink);
 }
 .ev-tl-dot.is-past i {
-    border-color: #b9b9c0;
+    border-color: var(--ad-rail-text);
 }
 .ev-tl-dot.is-upcoming i,
 .ev-tl-dot.is-today i {
@@ -547,7 +547,7 @@
     width: 120px;
     height: 120px;
     border-radius: 10px;
-    background: var(--ad-grey-bg) center/contain no-repeat;
+    background: var(--ad-desk) center/contain no-repeat;
     border: 1px solid var(--ad-line);
     flex: 0 0 auto;
 }
@@ -571,7 +571,7 @@
     letter-spacing: 1px;
     text-transform: uppercase;
     color: var(--ad-muted);
-    background: var(--ad-grey-bg);
+    background: var(--ad-desk);
     padding: 0 10px;
     height: 34px;
     border: 1px solid var(--ad-line);
@@ -598,7 +598,7 @@
 .ev-prog select.ad-select:focus {
     outline: 2px solid var(--ad-orange);
     outline-offset: -2px;
-    background: #fff7ef;
+    background: var(--ad-orange-soft);
 }
 .ev-prog-time {
     width: 190px;
@@ -655,10 +655,10 @@
     box-shadow: inset 4px 0 0 var(--ad-green);
 }
 .ev-prog-row.is-food td:first-child {
-    box-shadow: inset 4px 0 0 #e0a100;
+    box-shadow: inset 4px 0 0 var(--ad-gold);
 }
 .ev-prog-row.is-moment td:first-child {
-    box-shadow: inset 4px 0 0 #4a7bd0;
+    box-shadow: inset 4px 0 0 var(--ad-blue);
 }
 .ev-prog-row.is-ops td:first-child {
     box-shadow: inset 4px 0 0 var(--ad-muted);
@@ -695,8 +695,8 @@
     margin-bottom: 16px;
 }
 .ev-notice-box.is-on {
-    border-color: var(--ad-amber, #e0a100);
-    background: #fffaf0;
+    border-color: var(--ad-amber, var(--ad-gold));
+    background: var(--ad-orange-soft);
 }
 .ev-notice-box.is-cancelled {
     border-color: var(--ad-red);
@@ -717,7 +717,7 @@
 }
 .ev-notice-tag {
     font-weight: 700;
-    color: #b25b00;
+    color: var(--ad-amber);
 }
 .ev-notice-tag.is-cancelled {
     color: var(--ad-red);
@@ -750,7 +750,7 @@
     width: 100%;
     height: 78vh;
     border: 0;
-    background: #f39243;
+    background: var(--ad-amber);
 }
 /* vendors tab: who's coming */
 .ev-vend-top {
@@ -797,7 +797,7 @@
 .ev-vend {
     display: flex;
     gap: 12px;
-    background: #fff;
+    background: var(--ad-white);
     border: 1px solid var(--ad-line);
     border-radius: 12px;
     padding: 12px 14px;
@@ -806,7 +806,7 @@
     border-left: 4px solid var(--ad-orange);
 }
 .ev-vend-group.is-market .ev-vend {
-    border-left: 4px solid #4a7bd0;
+    border-left: 4px solid var(--ad-blue);
 }
 .ev-vend-main {
     flex: 1;
@@ -826,10 +826,10 @@
 .ev-vend-blurb {
     margin: 0;
     font-size: 13px;
-    color: #444;
+    color: var(--ad-text-soft);
 }
 .ev-vend-blurb.is-dim {
-    color: #aaa;
+    color: var(--ad-faint);
     font-style: italic;
 }
 .ev-vend-side {
@@ -858,14 +858,14 @@
 /* programme: "on the page" */
 .ev-prog-page {
     margin-right: 6px;
-    color: #c9a200;
+    color: var(--ad-gold);
     font-size: 17px;
 }
 .ev-prog-page.is-on {
-    color: #e0a100;
+    color: var(--ad-gold);
 }
 .ev-prog-more td {
-    background: #fffaf0 !important;
+    background: var(--ad-orange-soft) !important;
     padding: 10px 12px !important;
     height: auto !important;
 }
@@ -878,12 +878,12 @@
     width: 120px;
     height: 90px;
     border-radius: 10px;
-    background: #eee center/cover no-repeat;
+    background: var(--ad-desk) center/cover no-repeat;
     flex: 0 0 auto;
     border: 1px solid var(--ad-line);
 }
 .ev-prog-pic.is-blank {
-    background: repeating-linear-gradient(45deg, #f3f3f3, #f3f3f3 8px, #ececec 8px, #ececec 16px);
+    background: repeating-linear-gradient(45deg, var(--ad-desk), var(--ad-desk) 8px, var(--ad-desk) 8px, var(--ad-desk) 16px);
 }
 .ev-prog-more-f {
     flex: 1;
@@ -896,7 +896,7 @@
     height: 36px;
     border: 1px solid var(--ad-line) !important;
     border-radius: 8px !important;
-    background: #fff !important;
+    background: var(--ad-white) !important;
 }
 .ev-prog-more-row {
     display: flex;
@@ -937,7 +937,7 @@
     opacity: 1;
 }
 .ev-bud-files td {
-    background: #fffaf0 !important;
+    background: var(--ad-orange-soft) !important;
     padding: 6px 12px !important;
     height: auto !important;
 }
@@ -950,14 +950,14 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: #fff;
+    background: var(--ad-white);
     border: 1px solid var(--ad-line);
     border-radius: 8px;
     padding: 4px 8px;
     font-size: 13px;
 }
 .ev-bud-file a {
-    color: var(--ad-text);
+    color: var(--ad-ink);
     text-decoration: none;
 }
 .ev-bud-file a:hover {
@@ -975,6 +975,6 @@
     font-weight: 700;
     padding: 2px 8px;
     border-radius: 999px;
-    background: var(--ad-grey-bg);
+    background: var(--ad-desk);
     margin: 1px 0;
 }
