@@ -157,9 +157,7 @@
     /* ----------------------------------------------------------------------
        DRAWING ONE
        ---------------------------------------------------------------------- */
-    function esc(s) {
-        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    }
+    var esc = global.SG.esc;
 
     function chip(ev) {
         if (!ev.day) {

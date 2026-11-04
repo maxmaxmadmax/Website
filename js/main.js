@@ -1,12 +1,28 @@
 /* ==========================================================================
    MAIN - loaded by every public page (with defer).
 
+   HELPERS      window.SG - esc() for text going into HTML
    FRESH PAGE   reloads the page once when a newer version has been deployed
    COMPONENTS   drops the menu and footer in, highlights the current page
    MENU         burger, dropdowns, the home page tuck, the measured height
    CONTACT      pre-fills the contact form from ?about= / ?note= / ?email=
    SLIDER       pages a row of cards (window.SGSlider, used by other scripts)
    ========================================================================== */
+
+/* ==========================================================================
+   HELPERS
+   ========================================================================== */
+window.SG = {
+    /* Text into HTML: never let a name or a note become markup */
+    esc: function (s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+};
 
 /* ==========================================================================
    FRESH PAGE

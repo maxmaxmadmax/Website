@@ -125,7 +125,7 @@
     var HOW_MANY = 4;
     var W = window.SGWeekend;
     var roster = window.SG_ROSTER_BY_SLUG || {};
-    var esc = W ? W.esc : String;
+    var esc = window.SG.esc;
 
     /* The next four Fridays, today included if today is a Friday */
     function fridays() {

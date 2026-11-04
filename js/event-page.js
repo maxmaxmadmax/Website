@@ -1,11 +1,7 @@
 /* ==========================================================================
-   EVENT PAGE (for punters) - /eatz-beatz-halloween-2026
-
-     1. Share button - the phone's share sheet, or copy the link.
-     2. Print A4 button - uses the @media print styles in event-page.css.
-     3. Food vendors + market stalls - asks the eventLineup function for the
-        confirmed, PAID vendors and draws them (the function caches for
-        5 minutes). No vendors, or the call fails -> sections stay hidden.
+   EVENT PAGE - the share and print buttons, and the food vendors and market
+   stalls (from the eventLineup function: confirmed, paid vendors only; no
+   vendors, or a failed call, and the sections stay hidden).
    ========================================================================== */
 (function () {
     'use strict';
@@ -55,9 +51,7 @@
         'https://australia-southeast1-soundzgood-8c86f.cloudfunctions.net/eventLineup?event=' +
         encodeURIComponent(food.getAttribute('data-event'));
 
-    function esc(s) {
-        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    }
+    var esc = window.SG.esc;
 
     /*  FOOD PHOTOS - one per kind of food, free Unsplash pictures in
         images/vendor-cats/ (see CREDITS.txt there). A vendor's own photo
