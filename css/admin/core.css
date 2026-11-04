@@ -658,10 +658,6 @@ body {
     background: var(--ad-green-bg);
     color: var(--ad-green);
 }
-.ad-action-msg.is-bad {
-    background: var(--ad-red-bg);
-    color: var(--ad-red);
-}
 
 /* ---- seating ---- */
 .ad-seat {
