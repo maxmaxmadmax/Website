@@ -3,6 +3,7 @@
    Everything that decides something important happens on the server, never in the
    browser: which sites are taken, whether a category is full, whether a booking is paid. */
 
+const crypto = require('crypto');
 const { HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const { setGlobalOptions } = require('firebase-functions/v2');
