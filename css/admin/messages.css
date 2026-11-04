@@ -40,9 +40,9 @@
     cursor: pointer;
 }
 .ms-tab.is-on {
-    background: #111;
+    background: var(--ad-text);
     color: #fff;
-    border-color: #111;
+    border-color: var(--ad-text);
 }
 .ms-tab:disabled {
     opacity: 0.45;
@@ -78,7 +78,7 @@
     cursor: pointer;
 }
 .ms-table tbody tr:hover td {
-    background: #fafafa;
+    background: var(--ad-soft);
 }
 .ms-when {
     white-space: nowrap;
@@ -96,7 +96,7 @@
 .ms-fail {
     display: inline-block;
     margin-left: 6px;
-    color: #c62828;
+    color: var(--ad-red);
     font-weight: 700;
     font-size: 12px;
 }
@@ -127,7 +127,7 @@
 }
 .ms-green {
     background: #e3f5ea;
-    color: #13733d;
+    color: var(--ad-green);
 }
 .ms-blue {
     background: #e5efff;
@@ -143,7 +143,7 @@
     background: none;
     font: inherit;
     font-weight: 600;
-    color: var(--ad-orange, #ff6b00);
+    color: var(--ad-orange, var(--ad-orange));
     cursor: pointer;
     padding: 0;
     margin-bottom: 10px;
@@ -216,7 +216,7 @@
 }
 .ms-list summary {
     cursor: pointer;
-    color: var(--ad-orange, #ff6b00);
+    color: var(--ad-orange, var(--ad-orange));
     font-weight: 600;
 }
 .ms-list ul {
@@ -249,7 +249,7 @@
 }
 .ms-chips button {
     border: 1px solid var(--ad-line);
-    background: #fafafa;
+    background: var(--ad-soft);
     border-radius: 6px;
     padding: 4px 8px;
     font: 12px monospace;
@@ -271,13 +271,13 @@
     gap: 8px;
 }
 .ms-approve {
-    background: #13733d !important;
+    background: var(--ad-green) !important;
     color: #fff !important;
-    border-color: #13733d !important;
+    border-color: var(--ad-green) !important;
 }
 .ms-del {
     margin-left: auto;
-    color: #c62828 !important;
+    color: var(--ad-red) !important;
 }
 .ms-note {
     margin: 10px 0 0;
@@ -287,10 +287,10 @@
 .ms-msg {
     margin: 12px 0 0;
     font-size: 14px;
-    color: #13733d;
+    color: var(--ad-green);
 }
 .ms-msg.ms-bad {
-    color: #c62828;
+    color: var(--ad-red);
 }
 .ms-failed {
     margin-top: 16px;
@@ -301,7 +301,7 @@
 }
 .ms-failed p {
     margin: 0 0 8px;
-    color: #c62828;
+    color: var(--ad-red);
 }
 .ms-failed div {
     display: flex;
@@ -333,8 +333,8 @@
     background: #fff;
 }
 .ms-mail-top {
-    background: #111;
-    color: #ff6b00;
+    background: var(--ad-text);
+    color: var(--ad-orange);
     font-size: 11px;
     letter-spacing: 2px;
     padding: 12px 16px;
@@ -364,7 +364,7 @@
 .ms-mail-btn a {
     text-decoration: none;
     display: inline-block;
-    background: #ff6b00;
+    background: var(--ad-orange);
     color: #fff;
     font-weight: 700;
     padding: 10px 18px;
@@ -372,7 +372,7 @@
     font-size: 13px;
 }
 .ms-mail-foot {
-    background: #fafafa;
+    background: var(--ad-soft);
     border-top: 1px solid #eee;
     padding: 10px 16px;
     font-size: 11px;
@@ -514,8 +514,8 @@
 .ms-mail-btn2 {
     display: inline-block;
     margin-left: 6px;
-    border: 2px solid #111;
-    color: #111 !important;
+    border: 2px solid var(--ad-text);
+    color: var(--ad-text) !important;
     background: #fff !important;
     font-weight: 700;
     padding: 8px 16px !important;
@@ -635,7 +635,7 @@
     filter: brightness(1.08);
 }
 .ms-mail-body a {
-    color: #ff6b00;
+    color: var(--ad-orange);
     font-weight: 700;
 }
 .ms-sp-tip {
@@ -644,7 +644,7 @@
 }
 .sp-details-tag {
     background: #e3f5ea !important;
-    color: #13733d !important;
+    color: var(--ad-green) !important;
 }
 /* Messages > Reminders */
 .ms-log-grid > div > .ms-card + .ms-card {

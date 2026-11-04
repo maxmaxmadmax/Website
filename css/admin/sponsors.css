@@ -459,7 +459,7 @@ a.ms-tab {
 }
 .spd-stage.is-sponsor {
     background: #e3f5ea;
-    color: #13733d;
+    color: var(--ad-green);
 }
 .spd-stage.is-no {
     background: #f6e3e3;
@@ -507,7 +507,7 @@ a.ms-tab {
     font-style: normal;
     font-size: 12px;
     font-weight: 600;
-    color: #13733d;
+    color: var(--ad-green);
 }
 .spd-ind header em.is-open {
     color: var(--ad-faint);
@@ -635,7 +635,7 @@ a.ms-tab {
     margin-bottom: 10px;
 }
 .spd-box {
-    background: #fafbfc;
+    background: var(--ad-soft);
     border: 1px solid var(--ad-line);
     border-radius: 10px;
     padding: 10px 12px;
@@ -908,7 +908,7 @@ a.ms-tab {
     color: var(--ad-muted);
     padding: 12px 12px;
     border-bottom: 1px solid var(--ad-line);
-    background: #fafbfc;
+    background: var(--ad-soft);
     white-space: nowrap;
 }
 .spd-table td {
@@ -1000,7 +1000,7 @@ a.ms-tab {
     font-style: normal;
     font-size: 10px;
     background: #e3f5ea;
-    color: #13733d;
+    color: var(--ad-green);
     padding: 1px 6px;
     border-radius: 999px;
     margin-left: 4px;
@@ -1077,7 +1077,7 @@ a.ms-tab {
     background: var(--ad-orange-soft);
 }
 .spd-group td {
-    background: #f4f5f7 !important;
+    background: var(--ad-desk) !important;
     padding: 7px 12px !important;
     font-size: 12px;
 }
@@ -1094,7 +1094,7 @@ a.ms-tab {
     float: right;
     font-style: normal;
     font-weight: 600;
-    color: #13733d;
+    color: var(--ad-green);
 }
 .spd-group td em.is-open {
     color: var(--ad-faint);

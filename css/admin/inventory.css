@@ -209,16 +209,16 @@
     white-space: nowrap;
 }
 .inv-c0 {
-    background: #eef0f3;
+    background: var(--ad-grey-bg);
     color: #5b6472;
 }
 .inv-c1 {
-    background: #e8effd;
-    color: #2563eb;
+    background: var(--ad-blue-bg);
+    color: var(--ad-blue);
 }
 .inv-c2 {
-    background: #fdf0dc;
-    color: #b26a00;
+    background: var(--ad-amber-bg);
+    color: var(--ad-amber);
 }
 .inv-c3 {
     background: #f3e8fd;
@@ -1128,10 +1128,10 @@
 /* KITS (orange) and PACKAGES (black) */
 .inv-sys-badge.is-pkg,
 .qb-sys-tag.is-pkg {
-    background: #111 !important;
+    background: var(--ad-text) !important;
 }
 .inv-row-pkg td:first-child {
-    box-shadow: inset 4px 0 0 #111 !important;
+    box-shadow: inset 4px 0 0 var(--ad-text) !important;
 }
 .inv-row-pkg {
     background: #f6f6f6 !important;
@@ -1380,7 +1380,7 @@
     margin: 0 0 10px;
 }
 .inv-tab {
-    border: 1px solid var(--ad-line, #e5e7eb);
+    border: 1px solid var(--ad-line, var(--ad-line));
     background: #fff;
     border-radius: 999px;
     padding: 6px 14px;
@@ -1389,15 +1389,15 @@
     cursor: pointer;
 }
 .inv-tab.is-on {
-    background: #111;
+    background: var(--ad-text);
     color: #fff;
-    border-color: #111;
+    border-color: var(--ad-text);
 }
 .inv-low-dot {
     margin-left: 6px;
     padding: 1px 7px;
     border-radius: 999px;
-    background: #dc2626;
+    background: var(--ad-red);
     color: #fff;
     font-size: 11px;
 }
@@ -1411,11 +1411,11 @@
 }
 .inv-pill-low {
     background: #fee2e2;
-    color: #b91c1c;
+    color: var(--ad-red);
 }
 .inv-pill-ok {
     background: #dcfce7;
-    color: #15803d;
+    color: var(--ad-green);
 }
 .inv-detail.is-cons .inv-gear-only,
 .inv-detail:not(.is-cons) .inv-cons-only {

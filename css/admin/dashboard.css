@@ -583,7 +583,7 @@
 }
 .db-job.is-pending .db-job-who,
 .db-job.is-pending .db-job-date b {
-    color: #4b5563;
+    color: var(--ad-text-soft);
 }
 .db-state {
     display: block;
@@ -856,7 +856,7 @@
     bottom: 0;
     left: -40%;
     width: 40%;
-    background: linear-gradient(90deg, transparent, #ff6b00, transparent);
+    background: linear-gradient(90deg, transparent, var(--ad-orange), transparent);
     animation: ad-busy 1s ease-in-out infinite;
 }
 .ad-spin {
@@ -865,8 +865,8 @@
     height: 14px;
     margin-right: 8px;
     vertical-align: -2px;
-    border: 2px solid #e3e5ea;
-    border-top-color: #ff6b00;
+    border: 2px solid var(--ad-line);
+    border-top-color: var(--ad-orange);
     border-radius: 50%;
     animation: ad-spin 0.7s linear infinite;
 }

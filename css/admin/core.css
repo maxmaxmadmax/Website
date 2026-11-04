@@ -31,6 +31,8 @@
     --ad-text: #171a21;
     --ad-muted: #6b7280;
     --ad-faint: #9aa1ac;
+    --ad-text-soft: #374151; /* softer body text */
+    --ad-soft: #fafbfc; /* light panel fill */
 
     --ad-green: #0f9d58;
     --ad-green-bg: #e7f6ee;
@@ -614,7 +616,7 @@ body {
    DRAWER ACTIONS
    -------------------------------------------------------------------------- */
 .ad-actions {
-    background: #fafbfc;
+    background: var(--ad-soft);
     border: 1px solid var(--ad-line);
     border-radius: var(--ad-radius);
     padding: 14px 15px;
@@ -694,7 +696,7 @@ body {
 }
 
 .ad-notes li {
-    background: #fafbfc;
+    background: var(--ad-soft);
     border: 1px solid var(--ad-line);
     border-radius: 9px;
     padding: 9px 11px;
@@ -867,7 +869,7 @@ body {
     gap: 8px;
     padding: 14px 20px;
     border-top: 1px solid var(--ad-line);
-    background: #fafbfc;
+    background: var(--ad-soft);
 }
 
 /* --------------------------------------------------------------------------
@@ -946,7 +948,7 @@ body {
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--ad-muted);
-    background: #fafbfc;
+    background: var(--ad-soft);
     border-bottom: 1px solid var(--ad-line);
     white-space: nowrap;
 }
@@ -965,7 +967,7 @@ body {
     cursor: pointer;
 }
 .ad-table tbody tr[data-open]:hover {
-    background: #fafbfc;
+    background: var(--ad-soft);
 }
 
 .ad-cell-strong {
@@ -1085,7 +1087,7 @@ body {
 /*  Only the background moves on hover. Setting border-color here would
     out-specify the .is-green / .is-amber top edge and grey it out. */
 .ad-stat.is-clickable:hover {
-    background: #fafbfc;
+    background: var(--ad-soft);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
 }
 

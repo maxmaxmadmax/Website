@@ -21,14 +21,14 @@
     align-items: center;
     text-align: left;
     font: inherit;
-    background: #fafafa;
+    background: var(--ad-soft);
     border: 1px solid #ececf0;
     border-radius: 8px;
     padding: 8px 10px;
     cursor: pointer;
 }
 .cust-q:hover {
-    border-color: #ff6b00;
+    border-color: var(--ad-orange);
 }
 .cust-q span {
     overflow: hidden;

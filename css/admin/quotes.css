@@ -753,7 +753,7 @@
 .qb-cust-input:focus {
     outline: none;
     border-style: solid;
-    border-color: #ff6b00;
+    border-color: var(--ad-orange);
     background: #fff;
 }
 .qb-cust-results {
@@ -804,7 +804,7 @@
 .qb-cust-clear {
     background: none;
     border: 0;
-    color: #ff6b00;
+    color: var(--ad-orange);
     text-decoration: underline;
     cursor: pointer;
     font: inherit;
@@ -1223,7 +1223,7 @@
     cursor: pointer;
 }
 .sp-table tbody tr:hover td {
-    background: #fafbfc;
+    background: var(--ad-soft);
 }
 .sp-table tbody tr:last-child td {
     border-bottom: 0;
@@ -1658,7 +1658,7 @@
 
 /* a PACKAGE on a quote: package line on top, its kits & items boxed underneath */
 .qb-pkg {
-    border: 2px solid #111;
+    border: 2px solid var(--ad-text);
     border-radius: 10px;
     margin: 8px 0;
     overflow: hidden;
@@ -1681,7 +1681,7 @@
 }
 .qb-pkg-body {
     padding: 0 0 0 10px;
-    border-left: 4px solid #111;
+    border-left: 4px solid var(--ad-text);
     margin-left: 0;
 }
 .qb-pkg-body .qb-row {
@@ -1697,7 +1697,7 @@
     border-bottom: 1px solid #d3d7de;
 }
 .qb-pkg-head .qb-sys-tag {
-    background: #111 !important;
+    background: var(--ad-text) !important;
     color: #fff !important;
 }
 .qb-pkg-head .qb-del {
@@ -1720,7 +1720,7 @@
     padding: 6px 8px;
     border: 1px dashed var(--ad-line);
     border-radius: 10px;
-    background: #fafbfc;
+    background: var(--ad-soft);
     cursor: text;
     margin-top: 4px;
 }
@@ -1736,7 +1736,7 @@
     gap: 4px;
     padding: 4px 6px 4px 10px;
     border-radius: 999px;
-    background: #fff2e8;
+    background: var(--ad-orange-soft);
     color: #7a3c00;
     font-size: 13px;
     font-weight: 600;

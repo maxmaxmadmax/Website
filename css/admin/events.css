@@ -803,7 +803,7 @@
     padding: 12px 14px;
 }
 .ev-vend-group.is-food .ev-vend {
-    border-left: 4px solid #ff6b00;
+    border-left: 4px solid var(--ad-orange);
 }
 .ev-vend-group.is-market .ev-vend {
     border-left: 4px solid #4a7bd0;
