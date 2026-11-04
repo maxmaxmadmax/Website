@@ -1,11 +1,16 @@
 /* ==========================================================================
-   EQUIPMENT HIRE  -  the public catalogue
+   EQUIPMENT HIRE - hire.html, the public catalogue (js/hire.js builds the
+   cards). On top of site.css. Everything is .hire-
 
-   Sits on top of style.css and uses its tokens, so the dark theme and orange
-   accents match the rest of the site. Everything is scoped under .hire-* so
-   it cannot reach another page.
+   HEAD       intro and the filter chips
+   CARDS      the grid of items
+   COLOURS    one colour per category
+   PHONE      keep last
    ========================================================================== */
 
+/* ==========================================================================
+   HEAD
+   ========================================================================== */
 .hire-header .header-content h1 {
     margin-bottom: 0.3em;
 }
@@ -22,11 +27,11 @@
     font-size: 1.02rem;
     line-height: 1.6;
 }
+
 .hire-intro strong {
     color: var(--sg-orange, #ff6b00);
 }
 
-/* ---- filters ---- */
 .hire-filters {
     display: flex;
     flex-wrap: wrap;
@@ -35,6 +40,7 @@
     max-width: var(--sg-max-width, 1200px);
     margin: 0 auto 26px;
 }
+
 .hire-chip {
     appearance: none;
     cursor: pointer;
@@ -51,17 +57,21 @@
         color 0.15s,
         background 0.15s;
 }
+
 .hire-chip:hover {
     color: #fff;
     border-color: var(--sg-orange, #ff6b00);
 }
+
 .hire-chip.is-on {
     background: linear-gradient(135deg, var(--sg-orange, #ff6b00), var(--sg-orange-bright, #ff8c00));
     border-color: transparent;
     color: #fff;
 }
 
-/* ---- grid ---- */
+/* ==========================================================================
+   CARDS
+   ========================================================================== */
 .hire-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -69,6 +79,7 @@
     max-width: var(--sg-max-width, 1200px);
     margin: 0 auto;
 }
+
 .hire-loading,
 .hire-empty {
     grid-column: 1 / -1;
@@ -76,11 +87,11 @@
     color: var(--sg-dim, #aaa);
     padding: 40px 0;
 }
+
 .hire-empty a {
     color: var(--sg-orange, #ff6b00);
 }
 
-/* ---- card ---- */
 .hire-card {
     display: flex;
     flex-direction: column;
@@ -92,18 +103,19 @@
         transform 0.15s,
         border-color 0.15s;
 }
+
 .hire-card:hover {
     transform: translateY(-3px);
     border-color: #333;
 }
 
+/* Product shots sit on white, shown whole */
 .hire-media {
     aspect-ratio: 4 / 3;
-    background: #fff; /* product shots sit on white so contain blends */
+    background: #fff;
     overflow: hidden;
 }
-/*  'contain' (not cover) so the WHOLE item shows at a consistent size and the
-    big ones stop overflowing the frame. */
+
 .hire-media img {
     width: 100%;
     height: 100%;
@@ -112,6 +124,7 @@
     padding: 12px;
     box-sizing: border-box;
 }
+
 .hire-noimg {
     width: 100%;
     height: 100%;
@@ -132,6 +145,7 @@
     padding: 16px;
     flex: 1 1 auto;
 }
+
 .hire-cat {
     align-self: flex-start;
     padding: 3px 10px;
@@ -141,11 +155,13 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
+
 .hire-name {
     margin: 2px 0 0;
     font-size: 1.05rem;
     color: #fff;
 }
+
 .hire-sub {
     margin: 0;
     color: var(--sg-dim, #aaa);
@@ -160,12 +176,14 @@
     justify-content: space-between;
     gap: 10px;
 }
+
 .hire-price {
     margin: 0;
     font-size: 1.1rem;
     font-weight: 800;
     color: #fff;
 }
+
 .hire-price span {
     font-size: 0.74rem;
     font-weight: 600;
@@ -183,52 +201,67 @@
     font-weight: 700;
     font-size: 0.86rem;
 }
+
 .hire-enquire:hover {
     filter: brightness(1.06);
 }
 
-/* category pill / placeholder colours */
+/* ==========================================================================
+   COLOURS - category pill and placeholder, by category number
+   ========================================================================== */
 .hc0 {
     background: #26292f;
     color: #c3c9d2;
 }
+
 .hc1 {
     background: #16324f;
     color: #7db4ff;
 }
+
 .hc2 {
     background: #3f2f10;
     color: #ffc772;
 }
+
 .hc3 {
     background: #33204a;
     color: #cc9bff;
 }
+
 .hc4 {
     background: #0f3d34;
     color: #6fe6cd;
 }
+
 .hc5 {
     background: #23264f;
     color: #a6adff;
 }
+
 .hc6 {
     background: #43172c;
     color: #ff9ac4;
 }
 
+/* ==========================================================================
+   PHONE
+   ========================================================================== */
 @media (max-width: 560px) {
     .hire-grid {
         grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
         gap: 14px;
     }
+
     .hire-body {
         padding: 13px;
     }
+
     .hire-foot {
         flex-direction: column;
         align-items: stretch;
     }
+
     .hire-enquire {
         width: 100%;
     }

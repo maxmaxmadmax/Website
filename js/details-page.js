@@ -8,7 +8,7 @@
    Uses the sponsor page styles (sponsor.css).
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=825';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=826';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = (v) =>

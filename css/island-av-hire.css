@@ -1,11 +1,13 @@
 /* ==========================================================================
-   AV HIRE FOR THE ISLANDS
+   ISLAND AV HIRE - island-av-hire.html, on top of site.css. Everything is .isl-
 
-   Everything is scoped to #sg-island, so none of it can reach another
-   page. Loaded on top of style.css, which supplies the tokens, the
-   buttons, .section and the footer.
+   HERO       video banner
+   POINTS     the boat and the battery, the two selling points
+   BANDS      what comes with us, where we go (cards)
+   LISTS      what the battery suits, what to send with an enquiry
+   UPSELL     the quieter band under the closing call
+   CLOSING    book-us band
    ========================================================================== */
-
 #sg-island {
     background: #0a0a0a;
 }
@@ -13,18 +15,17 @@
 /* ==========================================================================
    HERO
    ========================================================================== */
-#sg-island .isl-hero {
+.isl-hero {
     position: relative;
     display: flex;
     align-items: flex-end;
     min-height: min(66vh, 580px);
     padding: calc(var(--sg-nav-height, 80px) + 44px) 20px 48px;
     overflow: hidden;
-    /*  The fallback sits behind the video, never over it, or it hides the clip. */
-    background: linear-gradient(120deg, #05222c 0%, #0a0a0a 66%);
+    background: linear-gradient(120deg, #05222c 0%, #0a0a0a 66%); /* shows until the video plays */
 }
 
-#sg-island .isl-hero-video {
+.isl-hero-video {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -33,7 +34,7 @@
     z-index: 0;
 }
 
-#sg-island .isl-hero-scrim {
+.isl-hero-scrim {
     position: absolute;
     inset: 0;
     z-index: 1;
@@ -42,7 +43,7 @@
         linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.15) 42%, #0a0a0a 100%);
 }
 
-#sg-island .isl-hero-body {
+.isl-hero-body {
     position: relative;
     z-index: 2;
     width: 100%;
@@ -50,7 +51,7 @@
     margin: auto;
 }
 
-#sg-island .isl-eyebrow {
+.isl-eyebrow {
     color: var(--sg-gold);
     font-family: var(--sg-font-accent);
     font-size: 0.72rem;
@@ -60,7 +61,7 @@
     margin-bottom: 14px;
 }
 
-#sg-island .isl-hero-body h1 {
+.isl-hero-body h1 {
     font-family: var(--sg-font-display);
     font-size: clamp(2.5rem, 6.5vw, 4.8rem);
     line-height: 0.92;
@@ -69,18 +70,18 @@
     margin: 0;
 }
 
-#sg-island .isl-hero-body h1 span {
+.isl-hero-body h1 span {
     color: var(--sg-gold);
 }
 
-#sg-island .isl-lead {
+.isl-lead {
     max-width: 56ch;
     margin-top: 20px;
     color: #ddd;
     line-height: 1.7;
 }
 
-#sg-island .isl-hero-actions {
+.isl-hero-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
@@ -88,26 +89,24 @@
 }
 
 /* ==========================================================================
-   THE BOAT AND THE BATTERY - the two main selling points, in their own band.
+   POINTS
    ========================================================================== */
-#sg-island .isl-points {
+.isl-points {
     padding: clamp(50px, 7vw, 84px) 20px;
     border-top: 1px solid var(--sg-border);
     border-bottom: 1px solid var(--sg-border);
     background: linear-gradient(180deg, #0f1417 0%, #0a0a0a 100%);
 }
 
-/*  min() inside minmax so the grid can shrink on very narrow windows
-    instead of pushing the page sideways.                              */
-#sg-island .isl-points-inner {
+.isl-points-inner {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); /* shrinks, never pushes sideways */
     gap: clamp(28px, 5vw, 56px);
     max-width: var(--sg-max-width);
     margin: auto;
 }
 
-#sg-island .isl-point h2 {
+.isl-point h2 {
     font-family: var(--sg-font-display);
     font-size: clamp(1.7rem, 3.6vw, 2.5rem);
     line-height: 1.02;
@@ -117,15 +116,14 @@
     margin: 0 0 16px;
 }
 
-#sg-island .isl-point p {
+.isl-point p {
     color: #ddd;
     font-size: 1rem;
     line-height: 1.75;
 }
 
-/*  The line somebody remembers, set apart so it reads as the answer rather
-    than as the last sentence of a paragraph.                             */
-#sg-island .isl-point-note {
+/* The line to remember, set apart from the paragraph */
+.isl-point-note {
     margin-top: 16px;
     padding-left: 14px;
     border-left: 3px solid var(--sg-gold);
@@ -139,26 +137,26 @@
 /* ==========================================================================
    BANDS
    ========================================================================== */
-#sg-island .isl-band {
+.isl-band {
     max-width: var(--sg-max-width);
     margin: auto;
     padding: clamp(46px, 6vw, 76px) 20px;
 }
 
-#sg-island .isl-band.is-alt {
+.isl-band.is-alt {
     max-width: none;
     background: #0d0d0d;
     border-top: 1px solid var(--sg-border);
     border-bottom: 1px solid var(--sg-border);
 }
 
-#sg-island .isl-band.is-alt > * {
+.isl-band.is-alt > * {
     max-width: var(--sg-max-width);
     margin-left: auto;
     margin-right: auto;
 }
 
-#sg-island .isl-band h2 {
+.isl-band h2 {
     font-family: var(--sg-font-display);
     font-size: clamp(1.8rem, 4vw, 2.6rem);
     letter-spacing: -1px;
@@ -167,15 +165,15 @@
     margin: 0;
 }
 
-#sg-island .isl-band .section-intro {
+.isl-band .section-intro {
     margin: 8px 0 30px;
     text-align: left;
     color: var(--sg-dim);
 }
 
-/* ---- what comes with us, and where we go: the same shape ---- */
-#sg-island .isl-kit,
-#sg-island .isl-places {
+/* What comes with us, and where we go: the same cards */
+.isl-kit,
+.isl-places {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
     gap: 18px;
@@ -184,16 +182,16 @@
     padding: 0;
 }
 
-#sg-island .isl-kit li,
-#sg-island .isl-places li {
+.isl-kit li,
+.isl-places li {
     padding: 22px 22px 24px;
     border: 1px solid var(--sg-border);
     border-radius: 14px;
     background: var(--sg-panel);
 }
 
-#sg-island .isl-kit h3,
-#sg-island .isl-places h3 {
+.isl-kit h3,
+.isl-places h3 {
     font-family: var(--sg-font-display);
     font-size: 1.05rem;
     letter-spacing: -0.3px;
@@ -201,104 +199,26 @@
     margin: 0 0 8px;
 }
 
-#sg-island .isl-kit p,
-#sg-island .isl-places p {
+.isl-kit p,
+.isl-places p {
     margin: 0;
     color: var(--sg-dim);
     font-size: 0.92rem;
     line-height: 1.65;
 }
 
-/* ==========================================================================
-   CLOSING
-   ========================================================================== */
-#sg-island .isl-cta {
-    padding: clamp(56px, 8vw, 96px) 20px;
-    border-top: 1px solid var(--sg-border);
-    background: linear-gradient(90deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.6) 70%), linear-gradient(120deg, #05222c 0%, #0a0a0a 66%);
-}
-
-#sg-island .isl-cta-inner {
-    max-width: var(--sg-max-width);
-    margin: auto;
-}
-
-#sg-island .isl-cta h2 {
-    font-family: var(--sg-font-display);
-    font-size: clamp(2rem, 5vw, 3.4rem);
-    line-height: 0.96;
-    letter-spacing: -1.5px;
-    text-transform: uppercase;
-    text-align: left;
-    margin: 0;
-}
-
-#sg-island .isl-cta h2 span {
-    color: var(--sg-gold);
-}
-
-#sg-island .isl-cta p {
-    max-width: 52ch;
-    margin: 18px 0 26px;
-    color: #ddd;
-    line-height: 1.7;
-}
-
-/* ==========================================================================
-   RESPONSIVE
-   ========================================================================== */
 @media (max-width: 560px) {
-    #sg-island .isl-kit,
-    #sg-island .isl-places {
+    .isl-kit,
+    .isl-places {
         grid-template-columns: 1fr;
     }
 }
 
 /* ==========================================================================
-   THE UPSELL - kept quieter than the closing call above it on purpose.
+   LISTS - short, so no card styling
    ========================================================================== */
-#sg-island .isl-upsell {
-    padding: clamp(34px, 5vw, 56px) 20px;
-    border-top: 1px solid var(--sg-border);
-    background: #0d0d0d;
-}
-
-#sg-island .isl-upsell-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 28px;
-    flex-wrap: wrap;
-    max-width: var(--sg-max-width);
-    margin: auto;
-}
-
-#sg-island .isl-upsell h2 {
-    font-family: var(--sg-font-display);
-    font-size: clamp(1.4rem, 3vw, 2rem);
-    letter-spacing: -0.8px;
-    text-transform: uppercase;
-    text-align: left;
-    margin: 0 0 10px;
-}
-
-#sg-island .isl-upsell p {
-    max-width: 52ch;
-    margin: 0;
-    color: var(--sg-dim);
-    line-height: 1.7;
-}
-
-#sg-island .isl-upsell .btn {
-    flex-shrink: 0;
-}
-
-/* ==========================================================================
-   THE SMALL LISTS - what the battery setup suits, and what to send with an
-   enquiry. Short, so no card styling.
-   ========================================================================== */
-#sg-island .isl-ideal-label,
-#sg-island .isl-send-label {
+.isl-ideal-label,
+.isl-send-label {
     margin-top: 16px;
     color: var(--sg-dim);
     font-family: var(--sg-font-accent);
@@ -308,13 +228,13 @@
     text-transform: uppercase;
 }
 
-#sg-island .isl-ideal {
+.isl-ideal {
     list-style: none;
     margin: 10px 0 0;
     padding: 0;
 }
 
-#sg-island .isl-ideal li {
+.isl-ideal li {
     display: flex;
     align-items: baseline;
     gap: 9px;
@@ -323,8 +243,8 @@
     font-size: 0.95rem;
 }
 
-/*  A tick drawn in CSS rather than a bullet. */
-#sg-island .isl-ideal li::before {
+/* A tick drawn in CSS */
+.isl-ideal li::before {
     content: '';
     width: 7px;
     height: 11px;
@@ -334,8 +254,8 @@
     transform: rotate(45deg) translateY(-1px);
 }
 
-/*  Numbered by the stylesheet so the number can be the size it wants. */
-#sg-island .isl-send {
+/* Numbered by the stylesheet so the number can be any size */
+.isl-send {
     list-style: none;
     margin: 12px 0 22px;
     padding: 0;
@@ -343,7 +263,7 @@
     max-width: 52ch;
 }
 
-#sg-island .isl-send li {
+.isl-send li {
     counter-increment: send;
     display: flex;
     align-items: baseline;
@@ -353,11 +273,11 @@
     color: #ddd;
 }
 
-#sg-island .isl-send li:last-child {
+.isl-send li:last-child {
     border-bottom: 0;
 }
 
-#sg-island .isl-send li::before {
+.isl-send li::before {
     content: counter(send);
     flex: 0 0 auto;
     width: 22px;
@@ -366,9 +286,83 @@
     font-size: 0.95rem;
 }
 
-/*  The line under the areas, inviting people to ask about other places. */
-#sg-island .isl-anywhere {
+/* "Somewhere else? Ask." under the areas */
+.isl-anywhere {
     margin-top: 22px;
     color: var(--sg-dim);
     font-size: 0.95rem;
+}
+
+/* ==========================================================================
+   UPSELL
+   ========================================================================== */
+.isl-upsell {
+    padding: clamp(34px, 5vw, 56px) 20px;
+    border-top: 1px solid var(--sg-border);
+    background: #0d0d0d;
+}
+
+.isl-upsell-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+    flex-wrap: wrap;
+    max-width: var(--sg-max-width);
+    margin: auto;
+}
+
+.isl-upsell h2 {
+    font-family: var(--sg-font-display);
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    letter-spacing: -0.8px;
+    text-transform: uppercase;
+    text-align: left;
+    margin: 0 0 10px;
+}
+
+.isl-upsell p {
+    max-width: 52ch;
+    margin: 0;
+    color: var(--sg-dim);
+    line-height: 1.7;
+}
+
+.isl-upsell .btn {
+    flex-shrink: 0;
+}
+
+/* ==========================================================================
+   CLOSING
+   ========================================================================== */
+.isl-cta {
+    padding: clamp(56px, 8vw, 96px) 20px;
+    border-top: 1px solid var(--sg-border);
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.6) 70%), linear-gradient(120deg, #05222c 0%, #0a0a0a 66%);
+}
+
+.isl-cta-inner {
+    max-width: var(--sg-max-width);
+    margin: auto;
+}
+
+.isl-cta h2 {
+    font-family: var(--sg-font-display);
+    font-size: clamp(2rem, 5vw, 3.4rem);
+    line-height: 0.96;
+    letter-spacing: -1.5px;
+    text-transform: uppercase;
+    text-align: left;
+    margin: 0;
+}
+
+.isl-cta h2 span {
+    color: var(--sg-gold);
+}
+
+.isl-cta p {
+    max-width: 52ch;
+    margin: 18px 0 26px;
+    color: #ddd;
+    line-height: 1.7;
 }

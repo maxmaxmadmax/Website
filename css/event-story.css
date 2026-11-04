@@ -1,16 +1,32 @@
 /* ==========================================================================
-   JOB STORIES / BLOG POSTS
-   One article per event we've worked on. White page so long text is easy to
-   read; the site menu and footer stay dark. Orange accents from style.css.
+   JOB STORY - one article per event we worked on (pages/event-stories).
+   White page so long text reads well; the menu and footer stay dark.
+   On top of site.css. Everything is .bl-
+
+   PAGE       the white page and the solid menu bar
+   TITLE      breadcrumb, eyebrow, heading, lead, hero photo
+   COPY       body text, gear list, stats, verdict, links
+   CTA        the dark call-to-action box
+   PHONE      keep last
    ========================================================================== */
 
+/* ==========================================================================
+   PAGE
+   ========================================================================== */
 body:has(.bl-wrap) {
     background: #fff;
 }
+
+/* The menu's see-through fade goes grey on white, so it gets a solid bar */
+body:has(.bl-wrap) #navbar > nav {
+    background: #000;
+}
+
 .bl-wrap {
     background: #fff;
     padding: 110px 16px 70px;
 }
+
 .bl-post {
     max-width: 760px;
     margin: 0 auto;
@@ -19,24 +35,28 @@ body:has(.bl-wrap) {
     line-height: 1.7;
 }
 
-/* breadcrumb */
+/* ==========================================================================
+   TITLE
+   ========================================================================== */
 .bl-crumbs {
     font-size: 13px;
     color: #888;
     margin-bottom: 22px;
 }
+
 .bl-crumbs a {
     color: #888;
     text-decoration: none;
 }
+
 .bl-crumbs a:hover {
     color: var(--sg-orange);
 }
+
 .bl-crumbs span {
     margin: 0 4px;
 }
 
-/* title block */
 .bl-eyebrow {
     color: var(--sg-orange);
     font-size: 12px;
@@ -45,6 +65,7 @@ body:has(.bl-wrap) {
     text-transform: uppercase;
     margin: 0 0 10px;
 }
+
 .bl-head h1 {
     font-family: var(--sg-font-display);
     color: #111;
@@ -52,6 +73,7 @@ body:has(.bl-wrap) {
     line-height: 1.1;
     margin: 0 0 18px;
 }
+
 .bl-lead {
     font-size: 19px;
     color: #222;
@@ -61,12 +83,14 @@ body:has(.bl-wrap) {
 .bl-hero {
     margin: 0 0 28px;
 }
+
 .bl-hero img {
     display: block;
     width: 100%;
     height: auto;
     border-radius: 14px;
 }
+
 .bl-hero figcaption {
     font-size: 12px;
     color: #888;
@@ -74,9 +98,9 @@ body:has(.bl-wrap) {
     text-align: right;
 }
 
-/* quick facts */
-
-/* body copy */
+/* ==========================================================================
+   COPY
+   ========================================================================== */
 .bl-post h2 {
     font-family: var(--sg-font-display);
     color: #111;
@@ -84,108 +108,51 @@ body:has(.bl-wrap) {
     line-height: 1.2;
     margin: 40px 0 12px;
 }
+
 .bl-post p {
     margin: 0 0 16px;
 }
+
 .bl-post ul {
     margin: 0 0 18px;
     padding-left: 22px;
 }
+
 .bl-post li {
     margin: 0 0 8px;
 }
+
 .bl-post strong {
     color: #111;
 }
+
 .bl-post a {
     color: #d35400;
 }
 
+.bl-fig {
+    margin: 6px 0 22px;
+}
+
+/* The gear list */
 .bl-gear {
     list-style: none;
     padding: 0 !important;
 }
+
 .bl-gear li {
     background: #fff7f0;
     border-left: 3px solid var(--sg-orange);
     border-radius: 8px;
     padding: 12px 14px;
 }
+
 .bl-gear b {
     color: var(--sg-orange);
     margin-right: 6px;
 }
 
-/* call to action - stays dark so it stands out on the white page */
-.bl-cta {
-    margin-top: 34px;
-    padding: 24px;
-    border-radius: 14px;
-    background: linear-gradient(140deg, #2a1300, #111 60%);
-    color: #ddd;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-items: center;
-}
-.bl-cta p {
-    flex: 1 1 100%;
-    margin: 0 0 4px;
-}
-.bl-cta p strong {
-    display: block;
-    font-family: var(--sg-font-display);
-    font-size: 22px;
-    margin-bottom: 2px;
-    color: #fff;
-}
-.bl-btn {
-    display: inline-block;
-    border: 0;
-    cursor: pointer;
-    background: var(--sg-orange);
-    color: #fff !important;
-    font: inherit;
-    font-weight: 800;
-    font-size: 15px;
-    padding: 13px 20px;
-    border-radius: 10px;
-    text-decoration: none;
-}
-.bl-btn:hover {
-    background: var(--sg-orange-bright);
-}
-.bl-btn-ghost {
-    background: transparent;
-    border: 1px solid #555;
-}
-.bl-btn-ghost:hover {
-    background: #222;
-}
-
-@media (max-width: 600px) {
-    .bl-wrap {
-        padding-top: 90px;
-    }
-    .bl-post {
-        font-size: 16px;
-    }
-    .bl-lead {
-        font-size: 17px;
-    }
-    .bl-btn {
-        width: 100%;
-        text-align: center;
-    }
-}
-
-/* the site menu sits over the page with a see-through fade - on a white
-   page that turns grey, so blog pages get a solid black bar */
-body:has(.bl-wrap) #navbar > nav {
-    background: #000;
-}
-
-/* big numbers strip */
+/* Big numbers strip */
 .bl-stats {
     list-style: none;
     display: grid;
@@ -194,6 +161,7 @@ body:has(.bl-wrap) #navbar > nav {
     padding: 0 !important;
     margin: 0 0 34px !important;
 }
+
 .bl-stats li {
     margin: 0;
     text-align: center;
@@ -201,6 +169,7 @@ body:has(.bl-wrap) #navbar > nav {
     border-radius: 12px;
     padding: 16px 8px;
 }
+
 .bl-stats b {
     display: block;
     font-family: var(--sg-font-display);
@@ -208,6 +177,7 @@ body:has(.bl-wrap) #navbar > nav {
     line-height: 1;
     color: var(--sg-orange);
 }
+
 .bl-stats span {
     display: block;
     margin-top: 6px;
@@ -217,13 +187,8 @@ body:has(.bl-wrap) #navbar > nav {
     text-transform: uppercase;
     color: #555;
 }
-@media (max-width: 600px) {
-    .bl-stats {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
 
-/* the one-line verdict */
+/* The one-line verdict */
 .bl-verdict {
     margin: 30px 0 !important;
     padding: 18px 22px;
@@ -235,6 +200,7 @@ body:has(.bl-wrap) #navbar > nav {
     line-height: 1.35;
     color: #111;
 }
+
 .bl-verdict cite {
     display: block;
     margin-top: 8px;
@@ -255,9 +221,88 @@ body:has(.bl-wrap) #navbar > nav {
     padding: 12px 18px;
     border-radius: 10px;
 }
+
 .bl-applink a:hover {
     background: var(--sg-orange);
 }
-.bl-fig {
-    margin: 6px 0 22px;
+
+/* ==========================================================================
+   CTA - stays dark so it stands out on the white page
+   ========================================================================== */
+.bl-cta {
+    margin-top: 34px;
+    padding: 24px;
+    border-radius: 14px;
+    background: linear-gradient(140deg, #2a1300, #111 60%);
+    color: #ddd;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+.bl-cta p {
+    flex: 1 1 100%;
+    margin: 0 0 4px;
+}
+
+.bl-cta p strong {
+    display: block;
+    font-family: var(--sg-font-display);
+    font-size: 22px;
+    margin-bottom: 2px;
+    color: #fff;
+}
+
+.bl-btn {
+    display: inline-block;
+    border: 0;
+    cursor: pointer;
+    background: var(--sg-orange);
+    color: #fff !important;
+    font: inherit;
+    font-weight: 800;
+    font-size: 15px;
+    padding: 13px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+}
+
+.bl-btn:hover {
+    background: var(--sg-orange-bright);
+}
+
+.bl-btn-ghost {
+    background: transparent;
+    border: 1px solid #555;
+}
+
+.bl-btn-ghost:hover {
+    background: #222;
+}
+
+/* ==========================================================================
+   PHONE
+   ========================================================================== */
+@media (max-width: 600px) {
+    .bl-wrap {
+        padding-top: 90px;
+    }
+
+    .bl-post {
+        font-size: 16px;
+    }
+
+    .bl-lead {
+        font-size: 17px;
+    }
+
+    .bl-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .bl-btn {
+        width: 100%;
+        text-align: center;
+    }
 }
