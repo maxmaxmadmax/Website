@@ -16,16 +16,16 @@
    Allocation and money only change through the admin Cloud Functions.
    -------------------------------------------------------------------------- */
 
-import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=842';
+import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=843';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=842';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=842';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=842';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=842';
-import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=842';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=842';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=842';
-import { expandKit } from './kit.js?v=842';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=843';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=843';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=843';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=843';
+import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=843';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=843';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=843';
+import { expandKit } from './kit.js?v=843';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -409,28 +409,6 @@ function timeOpts15(current, blank) {
         out += '<option value="' + hh + '"' + (hh === current ? ' selected' : '') + '>' + ampmT(hh) + '</option>';
     }
     return out;
-}
-/*  After any booking change: make / update / cancel that pub's invoice. */
-async function pubSyncNights(pairs) {
-    const notes = [];
-    const seen = new Set();
-    for (const [date, venue] of pairs) {
-        const k = date + '|' + pubCore(venue);
-        if (!date || seen.has(k) || !regularNightFor(venue)) continue;
-        seen.add(k);
-        try {
-            const r = await call('adminPubSync', { date, venue });
-            if (r.needFirst)
-                notes.push(
-                    'No earlier invoice for ' + r.venue + ' yet - make the first one by hand (Sales Pipeline), then they make themselves.'
-                );
-            if (r.noRate && r.noRate.length) notes.push('Add a rate for ' + r.noRate.join(', ') + ' (Entertainment > The roster).');
-            if (r.locked) notes.push('The ' + prettyDate(date) + ' invoice was already sent, so it was not changed.');
-        } catch (e) {
-            notes.push('Invoice not updated for ' + prettyDate(date) + ': ' + friendly(e));
-        }
-    }
-    return notes;
 }
 /*  DJ GIG INVOICES: make / update / cancel the invoice for each booking
     (template + customer + DJ hours x rate + travel). */
@@ -4793,103 +4771,6 @@ function mailtoFor(b, act) {
         encodeURIComponent(lines)
     );
 }
-function rosterPanel(acts) {
-    return `
-    <section class="ad-card ad-panel ad-roster">
-      <header class="ad-panel-head">
-        <h2>The roster</h2>
-      </header>
-
-      <div class="ad-panel-intro">
-        <p>
-          Everyone bookable. An act added here shows on the entertainment
-          page and in the booking form straight away.
-        </p>
-        <p class="ad-cell-muted">
-          The photograph is a path to a file in the site, like
-          images/talent/maxzi.jpg. Leave it blank and the card shows its
-          gradient.
-        </p>
-      </div>
-
-      ${
-          acts.length
-              ? `
-        <div class="ad-table-wrap">
-          <table class="ad-table">
-            <thead><tr><th>Name</th><th>Act</th><th>Rate /hr</th><th>Location</th><th>Phone</th><th>Email</th><th></th><th>Photo</th><th></th></tr></thead>
-            <tbody>
-              ${acts
-                  .map(
-                      (t) => `
-                <tr>
-                  <td class="ad-cell-strong">
-                    <span class="ad-act">
-                      <span class="ad-act-face"
-                            style="${t.photo ? `background-image:url('/${attr(t.photo)}')` : ''}"></span>
-                      ${esc(t.name)}
-                    </span>
-                  </td>
-                  <td>${esc(ACT_LABELS[t.act] || t.act || '')}</td>
-                  ${(() => {
-                      const r = (state.actRates || {})[t.slug] || {};
-                      const d = (c) => (c ? (c / 100).toFixed(2).replace(/\.00$/, '') : '');
-                      return `
-                  <td><input class="ad-rate-in" type="number" min="0" step="1" data-rate="${attr(t.slug)}" data-rf="hourly" value="${attr(d(r.hourlyRateCents))}" placeholder="$" aria-label="Rate per hour"></td>
-                  <td><input class="ad-rate-in ad-rate-mid" type="text" data-rate="${attr(t.slug)}" data-rf="location" value="${attr(r.location || '')}" placeholder="e.g. Mackay" aria-label="Where they live"></td>
-                  <td><input class="ad-rate-in ad-rate-wide" type="tel" data-rate="${attr(t.slug)}" data-rf="phone" value="${attr(r.phone || '')}" placeholder="Mobile" aria-label="Phone"></td>
-                  <td><input class="ad-rate-in ad-rate-wide" type="email" data-rate="${attr(t.slug)}" data-rf="email" value="${attr(r.email || '')}" placeholder="Email" aria-label="Email"></td>
-                  <td><button type="button" class="ad-btn" data-rate-save="${attr(t.slug)}">Save</button></td>`;
-                  })()}
-                  <td class="ad-cell-muted">${t.photo ? esc(t.photo) : '—'}</td>
-                  <td>
-                    <button type="button" class="ad-btn ad-btn-danger"
-                            data-act-remove="${attr(t.slug)}">Remove</button>
-                  </td>
-                </tr>`
-                  )
-                  .join('')}
-            </tbody>
-          </table>
-        </div>`
-              : '<p class="ad-empty">No acts yet.</p>'
-      }
-
-      <div class="ad-panel-intro" style="border-top:1px solid var(--ad-line)">
-        <p><strong>Add an act</strong></p>
-
-        <div class="ad-actions-row" style="flex-wrap:wrap;gap:10px;margin-top:10px">
-          <input type="text" id="ad-act-name" placeholder="Name" aria-label="Act name">
-          <select id="ad-act-type" aria-label="Act type">
-            ${Object.keys(ACT_LABELS)
-                .map(
-                    (k) => `
-              <option value="${attr(k)}">${esc(ACT_LABELS[k])}</option>`
-                )
-                .join('')}
-          </select>
-          <input type="text" id="ad-act-photo" style="min-width:230px"
-                 placeholder="images/talent/name.jpg (optional)" aria-label="Photo path">
-          <button type="button" class="ad-btn ad-btn-primary" id="ad-act-add">Add act</button>
-        </div>
-
-        <p class="ad-action-msg" id="ad-act-msg" hidden></p>
-      </div>
-    </section>
-    ${regularNightsPanel()}`;
-}
-
-/*  The four counts: icon, number, then what it counts. */
-function statTile(label, value, note, tone) {
-    return `
-    <div class="ad-bstat">
-      <span class="ad-bstat-icon is-${tone}" aria-hidden="true">${STAT_ICONS[tone] || ''}</span>
-      <span class="ad-bstat-text">
-        <span class="ad-bstat-value">${value}</span>
-        <span class="ad-bstat-label">${esc(label)}</span>
-      </span>
-    </div>`;
-}
 
 const STAT_ICONS = {
     blue: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
@@ -5419,14 +5300,6 @@ async function promptNewVenue() {
         window.alert(friendly(err));
         return null;
     }
-}
-
-function venuesKnown() {
-    const seen = {};
-    state.schedule.forEach((b) => {
-        if (b.venue) seen[b.venue] = true;
-    });
-    return Object.keys(seen).sort();
 }
 
 function filteredBookings() {
@@ -12020,7 +11893,6 @@ async function deletePackage(btn) {
    ========================================================================= */
 
 const RES_TYPES = { staff: 'Staff', vehicle: 'Vehicle', trailer: 'Trailer' };
-const RES_GROUP = { staff: 'Staff', vehicle: 'Vehicles', trailer: 'Trailers' };
 
 function blankResource(type) {
     return {
@@ -13396,16 +13268,6 @@ VIEWS.leads = {
     }
 };
 
-/* ---- little star rating: read-only in rows, clickable in the editor ---- */
-function leadStars(n, editable) {
-    const v = Math.max(0, Math.min(5, Math.round(n || 0)));
-    let out = '';
-    for (let i = 1; i <= 5; i++) {
-        out += `<span class="lead-star${i <= v ? ' is-on' : ''}"${editable ? ` data-star="${i}" role="button" tabindex="0" aria-label="${i} star${i === 1 ? '' : 's'}"` : ''}>&#9733;</span>`;
-    }
-    return `<span class="lead-stars${editable ? ' is-edit' : ''}">${out}</span>`;
-}
-
 /*  The categories actually in use, for the filter - so it grows with the
     data instead of being a hard-coded list.                              */
 function leadCategories() {
@@ -13581,13 +13443,6 @@ function leadSize(r) {
     return n < 300 ? 'small' : n < 2000 ? 'medium' : n < 10000 ? 'large' : 'major';
 }
 
-/*  Fit = the lead's priority, shown as Strong / Medium / Possible bars. */
-const LEAD_FIT = { high: ['Strong', 'is-strong', 4], medium: ['Medium', 'is-medium', 3], low: ['Possible', 'is-possible', 2] };
-function leadFitHtml(r) {
-    const [label, cls, n] = LEAD_FIT[leadPriority(r)];
-    return `<span class="lead-fitc ${cls}"><strong>${label}</strong><span class="lead-fitbars" aria-hidden="true">${[1, 2, 3, 4].map((i) => `<i${i <= n ? ' class="on"' : ''}></i>`).join('')}</span></span>`;
-}
-
 /*  The next thing to do on a lead, worked out from where it's up to.
     Clicking it does that thing.                                          */
 function leadNextAct(r) {
@@ -13649,7 +13504,6 @@ function fmtLeadDate(iso) {
 /* ---- the month strip across the top: a dot per lead, coloured by
         priority. Click a month to filter to it, click again to clear. ---- */
 const LEAD_CAL_MONTHS = 12;
-const LEAD_CAL_DOTS = 8; // dots drawn per month before it says +n
 
 /*  Financial-year week numbers, as Max works them: Week 1 is the first week
     of July (the Mon-Sun week holding July's first Thursday), counting on to
@@ -13962,10 +13816,6 @@ async function markLeadImageBroken(id) {
 }
 
 const LEAD_PRIO_LABEL = { high: 'High', medium: 'Medium', low: 'Low' };
-function leadHeatPill(r) {
-    const p = leadPriority(r);
-    return `<span class="lead-heat is-${p}">${LEAD_PRIO_LABEL[p]}</span>`;
-}
 
 function leadStagePill2(stage) {
     const s = LEAD_STAGES[stage] ? stage : 'new';
@@ -16426,20 +16276,6 @@ function wireLeadCompose() {
    Nothing is ever hidden or deleted: Pass / Locked are tags only.
    ========================================================================= */
 const LEAD_VERDICT = { pass: 'Not for us', locked: 'Locked — another supplier', nextyear: 'Target next year' };
-/*  'Target next year': the next edition's year as '27, and a follow-up about
-    4 months before it (when the date is known) so Max gets in early.  */
-function rateNextYear(r) {
-    const base = leadHasExactDate(r) ? new Date(r.eventDate.slice(0, 10) + 'T00:00:00') : null;
-    const y = (base ? base.getFullYear() : new Date().getFullYear()) + 1;
-    let followUp = '';
-    if (base) {
-        const d = new Date(base);
-        d.setFullYear(y);
-        d.setDate(d.getDate() - 120);
-        followUp = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    }
-    return { label: "'" + String(y).slice(2), followUp };
-}
 
 function rateState() {
     if (!state.rate) state.rate = { tab: 'review', pick: 0, skip: [], back: [], focus: '', busy: false };
@@ -16474,143 +16310,6 @@ function rateDeck() {
     const out = list.filter((r) => !s.skip.includes(r.id)).concat(skipped);
     return out;
 }
-function rateWaiting() {
-    return (state.leads || []).filter((r) => r.needsResearch);
-}
-function rateRated() {
-    return (state.leads || []).filter((r) => Number(r.rating)).sort((a, b) => rateSortKey(a).localeCompare(rateSortKey(b)));
-}
-
-function rateMissing(r) {
-    const miss = [];
-    if (!leadHasExactDate(r)) miss.push('Exact date');
-    if (leadNeedsContact(r)) miss.push('Contact');
-    if (!String(r.website || '').trim()) miss.push('Website');
-    if (!String(r.crowd || '').trim()) miss.push('Crowd size');
-    return miss;
-}
-
-function rateCardHtml(r, pos, total) {
-    const s = rateState();
-    const [icon, cls] = leadCatStyle(r);
-    const img = r.imageBroken ? '' : leadImageUrl(r);
-    const when = leadWhen(r) || 'Date TBC';
-    const where = r.venue || r.town || '';
-    const km = leadKmText(r);
-    const v = leadValue(r);
-    const org = leadOrganiser(r);
-    const about = String(r.summary || r.whyFit || r.needs || r.enrichNotes || r.notes || '')
-        .split('\n— Earlier')[0]
-        .trim();
-    // the brief, in the same shape as Claude's written answer about a lead:
-    // When / Where / Organiser / Size / Runs every year / Entertainment-AV
-    const soon = leadHasExactDate(r) && !leadIsPast(r) && new Date(r.eventDate.slice(0, 10) + 'T00:00:00') - new Date() < 21 * 864e5;
-    const contacts = [r.email, r.phone]
-        .map((x) => String(x || '').trim())
-        .filter(Boolean)
-        .join(' · ');
-    const facts = [
-        [
-            'When',
-            [
-                when,
-                r.startTime,
-                leadIsPast(r) ? 'Already happened — next edition' : soon ? 'Under 3 weeks away — likely too late this year' : ''
-            ]
-                .filter(Boolean)
-                .join(' · ')
-        ],
-        ['Where', [where, r.venueSetup, km].filter(Boolean).join(' · ')],
-        ['Organiser', [org, contacts].filter(Boolean).join(' — ')],
-        ['Size', [r.crowd, r.budget].filter(Boolean).join(' · ')],
-        ['Runs', [r.recurrence, r.lastEdition ? 'Last year: ' + r.lastEdition : ''].filter(Boolean).join(' · ')],
-        ['🎸 Live music', r.liveMusic],
-        [
-            'Entertainment/AV',
-            [
-                r.incumbent,
-                r.needs ? 'Needs: ' + r.needs : '',
-                r.power && r.power !== 'unknown' ? (r.power === 'generator' ? 'Generator needed' : 'Mains power') : ''
-            ]
-                .filter(Boolean)
-                .join(' · ')
-        ],
-        ['Supplier deadline', r.eoiDate ? fmtLeadDate(r.eoiDate) + (r.eoiNote ? ' — ' + r.eoiNote : '') : ''],
-        ...(r.tips || []).filter((t) => t && !t.done).map((t) => ['📝 You asked Scout', (t.text || '') + ' (waiting for Scout)']),
-        // one line per distinct reply (Scout answers several asks in one go)
-        ...[...new Set((r.tips || []).filter((t) => t && t.done && t.reply).map((t) => String(t.reply).trim()))]
-            .slice(-3)
-            .map((t) => ['🔭 Scout', t]),
-        ...(r.outreachDraft && r.outreachDraft.body
-            ? [['✉️ Email draft ready', (r.outreachDraft.subject || '') + ' — open the lead → Prepare Outreach to review and send']]
-            : [])
-    ].filter(([, x]) => String(x || '').trim());
-    const miss = rateMissing(r);
-    const pick = s.pick || Number(r.rating) || 0;
-    const tags = [
-        r.stage === 'won' ? '<span class="rt-chip is-won">🏆 Won</span>' : '',
-        r.verdict ? `<span class="rt-chip is-verdict">${esc(LEAD_VERDICT[r.verdict] || r.verdict)}</span>` : ''
-    ].join('');
-    return `
-    <article class="rt-card" data-rate-id="${attr(r.id)}">
-      <div class="rt-hero ${cls}">
-        ${img ? `<img src="${attr(img)}" alt="" referrerpolicy="no-referrer" data-lead-img="${attr(r.id)}">` : `<span class="rt-hero-ico" aria-hidden="true">${icon}</span>`}
-        ${total ? `<span class="rt-count">${pos} of ${total}</span>` : ''}
-      </div>
-      <div class="rt-body">
-        ${r.category ? `<span class="rt-catchip">${esc(r.category)}</span>` : ''}
-        <h2 class="rt-title">${esc(r.title || r.eventName || 'Lead')}</h2>
-        <ul class="rt-when">
-          <li><span aria-hidden="true">📅</span>${esc(when)}</li>
-          ${where ? `<li><span aria-hidden="true">📍</span>${esc(where)}</li>` : ''}
-          ${km ? `<li><span aria-hidden="true">🧭</span>${esc(km)}</li>` : ''}
-        </ul>
-        ${leadFreshHtml(r)}
-        ${tags.trim() ? `<div class="rt-chips">${tags}</div>` : ''}
-        <div class="rt-stats">
-          <div><i aria-hidden="true">👥</i><b>${esc(r.crowd || '—')}</b><span>Expected crowd</span></div>
-          <div><i aria-hidden="true">📊</i><b>${v ? leadDollars(v.cents) : '—'}</b><span>${v && v.src === 'quote' ? 'Quote value' : 'Est. value'}</span></div>
-        </div>
-        <div class="rt-links">${leadContactIconsHtml(r)}</div>
-        ${about ? `<p class="rt-about"><b>${esc(r.eventName || r.title || '')}</b> — ${esc(about.length > 320 ? about.slice(0, 317) + '…' : about)}</p>` : ''}
-        ${facts.length ? `<ul class="rt-brief">${facts.map(([k, x]) => `<li><b>${esc(k)}:</b> ${esc(x)}</li>`).join('')}</ul>` : ''}
-        ${String(r.pitch || '').trim() ? `<p class="rt-pitch"><b>Worth it for you?</b> ${esc(r.pitch)}</p>` : ''}
-        ${miss.length ? `<p class="rt-miss">Missing: ${miss.map(esc).join(' · ')}</p>` : ''}
-        <div class="rt-cardbtns"><button type="button" class="rt-open" data-rate-open="${attr(r.id)}">Open full lead ›</button></div>
-        <label class="rt-ask is-inline"><span aria-hidden="true">🔭</span>
-          <textarea rows="2" data-rate-tip-text placeholder="Ask Scout — what you know or what to do (sent with your action)">${esc(s.tipDraft || '')}</textarea>
-        </label>
-      </div>
-      ${s.edit ? rateEditHtml(r) : ''}
-    </article>
-    <div class="rt-rate">
-      <p>Rate this lead <span>(1 = low, 5 = high fit)</span></p>
-      <div class="rt-bar" role="radiogroup" aria-label="Fit rating">
-        ${[1, 2, 3, 4, 5].map((n) => `<button type="button" role="radio" aria-checked="${pick === n}" class="rt-seg${n <= pick ? ' is-fill' : ''}${n === pick ? ' is-on' : ''}" data-rate-pick="${n}">${n}</button>`).join('')}
-      </div>
-    </div>
-    <div class="rt-acts">
-      <button type="button" class="rt-act is-won" data-rate-act="won"><i>🏆</i>Won</button>
-      <button type="button" class="rt-act is-target" data-rate-act="nextyear"><i>🎯</i>Target ${esc(rateNextYear(r).label)}</button>
-      <button type="button" class="rt-act is-locked" data-rate-act="locked"><i>🔒</i>Locked</button>
-      <button type="button" class="rt-act is-pass" data-rate-act="pass"><i>✕</i>Pass</button>
-      <button type="button" class="rt-act is-next" data-rate-act="next"><i>»</i>Next</button>
-    </div>
-    <p class="rt-hint" id="rt-hint">${pick ? 'Now pick an action' : 'Choose a rating, then an action · swipe the card to browse'}</p>`;
-}
-
-function rateListHtml(rows, empty) {
-    if (!rows.length) return `<p class="rt-empty">${empty}</p>`;
-    return `<ul class="rt-list">${rows
-        .map(
-            (r) => `
-    <li><button type="button" data-rate-focus="${attr(r.id)}">
-      <span class="rt-li-t">${esc(r.title || 'Lead')}</span>
-      <span class="rt-li-m">${esc(leadWhen(r) || 'Date TBC')}${Number(r.rating) ? ` · Fit ${Number(r.rating)}/5` : ''}${r.verdict ? ' · ' + esc(LEAD_VERDICT[r.verdict] || '') : ''}${r.stage === 'won' ? ' · 🏆 Won' : ''}</span>
-    </button></li>`
-        )
-        .join('')}</ul>`;
-}
 
 /*  "Ask Scout now": Scout (a routine on Max's computer) checks every 15 min
     from 6am-10pm and only works when this has been pressed.            */
@@ -16630,63 +16329,6 @@ function scoutBarHtml() {
     else if (started > done) status = '🔭 Scout is working on your asks…';
     else if (done && Date.now() - done < 6 * 3600000) status = '🔭 Scout ' + ago(done) + (st.lastSummary ? ': ' + st.lastSummary : '');
     return status ? `<p class="rt-scout-line">${esc(status)}</p>` : '';
-}
-
-function leadRateHtml() {
-    const s = rateState();
-    const deck = rateDeck();
-    const all = (state.leads || []).length;
-    const rated = rateRated();
-    const waiting = rateWaiting();
-    const pct = all ? Math.round((rated.length / all) * 100) : 0;
-    const focus = s.focus && (state.leads || []).find((x) => x.id === s.focus);
-    let body;
-    if (focus) {
-        body = `<button type="button" class="rt-backlist" data-rate-unfocus>‹ Back to list</button>${rateCardHtml(focus, 0, 0)}`;
-    } else if (s.tab === 'review') {
-        if (!Number.isInteger(s.pos) || s.pos < 0) s.pos = 0;
-        if (s.pos >= deck.length) s.pos = Math.max(0, deck.length - 1);
-        body = deck.length
-            ? rateCardHtml(deck[s.pos], s.pos + 1, deck.length)
-            : '<p class="rt-empty">🎉 Every lead is rated. New leads and researched ones will show up here.</p>';
-    } else if (s.tab === 'waiting') {
-        body = rateListHtml(waiting, 'Nothing with Phil — tap "To Phil" on a lead and Phil fills it in tonight.');
-    } else {
-        body = rateListHtml(rated, 'No leads rated yet.');
-    }
-    return `
-    <div class="rt-wrap">
-      <div class="rt-phone">
-        <div class="rt-top">
-          <a class="rt-exit" href="#/leads" aria-label="Close Lead Rating">✕</a>
-          ${s.back.length && !focus && s.tab === 'review' ? '<button type="button" class="rt-prev" data-rate-prev aria-label="Previous lead">‹</button>' : ''}
-          <span class="rt-top-fill"></span>
-          <button type="button" class="rt-burger${s.menu ? ' is-on' : ''}" data-rate-menu aria-label="Menu" aria-expanded="${!!s.menu}">☰</button>
-        </div>
-        ${
-            s.menu
-                ? `<div class="rt-menu">
-          <nav class="rt-tabs">
-            ${[
-                ['review', 'Review', deck.length],
-                ['rated', 'Rated', rated.length]
-            ]
-                .map(
-                    ([k, label, n]) =>
-                        `<button type="button" class="rt-tab${s.tab === k && !focus ? ' is-on' : ''}" data-rate-tab="${k}">${label} <span>${n}</span></button>`
-                )
-                .join('')}
-          </nav>
-          <div class="rt-menu-prog"><span>${deck.length} left to review</span><span>${rated.length} of ${all} rated · ${pct}%</span></div>
-          <div class="rt-progbar"><i style="width:${pct}%"></i></div>
-          ${scoutBarHtml() || '<p class="rt-scout-line">🔭 Scout: nothing on right now</p>'}
-          ${state.withPhil ? `<p class="rt-scout-line">🔍 Phil is checking ${state.withPhil} new find${state.withPhil === 1 ? '' : 's'} (Findo / Tell)</p>` : ''}
-        </div>`
-                : ''
-        }
-        <div class="rt-main">${body}</div>
-      </div>
-    </div>`;
 }
 
 async function rateSave(r, patchData, logText) {
@@ -16747,81 +16389,6 @@ async function rateSendAsk(r, text, act) {
     return true;
 }
 
-async function rateAct(act) {
-    const s = rateState();
-    if (s.busy) return;
-    const id = (document.querySelector('.rt-card') || {}).getAttribute && document.querySelector('.rt-card').getAttribute('data-rate-id');
-    const r = id && (state.leads || []).find((x) => x.id === id);
-    if (!r) return;
-    const pick = s.pick || 0;
-    const hint = document.getElementById('rt-hint');
-    if (['won', 'locked', 'pass', 'nextyear'].includes(act) && !pick && !Number(r.rating)) {
-        if (hint) {
-            hint.textContent = 'Pick a rating (1–5) first';
-            hint.classList.add('is-bad');
-        }
-        return;
-    }
-    s.edit = false;
-    s.tip = false;
-    s.stay = '';
-    const patchData = {};
-    const log = [];
-    const ask = String(s.tipDraft || '')
-        .trim()
-        .slice(0, 1500);
-    if (pick && pick !== Number(r.rating)) {
-        patchData.rating = pick;
-        log.push(`Fit ${pick}/5`);
-    }
-    if (act === 'won') {
-        patchData.stage = 'won';
-        patchData.verdict = '';
-        log.push('Stage → Won');
-    }
-    if (act === 'locked') {
-        patchData.verdict = 'locked';
-        log.push('Tagged: Locked — another supplier');
-    }
-    if (act === 'pass') {
-        patchData.verdict = 'pass';
-        log.push('Tagged: Not for us');
-    }
-    if (act === 'nextyear') {
-        const ny = rateNextYear(r);
-        patchData.verdict = 'nextyear';
-        patchData.target = true;
-        log.push('Tagged: Target next year (' + ny.label + ')');
-        if (ny.followUp && (!r.followUp || String(r.followUp) > ny.followUp)) {
-            patchData.followUp = ny.followUp;
-            log.push('Follow-up ' + ny.followUp);
-        }
-    }
-    if (act === 'info') {
-        patchData.needsResearch = true;
-        log.push('Sent to Phil');
-    }
-    if (act === 'next' && !log.length && !ask) {
-        // skip for now - it comes back at the end of the deck
-        if (!s.focus) {
-            s.skip = s.skip.filter((x) => x !== r.id).concat(r.id);
-            s.back.push(r.id);
-        }
-        s.pick = 0;
-        s.focus = '';
-        render();
-        return;
-    }
-    if (log.length && !(await rateSave(r, patchData, 'Lead Rating: ' + log.join(' · ')))) return;
-    if (ask && !(await rateSendAsk(r, ask, act))) return;
-    s.tipDraft = '';
-    if (!s.focus) s.back.push(r.id);
-    s.skip = s.skip.filter((x) => x !== r.id);
-    s.pick = 0;
-    s.focus = '';
-    render();
-}
-
 /*  Browse the deck without answering: swipe the card left (next) or right
     (previous), or use the arrow keys. Nothing is saved; the rating you've
     picked and any Ask Scout text are cleared as you move on.            */
@@ -16840,223 +16407,8 @@ function rateBrowse(dir) {
     if (card) card.classList.add(dir > 0 ? 'is-in-right' : 'is-in-left');
 }
 
-function wireLeadRate() {
-    const root = document.querySelector('.rt-phone');
-    if (!root) return;
-    wireLeadImageErrors();
-    const s = rateState();
-    const card = root.querySelector('.rt-card');
-    if (card && !s.focus && s.tab === 'review') {
-        // Swipe to browse: a short swipe (~45px) or a quick flick is enough.
-        // Fingers use touch events (the phone can cancel pointer events once it
-        // starts scrolling); a mouse uses click-and-drag.
-        const SWIPE = 45;
-        let x0 = 0,
-            y0 = 0,
-            t0 = 0,
-            on = false,
-            horiz = null;
-        const start = (x, y, target) => {
-            if (target.closest('textarea, input, a, button')) {
-                on = false;
-                return;
-            }
-            on = true;
-            horiz = null;
-            x0 = x;
-            y0 = y;
-            t0 = Date.now();
-        };
-        const move = (x, y) => {
-            if (!on) return;
-            const dx = x - x0,
-                dy = y - y0;
-            if (horiz === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) horiz = Math.abs(dx) > Math.abs(dy);
-            if (horiz) card.style.transform = `translateX(${dx}px) rotate(${dx * 0.03}deg)`;
-        };
-        const finish = (x, y) => {
-            if (!on) return;
-            on = false;
-            card.style.transform = '';
-            const dx = x - x0,
-                dy = y - y0;
-            const fast = Math.abs(dx) / Math.max(1, Date.now() - t0) > 0.45; // a flick
-            if (horiz && (Math.abs(dx) > SWIPE || (fast && Math.abs(dx) > 20)) && Math.abs(dx) > Math.abs(dy)) rateBrowse(dx < 0 ? 1 : -1);
-        };
-        card.addEventListener('touchstart', (e) => start(e.touches[0].clientX, e.touches[0].clientY, e.target), { passive: true });
-        card.addEventListener('touchmove', (e) => move(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
-        card.addEventListener('touchend', (e) => finish(e.changedTouches[0].clientX, e.changedTouches[0].clientY));
-        card.addEventListener('touchcancel', () => {
-            on = false;
-            card.style.transform = '';
-        });
-        card.addEventListener('pointerdown', (e) => {
-            if (e.pointerType === 'mouse' && e.button === 0) start(e.clientX, e.clientY, e.target);
-        });
-        card.addEventListener('pointermove', (e) => {
-            if (e.pointerType === 'mouse') move(e.clientX, e.clientY);
-        });
-        card.addEventListener('pointerup', (e) => {
-            if (e.pointerType === 'mouse') finish(e.clientX, e.clientY);
-        });
-        card.addEventListener('pointerleave', (e) => {
-            if (e.pointerType === 'mouse') finish(e.clientX, e.clientY);
-        });
-        card.addEventListener('dragstart', (e) => e.preventDefault());
-    }
-    root.addEventListener('input', (e) => {
-        if (e.target.matches('[data-rate-tip-text]')) s.tipDraft = e.target.value;
-    });
-    root.addEventListener('submit', (e) => {
-        const tf = e.target.closest('[data-rate-tip-form]');
-        if (tf) {
-            e.preventDefault();
-            rateTipSave(tf);
-            return;
-        }
-        const f = e.target.closest('[data-rate-edit-form]');
-        if (!f) return;
-        e.preventDefault();
-        rateEditSave(f);
-    });
-    root.addEventListener('click', (e) => {
-        const t = e.target.closest(
-            '[data-rate-menu], [data-scout-now], [data-rate-tip], [data-rate-tip-cancel], [data-rate-edit], [data-rate-edit-cancel], [data-rate-tab], [data-rate-pick], [data-rate-act], [data-rate-focus], [data-rate-unfocus], [data-rate-prev], [data-rate-open]'
-        );
-        if (!t) return;
-        if (t.hasAttribute('data-rate-menu')) {
-            s.menu = !s.menu;
-            render();
-            return;
-        }
-        if (t.hasAttribute('data-scout-now')) {
-            t.disabled = true;
-            const { doc, setDoc } = fb.f;
-            setDoc(doc(fb.db, 'scout', 'state'), { requestedAt: Date.now() }, { merge: true }).catch((err) => {
-                console.error('scout ask', err);
-                t.disabled = false;
-            });
-            return;
-        }
-        if (t.hasAttribute('data-rate-tip')) {
-            s.tip = true;
-            s.edit = false;
-            render();
-            const f = document.querySelector('[data-rate-tip-form] textarea');
-            if (f) {
-                f.scrollIntoView({ block: 'center', behavior: 'smooth' });
-                f.focus();
-            }
-            return;
-        }
-        if (t.hasAttribute('data-rate-tip-cancel')) {
-            s.tip = false;
-            s.tipDraft = '';
-            render();
-            return;
-        }
-        if (t.hasAttribute('data-rate-edit')) {
-            s.tip = false;
-            s.edit = !s.edit;
-            render();
-            const f = document.querySelector('.rt-edit');
-            if (f) f.scrollIntoView({ block: 'start', behavior: 'smooth' });
-            return;
-        }
-        if (t.hasAttribute('data-rate-edit-cancel')) {
-            s.edit = false;
-            render();
-            return;
-        }
-        if (t.hasAttribute('data-rate-tab')) {
-            s.menu = false;
-            s.edit = false;
-            s.tip = false;
-            s.tipDraft = '';
-            s.tab = t.getAttribute('data-rate-tab');
-            s.focus = '';
-            s.pick = 0;
-            render();
-            return;
-        }
-        if (t.hasAttribute('data-rate-pick')) {
-            const n = Number(t.getAttribute('data-rate-pick'));
-            s.pick = s.pick === n ? 0 : n;
-            root.querySelectorAll('[data-rate-pick]').forEach((b) => {
-                const k = Number(b.getAttribute('data-rate-pick'));
-                b.classList.toggle('is-fill', k <= s.pick);
-                b.classList.toggle('is-on', k === s.pick);
-                b.setAttribute('aria-checked', String(k === s.pick));
-            });
-            const h = document.getElementById('rt-hint');
-            if (h) {
-                h.textContent = s.pick ? 'Now pick an action' : 'Choose a rating, then an action';
-                h.classList.remove('is-bad');
-            }
-            return;
-        }
-        if (t.hasAttribute('data-rate-act')) {
-            rateAct(t.getAttribute('data-rate-act'));
-            return;
-        }
-        if (t.hasAttribute('data-rate-focus')) {
-            s.focus = t.getAttribute('data-rate-focus');
-            s.pick = 0;
-            s.edit = false;
-            s.tip = false;
-            s.tipDraft = '';
-            render();
-            window.scrollTo(0, 0);
-            return;
-        }
-        if (t.hasAttribute('data-rate-unfocus')) {
-            s.focus = '';
-            s.pick = 0;
-            s.edit = false;
-            render();
-            return;
-        }
-        if (t.hasAttribute('data-rate-prev')) {
-            // step back to the last lead you acted on, to change your mind
-            const id = s.back.pop();
-            if (id) {
-                s.focus = id;
-                s.pick = 0;
-                s.edit = false;
-                s.tip = false;
-                s.tipDraft = '';
-                render();
-            }
-            return;
-        }
-        if (t.hasAttribute('data-rate-open')) {
-            const id = t.getAttribute('data-rate-open');
-            if (openLead(id, 'overview')) location.hash = '#/leads';
-        }
-    });
-}
-
 /*  Keys on a computer: 1-5 rate, W / I / L / P / N act. */
 let rateKeysWired = false;
-function wireRateKeys() {
-    if (rateKeysWired) return;
-    rateKeysWired = true;
-    document.addEventListener('keydown', (e) => {
-        if (state.view !== 'leadRate' || e.altKey || e.ctrlKey || e.metaKey || e.target.closest('input, select, textarea')) return;
-        const k = e.key.toLowerCase();
-        if (/^[1-5]$/.test(k)) {
-            const b = document.querySelector(`[data-rate-pick="${k}"]`);
-            if (b) b.click();
-            return;
-        }
-        if ((k === 'arrowright' || k === 'arrowleft') && document.querySelector('.rt-card') && !rateState().focus) {
-            rateBrowse(k === 'arrowright' ? 1 : -1);
-            return;
-        }
-        const act = { w: 'won', t: 'nextyear', l: 'locked', p: 'pass', n: 'next' }[k];
-        if (act && document.querySelector('.rt-card')) rateAct(act);
-    });
-}
 
 /*  "Add info" on a rating card: Max types what he already knows and it is
     saved straight onto the lead (logged in its History).                 */
@@ -17081,54 +16433,6 @@ const RATE_EDIT_FIELDS = [
     ['incumbent', 'Current supplier', 'text'],
     ['notes', 'Notes', 'textarea']
 ];
-function rateEditHtml(r) {
-    const val = (k) => (k === 'estValue' ? (r.estValueCents ? r.estValueCents / 100 : '') : r[k] == null ? '' : r[k]);
-    return `<form class="rt-edit" data-rate-edit-form="${attr(r.id)}">
-    <p class="rt-edit-h">Add what you know <span>— saves straight to the lead</span></p>
-    ${RATE_EDIT_FIELDS.map(
-        ([k, label, type, ph]) =>
-            `<label><span>${esc(label)}</span>${
-                type === 'textarea'
-                    ? `<textarea name="${k}" rows="3">${esc(val(k))}</textarea>`
-                    : `<input name="${k}" type="${type}" value="${attr(val(k))}"${ph ? ` placeholder="${attr(ph)}"` : ''}${type === 'number' ? ' min="0" step="50" inputmode="numeric"' : ''}>`
-            }</label>`
-    ).join('')}
-    <div class="rt-edit-btns"><button type="button" class="rt-edit-cancel" data-rate-edit-cancel>Cancel</button><button type="submit" class="rt-edit-save">Save info</button></div>
-  </form>`;
-}
-async function rateEditSave(form) {
-    const s = rateState();
-    const r = (state.leads || []).find((x) => x.id === form.getAttribute('data-rate-edit-form'));
-    if (!r) return;
-    const patchData = {};
-    const changed = [];
-    RATE_EDIT_FIELDS.forEach(([k, label]) => {
-        const raw = String(form.elements[k].value || '').trim();
-        if (k === 'estValue') {
-            const cents = Math.max(0, Math.round(Number(raw || 0) * 100));
-            if (cents !== Math.round(r.estValueCents || 0)) {
-                patchData.estValueCents = cents;
-                changed.push(label);
-            }
-            return;
-        }
-        if (raw !== String(r[k] == null ? '' : r[k]).trim()) {
-            patchData[k] = raw;
-            changed.push(label);
-        }
-    });
-    if (patchData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(patchData.email)) {
-        const h = form.querySelector('.rt-edit-h span');
-        if (h) {
-            h.textContent = '— that email looks wrong';
-            h.style.color = '#fca5a5';
-        }
-        return;
-    }
-    if (changed.length && !(await rateSave(r, patchData, 'Lead Rating: added info — ' + changed.join(', ')))) return;
-    s.edit = false;
-    render();
-}
 
 /*  Notes for the researcher: Max jots what he knows or wants checked
     ("Luke Geiger played last year, ABMC did production, Heath was the
@@ -17157,49 +16461,6 @@ function leadTipsHtml(r) {
     </div>`
         )
         .join('')}</div>`;
-}
-function rateTipFormHtml(r) {
-    const s = rateState();
-    return `<div class="rt-edit" data-rate-tip-form="${attr(r.id)}">
-    <p class="rt-edit-h">Ask Scout <span>— sent with your rating + action</span></p>
-    <label><textarea name="tip" rows="4" data-rate-tip-text placeholder="e.g. Luke Geiger played last year. ABMC did production, Heath was the contact. Check the location.">${esc(s.tipDraft || '')}</textarea></label>
-    <div class="rt-edit-btns"><button type="button" class="rt-edit-cancel" data-rate-tip-cancel>Clear</button></div>
-    <p class="rt-tip-how">Now rate it and pick an action — Scout gets this note and starts on it.</p>
-  </div>`;
-}
-async function rateTipSave(form) {
-    const s = rateState();
-    const r = (state.leads || []).find((x) => x.id === form.getAttribute('data-rate-tip-form'));
-    const text = String(form.elements.tip.value || '')
-        .trim()
-        .slice(0, 1500);
-    if (!r || !text) {
-        s.tip = false;
-        render();
-        return;
-    }
-    const tip = { at: Date.now(), text, done: false, reply: '' };
-    s.busy = true;
-    try {
-        const e = { at: Date.now(), text: 'Asked Scout: ' + text.slice(0, 200) };
-        const { doc, setDoc, arrayUnion } = fb.f;
-        await setDoc(doc(fb.db, 'leads', r.id), { tips: arrayUnion(tip), updatedAt: Date.now(), history: arrayUnion(e) }, { merge: true });
-        r.tips = [...(r.tips || []), tip];
-        r.history = [...(r.history || []), e];
-    } catch (err) {
-        console.error('tip save', err);
-        const h = form.querySelector('.rt-edit-h span');
-        if (h) {
-            h.textContent = '— could not save, check your connection';
-            h.style.color = '#dc2626';
-        }
-        s.busy = false;
-        return;
-    }
-    s.busy = false;
-    s.tip = false;
-    if (!s.focus) s.stay = r.id;
-    render();
 }
 
 /* =========================================================================

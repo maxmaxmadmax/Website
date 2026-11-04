@@ -754,20 +754,11 @@
     text-decoration: none;
 }
 /* roster rows line up; location box */
-.ad-roster .ad-table td {
-    vertical-align: middle;
-}
-.ad-roster .ad-act {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-}
+
 .ad-rate-mid {
     width: 120px;
 }
-.ad-roster td.ad-cell-strong {
-    display: table-cell;
-} /* must not be display:block - it knocks the rows out of line */
+/* must not be display:block - it knocks the rows out of line */
 .ad-desk.is-bookings .ad-regular {
     display: none;
     margin-top: 14px;

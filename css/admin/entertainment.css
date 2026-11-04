@@ -18,71 +18,6 @@
 
 /* ---- the four counts ---- */
 
-.ad-bstat {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 13px 15px;
-    border: 1px solid var(--ad-line);
-    border-radius: 12px;
-    background: #fff;
-}
-
-.ad-bstat-icon {
-    display: grid;
-    place-items: center;
-    width: 38px;
-    height: 38px;
-    flex: 0 0 auto;
-    border-radius: 10px;
-}
-
-.ad-bstat-icon svg {
-    width: 20px;
-    height: 20px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-.ad-bstat-icon.is-blue {
-    background: var(--ad-blue-bg);
-    color: var(--ad-blue);
-}
-.ad-bstat-icon.is-green {
-    background: var(--ad-green-bg);
-    color: var(--ad-green);
-}
-.ad-bstat-icon.is-amber {
-    background: var(--ad-amber-bg);
-    color: var(--ad-amber);
-}
-.ad-bstat-icon.is-grey {
-    background: var(--ad-blue-bg);
-    color: var(--ad-blue);
-}
-
-.ad-bstat-text {
-    display: block;
-    min-width: 0;
-}
-
-.ad-bstat-value {
-    display: block;
-    font-size: 1.5rem;
-    font-weight: 700;
-    line-height: 1.1;
-    letter-spacing: -0.5px;
-}
-
-.ad-bstat-label {
-    display: block;
-    color: var(--ad-muted);
-    font-size: 0.78rem;
-}
-
 /* ---- month beside the booking ---- */
 /* The month first at a fixed width (square days); the booking takes the rest. */
 
@@ -390,20 +325,9 @@
 
 /* ---- the roster ----
    Folded away behind a toggle. */
-.ad-roster {
-    margin-top: 14px;
-}
-
-.ad-desk.is-bookings .ad-roster {
-    display: none;
-}
 
 .ad-desk.is-bookings.show-roster {
     overflow-y: auto;
-}
-
-.ad-desk.is-bookings.show-roster .ad-roster {
-    display: block;
 }
 
 /* Height chain for one-screen views: every box from the shell down needs
@@ -438,22 +362,6 @@ body.ad-fit .ad-main {
     font-size: 1.9rem;
     font-weight: 700;
     letter-spacing: -0.8px;
-}
-
-.ad-desk.is-bookings .ad-bstat {
-    padding: 15px 17px;
-}
-.ad-desk.is-bookings .ad-bstat-value {
-    font-size: 1.65rem;
-}
-.ad-desk.is-bookings .ad-bstat-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 11px;
-}
-.ad-desk.is-bookings .ad-bstat-icon svg {
-    width: 21px;
-    height: 21px;
 }
 
 /* Tighter calendar rows. */
