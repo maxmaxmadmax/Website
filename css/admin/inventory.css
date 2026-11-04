@@ -56,68 +56,6 @@
 }
 
 /* ---- stat tiles ---- */
-.inv-tiles {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
-    margin-bottom: 16px;
-}
-.inv-tile {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: var(--ad-white);
-    border: 1px solid var(--ad-line);
-    border-radius: 12px;
-    padding: 14px 16px;
-}
-.inv-tile-ico {
-    flex: 0 0 auto;
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-}
-.inv-t-slate {
-    background: var(--ad-desk);
-    color: var(--ad-text-soft);
-}
-.inv-t-green {
-    background: var(--ad-green-bg);
-    color: var(--ad-green);
-}
-.inv-t-blue {
-    background: var(--ad-blue-bg);
-    color: var(--ad-blue);
-}
-.inv-t-amber {
-    background: var(--ad-orange-soft);
-    color: var(--ad-amber);
-}
-.inv-tile-body {
-    flex: 1 1 auto;
-    min-width: 0;
-}
-.inv-tile-value {
-    margin: 0;
-    font-size: 1.35rem;
-    font-weight: 700;
-    line-height: 1;
-}
-.inv-tile-label {
-    margin: 3px 0 0;
-    color: var(--ad-muted);
-    font-size: 0.78rem;
-}
-.inv-tile-pct {
-    flex: 0 0 auto;
-    font-size: 0.78rem;
-    font-weight: 700;
-    color: var(--ad-muted);
-}
 
 /* ---- toolbar ---- */
 .inv-toolbar {
@@ -437,9 +375,6 @@
     }
 }
 @media (max-width: 760px) {
-    .inv-tiles {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
     .inv-fgrid {
         grid-template-columns: 1fr;
     }
@@ -1167,13 +1102,7 @@
     .ad-desk.is-inv .inv-head {
         margin-bottom: 12px;
     }
-    .ad-desk.is-inv .inv-tiles {
-        margin-bottom: 12px;
-    }
-    .ad-desk.is-inv .inv-tile {
-        padding-top: 12px;
-        padding-bottom: 12px;
-    }
+
     .ad-desk.is-inv .inv-toolbar {
         margin-bottom: 12px;
     }
@@ -1254,10 +1183,7 @@
 .inv-row.is-past td {
     opacity: 0.6;
 }
-.inv-t-red {
-    background: var(--ad-red-bg);
-    color: var(--ad-red);
-}
+
 /* UNCONFIRMED bookings - DJ held until paid */
 .inv-row.is-unconf td {
     background: var(--ad-orange-soft);

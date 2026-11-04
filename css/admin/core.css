@@ -1064,78 +1064,9 @@ body {
    Auto-fit so the row reflows from eight across down to two without any
    breakpoints of its own.
    -------------------------------------------------------------------------- */
-.ad-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
-    gap: 12px;
-    margin-bottom: 22px;
-}
-
-.ad-stat {
-    background: var(--ad-white);
-    border: 1px solid var(--ad-line);
-    border-radius: var(--ad-radius);
-    padding: 15px 16px;
-    border-top: 3px solid var(--ad-line);
-
-    /* most are divs, the ones that filter the list are buttons */
-    font: inherit;
-    text-align: left;
-    width: 100%;
-    display: block;
-}
-
-.ad-stat.is-clickable {
-    cursor: pointer;
-}
 
 /*  Only the background moves on hover. Setting border-color here would
     out-specify the .is-green / .is-amber top edge and grey it out. */
-.ad-stat.is-clickable:hover {
-    background: var(--ad-soft);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
-}
-
-.ad-stat.is-clickable:focus-visible {
-    outline: 2px solid var(--ad-orange);
-    outline-offset: 2px;
-}
-
-.ad-stat.is-green {
-    border-top-color: var(--ad-green);
-}
-.ad-stat.is-amber {
-    border-top-color: var(--ad-amber);
-}
-.ad-stat.is-red {
-    border-top-color: var(--ad-red);
-}
-.ad-stat.is-blue {
-    border-top-color: var(--ad-blue);
-}
-
-.ad-stat-label {
-    margin: 0;
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--ad-muted);
-}
-
-.ad-stat-value {
-    margin: 6px 0 2px;
-    font-size: 1.85rem;
-    font-weight: 700;
-    line-height: 1;
-    letter-spacing: -1px;
-}
-
-.ad-stat-note {
-    margin: 0;
-    font-size: 0.74rem;
-    color: var(--ad-faint);
-}
 
 /* --------------------------------------------------------------------------
    RESPONSIVE
@@ -1454,4 +1385,134 @@ body {
 }
 .ad-linetabs::-webkit-scrollbar {
     display: none;
+}
+
+/* Number cards: an icon, the number, what it counts, a small note */
+.ad-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.ad-tile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    padding: 14px 16px;
+    border: 1px solid var(--ad-line);
+    border-radius: 12px;
+    background: var(--ad-white);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+}
+/* the ones that filter the list are buttons */
+button.ad-tile {
+    cursor: pointer;
+}
+button.ad-tile:hover {
+    background: var(--ad-soft);
+}
+.ad-tile.is-on {
+    border-color: var(--ad-orange);
+    box-shadow: inset 0 0 0 1px var(--ad-orange);
+}
+/* a coloured top edge says what the number means (vendors page) */
+.ad-tile.is-green {
+    border-top: 3px solid var(--ad-green);
+}
+.ad-tile.is-amber {
+    border-top: 3px solid var(--ad-amber);
+}
+.ad-tile.is-red {
+    border-top: 3px solid var(--ad-red);
+}
+.ad-tile.is-blue {
+    border-top: 3px solid var(--ad-blue);
+}
+.ad-tile-ico {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--ad-desk);
+    color: var(--ad-text-soft);
+    font-size: 18px;
+}
+.ad-tile-ico svg {
+    width: 20px;
+    height: 20px;
+}
+.ad-tile-ico.is-green {
+    background: var(--ad-green-bg);
+    color: var(--ad-green);
+}
+.ad-tile-ico.is-blue {
+    background: var(--ad-blue-bg);
+    color: var(--ad-blue);
+}
+.ad-tile-ico.is-amber,
+.ad-tile-ico.is-orange {
+    background: var(--ad-orange-soft);
+    color: var(--ad-orange);
+}
+.ad-tile-ico.is-red {
+    background: var(--ad-red-bg);
+    color: var(--ad-red);
+}
+.ad-tile-body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+.ad-tile-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--ad-ink);
+}
+.ad-tile-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--ad-ink);
+}
+.ad-tile-note,
+.ad-tile-pct {
+    font-size: 0.75rem;
+    font-style: normal;
+    color: var(--ad-muted);
+}
+.ad-tile-note.is-good {
+    color: var(--ad-green);
+}
+.ad-tile-note.is-warn {
+    color: var(--ad-amber);
+}
+.ad-tile-note.is-bad {
+    color: var(--ad-red);
+}
+/* phones: two across, a little tighter */
+@media (max-width: 600px) {
+    .ad-tiles {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+    .ad-tile {
+        gap: 8px;
+        padding: 10px;
+    }
+    .ad-tile-ico {
+        width: 32px;
+        height: 32px;
+        font-size: 15px;
+    }
+    .ad-tile-pct {
+        display: none;
+    }
 }

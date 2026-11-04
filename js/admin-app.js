@@ -16,16 +16,16 @@
    Allocation and money only change through the admin Cloud Functions.
    -------------------------------------------------------------------------- */
 
-import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=848';
+import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=849';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=848';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=848';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=848';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=848';
-import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=848';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=848';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=848';
-import { expandKit } from './kit.js?v=848';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=849';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=849';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=849';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=849';
+import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=849';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=849';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=849';
+import { expandKit } from './kit.js?v=849';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -1286,18 +1286,13 @@ function statsStrip() {
     ];
 
     return `
-    <div class="ad-stats">
+    <div class="ad-tiles">
       ${cards
           .map(([label, value, note, mod, filter]) => {
-              const inner = `
-          <p class="ad-stat-label">${esc(label)}</p>
-          <p class="ad-stat-value">${value}</p>
-          <p class="ad-stat-note">${esc(note)}</p>`;
-
+              const inner = `<span class="ad-tile-body"><b class="ad-tile-value">${value}</b><span class="ad-tile-label">${esc(label)}</span><em class="ad-tile-note">${esc(note)}</em></span>`;
               return filter
-                  ? `<button type="button" class="ad-stat ${mod} is-clickable"
-                     data-stat="${attr(JSON.stringify(filter))}">${inner}</button>`
-                  : `<div class="ad-stat ${mod}">${inner}</div>`;
+                  ? `<button type="button" class="ad-tile ${mod}" data-stat="${attr(JSON.stringify(filter))}">${inner}</button>`
+                  : `<div class="ad-tile ${mod}">${inner}</div>`;
           })
           .join('')}
     </div>`;
@@ -3603,12 +3598,12 @@ function gigsMainHtml(side) {
     return `
       <div class="inv-main">
         ${entHead('gigs')}
-        <div class="inv-tiles">
-          ${invTile('&#128197;', 'inv-t-blue', thisWeek.length, 'This week', '')}
-          ${invTile('&#127925;', 'inv-t-green', upcoming.length, 'Upcoming', '')}
-          ${invTile('&#10071;', 'inv-t-red', openNights.length, 'Nights with no DJ', '')}
-          ${invTile('&#9203;', 'inv-t-amber', waitingDj.length, 'Waiting on DJ', '')}
-          ${invTile('&#128338;', 'inv-t-slate', timesDue.length, 'Times to come in', '')}
+        <div class="ad-tiles">
+          ${invTile('&#128197;', 'is-blue', thisWeek.length, 'This week', '')}
+          ${invTile('&#127925;', 'is-green', upcoming.length, 'Upcoming', '')}
+          ${invTile('&#10071;', 'is-red', openNights.length, 'Nights with no DJ', '')}
+          ${invTile('&#9203;', 'is-amber', waitingDj.length, 'Waiting on DJ', '')}
+          ${invTile('&#128338;', 'is-grey', timesDue.length, 'Times to come in', '')}
         </div>
         ${importBanner()}
         <div class="ent-split">
@@ -3685,11 +3680,11 @@ function djMainHtml() {
     return `
       <div class="inv-main">
         ${entHead('djs')}
-        <div class="inv-tiles">
-          ${invTile('&#127911;', 'inv-t-green', acts.length, 'DJs & acts', '')}
-          ${invTile('&#128176;', 'inv-t-blue', withRate, 'With a rate', '')}
-          ${invTile('&#9993;', 'inv-t-amber', noEmail, 'Missing email', '')}
-          ${invTile('&#128197;', 'inv-t-slate', (state.schedule || []).filter((b) => b.date >= isoDay(new Date())).length, 'Upcoming gigs', '')}
+        <div class="ad-tiles">
+          ${invTile('&#127911;', 'is-green', acts.length, 'DJs & acts', '')}
+          ${invTile('&#128176;', 'is-blue', withRate, 'With a rate', '')}
+          ${invTile('&#9993;', 'is-amber', noEmail, 'Missing email', '')}
+          ${invTile('&#128197;', 'is-grey', (state.schedule || []).filter((b) => b.date >= isoDay(new Date())).length, 'Upcoming gigs', '')}
         </div>
         <div class="inv-toolbar">
           <input type="search" id="dj-search" class="ad-search" placeholder="Search DJs..." value="${attr(state.djSearch || '')}" aria-label="Search DJs">
@@ -4729,17 +4724,17 @@ function venuesMainHtml() {
     return `
       <div class="inv-main">
         ${entHead('venues')}
-        <div class="inv-tiles">
-          ${invTile('&#127970;', 'inv-t-green', vs.length, 'Venues', '')}
-          ${invTile('&#129534;', 'inv-t-blue', vs.filter((v) => v.customerId).length, 'With a client', '')}
+        <div class="ad-tiles">
+          ${invTile('&#127970;', 'is-green', vs.length, 'Venues', '')}
+          ${invTile('&#129534;', 'is-blue', vs.filter((v) => v.customerId).length, 'With a client', '')}
           ${invTile(
               '&#128197;',
-              'inv-t-slate',
+              'is-grey',
               vs.reduce((n, v) => n + upcoming(v).length, 0),
               'Upcoming gigs',
               ''
           )}
-          ${invTile('&#9203;', 'inv-t-amber', (state.schedule || []).filter((b) => b.status === 'unconfirmed' && b.date >= today).length, 'Unconfirmed', '')}
+          ${invTile('&#9203;', 'is-amber', (state.schedule || []).filter((b) => b.status === 'unconfirmed' && b.date >= today).length, 'Unconfirmed', '')}
         </div>
         <div class="inv-toolbar">
           <input type="search" id="venue-search" class="ad-search" placeholder="Search venues..." value="${attr(state.venueSearch || '')}" aria-label="Search venues">
@@ -6330,11 +6325,11 @@ VIEWS.inventory = {
             </div>
           </div>
 
-          <div class="inv-tiles">
-            ${invTile('&#128230;', 'inv-t-slate', s.total, 'Total Items', '')}
-            ${invTile('&#10003;', 'inv-t-green', s.available, 'Available', pct(s.available) + '%')}
-            ${invTile('&#128666;', 'inv-t-blue', s.onHire, 'On Hire', pct(s.onHire) + '%')}
-            ${invTile('&#128295;', 'inv-t-amber', s.inRepair, 'In Repair', pct(s.inRepair) + '%')}
+          <div class="ad-tiles">
+            ${invTile('&#128230;', 'is-grey', s.total, 'Total Items', '')}
+            ${invTile('&#10003;', 'is-green', s.available, 'Available', pct(s.available) + '%')}
+            ${invTile('&#128666;', 'is-blue', s.onHire, 'On Hire', pct(s.onHire) + '%')}
+            ${invTile('&#128295;', 'is-amber', s.inRepair, 'In Repair', pct(s.inRepair) + '%')}
           </div>
 
           ${
@@ -6464,13 +6459,10 @@ function updateInvSortHeaders() {
 
 function invTile(icon, cls, value, label, pct) {
     return `
-    <div class="inv-tile">
-      <span class="inv-tile-ico ${cls}" aria-hidden="true">${icon}</span>
-      <div class="inv-tile-body">
-        <p class="inv-tile-value">${esc(value)}</p>
-        <p class="inv-tile-label">${esc(label)}</p>
-      </div>
-      ${pct ? `<span class="inv-tile-pct">${esc(pct)}</span>` : ''}
+    <div class="ad-tile">
+      <span class="ad-tile-ico ${cls}" aria-hidden="true">${icon}</span>
+      <span class="ad-tile-body"><b class="ad-tile-value">${esc(value)}</b><span class="ad-tile-label">${esc(label)}</span></span>
+      ${pct ? `<span class="ad-tile-pct">${esc(pct)}</span>` : ''}
     </div>`;
 }
 
@@ -10764,11 +10756,11 @@ function packageMainHtml() {
           </div>
         </div>
 
-        <div class="inv-tiles">
-          ${invTile('&#128230;', 'inv-t-slate', s.total, 'Packages', '')}
-          ${invTile('&#10003;', 'inv-t-green', s.active, 'Active', '')}
-          ${invTile('&#9711;', 'inv-t-amber', s.off, 'Off', '')}
-          ${invTile('&#9635;', 'inv-t-blue', s.types, 'Event types', '')}
+        <div class="ad-tiles">
+          ${invTile('&#128230;', 'is-grey', s.total, 'Packages', '')}
+          ${invTile('&#10003;', 'is-green', s.active, 'Active', '')}
+          ${invTile('&#9711;', 'is-amber', s.off, 'Off', '')}
+          ${invTile('&#9635;', 'is-blue', s.types, 'Event types', '')}
         </div>
 
         <div class="inv-toolbar">
@@ -11505,11 +11497,11 @@ function resourceMainHtml() {
           </div>
         </div>
 
-        <div class="inv-tiles">
-          ${invTile('&#128100;', 'inv-t-green', s.staff, 'Staff', '')}
-          ${invTile('&#128666;', 'inv-t-blue', s.vehicle, 'Vehicles', '')}
-          ${invTile('&#128230;', 'inv-t-amber', s.trailer, 'Trailers', '')}
-          ${invTile('&#9776;', 'inv-t-slate', s.total, 'Total', '')}
+        <div class="ad-tiles">
+          ${invTile('&#128100;', 'is-green', s.staff, 'Staff', '')}
+          ${invTile('&#128666;', 'is-blue', s.vehicle, 'Vehicles', '')}
+          ${invTile('&#128230;', 'is-amber', s.trailer, 'Trailers', '')}
+          ${invTile('&#9776;', 'is-grey', s.total, 'Total', '')}
         </div>
 
         <div class="inv-toolbar">
@@ -11967,11 +11959,11 @@ function customerMainHtml() {
         </div>
         <p class="ad-quote-msg" id="cust-import-msg"></p>
 
-        <div class="inv-tiles">
-          ${invTile('&#128101;', 'inv-t-slate', rows.length, 'Customers', '')}
-          ${invTile('&#127968;', 'inv-t-green', count('private'), 'Private', '')}
-          ${invTile('&#127970;', 'inv-t-blue', count('business'), 'Business', '')}
-          ${invTile('&#127963;', 'inv-t-amber', count('nfp') + count('council') + count('school') + count('club'), 'Not-for-profits, councils, schools &amp; clubs', '')}
+        <div class="ad-tiles">
+          ${invTile('&#128101;', 'is-grey', rows.length, 'Customers', '')}
+          ${invTile('&#127968;', 'is-green', count('private'), 'Private', '')}
+          ${invTile('&#127970;', 'is-blue', count('business'), 'Business', '')}
+          ${invTile('&#127963;', 'is-amber', count('nfp') + count('council') + count('school') + count('club'), 'Not-for-profits, councils, schools &amp; clubs', '')}
         </div>
 
         <div class="inv-toolbar">
@@ -13824,9 +13816,9 @@ function leadMainHtml() {
             ${dot ? `<i class="lead-dot is-${dot}"></i>` : ''}${label} <span>(${c[k]})</span>
           </button>`;
     const kpi = (k, icon, tone, value, label, sub, subTone) => `
-          <button type="button" class="lead-kpi${ch === k ? ' is-on' : ''}" data-lead-chip="${k}">
-            <span class="lead-kpi-ico ${tone}" aria-hidden="true">${icon}</span>
-            <span class="lead-kpi-txt"><strong>${value}</strong><span>${label}</span>${sub ? `<em class="${subTone || ''}">${sub}</em>` : ''}</span>
+          <button type="button" class="ad-tile${ch === k ? ' is-on' : ''}" data-lead-chip="${k}">
+            <span class="ad-tile-ico ${tone}" aria-hidden="true">${icon}</span>
+            <span class="ad-tile-body"><b class="ad-tile-value">${value}</b><span class="ad-tile-label">${label}</span>${sub ? `<em class="ad-tile-note ${subTone || ''}">${sub}</em>` : ''}</span>
           </button>`;
     const rg = state.leadRange || 'all';
     const so = state.leadSort || 'date';
@@ -13848,7 +13840,7 @@ function leadMainHtml() {
           </div>
         </div>
 
-        <div class="lead-kpis" id="lead-kpis">
+        <div class="ad-tiles" id="lead-kpis">
           ${kpi('hot', '🔥', 'is-red', c.hot, 'Hot leads', c.hotNew ? `↑ ${c.hotNew} this month` : '', 'is-good')}
           ${kpi('needs', '📨', 'is-green', c.needs, 'Need contact', c.needsHot ? `${c.needsHot} are hot` : '', 'is-warn')}
           ${kpi('followups', '🔁', 'is-blue', c.followups, 'Follow-ups', c.overdue ? `${c.overdue} overdue` : 'due this week', c.overdue ? 'is-bad' : '')}
@@ -14572,7 +14564,7 @@ function wireLeadList() {
             page.querySelectorAll('.lead-chip[data-lead-chip]').forEach((x) =>
                 x.classList.toggle('is-active', x.getAttribute('data-lead-chip') === state.leadChip)
             );
-            page.querySelectorAll('.lead-kpi[data-lead-chip]').forEach((x) =>
+            page.querySelectorAll('.ad-tile[data-lead-chip]').forEach((x) =>
                 x.classList.toggle('is-on', x.getAttribute('data-lead-chip') === state.leadChip)
             );
             renderLeadListParts();

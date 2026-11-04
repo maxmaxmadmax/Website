@@ -8,8 +8,8 @@
    the quotes and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=848'; // who still owes money
-import { isBooked, pickLineProgress } from './stock.js?v=848';
+import { owesMoney } from './messages.js?v=849'; // who still owes money
+import { isBooked, pickLineProgress } from './stock.js?v=849';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -219,9 +219,9 @@ function counts(jobs) {
 export function pipelineHtml(jobs, f, h) {
     const n = counts(jobs);
     const stat = (tab, icon, tone, num, title, sub) => `
-    <button type="button" class="sp-stat" data-sp-tab="${tab}">
-      <span class="sp-stat-ico sp-${tone}">${svg(icon)}</span>
-      <span><b>${num}</b><strong>${title}</strong><em>${sub}</em></span>
+    <button type="button" class="ad-tile" data-sp-tab="${tab}">
+      <span class="ad-tile-ico is-${tone}">${svg(icon)}</span>
+      <span class="ad-tile-body"><b class="ad-tile-value">${num}</b><span class="ad-tile-label">${title}</span><em class="ad-tile-note">${sub}</em></span>
     </button>`;
     const withClient = jobs.filter((q) => q.status === 'approved' || q.status === 'sent').length;
     const head = (key, label) => {
@@ -244,7 +244,7 @@ export function pipelineHtml(jobs, f, h) {
         ${f.tab === 'templates' ? '<button type="button" class="ad-btn sp-new" id="q-new-tpl">+ New template</button>' : ''}<button type="button" class="ad-btn ad-btn-primary sp-new" id="q-new">+ New quote</button>
       </div>
 
-      <div class="sp-stats">
+      <div class="ad-tiles">
         ${stat('estimates', 'doc', 'orange', n.estimates, 'Need review', 'Estimates waiting for approval')}
         ${stat('quotes', 'send', 'blue', withClient, 'With client', 'Quotes sent or awaiting acceptance')}
         ${stat('payment', 'dollar', 'amber', n.payment, 'Awaiting payment', 'Deposit or payment outstanding')}

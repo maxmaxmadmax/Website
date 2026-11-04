@@ -10,9 +10,9 @@
    counts in the month it was last paid (lastPaidAt / paidAt / acceptedAt).
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=848';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=848';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=848';
+import { isBooked, pickLineProgress } from './stock.js?v=849';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=849';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=849';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -461,10 +461,8 @@ export function dashboardHtml(ctx) {
         return `<span class="db-trend ${pct >= 0 ? 'is-up' : 'is-down'}">${pct >= 0 ? '&#9650;' : '&#9660;'} ${Math.abs(pct)}% vs last month</span>`;
     };
     const card = (label, cents, sub, extra = '') => `
-      <div class="db-stat">
-        <p class="db-stat-label">${label}</p>
-        <p class="db-stat-num">${money(cents)}</p>
-        ${sub}${extra}
+      <div class="ad-tile">
+        <span class="ad-tile-body"><b class="ad-tile-value">${money(cents)}</b><span class="ad-tile-label">${label}</span>${sub}${extra}</span>
       </div>`;
     const hour = new Date().getHours();
     let greeting = 'Evening';
@@ -616,7 +614,7 @@ export function dashboardHtml(ctx) {
       </div>
     </header>
 
-    <div class="db-stats">
+    <div class="ad-tiles">
       ${card('Sales this month', d.salesNow, trend(d.salesNow, d.salesLast))}
       ${card('Money in this month', d.inNow, trend(d.inNow, d.inLast))}
       ${card('Money owed', d.owedCents, `<span class="db-trend">${d.owed.length} job${d.owed.length === 1 ? '' : 's'}${d.owed.length ? ': ' + esc(d.owed.slice(0, 2).map(who).join(', ')) + (d.owed.length > 2 ? '&hellip;' : '') : ''}</span>`)}

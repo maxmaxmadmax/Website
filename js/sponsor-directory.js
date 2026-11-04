@@ -10,8 +10,8 @@
     One sponsor per industry: once a business in an industry has said yes
     to the event picked, the others in that industry show "industry taken". */
 
-import { spAvatar, spColor } from './messages.js?v=848';
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=848';
+import { spAvatar, spColor } from './messages.js?v=849';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=849';
 
 /* what to ask for, from the score */
 const ASK = { 5: 'gold', 4: 'silver', 3: 'bronze', 2: 'supporter', 1: 'supporter' };
@@ -321,10 +321,10 @@ export function sponsorDirHtml(ctx) {
         const total = rows.reduce((t, r) => t + r.ask.cents, 0);
         const takenRows = Object.keys(takenBy).sort();
         return `<div class="spd-pot">
-      <div class="spd-pot-stats">
-        <div class="spd-stat is-target"><span class="spd-stat-ico">&#127919;</span><div><small>Potential on the table</small><b>${money0(total)}</b></div></div>
-        <div class="spd-stat is-yes"><span class="spd-stat-ico">&#128269;</span><div><small>Open industries with a candidate</small><b>${rows.length}</b></div></div>
-        <div class="spd-stat is-got"><span class="spd-stat-ico">&#10003;</span><div><small>Industries already taken</small><b>${takenRows.length}</b></div></div>
+      <div class="ad-tiles">
+        <div class="ad-tile"><span class="ad-tile-ico is-orange">&#127919;</span><span class="ad-tile-body"><b class="ad-tile-value">${money0(total)}</b><span class="ad-tile-label">Potential on the table</span></span></div>
+        <div class="ad-tile"><span class="ad-tile-ico is-blue">&#128269;</span><span class="ad-tile-body"><b class="ad-tile-value">${rows.length}</b><span class="ad-tile-label">Open industries with a candidate</span></span></div>
+        <div class="ad-tile"><span class="ad-tile-ico is-green">&#10003;</span><span class="ad-tile-body"><b class="ad-tile-value">${takenRows.length}</b><span class="ad-tile-label">Industries already taken</span></span></div>
       </div>
       <p class="ad-seat-hint">The strongest business we have not asked yet in each open industry, best first. Suggested ask comes from the stars (5 = Gold, 4 = Silver, 3 = Bronze) or your budget guess. Set stars and facts in the profile to sharpen it.</p>
       ${

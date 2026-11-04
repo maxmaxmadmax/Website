@@ -38,19 +38,6 @@
     text-decoration: none;
 }
 
-.db-stats {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 12px;
-    margin-bottom: 16px;
-}
-.db-stat {
-    min-width: 0;
-    background: var(--ad-white);
-    border: 1px solid var(--ad-line);
-    border-radius: var(--ad-radius);
-    padding: 14px 16px;
-}
 .db-stat-label {
     margin: 0;
     font-size: 11px;
@@ -289,9 +276,6 @@
 }
 
 @media (max-width: 1100px) {
-    .db-stats {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
     .db-cols {
         grid-template-columns: 1fr;
     }
@@ -300,9 +284,7 @@
     .db {
         padding: 14px;
     }
-    .db-stats {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+
     .db-stat-num {
         font-size: 20px;
     }
@@ -362,20 +344,7 @@
     background: var(--ad-white);
 }
 /* event-day weather on dashboard jobs */
-.db-wx {
-    background: var(--ad-blue-bg);
-    color: var(--ad-text-soft);
-}
-.db-wx.is-warn {
-    background: var(--ad-orange-soft);
-    color: var(--ad-amber);
-    font-weight: 700;
-}
-.db-wx.is-bad {
-    background: var(--ad-red-bg);
-    color: var(--ad-red);
-    font-weight: 700;
-}
+
 /* the weather card beside the job buttons */
 .db-job-acts {
     align-items: center;
@@ -686,9 +655,16 @@
 .db-job {
     grid-template-columns: 86px minmax(0, 1fr) 92px 300px;
 }
-@media (max-width: 1100px) {
+/* the panel is half the page, so four columns only fit on a very wide screen */
+@media (max-width: 1500px) {
     .db-job {
         grid-template-columns: 86px minmax(0, 1fr) 92px;
+    }
+    /* the buttons go in a row underneath */
+    .db-job-acts {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        flex-wrap: wrap;
     }
 }
 @media (max-width: 640px) {
@@ -785,14 +761,7 @@
     font-weight: 800;
     color: var(--ad-red);
 }
-.ent .inv-tiles:has(> :nth-child(5)) {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-@media (max-width: 900px) {
-    .ent .inv-tiles:has(> :nth-child(5)) {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
+
 .ad-cal-day.is-unconf {
     border: 2px dashed var(--ad-amber);
     background: var(--ad-orange-soft);

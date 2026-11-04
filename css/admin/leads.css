@@ -1365,92 +1365,6 @@
     background: var(--ad-orange-soft);
 }
 
-/* KPI tiles */
-.lead-kpis {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 10px;
-    margin: 0 0 10px;
-}
-.lead-kpi {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-align: left;
-    cursor: pointer;
-    min-width: 0;
-    padding: 10px 12px;
-    border: 1px solid var(--ad-line);
-    border-radius: 12px;
-    background: var(--ad-white);
-    font: inherit;
-}
-.lead-kpi:hover {
-    border-color: var(--ad-line-strong);
-}
-.lead-kpi.is-on {
-    border-color: var(--ad-orange);
-    box-shadow: inset 0 0 0 1px var(--ad-orange);
-}
-.lead-kpi-ico {
-    flex: 0 0 36px;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-}
-.lead-kpi-ico.is-red {
-    background: var(--ad-orange-soft);
-}
-.lead-kpi-ico.is-green {
-    background: var(--ad-green-bg);
-}
-.lead-kpi-ico.is-blue {
-    background: var(--ad-blue-bg);
-}
-.lead-kpi-ico.is-amber {
-    background: var(--ad-orange-soft);
-}
-.lead-kpi-txt {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    line-height: 1.2;
-}
-.lead-kpi-txt strong {
-    font-size: 1.25rem;
-    font-weight: 800;
-    color: var(--ad-ink);
-}
-.lead-kpi-txt span {
-    font-size: 0.8rem;
-    color: var(--ad-ink);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.lead-kpi-txt em {
-    font-style: normal;
-    font-size: 0.72rem;
-    color: var(--ad-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.lead-kpi-txt em.is-good {
-    color: var(--ad-green);
-}
-.lead-kpi-txt em.is-warn {
-    color: var(--ad-amber);
-}
-.lead-kpi-txt em.is-bad {
-    color: var(--ad-red);
-    font-weight: 700;
-}
-
 /* compact calendar: month, big count, one row of week slots */
 .lead-cal-v3 .lead-cal-track {
     grid-template-columns: repeat(12, minmax(66px, 1fr));
@@ -1828,20 +1742,7 @@
     background: var(--ad-red-bg);
 }
 
-@media (max-width: 1180px) {
-    .lead-kpis {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-}
-@media (max-width: 760px) {
-    .lead-kpis {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
 @media (min-width: 900px) {
-    .ad-desk.is-leads .lead-kpis {
-        margin-bottom: 8px;
-    }
     .ad-desk.is-leads .lead-cal-v3 .lead-wslot {
         min-height: 0;
     }
