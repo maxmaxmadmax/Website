@@ -135,9 +135,9 @@ body:has(.bl-wrap) #navbar > nav {
 }
 
 /* The gear list */
-.bl-gear {
+.bl-post .bl-gear {
     list-style: none;
-    padding: 0 !important;
+    padding: 0;
 }
 
 .bl-gear li {
@@ -153,13 +153,13 @@ body:has(.bl-wrap) #navbar > nav {
 }
 
 /* Big numbers strip */
-.bl-stats {
+.bl-post .bl-stats {
     list-style: none;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 10px;
-    padding: 0 !important;
-    margin: 0 0 34px !important;
+    padding: 0;
+    margin: 0 0 34px;
 }
 
 .bl-stats li {
@@ -189,8 +189,8 @@ body:has(.bl-wrap) #navbar > nav {
 }
 
 /* The one-line verdict */
-.bl-verdict {
-    margin: 30px 0 !important;
+.bl-post .bl-verdict {
+    margin: 30px 0;
     padding: 18px 22px;
     border-left: 4px solid var(--sg-orange);
     background: #fafafa;
@@ -212,10 +212,10 @@ body:has(.bl-wrap) #navbar > nav {
 }
 
 /* "See the live ..." link to a tool we built */
-.bl-applink a {
+.bl-post .bl-applink a {
     display: inline-block;
     background: #111;
-    color: #fff !important;
+    color: #fff;
     text-decoration: none;
     font-weight: 800;
     padding: 12px 18px;
@@ -254,12 +254,12 @@ body:has(.bl-wrap) #navbar > nav {
     color: #fff;
 }
 
-.bl-btn {
+.bl-post .bl-btn {
     display: inline-block;
     border: 0;
     cursor: pointer;
     background: var(--sg-orange);
-    color: #fff !important;
+    color: #fff;
     font: inherit;
     font-weight: 800;
     font-size: 15px;
@@ -268,16 +268,16 @@ body:has(.bl-wrap) #navbar > nav {
     text-decoration: none;
 }
 
-.bl-btn:hover {
+.bl-post .bl-btn:hover {
     background: var(--sg-orange-bright);
 }
 
-.bl-btn-ghost {
+.bl-post .bl-btn-ghost {
     background: transparent;
     border: 1px solid #555;
 }
 
-.bl-btn-ghost:hover {
+.bl-post .bl-btn-ghost:hover {
     background: #222;
 }
 
@@ -297,11 +297,11 @@ body:has(.bl-wrap) #navbar > nav {
         font-size: 17px;
     }
 
-    .bl-stats {
+    .bl-post .bl-stats {
         grid-template-columns: repeat(2, 1fr);
     }
 
-    .bl-btn {
+    .bl-post .bl-btn {
         width: 100%;
         text-align: center;
     }

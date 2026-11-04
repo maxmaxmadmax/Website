@@ -720,8 +720,8 @@
     background: #fff;
     color: var(--sg-ink, #111);
     border: 2px solid #111;
-    font-size: 0.72rem !important;
-    padding: 12px 16px !important;
+    font-size: 0.72rem;
+    padding: 12px 16px;
     letter-spacing: 0.12em;
 }
 

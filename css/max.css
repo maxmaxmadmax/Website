@@ -348,8 +348,8 @@
 
 .eng-a-photos {
     grid-area: photos;
-    grid-template-columns: 1fr !important;
-    margin-top: 34px !important;
+    grid-template-columns: 1fr;
+    margin-top: 34px;
 }
 
 .eng-a-studio {
@@ -361,7 +361,7 @@
 }
 
 .eng-studio {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr;
 }
 
 .eng-photo {
@@ -383,7 +383,7 @@
     }
 
     .eng-a-photos {
-        grid-template-columns: 1fr 1fr !important;
+        grid-template-columns: 1fr 1fr;
     }
 
     .eng-credits td:nth-of-type(3) {
@@ -488,7 +488,7 @@
     .navbar,
     .footer,
     .eng-actions {
-        display: none !important;
+        display: none;
     }
 
     .eng-wrap {
@@ -578,28 +578,28 @@
     }
 
     .eng-a-photos {
-        margin-top: 4mm !important;
-        gap: 2.5mm !important;
+        margin-top: 4mm;
+        gap: 2.5mm;
     }
 
     .eng-role {
-        margin: 2mm 0 0.5mm !important;
-        font-size: 10pt !important;
+        margin: 2mm 0 0.5mm;
+        font-size: 10pt;
     }
 
     .eng-sec {
         break-inside: avoid;
-        margin-top: 3.5mm !important;
+        margin-top: 3.5mm;
     }
 
     .eng-cols3 h3 {
         font-size: 9.5pt;
-        margin-bottom: 0.5mm !important;
+        margin-bottom: 0.5mm;
     }
 
     .eng-sec,
     .eng-layout {
-        break-inside: auto !important;
+        break-inside: auto;
     }
 
     .eng-a-photos .eng-photo:nth-child(4) {
@@ -611,27 +611,27 @@
     }
 
     .eng-a-photos .eng-photo:nth-child(n + 3) {
-        display: none !important;
+        display: none;
     }
 
     .eng-a-photos .eng-photo {
-        aspect-ratio: auto !important;
-        height: 30mm !important;
+        aspect-ratio: auto;
+        height: 30mm;
     }
 
     .eng-a-studio {
-        margin-top: 4mm !important;
+        margin-top: 4mm;
     }
 
     .eng-a-studio .eng-p {
         margin-bottom: 1.5mm;
-        font-size: 8pt !important;
+        font-size: 8pt;
         line-height: 1.35;
     }
 
     .eng-a-studio .eng-cols3 {
-        grid-template-columns: 1fr 1fr !important;
-        gap: 2mm 4mm !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 2mm 4mm;
     }
 
     .eng-a-studio .eng-cols3 ul {
@@ -640,16 +640,16 @@
 
     .eng-hero {
         border-bottom-width: 2mm;
-        padding: 6mm 0 4mm !important;
+        padding: 6mm 0 4mm;
     }
 
     .eng-name {
-        font-size: 34pt !important;
+        font-size: 34pt;
     }
 
     .eng-main {
-        padding-top: 3mm !important;
-        padding-bottom: 11mm !important;
+        padding-top: 3mm;
+        padding-bottom: 11mm;
     }
 
     .eng-scroll-hint {
@@ -658,24 +658,24 @@
 
     .eng-layout {
         column-gap: 7mm;
-        grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr) !important;
+        grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
         grid-template-areas:
             'intro   intro'
             'actions actions'
             'credits photos'
             'credits studio'
-            'credits skills' !important;
-        grid-template-rows: auto auto auto auto 1fr !important;
+            'credits skills';
+        grid-template-rows: auto auto auto auto 1fr;
     }
 
     .eng-a-photos .eng-photo:nth-child(n + 2) {
-        display: none !important;
+        display: none;
     }
 
     .eng-a-skills {
-        grid-template-columns: 1fr 1fr !important;
-        gap: 3mm 4mm !important;
-        margin-top: 4mm !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 3mm 4mm;
+        margin-top: 4mm;
     }
 
     .eng-a-skills > div:nth-child(2) {
@@ -684,37 +684,37 @@
     }
 
     .eng-a-skills .eng-h2 {
-        margin-bottom: 1mm !important;
-        font-size: 9.5pt !important;
+        margin-bottom: 1mm;
+        font-size: 9.5pt;
     }
 
     .eng-a-skills ul {
-        gap: 0 !important;
-        font-size: 7.4pt !important;
+        gap: 0;
+        font-size: 7.4pt;
     }
 
     .eng-acts {
         -webkit-box-orient: vertical;
-        display: block !important;
+        display: block;
         -webkit-line-clamp: unset;
         overflow: visible;
-        font-size: 6.4pt !important;
-        line-height: 1.2 !important;
+        font-size: 6.4pt;
+        line-height: 1.2;
     }
 
     .eng-credits td {
-        padding: 0.3mm 2mm 0.3mm 0 !important;
+        padding: 0.3mm 2mm 0.3mm 0;
     }
 
     .eng-intro {
         margin: 0 0 2mm;
         max-width: none;
-        font-size: 8.8pt !important;
-        line-height: 1.4 !important;
-        margin-bottom: 0 !important;
+        font-size: 8.8pt;
+        line-height: 1.4;
+        margin-bottom: 0;
     }
 
     .eng-a-credits {
-        margin-top: 3mm !important;
+        margin-top: 3mm;
     }
 }

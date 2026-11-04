@@ -51,11 +51,11 @@
 }
 
 /* The line to remember, set apart from the paragraph */
-.isl-point-note {
+.isl-point p.isl-point-note {
     margin-top: 16px;
     padding-left: 14px;
     border-left: 3px solid var(--sg-gold);
-    color: var(--sg-gold) !important;
+    color: var(--sg-gold);
     font-family: var(--sg-font-display);
     font-size: 1.1rem;
     letter-spacing: -0.3px;
