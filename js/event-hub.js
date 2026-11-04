@@ -9,7 +9,7 @@
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=847';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=848';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 
@@ -139,8 +139,8 @@ export function eventHubHtml(ctx) {
           ${signupBtn(ev, attr)}
         </div>
       </div>
-      <div class="ev-tabs" role="tablist">
-        ${HUB_TABS.map(([k, label]) => `<a role="tab" class="ev-tab${tab === k ? ' is-on' : ''}" href="#/event?id=${attr(ev.id)}&tab=${k}">${label}</a>`).join('')}
+      <div class="ad-linetabs" role="tablist">
+        ${HUB_TABS.map(([k, label]) => `<a role="tab" class="ad-linetab${tab === k ? ' is-on' : ''}" href="#/event?id=${attr(ev.id)}&tab=${k}">${label}</a>`).join('')}
       </div>
       <div class="ev-hub-body">
         ${body}

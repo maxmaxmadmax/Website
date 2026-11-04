@@ -11,32 +11,6 @@
 }
 
 /* tab bar */
-.pkg-tabs {
-    display: flex;
-    gap: 2px;
-    padding: 0 14px;
-    border-bottom: 1px solid var(--ad-line);
-    overflow-x: auto;
-}
-.pkg-tab {
-    border: none;
-    background: none;
-    cursor: pointer;
-    font: inherit;
-    font-size: 0.84rem;
-    font-weight: 600;
-    color: var(--ad-muted);
-    padding: 11px 12px;
-    border-bottom: 2px solid transparent;
-    white-space: nowrap;
-}
-.pkg-tab:hover {
-    color: var(--ad-ink);
-}
-.pkg-tab.is-on {
-    color: var(--ad-orange);
-    border-bottom-color: var(--ad-orange);
-}
 
 .pkg-sec-h {
     display: flex;

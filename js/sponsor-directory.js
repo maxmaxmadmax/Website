@@ -10,8 +10,8 @@
     One sponsor per industry: once a business in an industry has said yes
     to the event picked, the others in that industry show "industry taken". */
 
-import { spAvatar, spColor } from './messages.js?v=847';
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=847';
+import { spAvatar, spColor } from './messages.js?v=848';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=848';
 
 /* what to ask for, from the score */
 const ASK = { 5: 'gold', 4: 'silver', 3: 'bronze', 2: 'supporter', 1: 'supporter' };
@@ -396,7 +396,7 @@ export function sponsorDirHtml(ctx) {
         </span>
         <button type="button" class="ad-btn ad-btn-primary" data-spd-new>+ Add a business</button>
       </div>
-      <div class="spd-tabs">
+      <div class="ad-tabs">
         <button type="button" class="ad-tab${f.tab !== 'ind' ? ' is-on' : ''}" data-spd-tab="biz">Businesses</button>
         <button type="button" class="ad-tab${f.tab === 'pot' ? ' is-on' : ''}" data-spd-tab="pot">&#9733; Potential</button>
         <button type="button" class="ad-tab${f.tab === 'ind' ? ' is-on' : ''}" data-spd-tab="ind">Industries</button>

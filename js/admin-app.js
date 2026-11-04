@@ -16,16 +16,16 @@
    Allocation and money only change through the admin Cloud Functions.
    -------------------------------------------------------------------------- */
 
-import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=847';
+import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=848';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=847';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=847';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=847';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=847';
-import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=847';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=847';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=847';
-import { expandKit } from './kit.js?v=847';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=848';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=848';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=848';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=848';
+import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=848';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=848';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=848';
+import { expandKit } from './kit.js?v=848';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -3486,11 +3486,11 @@ function entHead(tab) {
             </div>
           </div>
           <div class="inv-head-actions">
-            <div class="ent-tabs" role="tablist">
-              <button type="button" class="ent-tab${tab === 'gigs' ? ' is-on' : ''}" data-ent-tab="gigs">Bookings</button>
-              <button type="button" class="ent-tab${tab === 'djs' ? ' is-on' : ''}" data-ent-tab="djs">Entertainment Roster</button>
-              <button type="button" class="ent-tab${tab === 'venues' ? ' is-on' : ''}" data-ent-tab="venues">Venues</button>
-              <button type="button" class="ent-tab${tab === 'accom' ? ' is-on' : ''}" data-ent-tab="accom">Accommodation</button>
+            <div class="ad-tabs" role="tablist">
+              <button type="button" class="ad-tab${tab === 'gigs' ? ' is-on' : ''}" data-ent-tab="gigs">Bookings</button>
+              <button type="button" class="ad-tab${tab === 'djs' ? ' is-on' : ''}" data-ent-tab="djs">Entertainment Roster</button>
+              <button type="button" class="ad-tab${tab === 'venues' ? ' is-on' : ''}" data-ent-tab="venues">Venues</button>
+              <button type="button" class="ad-tab${tab === 'accom' ? ' is-on' : ''}" data-ent-tab="accom">Accommodation</button>
             </div>
             ${ENT_NEW_BTN[tab] || ENT_NEW_BTN.djs}
           </div>
@@ -3706,10 +3706,10 @@ function djMainHtml() {
                                 const nx = djNextGig(t.slug);
                                 return `<tr class="inv-row${state.openDj === t.slug ? ' is-open' : ''}" data-dj-open="${attr(t.slug)}">
                   <td><span class="inv-item-cell"><span class="ad-act-face ent-face" style="${t.photo ? `background-image:url('/${attr(t.photo)}')` : ''}"></span><span class="inv-item-name">${esc(t.name)}</span></span></td>
-                  <td><span class="inv-pill inv-st-blue">${esc(ACT_LABELS[t.act] || t.act || 'DJ')}</span></td>
+                  <td><span class="ad-pill ad-pill-blue">${esc(ACT_LABELS[t.act] || t.act || 'DJ')}</span></td>
                   <td>${r.location ? esc(r.location) : '<span class="ad-cell-muted">—</span>'}</td>
-                  <td class="inv-num">${r.onRequest ? '<span class="inv-pill inv-st-blue">On request</span>' : r.hourlyRateCents ? esc(money(r.hourlyRateCents)) + '<span class="inv-perday">/hr</span>' : '<span class="ad-cell-muted">—</span>'}</td>
-                  <td>${r.phone || r.email ? esc([r.phone, r.email].filter(Boolean).join(' · ')) : '<span class="inv-pill inv-st-amber">Add contact</span>'}</td>
+                  <td class="inv-num">${r.onRequest ? '<span class="ad-pill ad-pill-blue">On request</span>' : r.hourlyRateCents ? esc(money(r.hourlyRateCents)) + '<span class="inv-perday">/hr</span>' : '<span class="ad-cell-muted">—</span>'}</td>
+                  <td>${r.phone || r.email ? esc([r.phone, r.email].filter(Boolean).join(' · ')) : '<span class="ad-pill ad-pill-amber">Add contact</span>'}</td>
                   <td>${nx ? esc(prettyDate(nx.date)) + ' <span class="ad-cell-muted">' + esc(String(nx.venue || '').split(',')[0]) + '</span>' : '<span class="ad-cell-muted">—</span>'}</td>
                   <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-dj-open="${attr(t.slug)}" aria-label="Edit">&#8250;</button></td>
                 </tr>`;
@@ -4757,7 +4757,7 @@ function venuesMainHtml() {
                                 return `<tr class="inv-row${state.openVenue === v.id ? ' is-open' : ''}" data-venue-open="${attr(v.id)}">
                   <td><span class="inv-item-name">${esc(v.name)}</span></td>
                   <td>${v.town ? esc(v.town) : '<span class="ad-cell-muted">—</span>'}</td>
-                  <td>${v.customerId ? esc(custName(v.customerId) || '—') : '<span class="inv-pill inv-st-amber">Add client</span>'}</td>
+                  <td>${v.customerId ? esc(custName(v.customerId) || '—') : '<span class="ad-pill ad-pill-amber">Add client</span>'}</td>
                   <td>${v.templateId ? esc(tplName(v.templateId) || '—') : '<span class="ad-cell-muted">—</span>'}</td>
                   <td>${v.contactName || v.phone || v.email ? esc([v.contactName, v.phone].filter(Boolean).join(' · ') || v.email) : '<span class="ad-cell-muted">—</span>'}</td>
                   <td>${nx ? esc(prettyDate(nx.date)) + ' <span class="ad-cell-muted">' + esc(act.name || nx.slug) + '</span>' + (nx.status === 'unconfirmed' ? ' <span class="ent-unconf-tag">Unconfirmed</span>' : '') : '<span class="ad-cell-muted">—</span>'}</td>
@@ -6225,13 +6225,13 @@ function invCatClass(cat) {
 }
 
 const INV_STATUS = {
-    available: ['inv-st-green', 'Available'],
-    'on-hire': ['inv-st-blue', 'On Hire'],
-    'in-repair': ['inv-st-red', 'In Repair']
+    available: ['ad-pill-green', 'Available'],
+    'on-hire': ['ad-pill-blue', 'On Hire'],
+    'in-repair': ['ad-pill-red', 'In Repair']
 };
 function invStatusPill(status) {
     const [cls, label] = INV_STATUS[status] || INV_STATUS.available;
-    return `<span class="inv-pill ${cls}">${esc(label)}</span>`;
+    return `<span class="ad-pill ${cls}">${esc(label)}</span>`;
 }
 
 /*  A thumbnail stand-in when there is no photo: a tinted tile with the
@@ -6345,9 +6345,9 @@ VIEWS.inventory = {
           </div>`
                   : ''
           }
-          <div class="inv-tabs" role="tablist">
-            <button type="button" class="inv-tab${state.invTab !== 'consumables' ? ' is-on' : ''}" data-inv-tab="gear">Equipment</button>
-            <button type="button" class="inv-tab${state.invTab === 'consumables' ? ' is-on' : ''}" data-inv-tab="consumables">Consumables${lowCount ? ' <span class="inv-low-dot" title="Something is low - reorder">' + lowCount + ' low</span>' : ''}</button>
+          <div class="ad-tabs" role="tablist">
+            <button type="button" class="ad-tab${state.invTab !== 'consumables' ? ' is-on' : ''}" data-inv-tab="gear">Equipment</button>
+            <button type="button" class="ad-tab${state.invTab === 'consumables' ? ' is-on' : ''}" data-inv-tab="consumables">Consumables${lowCount ? ' <span class="inv-low-dot" title="Something is low - reorder">' + lowCount + ' low</span>' : ''}</button>
           </div>
           <div class="inv-toolbar">
             <input type="search" id="inv-search" class="ad-search" placeholder="Search items..."
@@ -6675,13 +6675,13 @@ function invRowsHtml() {
           ${it.subtitle ? `<span class="inv-item-sub">${esc(it.subtitle)}</span>` : ''}
         </span>
       </td>
-      <td>${it.category ? `<span class="inv-pill ${invCatClass(it.category)}">${esc(it.category)}</span>` : '<span class="ad-cell-muted">—</span>'}</td>
+      <td>${it.category ? `<span class="ad-pill ${invCatClass(it.category)}">${esc(it.category)}</span>` : '<span class="ad-cell-muted">—</span>'}</td>
       <td class="inv-num">${esc(it.quantityTotal)}</td>
       ${invStockCells(it, use, byId)}
       <td>${it.location ? esc(it.location) : '<span class="ad-cell-muted">—</span>'}</td>
       <td class="inv-num">${esc(money(it.priceCents))}</td>
       <td class="inv-num">${it.extraDayCents ? esc(money(it.extraDayCents)) : '<span class="ad-cell-muted">—</span>'}</td>
-      <td>${it.consumable ? (invLow(it) ? '<span class="inv-pill-low">Reorder</span>' : '<span class="inv-pill-ok">In stock</span>') : invStatusPill(it.status)}</td>
+      <td>${it.consumable ? (invLow(it) ? '<span class="ad-pill ad-pill-red">Reorder</span>' : '<span class="ad-pill ad-pill-green">In stock</span>') : invStatusPill(it.status)}</td>
       <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-inv-open="${attr(it.id)}" aria-label="Edit">&#8250;</button></td>
     </tr>`
               )
@@ -6704,16 +6704,16 @@ function renderInvRows() {
         const to = r.start + r.shown;
         let nums = '';
         for (let p = 1; p <= r.pages; p++) {
-            nums += `<button type="button" class="inv-pagebtn${p === state.invPage ? ' is-on' : ''}"
+            nums += `<button type="button" class="ad-pg${p === state.invPage ? ' is-on' : ''}"
                  data-inv-page="${p}">${p}</button>`;
         }
         foot.innerHTML = `
       <p class="inv-foot-count">Showing ${from}–${to} of ${r.total} items</p>
-      <div class="inv-pages">
-        <button type="button" class="inv-pagebtn" data-inv-page="${Math.max(1, state.invPage - 1)}"
+      <div class="ad-pages">
+        <button type="button" class="ad-pg" data-inv-page="${Math.max(1, state.invPage - 1)}"
                 ${state.invPage === 1 ? 'disabled' : ''}>‹</button>
         ${nums}
-        <button type="button" class="inv-pagebtn" data-inv-page="${Math.min(r.pages, state.invPage + 1)}"
+        <button type="button" class="ad-pg" data-inv-page="${Math.min(r.pages, state.invPage + 1)}"
                 ${state.invPage === r.pages ? 'disabled' : ''}>›</button>
       </div>`;
     }
@@ -10809,11 +10809,11 @@ function renderPkgRows() {
       <tr class="inv-row${state.openPackageId === p.id ? ' is-open' : ''}" data-open-pkg="${attr(p.id)}">
         <td class="inv-item-cell">${pkgThumb(p)}
           <span class="inv-item-text"><span class="inv-item-name">${esc(p.name || 'Untitled')}</span>${p.description ? `<span class="inv-item-sub">${esc(p.description)}</span>` : ''}</span></td>
-        <td>${p.eventType ? `<span class="inv-pill ${invCatClass(p.eventType)}">${esc(p.eventType)}</span>` : '<span class="ad-cell-muted">—</span>'}</td>
+        <td>${p.eventType ? `<span class="ad-pill ${invCatClass(p.eventType)}">${esc(p.eventType)}</span>` : '<span class="ad-cell-muted">—</span>'}</td>
         <td>${gearN} item${gearN === 1 ? '' : 's'}</td>
         <td>${xtra} extra${xtra === 1 ? '' : 's'}</td>
         <td class="inv-num">${esc(money(pkgCustomerCents(draft, byId)))}<span class="inv-perday">/day</span></td>
-        <td>${p.active === false ? '<span class="inv-pill inv-st-slate">Off</span>' : '<span class="inv-pill inv-st-green">Active</span>'}</td>
+        <td>${p.active === false ? '<span class="ad-pill ad-pill-grey">Off</span>' : '<span class="ad-pill ad-pill-green">Active</span>'}</td>
         <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-open-pkg="${attr(p.id)}" aria-label="Edit">&#8250;</button></td>
       </tr>`;
               })
@@ -10896,10 +10896,10 @@ function packageDetailHtml() {
     const p = packageDraft;
     const pill =
         p.active !== false
-            ? '<span class="inv-pill inv-st-green pkg-head-pill">Active</span>'
-            : '<span class="inv-pill inv-st-slate pkg-head-pill">Off</span>';
+            ? '<span class="ad-pill ad-pill-green pkg-head-pill">Active</span>'
+            : '<span class="ad-pill ad-pill-grey pkg-head-pill">Off</span>';
     const tabs = PKG_TABS.map(
-        ([k, l]) => `<button type="button" class="pkg-tab${state.pkgTab === k ? ' is-on' : ''}" data-pkg-tab="${k}">${l}</button>`
+        ([k, l]) => `<button type="button" class="ad-linetab${state.pkgTab === k ? ' is-on' : ''}" data-pkg-tab="${k}">${l}</button>`
     ).join('');
 
     return `
@@ -10912,7 +10912,7 @@ function packageDetailHtml() {
         <button type="button" class="inv-detail-close" id="pkg-close" aria-label="Close">&times;</button>
       </header>
 
-      <nav class="pkg-tabs">${tabs}</nav>
+      <nav class="ad-linetabs">${tabs}</nav>
 
       <div class="inv-detail-body" id="pkg-tabbody"></div>
 
@@ -11474,13 +11474,13 @@ function resThumb(r) {
     return `<span class="inv-thumb ${invCatClass(RES_TYPES[r.type] || '')}">${esc(letter)}</span>`;
 }
 
-const RES_TYPE_PILL = { staff: 'inv-st-green', vehicle: 'inv-st-blue', trailer: 'inv-st-amber' };
+const RES_TYPE_PILL = { staff: 'ad-pill-green', vehicle: 'ad-pill-blue', trailer: 'ad-pill-amber' };
 function resTypePill(type) {
     const t = RES_TYPES[type] ? type : 'staff';
-    return `<span class="inv-pill ${RES_TYPE_PILL[t]}">${esc(RES_TYPES[t])}</span>`;
+    return `<span class="ad-pill ${RES_TYPE_PILL[t]}">${esc(RES_TYPES[t])}</span>`;
 }
 function resActivePill(r) {
-    return r.active === false ? '<span class="inv-pill inv-st-slate">Off</span>' : '<span class="inv-pill inv-st-green">Active</span>';
+    return r.active === false ? '<span class="ad-pill ad-pill-grey">Off</span>' : '<span class="ad-pill ad-pill-green">Active</span>';
 }
 
 function resourceMainHtml() {
@@ -11811,12 +11811,12 @@ async function deleteResource(btn) {
    ========================================================================= */
 const CUST_TYPES = { private: 'Private', business: 'Business', nfp: 'Not-for-profit', council: 'Council', school: 'School', club: 'Club' };
 const CUST_TYPE_PILL = {
-    private: 'inv-st-slate',
-    business: 'inv-st-blue',
-    nfp: 'inv-st-green',
-    council: 'inv-st-green',
-    school: 'inv-st-amber',
-    club: 'inv-st-amber'
+    private: 'ad-pill-grey',
+    business: 'ad-pill-blue',
+    nfp: 'ad-pill-green',
+    council: 'ad-pill-green',
+    school: 'ad-pill-amber',
+    club: 'ad-pill-amber'
 };
 
 let customerDraft = null;
@@ -12012,7 +12012,7 @@ function renderCustRows() {
         <span class="inv-item-text"><span class="inv-item-name">${esc(r.name || r.business || 'Unnamed')}</span>
           ${r.name && r.business ? `<span class="inv-item-sub">${esc(r.business)}</span>` : ''}</span>
       </td>
-      <td><span class="inv-pill ${CUST_TYPE_PILL[t]}">${esc(CUST_TYPES[t])}</span></td>
+      <td><span class="ad-pill ${CUST_TYPE_PILL[t]}">${esc(CUST_TYPES[t])}</span></td>
       <td>${r.phone ? esc(r.phone) : dash}</td>
       <td>${r.email ? esc(r.email) : dash}</td>
       <td class="inv-num">${customerQuotes(r).length}</td>
@@ -12480,12 +12480,12 @@ const LEAD_STAGES = {
     it. Both are flags only - nothing is blocked.                          */
 const GROK_ORDER = ['Hot', 'Existing', 'Warm', 'Cool', 'Locked', 'Skip'];
 const GROK_PILL = {
-    Hot: 'inv-st-red',
-    Existing: 'inv-st-green',
-    Warm: 'inv-st-amber',
-    Cool: 'inv-st-blue',
-    Locked: 'inv-st-slate',
-    Skip: 'inv-st-slate'
+    Hot: 'ad-pill-red',
+    Existing: 'ad-pill-green',
+    Warm: 'ad-pill-amber',
+    Cool: 'ad-pill-blue',
+    Locked: 'ad-pill-grey',
+    Skip: 'ad-pill-grey'
 };
 
 function blankLead(type) {
@@ -12926,7 +12926,7 @@ function leadWhen(r) {
 }
 
 function grokPill(g) {
-    return GROK_PILL[g] ? `<span class="inv-pill ${GROK_PILL[g]}">${esc(g)}</span>` : '';
+    return GROK_PILL[g] ? `<span class="ad-pill ${GROK_PILL[g]}">${esc(g)}</span>` : '';
 }
 
 function fmtLeadDate(iso) {
@@ -13246,7 +13246,7 @@ const LEAD_PRIO_LABEL = { high: 'High', medium: 'Medium', low: 'Low' };
 
 function leadStagePill2(stage) {
     const s = LEAD_STAGES[stage] ? stage : 'new';
-    return `<span class="lead-stage is-${s}">${esc(LEAD_STAGES[s])}</span>`;
+    return `<span class="ad-pill lead-stage is-${s}">${esc(LEAD_STAGES[s])}</span>`;
 }
 
 /*  Value: the linked quote's total when there is one, else Max's estimate. */
@@ -14317,7 +14317,7 @@ function leadMobileCardHtml(r) {
     const where = r.venue || r.town || '';
     const km = leadKmText(r);
     const type =
-        `<span class="lead-cat">${esc(r.category || LEAD_TYPES[r.type] || 'Lead')}</span>` +
+        `<span class="ad-pill lead-cat">${esc(r.category || LEAD_TYPES[r.type] || 'Lead')}</span>` +
         (r.verdict ? `<span class="lead-verdict is-${attr(r.verdict)}">${esc(LEAD_VERDICT[r.verdict] || r.verdict)}</span>` : '') +
         (r.stage === 'won' ? '<span class="lead-verdict is-won">🏆 Won</span>' : '');
     const contact = String(r.contactName || '').trim();
@@ -14400,7 +14400,7 @@ function renderLeadRows() {
         ${where ? `<span class="lead-loc" title="${attr(where)}"><span class="lead-ico" aria-hidden="true">📍</span>${esc(where)}</span>` : '<span class="ad-cell-muted">—</span>'}
         ${km ? `<span class="lead-km">${esc(km)}</span>` : ''}
       </td>
-      <td class="lead-catcol">${r.category ? `<span class="lead-cat">${esc(r.category)}</span>` : `<span class="lead-cat is-type">${esc(LEAD_TYPES[r.type] || 'Lead')}</span>`}${r.verdict ? `<span class="lead-verdict is-${attr(r.verdict)}">${esc(LEAD_VERDICT[r.verdict] || r.verdict)}</span>` : ''}</td>
+      <td class="lead-catcol">${r.category ? `<span class="ad-pill lead-cat">${esc(r.category)}</span>` : `<span class="ad-pill lead-cat is-type">${esc(LEAD_TYPES[r.type] || 'Lead')}</span>`}${r.verdict ? `<span class="lead-verdict is-${attr(r.verdict)}">${esc(LEAD_VERDICT[r.verdict] || r.verdict)}</span>` : ''}</td>
       <td class="lead-num">${leadValueHtml(r)}</td>
       <td>${leadNextActHtml(r)}${fu ? `<span class="lead-fu is-${fu}">${fu === 'overdue' ? 'Overdue ' : 'Due '}${esc(fmtLeadDate(String(r.followUp).slice(0, 10)))}</span>` : ''}${(() => {
           const e = leadEoi(r);
@@ -14425,18 +14425,18 @@ function renderLeadRows() {
         const pager = leadPageList(state.leadPage, pages)
             .map((n) =>
                 n === '…'
-                    ? '<span class="lead-pg-gap">…</span>'
-                    : `<button type="button" class="lead-pg${n === state.leadPage ? ' is-on' : ''}" data-lead-page="${n}"${n === state.leadPage ? ' aria-current="page"' : ''}>${n}</button>`
+                    ? '<span class="ad-pg-gap">…</span>'
+                    : `<button type="button" class="ad-pg${n === state.leadPage ? ' is-on' : ''}" data-lead-page="${n}"${n === state.leadPage ? ' aria-current="page"' : ''}>${n}</button>`
             )
             .join('');
         const perOpt = (n) => `<option value="${n}"${per === n ? ' selected' : ''}>${n} per page</option>`;
         foot.innerHTML = `
       <div class="lead-foot-count"><strong>${all.length} lead${all.length === 1 ? '' : 's'}</strong>
         <span>Showing ${from}–${to} of ${all.length}</span></div>
-      <div class="lead-pager">
-        <button type="button" class="lead-pg" data-lead-page="${state.leadPage - 1}"${state.leadPage <= 1 ? ' disabled' : ''} aria-label="Previous page">&#8249;</button>
+      <div class="ad-pages">
+        <button type="button" class="ad-pg" data-lead-page="${state.leadPage - 1}"${state.leadPage <= 1 ? ' disabled' : ''} aria-label="Previous page">&#8249;</button>
         ${pager}
-        <button type="button" class="lead-pg" data-lead-page="${state.leadPage + 1}"${state.leadPage >= pages ? ' disabled' : ''} aria-label="Next page">&#8250;</button>
+        <button type="button" class="ad-pg" data-lead-page="${state.leadPage + 1}"${state.leadPage >= pages ? ' disabled' : ''} aria-label="Next page">&#8250;</button>
       </div>
       <select class="lead-mini-select lead-per" id="lead-per" aria-label="Leads per page">${[10, 25, 50, 100].map(perOpt).join('')}</select>`;
     }
@@ -15193,8 +15193,8 @@ function leadDetailHtml() {
         ${
             !isNew
                 ? `<div class="lead-dtags">
-          ${recurring ? '<span class="lead-cat is-recur">Recurring event</span>' : ''}
-          ${r.category ? `<span class="lead-cat">${esc(r.category)}</span>` : `<span class="lead-cat is-type">${esc(LEAD_TYPES[type])}</span>`}
+          ${recurring ? '<span class="ad-pill lead-cat is-recur">Recurring event</span>' : ''}
+          ${r.category ? `<span class="ad-pill lead-cat">${esc(r.category)}</span>` : `<span class="ad-pill lead-cat is-type">${esc(LEAD_TYPES[type])}</span>`}
           ${leadStagePill2(r.stage)}
           ${r.grokRating ? `${grokPill(r.grokRating)}${r.winPct ? `<span class="lead-win">${esc(r.winPct)}% win</span>` : ''}` : ''}
           ${leadNeedsContact(r) ? '<span class="lead-flag">Needs contact</span>' : ''}
@@ -15205,8 +15205,8 @@ function leadDetailHtml() {
         }
       </div>
 
-      <nav class="lead-tabs" role="tablist" aria-label="Lead sections">
-        ${tabs.map(([k, label]) => `<button type="button" role="tab" class="lead-tab${tab === k ? ' is-on' : ''}" data-lead-tab="${k}" aria-selected="${tab === k}">${label}</button>`).join('')}
+      <nav class="ad-linetabs" role="tablist" aria-label="Lead sections">
+        ${tabs.map(([k, label]) => `<button type="button" role="tab" class="ad-linetab${tab === k ? ' is-on' : ''}" data-lead-tab="${k}" aria-selected="${tab === k}">${label}</button>`).join('')}
       </nav>
 
       <div class="lead-panes">
@@ -15239,7 +15239,7 @@ function wireLeadDetail() {
 
     const showTab = (k) => {
         state.leadTab = k;
-        panel.querySelectorAll('.lead-tab[data-lead-tab]').forEach((b) => {
+        panel.querySelectorAll('.ad-linetab[data-lead-tab]').forEach((b) => {
             const on = b.getAttribute('data-lead-tab') === k;
             b.classList.toggle('is-on', on);
             b.setAttribute('aria-selected', String(on));
@@ -15253,7 +15253,7 @@ function wireLeadDetail() {
         panel.scrollTop = 0;
     };
     const contactsTabLabel = () => {
-        const t = panel.querySelector('.lead-tab[data-lead-tab="contacts"]');
+        const t = panel.querySelector('.ad-linetab[data-lead-tab="contacts"]');
         const n = leadContactCount(leadDraft);
         if (t) t.textContent = 'Contacts' + (n ? ` (${n})` : '');
     };

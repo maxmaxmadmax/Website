@@ -8,8 +8,8 @@
    the quotes and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=847'; // who still owes money
-import { isBooked, pickLineProgress } from './stock.js?v=847';
+import { owesMoney } from './messages.js?v=848'; // who still owes money
+import { isBooked, pickLineProgress } from './stock.js?v=848';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -252,8 +252,8 @@ export function pipelineHtml(jobs, f, h) {
       </div>
 
       <div class="sp-bar">
-        <div class="sp-tabs" role="tablist">
-          ${TABS.map(([k, label]) => `<button type="button" role="tab" class="sp-tab${f.tab === k ? ' is-on' : ''}" data-sp-tab="${k}">${label}${k === 'archived' ? '' : ' (' + n[k] + ')'}</button>`).join('')}
+        <div class="ad-tabs" role="tablist">
+          ${TABS.map(([k, label]) => `<button type="button" role="tab" class="ad-tab${f.tab === k ? ' is-on' : ''}" data-sp-tab="${k}">${label}${k === 'archived' ? '' : ' (' + n[k] + ')'}</button>`).join('')}
         </div>
         <select id="sp-dates" class="ad-select sp-dates" aria-label="Event dates">
           ${dateOpt('all', 'All dates')}${dateOpt('upcoming', 'Upcoming')}${dateOpt('month', 'This month')}${dateOpt('past', 'Past')}

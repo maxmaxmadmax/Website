@@ -23,28 +23,7 @@
     color: var(--ad-muted);
     font-size: 14px;
 }
-.ms-tabs {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-}
-.ms-tab {
-    border: 1px solid var(--ad-line);
-    background: var(--ad-white);
-    border-radius: 999px;
-    padding: 7px 16px;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-}
-.ms-tab.is-on {
-    background: var(--ad-ink);
-    color: var(--ad-white);
-    border-color: var(--ad-ink);
-}
-.ms-tab:disabled {
+.ad-tab:disabled {
     opacity: 0.45;
     cursor: default;
 }
@@ -99,15 +78,6 @@
     color: var(--ad-red);
     font-weight: 700;
     font-size: 12px;
-}
-.ms-tag {
-    display: inline-block;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 1px 7px;
-    border-radius: 999px;
-    background: var(--ad-desk);
-    color: var(--ad-text-soft);
 }
 .ms-chip {
     display: inline-block;

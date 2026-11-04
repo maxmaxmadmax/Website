@@ -200,14 +200,6 @@
 }
 
 /* ---- pills (category + status) ---- */
-.inv-pill {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 999px;
-    font-size: 0.72rem;
-    font-weight: 700;
-    white-space: nowrap;
-}
 .inv-c0 {
     background: var(--ad-desk);
     color: var(--ad-muted);
@@ -239,27 +231,6 @@
 .inv-thumb.inv-c0 {
     background: var(--ad-line);
 }
-
-.inv-st-green {
-    background: var(--ad-green-bg);
-    color: var(--ad-green);
-}
-.inv-st-blue {
-    background: var(--ad-blue-bg);
-    color: var(--ad-blue);
-}
-.inv-st-red {
-    background: var(--ad-red-bg);
-    color: var(--ad-red);
-}
-.inv-st-amber {
-    background: var(--ad-orange-soft);
-    color: var(--ad-amber);
-}
-.inv-st-slate {
-    background: var(--ad-desk);
-    color: var(--ad-text-soft);
-}
 .inv-perday {
     color: var(--ad-faint);
     font-weight: 400;
@@ -287,35 +258,6 @@
     margin: 0;
     color: var(--ad-muted);
     font-size: 0.82rem;
-}
-.inv-pages {
-    display: flex;
-    gap: 4px;
-}
-.inv-pagebtn {
-    min-width: 32px;
-    height: 32px;
-    padding: 0 8px;
-    border: 1px solid var(--ad-line);
-    background: var(--ad-white);
-    border-radius: 8px;
-    cursor: pointer;
-    font: inherit;
-    font-size: 0.82rem;
-    color: var(--ad-ink);
-}
-.inv-pagebtn:hover:not(:disabled) {
-    border-color: var(--ad-orange);
-    color: var(--ad-orange);
-}
-.inv-pagebtn.is-on {
-    background: var(--ad-orange);
-    border-color: var(--ad-orange);
-    color: var(--ad-white);
-}
-.inv-pagebtn:disabled {
-    opacity: 0.4;
-    cursor: default;
 }
 
 /* ---- detail panel ---- */
@@ -1374,25 +1316,6 @@
 }
 
 /* inventory: Equipment | Consumables tabs */
-.inv-tabs {
-    display: flex;
-    gap: 6px;
-    margin: 0 0 10px;
-}
-.inv-tab {
-    border: 1px solid var(--ad-line, var(--ad-line));
-    background: var(--ad-white);
-    border-radius: 999px;
-    padding: 6px 14px;
-    font-weight: 700;
-    font-size: 13px;
-    cursor: pointer;
-}
-.inv-tab.is-on {
-    background: var(--ad-ink);
-    color: var(--ad-white);
-    border-color: var(--ad-ink);
-}
 .inv-low-dot {
     margin-left: 6px;
     padding: 1px 7px;
@@ -1400,22 +1323,6 @@
     background: var(--ad-red);
     color: var(--ad-white);
     font-size: 11px;
-}
-.inv-pill-low,
-.inv-pill-ok {
-    display: inline-block;
-    padding: 2px 9px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 700;
-}
-.inv-pill-low {
-    background: var(--ad-red-bg);
-    color: var(--ad-red);
-}
-.inv-pill-ok {
-    background: var(--ad-green-bg);
-    color: var(--ad-green);
 }
 .inv-detail.is-cons .inv-gear-only,
 .inv-detail:not(.is-cons) .inv-cons-only {

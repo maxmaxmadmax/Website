@@ -1147,27 +1147,8 @@
     margin-bottom: 12px;
     flex-wrap: wrap;
 }
-.sp-tabs {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
+.sp-bar > .ad-tabs {
     flex: 1;
-}
-.sp-tab {
-    border: 1px solid var(--ad-line);
-    background: var(--ad-white);
-    border-radius: 8px;
-    padding: 8px 14px;
-    font: inherit;
-    font-size: 13px;
-    cursor: pointer;
-    color: var(--ad-ink);
-}
-.sp-tab.is-on {
-    background: var(--sp-orange);
-    border-color: var(--sp-orange);
-    color: var(--ad-white);
-    font-weight: 700;
 }
 .sp-dates {
     width: auto;
@@ -1484,17 +1465,6 @@
     .sp-stat {
         flex-direction: column;
         gap: 8px;
-    }
-    .sp-tabs {
-        flex: 1 1 100%;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        padding-bottom: 4px;
-        -webkit-overflow-scrolling: touch;
-    }
-    .sp-tab {
-        flex: none;
-        white-space: nowrap;
     }
     .sp-dates {
         width: 100%;

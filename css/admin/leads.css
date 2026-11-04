@@ -500,16 +500,6 @@
 }
 
 /* pills */
-.lead-cat {
-    display: inline-block;
-    padding: 3px 9px;
-    border-radius: 6px;
-    white-space: nowrap;
-    background: var(--ad-desk);
-    color: var(--ad-ink);
-    font-size: 0.75rem;
-    font-weight: 600;
-}
 .lead-cat.is-type {
     color: var(--ad-muted);
 }
@@ -562,40 +552,6 @@
 }
 .lead-foot-count strong {
     color: var(--ad-ink);
-}
-.lead-pager {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-}
-.lead-pg {
-    min-width: 32px;
-    height: 32px;
-    padding: 0 8px;
-    border: 1px solid var(--ad-line);
-    border-radius: 8px;
-    background: var(--ad-white);
-    font: inherit;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--ad-ink);
-    cursor: pointer;
-}
-.lead-pg:hover:not(:disabled) {
-    border-color: var(--ad-line-strong);
-}
-.lead-pg.is-on {
-    background: var(--ad-orange);
-    border-color: var(--ad-orange);
-    color: var(--ad-white);
-}
-.lead-pg:disabled {
-    opacity: 0.4;
-    cursor: default;
-}
-.lead-pg-gap {
-    color: var(--ad-faint);
-    padding: 0 2px;
 }
 .lead-detail .inv-detail-foot {
     position: sticky;
@@ -928,42 +884,6 @@
 .lead-win {
     font-size: 0.75rem;
     color: var(--ad-muted);
-}
-
-.lead-tabs {
-    display: flex;
-    gap: 2px;
-    padding: 0 12px;
-    border-bottom: 1px solid var(--ad-line);
-    position: sticky;
-    top: 0;
-    z-index: 3;
-    background: var(--ad-white);
-    overflow-x: auto;
-    scrollbar-width: none;
-}
-.lead-tabs::-webkit-scrollbar {
-    display: none;
-}
-.lead-tab {
-    flex: 0 0 auto;
-    border: 0;
-    background: transparent;
-    cursor: pointer;
-    font: inherit;
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--ad-muted);
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-    padding: 8px 8px 7px;
-}
-.lead-tab:hover {
-    color: var(--ad-ink);
-}
-.lead-tab.is-on {
-    color: var(--ad-orange);
-    border-bottom-color: var(--ad-orange);
 }
 .lead-pane {
     display: none;
@@ -2264,10 +2184,6 @@
 /* banner: never let the header or tab bar get squeezed away */
 .lead-detail > *:not(.lead-panes) {
     flex-shrink: 0;
-}
-.lead-tabs {
-    flex-shrink: 0;
-    min-height: 38px;
 }
 /* fixed column widths so spare room can't pile up in one column */
 .lead-table thead th:nth-child(1) {

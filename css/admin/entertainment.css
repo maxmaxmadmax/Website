@@ -259,38 +259,6 @@
     border-bottom: 1px solid var(--ad-line);
 }
 
-.ad-tabs {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-}
-
-.ad-tab {
-    padding: 7px 14px;
-    border: 1px solid transparent;
-    border-radius: 8px;
-    background: none;
-    color: var(--ad-muted);
-    font: inherit;
-    font-size: 0.84rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition:
-        background-color 0.15s,
-        color 0.15s;
-}
-
-.ad-tab:hover {
-    background: var(--ad-desk);
-    color: var(--ad-ink);
-}
-
-.ad-tab.is-on {
-    background: var(--ad-ink);
-    border-color: var(--ad-ink);
-    color: var(--ad-white);
-}
-
 .ad-book-search {
     width: min(260px, 100%);
     padding: 8px 12px;
@@ -428,29 +396,6 @@ body.ad-fit .ad-main {
 }
 
 /* ENTERTAINMENT - styled like Crew & Vehicles */
-.ent-tabs {
-    display: inline-flex;
-    background: var(--ad-desk);
-    border-radius: 10px;
-    padding: 3px;
-    margin-right: 8px;
-}
-.ent-tab {
-    border: 0;
-    background: transparent;
-    padding: 7px 16px;
-    border-radius: 8px;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--ad-muted);
-    cursor: pointer;
-}
-.ent-tab.is-on {
-    background: var(--ad-white);
-    color: var(--ad-ink);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-}
 .ent-split {
     display: grid;
     gap: 16px;
@@ -783,14 +728,6 @@ body.ad-fit .ad-main {
     }
 }
 @media (max-width: 760px) {
-    .ent-tabs {
-        max-width: 100%;
-        overflow-x: auto;
-        flex-wrap: nowrap;
-    }
-    .ent-tab {
-        white-space: nowrap;
-    }
     .ad-book-tabs {
         flex-wrap: wrap;
         gap: 8px;

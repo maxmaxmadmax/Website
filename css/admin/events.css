@@ -29,31 +29,6 @@
     gap: 8px;
     flex-wrap: wrap;
 }
-.ev-tabs {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-    border-bottom: 1px solid var(--ad-line);
-    margin: 0 0 18px;
-}
-.ev-tab {
-    padding: 10px 14px;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--ad-muted);
-    text-decoration: none;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-    border-radius: 6px 6px 0 0;
-}
-.ev-tab:hover {
-    color: var(--ad-ink);
-    background: var(--ad-desk);
-}
-.ev-tab.is-on {
-    color: var(--ad-orange);
-    border-bottom-color: var(--ad-orange);
-}
 .ev-hub-body > .ad-page-head h1 {
     font-size: 20px;
 }

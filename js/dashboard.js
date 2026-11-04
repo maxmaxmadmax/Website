@@ -10,9 +10,9 @@
    counts in the month it was last paid (lastPaidAt / paidAt / acceptedAt).
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=847';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=847';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=847';
+import { isBooked, pickLineProgress } from './stock.js?v=848';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=848';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=848';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -485,7 +485,7 @@ export function dashboardHtml(ctx) {
             ${c.eventVenue ? `<p class="db-job-sub">${esc(c.eventVenue)}</p>` : ''}
             <p class="db-job-tags">
               <span class="ad-pill db-pill-ours">Our event</span>
-              ${sitesNote ? `<span class="db-tag">${esc(sitesNote)}</span>` : ''}
+              ${sitesNote ? `<span class="ad-pill ad-pill-grey">${esc(sitesNote)}</span>` : ''}
             </p>
           </div>
           <div class="db-job-wx">${weatherBox(ctx.weather && ctx.weather[q.id], esc)}</div>
@@ -505,7 +505,7 @@ export function dashboardHtml(ctx) {
         let word = 'Invoice sent';
         if (inv.status === 'approved') word = 'Invoice ready';
         else if (inv.paymentStatus === 'paid' || inv.status === 'paid') word = 'Paid';
-        return ` <a class="db-tag db-invtag" href="#/quoteDocs?q=${attr(inv.id)}">${esc(word)} &middot; ${esc(money(inv.totalCents))}</a>`;
+        return ` <a class="ad-pill ad-pill-grey db-invtag" href="#/quoteDocs?q=${attr(inv.id)}">${esc(word)} &middot; ${esc(money(inv.totalCents))}</a>`;
     };
     const gigPills = (q) => {
         if (q.noDj) return '<span class="ad-pill ad-pill-red">No DJ booked</span>';
@@ -554,8 +554,8 @@ export function dashboardHtml(ctx) {
             pill = (q.jobConfirmedAt && !q.paymentStatus ? 'Confirmed · pay later · ' : 'Deposit in · ') + money(owing) + ' owing';
         let crewTag = '';
         if ((q.crewAssigned || []).length) {
-            crewTag = `<span class="db-tag db-crewtag">&#128119; ${esc(q.crewAssigned.map((x) => x.name.split(' ')[0]).join(', '))}</span>`;
-        } else if (booked) crewTag = '<span class="db-tag db-nocrew">No crew yet</span>';
+            crewTag = `<span class="ad-pill ad-pill-grey db-crewtag">&#128119; ${esc(q.crewAssigned.map((x) => x.name.split(' ')[0]).join(', '))}</span>`;
+        } else if (booked) crewTag = '<span class="ad-pill ad-pill-grey db-nocrew">No crew yet</span>';
         return `
         <li class="db-job ${booked ? 'is-confirmed' : 'is-pending'}">
           <div class="db-job-date"><b>${esc(shortDate(q.hire.startDate))}</b>${stateTag(booked)}</div>
@@ -564,9 +564,9 @@ export function dashboardHtml(ctx) {
             ${c.eventVenue ? `<p class="db-job-sub">${esc(c.eventVenue)}</p>` : ''}
             <p class="db-job-tags">
               <span class="ad-pill ad-pill-${st.status[1]}">${esc(pill)}</span>
-              ${pp && pp.lines ? `<span class="db-tag">${pp.returned === pp.lines ? 'All gear back' : pp.packed + ' of ' + pp.lines + ' packed'}</span>` : ''}
+              ${pp && pp.lines ? `<span class="ad-pill ad-pill-grey">${pp.returned === pp.lines ? 'All gear back' : pp.packed + ' of ' + pp.lines + ' packed'}</span>` : ''}
               ${crewTag}
-              ${crew.length ? `<span class="db-tag">${esc(crew.slice(0, 3).join(', '))}${crew.length > 3 ? ' +' + (crew.length - 3) : ''}</span>` : ''}
+              ${crew.length ? `<span class="ad-pill ad-pill-grey">${esc(crew.slice(0, 3).join(', '))}${crew.length > 3 ? ' +' + (crew.length - 3) : ''}</span>` : ''}
             </p>
           </div>
           <div class="db-job-wx">${weatherBox(ctx.weather && ctx.weather[q.id], esc)}</div>

@@ -16,7 +16,7 @@
    ctx = { state, h: { esc, attr }, call, render, money }
    ========================================================================== */
 
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=847';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=848';
 
 const SEND_TIME = '9:35 am';
 
@@ -280,7 +280,7 @@ export function messagesHtml(ctx) {
             return `<tr data-ms-open="${h.attr(m.id)}">
       <td class="ms-when">${h.esc(whenText(m, ev))}</td>
       <td><strong>${h.esc(m.name || '(no name)')}</strong><span class="ms-sub">${h.esc(fill(m.subject || '', { event_name: ev.name || '', event_date: ev.dateLabel || '' }, String))}</span></td>
-      <td>${h.esc(who)}${m.promo ? ' <span class="ms-tag">Promo</span>' : ''}</td>
+      <td>${h.esc(who)}${m.promo ? ' <span class="ad-pill ad-pill-grey">Promo</span>' : ''}</td>
       <td><span class="ms-chip ms-${tone}">${h.esc(label)}</span></td>
       <td class="ms-sent">${wl ? sent + ' offer' + (sent === 1 ? '' : 's') : sent + ' of ' + total}${failed ? ` <span class="ms-fail">${failed} failed</span>` : ''}</td>
     </tr>`;
@@ -311,13 +311,13 @@ export function messagesHtml(ctx) {
       </div>
       <button type="button" class="ad-btn ad-btn-primary" data-ms-new>+ New message</button>
     </div>
-    <div class="ms-tabs" role="tablist">
-      <button type="button" class="ms-tab${tab === 'vendors' ? ' is-on' : ''}" role="tab" data-ms-tab="vendors">Vendors</button>
-      ${inHub ? '' : `<button type="button" class="ms-tab${tab === 'clients' ? ' is-on' : ''}" role="tab" data-ms-tab="clients">Clients</button>`}
-      <button type="button" class="ms-tab" disabled title="Coming soon">Crew &amp; performers</button>
-      ${inHub ? `<a class="ms-tab" role="tab" href="#/event?id=${h.attr(state.activeEventId || '')}&tab=sponsors">Sponsors</a>` : `<button type="button" class="ms-tab${tab === 'sponsors' ? ' is-on' : ''}" role="tab" data-ms-tab="sponsors">Sponsors</button>`}
-      <button type="button" class="ms-tab${tab === 'reminders' ? ' is-on' : ''}" role="tab" data-ms-tab="reminders">Reminders</button>
-      <button type="button" class="ms-tab ms-tab-log${tab === 'sent' ? ' is-on' : ''}" role="tab" data-ms-tab="sent">Sent emails</button>
+    <div class="ad-tabs" role="tablist">
+      <button type="button" class="ad-tab${tab === 'vendors' ? ' is-on' : ''}" role="tab" data-ms-tab="vendors">Vendors</button>
+      ${inHub ? '' : `<button type="button" class="ad-tab${tab === 'clients' ? ' is-on' : ''}" role="tab" data-ms-tab="clients">Clients</button>`}
+      <button type="button" class="ad-tab" disabled title="Coming soon">Crew &amp; performers</button>
+      ${inHub ? `<a class="ad-tab" role="tab" href="#/event?id=${h.attr(state.activeEventId || '')}&tab=sponsors">Sponsors</a>` : `<button type="button" class="ad-tab${tab === 'sponsors' ? ' is-on' : ''}" role="tab" data-ms-tab="sponsors">Sponsors</button>`}
+      <button type="button" class="ad-tab${tab === 'reminders' ? ' is-on' : ''}" role="tab" data-ms-tab="reminders">Reminders</button>
+      <button type="button" class="ad-tab ms-tab-log${tab === 'sent' ? ' is-on' : ''}" role="tab" data-ms-tab="sent">Sent emails</button>
     </div>
     ${body}
     <p class="ms-key"><span class="ms-chip ms-grey">Draft</span> still being written &nbsp; <span class="ms-chip ms-amber">Your OK</span> ready &mdash; needs your approval &nbsp; <span class="ms-chip ms-green">Auto</span> approved, sends itself</p>

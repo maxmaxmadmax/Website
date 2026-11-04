@@ -1341,3 +1341,117 @@ body {
         transform: rotate(360deg);
     }
 }
+
+/* ==========================================================================
+   SHARED PARTS - one look for things every page uses (pager, chips, tabs, labels...)
+   ========================================================================== */
+
+/* Page numbers under a list */
+.ad-pg {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid var(--ad-line);
+    background: var(--ad-white);
+    border-radius: 8px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.82rem;
+    color: var(--ad-ink);
+}
+.ad-pg:hover:not(:disabled) {
+    border-color: var(--ad-orange);
+    color: var(--ad-orange);
+}
+.ad-pg.is-on {
+    background: var(--ad-orange);
+    border-color: var(--ad-orange);
+    color: var(--ad-white);
+}
+.ad-pg:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.ad-pages {
+    display: flex;
+    gap: 4px;
+}
+
+.ad-pg-gap {
+    color: var(--ad-faint);
+    padding: 0 2px;
+}
+
+/* Tabs: buttons that switch a page between views */
+.ad-tab {
+    padding: 7px 14px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: none;
+    color: var(--ad-muted);
+    font: inherit;
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition:
+        background-color 0.15s,
+        color 0.15s;
+}
+.ad-tab:hover {
+    background: var(--ad-desk);
+    color: var(--ad-ink);
+}
+.ad-tab.is-on {
+    background: var(--ad-ink);
+    border-color: var(--ad-ink);
+    color: var(--ad-white);
+}
+
+.ad-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* Underline tabs: switch the sections of a panel */
+.ad-linetab {
+    flex: 0 0 auto;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--ad-muted);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    padding: 8px 8px 7px;
+}
+.ad-linetab:hover {
+    color: var(--ad-ink);
+}
+.ad-linetab.is-on {
+    color: var(--ad-orange);
+    border-bottom-color: var(--ad-orange);
+}
+
+.ad-linetabs {
+    display: flex;
+    gap: 2px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--ad-line);
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: var(--ad-white);
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex-shrink: 0;
+    min-height: 38px;
+}
+.ad-linetabs::-webkit-scrollbar {
+    display: none;
+}

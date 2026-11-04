@@ -360,7 +360,7 @@
     font-size: 13px;
 }
 
-a.ms-tab {
+a.ad-tab {
     text-decoration: none;
     display: inline-flex;
     align-items: center;
@@ -399,13 +399,6 @@ a.ms-tab {
     margin: 0;
     color: var(--ad-muted);
     font-size: 13px;
-}
-.spd-tabs {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
 }
 
 .spd-filters {

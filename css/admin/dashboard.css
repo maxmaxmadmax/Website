@@ -193,13 +193,6 @@
     flex-wrap: wrap;
     gap: 6px;
 }
-.db-tag {
-    font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 20px;
-    background: var(--ad-desk);
-    color: var(--ad-ink);
-}
 .db-job-acts {
     display: flex;
     gap: 6px;
