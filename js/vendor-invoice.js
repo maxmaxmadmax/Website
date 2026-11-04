@@ -16,9 +16,9 @@
    Data comes from getVendorInvoice (the bookings collection stays closed).
    ========================================================================== */
 
-import { termBodyHtml } from './terms-data.js?v=836';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=836';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=836';
+import { termBodyHtml } from './terms-data.js?v=837';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=837';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=837';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -155,7 +155,7 @@ function siteMap(d) {
         .join(' + ');
     return (
         '<div class="qp-map"><p class="qp-mini">Where you are</p>' +
-        '<p class="qp-sub" style="margin:0 0 10px">Your site: <strong>' +
+        '<p class="qp-sub vi-map-sub">Your site: <strong>' +
         esc(names) +
         '</strong> &mdash; highlighted in orange on the plan.</p>' +
         '<svg viewBox="0 0 ' +
@@ -164,7 +164,7 @@ function siteMap(d) {
         h +
         '" role="img" aria-label="Site map, your site ' +
         esc(names) +
-        ' highlighted" style="display:block;width:100%;max-width:280px;height:auto;margin:0 auto;border:1px solid #e3e3e6;border-radius:10px;background:#fff">' +
+        ' highlighted">' +
         lm +
         sites +
         '</svg></div>'
@@ -192,18 +192,18 @@ function documentsHtml(d) {
     const row = (x) =>
         '<a href="' +
         esc(x.url) +
-        '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid #e3e3e6;border-radius:8px;background:#fff;text-decoration:none;color:#1a1a1a">' +
-        '<span aria-hidden="true" style="font-size:20px">&#128196;</span>' +
-        '<span style="flex:1;min-width:0"><b style="display:block;word-break:break-word">' +
+        '" target="_blank" rel="noopener" class="vi-doc">' +
+        '<span aria-hidden="true" class="vi-doc-ico">&#128196;</span>' +
+        '<span class="vi-doc-text"><b>' +
         esc(x.name) +
         '</b>' +
-        (x.type ? '<span style="font-size:12.5px;color:#777">' + esc(x.type) + '</span>' : '') +
+        (x.type ? '<span class="vi-doc-type">' + esc(x.type) + '</span>' : '') +
         '</span>' +
-        '<span style="color:#ff6b00;font-weight:700;font-size:13px">Open &rarr;</span></a>';
+        '<span class="vi-doc-open">Open &rarr;</span></a>';
     return (
-        '<div class="qp-docs" style="margin-top:22px;padding:16px 18px;border:1px solid #ddd;border-radius:12px;background:#fafafa">' +
-        '<p class="qp-mini" style="margin-top:0">Your documents on file</p>' +
-        '<div style="display:grid;gap:8px">' +
+        '<div class="qp-docs">' +
+        '<p class="qp-mini">Your documents on file</p>' +
+        '<div class="vi-doc-list">' +
         docs.map(row).join('') +
         '</div></div>'
     );
@@ -266,7 +266,7 @@ function shareHtml(d) {
             '<a class="qv-btn qv-btn-primary" href="' +
                 POSTER_URL +
                 '" download="Eatz-and-Beatz-poster.webp" target="_blank" rel="noopener">Poster</a>' +
-                '<a class="qv-btn qv-btn-ghost" style="color:#111;border-color:#111;background:#fff" href="' +
+                '<a class="qv-btn qv-btn-ghost vi-btn-light" href="' +
                 PROGRAM_URL +
                 '" target="_blank" rel="noopener">A4 program</a>'
         ) +
@@ -341,11 +341,11 @@ function top(d) {
 
     return `
     <section class="qp-hero">
-      <div class="qp-hero-photo" style="--qp-photo:none;background:linear-gradient(180deg,#ff6b00 0%,#d95a00 55%,#0b0b0b 100%)">
-        <div class="qp-hero-in" style="max-width:none;width:100%;display:flex;flex-wrap:wrap;gap:30px;align-items:center">
-          ${posterOf(ev) ? '<img src="' + esc(posterOf(ev)) + '" alt="' + esc(ev.name) + ' poster" style="flex:0 0 auto;width:min(100%,270px);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.5)">' : ''}
-          <div style="flex:1 1 300px;max-width:680px">
-            <p class="qp-eyebrow" style="color:#fff">Vendor invoice &amp; event guide</p>
+      <div class="qp-hero-photo vi-hero-photo">
+        <div class="qp-hero-in vi-hero-in">
+          ${posterOf(ev) ? '<img class="vi-hero-poster" src="' + esc(posterOf(ev)) + '" alt="' + esc(ev.name) + ' poster">' : ''}
+          <div class="vi-hero-words">
+            <p class="qp-eyebrow vi-hero-eyebrow">Vendor invoice &amp; event guide</p>
             <h1>${esc(ev.name || 'Eatz & Beatz')}</h1>
             <p class="qp-when">${ev.dateLabel ? svgIcon('Date') + esc(ev.dateLabel) : ''}${where ? '<br>' + svgIcon('Pin') + esc(where) : ''}</p>
           </div>
@@ -395,14 +395,14 @@ function guide(d) {
         <div>
           <p class="qp-mini">What to bring</p>
           <div class="qp-incl"><ul>${bring}</ul></div>
-          <p class="qp-mini" style="margin-top:24px">On the night</p>
+          <p class="qp-mini vi-mini-gap">On the night</p>
           <ul class="vi-rules">${rules}</ul>
           <div class="vi-dress"><span aria-hidden="true">&#127875;</span><p><b>Win your vendor fee back!</b> Dress up and deck out your stall for Halloween - the best dressed stall gets their fee refunded.</p></div>
           ${documentsHtml(d)}
         </div>
         <div>${siteMap(d)}</div>
       </div>
-      <p class="qp-sub vi-guide-foot" style="margin-top:22px">Follow directions from event staff for access, setup and departure. Questions? ${esc(d.seller.email)} &middot; ${esc(d.seller.phone)}</p>
+      <p class="qp-sub vi-guide-foot">Follow directions from event staff for access, setup and departure. Questions? ${esc(d.seller.email)} &middot; ${esc(d.seller.phone)}</p>
     </section>`;
 }
 

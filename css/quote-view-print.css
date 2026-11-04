@@ -9,13 +9,13 @@
    ========================================================================== */
 @media print {
     body {
-        background: #fff !important;
+        background: #fff;
     }
 
     #navbar,
     #footer,
     .qv-actions {
-        display: none !important;
+        display: none;
     }
 
     .qv-wrap {
@@ -30,7 +30,7 @@
 
     .qp-book,
     .qp-jump {
-        display: none !important;
+        display: none;
     }
 
     @page {
@@ -66,7 +66,7 @@
     }
 
     .qp-term p {
-        display: block !important;
+        display: block;
     }
 
     .qp-term summary::after {
@@ -210,7 +210,7 @@
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        background: #0b0b0b !important;
+        background: #0b0b0b;
     }
 
     .qp-hero-photo {
@@ -220,7 +220,7 @@
     }
 
     .qp-hero-in {
-        padding: 0 18mm 6mm !important;
+        padding: 0 18mm 6mm;
         max-width: none;
     }
 
@@ -232,7 +232,7 @@
         flex: 1;
         display: flex;
         flex-direction: column;
-        padding: 6mm 18mm 14mm !important;
+        padding: 6mm 18mm 14mm;
     }
 
     .qp-hero .qp-intro {
@@ -296,9 +296,9 @@
         min-height: 270mm;
         display: flex;
         flex-direction: column;
-        padding: 0 6mm !important;
+        padding: 0 6mm;
         justify-content: flex-start;
-        padding-top: 4mm !important;
+        padding-top: 4mm;
     }
 
     .qp-invest .qp-inv {
@@ -320,8 +320,8 @@
         padding-top: 8mm;
     }
 
-    .qv-sechead td {
-        padding: 3mm 2mm 1mm !important;
+    .qv-table .qv-sechead td {
+        padding: 3mm 2mm 1mm;
         font-size: 8.5pt;
         break-after: avoid;
     }
@@ -329,7 +329,7 @@
     .pg-steps,
     .pg-invhead .pg-print,
     .pg-note {
-        display: none !important;
+        display: none;
     }
 
     .qp-styles span {
@@ -343,8 +343,8 @@
 
     .qp-hero-photo.is-dj ~ .qp-hero-body {
         flex: 1 0 auto;
-        padding-top: 7mm !important;
-        padding-bottom: 9mm !important;
+        padding-top: 7mm;
+        padding-bottom: 9mm;
     }
 
     .qp-hero-photo.is-dj ~ .qp-hero-body .qp-tiles {
@@ -373,10 +373,6 @@
 
     .qp-styles {
         margin-top: 8px;
-    }
-
-    .qp-hero-photo.is-dj .qp-hero-in {
-        padding-top: 20px;
     }
 
     .qp-djf {

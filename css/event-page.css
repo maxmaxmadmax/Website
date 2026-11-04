@@ -501,14 +501,14 @@ a.ep-fv:focus-visible {
 
 /* A logo instead of a photo: shown whole, on white */
 .ep-fv-pic-logo {
-    background-size: contain !important;
+    background-size: contain;
     background-repeat: no-repeat;
     background-color: #fff;
 }
 
 /* A portrait photo: face first */
 .ep-fv-pic-top {
-    background-position: center top !important;
+    background-position: center top;
 }
 
 .ep-fv-text {
@@ -869,7 +869,7 @@ a.ep-fv:focus-visible {
     grid-template-columns: 45% 1fr;
     align-items: center;
     gap: 18px;
-    padding: 0 22px 0 0 !important;
+    padding: 0 22px 0 0;
 }
 
 .ep-ent-hosts-pic {
@@ -924,11 +924,11 @@ a.ep-fv:focus-visible {
 
 /* Never split a team name - shrink instead */
 .ep-ent-cricket h3 {
-    font-size: clamp(1.5rem, 2.7vw, 2.3rem) !important;
+    font-size: clamp(1.5rem, 2.7vw, 2.3rem);
     line-height: 0.95;
     margin: 0 0 12px;
-    overflow-wrap: normal !important;
-    word-break: keep-all !important;
+    overflow-wrap: normal;
+    word-break: keep-all;
     hyphens: none;
 }
 
@@ -1005,22 +1005,22 @@ a.ep-fv:focus-visible {
 /* Computer: the four small tiles share the height, the band fills the left */
 @media screen and (min-width: 861px) {
     .ep-ent {
-        grid-template-rows: repeat(4, 1fr) !important;
+        grid-template-rows: repeat(4, 1fr);
         align-items: stretch;
     }
 
-    .ep-ent-card:not(.ep-ent-band) {
+    .ep-ent-card:where(:not(.ep-ent-band)) {
         display: flex;
         flex-direction: column;
         justify-content: center;
     }
 
     .ep-ent-castle {
-        flex-direction: row !important;
+        flex-direction: row;
     }
 
     .ep-ent-hosts {
-        display: grid !important;
+        display: grid;
     }
 
     .ep-ent-band .ep-ent-photo {
@@ -1053,7 +1053,7 @@ a.ep-fv:focus-visible {
     }
 
     .ep-ent-cricket h3 {
-        font-size: clamp(1.35rem, 2.2vw, 1.9rem) !important;
+        font-size: clamp(1.35rem, 2.2vw, 1.9rem);
         margin: 0 0 8px;
     }
 
@@ -1085,7 +1085,7 @@ a.ep-fv:focus-visible {
     }
 
     .ep-ent-gen .ep-ent-card {
-        grid-column: auto !important;
+        grid-column: auto;
         grid-row: auto;
     }
 }
@@ -1418,7 +1418,7 @@ a.ep-fv:focus-visible {
 }
 
 .ep-notice-now {
-    margin-top: 8px !important;
+    margin-top: 8px;
     font-weight: bold;
 }
 

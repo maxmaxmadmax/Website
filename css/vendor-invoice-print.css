@@ -12,74 +12,74 @@
     }
     /* Page 1: the cover, tiles at the bottom like the quote */
     body.vi-page .qv-wrap .qp-hero {
-        min-height: 301.5mm !important;
-        break-after: page !important;
+        min-height: 301.5mm;
+        break-after: page;
     }
     body.vi-page .qv-wrap .qp-hero-photo {
-        min-height: 120mm !important;
+        min-height: 120mm;
     }
     body.vi-page .qv-wrap .qp-hero .qp-tiles {
-        margin-top: auto !important;
+        margin-top: auto;
     }
     /* Page 2: summary, then the tax invoice under it */
     body.vi-page .qv-wrap .qp-invest {
-        min-height: 0 !important;
-        display: block !important;
-        break-after: avoid !important;
-        margin-top: 0 !important;
-        padding: 0 6mm !important;
+        min-height: 0;
+        display: block;
+        break-after: avoid;
+        margin-top: 0;
+        padding: 0 6mm;
     }
     body.vi-page .qv-wrap .qp-invest .qp-inv {
-        margin: 4mm 0 !important;
+        margin: 4mm 0;
     }
     body.vi-page .qv-wrap .qp-invest .qp-inv-extra {
-        margin-top: 4mm !important;
+        margin-top: 4mm;
     }
     body.vi-page .qv-wrap .qv-doc {
-        break-before: avoid !important;
-        min-height: 0 !important;
-        display: block !important;
-        margin-top: 6mm !important;
-        break-after: page !important;
+        break-before: avoid;
+        min-height: 0;
+        display: block;
+        margin-top: 6mm;
+        break-after: page;
     }
     body.vi-page .qv-wrap .qv-foot {
-        display: none !important;
+        display: none;
     }
     body.vi-page .qv-wrap .qv-sumwrap {
-        margin: 5mm 0 0 auto !important;
-        padding: 0 !important;
+        margin: 5mm 0 0 auto;
+        padding: 0;
     }
     /* Page 3: guide + map + documents, then share */
     body.vi-page .qv-wrap .qp-guide {
-        padding: 0 6mm !important;
+        padding: 0 6mm;
         break-inside: avoid;
     }
     body.vi-page .vi-guide-grid {
-        grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) !important;
-        gap: 6mm !important;
-        margin-top: 4mm !important;
+        grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+        gap: 6mm;
+        margin-top: 4mm;
     }
 
     body.vi-page .vi-rules {
-        gap: 1.5mm !important;
-        padding: 2.5mm 3mm !important;
+        gap: 1.5mm;
+        padding: 2.5mm 3mm;
     }
     body.vi-page .vi-dress {
-        margin-top: 3mm !important;
-        padding: 2.5mm 3mm !important;
+        margin-top: 3mm;
+        padding: 2.5mm 3mm;
     }
     body.vi-page .qp-docs {
-        margin-top: 3mm !important;
-        padding: 2.5mm 3mm !important;
+        margin-top: 3mm;
+        padding: 2.5mm 3mm;
     }
     body.vi-page .vi-guide-foot {
-        display: none !important;
+        display: none;
     }
 
     body.vi-page .vi-card li,
     body.vi-page .vi-rules li,
     body.vi-page .vi-dress p {
-        font-size: 9pt !important;
+        font-size: 9pt;
     }
     body.vi-page .vi-card,
     body.vi-page .vi-rules,
@@ -89,55 +89,55 @@
         print-color-adjust: exact;
     }
     body.vi-page .qp-map svg {
-        max-width: 230px !important;
+        max-width: 230px;
     }
     body.vi-page .qv-wrap .qp-share {
-        padding: 0 6mm !important;
-        margin-top: 0 !important;
-        break-before: page !important;
+        padding: 0 6mm;
+        margin-top: 0;
+        break-before: page;
     }
     body.vi-page .qp-share .qp-h2 {
-        font-size: 15pt !important;
-        margin: 0 0 1.5mm !important;
+        font-size: 15pt;
+        margin: 0 0 1.5mm;
     }
     body.vi-page .qp-share .qp-sub {
-        font-size: 9pt !important;
-        margin: 0 0 2mm !important;
+        font-size: 9pt;
+        margin: 0 0 2mm;
     }
     body.vi-page .qp-share .qp-inv-extra {
-        margin-top: 3mm !important;
-        gap: 6mm !important;
+        margin-top: 3mm;
+        gap: 6mm;
     }
     body.vi-page .qv-wrap .qp-share .qv-btn {
-        display: none !important;
+        display: none;
     }
     body.vi-page .vi-share-grid {
-        grid-template-columns: repeat(3, 1fr) !important;
+        grid-template-columns: repeat(3, 1fr);
     }
     body.vi-page .vi-share-btns,
     body.vi-page .vi-ig .qv-btn {
-        display: none !important;
+        display: none;
     }
     body.vi-page .vi-share-link {
-        display: block !important;
+        display: block;
     }
     body.vi-page .vi-ig {
-        margin-top: 3mm !important;
-        padding: 3mm 4mm !important;
+        margin-top: 3mm;
+        padding: 3mm 4mm;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
     body.vi-page .vi-ig p {
-        font-size: 9pt !important;
+        font-size: 9pt;
     }
     body.vi-page .qp-share > .qp-sub {
-        display: none !important;
+        display: none;
     }
     body.vi-page .vi-share-grid {
-        margin-top: 2mm !important;
+        margin-top: 2mm;
     }
     body.vi-page .vi-share-link {
-        margin: 0 !important;
+        margin: 0;
     }
     body.vi-page .vi-share-card {
         padding: 2.5mm 3.5mm;
@@ -149,30 +149,30 @@
     }
     /* Pages 4-5: terms in two columns */
     body.vi-page .qv-wrap .qp-terms {
-        break-before: avoid !important;
-        margin-top: 3mm !important;
+        break-before: avoid;
+        margin-top: 3mm;
     }
     body.vi-page .qp-legal summary {
-        padding: 2mm 3mm !important;
+        padding: 2mm 3mm;
     }
     body.vi-page .qp-legal-body {
-        padding: 2mm 0 0 !important;
-        max-height: none !important;
-        overflow: visible !important;
+        padding: 2mm 0 0;
+        max-height: none;
+        overflow: visible;
         column-count: 2;
         column-gap: 8mm;
-        background: #fff !important;
+        background: #fff;
     }
     body.vi-page .qp-term,
     body.vi-page .qp-legal {
-        break-inside: auto !important;
+        break-inside: auto;
     }
     body.vi-page .qp-legal-clause {
         break-inside: auto;
     }
     body.vi-page .qp-legal-body p,
     body.vi-page .qp-legal-body li {
-        font-size: 7.6pt !important;
-        line-height: 1.28 !important;
+        font-size: 7.6pt;
+        line-height: 1.28;
     }
 }

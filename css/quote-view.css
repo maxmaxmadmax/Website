@@ -499,25 +499,25 @@
     padding: 0 0 0 12px;
 }
 
-.qv-sumpart {
+.qv-sumrow.qv-sumpart {
     border-top: 1px solid #eee;
     font-weight: 600;
-    padding-top: 2px !important;
+    padding-top: 2px;
     margin-top: 2px;
 }
 
-.qv-sumtotal {
+.qv-sumrow.qv-sumtotal {
     border-top: 1px solid #ccc;
     margin-top: 2px;
-    padding-top: 3px !important;
+    padding-top: 3px;
 }
 
-.qv-grand {
+.qv-sumrow.qv-grand {
     font-weight: 800;
     font-size: 17px;
     border-top: 2px solid #111;
     margin-top: 4px;
-    padding-top: 5px !important;
+    padding-top: 5px;
 }
 
 @media screen and (max-width: 640px) {
@@ -913,9 +913,13 @@
     padding: 16px 18px;
 }
 
+/* Side panel rows: smaller type; padding low enough that the totals rows keep theirs */
 .qp-side .qv-sumrow {
-    padding: 4px 0;
     font-size: 14px;
+}
+
+.qp-side :where(.qv-sumrow) {
+    padding: 4px 0;
 }
 
 .qp-done {
@@ -1578,19 +1582,19 @@
     letter-spacing: 0.04em;
 }
 
-.qv-sechead td {
-    padding: 16px 10px 6px !important;
+.qv-table .qv-sechead td {
+    padding: 16px 10px 6px;
     font-weight: 800;
     font-size: 12px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: #111;
-    border-bottom: 2px solid #111 !important;
-    background: #fff !important;
+    border-bottom: 2px solid #111;
+    background: #fff;
 }
 
 .qv-table tbody tr.qv-sechead:first-child td {
-    padding-top: 8px !important;
+    padding-top: 8px;
 }
 
 .qp-full-note {
@@ -1610,9 +1614,9 @@
 }
 
 .qp-overdue {
-    background: #fff1f0 !important;
-    border-color: #f3b3ad !important;
-    color: #a1261b !important;
+    background: #fff1f0;
+    border-color: #f3b3ad;
+    color: #a1261b;
 }
 
 /* ==========================================================================

@@ -103,29 +103,24 @@ a {
     color: var(--sg-orange);
 }
 
+/* Headings: long words wrap instead of widening the page */
 h1,
 h2,
 h3,
 h4,
 h5 {
     line-height: 1.15;
+    overflow-wrap: break-word;
 }
 
-/* Headings use the heavy poster face */
+/* The big ones use the heavy poster face */
 h1,
-h2,
-.featured-event h2 {
+h2 {
     font-family: var(--sg-font-display);
     letter-spacing: -0.5px;
 }
 
-/* Long words and URLs wrap instead of widening the page */
 p,
-h1,
-h2,
-h3,
-h4,
-h5,
 li,
 a {
     overflow-wrap: break-word;
@@ -443,6 +438,12 @@ textarea:focus-visible {
 .btn:hover,
 .btn:focus-visible {
     transform: translateY(-3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn:hover {
+        transform: none;
+    }
 }
 
 /* Outline version */
@@ -1516,7 +1517,6 @@ nav a.nav-cta.active {
         scroll-behavior: auto;
     }
 
-    .btn:hover,
     .sponsors a:hover img {
         transform: none;
     }

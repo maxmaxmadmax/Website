@@ -13,36 +13,36 @@
    PACK
    ========================================================================== */
 body.vi-page .qv-wrap .qp-hero {
-    min-height: 0 !important;
+    min-height: 0;
 }
 body.vi-page .qv-wrap .qp-hero-photo {
-    min-height: 0 !important;
+    min-height: 0;
 }
 body.vi-page .qv-wrap .qp-hero-photo::before {
-    display: none !important;
+    display: none;
 }
 body.vi-page .qv-wrap .qp-hero .qp-tiles {
-    margin-top: 0 !important;
+    margin-top: 0;
 }
 body.vi-page .qv-wrap .qp-invest {
-    min-height: 0 !important;
-    display: block !important;
-    padding-top: 56px !important;
-    padding-bottom: 56px !important;
+    min-height: 0;
+    display: block;
+    padding-top: 56px;
+    padding-bottom: 56px;
 }
 body.vi-page .qv-wrap .qp-invest .qp-h2 {
     margin-bottom: 8px;
 }
 body.vi-page .qv-wrap .qp-invest .qp-inv {
-    margin: 30px 0 !important;
+    margin: 30px 0;
 }
 body.vi-page .qv-wrap .qp-invest .qp-inv td {
     padding-top: 14px;
     padding-bottom: 14px;
 }
 body.vi-page .qv-wrap .qp-invest .qp-inv-extra {
-    margin-top: 40px !important;
-    gap: 40px !important;
+    margin-top: 40px;
+    gap: 40px;
 }
 body.vi-page .qv-wrap .qp-invest .qp-incl li {
     padding-bottom: 10px;
@@ -55,20 +55,20 @@ body.vi-page .qv-wrap .qp-invest .qp-qd dl div {
 }
 body.vi-page .qv-wrap .qp-guide,
 body.vi-page .qv-wrap .qp-share {
-    padding-top: 56px !important;
-    padding-bottom: 56px !important;
+    padding-top: 56px;
+    padding-bottom: 56px;
 }
 body.vi-page .qv-wrap .qv-doc {
-    min-height: 0 !important;
-    display: block !important;
+    min-height: 0;
+    display: block;
 }
 body.vi-page .qv-wrap .qv-sumwrap {
-    margin: 12px 0 0 auto !important;
-    padding-top: 0 !important;
+    margin: 12px 0 0 auto;
+    padding-top: 0;
 }
 body.vi-page .qp-legal,
 body.vi-page .qp-legal * {
-    font-family: Arial, Helvetica, sans-serif !important;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 /* ==========================================================================
@@ -146,6 +146,116 @@ body.vi-page .qp-legal * {
     }
 }
 
+/* Cover: orange sunset, poster beside the words */
+.vi-hero-photo {
+    --qp-photo: none;
+    background: linear-gradient(180deg, #ff6b00 0%, #d95a00 55%, #0b0b0b 100%);
+}
+
+.vi-hero-in {
+    max-width: none;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    align-items: center;
+}
+
+.vi-hero-poster {
+    flex: 0 0 auto;
+    width: min(100%, 270px);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.vi-hero-words {
+    flex: 1 1 300px;
+    max-width: 680px;
+}
+
+.vi-hero-eyebrow {
+    color: #fff;
+}
+
+.vi-mini-gap {
+    margin-top: 24px;
+}
+
+.vi-guide-foot {
+    margin-top: 22px;
+}
+
+/* The site plan */
+.vi-map-sub {
+    margin: 0 0 10px;
+}
+
+.qp-map svg {
+    display: block;
+    width: 100%;
+    max-width: 280px;
+    height: auto;
+    margin: 0 auto;
+    border: 1px solid #e3e3e6;
+    border-radius: 10px;
+    background: #fff;
+}
+
+/* Their documents on file */
+.qp-docs {
+    margin-top: 22px;
+    padding: 16px 18px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background: #fafafa;
+}
+
+.qp-docs .qp-mini {
+    margin-top: 0;
+}
+
+.vi-doc-list {
+    display: grid;
+    gap: 8px;
+}
+
+.vi-doc {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid #e3e3e6;
+    border-radius: 8px;
+    background: #fff;
+    text-decoration: none;
+    color: #1a1a1a;
+}
+
+.vi-doc-ico {
+    font-size: 20px;
+}
+
+.vi-doc-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.vi-doc-text b {
+    display: block;
+    word-break: break-word;
+}
+
+.vi-doc-type {
+    font-size: 12.5px;
+    color: #777;
+}
+
+.vi-doc-open {
+    color: var(--sg-orange);
+    font-weight: 700;
+    font-size: 13px;
+}
+
 /* ==========================================================================
    SHARE - cards with the buttons lined up at the bottom
    ========================================================================== */
@@ -161,6 +271,13 @@ body.vi-page .qp-legal * {
     flex-wrap: wrap;
     gap: 8px;
 }
+/* A white outline button on the light cards */
+.vi-btn-light {
+    color: #111;
+    border-color: #111;
+    background: #fff;
+}
+
 .vi-share-btns .qv-btn {
     text-decoration: none;
     text-align: center;
