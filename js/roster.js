@@ -5,7 +5,7 @@
 
        js/entertainment.js   the roster page at /entertainment
        js/events.js          whose DJ is on which Friday Night
-       js/admin-app.js       the dropdown for naming that DJ
+       js/admin/entertainment.js   the dropdown for naming that DJ
 
    Publishes itself as window.SG_ROSTER. Plain script, not a module.
    ========================================================================== */

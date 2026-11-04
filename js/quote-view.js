@@ -24,9 +24,9 @@
 
 /* ---------- 1  Setup ---------- */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=850';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=850'; // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=850';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=851';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=851'; // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=851';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -248,7 +248,7 @@ function spreadSaving(amounts, disc) {
 /* ---------- 5  Cost groups ---------- */
 
 /*  COST BREAKDOWN GROUPS - KEEP IN STEP between
-    js/quote-view.js and js/admin-app.js. Inventory category -> group shown
+    js/quote-view.js and js/admin/quotes.js. Inventory category -> group shown
     in the totals ("Audio $180, Staging $180, Lighting $60").            */
 const COST_GROUP = {
     audio: 'Audio',

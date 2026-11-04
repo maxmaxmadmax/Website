@@ -3,13 +3,13 @@
 
    Overview and Budget are drawn here. The other tabs are the existing
    admin pages (Vendors, Sites & Map, Entertainment, Messages, Sponsors)
-   rendered by admin-app.js and passed in as `inner`.
+   rendered by the admin (js/admin/) and passed in as `inner`.
 
-   Pure functions - no Firebase, no page state. admin-app.js passes in
+   Pure functions - no Firebase, no page state. the admin (js/admin/) passes in
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=850';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=851';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 

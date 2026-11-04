@@ -4,12 +4,12 @@
    One row per job. Each job is ONE document that moves through:
      Estimate (draft) -> Quote (approved / sent) -> Payment (invoiced) -> Job (paid)
 
-   Pure functions only - no Firebase, no page state. admin-app.js passes in
+   Pure functions only - no Firebase, no page state. the admin (js/admin/) passes in
    the quotes and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=850'; // who still owes money
-import { isBooked, pickLineProgress } from './stock.js?v=850';
+import { owesMoney } from './messages.js?v=851'; // who still owes money
+import { isBooked, pickLineProgress } from './stock.js?v=851';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {

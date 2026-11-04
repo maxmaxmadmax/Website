@@ -1,208 +1,222 @@
 ---
 permalink: /admin.html
 ---
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-<title>SoundzGood Admin</title>
+        <title>SoundzGood Admin</title>
 
-<!-- Staff tool. Not for search engines, not in any public menu. -->
-<meta name="robots" content="noindex, nofollow">
+        <!-- Staff tool. Not for search engines, not in any public menu. -->
+        <meta name="robots" content="noindex, nofollow" />
 
-<link rel="icon" href="images/logo.png">
+        <link rel="icon" href="images/logo.png" />
 
-<!-- Admin styles only (the public site css is kept out so the two never clash).
+        <!-- Admin styles only (the public site css is kept out so the two never clash).
      core = the look every page shares; the rest = one file per feature, only its own bits. -->
-<link rel="stylesheet" href="css/admin/core.css?v=850">
-<link rel="stylesheet" href="css/admin/map.css?v=850">
-<link rel="stylesheet" href="css/admin/entertainment.css?v=850">
-<link rel="stylesheet" href="css/admin/quotes.css?v=850">
-<link rel="stylesheet" href="css/admin/inventory.css?v=850">
-<link rel="stylesheet" href="css/admin/packages.css?v=850">
-<link rel="stylesheet" href="css/admin/leads.css?v=850">
-<link rel="stylesheet" href="css/admin/customers.css?v=850">
-<link rel="stylesheet" href="css/admin/messages.css?v=850">
-<link rel="stylesheet" href="css/admin/dashboard.css?v=850">
-<link rel="stylesheet" href="css/admin/events.css?v=850">
-<link rel="stylesheet" href="css/admin/sponsors.css?v=850">
-<!-- The DJ list for the Friday Nights panel (same roster as the entertainment page). -->
-  <script src="js/roster.js?v=850" defer></script>
-  <script type="module" src="js/admin-app.js?v=850"></script>
-  <!-- AUTO-UPDATE: on open (and when the tab comes back) check for a newer version and reload once. -->
-  <script>
-  (function () {
-    var mine = (document.querySelector('script[src*="admin-app.js?v="]') || {}).src || '';
-    var cur = (mine.match(/v=(\d+)/) || [])[1];
-    function check() {
-      if (!cur) return;
-      fetch('admin.html?check=' + Date.now(), { cache: 'no-store' })
-        .then(function (r) { return r.text(); })
-        .then(function (t) {
-          var live = (t.match(/admin-app\.js\?v=(\d+)/) || [])[1];
-          if (!live || Number(live) <= Number(cur)) return;
-          var key = 'sg-admin-reloaded-' + live;
-          try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, '1'); } catch (e) {}
-          var u = new URL(location.href);
-          u.searchParams.set('v', live);
-          location.replace(u.toString());
-        })
-        .catch(function () {});
-    }
-    check();
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
-  })();
-  </script>
+        <link rel="stylesheet" href="css/admin/core.css?v=851" />
+        <link rel="stylesheet" href="css/admin/map.css?v=851" />
+        <link rel="stylesheet" href="css/admin/entertainment.css?v=851" />
+        <link rel="stylesheet" href="css/admin/quotes.css?v=851" />
+        <link rel="stylesheet" href="css/admin/inventory.css?v=851" />
+        <link rel="stylesheet" href="css/admin/packages.css?v=851" />
+        <link rel="stylesheet" href="css/admin/leads.css?v=851" />
+        <link rel="stylesheet" href="css/admin/customers.css?v=851" />
+        <link rel="stylesheet" href="css/admin/messages.css?v=851" />
+        <link rel="stylesheet" href="css/admin/dashboard.css?v=851" />
+        <link rel="stylesheet" href="css/admin/events.css?v=851" />
+        <link rel="stylesheet" href="css/admin/sponsors.css?v=851" />
+        <!-- The DJ list for the Friday Nights panel (same roster as the entertainment page). -->
+        <script src="js/roster.js?v=851" defer></script>
+        <!-- The admin code: boot.js (the one module) then one plain script per feature, in this order. -->
+        <script type="module" src="js/admin/boot.js?v=851"></script>
+        <script src="js/admin/core.js?v=851" defer></script>
+        <script src="js/admin/vendors.js?v=851" defer></script>
+        <script src="js/admin/map.js?v=851" defer></script>
+        <script src="js/admin/events.js?v=851" defer></script>
+        <script src="js/admin/settings.js?v=851" defer></script>
+        <script src="js/admin/entertainment.js?v=851" defer></script>
+        <script src="js/admin/messages.js?v=851" defer></script>
+        <script src="js/admin/inventory.js?v=851" defer></script>
+        <script src="js/admin/quotes.js?v=851" defer></script>
+        <script src="js/admin/packages.js?v=851" defer></script>
+        <script src="js/admin/crew.js?v=851" defer></script>
+        <script src="js/admin/customers.js?v=851" defer></script>
+        <script src="js/admin/leads.js?v=851" defer></script>
+        <script src="js/admin/lead-rating.js?v=851" defer></script>
+        <!-- AUTO-UPDATE: on open (and when the tab comes back) check for a newer version and reload once. -->
+        <script>
+            (function () {
+                var mine = (document.querySelector('script[src*="admin/core.js?v="]') || {}).src || '';
+                var cur = (mine.match(/v=(\d+)/) || [])[1];
+                function check() {
+                    if (!cur) return;
+                    fetch('admin.html?check=' + Date.now(), { cache: 'no-store' })
+                        .then(function (r) {
+                            return r.text();
+                        })
+                        .then(function (t) {
+                            var live = (t.match(/admin\/core\.js\?v=(\d+)/) || [])[1];
+                            if (!live || Number(live) <= Number(cur)) return;
+                            var key = 'sg-admin-reloaded-' + live;
+                            try {
+                                if (sessionStorage.getItem(key)) return;
+                                sessionStorage.setItem(key, '1');
+                            } catch (e) {}
+                            var u = new URL(location.href);
+                            u.searchParams.set('v', live);
+                            location.replace(u.toString());
+                        })
+                        .catch(function () {});
+                }
+                check();
+                document.addEventListener('visibilitychange', function () {
+                    if (!document.hidden) check();
+                });
+            })();
+        </script>
+    </head>
 
-</head>
-
-<body>
-
-<!-- ==========================================================================
+    <body>
+        <!-- ==========================================================================
      SIGN IN
      Shown until an account with the admin claim is signed in. The claim is
-     what protects this, not the address - see js/admin-app.js.
+     what protects this, not the address - see js/admin/.
      ========================================================================== -->
-<div class="ad-gate" id="ad-gate">
-  <form class="ad-gate-card" id="ad-login">
-    <p class="ad-gate-brand">SoundzGood</p>
-    <h1>Admin</h1>
-    <p class="ad-gate-sub">Staff only.</p>
+        <div class="ad-gate" id="ad-gate">
+            <form class="ad-gate-card" id="ad-login">
+                <p class="ad-gate-brand">SoundzGood</p>
+                <h1>Admin</h1>
+                <p class="ad-gate-sub">Staff only.</p>
 
-    <label for="ad-email">Email</label>
-    <input type="email" id="ad-email" autocomplete="email" required>
+                <label for="ad-email">Email</label>
+                <input type="email" id="ad-email" autocomplete="email" required />
 
-    <label for="ad-password">Password</label>
-    <input type="password" id="ad-password" autocomplete="current-password" required>
+                <label for="ad-password">Password</label>
+                <input type="password" id="ad-password" autocomplete="current-password" required />
 
-    <p class="ad-error" id="ad-login-error" hidden></p>
+                <p class="ad-error" id="ad-login-error" hidden></p>
 
-    <button type="submit" class="ad-btn ad-btn-primary" id="ad-login-submit">Sign In</button>
-  </form>
-</div>
+                <button type="submit" class="ad-btn ad-btn-primary" id="ad-login-submit">Sign In</button>
+            </form>
+        </div>
 
-
-<!-- ==========================================================================
+        <!-- ==========================================================================
      THE APP
      ========================================================================== -->
-<div class="ad-shell" id="ad-shell" hidden>
+        <div class="ad-shell" id="ad-shell" hidden>
+            <!-- ---- left rail ------------------------------------------------- -->
+            <aside class="ad-rail" id="ad-rail">
+                <div class="ad-brand">
+                    <img src="images/logowhite.png" alt="" class="ad-brand-mark" />
+                    <div>
+                        <p class="ad-brand-name">SoundzGood</p>
+                        <p class="ad-brand-sub">Events &middot; Production &middot; Hire</p>
+                    </div>
+                </div>
 
-  <!-- ---- left rail ------------------------------------------------- -->
-  <aside class="ad-rail" id="ad-rail">
+                <!-- THE RAIL - menu grouped under plain section labels. data-soon items are Coming Soon stubs. -->
+                <nav class="ad-nav" aria-label="Admin sections">
+                    <button type="button" class="ad-nav-item" data-view="dashboard">
+                        <span class="ad-ico" aria-hidden="true">▤</span> Dashboard
+                    </button>
 
-    <div class="ad-brand">
-      <img src="images/logowhite.png" alt="" class="ad-brand-mark">
-      <div>
-        <p class="ad-brand-name">SoundzGood</p>
-        <p class="ad-brand-sub">Events &middot; Production &middot; Hire</p>
-      </div>
-    </div>
+                    <p class="ad-nav-label">Sales</p>
+                    <button type="button" class="ad-nav-item" data-view="leads">
+                        <span class="ad-ico" aria-hidden="true">★</span> Gig Opportunities
+                    </button>
+                    <button type="button" class="ad-nav-item" data-view="leadRate">
+                        <span class="ad-ico" aria-hidden="true">🔥</span> Gig Match
+                    </button>
+                    <button type="button" class="ad-nav-item" data-view="quoteDocs">
+                        <span class="ad-ico" aria-hidden="true">▦</span> Sales Pipeline
+                    </button>
 
-    <!-- THE RAIL - menu grouped under plain section labels. data-soon items are Coming Soon stubs. -->
-    <nav class="ad-nav" aria-label="Admin sections">
+                    <p class="ad-nav-label">Events</p>
+                    <button type="button" class="ad-nav-item" data-view="events">
+                        <span class="ad-ico" aria-hidden="true">◈</span> Events
+                    </button>
+                    <!-- Applications is off the menu on purpose - Vendors > Unpaid shows the same people. #/applications still opens for old links. -->
+                    <button type="button" class="ad-nav-item" data-view="vendors">
+                        <span class="ad-ico" aria-hidden="true">☺</span> Vendors
+                    </button>
+                    <button type="button" class="ad-nav-item" data-view="map">
+                        <span class="ad-ico" aria-hidden="true">▦</span> Sites &amp; Map
+                    </button>
+                    <button type="button" class="ad-nav-item" data-view="entertainment">
+                        <span class="ad-ico" aria-hidden="true">♫</span> Entertainment
+                    </button>
+                    <button type="button" class="ad-nav-item" data-view="sponsorDir">
+                        <span class="ad-ico" aria-hidden="true">◆</span> Sponsors
+                    </button>
+                    <button type="button" class="ad-nav-item" data-view="volunteers">
+                        <span class="ad-ico" aria-hidden="true">✋</span> Volunteers
+                    </button>
 
-      <button type="button" class="ad-nav-item" data-view="dashboard">
-        <span class="ad-ico" aria-hidden="true">▤</span> Dashboard
-      </button>
+                    <p class="ad-nav-label">Pricing</p>
+                    <button type="button" class="ad-nav-item" data-view="inventory">
+                        <span class="ad-ico" aria-hidden="true">▧</span> Inventory
+                    </button>
+                    <button type="button" class="ad-nav-item" data-view="resources">
+                        <span class="ad-ico" aria-hidden="true">▤</span> Crew &amp; Vehicles
+                    </button>
 
-      <p class="ad-nav-label">Sales</p>
-      <button type="button" class="ad-nav-item" data-view="leads">
-        <span class="ad-ico" aria-hidden="true">★</span> Gig Opportunities
-      </button>
-      <button type="button" class="ad-nav-item" data-view="leadRate">
-        <span class="ad-ico" aria-hidden="true">🔥</span> Gig Match
-      </button>
-      <button type="button" class="ad-nav-item" data-view="quoteDocs">
-        <span class="ad-ico" aria-hidden="true">▦</span> Sales Pipeline
-      </button>
+                    <p class="ad-nav-label">Communication</p>
+                    <button type="button" class="ad-nav-item" data-view="customers">
+                        <span class="ad-ico" aria-hidden="true">☺</span> Customers
+                    </button>
+                    <button type="button" class="ad-nav-item" data-view="vendorEmail">
+                        <span class="ad-ico" aria-hidden="true">✉</span> Messages
+                    </button>
 
-      <p class="ad-nav-label">Events</p>
-      <button type="button" class="ad-nav-item" data-view="events">
-        <span class="ad-ico" aria-hidden="true">◈</span> Events
-      </button>
-      <!-- Applications is off the menu on purpose - Vendors > Unpaid shows the same people. #/applications still opens for old links. -->
-      <button type="button" class="ad-nav-item" data-view="vendors">
-        <span class="ad-ico" aria-hidden="true">☺</span> Vendors
-      </button>
-      <button type="button" class="ad-nav-item" data-view="map">
-        <span class="ad-ico" aria-hidden="true">▦</span> Sites &amp; Map
-      </button>
-      <button type="button" class="ad-nav-item" data-view="entertainment">
-        <span class="ad-ico" aria-hidden="true">♫</span> Entertainment
-      </button>
-      <button type="button" class="ad-nav-item" data-view="sponsorDir">
-        <span class="ad-ico" aria-hidden="true">◆</span> Sponsors
-      </button>
-      <button type="button" class="ad-nav-item" data-view="volunteers">
-        <span class="ad-ico" aria-hidden="true">✋</span> Volunteers
-      </button>
+                    <p class="ad-nav-label">Website</p>
+                    <button type="button" class="ad-nav-item" data-view="pages" data-soon>
+                        <span class="ad-ico" aria-hidden="true">▢</span> Pages
+                    </button>
+                    <button type="button" class="ad-nav-item" data-view="media" data-soon>
+                        <span class="ad-ico" aria-hidden="true">▣</span> Media
+                    </button>
 
-      <p class="ad-nav-label">Pricing</p>
-      <button type="button" class="ad-nav-item" data-view="inventory">
-        <span class="ad-ico" aria-hidden="true">▧</span> Inventory
-      </button>
-      <button type="button" class="ad-nav-item" data-view="resources">
-        <span class="ad-ico" aria-hidden="true">▤</span> Crew &amp; Vehicles
-      </button>
+                    <p class="ad-nav-label">System</p>
+                    <button type="button" class="ad-nav-item" data-view="settings">
+                        <span class="ad-ico" aria-hidden="true">⚙</span> Settings
+                    </button>
+                    <!-- The version this page is running (read from the admin/core.js?v= number). -->
+                    <p class="ad-version" id="ad-version">Version &hellip;</p>
+                    <script>
+                        (function () {
+                            var s = document.querySelector('script[src*="admin/core.js"]');
+                            var m = s && s.getAttribute('src').match(/v=(\d+)/);
+                            document.getElementById('ad-version').textContent = 'Version ' + (m ? m[1] : '?');
+                        })();
+                    </script>
+                </nav>
 
-      <p class="ad-nav-label">Communication</p>
-      <button type="button" class="ad-nav-item" data-view="customers">
-        <span class="ad-ico" aria-hidden="true">☺</span> Customers
-      </button>
-      <button type="button" class="ad-nav-item" data-view="vendorEmail">
-        <span class="ad-ico" aria-hidden="true">✉</span> Messages
-      </button>
+                <div class="ad-rail-foot">
+                    <div class="ad-who">
+                        <span class="ad-avatar" id="ad-avatar" aria-hidden="true"></span>
+                        <div>
+                            <p class="ad-who-name" id="ad-who-name">&nbsp;</p>
+                            <p class="ad-who-role">Admin</p>
+                        </div>
+                    </div>
+                    <button type="button" class="ad-signout" id="ad-signout">Log out</button>
+                </div>
+            </aside>
 
-      <p class="ad-nav-label">Website</p>
-      <button type="button" class="ad-nav-item" data-view="pages" data-soon>
-        <span class="ad-ico" aria-hidden="true">▢</span> Pages
-      </button>
-      <button type="button" class="ad-nav-item" data-view="media" data-soon>
-        <span class="ad-ico" aria-hidden="true">▣</span> Media
-      </button>
+            <!-- ---- main ------------------------------------------------------- -->
+            <div class="ad-main">
+                <header class="ad-top">
+                    <button type="button" class="ad-rail-toggle" id="ad-rail-toggle" aria-label="Show sections">☰</button>
+                </header>
 
-      <p class="ad-nav-label">System</p>
-      <button type="button" class="ad-nav-item" data-view="settings">
-        <span class="ad-ico" aria-hidden="true">⚙</span> Settings
-      </button>
-      <!-- The version this page is running (read from the admin-app.js?v= number). -->
-      <p class="ad-version" id="ad-version">Version &hellip;</p>
-      <script>
-        (function () {
-          var s = document.querySelector('script[src*="admin-app.js"]');
-          var m = s && s.getAttribute('src').match(/v=(\d+)/);
-          document.getElementById('ad-version').textContent = 'Version ' + (m ? m[1] : '?');
-        }());
-      </script>
-    </nav>
-
-    <div class="ad-rail-foot">
-      <div class="ad-who">
-        <span class="ad-avatar" id="ad-avatar" aria-hidden="true"></span>
-        <div>
-          <p class="ad-who-name" id="ad-who-name">&nbsp;</p>
-          <p class="ad-who-role">Admin</p>
+                <main class="ad-desk" id="ad-desk">
+                    <p class="ad-loading" id="ad-boot">Loading…</p>
+                </main>
+            </div>
         </div>
-      </div>
-      <button type="button" class="ad-signout" id="ad-signout">Log out</button>
-    </div>
-  </aside>
-
-  <!-- ---- main ------------------------------------------------------- -->
-  <div class="ad-main">
-
-    <header class="ad-top">
-      <button type="button" class="ad-rail-toggle" id="ad-rail-toggle"
-              aria-label="Show sections">☰</button>
-    </header>
-
-    <main class="ad-desk" id="ad-desk">
-      <p class="ad-loading" id="ad-boot">Loading…</p>
-    </main>
-  </div>
-</div>
-
-</body>
+    </body>
 </html>

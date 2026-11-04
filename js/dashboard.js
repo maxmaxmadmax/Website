@@ -3,16 +3,16 @@
    Money cards, to-dos, the next 30 days of jobs, the next event card,
    sales per month and quick buttons. No leads (those are on Gig Opportunities).
 
-   Pure functions: admin-app.js passes in the live data (ctx) and the helpers
+   Pure functions: the admin (js/admin/) passes in the live data (ctx) and the helpers
    (esc, attr, money). Nothing here reads Firebase.
 
    "MONEY IN": a quote keeps the total paid, not each payment, so a payment
    counts in the month it was last paid (lastPaidAt / paidAt / acceptedAt).
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=850';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=850';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=850';
+import { isBooked, pickLineProgress } from './stock.js?v=851';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=851';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=851';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -52,7 +52,7 @@ const paidBooking = (b) => b.status === 'confirmed' || b.paymentStatus === 'paid
 const bookingCents = (b) => (b.totalCents != null ? b.totalCents : b.amountCents);
 
 /*  A pub's name boiled down, so "Grand View Hotel, Bowen" matches "Grand View".
-    KEEP IN STEP with pubCore() in js/admin-app.js + functions/index.js */
+    KEEP IN STEP with pubCore() in js/admin/core.js + functions/index.js */
 const PUB_WORDS = /\b(hotel|tavern|pub|bar|club|the|inn|bowen|qld|queensland)\b/g;
 function pubCore(v) {
     return String(v || '')

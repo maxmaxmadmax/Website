@@ -12,9 +12,9 @@
    it, the pick list shows every part, and stock is counted on the real
    parts. Each part's own required gear still comes along through js/kit.js.
 
-   Pure HTML + wiring; admin-app.js hands in the items and does the saving.
+   Pure HTML + wiring; the admin (js/admin/) hands in the items and does the saving.
    ========================================================================== */
-import { expandKit, resolveTotals } from './kit.js?v=850';
+import { expandKit, resolveTotals } from './kit.js?v=851';
 
 /* the working copy of the system being built */
 export function sysDraftFrom(item, type) {
@@ -273,7 +273,7 @@ function resultsHtml(d, items, h) {
 export function wireSystemPanel(d, getItems, h, cats, act) {
     const panel = document.querySelector('.sys-panel');
     if (!panel) return;
-    if (act.afterDraw) act.afterDraw(); // e.g. the photo box (admin-app.js)
+    if (act.afterDraw) act.afterDraw(); // e.g. the photo box (js/admin/inventory.js)
     const redraw = () => {
         const keep = document.activeElement && document.activeElement.id;
         const fresh = document.createElement('div');
