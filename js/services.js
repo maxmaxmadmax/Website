@@ -34,7 +34,6 @@
     var names = navButtons.map(function (b) {
         return b.textContent.trim();
     });
-    var current = 0;
 
     var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -136,7 +135,6 @@
        --------------------------------------------------------------------- */
     function paint() {
         var i = currentIndex();
-        current = i;
 
         navButtons.forEach(function (btn, n) {
             if (n === i) {
@@ -516,120 +514,65 @@
 })();
 
 /* --------------------------------------------------------------------------
-   THE ANNUAL EVENTS ROW
-
-   Pages the row of annual events. Counts the cards and sets a page number
-   on the track; the CSS does the movement.
-
-   How many fit per page comes from --per on the slider window (site.css
-   SLIDER), so new breakpoints need no change here. Without JS the
-   row shows its first four cards.
+   THE ANNUAL EVENTS ROW - the shared slider (js/main.js) plus a dash per
+   page and a "1-4 of 9" count.
    -------------------------------------------------------------------------- */
 (function () {
     'use strict';
 
     var section = document.querySelector('.sgs-annual');
-    if (!section) return;
-
     var track = document.getElementById('sgs-annual-track');
     var dots = document.getElementById('sgs-annual-dots');
     var count = document.getElementById('sgs-annual-count');
-    if (!track) return;
+    if (!section || !track || !window.SGSlider) return;
 
     var cards = track.querySelectorAll('.sgs-an-card').length;
     if (!cards) return;
 
-    var arrows = Array.prototype.slice.call(section.querySelectorAll('[data-sgs-annual]'));
-
-    var page = 0;
     var built = 0; /* how many dashes are in the DOM right now */
 
-    function perView() {
-        var raw = window.getComputedStyle(track.parentElement).getPropertyValue('--per');
-        var n = parseInt(raw, 10);
-        return n > 0 ? n : 1;
-    }
-
-    function pages() {
-        return Math.max(1, Math.ceil(cards / perView()));
-    }
-
-    /*  Rebuilt only when the number has actually changed - a resize that
-        does not cross a breakpoint should not throw the dashes away and
-        make new ones.                                                    */
+    /* Rebuilt only when the number of pages changes */
     function buildDots(total) {
         if (!dots || built === total) return;
         built = total;
         dots.innerHTML = '';
-
-        if (total < 2) return; /* one page needs no page indicator */
+        if (total < 2) return; /* one page needs no dashes */
 
         for (var i = 0; i < total; i++) {
             var b = document.createElement('button');
             b.type = 'button';
             b.setAttribute('role', 'tab');
-            b.setAttribute('data-ev-page', i);
+            b.setAttribute('data-page', i);
             b.setAttribute('aria-label', 'Page ' + (i + 1) + ' of ' + total);
             dots.appendChild(b);
         }
     }
 
-    function paint() {
-        var total = pages();
-        var last = total - 1;
+    var slider = window.SGSlider(track, Array.prototype.slice.call(section.querySelectorAll('[data-slide]')), {
+        onPaint: function (page, total, per) {
+            buildDots(total);
 
-        /*  A window that has just got wider can leave us past the end, on a
-            page that no longer exists. Pull back rather than showing a row
-            of nothing.                                                    */
-        if (page > last) page = last;
-        if (page < 0) page = 0;
+            if (dots) {
+                Array.prototype.forEach.call(dots.children, function (b, i) {
+                    b.setAttribute('aria-selected', i === page ? 'true' : 'false');
+                });
+            }
 
-        track.style.setProperty('--page', page);
-
-        arrows.forEach(function (btn) {
-            var dir = parseInt(btn.getAttribute('data-sgs-annual'), 10);
-            btn.disabled = dir < 0 ? page === 0 : page === last;
-        });
-
-        buildDots(total);
-
-        if (dots) {
-            Array.prototype.forEach.call(dots.children, function (b, i) {
-                b.setAttribute('aria-selected', i === page ? 'true' : 'false');
-            });
+            if (count) {
+                var first = page * per + 1;
+                var lastCard = Math.min(cards, first + per - 1);
+                count.textContent = first === lastCard ? first + ' of ' + cards : first + '–' + lastCard + ' of ' + cards;
+            }
         }
-
-        if (count) {
-            var per = perView();
-            var first = page * per + 1;
-            var lastCard = Math.min(cards, first + per - 1);
-
-            count.textContent = first === lastCard ? first + ' of ' + cards : first + '–' + lastCard + ' of ' + cards;
-        }
-    }
-
-    arrows.forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            page += parseInt(btn.getAttribute('data-sgs-annual'), 10) || 0;
-            paint();
-        });
     });
 
-    /*  One listener on the strip rather than one per dash, so the dashes
-        can be thrown away and rebuilt without taking their handlers with
-        them.                                                             */
+    /* One listener on the strip, so the dashes can be rebuilt freely */
     if (dots) {
         dots.addEventListener('click', function (ev) {
-            var b = ev.target.closest('[data-ev-page]');
-            if (!b) return;
-            page = parseInt(b.getAttribute('data-ev-page'), 10) || 0;
-            paint();
+            var b = ev.target.closest('[data-page]');
+            if (b) slider.goTo(parseInt(b.getAttribute('data-page'), 10) || 0);
         });
     }
 
-    /*  Resizing changes how many fit, which changes how many pages there
-        are. Cheap enough to just redo the sums.                          */
-    window.addEventListener('resize', paint);
-
-    paint();
+    slider.paint();
 })();

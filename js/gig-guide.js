@@ -83,7 +83,6 @@ var GG_LISTINGS = [
     var page = document.getElementById('sg-gig-guide');
     if (!page) return;
 
-    var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     var DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     /*  How many weeks ahead a repeating event is worked out to. */
@@ -232,8 +231,6 @@ var GG_LISTINGS = [
     var upcomingGrid = document.getElementById('gg-upcoming-grid');
     var upcomingEmpty = document.getElementById('gg-upcoming-empty');
 
-    var upPage = 0;
-
     function draw() {
         var showing = events.filter(matches);
         var w = weekendRange();
@@ -261,8 +258,6 @@ var GG_LISTINGS = [
 
         fill(upcomingGrid, upcomingEmpty, upcoming, 'Nothing else listed just now.');
 
-        if (upPage > pages() - 1) upPage = pages() - 1;
-        if (upPage < 0) upPage = 0;
         paintPage();
     }
 
@@ -278,47 +273,16 @@ var GG_LISTINGS = [
     }
 
     /* ----------------------------------------------------------------------
-       PAGING THE HIGHLIGHTS ROW
-
-       The track is a grid sized against its own window, so one page is
-       exactly -100%. Nothing is measured.
+       PAGING THE HIGHLIGHTS ROW - the shared slider in js/main.js
        ---------------------------------------------------------------------- */
-    var view = document.getElementById('gg-upcoming-view');
-    var arrows = Array.prototype.slice.call(page.querySelectorAll('[data-gg-page]'));
-
-    function perView() {
-        if (!view) return 1;
-        var n = parseInt(window.getComputedStyle(view).getPropertyValue('--per'), 10);
-        return n > 0 ? n : 1;
-    }
-
-    function pages() {
-        var n = upcomingGrid ? upcomingGrid.children.length : 0;
-        return Math.max(1, Math.ceil(n / perView()));
-    }
+    var slider =
+        upcomingGrid && window.SGSlider
+            ? window.SGSlider(upcomingGrid, Array.prototype.slice.call(page.querySelectorAll('[data-slide]')))
+            : null;
 
     function paintPage() {
-        if (!upcomingGrid) return;
-
-        var last = pages() - 1;
-        upcomingGrid.style.setProperty('--page', upPage);
-
-        arrows.forEach(function (btn) {
-            var dir = parseInt(btn.getAttribute('data-gg-page'), 10);
-            btn.disabled = dir < 0 ? upPage === 0 : upPage === last;
-        });
+        if (slider) slider.paint();
     }
-
-    arrows.forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            upPage += parseInt(btn.getAttribute('data-gg-page'), 10) || 0;
-            if (upPage < 0) upPage = 0;
-            if (upPage > pages() - 1) upPage = pages() - 1;
-            paintPage();
-        });
-    });
-
-    window.addEventListener('resize', paintPage);
 
     /* ----------------------------------------------------------------------
        THE CONTROLS
