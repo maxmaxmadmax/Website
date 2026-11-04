@@ -11,8 +11,8 @@
    ========================================================================== */
 #sg-services-page {
     display: block;
-    background: var(--sg-black);
-    color: var(--sg-text);
+    background: var(--sg-night);
+    color: var(--sg-white);
     overflow-x: hidden; /* nothing may push the page sideways */
 }
 
@@ -21,7 +21,7 @@
    ========================================================================== */
 .sgs-stage {
     position: relative;
-    background: #000;
+    background: var(--sg-night);
 }
 
 .sgs-track {
@@ -51,7 +51,7 @@
     height: 100vh;
     height: 100svh;
     overflow: hidden;
-    background-color: #0a0a0a;
+    background-color: var(--sg-night);
 }
 
 /* The photo, on its own layer so the gradient shows if the file is missing */
@@ -67,37 +67,37 @@
 
 /* A warm gradient per slide, under the photo */
 .sgs-intro {
-    background-image: linear-gradient(135deg, #2a1403 0%, #0a0a0a 62%);
+    background-image: linear-gradient(135deg, var(--sg-poster-ink) 0%, var(--sg-night) 62%);
 }
 .sgs-weddings {
-    background-image: linear-gradient(135deg, #241528 0%, #0a0a0a 62%);
+    background-image: linear-gradient(135deg, var(--sg-purple-dark) 0%, var(--sg-night) 62%);
 }
 .sgs-corporate {
-    background-image: linear-gradient(135deg, #0f2a18 0%, #0a0a0a 62%);
+    background-image: linear-gradient(135deg, var(--sg-border) 0%, var(--sg-night) 62%);
 }
 .sgs-bands {
-    background-image: linear-gradient(135deg, #2a0d14 0%, #0a0a0a 62%);
+    background-image: linear-gradient(135deg, var(--sg-poster-ink) 0%, var(--sg-night) 62%);
 }
 .sgs-dj {
-    background-image: linear-gradient(135deg, #1c1c22 0%, #0a0a0a 62%);
+    background-image: linear-gradient(135deg, var(--sg-ink) 0%, var(--sg-night) 62%);
 }
 .sgs-functions {
-    background-image: linear-gradient(135deg, #2d1030 0%, #0a0a0a 62%);
+    background-image: linear-gradient(135deg, var(--sg-purple-dark) 0%, var(--sg-night) 62%);
 }
 .sgs-community {
-    background-image: linear-gradient(135deg, #2b1f08 0%, #0a0a0a 62%);
+    background-image: linear-gradient(135deg, var(--sg-poster-ink) 0%, var(--sg-night) 62%);
 }
 .sgs-festivals {
-    background-image: linear-gradient(135deg, #3a1d02 0%, #0a0a0a 62%);
+    background-image: linear-gradient(135deg, var(--sg-poster-ink) 0%, var(--sg-night) 62%);
 }
 .sgs-sporting {
-    background-image: linear-gradient(135deg, #06231f 0%, #0a0a0a 62%);
+    background-image: linear-gradient(135deg, var(--sg-border) 0%, var(--sg-night) 62%);
 }
 .sgs-screens {
-    background-image: linear-gradient(135deg, #0d2033 0%, #0a0a0a 62%);
+    background-image: linear-gradient(135deg, var(--sg-ink) 0%, var(--sg-night) 62%);
 }
 .sgs-trailer {
-    background-image: linear-gradient(135deg, #2b2205 0%, #0a0a0a 62%);
+    background-image: linear-gradient(135deg, var(--sg-poster-ink) 0%, var(--sg-night) 62%);
 }
 
 .sgs-video {
@@ -148,7 +148,7 @@
     line-height: 0.92;
     letter-spacing: -2px;
     text-transform: uppercase;
-    color: #fff;
+    color: var(--sg-white);
     margin: 0 0 22px;
     text-shadow: 0 6px 40px rgba(0, 0, 0, 0.6);
     max-width: 16ch; /* wide enough for ENTERTAINMENT */
@@ -161,7 +161,7 @@
     font-size: clamp(0.72rem, 1.6vw, 0.86rem);
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: #fff;
+    color: var(--sg-white);
     margin-bottom: 10px;
     text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9);
 }
@@ -171,7 +171,7 @@
     font-size: clamp(0.68rem, 1.5vw, 0.8rem);
     letter-spacing: 0.28em;
     text-transform: uppercase;
-    color: #c8c8c8;
+    color: var(--sg-muted);
     margin-bottom: 30px;
     text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9);
 }
@@ -197,7 +197,7 @@
     border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, 0.35);
     background: rgba(0, 0, 0, 0.45);
-    color: #fff;
+    color: var(--sg-white);
     font-size: 1.9rem;
     line-height: 1;
     cursor: pointer;
@@ -222,7 +222,7 @@
 .sgs-arrow:hover {
     background: var(--sg-gold);
     border-color: var(--sg-gold);
-    color: #0a0a0a;
+    color: var(--sg-night);
 }
 
 .sgs-arrow:focus-visible {
@@ -238,7 +238,7 @@
 .sgs-arrow[disabled]:hover {
     background: rgba(0, 0, 0, 0.45);
     border-color: rgba(255, 255, 255, 0.35);
-    color: #fff;
+    color: var(--sg-white);
 }
 
 /* Slide names, phone counter and progress bar along the bottom */
@@ -277,7 +277,7 @@
 }
 
 .sgs-nav-list button:hover {
-    color: #fff;
+    color: var(--sg-white);
 }
 
 .sgs-nav-list button[aria-current='true'] {
@@ -297,7 +297,7 @@
     font-weight: bold;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: #fff;
+    color: var(--sg-white);
     margin: 0 0 12px;
 }
 
@@ -396,7 +396,7 @@
    ========================================================================== */
 .sgs-block {
     padding: 92px 6%;
-    background: #0a0a0a;
+    background: var(--sg-night);
 }
 
 .sgs-wrap {
@@ -410,7 +410,7 @@
     line-height: 1.02;
     letter-spacing: -1px;
     text-transform: uppercase;
-    color: #fff;
+    color: var(--sg-white);
     margin: 0 0 24px;
 }
 
@@ -418,7 +418,7 @@
    WHAT WE BRING - pitch, button and handwritten mark, then six capabilities
    ========================================================================== */
 .sgs-band {
-    border-bottom: 1px solid var(--sg-border, #222);
+    border-bottom: 1px solid var(--sg-border, var(--sg-border));
     padding-top: 76px;
     padding-bottom: 64px;
 }
@@ -440,7 +440,7 @@
 }
 
 .sgs-band-lead {
-    color: var(--sg-muted, #d0d0d0);
+    color: var(--sg-muted, var(--sg-muted));
     font-size: 1rem;
     line-height: 1.75;
     max-width: 56ch;
@@ -456,7 +456,7 @@
     font-family: var(--sg-font-script);
     font-size: clamp(1.7rem, 3.2vw, 2.7rem);
     line-height: 1;
-    color: #fff;
+    color: var(--sg-white);
     text-align: right;
     margin: 0;
     transform: rotate(-6deg);
@@ -470,7 +470,7 @@
     margin-top: 8px;
     margin-left: auto;
     width: 76%;
-    background: #fff;
+    background: var(--sg-white);
     border-radius: 2px;
     transform: rotate(1.5deg);
     opacity: 0.85;
@@ -492,7 +492,7 @@
     gap: 16px;
     padding: 8px 14px;
     text-align: center;
-    border-left: 1px solid var(--sg-border, #222);
+    border-left: 1px solid var(--sg-border, var(--sg-border));
 }
 
 .sgs-caps li:first-child {
@@ -504,7 +504,7 @@
     height: 46px;
     flex: 0 0 auto;
     fill: none;
-    stroke: #fff;
+    stroke: var(--sg-white);
     stroke-width: 1.6;
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -519,7 +519,7 @@
     font-weight: bold;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--sg-muted, #d0d0d0);
+    color: var(--sg-muted, var(--sg-muted));
 }
 
 .sgs-caps li:hover .sgs-cap-icon {
@@ -566,7 +566,7 @@
     }
 
     .sgs-caps li:nth-child(3n + 1) {
-        border-left: 1px solid var(--sg-border, #222);
+        border-left: 1px solid var(--sg-border, var(--sg-border));
     }
 
     .sgs-caps li:nth-child(odd) {
@@ -588,23 +588,23 @@
    TRUSTED BY - white band, because most partner logos are dark
    ========================================================================== */
 .sgs-trusted {
-    background: #fff;
-    color: #111;
+    background: var(--sg-white);
+    color: var(--sg-panel);
     padding-top: 64px;
     padding-bottom: 56px;
 }
 
 .sgs-trusted h2 {
-    color: #111;
+    color: var(--sg-panel);
     margin-bottom: 12px;
 }
 
 .sgs-kicker-dark {
-    color: #d95b00; /* site orange, dark enough to read on white */
+    color: var(--sg-sun-deep); /* site orange, dark enough to read on white */
 }
 
 .sgs-trusted-lead {
-    color: #444;
+    color: var(--sg-ink-soft);
     font-size: 1rem;
     line-height: 1.7;
     max-width: 58ch;
@@ -645,7 +645,7 @@
 .sgs-logo.is-missing span {
     display: block;
     text-align: center;
-    color: #666;
+    color: var(--sg-ink-muted);
     font-family: var(--sg-font-accent);
     font-size: 0.68rem;
     font-weight: bold;
@@ -666,7 +666,7 @@
     overflow: hidden;
     padding-top: 0;
     padding-bottom: 0;
-    border-top: 1px solid var(--sg-border, #222);
+    border-top: 1px solid var(--sg-border, var(--sg-border));
 }
 
 .sgs-region-media {
@@ -683,12 +683,12 @@
 }
 
 .sgs-region-half.is-outback {
-    background-image: var(--sgs-outback, none), linear-gradient(120deg, #3a2109, #0a0a0a 70%);
+    background-image: var(--sgs-outback, none), linear-gradient(120deg, var(--sg-poster-ink), var(--sg-night) 70%);
 }
 
 /* Coast on top, clipped to the split */
 .sgs-region-half.is-coast {
-    background-image: var(--sgs-coast, none), linear-gradient(120deg, #12202e, #0a0a0a 70%);
+    background-image: var(--sgs-coast, none), linear-gradient(120deg, var(--sg-ink), var(--sg-night) 70%);
     clip-path: inset(0 calc(100% - var(--sgs-split)) 0 0);
 }
 
@@ -723,7 +723,7 @@
 }
 
 .sgs-region-lead {
-    color: var(--sg-muted, #d0d0d0);
+    color: var(--sg-muted, var(--sg-muted));
     font-size: 1rem;
     line-height: 1.75;
     max-width: 44ch;
@@ -749,7 +749,7 @@
     font-weight: bold;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: #fff;
+    color: var(--sg-white);
 }
 
 .sgs-places li {
@@ -773,7 +773,7 @@
    ========================================================================== */
 .sgs-annual {
     padding: clamp(60px, 9vw, 110px) 0 clamp(50px, 7vw, 90px);
-    background: linear-gradient(180deg, #0d0d0d 0%, #0a0a0a 100%);
+    background: linear-gradient(180deg, var(--sg-night) 0%, var(--sg-night) 100%);
     border-top: 1px solid var(--sg-border);
 }
 
@@ -858,7 +858,7 @@
     overflow: hidden;
     border: 1px solid var(--sg-border);
     border-radius: 16px;
-    background: #141414;
+    background: var(--sg-panel);
     transition:
         transform 0.28s ease,
         border-color 0.28s ease,
@@ -867,7 +867,7 @@
 
 .sgs-an-card:hover {
     transform: translateY(-5px);
-    border-color: #3a3a3a;
+    border-color: var(--sg-ink-soft);
     box-shadow: 0 22px 46px rgba(0, 0, 0, 0.55);
 }
 
@@ -950,7 +950,7 @@
 .sgs-an-read {
     display: inline-block;
     margin-top: 12px;
-    color: var(--sg-gold, #ffb700);
+    color: var(--sg-gold, var(--sg-gold));
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.08em;
@@ -988,7 +988,7 @@
     padding: 0;
     border: 0;
     border-radius: 2px;
-    background: #333;
+    background: var(--sg-ink-soft);
     cursor: pointer;
     transition:
         background-color 0.25s ease,
@@ -1041,7 +1041,7 @@
     position: relative;
     overflow: hidden;
     text-align: left;
-    border-top: 1px solid var(--sg-border, #222);
+    border-top: 1px solid var(--sg-border, var(--sg-border));
     padding-top: 52px;
     padding-bottom: 52px;
 }
@@ -1052,7 +1052,7 @@
     --sgs-cta-img: url('../../images/services/cta.webp');
     background:
         linear-gradient(90deg, rgba(8, 8, 8, 0.95) 26%, rgba(8, 8, 8, 0.55) 70%, rgba(8, 8, 8, 0.8) 100%), var(--sgs-cta-img, none),
-        radial-gradient(90% 120% at 20% 0%, #2a1403 0%, #0a0a0a 58%);
+        radial-gradient(90% 120% at 20% 0%, var(--sg-poster-ink) 0%, var(--sg-night) 58%);
     background-size: cover;
     background-position: center;
 }
@@ -1078,11 +1078,11 @@
 }
 
 .sgs-cta h2 span {
-    color: var(--sg-orange, #ff6b00);
+    color: var(--sg-orange, var(--sg-orange));
 }
 
 .sgs-cta-lead {
-    color: var(--sg-muted, #d0d0d0);
+    color: var(--sg-muted, var(--sg-muted));
     font-size: 1rem;
     line-height: 1.7;
     max-width: 50ch;
@@ -1102,7 +1102,7 @@
     display: flex;
     align-items: center;
     gap: 11px;
-    color: var(--sg-muted, #d0d0d0);
+    color: var(--sg-muted, var(--sg-muted));
     font-family: var(--sg-font-accent);
     font-size: 0.72rem;
     font-weight: bold;

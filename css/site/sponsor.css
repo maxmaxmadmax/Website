@@ -17,18 +17,18 @@
    PAGE
    ========================================================================== */
 :root {
-    --spn-brand: #ff6b00; /* the sponsor's own colour on a personal link */
+    --spn-brand: var(--sg-orange); /* the sponsor's own colour on a personal link */
 }
 
 .spn-page {
-    background: #0b0b0b;
+    background: var(--sg-night);
 }
 
 .spn-wrap {
     max-width: 1100px;
     margin: 0 auto;
     padding: 110px 20px 40px;
-    color: #fff;
+    color: var(--sg-white);
     font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -45,8 +45,8 @@
     display: inline-block;
     border: 0;
     cursor: pointer;
-    background: #ff6b00;
-    color: #fff;
+    background: var(--sg-orange);
+    color: var(--sg-white);
     font: inherit;
     font-weight: 800;
     font-size: 15px;
@@ -56,8 +56,8 @@
 }
 
 .spn-btn-ghost {
-    background: #fff;
-    color: #111;
+    background: var(--sg-white);
+    color: var(--sg-panel);
 }
 
 .spn-btn:disabled {
@@ -79,7 +79,7 @@
     align-items: center;
     padding: 32px;
     border-radius: 18px;
-    background: linear-gradient(180deg, #ff6b00 0%, #d95a00 55%, #0b0b0b 100%);
+    background: linear-gradient(180deg, var(--sg-orange) 0%, var(--sg-sun-deep) 55%, var(--sg-night) 100%);
 }
 
 .spn-poster {
@@ -133,8 +133,8 @@
    SECTIONS
    ========================================================================== */
 .spn-sec {
-    background: #fff;
-    color: #1a1a1a;
+    background: var(--sg-white);
+    color: var(--sg-border);
     border-radius: 18px;
     padding: 30px;
     margin-top: 18px;
@@ -148,7 +148,7 @@
 
 .spn-sub {
     margin: 0 0 16px;
-    color: #666;
+    color: var(--sg-ink-muted);
 }
 
 /* Why sponsor: three tiles */
@@ -159,8 +159,8 @@
 }
 
 .spn-why div {
-    background: #fff7ef;
-    border: 1px solid #ffd9b3;
+    background: var(--sg-poster-cream);
+    border: 1px solid var(--sg-sand);
     border-radius: 12px;
     padding: 16px;
 }
@@ -175,7 +175,7 @@
     margin: 0;
     font-size: 14px;
     line-height: 1.5;
-    color: #444;
+    color: var(--sg-ink-soft);
 }
 
 /* What it costs to run */
@@ -196,14 +196,14 @@
 .spn-level {
     display: flex;
     flex-direction: column;
-    border: 2px solid #ececec;
+    border: 2px solid var(--sg-paper-line);
     border-radius: 14px;
     padding: 18px;
 }
 
 .spn-level.is-top {
-    border-color: #ff6b00;
-    background: #fff7ef;
+    border-color: var(--sg-orange);
+    background: var(--sg-poster-cream);
 }
 
 .spn-level.is-out {
@@ -227,14 +227,14 @@
 .spn-level-price small {
     font-size: 13px;
     font-weight: 600;
-    color: #777;
+    color: var(--sg-grey);
 }
 
 .spn-level-left {
     margin: 0 0 10px;
     font-size: 13px;
     font-weight: 700;
-    color: #b25b00;
+    color: var(--sg-orange-dark);
 }
 
 .spn-level ul {
@@ -242,7 +242,7 @@
     padding-left: 18px;
     font-size: 14px;
     line-height: 1.5;
-    color: #333;
+    color: var(--sg-ink-soft);
     flex: 1;
 }
 
@@ -269,7 +269,7 @@
 
 .spn-form label span {
     font-weight: 400;
-    color: #888;
+    color: var(--sg-grey);
 }
 
 /* "(optional)" sits beside the label so every box lines up */
@@ -283,7 +283,7 @@
     font: inherit;
     font-size: 15px;
     padding: 11px 12px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--sg-muted);
     border-radius: 8px;
 }
 
@@ -298,15 +298,15 @@
 
 .spn-msg {
     grid-column: 1 / -1;
-    color: #b3261e;
+    color: var(--sg-red);
     margin: 0;
 }
 
 .spn-done {
     grid-column: 1 / -1;
-    background: #e7f6ee;
-    border: 1px solid #b9e6cd;
-    color: #0f7a43;
+    background: var(--sg-green-bg);
+    border: 1px solid var(--sg-green-bg);
+    color: var(--sg-green);
     border-radius: 12px;
     padding: 16px 18px;
 }
@@ -339,8 +339,8 @@
     align-items: center;
     gap: 22px;
     flex-wrap: wrap;
-    background: #fff;
-    color: #111;
+    background: var(--sg-white);
+    color: var(--sg-panel);
     border-radius: 18px;
     padding: 18px 24px;
     margin-bottom: 16px;
@@ -362,7 +362,7 @@
 
 .spn-for-x {
     font-size: 22px;
-    color: #999;
+    color: var(--sg-dim);
 }
 
 .spn-for-logo {
@@ -370,8 +370,8 @@
     height: 84px;
     object-fit: contain;
     border-radius: 14px;
-    background: #fff;
-    border: 1px solid #eee;
+    background: var(--sg-white);
+    border: 1px solid var(--sg-paper-soft);
 }
 
 .spn-for-initials {
@@ -382,7 +382,7 @@
     justify-content: center;
     border-radius: 14px;
     background: var(--spn-brand);
-    color: #fff;
+    color: var(--sg-white);
     font-weight: 800;
     font-size: 30px;
 }
@@ -395,7 +395,7 @@
 
 .spn-for p {
     margin: 0;
-    color: #666;
+    color: var(--sg-ink-muted);
 }
 
 .spn-for .spn-eyebrow {
@@ -428,19 +428,19 @@
 }
 
 #dt-form label > select {
-    background: #fff;
+    background: var(--sg-white);
 }
 
 /* Red star on required boxes */
 .dt-req {
-    color: #d11;
+    color: var(--sg-poster-orange);
     font-weight: 800;
 }
 
 .dt-note {
     margin: 4px 0 12px;
     font-size: 13px;
-    color: #555;
+    color: var(--sg-ink-muted);
 }
 
 /* The (i) next to Business */
@@ -454,8 +454,8 @@
     padding: 0;
     border: 0;
     border-radius: 50%;
-    background: #ff6b00;
-    color: #fff;
+    background: var(--sg-orange);
+    color: var(--sg-white);
     font:
         italic 800 12px/1 Georgia,
         serif;
@@ -467,9 +467,9 @@
     display: block;
     font-weight: 400;
     font-size: 13px;
-    color: #555;
-    background: #fff4ec;
-    border-left: 3px solid #ff6b00;
+    color: var(--sg-ink-muted);
+    background: var(--sg-poster-cream);
+    border-left: 3px solid var(--sg-orange);
     padding: 8px 10px;
     border-radius: 6px;
     margin-top: 6px;
@@ -484,7 +484,7 @@
     margin-top: 5px;
     font-weight: 400;
     font-size: 12px;
-    color: #777;
+    color: var(--sg-grey);
 }
 
 /* ==========================================================================
@@ -499,27 +499,27 @@
     width: 100%;
     box-sizing: border-box;
     margin-top: 6px;
-    background: #fff;
+    background: var(--sg-white);
 }
 
 .dj-hours {
     margin: 0;
     font-weight: 800;
-    color: #ff6b00;
+    color: var(--sg-orange);
     font-size: 16px;
     min-height: 1.2em;
 }
 
 .dj-hours.is-bad {
-    color: #c5322b;
+    color: var(--sg-red);
 }
 
 .dj-ok {
     margin: 10px 0 0;
     padding: 12px 14px;
     border-radius: 10px;
-    background: #e7f6ee;
-    color: #0f7a43;
+    background: var(--sg-green-bg);
+    color: var(--sg-green);
     font-weight: 700;
 }
 
@@ -527,7 +527,7 @@
 .dj-accom {
     margin: 14px 0;
     padding: 12px 14px;
-    background: #f6f6f7;
+    background: var(--sg-paper-soft);
     border-radius: 10px;
     font-size: 14px;
     line-height: 1.5;

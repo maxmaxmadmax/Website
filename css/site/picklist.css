@@ -27,8 +27,8 @@ html {
 
 body {
     margin: 0;
-    background: #f2f2f2;
-    color: #111;
+    background: var(--sg-paper-soft);
+    color: var(--sg-panel);
     font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -41,7 +41,7 @@ body {
 .pl-loading {
     text-align: center;
     padding: 80px 16px;
-    color: #555;
+    color: var(--sg-ink-muted);
 }
 
 /* ==========================================================================
@@ -52,9 +52,9 @@ body {
     justify-content: space-between;
     align-items: center;
     gap: 16px;
-    background: #fff;
+    background: var(--sg-white);
     padding: 22px 24px;
-    border-bottom: 3px solid #111;
+    border-bottom: 3px solid var(--sg-panel);
 }
 
 .pl-logo {
@@ -84,7 +84,7 @@ body {
    JOB
    ========================================================================== */
 .pl-job {
-    background: #fff;
+    background: var(--sg-white);
     padding: 20px 24px 22px;
 }
 
@@ -105,7 +105,7 @@ body {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: #777;
+    color: var(--sg-grey);
     font-weight: 700;
 }
 
@@ -116,18 +116,18 @@ body {
 }
 
 .pl-info small {
-    color: #666;
+    color: var(--sg-ink-muted);
 }
 
 .pl-info a {
-    color: #111;
+    color: var(--sg-panel);
     font-weight: 700;
 }
 
 .pl-notes {
     margin: 16px 0 0;
     padding: 10px 12px;
-    background: #f4f4f4;
+    background: var(--sg-paper-soft);
     font-size: 14px;
     white-space: pre-line;
 }
@@ -135,14 +135,14 @@ body {
 .pl-flag {
     margin: 14px 0 0;
     padding: 10px 12px;
-    border: 2px solid #111;
+    border: 2px solid var(--sg-panel);
     font-weight: 700;
     font-size: 14px;
 }
 
 /* The DJ gig brief */
 .pl-brief {
-    border-top: 3px solid #ff6b00;
+    border-top: 3px solid var(--sg-orange);
 }
 
 .pl-brief h2 {
@@ -153,12 +153,12 @@ body {
    PROGRESS
    ========================================================================== */
 .pl-progress {
-    background: #fff;
+    background: var(--sg-white);
     padding: 14px 24px 18px;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 18px;
-    border-top: 1px solid #e6e6e6;
+    border-top: 1px solid var(--sg-paper-line);
 }
 
 .pl-prog span {
@@ -171,7 +171,7 @@ body {
 .pl-prog i {
     display: block;
     height: 8px;
-    background: #e6e6e6;
+    background: var(--sg-paper-line);
     border-radius: 4px;
     overflow: hidden;
 }
@@ -179,25 +179,25 @@ body {
 .pl-prog em {
     display: block;
     height: 100%;
-    background: #111;
+    background: var(--sg-panel);
     transition: width 0.2s;
 }
 
 .pl-prog.is-returned em {
-    background: #0f9d58;
+    background: var(--sg-green);
 }
 
 /* ==========================================================================
    LIST
    ========================================================================== */
 .pl-list {
-    background: #fff;
+    background: var(--sg-white);
     padding: 6px 24px 20px;
     margin-top: 12px;
 }
 
 .pl-count {
-    color: #555;
+    color: var(--sg-ink-muted);
     font-size: 13px;
     margin: 12px 0 4px;
 }
@@ -208,7 +208,7 @@ body {
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    border-bottom: 2px solid #111;
+    border-bottom: 2px solid var(--sg-panel);
 }
 
 .pl-row {
@@ -217,11 +217,11 @@ body {
     align-items: center;
     gap: 10px;
     padding: 10px 0;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--sg-paper-soft);
 }
 
 .pl-row.is-packed .pl-name {
-    color: #888;
+    color: var(--sg-grey);
 }
 
 .pl-qty {
@@ -241,11 +241,11 @@ body {
 
 .pl-row.pl-sub .pl-name {
     font-weight: 500;
-    color: #333;
+    color: var(--sg-ink-soft);
 }
 
 .pl-arrow {
-    color: #aaa;
+    color: var(--sg-dim);
     margin-right: 8px;
 }
 
@@ -254,8 +254,8 @@ body {
     margin-left: 6px;
     padding: 1px 6px;
     border-radius: 4px;
-    background: #ff6b00;
-    color: #fff;
+    background: var(--sg-orange);
+    color: var(--sg-white);
     font-size: 10px;
     font-weight: 800;
     text-transform: uppercase;
@@ -268,7 +268,7 @@ body {
     font-weight: 800;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #888;
+    color: var(--sg-grey);
 }
 
 /* Big tick boxes, easy to hit with a thumb */
@@ -297,24 +297,24 @@ body {
 .pl-box span {
     width: 34px;
     height: 34px;
-    border: 2px solid #111;
+    border: 2px solid var(--sg-panel);
     border-radius: 6px;
     display: grid;
     place-items: center;
     color: transparent;
     font-size: 20px;
     font-weight: 900;
-    background: #fff;
+    background: var(--sg-white);
 }
 
 .pl-box.is-on span {
-    background: #111;
-    color: #fff;
+    background: var(--sg-panel);
+    color: var(--sg-white);
 }
 
 .pl-box:last-child.is-on span {
-    background: #0f9d58;
-    border-color: #0f9d58;
+    background: var(--sg-green);
+    border-color: var(--sg-green);
 }
 
 .pl-box em {
@@ -322,11 +322,11 @@ body {
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #666;
+    color: var(--sg-ink-muted);
 }
 
 .pl-box input:focus-visible + span {
-    outline: 3px solid #ff6b00;
+    outline: 3px solid var(--sg-orange);
     outline-offset: 2px;
 }
 
@@ -337,10 +337,10 @@ body {
     height: 34px;
     margin: 0 8px 0 0;
     padding: 0;
-    border: 1px solid #ddd;
+    border: 1px solid var(--sg-paper-line);
     border-radius: 6px;
     overflow: hidden;
-    background: #fff;
+    background: var(--sg-white);
     vertical-align: middle;
     cursor: zoom-in;
     flex: none;
@@ -361,7 +361,7 @@ body {
     color: inherit;
     text-align: left;
     cursor: zoom-in;
-    text-decoration: underline dotted #bbb;
+    text-decoration: underline dotted var(--sg-dim);
     text-underline-offset: 3px;
 }
 
@@ -386,7 +386,7 @@ body {
 .pl-lightbox img {
     max-width: 100%;
     max-height: 70vh;
-    background: #fff;
+    background: var(--sg-white);
     border-radius: 12px;
     padding: 10px;
     box-sizing: border-box;
@@ -394,7 +394,7 @@ body {
 
 .pl-lightbox figcaption {
     margin-top: 12px;
-    color: #fff;
+    color: var(--sg-white);
     font-size: 17px;
     font-weight: 700;
 }
@@ -421,7 +421,7 @@ body {
 
 .pl-extras-h small {
     font-weight: 400;
-    color: #777;
+    color: var(--sg-grey);
     font-size: 12px;
     margin-left: 6px;
 }
@@ -437,7 +437,7 @@ body {
     flex: 1 1 220px;
     min-width: 0;
     padding: 10px 12px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--sg-muted);
     border-radius: 8px;
     font: inherit;
     font-size: 15px;
@@ -446,7 +446,7 @@ body {
 .pl-addx #pl-x-qty {
     width: 70px;
     padding: 10px 8px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--sg-muted);
     border-radius: 8px;
     font: inherit;
     font-size: 15px;
@@ -456,7 +456,7 @@ body {
 .pl-xdel {
     border: 0;
     background: none;
-    color: #b42318;
+    color: var(--sg-red);
     font-size: 20px;
     line-height: 1;
     padding: 0 6px;
@@ -474,7 +474,7 @@ body {
     width: 100%;
     box-sizing: border-box;
     padding: 10px 12px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--sg-muted);
     border-radius: 8px;
     font: inherit;
     font-size: 15px;
@@ -486,8 +486,8 @@ body {
     right: 0;
     top: calc(100% + 4px);
     z-index: 20;
-    background: #fff;
-    border: 1px solid #ddd;
+    background: var(--sg-white);
+    border: 1px solid var(--sg-paper-line);
     border-radius: 10px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     overflow: hidden;
@@ -500,8 +500,8 @@ body {
     width: 100%;
     padding: 9px 12px;
     border: 0;
-    border-top: 1px solid #eee;
-    background: #fff;
+    border-top: 1px solid var(--sg-paper-soft);
+    background: var(--sg-white);
     font: inherit;
     font-size: 14px;
     text-align: left;
@@ -513,7 +513,7 @@ body {
 }
 
 .pl-x-res:hover {
-    background: #fff4ec;
+    background: var(--sg-poster-cream);
 }
 
 .pl-x-res img,
@@ -522,7 +522,7 @@ body {
     height: 30px;
     object-fit: contain;
     border-radius: 4px;
-    background: #f4f4f4;
+    background: var(--sg-paper-soft);
     flex: none;
 }
 
@@ -538,8 +538,8 @@ body {
 }
 
 .pl-btn {
-    background: #111;
-    color: #fff;
+    background: var(--sg-panel);
+    color: var(--sg-white);
     border: 0;
     border-radius: 8px;
     padding: 12px 22px;
@@ -549,7 +549,7 @@ body {
 }
 
 .pl-msg {
-    color: #555;
+    color: var(--sg-ink-muted);
     font-size: 13px;
 }
 

@@ -89,8 +89,8 @@ body.vi-page .qp-legal * {
     list-style: none;
     margin: 0;
     padding: 12px 14px;
-    border: 1px solid #f3c9c4;
-    background: #fff6f5;
+    border: 1px solid var(--sg-red-bg);
+    background: var(--sg-paper-soft);
     border-radius: 10px;
     display: grid;
     gap: 8px;
@@ -101,18 +101,18 @@ body.vi-page .qp-legal * {
     align-items: flex-start;
     font-size: 13.5px;
     line-height: 1.4;
-    color: #444;
+    color: var(--sg-ink-soft);
 }
 .vi-rules b {
-    color: #111;
+    color: var(--sg-panel);
 }
 .vi-x {
     flex: none;
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: #d93025;
-    color: #fff;
+    background: var(--sg-red);
+    color: var(--sg-white);
     font-size: 11px;
     font-weight: 800;
     display: flex;
@@ -127,8 +127,8 @@ body.vi-page .qp-legal * {
     margin-top: 14px;
     padding: 12px 14px;
     border-radius: 10px;
-    background: linear-gradient(90deg, #fff1e4, #fff8f1);
-    border: 1px solid #ffd9b3;
+    background: linear-gradient(90deg, var(--sg-poster-cream), var(--sg-poster-cream));
+    border: 1px solid var(--sg-sand);
 }
 .vi-dress span {
     font-size: 26px;
@@ -138,7 +138,7 @@ body.vi-page .qp-legal * {
     margin: 0;
     font-size: 13.5px;
     line-height: 1.45;
-    color: #333;
+    color: var(--sg-ink-soft);
 }
 @media (max-width: 760px) {
     .vi-guide-grid {
@@ -149,7 +149,7 @@ body.vi-page .qp-legal * {
 /* Cover: orange sunset, poster beside the words */
 .vi-hero-photo {
     --qp-photo: none;
-    background: linear-gradient(180deg, #ff6b00 0%, #d95a00 55%, #0b0b0b 100%);
+    background: linear-gradient(180deg, var(--sg-orange) 0%, var(--sg-sun-deep) 55%, var(--sg-night) 100%);
 }
 
 .vi-hero-in {
@@ -174,7 +174,7 @@ body.vi-page .qp-legal * {
 }
 
 .vi-hero-eyebrow {
-    color: #fff;
+    color: var(--sg-white);
 }
 
 .vi-mini-gap {
@@ -196,18 +196,18 @@ body.vi-page .qp-legal * {
     max-width: 280px;
     height: auto;
     margin: 0 auto;
-    border: 1px solid #e3e3e6;
+    border: 1px solid var(--sg-paper-line);
     border-radius: 10px;
-    background: #fff;
+    background: var(--sg-white);
 }
 
 /* Their documents on file */
 .qp-docs {
     margin-top: 22px;
     padding: 16px 18px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--sg-paper-line);
     border-radius: 12px;
-    background: #fafafa;
+    background: var(--sg-paper-soft);
 }
 
 .qp-docs .qp-mini {
@@ -224,11 +224,11 @@ body.vi-page .qp-legal * {
     align-items: center;
     gap: 12px;
     padding: 10px 12px;
-    border: 1px solid #e3e3e6;
+    border: 1px solid var(--sg-paper-line);
     border-radius: 8px;
-    background: #fff;
+    background: var(--sg-white);
     text-decoration: none;
-    color: #1a1a1a;
+    color: var(--sg-border);
 }
 
 .vi-doc-ico {
@@ -247,7 +247,7 @@ body.vi-page .qp-legal * {
 
 .vi-doc-type {
     font-size: 12.5px;
-    color: #777;
+    color: var(--sg-grey);
 }
 
 .vi-doc-open {
@@ -273,9 +273,9 @@ body.vi-page .qp-legal * {
 }
 /* A white outline button on the light cards */
 .vi-btn-light {
-    color: #111;
-    border-color: #111;
-    background: #fff;
+    color: var(--sg-panel);
+    border-color: var(--sg-panel);
+    background: var(--sg-white);
 }
 
 .vi-share-btns .qv-btn {
@@ -290,23 +290,23 @@ body.vi-page .qp-legal * {
 .vi-share-card {
     display: flex;
     flex-direction: column;
-    border: 1px solid #e6e6e9;
+    border: 1px solid var(--sg-paper-line);
     border-radius: 12px;
     padding: 16px 18px;
-    background: #fff;
+    background: var(--sg-white);
 }
 .vi-share-note {
     margin: 0 0 14px;
     font-size: 14px;
     line-height: 1.5;
-    color: #444;
+    color: var(--sg-ink-soft);
 }
 .vi-share-link {
     display: none;
     margin: 0;
     font-size: 9pt;
     font-weight: 700;
-    color: #ff6b00;
+    color: var(--sg-orange);
     word-break: break-all;
 }
 .vi-share-card .qv-btn {
@@ -327,15 +327,15 @@ body.vi-page .qp-legal * {
     margin-top: 14px;
     padding: 14px 18px;
     border-radius: 12px;
-    background: #111;
-    color: #fff;
+    background: var(--sg-panel);
+    color: var(--sg-white);
 }
 .vi-ig svg {
     width: 30px;
     height: 30px;
     flex: none;
     fill: none;
-    stroke: #ff6b00;
+    stroke: var(--sg-orange);
     stroke-width: 1.8;
 }
 .vi-ig p {
@@ -343,10 +343,10 @@ body.vi-page .qp-legal * {
     flex: 1;
     font-size: 14px;
     line-height: 1.45;
-    color: #ddd;
+    color: var(--sg-paper-line);
 }
 .vi-ig b {
-    color: #fff;
+    color: var(--sg-white);
 }
 .vi-ig .qv-btn {
     text-decoration: none;

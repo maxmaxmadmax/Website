@@ -24,14 +24,14 @@
    ========================================================================== */
 .vendor-signup {
     /* The site tokens, re-coloured for a white page */
-    --sg-black: #f6f7f9;
-    --sg-panel: #ffffff;
-    --sg-panel-light: #f2f4f7;
-    --sg-border: #e3e6ec;
-    --sg-text: #12141a;
-    --sg-muted: #4b5262;
-    --sg-dim: #6b7280;
-    --sg-gold: #8a5f00; /* darker gold, reads on white */
+    --sg-black: var(--sg-paper-soft);
+    --sg-panel: var(--sg-white);
+    --sg-panel-light: var(--sg-paper-soft);
+    --sg-border: var(--sg-paper-line);
+    --sg-text: var(--sg-ink);
+    --sg-muted: var(--sg-ink-muted);
+    --sg-dim: var(--sg-ink-muted);
+    --sg-gold: var(--sg-orange-dark); /* darker gold, reads on white */
     --sg-grain: none; /* grain looks like dirt on white */
 
     /* Poppins headings, Inter text, on this page only */
@@ -40,16 +40,16 @@
     --sg-font-accent: 'Inter', -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
 
     /* Halloween accents */
-    --vs-purple: #6b3fa0;
-    --vs-purple-deep: #3a1f5c;
-    --vs-purple-light: #b98cff;
-    --vs-slime: #8bc34a;
+    --vs-purple: var(--sg-purple);
+    --vs-purple-deep: var(--sg-purple-dark);
+    --vs-purple-light: var(--sg-purple);
+    --vs-slime: var(--sg-lime);
 
     /* Site plan states (dark set, kept for the swatches' fallback) */
-    --vs-available: #2e7d32;
-    --vs-held: #c8860d;
-    --vs-booked: #5a1f1f;
-    --vs-blocked: #2a2a2a;
+    --vs-available: var(--sg-green);
+    --vs-held: var(--sg-sun-top);
+    --vs-booked: var(--sg-poster-ink);
+    --vs-blocked: var(--sg-border);
     --vs-mine: var(--sg-orange);
 }
 
@@ -61,21 +61,21 @@
 /* Headings: ink on white, no uppercase */
 .vendor-signup h2,
 .vendor-signup h3 {
-    color: var(--sg-text);
+    color: var(--sg-white);
 }
 
 /* Inputs: white boxes with a visible edge */
 .vendor-signup input,
 .vendor-signup select,
 .vendor-signup textarea {
-    background: #fff;
-    color: var(--sg-text);
+    background: var(--sg-white);
+    color: var(--sg-white);
     border-color: var(--sg-border);
 }
 
 .vendor-signup input::placeholder,
 .vendor-signup textarea::placeholder {
-    color: #9aa1ad;
+    color: var(--sg-dim);
 }
 
 /* ==========================================================================
@@ -89,7 +89,7 @@
         radial-gradient(120% 100% at 50% 0%, rgba(46, 16, 66, 0.82) 0%, rgba(10, 10, 10, 0.92) 62%),
         linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.65) 100%),
         url('../../images/services/festivals.webp') center 62% / cover no-repeat,
-        var(--sg-black);
+        var(--sg-night);
 }
 
 .vs-hero::before {
@@ -109,13 +109,13 @@
 
 /* The hero keeps the real gold and white type */
 .vendor-signup .vs-hero {
-    --sg-gold: #ffb700;
+    --sg-gold: var(--sg-gold);
 }
 
 .vendor-signup .vs-hero,
 .vendor-signup .vs-hero h1,
 .vendor-signup .vs-hero p {
-    color: #fff;
+    color: var(--sg-white);
 }
 
 .vs-hero-inner {
@@ -172,22 +172,22 @@
 
 .vs-web path {
     fill: none;
-    stroke: #fff;
+    stroke: var(--sg-white);
     stroke-width: 1.4;
 }
 
 /* Red banner shown only while Firebase is not connected */
 .vs-preview-banner {
-    background: #4a1d1d;
-    border-bottom: 2px solid #7a2f2f;
-    color: #ffd9d9;
+    background: var(--sg-poster-ink);
+    border-bottom: 2px solid var(--sg-red);
+    color: var(--sg-red-bg);
     padding: 14px 6%;
     text-align: center;
     font-size: 0.95rem;
 }
 
 .vs-preview-banner strong {
-    color: #12141a;
+    color: var(--sg-ink);
 }
 
 /* ==========================================================================
@@ -197,8 +197,8 @@
     position: sticky;
     top: 0;
     z-index: 20;
-    background: #0b0b0b;
-    border-bottom: 1px solid #1e1e1e;
+    background: var(--sg-night);
+    border-bottom: 1px solid var(--sg-border);
 }
 
 .vendor-signup .vs-rail {
@@ -235,7 +235,7 @@
     content: '';
     flex: 1 1 20px;
     height: 1px;
-    background: #2b2b2b;
+    background: var(--sg-ink-soft);
     margin: 0 4px;
 }
 
@@ -248,7 +248,7 @@
     border: 0;
     border-radius: 8px;
     background: none;
-    color: #8b93a1;
+    color: var(--sg-grey);
     font: inherit;
     font-size: 0.86rem;
     white-space: nowrap;
@@ -257,7 +257,7 @@
 }
 
 .vs-rail-list button:hover {
-    color: #fff;
+    color: var(--sg-white);
 }
 
 .vs-rail-num {
@@ -267,29 +267,29 @@
     width: 26px;
     height: 26px;
     border-radius: 50%;
-    border: 1px solid #3a3a3a;
+    border: 1px solid var(--sg-ink-soft);
     font-size: 0.8rem;
     font-weight: 600;
 }
 
 .vs-rail-list .is-here button {
-    color: #fff;
+    color: var(--sg-white);
 }
 
 .vs-rail-list .is-here .vs-rail-num {
     background: var(--sg-orange);
     border-color: var(--sg-orange);
-    color: #12141a;
+    color: var(--sg-ink);
 }
 
 .vs-rail-list .is-done .vs-rail-num {
-    background: #15803d;
-    border-color: #15803d;
-    color: #fff;
+    background: var(--sg-green);
+    border-color: var(--sg-green);
+    color: var(--sg-white);
 }
 
 .vs-rail-list .is-done button {
-    color: #d4d8de;
+    color: var(--sg-muted);
 }
 
 /* ==========================================================================
@@ -297,12 +297,12 @@
    ========================================================================== */
 .vs-apply {
     padding: clamp(28px, 4vw, 52px) 6% clamp(48px, 7vw, 84px);
-    background: var(--sg-black);
+    background: var(--sg-night);
     color: var(--sg-ink);
 }
 
 .vendor-signup .vs-apply {
-    color: var(--sg-text);
+    color: var(--sg-white);
 }
 
 .vs-apply-inner {
@@ -323,23 +323,23 @@
 
 /* Outline buttons and text links, dark on white */
 .vendor-signup .vs-apply .btn-outline {
-    color: #12141a;
-    border-color: #c9ced7;
-    background: #fff;
+    color: var(--sg-ink);
+    border-color: var(--sg-muted);
+    background: var(--sg-white);
 }
 
 .vendor-signup .vs-apply .btn-outline:hover {
-    background: #12141a;
-    border-color: #12141a;
-    color: #fff;
+    background: var(--sg-ink);
+    border-color: var(--sg-ink);
+    color: var(--sg-white);
 }
 
 .vendor-signup .vs-apply a:not(.btn) {
-    color: #b34700;
+    color: var(--sg-orange-dark);
 }
 
 .vendor-signup .vs-apply a:not(.btn):hover {
-    color: #12141a;
+    color: var(--sg-ink);
 }
 
 /* Headings in the flow: no uppercase, lighter weight */
@@ -365,7 +365,7 @@
     font-family: var(--sg-font-display);
     font-size: clamp(1.5rem, 3.4vw, 2.1rem);
     letter-spacing: -0.7px;
-    color: var(--sg-text);
+    color: var(--sg-white);
     text-align: left;
     margin: 0 0 8px;
 }
@@ -389,7 +389,7 @@
 .vs-sec-aside {
     flex: 0 0 auto;
     margin-left: auto; /* stays right when it wraps */
-    color: #b34700;
+    color: var(--sg-orange-dark);
     font-size: 0.86rem;
 }
 
@@ -405,7 +405,7 @@
     margin: 0 0 14px;
     border-radius: 50%;
     background: var(--sg-orange);
-    color: #12141a; /* white on orange is too faint at this size */
+    color: var(--sg-ink); /* white on orange is too faint at this size */
     font-family: var(--sg-font);
     font-size: 0.95rem;
     font-weight: bold;
@@ -414,8 +414,8 @@
 }
 
 .vs-sec.is-locked .vs-secnum {
-    background: #c9ced7;
-    color: #6b7280;
+    background: var(--sg-muted);
+    color: var(--sg-ink-muted);
 }
 
 .vs-sec-intro {
@@ -446,7 +446,7 @@
     padding: 40px 20px;
     border: 1px solid var(--sg-paper-line);
     border-radius: 14px;
-    background: var(--sg-paper);
+    background: var(--sg-white);
     text-align: center;
 }
 
@@ -502,9 +502,9 @@
 }
 
 .vs-error {
-    background: #4a1d1d;
-    border: 1px solid #7a2f2f;
-    color: #ffd9d9;
+    background: var(--sg-poster-ink);
+    border: 1px solid var(--sg-red);
+    color: var(--sg-red-bg);
     border-radius: 10px;
     padding: 12px 16px;
     margin-top: 18px;
@@ -545,7 +545,7 @@
     overflow: hidden;
     border: 1px solid var(--sg-paper-line);
     border-radius: 14px;
-    background: var(--sg-paper);
+    background: var(--sg-white);
     box-shadow:
         0 1px 2px rgba(16, 24, 40, 0.04),
         0 1px 3px rgba(16, 24, 40, 0.06);
@@ -557,7 +557,7 @@
 
 .vs-sec .vs-event:hover {
     transform: translateY(-3px);
-    border-color: #3a3a3a;
+    border-color: var(--sg-ink-soft);
     box-shadow: 0 12px 26px rgba(16, 24, 40, 0.12);
 }
 
@@ -582,7 +582,7 @@
 .vs-sec .vs-event-art {
     position: relative;
     aspect-ratio: 16 / 9;
-    background-color: #e9ecf1;
+    background-color: var(--sg-paper-line);
     background-image: var(--vs-ev-art);
     background-size: cover;
     background-position: center;
@@ -603,19 +603,19 @@
 }
 
 .vs-sec .vs-event-status.is-open {
-    background: #15803d;
-    color: #fff;
+    background: var(--sg-green);
+    color: var(--sg-white);
 }
 
 .vs-sec .vs-event-status.is-limited {
-    background: #f5b83d;
-    color: #3a2600;
+    background: var(--sg-sun-top);
+    color: var(--sg-poster-ink);
 }
 
 .vs-sec .vs-event-status.is-closed,
 .vs-sec .vs-event-status.is-soon {
-    background: #12141a;
-    color: #fff;
+    background: var(--sg-ink);
+    color: var(--sg-white);
 }
 
 .vs-sec .vs-event-body {
@@ -682,7 +682,7 @@
     border: 0;
     border-radius: 10px;
     background: var(--sg-ink);
-    color: #fff;
+    color: var(--sg-white);
     font-family: var(--sg-font-accent);
     font-size: 0.68rem;
     font-weight: bold;
@@ -694,21 +694,21 @@
 }
 
 .vs-sec .vs-event-go:hover {
-    background: #000;
+    background: var(--sg-night);
 }
 
 .vs-sec .vs-event.is-chosen .vs-event-go {
     background: var(--sg-orange);
-    color: #12141a;
+    color: var(--sg-ink);
 }
 
 .vs-sec .vs-event.is-chosen .vs-event-go:hover {
-    background: #e66000;
+    background: var(--sg-sun-deep);
 }
 
 .vs-sec .vs-event-go.is-disabled {
-    background: #dfe3e9;
-    color: #8b93a1;
+    background: var(--sg-paper-line);
+    color: var(--sg-grey);
     cursor: default;
 }
 
@@ -717,24 +717,24 @@
     display: block;
     width: 100%;
     margin-top: 10px;
-    background: #fff;
-    color: var(--sg-ink, #111);
-    border: 2px solid #111;
+    background: var(--sg-white);
+    color: var(--sg-ink, var(--sg-panel));
+    border: 2px solid var(--sg-panel);
     font-size: 0.72rem;
     padding: 12px 16px;
     letter-spacing: 0.12em;
 }
 
 .vs-event-share:hover {
-    background: #111;
-    color: #fff;
+    background: var(--sg-panel);
+    color: var(--sg-white);
 }
 
 /* No picture: the logo on the house gradient */
 .vs-event[data-noart] .vs-event-art,
 .vs-picked-art[data-noart],
 .vs-side-art[data-noart] {
-    background-color: #12141a;
+    background-color: var(--sg-ink);
     background-image: url('/images/logowhite.png'), linear-gradient(135deg, #3a1c05 0%, #12141a 72%);
     background-repeat: no-repeat;
     background-position: center;
@@ -748,7 +748,7 @@
     aspect-ratio: 900 / 1335;
     background-size: cover;
     background-position: center top;
-    background-color: #f39243;
+    background-color: var(--sg-sun-top);
 }
 
 .vs-event[data-poster] .vs-event-status {
@@ -768,9 +768,9 @@
     top: 38%;
     left: 50%;
     transform: translate(-50%, -50%) rotate(-8deg);
-    background: #e3141b;
-    color: #fff;
-    border: 3px solid #fff;
+    background: var(--sg-red);
+    color: var(--sg-white);
+    border: 3px solid var(--sg-white);
     padding: 10px 18px;
     border-radius: 10px;
     font-family: 'Arial Black', Impact, sans-serif;
@@ -803,7 +803,7 @@
 
 .vs-event.is-loading .vs-event-art,
 .vs-skel {
-    background: #e9ecf1;
+    background: var(--sg-paper-line);
     animation: vs-pulse 1.4s ease-in-out infinite;
 }
 
@@ -851,7 +851,7 @@
     margin-top: 22px;
     border: 1px solid var(--sg-orange);
     border-radius: 14px;
-    background: #fff9f4;
+    background: var(--sg-white);
 }
 
 .vs-picked-head {
@@ -868,7 +868,7 @@
     width: 96px;
     height: 64px;
     border-radius: 10px;
-    background-color: #e9ecf1;
+    background-color: var(--sg-paper-line);
     background-image: var(--vs-ev-art);
     background-size: cover;
     background-position: center;
@@ -883,8 +883,8 @@
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    background: #15803d;
-    color: #fff;
+    background: var(--sg-green);
+    color: var(--sg-white);
     font-size: 0.72rem;
 }
 
@@ -906,7 +906,7 @@
 .vs-picked-fact {
     flex: 0 1 auto;
     padding-left: 18px;
-    border-left: 1px solid #f0d9c4;
+    border-left: 1px solid var(--sg-poster-cream);
 }
 
 .vs-picked-what strong,
@@ -921,7 +921,7 @@
     font-weight: bold;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: #6f6152;
+    color: var(--sg-grey);
 }
 
 .vs-picked-more-btn {
@@ -932,7 +932,7 @@
     padding: 9px 14px;
     border: 1px solid var(--sg-paper-line);
     border-radius: 9px;
-    background: #fff;
+    background: var(--sg-white);
     color: var(--sg-ink);
     font: inherit;
     font-size: 0.84rem;
@@ -950,7 +950,7 @@
 
 .vs-picked-more {
     padding: 4px 16px 18px;
-    border-top: 1px solid #f0d9c4;
+    border-top: 1px solid var(--sg-poster-cream);
 }
 
 /* ==========================================================================
@@ -973,7 +973,7 @@
     padding: 20px;
     border: 2px solid var(--sg-paper-line);
     border-radius: 14px;
-    background: #fff;
+    background: var(--sg-white);
     text-align: left;
     cursor: pointer;
     transition:
@@ -982,13 +982,13 @@
 }
 
 .vs-type:hover {
-    border-color: #c9ced7;
+    border-color: var(--sg-muted);
     box-shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
 }
 
 .vs-type.is-selected {
     border-color: var(--sg-orange);
-    background: #fff9f4;
+    background: var(--sg-white);
 }
 
 .vs-type-ico {
@@ -1002,7 +1002,7 @@
 }
 
 .vs-type.is-selected .vs-type-ico {
-    stroke: #b34700;
+    stroke: var(--sg-orange-dark);
 }
 
 .vs-type-body {
@@ -1060,8 +1060,8 @@
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: #15803d;
-    color: #fff;
+    background: var(--sg-green);
+    color: var(--sg-white);
     font-size: 0.78rem;
 }
 
@@ -1089,8 +1089,8 @@
     bottom: 16px;
     right: 16px;
     z-index: 2;
-    background: #e3141b;
-    color: #fff;
+    background: var(--sg-red);
+    color: var(--sg-white);
     padding: 6px 12px;
     border-radius: 6px;
     font-family: 'Arial Black', Impact, sans-serif;
@@ -1103,7 +1103,7 @@
 }
 
 .vs-soldout-word {
-    color: #e3141b;
+    color: var(--sg-red);
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
@@ -1123,11 +1123,11 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 5px;
-    background: #ffffff;
+    background: var(--sg-white);
     border: 2px solid var(--sg-border);
     border-radius: 12px;
     padding: 16px 18px;
-    color: #12141a;
+    color: var(--sg-ink);
     text-align: left;
     cursor: pointer;
     transition:
@@ -1137,16 +1137,16 @@
 
 .vs-category:hover:not(:disabled) {
     transform: translateY(-2px);
-    border-color: #4a2a06;
+    border-color: var(--sg-poster-ink);
 }
 
 .vs-category.is-selected {
     border-color: var(--sg-orange);
-    background: #fff9f4;
+    background: var(--sg-white);
 }
 
 .vs-category.is-selected .vs-category-name {
-    color: #b34700;
+    color: var(--sg-orange-dark);
 }
 
 .vs-category-name {
@@ -1179,7 +1179,7 @@
 .vs-category.is-full {
     opacity: 0.55;
     cursor: not-allowed;
-    border-color: #3a1414;
+    border-color: var(--sg-poster-ink);
 }
 
 .vs-category-full {
@@ -1190,8 +1190,8 @@
     font-size: 0.66rem;
     font-weight: bold;
     letter-spacing: 1.5px;
-    color: #ff8a8a;
-    background: #4a1d1d;
+    color: var(--sg-red-light);
+    background: var(--sg-poster-ink);
     border-radius: 4px;
     padding: 2px 6px;
 }
@@ -1235,12 +1235,12 @@
     font-weight: 500;
     letter-spacing: 0;
     text-transform: none;
-    color: #3d4351;
+    color: var(--sg-ink-soft);
 }
 
 .vendor-signup .vs-field:has(input[required], select[required], textarea[required]) > label::after {
     content: ' *';
-    color: #c0392b;
+    color: var(--sg-red);
 }
 
 .vs-field input,
@@ -1248,8 +1248,8 @@
 .vs-field textarea {
     padding: 14px;
     border-radius: 8px;
-    background: #ffffff;
-    color: #12141a;
+    background: var(--sg-white);
+    color: var(--sg-ink);
     border: 1px solid var(--sg-border);
     font-family: var(--sg-font);
     font-size: 1rem;
@@ -1304,7 +1304,7 @@
 }
 
 .vs-notice strong {
-    color: #12141a;
+    color: var(--sg-ink);
 }
 
 /* A button inside a label, styled as a link */
@@ -1313,7 +1313,7 @@
     border: 0;
     background: none;
     font: inherit;
-    color: #b34700;
+    color: var(--sg-orange-dark);
     text-decoration: underline;
     cursor: pointer;
 }
@@ -1353,7 +1353,7 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 8px 14px;
-    background: #ffffff;
+    background: var(--sg-white);
     border: 1px solid var(--sg-border);
     border-radius: 10px;
     padding: 12px 16px;
@@ -1397,7 +1397,7 @@
 }
 
 .vs-facts > div {
-    background: #ffffff;
+    background: var(--sg-white);
     padding: 16px 18px;
 }
 
@@ -1412,7 +1412,7 @@
 }
 
 .vs-facts dd {
-    color: #12141a;
+    color: var(--sg-ink);
     font-size: 0.95rem;
 }
 
@@ -1424,7 +1424,7 @@
 }
 
 .vs-faqs details {
-    background: #ffffff;
+    background: var(--sg-white);
     border: 1px solid var(--sg-border);
     border-radius: 12px;
     overflow: hidden;
@@ -1439,7 +1439,7 @@
     cursor: pointer;
     position: relative;
     font-weight: bold;
-    color: #12141a;
+    color: var(--sg-ink);
     list-style: none;
 }
 
@@ -1504,9 +1504,9 @@
 
 .vs-terms-read {
     margin: 14px 0 0;
-    border: 1px solid #e3b341;
+    border: 1px solid var(--sg-sun-top);
     border-radius: 12px;
-    background: #fffaf0;
+    background: var(--sg-poster-cream);
     padding: 10px 14px;
 }
 
@@ -1577,15 +1577,15 @@
     font-size: 15px;
     padding: 10px 12px;
     border-radius: 8px;
-    border: 1px solid #e3c7b0;
-    background: #fff;
-    color: #111;
+    border: 1px solid var(--sg-muted);
+    background: var(--sg-white);
+    color: var(--sg-panel);
 }
 
 .vs-wl-grid input:focus {
-    outline: 2px solid #ff6b00;
+    outline: 2px solid var(--sg-orange);
     outline-offset: 1px;
-    border-color: #ff6b00;
+    border-color: var(--sg-orange);
 }
 
 .vs-wl-wide {
@@ -1594,7 +1594,7 @@
 
 .vs-wl-msg {
     margin: 8px 0 0;
-    color: #ff8a80;
+    color: var(--sg-red-light);
     font-size: 14px;
 }
 
@@ -1609,14 +1609,14 @@
     max-width: 1100px;
     padding: 14px 18px;
     border-radius: 12px;
-    background: #ff6b00;
-    color: #fff;
+    background: var(--sg-orange);
+    color: var(--sg-white);
     font-size: 15px;
     line-height: 1.5;
 }
 
 .vs-claim-banner.is-bad {
-    background: #b3261e;
+    background: var(--sg-red);
 }
 
 /* ==========================================================================
@@ -1626,7 +1626,7 @@
    ========================================================================== */
 .vs-map-wrap {
     position: relative;
-    background: #fbfcfd;
+    background: var(--sg-white);
     border: 1px solid var(--sg-paper-line);
     border-radius: 14px;
     padding: 14px;
@@ -1654,13 +1654,13 @@
 
 /* Fixed furniture: stage, bar, walkway */
 .vmap-landmark rect {
-    fill: #eef0f4;
-    stroke: #d6dae1;
+    fill: var(--sg-paper-soft);
+    stroke: var(--sg-paper-line);
     stroke-width: 2;
 }
 
 .vmap-landmark-text {
-    fill: #8a8a8a;
+    fill: var(--sg-grey);
     font-family: 'Courier New', Courier, monospace;
     font-size: 13px;
     letter-spacing: 1.5px;
@@ -1675,7 +1675,7 @@
 }
 
 .vmap-site-label {
-    fill: #12141a;
+    fill: var(--sg-ink);
     font-family: 'Arial Black', Arial, sans-serif;
     font-size: 17px;
     pointer-events: none;
@@ -1690,28 +1690,28 @@
 }
 
 .vmap-site.is-available rect {
-    fill: #e7f6ea;
-    stroke: #15803d;
+    fill: var(--sg-green-bg);
+    stroke: var(--sg-green);
 }
 
 .vmap-site.is-held rect {
-    fill: #fdf3d9;
-    stroke: #a16207;
+    fill: var(--sg-poster-cream);
+    stroke: var(--sg-orange-dark);
 }
 
 .vmap-site.is-booked rect {
-    fill: #fdeaea;
-    stroke: #b91c1c;
+    fill: var(--sg-red-bg);
+    stroke: var(--sg-red);
 }
 
 .vmap-site.is-blocked rect {
-    fill: #f1f2f5;
-    stroke: #c9ced7;
+    fill: var(--sg-paper-soft);
+    stroke: var(--sg-muted);
 }
 
 .vmap-site.is-mine rect {
-    fill: #fff1e4;
-    stroke: #c2410c;
+    fill: var(--sg-poster-cream);
+    stroke: var(--sg-orange-dark);
 }
 
 .vmap-site.is-selectable {
@@ -1719,20 +1719,20 @@
 }
 
 .vmap-site.is-selectable:hover rect {
-    fill: #d4eeda;
-    stroke: #15803d;
+    fill: var(--sg-green-bg);
+    stroke: var(--sg-green);
 }
 
 .vmap-site.is-selected rect {
-    fill: #ffe6d2;
+    fill: var(--sg-poster-cream);
     stroke: var(--sg-orange);
     stroke-width: 4;
 }
 
 /* Free but not released yet: dashed, reads "not now" not "gone" */
 .vmap-site.is-not-open rect {
-    fill: #f7f8fa;
-    stroke: #c9ced7;
+    fill: var(--sg-paper-soft);
+    stroke: var(--sg-muted);
     stroke-dasharray: 5 4;
 }
 
@@ -1743,8 +1743,8 @@
 }
 
 .vmap-site.is-wrong-type rect {
-    fill: #f7f8fa;
-    stroke: #e3e6ec;
+    fill: var(--sg-paper-soft);
+    stroke: var(--sg-paper-line);
 }
 
 .vmap-site.is-wrong-type .vmap-site-label,
@@ -1783,33 +1783,33 @@
 }
 
 .vs-swatch.is-available {
-    background: #e7f6ea;
-    border-color: #15803d;
+    background: var(--sg-green-bg);
+    border-color: var(--sg-green);
 }
 
 .vs-swatch.is-held {
-    background: #fdf3d9;
-    border-color: #a16207;
+    background: var(--sg-poster-cream);
+    border-color: var(--sg-orange-dark);
 }
 
 .vs-swatch.is-booked {
-    background: #fdeaea;
-    border-color: #b91c1c;
+    background: var(--sg-red-bg);
+    border-color: var(--sg-red);
 }
 
 .vs-swatch.is-blocked {
-    background: #f1f2f5;
-    border-color: #c9ced7;
+    background: var(--sg-paper-soft);
+    border-color: var(--sg-muted);
 }
 
 .vs-swatch.is-mine {
-    background: #fff1e4;
-    border-color: #c2410c;
+    background: var(--sg-poster-cream);
+    border-color: var(--sg-orange-dark);
 }
 
 .vs-swatch.is-not-open {
-    background: #f7f8fa;
-    border-color: #c9ced7;
+    background: var(--sg-paper-soft);
+    border-color: var(--sg-muted);
 }
 
 /* Words above the plan */
@@ -1821,7 +1821,7 @@
 }
 
 .vs-map-intro strong {
-    color: #b34700;
+    color: var(--sg-orange-dark);
 }
 
 .vs-map-intro-sub {
@@ -1840,15 +1840,15 @@
     margin-top: 14px;
     padding: 12px 16px;
     border-radius: 10px;
-    background: #ffffff;
+    background: var(--sg-white);
     border: 1px solid var(--sg-border);
     color: var(--sg-dim);
 }
 
 .vs-site-choice.is-chosen {
     border-color: var(--sg-orange);
-    background: #fff7f0;
-    color: #12141a;
+    background: var(--sg-poster-cream);
+    color: var(--sg-ink);
 }
 
 .vs-hold-timer {
@@ -1861,7 +1861,7 @@
 }
 
 .vs-hold-timer.is-expired {
-    color: #ff8a8a;
+    color: var(--sg-red-light);
 }
 
 /* ==========================================================================
@@ -1877,7 +1877,7 @@
     top: 76px; /* clears the rail */
     border: 1px solid var(--sg-paper-line);
     border-radius: 16px;
-    background: #fff;
+    background: var(--sg-white);
     padding: 18px;
     box-shadow:
         0 1px 2px rgba(16, 24, 40, 0.04),
@@ -1905,7 +1905,7 @@
     padding: 0;
     border: 0;
     background: none;
-    color: #b34700;
+    color: var(--sg-orange-dark);
     font: inherit;
     font-size: 0.8rem;
     cursor: pointer;
@@ -1930,7 +1930,7 @@
     width: 72px;
     height: 56px;
     border-radius: 9px;
-    background-color: #e9ecf1;
+    background-color: var(--sg-paper-line);
     background-image: var(--vs-ev-art);
     background-size: cover;
     background-position: center;
@@ -2087,7 +2087,7 @@
 }
 
 .vs-card {
-    background: var(--sg-paper);
+    background: var(--sg-white);
     border: 1px solid var(--sg-paper-line);
     border-radius: 16px;
     padding: 20px;
@@ -2098,7 +2098,7 @@
     font-family: var(--sg-font-display);
     font-size: 1.2rem;
     letter-spacing: -0.4px;
-    color: #12141a;
+    color: var(--sg-ink);
 }
 
 .vs-card-head {
@@ -2124,8 +2124,8 @@
     padding: 8px 14px;
     border-radius: 50px;
     border: 1px solid var(--sg-paper-line);
-    background: #eef0f4;
-    color: #12141a;
+    background: var(--sg-paper-soft);
+    color: var(--sg-ink);
     font-size: 0.82rem;
     cursor: pointer;
     transition:
@@ -2176,7 +2176,7 @@
 }
 
 .vs-lineitem-txt strong {
-    color: #12141a;
+    color: var(--sg-ink);
     font-size: 1rem;
 }
 
@@ -2215,7 +2215,7 @@
 
 .vs-figures dd {
     margin: 0;
-    color: #12141a;
+    color: var(--sg-ink);
     font-size: 0.95rem;
 }
 
@@ -2247,7 +2247,7 @@
 
 .vs-sum dd {
     margin: 0;
-    color: #12141a;
+    color: var(--sg-ink);
     font-size: 0.92rem;
 }
 
@@ -2275,7 +2275,7 @@
     margin: 12px 0 0;
     padding: 11px 13px;
     border-radius: 9px;
-    background: #f6f7f9;
+    background: var(--sg-paper-soft);
     border: 1px solid var(--sg-paper-line);
     color: var(--sg-muted);
     font-size: 0.82rem;
@@ -2336,7 +2336,7 @@
 }
 
 .vs-secure-head strong {
-    color: #12141a;
+    color: var(--sg-ink);
     font-size: 0.95rem;
 }
 
@@ -2417,7 +2417,7 @@
     display: grid;
     grid-template-columns: minmax(120px, 200px) 1fr;
     gap: 14px;
-    background: #ffffff;
+    background: var(--sg-white);
     padding: 13px 18px;
 }
 
@@ -2432,7 +2432,7 @@
 }
 
 .vs-summary-list dd {
-    color: #12141a;
+    color: var(--sg-ink);
     word-break: break-word;
 }
 
@@ -2465,7 +2465,7 @@
 .vs-sum-total span,
 .vs-sum-total strong,
 .vs-help-link {
-    color: #b34700;
+    color: var(--sg-orange-dark);
 }
 
 /* The pay button, at the end of the page */
@@ -2550,7 +2550,7 @@
     width: 42px;
     height: 42px;
     margin: 0 auto 20px;
-    border: 3px solid #2a2a2a;
+    border: 3px solid var(--sg-border);
     border-top-color: var(--sg-orange);
     border-radius: 50%;
     animation: vs-spin 1s linear infinite;
@@ -2633,7 +2633,7 @@
     .vs-picked-fact {
         padding-left: 0;
         border-left: 0;
-        border-top: 1px solid #f0d9c4;
+        border-top: 1px solid var(--sg-poster-cream);
         padding-top: 10px;
         flex-basis: 100%;
     }

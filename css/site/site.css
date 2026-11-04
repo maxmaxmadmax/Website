@@ -23,52 +23,47 @@
    TOKENS
    ========================================================================== */
 :root {
+    /* The palette: every colour on every page is one of these */
     --sg-orange: #ff6b00;
     --sg-orange-bright: #ff8c00;
+    --sg-orange-dark: #b34700;
     --sg-gold: #ffb700;
-
-    /* Sunset tones from the poster artwork */
     --sg-sun-top: #f7a83f;
-    --sg-sun-mid: #f0862b;
     --sg-sun-deep: #e2661a;
     --sg-sand: #ffd9a0;
-
-    --sg-black: #000;
-    --sg-night: #0a0a0a; /* page bands, the footer, dark text on orange */
-    --sg-panel: #111;
-    --sg-panel-light: #161616;
-    --sg-border: #222;
-
-    --sg-text: #fff;
+    --sg-poster-ink: #1d0d02;
+    --sg-poster-cream: #fff4e6;
+    --sg-poster-orange: #f25a0c;
+    --sg-lime: #d6f53b;
+    --sg-purple: #b98cff;
+    --sg-purple-dark: #2b1a3d;
+    --sg-night: #0a0a0a;
+    --sg-panel: #111111;
+    --sg-border: #222222;
+    --sg-grey: #888888;
+    --sg-dim: #aaaaaa;
     --sg-muted: #d0d0d0;
-    --sg-dim: #aaa;
+    --sg-white: #ffffff;
+    --sg-ink: #12141a;
+    --sg-ink-soft: #333333;
+    --sg-ink-muted: #606877;
+    --sg-paper-line: #e3e6ec;
+    --sg-paper-soft: #f6f7f9;
+    --sg-green: #15803d;
+    --sg-green-bg: #e7f6ee;
+    --sg-red: #b3261e;
+    --sg-red-light: #ff8a80;
+    --sg-red-bg: #fdecea;
 
     --sg-font: Arial, Helvetica, sans-serif;
     --sg-font-display: 'Arial Black', 'Arial Bold', 'Helvetica Neue', Impact, sans-serif;
     --sg-font-accent: 'Courier New', Courier, monospace;
     --sg-font-script: 'Brush Script MT', 'Segoe Script', 'Pacifico', cursive;
 
-    /* Paper grain, drawn in CSS (no image to load) */
     --sg-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
 
     --sg-max-width: 1200px;
 
-    /* Status */
-    --sg-green: #15803d;
-    --sg-red: #b3261e;
-
-    /* Light pages (vendor signup, quote, sponsor pack): dark ink on white */
-    --sg-ink: #12141a;
-    --sg-ink-muted: #606877;
-    --sg-paper: #fff;
-    --sg-paper-line: #e3e6ec;
-    --sg-paper-soft: #f6f7f9;
-
-    /* The Eatz & Beatz poster look (event pages) */
-    --sg-poster-ink: #1d0d02;
-    --sg-poster-cream: #fff4e6;
-    --sg-poster-orange: #f25a0c;
-    --sg-lime: #d6f53b;
     --sg-font-poster: 'Bowlby One', 'Arial Black', Impact, sans-serif;
     --sg-font-hand: 'Permanent Marker', 'Segoe Print', cursive;
     --sg-font-cond: 'Oswald', 'Arial Narrow', Arial, sans-serif;
@@ -88,8 +83,8 @@ html {
 }
 
 body {
-    background: var(--sg-black);
-    color: var(--sg-text);
+    background: var(--sg-night);
+    color: var(--sg-white);
     font-family: var(--sg-font);
     line-height: 1.6;
     overflow-x: hidden; /* nothing can scroll sideways */
@@ -207,7 +202,7 @@ textarea:focus-visible {
 /* Bigger body copy under a heading */
 .lead {
     max-width: 56ch;
-    color: #ddd;
+    color: var(--sg-paper-line);
     font-size: 1.05rem;
     line-height: 1.7;
 }
@@ -280,7 +275,7 @@ textarea:focus-visible {
     justify-content: center;
     align-items: center;
     overflow: hidden;
-    background: linear-gradient(140deg, #1a0d00 0%, #000 55%, #150a00 100%);
+    background: linear-gradient(140deg, var(--sg-poster-ink) 0%, var(--sg-night) 55%, var(--sg-poster-ink) 100%);
 }
 
 .header-overlay {
@@ -359,7 +354,7 @@ textarea:focus-visible {
    colour that shows until the video plays.
    ========================================================================== */
 .banner {
-    --banner-tint: #2a1403;
+    --banner-tint: var(--sg-poster-ink);
     position: relative;
     display: flex;
     align-items: flex-end;
@@ -423,7 +418,7 @@ textarea:focus-visible {
     font-size: clamp(1.1rem, 2vw, 1.6rem);
     line-height: 1.15;
     text-align: right;
-    color: #fff;
+    color: var(--sg-white);
     flex-shrink: 0;
 }
 
@@ -449,7 +444,7 @@ textarea:focus-visible {
 .btn {
     display: inline-block;
     background: var(--sg-orange);
-    color: #fff;
+    color: var(--sg-white);
     padding: 16px 36px;
     border-radius: 50px;
     border: 2px solid var(--sg-orange);
@@ -475,7 +470,7 @@ textarea:focus-visible {
 /* Outline version */
 .btn-outline {
     background: transparent;
-    color: #fff;
+    color: var(--sg-white);
     border: 2px solid var(--sg-orange);
 }
 
@@ -488,13 +483,13 @@ textarea:focus-visible {
 .btn-gold {
     background: var(--sg-gold);
     border-color: var(--sg-gold);
-    color: #140800;
+    color: var(--sg-poster-ink);
 }
 
 .btn-gold:hover,
 .btn-gold:focus-visible {
-    background: #ffc933;
-    border-color: #ffc933;
+    background: var(--sg-gold);
+    border-color: var(--sg-gold);
 }
 
 /* Loud version for ticket links */
@@ -515,8 +510,8 @@ textarea:focus-visible {
 
 /* Archived: reads as a statement, not a button */
 .btn.is-done {
-    background: #1a1a1a;
-    border: 1px solid #333;
+    background: var(--sg-border);
+    border: 1px solid var(--sg-ink-soft);
     color: var(--sg-dim);
     cursor: default;
 }
@@ -569,7 +564,7 @@ textarea:focus-visible {
 
 .card:hover {
     transform: translateY(-4px);
-    border-color: #3a3a3a;
+    border-color: var(--sg-ink-soft);
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
 }
 
@@ -622,7 +617,7 @@ textarea:focus-visible {
     border: 1px solid var(--sg-border);
     border-radius: 10px;
     background: var(--sg-panel);
-    color: #fff;
+    color: var(--sg-white);
     font-family: var(--sg-font);
     font-size: 0.95rem;
 }
@@ -655,7 +650,7 @@ textarea:focus-visible {
     border: 1px solid var(--sg-border);
     border-radius: 999px;
     background: var(--sg-panel);
-    color: #ccc;
+    color: var(--sg-muted);
     font-family: var(--sg-font);
     font-size: 0.76rem;
     font-weight: bold;
@@ -669,8 +664,8 @@ textarea:focus-visible {
 }
 
 .pill:hover {
-    border-color: #444;
-    color: #fff;
+    border-color: var(--sg-ink-soft);
+    color: var(--sg-white);
 }
 
 .pill.is-on,
@@ -689,7 +684,7 @@ textarea:focus-visible {
     font-family: var(--sg-font);
     font-size: 0.76rem;
     letter-spacing: 0.06em;
-    color: #ccc;
+    color: var(--sg-muted);
 }
 
 .form label.pill:has(input:checked) {
@@ -701,7 +696,7 @@ textarea:focus-visible {
     border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.05);
-    color: #ccc;
+    color: var(--sg-muted);
     font-size: 0.6rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -735,15 +730,15 @@ textarea:focus-visible {
 }
 
 .badge.is-past {
-    background: #1a1a1a;
-    border-color: #333;
+    background: var(--sg-border);
+    border-color: var(--sg-ink-soft);
     color: var(--sg-dim);
 }
 
 .badge.is-soldout {
-    background: #3a1414;
-    border-color: #8c3a3a;
-    color: #ff9d9d;
+    background: var(--sg-poster-ink);
+    border-color: var(--sg-red);
+    color: var(--sg-red-light);
 }
 
 /* ==========================================================================
@@ -761,7 +756,7 @@ textarea:focus-visible {
     border-radius: 50%;
     border: 1px solid var(--sg-border);
     background: var(--sg-panel);
-    color: #fff;
+    color: var(--sg-white);
     font-size: 1.5rem;
     line-height: 1;
     cursor: pointer;
@@ -868,7 +863,7 @@ nav ul {
 nav a {
     display: inline-block;
     padding: 10px 2px;
-    color: #fff;
+    color: var(--sg-white);
     font-size: 0.95rem;
     letter-spacing: 1px;
     text-decoration: none;
@@ -902,7 +897,7 @@ nav .sub-toggle {
     background: none;
     border: 0;
     padding: 10px 2px;
-    color: #fff;
+    color: var(--sg-white);
     font-size: 0.7rem;
     line-height: 1;
     cursor: pointer;
@@ -988,7 +983,7 @@ nav a.nav-cta {
 
 nav a.nav-cta:hover {
     background: transparent;
-    color: #fff;
+    color: var(--sg-white);
 }
 
 nav a.nav-cta.active {
@@ -1045,7 +1040,7 @@ nav a.nav-cta.active {
         width: 22px;
         height: 2px;
         border-radius: 2px;
-        background: #fff;
+        background: var(--sg-white);
         transition:
             transform 0.2s ease,
             opacity 0.2s ease;
@@ -1076,7 +1071,7 @@ nav a.nav-cta.active {
         gap: 0;
         margin: 0;
         padding: 8px 16px 18px;
-        background: #0b0b0b;
+        background: var(--sg-night);
         border-top: 1px solid rgba(255, 255, 255, 0.08);
         box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
     }
@@ -1141,7 +1136,7 @@ nav a.nav-cta.active {
 
     nav .subnav a:hover,
     nav .subnav a.active {
-        color: #fff;
+        color: var(--sg-white);
         border-left-color: var(--sg-orange);
     }
 
@@ -1241,7 +1236,7 @@ nav a.nav-cta.active {
 }
 
 .footer-bottom p {
-    color: #666;
+    color: var(--sg-ink-muted);
     font-size: 0.9rem;
 }
 
@@ -1324,11 +1319,11 @@ nav a.nav-cta.active {
 .featured-event {
     position: relative;
     overflow: hidden;
-    background-color: #000;
+    background-color: var(--sg-night);
     background-image: linear-gradient(rgba(0, 0, 0, 0.74), rgba(0, 0, 0, 0.86)), url('../../images/services/trailer-stage.webp');
     background-size: cover;
     background-position: center;
-    border: 1px solid #3a2000;
+    border: 1px solid var(--sg-poster-ink);
     border-radius: 18px;
     max-width: var(--sg-max-width);
     margin: auto;
@@ -1372,7 +1367,7 @@ nav a.nav-cta.active {
 
 .event-facts li strong {
     display: block;
-    color: #fff;
+    color: var(--sg-white);
     font-size: 1.1rem;
 }
 
@@ -1474,7 +1469,7 @@ nav a.nav-cta.active {
 }
 
 .contact-item a {
-    color: #fff;
+    color: var(--sg-white);
     text-decoration: none;
 }
 
@@ -1494,7 +1489,7 @@ nav a.nav-cta.active {
     padding: 15px;
     border-radius: 8px;
     background: var(--sg-panel);
-    color: #fff;
+    color: var(--sg-white);
     border: 1px solid var(--sg-border);
     font-family: var(--sg-font);
     font-size: 1rem;

@@ -47,7 +47,9 @@
 
 /* Halloween look, scoped to this panel */
 .ev-feature.is-halloween {
-    background: radial-gradient(80% 90% at 88% 18%, #3a1f5c 0%, transparent 58%), linear-gradient(150deg, #1b0d02 0%, #0b0b0b 62%);
+    background:
+        radial-gradient(80% 90% at 88% 18%, var(--sg-purple-dark) 0%, transparent 58%),
+        linear-gradient(150deg, var(--sg-poster-ink) 0%, var(--sg-night) 62%);
 }
 
 .ev-feature.is-halloween::after {
@@ -87,7 +89,7 @@
 
 .ev-web path {
     fill: none;
-    stroke: #fff;
+    stroke: var(--sg-white);
     stroke-width: 1.4;
 }
 
@@ -193,7 +195,7 @@
     font-family: var(--sg-font-display);
     font-size: clamp(1.5rem, 3.4vw, 2.2rem);
     line-height: 1;
-    color: #fff;
+    color: var(--sg-white);
     font-variant-numeric: tabular-nums; /* digits do not jog about */
 }
 
@@ -222,7 +224,7 @@
    VOLUNTEER
    ========================================================================== */
 .ev-vol {
-    background: var(--sg-black);
+    background: var(--sg-night);
 }
 
 .ev-vol-panel {
@@ -232,7 +234,7 @@
     max-width: 1100px;
     margin: 0 auto;
     background: var(--sg-panel);
-    border: 1px solid #222;
+    border: 1px solid var(--sg-border);
     border-radius: 22px;
     padding: 40px;
 }
@@ -242,7 +244,7 @@
     line-height: 0.95;
     text-transform: uppercase;
     font-weight: 900;
-    color: #fff;
+    color: var(--sg-white);
     margin: 0 0 18px;
 }
 
@@ -251,7 +253,7 @@
 }
 
 .ev-vol-strap {
-    color: #cfcfcf;
+    color: var(--sg-muted);
     font-size: 1.05rem;
     line-height: 1.6;
     max-width: 40ch;
@@ -291,7 +293,7 @@
 .ev-vol-roles legend {
     font-weight: bold;
     font-size: 0.9rem;
-    color: #eee;
+    color: var(--sg-paper-soft);
     margin-bottom: 8px;
 }
 
@@ -367,7 +369,7 @@
     letter-spacing: -2px;
     text-transform: uppercase;
     margin: 22px 0 4px;
-    color: #fff;
+    color: var(--sg-white);
     text-shadow: 0 0 60px rgba(255, 107, 0, 0.45);
     white-space: nowrap;
 }
@@ -432,7 +434,7 @@
     min-height: min(56vh, 420px);
     display: flex;
     align-items: center;
-    background: linear-gradient(120deg, #2a1436, #0a0a0a 70%);
+    background: linear-gradient(120deg, var(--sg-purple-dark), var(--sg-night) 70%);
 }
 
 .ev-res-video {
@@ -471,7 +473,7 @@
     font-size: clamp(0.72rem, 1.7vw, 0.92rem);
     letter-spacing: 3px;
     text-transform: uppercase;
-    color: #fff;
+    color: var(--sg-white);
     margin-bottom: 14px;
 }
 
@@ -509,7 +511,7 @@
 }
 
 .ev-res-facts b {
-    color: #fff;
+    color: var(--sg-white);
     font-weight: bold;
 }
 
@@ -523,7 +525,7 @@
     font-size: clamp(1.2rem, 2.4vw, 2rem);
     line-height: 1.25;
     text-align: center;
-    color: #fff;
+    color: var(--sg-white);
     opacity: 0.9;
     pointer-events: none;
 }
@@ -552,7 +554,7 @@
 .ev-fri {
     position: relative;
     aspect-ratio: 3 / 4;
-    background: var(--ev-art, none), linear-gradient(140deg, #33184a, #0d0d0d 72%);
+    background: var(--ev-art, none), linear-gradient(140deg, var(--sg-purple-dark), var(--sg-night) 72%);
     background-size: cover;
     background-position: center 18%;
     border: 1px solid var(--sg-border);
@@ -610,7 +612,7 @@
     gap: 8px;
     padding-bottom: 4px;
     border-bottom: 1px solid var(--sg-dim);
-    color: #fff;
+    color: var(--sg-white);
     font-family: var(--sg-font-accent);
     font-size: 0.66rem;
     font-weight: bold;
@@ -625,7 +627,7 @@
 
 /* Venue card */
 .ev-venue {
-    background: #121212;
+    background: var(--sg-panel);
     border: 1px solid var(--sg-border);
     border-radius: 12px;
     padding: 0 0 16px;
@@ -675,8 +677,8 @@
 }
 
 .ev-venue-link:hover {
-    color: #fff;
-    border-color: #fff;
+    color: var(--sg-white);
+    border-color: var(--sg-white);
 }
 
 /* Book a DJ strip */
@@ -687,7 +689,7 @@
     justify-content: space-between;
     gap: 24px;
     padding: 18px 6%;
-    background: #0b0b0b;
+    background: var(--sg-night);
     border-top: 1px solid var(--sg-border);
 }
 
@@ -761,7 +763,7 @@
 .ev-card-art.is-logo {
     background-size: min(56%, 190px);
     background-repeat: no-repeat;
-    background-color: #141414;
+    background-color: var(--sg-panel);
     filter: brightness(0.75);
 }
 
@@ -788,7 +790,7 @@
 .ev-card:hover .ev-card-btn {
     background: var(--sg-orange);
     border-color: var(--sg-orange);
-    color: #0a0a0a;
+    color: var(--sg-night);
 }
 
 .ev-card.is-nolink .ev-card-link {

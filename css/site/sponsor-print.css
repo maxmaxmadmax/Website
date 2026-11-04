@@ -16,7 +16,7 @@
     body {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
-        background: #fff;
+        background: var(--sg-white);
     }
 
     #navbar,
@@ -54,6 +54,6 @@
     }
 
     .spn-for {
-        border: 1px solid #ddd;
+        border: 1px solid var(--sg-paper-line);
     }
 }

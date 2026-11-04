@@ -24,7 +24,7 @@
    HERO
    ========================================================================== */
 .ent-hero {
-    --banner-tint: #3a1a02;
+    --banner-tint: var(--sg-poster-ink);
 }
 
 .ent-hero-types {
@@ -33,7 +33,7 @@
     font-weight: bold;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: #fff;
+    color: var(--sg-white);
     margin: 22px 0 6px;
 }
 
@@ -51,7 +51,7 @@
     padding: 0;
     background: none;
     border: 0;
-    color: #fff;
+    color: var(--sg-white);
     text-align: left;
     cursor: pointer;
 }
@@ -96,7 +96,7 @@
 /* The reel pop-up */
 .ent-video {
     width: min(900px, 94vw);
-    background: #000;
+    background: var(--sg-night);
 }
 
 .ent-video video {
@@ -112,7 +112,7 @@
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: 1fr;
-    background: #0c0c0c;
+    background: var(--sg-night);
     border-top: 1px solid var(--sg-border);
     border-bottom: 1px solid var(--sg-border);
     overflow-x: auto;
@@ -155,7 +155,7 @@
 }
 
 .ent-type:hover {
-    color: #fff;
+    color: var(--sg-white);
     background: rgba(255, 255, 255, 0.03);
 }
 
@@ -182,7 +182,7 @@
     inset: 0;
     background:
         linear-gradient(90deg, rgba(6, 6, 6, 0.96) 30%, rgba(6, 6, 6, 0.55) 100%),
-        var(--ent-img, linear-gradient(120deg, #2a1201, #0a0a0a 70%));
+        var(--ent-img, linear-gradient(120deg, var(--sg-poster-ink), var(--sg-night) 70%));
     background-size: cover;
     background-position: center;
 }
@@ -371,7 +371,7 @@
     padding: 38px 20px;
     text-align: center;
     color: var(--sg-muted);
-    background: #101010;
+    background: var(--sg-panel);
     border: 1px solid var(--sg-border);
     border-radius: 14px;
 }
@@ -395,7 +395,7 @@
     flex-direction: column;
     justify-content: flex-end;
     min-height: 310px;
-    background: var(--ent-img, none), linear-gradient(140deg, #2b1a3d, #0d0d0d 72%);
+    background: var(--ent-img, none), linear-gradient(140deg, var(--sg-purple-dark), var(--sg-night) 72%);
     background-size: cover;
     background-position: center 18%; /* keeps the head in frame */
     border: 1px solid var(--sg-border);
@@ -407,7 +407,7 @@
 }
 
 .ent-card:hover {
-    border-color: #3a3a3a;
+    border-color: var(--sg-ink-soft);
     transform: translateY(-3px);
 }
 
@@ -437,7 +437,7 @@
 .ent-card-glyph {
     width: 46px;
     height: 46px;
-    fill: #fff;
+    fill: var(--sg-white);
     opacity: 0.16;
 }
 
@@ -504,7 +504,7 @@
     margin: 4px 0 0;
     font-size: 12px;
     letter-spacing: 0.04em;
-    color: #e8e8e8;
+    color: var(--sg-paper-line);
     opacity: 0.85;
 }
 
@@ -549,8 +549,8 @@
     padding: 0;
     border: 1px solid var(--sg-border);
     border-radius: 16px;
-    background: var(--sg-panel-light);
-    color: #fff;
+    background: var(--sg-panel);
+    color: var(--sg-white);
     overflow: hidden;
 }
 
@@ -570,7 +570,7 @@
     background: rgba(0, 0, 0, 0.55);
     border: 1px solid var(--sg-border);
     border-radius: 50%;
-    color: #fff;
+    color: var(--sg-white);
     font-size: 1.3rem;
     line-height: 1;
     cursor: pointer;
@@ -584,7 +584,8 @@
 .ent-panel-media {
     height: 190px;
     background:
-        linear-gradient(to top, rgba(10, 10, 10, 0.9), rgba(10, 10, 10, 0.3)), var(--ent-img, linear-gradient(140deg, #2a1201, #0a0a0a 70%));
+        linear-gradient(to top, rgba(10, 10, 10, 0.9), rgba(10, 10, 10, 0.3)),
+        var(--ent-img, linear-gradient(140deg, var(--sg-poster-ink), var(--sg-night) 70%));
     background-size: cover;
     background-position: center 12%; /* keeps the face in view */
     display: grid;

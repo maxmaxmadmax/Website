@@ -23,7 +23,7 @@
     body.event-page {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
-        background: #f39243;
+        background: var(--sg-sun-top);
         font-size: 12pt;
         margin: 0;
     }
@@ -142,7 +142,7 @@
     .ep-title {
         font-size: 98pt;
         line-height: 0.86;
-        color: #fff3d6;
+        color: var(--sg-poster-cream);
         -webkit-text-stroke: 4px var(--sg-poster-ink);
         text-shadow: 7px 7px 0 var(--sg-poster-ink);
         margin: 0;
@@ -1012,7 +1012,7 @@
     .ep-sponsors .ep-h2 {
         margin: 0;
         font-size: 23pt;
-        color: #fff;
+        color: var(--sg-white);
     }
 
     .ep-sponsor-grid {
@@ -1026,7 +1026,7 @@
         width: calc((100% - 12mm) / 5); /* five across */
         height: 26mm;
         padding: 2mm;
-        border-color: #333;
+        border-color: var(--sg-ink-soft);
     }
 
     .ep-sponsor-grid img {

@@ -25,7 +25,7 @@
     color: var(--sg-poster-ink);
     background:
         radial-gradient(circle at 78% 6%, rgba(255, 226, 140, 0.75), transparent 28%),
-        linear-gradient(180deg, #f9b45a 0%, #f39243 30%, #ee7a35 60%, #e8662c 100%);
+        linear-gradient(180deg, var(--sg-sun-top) 0%, var(--sg-sun-top) 30%, var(--sg-sun-deep) 60%, var(--sg-sun-deep) 100%);
     background-attachment: fixed;
 }
 
@@ -88,7 +88,7 @@
     font-size: clamp(3rem, 7.2vw, 6.4rem);
     line-height: 0.88;
     text-transform: uppercase;
-    color: #fffaf2;
+    color: var(--sg-poster-cream);
     -webkit-text-stroke: 3px var(--sg-poster-ink);
     paint-order: stroke fill;
     text-shadow: 6px 6px 0 var(--sg-poster-ink);
@@ -110,7 +110,7 @@
 
 .ep-subline i {
     font-style: normal;
-    color: #fffaf2;
+    color: var(--sg-poster-cream);
     margin: 0 4px;
 }
 
@@ -160,7 +160,7 @@
     font: bold 0.95rem var(--sg-font);
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: #fff;
+    color: var(--sg-white);
     background: var(--sg-poster-ink);
     border: 2px solid var(--sg-poster-ink);
     border-radius: 999px;
@@ -170,7 +170,7 @@
 
 .ep-btn:hover,
 .ep-btn:focus-visible {
-    background: #3a1a05;
+    background: var(--sg-poster-ink);
 }
 
 .ep-btn-ghost {
@@ -447,7 +447,7 @@
 
 .ep-strap i {
     font-style: normal;
-    color: #fff;
+    color: var(--sg-white);
     margin: 0 6px;
 }
 
@@ -496,14 +496,14 @@ a.ep-fv:focus-visible {
 }
 
 .ep-fv-pic-none {
-    background: linear-gradient(135deg, #ffb36b, #e8662c);
+    background: linear-gradient(135deg, var(--sg-sun-top), var(--sg-sun-deep));
 }
 
 /* A logo instead of a photo: shown whole, on white */
 .ep-fv-pic-logo {
     background-size: contain;
     background-repeat: no-repeat;
-    background-color: #fff;
+    background-color: var(--sg-white);
 }
 
 /* A portrait photo: face first */
@@ -541,7 +541,7 @@ a.ep-fv:focus-visible {
 .ep-fv-text span {
     font-size: 0.88rem;
     line-height: 1.35;
-    color: #4a2a12;
+    color: var(--sg-poster-ink);
 }
 
 /* The orange arrow */
@@ -555,7 +555,7 @@ a.ep-fv:focus-visible {
     place-items: center;
     border-radius: 50%;
     background: var(--sg-poster-orange);
-    color: #fff;
+    color: var(--sg-white);
     font-style: normal;
     font-weight: bold;
 }
@@ -613,7 +613,7 @@ a.ep-fv:focus-visible {
 .ep-big span {
     display: block;
     font-size: 1.3em;
-    color: #fffaf2;
+    color: var(--sg-poster-cream);
     -webkit-text-stroke: 2px var(--sg-poster-ink);
     paint-order: stroke fill;
     text-shadow: 4px 4px 0 var(--sg-poster-ink);
@@ -661,7 +661,7 @@ a.ep-fv:focus-visible {
     gap: 10px;
     padding-bottom: 10px;
     margin-bottom: 10px;
-    border-bottom: 1px solid #e9c9a6;
+    border-bottom: 1px solid var(--sg-sand);
 }
 
 .ep-mt svg {
@@ -693,7 +693,7 @@ a.ep-fv:focus-visible {
     font-weight: bold;
     letter-spacing: 0.02em;
     text-transform: uppercase;
-    color: #3a1e08;
+    color: var(--sg-poster-ink);
     line-height: 1.25;
     overflow-wrap: anywhere;
 }
@@ -787,8 +787,8 @@ a.ep-fv:focus-visible {
     display: flex;
     flex-direction: column;
     padding: 0;
-    color: #fffaf2;
-    background: #120a04;
+    color: var(--sg-poster-cream);
+    background: var(--sg-night);
 }
 
 .ep-ent-photo {
@@ -817,7 +817,7 @@ a.ep-fv:focus-visible {
 .ep-ent-band-text p:not(.ep-kicker) {
     margin: 0 0 12px;
     line-height: 1.5;
-    color: #f3e3d0;
+    color: var(--sg-poster-cream);
 }
 
 .ep-ent-link {
@@ -837,8 +837,8 @@ a.ep-fv:focus-visible {
 }
 
 .ep-ent-treat {
-    background: #2a1204;
-    color: #fffaf2;
+    background: var(--sg-poster-ink);
+    color: var(--sg-poster-cream);
 }
 
 .ep-ent-treat h3 {
@@ -853,7 +853,7 @@ a.ep-fv:focus-visible {
     font-family: var(--sg-font-hand);
     font-size: 1.1rem;
     text-transform: uppercase;
-    color: #fff;
+    color: var(--sg-white);
     background: var(--sg-poster-orange);
     padding: 8px 14px;
     border-radius: 8px;
@@ -892,7 +892,7 @@ a.ep-fv:focus-visible {
 
 /* Cricket: Chargers v Dregernauts */
 .ep-ent-cricket {
-    background: #fff;
+    background: var(--sg-white);
     color: var(--sg-poster-ink);
     padding: 28px 30px;
 }
@@ -939,7 +939,7 @@ a.ep-fv:focus-visible {
 
 /* Jumping castle: picture left, words right */
 .ep-ent-castle {
-    background: #fff;
+    background: var(--sg-white);
     color: var(--sg-poster-ink);
     display: flex;
     align-items: center;
@@ -988,7 +988,7 @@ a.ep-fv:focus-visible {
     margin: 8px 0 0;
     font-size: 0.92rem;
     line-height: 1.4;
-    color: #f3e3d0;
+    color: var(--sg-poster-cream);
 }
 
 .ep-ent-gen .ep-ent-side .ep-ent-link {
@@ -1157,7 +1157,7 @@ a.ep-fv:focus-visible {
     display: block;
     font-weight: normal;
     font-size: 0.85em;
-    color: #6b4524;
+    color: var(--sg-ink-soft);
     margin-top: 2px;
 }
 
@@ -1283,7 +1283,7 @@ a.ep-fv:focus-visible {
     margin: 0;
     font-size: 0.92rem;
     line-height: 1.4;
-    color: #3a1e08;
+    color: var(--sg-poster-ink);
 }
 
 @media (max-width: 700px) {
@@ -1296,8 +1296,8 @@ a.ep-fv:focus-visible {
    SPONSORS - the poster's logo strip on black, one tile per logo
    ========================================================================== */
 .ep-sponsors {
-    background: #000;
-    color: #fff;
+    background: var(--sg-night);
+    color: var(--sg-white);
     border-radius: 16px;
     padding: 22px 24px;
     text-align: center;
@@ -1305,7 +1305,7 @@ a.ep-fv:focus-visible {
 }
 
 .ep-sponsors .ep-h2 {
-    color: #fff;
+    color: var(--sg-white);
     font-size: clamp(1.4rem, 3vw, 2rem);
     margin-bottom: 12px;
 }
@@ -1334,7 +1334,7 @@ a.ep-fv:focus-visible {
     height: 96px;
     display: grid;
     place-items: center;
-    border: 1px solid #2a2a2a;
+    border: 1px solid var(--sg-border);
     border-radius: 10px;
     padding: 10px 14px;
     box-sizing: border-box;
@@ -1385,7 +1385,7 @@ a.ep-fv:focus-visible {
     top: 0;
     z-index: 50;
     background: var(--sg-poster-ink);
-    color: #fff;
+    color: var(--sg-white);
 }
 
 .ep-notice-in {
@@ -1428,35 +1428,35 @@ a.ep-fv:focus-visible {
 }
 
 .ep-notice.is-venue {
-    background: #0f3d2e;
+    background: var(--sg-ink-soft);
 }
 
 .ep-notice.is-venue .ep-notice-k {
-    color: #9ff5c7;
+    color: var(--sg-green-bg);
 }
 
 .ep-notice.is-postponed {
-    background: #3a2a05;
+    background: var(--sg-poster-ink);
 }
 
 .ep-notice.is-postponed .ep-notice-k {
-    color: #ffd76a;
+    color: var(--sg-sun-top);
 }
 
 .ep-notice.is-cancelled {
-    background: #5a1410;
+    background: var(--sg-poster-ink);
 }
 
 .ep-notice.is-cancelled .ep-notice-k {
-    color: #ffb3ad;
+    color: var(--sg-red-light);
 }
 
 .ep-notice.is-info {
-    background: #102a4a;
+    background: var(--sg-purple-dark);
 }
 
 .ep-notice.is-info .ep-notice-k {
-    color: #a8d4ff;
+    color: var(--sg-paper-line);
 }
 
 .has-notice-cancelled .ep-hero-body {

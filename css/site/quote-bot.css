@@ -7,11 +7,11 @@
    ========================================================================== */
 
 .sgq {
-    --q-card: #17181c;
-    --q-panel: #202127;
-    --q-line: #2c2e36;
-    --q-text: #f2f2f3;
-    --q-muted: #9aa0aa;
+    --q-card: var(--sg-ink);
+    --q-panel: var(--sg-border);
+    --q-line: var(--sg-ink-soft);
+    --q-text: var(--sg-paper-soft);
+    --q-muted: var(--sg-dim);
 
     max-width: 440px;
     margin: 0 auto;
@@ -35,7 +35,7 @@
     gap: 12px;
     padding: 16px 18px;
     border-bottom: 1px solid var(--q-line);
-    background: linear-gradient(180deg, #1c1d22, #17181c);
+    background: linear-gradient(180deg, var(--sg-border), var(--sg-ink));
 }
 
 .sgq-avatar {
@@ -76,7 +76,7 @@
     font-weight: 800;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: #fff;
+    color: var(--sg-white);
     background: rgba(255, 255, 255, 0.22);
     padding: 2px 7px;
     border-radius: 999px;
@@ -93,7 +93,7 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #35c759;
+    background: var(--sg-green);
     box-shadow: 0 0 0 3px rgba(53, 199, 89, 0.2);
 }
 
@@ -135,7 +135,7 @@
 
 .sgq-bubble-me {
     background: linear-gradient(135deg, var(--sg-orange), var(--sg-orange-bright));
-    color: #fff;
+    color: var(--sg-white);
     border-bottom-left-radius: 16px;
     border-bottom-right-radius: 5px;
     font-weight: 600;
@@ -146,7 +146,7 @@
     display: block;
     font-size: 26px;
     font-weight: 800;
-    color: #fff;
+    color: var(--sg-white);
 }
 .sgq-range-note {
     display: block;
@@ -196,7 +196,7 @@
     flex: 0 0 auto;
     padding: 14px 18px 18px;
     border-top: 1px solid var(--q-line);
-    background: #141519;
+    background: var(--sg-ink);
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
@@ -230,13 +230,13 @@
 
 .sgq-chip-toggle.is-on {
     background: linear-gradient(135deg, var(--sg-orange), var(--sg-orange-bright));
-    color: #fff;
+    color: var(--sg-white);
     border-color: transparent;
 }
 
 .sgq-chip-go {
     background: linear-gradient(135deg, var(--sg-orange), var(--sg-orange-bright));
-    color: #fff;
+    color: var(--sg-white);
     border-color: transparent;
     margin-left: auto;
 }
@@ -271,7 +271,7 @@
 }
 .sgq-field em {
     font-style: normal;
-    color: #6b7280;
+    color: var(--sg-ink-muted);
     font-weight: 400;
 }
 
@@ -333,7 +333,7 @@
 .sgq-err {
     margin: 2px 0 0;
     font-size: 13px;
-    color: #ff8a80;
+    color: var(--sg-red-light);
 }
 
 .sgq-submit {
@@ -343,7 +343,7 @@
     border-radius: 12px;
     cursor: pointer;
     background: linear-gradient(135deg, var(--sg-orange), var(--sg-orange-bright));
-    color: #fff;
+    color: var(--sg-white);
     font-size: 15px;
     font-weight: 700;
     font-family: inherit;
@@ -385,8 +385,8 @@
     border: none;
     border-radius: 999px;
     cursor: pointer;
-    background: linear-gradient(135deg, var(--sg-orange, #ff6b00), var(--sg-orange-bright, #ff8c00));
-    color: #fff;
+    background: linear-gradient(135deg, var(--sg-orange, var(--sg-orange)), var(--sg-orange-bright, var(--sg-orange-bright)));
+    color: var(--sg-white);
     font: inherit;
     font-weight: 700;
     font-size: 15px;
@@ -409,13 +409,13 @@
     flex: 0 0 auto;
 }
 .sgq-fab-open {
-    fill: #fff;
+    fill: var(--sg-white);
     stroke: none;
 }
 .sgq-fab-close {
     display: none;
     fill: none;
-    stroke: #fff;
+    stroke: var(--sg-white);
     stroke-width: 2.2;
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -505,7 +505,7 @@
     cursor: pointer;
 }
 .sgq-close:hover {
-    color: #fff;
+    color: var(--sg-white);
 }
 
 @media (max-width: 520px) {

@@ -14,23 +14,23 @@
    PAGE
    ========================================================================== */
 body:has(.bl-wrap) {
-    background: #fff;
+    background: var(--sg-white);
 }
 
 /* The menu's see-through fade goes grey on white, so it gets a solid bar */
 body:has(.bl-wrap) #navbar > nav {
-    background: #000;
+    background: var(--sg-night);
 }
 
 .bl-wrap {
-    background: #fff;
+    background: var(--sg-white);
     padding: 110px 16px 70px;
 }
 
 .bl-post {
     max-width: 760px;
     margin: 0 auto;
-    color: #333;
+    color: var(--sg-ink-soft);
     font-size: 17px;
     line-height: 1.7;
 }
@@ -40,12 +40,12 @@ body:has(.bl-wrap) #navbar > nav {
    ========================================================================== */
 .bl-crumbs {
     font-size: 13px;
-    color: #888;
+    color: var(--sg-grey);
     margin-bottom: 22px;
 }
 
 .bl-crumbs a {
-    color: #888;
+    color: var(--sg-grey);
     text-decoration: none;
 }
 
@@ -68,7 +68,7 @@ body:has(.bl-wrap) #navbar > nav {
 
 .bl-head h1 {
     font-family: var(--sg-font-display);
-    color: #111;
+    color: var(--sg-panel);
     font-size: clamp(28px, 5vw, 44px);
     line-height: 1.1;
     margin: 0 0 18px;
@@ -76,7 +76,7 @@ body:has(.bl-wrap) #navbar > nav {
 
 .bl-lead {
     font-size: 19px;
-    color: #222;
+    color: var(--sg-border);
     margin: 0 0 28px;
 }
 
@@ -93,7 +93,7 @@ body:has(.bl-wrap) #navbar > nav {
 
 .bl-hero figcaption {
     font-size: 12px;
-    color: #888;
+    color: var(--sg-grey);
     margin-top: 6px;
     text-align: right;
 }
@@ -103,7 +103,7 @@ body:has(.bl-wrap) #navbar > nav {
    ========================================================================== */
 .bl-post h2 {
     font-family: var(--sg-font-display);
-    color: #111;
+    color: var(--sg-panel);
     font-size: clamp(21px, 3.2vw, 27px);
     line-height: 1.2;
     margin: 40px 0 12px;
@@ -123,11 +123,11 @@ body:has(.bl-wrap) #navbar > nav {
 }
 
 .bl-post strong {
-    color: #111;
+    color: var(--sg-panel);
 }
 
 .bl-post a {
-    color: #d35400;
+    color: var(--sg-sun-deep);
 }
 
 .bl-fig {
@@ -141,7 +141,7 @@ body:has(.bl-wrap) #navbar > nav {
 }
 
 .bl-gear li {
-    background: #fff7f0;
+    background: var(--sg-poster-cream);
     border-left: 3px solid var(--sg-orange);
     border-radius: 8px;
     padding: 12px 14px;
@@ -165,7 +165,7 @@ body:has(.bl-wrap) #navbar > nav {
 .bl-stats li {
     margin: 0;
     text-align: center;
-    background: #fff7f0;
+    background: var(--sg-poster-cream);
     border-radius: 12px;
     padding: 16px 8px;
 }
@@ -185,7 +185,7 @@ body:has(.bl-wrap) #navbar > nav {
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #555;
+    color: var(--sg-ink-muted);
 }
 
 /* The one-line verdict */
@@ -193,12 +193,12 @@ body:has(.bl-wrap) #navbar > nav {
     margin: 30px 0;
     padding: 18px 22px;
     border-left: 4px solid var(--sg-orange);
-    background: #fafafa;
+    background: var(--sg-paper-soft);
     border-radius: 10px;
     font-family: var(--sg-font-display);
     font-size: clamp(19px, 3vw, 23px);
     line-height: 1.35;
-    color: #111;
+    color: var(--sg-panel);
 }
 
 .bl-verdict cite {
@@ -208,14 +208,14 @@ body:has(.bl-wrap) #navbar > nav {
     font-style: normal;
     font-size: 13px;
     font-weight: 700;
-    color: #777;
+    color: var(--sg-grey);
 }
 
 /* "See the live ..." link to a tool we built */
 .bl-post .bl-applink a {
     display: inline-block;
-    background: #111;
-    color: #fff;
+    background: var(--sg-panel);
+    color: var(--sg-white);
     text-decoration: none;
     font-weight: 800;
     padding: 12px 18px;
@@ -233,8 +233,8 @@ body:has(.bl-wrap) #navbar > nav {
     margin-top: 34px;
     padding: 24px;
     border-radius: 14px;
-    background: linear-gradient(140deg, #2a1300, #111 60%);
-    color: #ddd;
+    background: linear-gradient(140deg, var(--sg-poster-ink), var(--sg-panel) 60%);
+    color: var(--sg-paper-line);
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
@@ -251,7 +251,7 @@ body:has(.bl-wrap) #navbar > nav {
     font-family: var(--sg-font-display);
     font-size: 22px;
     margin-bottom: 2px;
-    color: #fff;
+    color: var(--sg-white);
 }
 
 .bl-post .bl-btn {
@@ -259,7 +259,7 @@ body:has(.bl-wrap) #navbar > nav {
     border: 0;
     cursor: pointer;
     background: var(--sg-orange);
-    color: #fff;
+    color: var(--sg-white);
     font: inherit;
     font-weight: 800;
     font-size: 15px;
@@ -274,11 +274,11 @@ body:has(.bl-wrap) #navbar > nav {
 
 .bl-post .bl-btn-ghost {
     background: transparent;
-    border: 1px solid #555;
+    border: 1px solid var(--sg-ink-muted);
 }
 
 .bl-post .bl-btn-ghost:hover {
-    background: #222;
+    background: var(--sg-border);
 }
 
 /* ==========================================================================

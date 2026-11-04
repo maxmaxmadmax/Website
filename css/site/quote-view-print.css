@@ -9,7 +9,7 @@
    ========================================================================== */
 @media print {
     body {
-        background: #fff;
+        background: var(--sg-white);
     }
 
     #navbar,
@@ -171,7 +171,7 @@
 
     .qp-legal summary {
         background: none;
-        color: #000;
+        color: var(--sg-night);
         padding: 0 0 6px;
     }
 
@@ -210,7 +210,7 @@
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        background: #0b0b0b;
+        background: var(--sg-night);
     }
 
     .qp-hero-photo {
@@ -243,7 +243,7 @@
 
     .qp-hero .qp-tiles {
         margin-top: auto;
-        border-top: 1px solid #2a2a2a;
+        border-top: 1px solid var(--sg-border);
         padding-top: 9mm;
     }
 
@@ -333,7 +333,7 @@
     }
 
     .qp-styles span {
-        color: #b45309;
+        color: var(--sg-orange-dark);
     }
 
     .qp-hero-photo.is-dj {
@@ -402,7 +402,7 @@
     }
 
     .qv-law {
-        background: #fff;
+        background: var(--sg-white);
     }
 
     .qp-lock-card,

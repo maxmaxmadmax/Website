@@ -161,7 +161,7 @@
         overflow: visible;
         column-count: 2;
         column-gap: 8mm;
-        background: #fff;
+        background: var(--sg-white);
     }
     body.vi-page .qp-term,
     body.vi-page .qp-legal {

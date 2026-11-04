@@ -5,7 +5,7 @@
    ========================================================================== */
 .gg-card-art {
     aspect-ratio: 16 / 10;
-    background-color: #161616;
+    background-color: var(--sg-panel);
     background-image: var(--gg-art);
     background-size: cover;
     background-position: center;
@@ -66,7 +66,7 @@
 }
 
 .gg-where {
-    color: #ddd;
+    color: var(--sg-paper-line);
 }
 
 .gg-when {
@@ -109,7 +109,7 @@
     letter-spacing: 0.06em;
     text-transform: uppercase;
     text-decoration: none;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--sg-ink-soft);
     transition:
         color 0.2s ease,
         border-color 0.2s ease;

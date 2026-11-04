@@ -25,7 +25,7 @@
 
     padding: 46px 0;
     text-align: center;
-    color: #000;
+    color: var(--sg-night);
 }
 
 /* Alternate the alignment so the eye keeps moving down the page.
@@ -89,7 +89,7 @@
     border: 2px solid rgba(0, 0, 0, 0.55);
     border-radius: 12px;
     overflow: hidden;
-    background: #000;
+    background: var(--sg-night);
     box-shadow: 0 10px 26px rgba(80, 28, 0, 0.3);
 }
 
@@ -175,8 +175,8 @@
 
     /* Die-cut sticker edge: a white outline plus a lifted shadow, so each
        cut-out looks like it has been pasted onto the page. */
-    filter: drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff)
-        drop-shadow(0 16px 22px rgba(0, 0, 0, 0.45));
+    filter: drop-shadow(3px 0 0 var(--sg-white)) drop-shadow(-3px 0 0 var(--sg-white)) drop-shadow(0 3px 0 var(--sg-white))
+        drop-shadow(0 -3px 0 var(--sg-white)) drop-shadow(0 16px 22px rgba(0, 0, 0, 0.45));
 }
 
 /*  SCRAPBOOK SCROLL ANIMATION
@@ -189,7 +189,7 @@
    CLOSING BANNER - full-width image that closes the page
    ========================================================================== */
 .closing-banner {
-    background: #000;
+    background: var(--sg-night);
     padding: 0;
     line-height: 0; /* removes the gap under an inline image */
 }
@@ -247,7 +247,7 @@
 }
 
 .event-copy p.lead {
-    color: #fff;
+    color: var(--sg-white);
     font-size: 1.25rem;
     font-weight: bold;
 }
@@ -270,13 +270,13 @@
     background: linear-gradient(
         180deg,
         var(--sg-sun-top) 0%,
-        var(--sg-sun-mid) 30%,
+        var(--sg-sun-top) 30%,
         var(--sg-sun-deep) 58%,
-        #a34412 76%,
-        #3d1806 90%,
-        #000 100%
+        var(--sg-orange-dark) 76%,
+        var(--sg-poster-ink) 90%,
+        var(--sg-night) 100%
     );
-    color: #000;
+    color: var(--sg-night);
     overflow: hidden;
 }
 
@@ -305,7 +305,7 @@
 .event-flow h2,
 .event-flow h3,
 .event-flow h5 {
-    color: #000;
+    color: var(--sg-night);
 }
 
 /*  Detail bar: bold black type straight onto the sunset, no boxes. */
@@ -314,8 +314,8 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 0;
-    border-top: 3px solid #000;
-    border-bottom: 3px solid #000;
+    border-top: 3px solid var(--sg-night);
+    border-bottom: 3px solid var(--sg-night);
     max-width: var(--sg-max-width);
     margin: auto;
 }
@@ -327,7 +327,7 @@
     border-right: 2px solid rgba(0, 0, 0, 0.28);
     border-radius: 0;
     padding: 26px 18px;
-    color: #000;
+    color: var(--sg-night);
 }
 
 .event-flow .detail-card:last-child {
@@ -342,7 +342,7 @@
 }
 
 .event-flow .detail-card p {
-    color: #000;
+    color: var(--sg-night);
     font-size: clamp(1rem, 2.2vw, 1.3rem);
     line-height: 1.25;
 }
@@ -352,7 +352,7 @@
     position: absolute;
     width: clamp(150px, 22vw, 330px);
     height: auto;
-    color: #000;
+    color: var(--sg-night);
     opacity: 0.14;
     pointer-events: none;
     z-index: 0;
@@ -385,17 +385,17 @@
 /* Copy near the bottom of the flow sits on dark, so it flips to white */
 .event-flow .flow-copy h2,
 .event-flow .flow-copy p {
-    color: #fff;
+    color: var(--sg-white);
 }
 
 .event-flow .flow-copy p.lead {
-    color: #fff;
+    color: var(--sg-white);
 }
 
 .event-flow .flow-copy .btn {
     background: var(--sg-orange-bright);
     border-color: var(--sg-orange-bright);
-    color: #fff;
+    color: var(--sg-white);
 }
 
 /*  Poster tagline: LIVE MUSIC / FOOD / BAR / DJS - light and widely spaced. */
@@ -482,11 +482,11 @@
 
 /* Hero sits on the orange sky, so its type goes black like the poster */
 .event-hero-content {
-    color: #000;
+    color: var(--sg-night);
 }
 
 .event-hero .poster-tagline {
-    color: #000;
+    color: var(--sg-night);
 }
 
 .event-headline-date {
@@ -496,7 +496,7 @@
     letter-spacing: -1.5px;
     text-transform: uppercase;
     margin: 1.8vh 0 0.8vh;
-    color: #000;
+    color: var(--sg-night);
 }
 
 .event-hero .event-date {
@@ -506,14 +506,14 @@
     letter-spacing: 0.2em;
     text-indent: 0.2em;
     text-transform: uppercase;
-    color: #000;
+    color: var(--sg-night);
     margin: 0;
 }
 
 /* Venue sits in a black box with orange type */
 .event-hero .event-location {
     display: inline-block;
-    background: #000;
+    background: var(--sg-night);
     color: var(--sg-orange-bright);
     border-radius: 8px;
     padding: 13px 30px;
@@ -528,14 +528,14 @@
 
 /* Black ticket button reads best against the orange sky */
 .event-hero .btn-ticket {
-    background: #000;
-    border-color: #000;
-    color: #fff;
+    background: var(--sg-night);
+    border-color: var(--sg-night);
+    color: var(--sg-white);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
 .event-hero .btn-ticket:hover {
-    background: #1a1a1a;
+    background: var(--sg-border);
 }
 
 .event-hero h1 {
@@ -555,7 +555,7 @@
 
 .event-date {
     margin: 12px 0 28px;
-    color: #eee;
+    color: var(--sg-paper-soft);
     font-family: var(--sg-font-accent);
     letter-spacing: 2px;
     font-size: clamp(0.9rem, 2.6vw, 1.1rem);
@@ -580,8 +580,8 @@
     width: min(1000px, 150vw);
     aspect-ratio: 1;
     background: repeating-conic-gradient(from 0deg, rgba(0, 0, 0, 0.075) 0deg 5deg, transparent 5deg 11deg);
-    -webkit-mask-image: radial-gradient(circle, #000 12%, transparent 62%);
-    mask-image: radial-gradient(circle, #000 12%, transparent 62%);
+    -webkit-mask-image: radial-gradient(circle, var(--sg-night) 12%, transparent 62%);
+    mask-image: radial-gradient(circle, var(--sg-night) 12%, transparent 62%);
     pointer-events: none;
     z-index: 0;
 }
@@ -626,7 +626,7 @@
     font-size: clamp(1rem, min(3.3vh, 3.8vw), 2.85rem);
     text-transform: uppercase;
     letter-spacing: -0.5px;
-    color: #000;
+    color: var(--sg-night);
     white-space: nowrap;
 
     /* soft lift, so the type sits on the sunset instead of looking flat */
@@ -648,7 +648,7 @@
     aspect-ratio: 1;
     flex: 0 0 auto;
 
-    background-color: #000;
+    background-color: var(--sg-night);
     -webkit-mask: var(--sun-icon) center / contain no-repeat;
     mask: var(--sun-icon) center / contain no-repeat;
 
@@ -729,8 +729,8 @@
     z-index: 90;
 
     background: rgba(10, 10, 10, 0.96);
-    border-top: 1px solid #2a1600;
-    border-bottom: 1px solid #2a1600;
+    border-top: 1px solid var(--sg-poster-ink);
+    border-bottom: 1px solid var(--sg-poster-ink);
     backdrop-filter: blur(6px);
 
     display: flex;
@@ -773,7 +773,7 @@
    WEEKEND - accommodation and things-to-do cards
    ========================================================================== */
 .weekend-section {
-    background: radial-gradient(120% 90% at 50% 0%, #1b1005 0%, #0a0a0a 62%);
+    background: radial-gradient(120% 90% at 50% 0%, var(--sg-poster-ink) 0%, var(--sg-night) 62%);
 }
 
 .weekend-eyebrow {
@@ -812,7 +812,7 @@
 .weekend-card:hover,
 .weekend-card:focus-visible {
     transform: translateY(-6px);
-    border-color: #4a2a06;
+    border-color: var(--sg-poster-ink);
 }
 
 .weekend-card img {
@@ -850,7 +850,7 @@
     font-size: clamp(1.5rem, 3.4vw, 2.1rem);
     letter-spacing: -0.5px;
     text-transform: uppercase;
-    color: #fff;
+    color: var(--sg-white);
 }
 
 .weekend-card-body p {

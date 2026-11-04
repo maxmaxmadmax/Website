@@ -14,7 +14,7 @@
 }
 
 #sg-gig-guide {
-    background: #0a0a0a;
+    background: var(--sg-night);
 }
 
 /* ==========================================================================
@@ -22,7 +22,7 @@
    ========================================================================== */
 .gg-filters {
     border-bottom: 1px solid var(--sg-border);
-    background: #0c0c0c;
+    background: var(--sg-night);
 }
 
 .gg-filters-inner {
@@ -79,7 +79,7 @@
 }
 
 .gg-place:hover {
-    color: #fff;
+    color: var(--sg-white);
 }
 
 .gg-place.is-on {
@@ -95,7 +95,7 @@
 }
 
 .gg-band.is-alt {
-    background: #0d0d0d;
+    background: var(--sg-night);
     border-top: 1px solid var(--sg-border);
     border-bottom: 1px solid var(--sg-border);
 }
@@ -154,7 +154,7 @@
 
 .gg-cta p {
     margin: 18px 0 24px;
-    color: #ddd;
+    color: var(--sg-paper-line);
     line-height: 1.65;
 }
 
