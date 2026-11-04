@@ -8,7 +8,7 @@
    RESIDENCY   Friday nights at the Grand View
    WEEK        the what's-on strip (slider from site.css, cards from gig-card.css)
    CARDS       grid of past events
-   PHONE       keep last
+   Each section carries its own phone rules.
    ========================================================================== */
 
 /* Date and place line */
@@ -153,6 +153,30 @@
     height: auto;
 }
 
+/* Tablet */
+@media (max-width: 900px) {
+    .ev-feature-inner {
+        grid-template-columns: 1fr;
+        gap: 28px;
+        padding-bottom: 56px;
+    }
+    .ev-poster {
+        width: min(100%, 360px);
+        transform: none;
+    }
+}
+
+/* Phone */
+@media (max-width: 600px) {
+    .ev-actions .btn {
+        width: 100%;
+        text-align: center;
+    }
+    .ev-feature-inner {
+        padding-bottom: 44px;
+    }
+}
+
 /* ==========================================================================
    COUNTDOWN
    ========================================================================== */
@@ -218,6 +242,14 @@
     color: var(--sg-orange);
     font-size: 0.9rem;
     letter-spacing: 0.2em;
+}
+
+/* Phone */
+@media (max-width: 600px) {
+    .ev-countdown-units li {
+        flex: 1 1 calc(50% - 5px); /* two by two */
+        min-width: 0;
+    }
 }
 
 /* ==========================================================================
@@ -307,6 +339,16 @@
     margin: 12px 0 0;
     font-weight: bold;
     color: var(--sg-gold);
+}
+
+@media (max-width: 760px) {
+    .ev-vol-panel {
+        grid-template-columns: 1fr;
+        padding: 26px 20px;
+    }
+    .ev-vol-2 {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* ==========================================================================
@@ -415,9 +457,15 @@
     color: var(--sg-orange);
 }
 
+/* Phone */
+@media (max-width: 600px) {
+    .ev-teaser-body {
+        padding: calc(var(--sg-nav-height, 78px) + 26px) 18px 46px;
+    }
+}
+
 /* ==========================================================================
-   RESIDENCY - hidden with the `hidden` attribute on its section.
-   Never set display on .ev-residency itself or `hidden` stops working.
+   RESIDENCY - Friday nights at the Grand View (hidden with the `hidden` attribute)
    ========================================================================== */
 
 .ev-residency {
@@ -707,6 +755,70 @@
     color: var(--sg-muted);
 }
 
+/* Computer: four DJ cards across, residency fits one screen */
+@media (min-width: 901px) {
+    .ev-fri-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .ev-residency {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        height: 100dvh;
+        min-height: 600px;
+    }
+    .ev-res-hero {
+        flex: 1 1 auto;
+        min-height: 250px;
+    }
+    .ev-res-body,
+    .ev-res-cta {
+        flex: 0 0 auto;
+    }
+}
+
+/* Short laptop screens: tighter so it still fits one screen */
+@media (min-width: 901px) and (max-height: 840px) {
+    .ev-res-hero-inner {
+        padding: 16px 6%;
+    }
+    .ev-res-name {
+        font-size: clamp(1.7rem, 3.2vw, 2.3rem);
+    }
+    .ev-res-venue {
+        margin-bottom: 10px;
+    }
+    .ev-res-facts {
+        margin-bottom: 0;
+    }
+    .ev-res-body {
+        padding: 12px 6%;
+    }
+    .ev-fri-body {
+        padding: 22px 12px 12px;
+    }
+    .ev-venue-art {
+        height: 92px;
+        margin-bottom: 10px;
+    }
+    .ev-venue > p {
+        margin-bottom: 10px;
+    }
+    .ev-res-cta {
+        padding: 12px 6%;
+    }
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+    .ev-res-body {
+        grid-template-columns: 1fr;
+    }
+    .ev-res-script {
+        display: none;
+    }
+}
+
 /* ==========================================================================
    WEEK - heading, arrows and the window the cards slide across
    ========================================================================== */
@@ -813,130 +925,10 @@
     border-color: var(--sg-orange);
 }
 
-/* ==========================================================================
-   PHONE - and the one-screen residency on a computer. Keep last.
-   ========================================================================== */
-
-/* Computer: four DJ cards across, residency fits one screen */
-@media (min-width: 901px) {
-    .ev-fri-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    .ev-residency {
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        height: 100dvh;
-        min-height: 600px;
-    }
-
-    .ev-res-hero {
-        flex: 1 1 auto;
-        min-height: 250px;
-    }
-
-    .ev-res-body,
-    .ev-res-cta {
-        flex: 0 0 auto;
-    }
-}
-
-/* Short laptop screens: tighter so it still fits one screen */
-@media (min-width: 901px) and (max-height: 840px) {
-    .ev-res-hero-inner {
-        padding: 16px 6%;
-    }
-
-    .ev-res-name {
-        font-size: clamp(1.7rem, 3.2vw, 2.3rem);
-    }
-
-    .ev-res-venue {
-        margin-bottom: 10px;
-    }
-
-    .ev-res-facts {
-        margin-bottom: 0;
-    }
-
-    .ev-res-body {
-        padding: 12px 6%;
-    }
-
-    .ev-fri-body {
-        padding: 22px 12px 12px;
-    }
-
-    .ev-venue-art {
-        height: 92px;
-        margin-bottom: 10px;
-    }
-
-    .ev-venue > p {
-        margin-bottom: 10px;
-    }
-
-    .ev-res-cta {
-        padding: 12px 6%;
-    }
-}
-
-/* Tablet */
-@media (max-width: 900px) {
-    .ev-res-body {
-        grid-template-columns: 1fr;
-    }
-
-    .ev-res-script {
-        display: none;
-    }
-
-    .ev-feature-inner {
-        grid-template-columns: 1fr;
-        gap: 28px;
-        padding-bottom: 56px;
-    }
-
-    .ev-poster {
-        width: min(100%, 360px);
-        transform: none;
-    }
-}
-
-@media (max-width: 760px) {
-    .ev-vol-panel {
-        grid-template-columns: 1fr;
-        padding: 26px 20px;
-    }
-
-    .ev-vol-2 {
-        grid-template-columns: 1fr;
-    }
-}
-
 /* Phone */
 @media (max-width: 600px) {
     .ev-grid {
         grid-template-columns: 1fr;
-    }
-
-    .ev-teaser-body {
-        padding: calc(var(--sg-nav-height, 78px) + 26px) 18px 46px;
-    }
-
-    .ev-actions .btn {
-        width: 100%;
-        text-align: center;
-    }
-
-    .ev-countdown-units li {
-        flex: 1 1 calc(50% - 5px); /* two by two */
-        min-width: 0;
-    }
-
-    .ev-feature-inner {
-        padding-bottom: 44px;
     }
 }
 
@@ -945,7 +937,6 @@
     .ev-card-btn {
         transition: none;
     }
-
     .ev-card:hover .ev-card-art {
         transform: none;
     }
