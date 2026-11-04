@@ -9,11 +9,11 @@
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=846';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=847';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 
-export const HUB_TABS = [
+const HUB_TABS = [
     ['overview', 'Overview'],
     ['budget', 'Budget'],
     ['vendors', 'Vendors'],
@@ -47,12 +47,22 @@ const isoToday = () => {
 export function eventGroup(ev) {
     if (!ev.dateISO) return 'upcoming';
     const t = isoToday();
-    return ev.dateISO < t ? 'past' : ev.dateISO === t ? 'today' : 'upcoming';
+    if (ev.dateISO < t) return 'past';
+    return ev.dateISO === t ? 'today' : 'upcoming';
 }
 
 const paid = (b) => b.status === 'confirmed' || b.paymentStatus === 'paid';
 const bCents = (b) => (b.totalCents != null ? b.totalCents : b.amountCents || 0);
 const sponsorCents = (p) => (LEVEL[p.level] && LEVEL[p.level].priceCents) || 0;
+const dollars = (c) => (c ? (c / 100).toFixed(2) : ''); // cents -> input value
+
+/* the Open / Close signup button */
+function signupBtn(ev, attr) {
+    if (ev.status === 'open') {
+        return `<button type="button" class="ad-btn" data-close-ev="${attr(ev.id)}" data-confirm="Close vendor signup for ${attr(ev.name || ev.id)}? Nobody new can take a site.">Close signup</button>`;
+    }
+    return `<button type="button" class="ad-btn" data-open-ev="${attr(ev.id)}" data-confirm="Open vendor signup for ${attr(ev.name || ev.id)}?">Open signup</button>`;
+}
 
 /* the numbers every tab shares */
 export function eventFigures(ctx) {
@@ -74,22 +84,22 @@ export function eventFigures(ctx) {
     };
 }
 
+/* budget lines that fill themselves in: which figure, and where it comes from */
+const AUTO = {
+    vendors: ['vendorCents', 'paid vendor bookings'],
+    sponsors: ['sponsorYes', 'sponsors who said yes'],
+    programme: ['programmeCents', 'the Programme tab']
+};
+
 /* budget lines with the automatic actuals filled in */
-export function budgetLines(ctx, f) {
+function budgetLines(ctx, f) {
     return (ctx.budget || []).map((l) => {
-        const actual =
-            l.auto === 'vendors'
-                ? f.vendorCents
-                : l.auto === 'sponsors'
-                  ? f.sponsorYes
-                  : l.auto === 'programme'
-                    ? f.programmeCents
-                    : l.actualCents || 0;
+        const actual = Object.hasOwn(AUTO, l.auto) ? f[AUTO[l.auto][0]] : l.actualCents || 0;
         return { ...l, actualCents: actual };
     });
 }
 const sum = (rows, k) => rows.reduce((t, r) => t + (r[k] || 0), 0);
-export function budgetTotals(lines) {
+function budgetTotals(lines) {
     const inc = lines.filter((l) => l.kind === 'income'),
         cost = lines.filter((l) => l.kind !== 'income');
     return {
@@ -101,34 +111,39 @@ export function budgetTotals(lines) {
 }
 
 /* ---------- the page ---------- */
+const GROUP_WORD = { past: 'Past', today: 'Today', upcoming: 'Upcoming' };
+const TAB_BODY = {
+    overview: overviewHtml,
+    budget: budgetHtml,
+    website: websiteHtml,
+    programme: programmeHtml,
+    vendors: attendingHtml,
+    volunteers: volunteersHtml
+};
+
 export function eventHubHtml(ctx) {
-    const { ev, tab, h } = ctx;
-    const esc = h.esc,
-        attr = h.attr;
-    const grp = eventGroup(ev);
+    const { ev, tab } = ctx;
+    const { esc, attr } = ctx.h;
+    const body = Object.hasOwn(TAB_BODY, tab) ? TAB_BODY[tab](ctx) : ctx.inner || '';
     return `
     <div class="ev-hub">
       <div class="ad-page-head ev-hub-head">
         <div>
-          <p class="ev-hub-crumb"><a href="#/events">Events</a> &rsaquo; ${esc(grp === 'past' ? 'Past' : grp === 'today' ? 'Today' : 'Upcoming')}</p>
+          <p class="ev-hub-crumb"><a href="#/events">Events</a> &rsaquo; ${esc(GROUP_WORD[eventGroup(ev)])}</p>
           <h1>${esc(ev.name || ev.id)}</h1>
           <p>${esc(ev.dateLabel || ev.dateISO || 'No date set')}${ev.venue ? ' &middot; ' + esc(ev.venue) : ''}${ev.location ? ', ' + esc(ev.location) : ''}</p>
         </div>
         <div class="ad-page-actions">
           ${ctx.eventPill(ev.status)}
           <button type="button" class="ad-btn" data-edit-ev="${attr(ev.id)}">Edit details</button>
-          ${
-              ev.status === 'open'
-                  ? `<button type="button" class="ad-btn" data-close-ev="${attr(ev.id)}" data-confirm="Close vendor signup for ${attr(ev.name || ev.id)}? Nobody new can take a site.">Close signup</button>`
-                  : `<button type="button" class="ad-btn" data-open-ev="${attr(ev.id)}" data-confirm="Open vendor signup for ${attr(ev.name || ev.id)}?">Open signup</button>`
-          }
+          ${signupBtn(ev, attr)}
         </div>
       </div>
       <div class="ev-tabs" role="tablist">
         ${HUB_TABS.map(([k, label]) => `<a role="tab" class="ev-tab${tab === k ? ' is-on' : ''}" href="#/event?id=${attr(ev.id)}&tab=${k}">${label}</a>`).join('')}
       </div>
       <div class="ev-hub-body">
-        ${tab === 'overview' ? overviewHtml(ctx) : tab === 'budget' ? budgetHtml(ctx) : tab === 'website' ? websiteHtml(ctx) : tab === 'programme' ? programmeHtml(ctx) : tab === 'vendors' ? attendingHtml(ctx) : tab === 'volunteers' ? volunteersHtml(ctx) : ctx.inner || ''}
+        ${body}
       </div>
       <p class="ad-action-msg" id="ad-action-msg" hidden></p>
     </div>`;
@@ -139,10 +154,8 @@ function card(title, big, sub, tone) {
 }
 
 function overviewHtml(ctx) {
-    const { ev, h } = ctx;
-    const esc = h.esc,
-        attr = h.attr,
-        money = h.money;
+    const { ev } = ctx;
+    const { esc, attr, money } = ctx.h;
     const f = eventFigures(ctx);
     const lines = budgetLines(ctx, f);
     const t = budgetTotals(lines);
@@ -176,10 +189,7 @@ function overviewHtml(ctx) {
 }
 
 function budgetHtml(ctx) {
-    const { h } = ctx;
-    const esc = h.esc,
-        attr = h.attr,
-        money = h.money;
+    const { esc, attr, money } = ctx.h;
     const f = eventFigures(ctx);
     const lines = budgetLines(ctx, f);
     if (!lines.length) {
@@ -191,25 +201,34 @@ function budgetHtml(ctx) {
       </div>`;
     }
     const t = budgetTotals(lines);
-    const dollars = (c) => (c ? (c / 100).toFixed(2) : '');
     const diffCell = (l) => {
         const d = l.kind === 'income' ? l.actualCents - l.plannedCents : l.plannedCents - l.actualCents;
         if (!l.plannedCents && !l.actualCents) return '<td class="ev-bud-diff">&nbsp;</td>';
         return `<td class="ev-bud-diff ${d < 0 ? 'is-bad' : 'is-good'}">${d < 0 ? '&minus;' : '+'}${esc(money(Math.abs(d)))}</td>`;
     };
-    const rowHtml = (l) => `
-    <tr data-bud-row="${attr(l.id)}">
-      <td><input class="ad-input ev-bud-name" value="${attr(l.name || '')}" data-bud="name" data-id="${attr(l.id)}" placeholder="Line"></td>
-      <td><input class="ad-input ev-bud-num" type="number" step="0.01" min="0" value="${dollars(l.plannedCents)}" data-bud="plannedCents" data-id="${attr(l.id)}" placeholder="0.00"></td>
-      <td>${
-          l.auto
-              ? `<span class="ev-bud-auto" title="Filled in from ${l.auto === 'vendors' ? 'paid vendor bookings' : l.auto === 'sponsors' ? 'sponsors who said yes' : 'the Programme tab'}">${esc(money(l.actualCents))} <small>auto</small></span>`
-              : `<input class="ad-input ev-bud-num" type="number" step="0.01" min="0" value="${dollars(l.actualCents)}" data-bud="actualCents" data-id="${attr(l.id)}" placeholder="0.00">`
-      }</td>
+    const actualCell = (l) => {
+        if (!l.auto) {
+            return `<input class="ad-input ev-bud-num" type="number" step="0.01" min="0" value="${dollars(l.actualCents)}" data-bud="actualCents" data-id="${attr(l.id)}" placeholder="0.00">`;
+        }
+        const from = (Object.hasOwn(AUTO, l.auto) ? AUTO[l.auto] : AUTO.programme)[1];
+        return `<span class="ev-bud-auto" title="Filled in from ${from}">${esc(money(l.actualCents))} <small>auto</small></span>`;
+    };
+    const rowHtml = (l) => {
+        const id = attr(l.id);
+        const files = l.files || [];
+        const fileRow = files.length
+            ? `<tr class="ev-bud-files"><td colspan="5"><div class="ev-bud-files-in">${files.map((f, i) => `<span class="ev-bud-file"><a href="${attr(f.url)}" target="_blank" rel="noopener">&#128196; ${esc(f.name || 'file')}</a><button type="button" class="ad-linkish" data-bud-unfile="${id}" data-i="${i}" title="Remove this file">&times;</button></span>`).join('')}</div></td></tr>`
+            : '';
+        return `
+    <tr data-bud-row="${id}">
+      <td><input class="ad-input ev-bud-name" value="${attr(l.name || '')}" data-bud="name" data-id="${id}" placeholder="Line"></td>
+      <td><input class="ad-input ev-bud-num" type="number" step="0.01" min="0" value="${dollars(l.plannedCents)}" data-bud="plannedCents" data-id="${id}" placeholder="0.00"></td>
+      <td>${actualCell(l)}</td>
       ${diffCell(l)}
-      <td class="ev-bud-x"><label class="ad-linkish ev-bud-clip${(l.files || []).length ? ' has-files' : ''}" title="Attach an invoice or receipt">&#128206;${(l.files || []).length ? '<b>' + (l.files || []).length + '</b>' : ''}<input type="file" accept="image/*,.pdf" data-bud-file="${attr(l.id)}" hidden></label><button type="button" class="ad-linkish" data-bud-del="${attr(l.id)}" aria-label="Remove ${attr(l.name || 'line')}">&times;</button></td>
+      <td class="ev-bud-x"><label class="ad-linkish ev-bud-clip${files.length ? ' has-files' : ''}" title="Attach an invoice or receipt">&#128206;${files.length ? '<b>' + files.length + '</b>' : ''}<input type="file" accept="image/*,.pdf" data-bud-file="${id}" hidden></label><button type="button" class="ad-linkish" data-bud-del="${id}" aria-label="Remove ${attr(l.name || 'line')}">&times;</button></td>
     </tr>
-    ${(l.files || []).length ? `<tr class="ev-bud-files"><td colspan="5"><div class="ev-bud-files-in">${(l.files || []).map((f, i) => `<span class="ev-bud-file"><a href="${attr(f.url)}" target="_blank" rel="noopener">&#128196; ${esc(f.name || 'file')}</a><button type="button" class="ad-linkish" data-bud-unfile="${attr(l.id)}" data-i="${i}" title="Remove this file">&times;</button></span>`).join('')}</div></td></tr>` : ''}`;
+    ${fileRow}`;
+    };
     const section = (kind, title, pIn, aIn) => `
     <tbody>
       <tr class="ev-bud-h"><th>${title}</th><th>Planned</th><th>Actual</th><th>Diff</th><th></th></tr>
@@ -242,12 +261,10 @@ function budgetHtml(ctx) {
     </div>`;
 }
 
-export const NOTICE_WORD = { venue: 'Venue change', postponed: 'Postponed', cancelled: 'Cancelled', info: 'Update' };
+const NOTICE_WORD = { venue: 'Venue change', postponed: 'Postponed', cancelled: 'Cancelled', info: 'Update' };
 function websiteHtml(ctx) {
-    const { ev, h } = ctx;
-    const esc = h.esc,
-        attr = h.attr,
-        money = h.money;
+    const { ev } = ctx;
+    const { esc, attr, money } = ctx.h;
     const p = ev.pricing || {};
     const row = (k, v) => `<div><dt>${k}</dt><dd>${v}</dd></div>`;
     const n = ev.notice || {};
@@ -315,7 +332,7 @@ const EVENT_POSTERS = [
         url: '/images/events/eatz-beatz-halloween-2026-v3.webp'
     }
 ];
-export function posterOf(ev) {
+function posterOf(ev) {
     if (ev.image && /^(https:\/\/|\/)[^\s'"()<>\\]*$/.test(ev.image)) return ev.image;
     const p = EVENT_POSTERS.find((x) => x.match(ev));
     return p ? p.url : '';
@@ -324,10 +341,8 @@ export function posterOf(ev) {
 /*  ctx: { ev, active, figures|null, budget, h, eventPill }. Figures are
     only known for the active event (its bookings are the ones subscribed). */
 export function eventCardHtml(ctx) {
-    const { ev, active, h } = ctx;
-    const esc = h.esc,
-        attr = h.attr,
-        money = h.money;
+    const { ev, active } = ctx;
+    const { esc, attr, money } = ctx.h;
     const f = ctx.figures;
     const lines = f ? budgetLines({ budget: ctx.budget || [] }, f) : [];
     const t = budgetTotals(lines);
@@ -338,6 +353,11 @@ export function eventCardHtml(ctx) {
     const grp = eventGroup(ev);
     const stat = (big, label) => `<div class="ev-stat"><b>${big}</b><span>${label}</span></div>`;
     const dash = '<b class="is-dim">&mdash;</b>';
+    const kicker = { past: 'Past event', today: 'Tonight', upcoming: 'Upcoming' }[grp];
+    const notice = ev.notice && ev.notice.kind;
+    const hasBudget = !!f && lines.length > 0;
+    let profitTone = '';
+    if (hasBudget) profitTone = profit < 0 ? 'is-bad' : 'is-good';
     return `
     <article class="ad-card ev-banner${active ? ' is-active' : ''}${grp === 'past' ? ' is-past' : ''}" data-open-hub="${attr(ev.id)}">
       <div class="ev-banner-art${poster ? '' : ' is-blank'}"${poster ? ` style="background-image:url('${attr(poster)}')"` : ''}>
@@ -346,7 +366,7 @@ export function eventCardHtml(ctx) {
       <div class="ev-banner-main">
         <header class="ev-banner-head">
           <div>
-            <p class="ev-banner-kicker">${grp === 'past' ? 'Past event' : grp === 'today' ? 'Tonight' : 'Upcoming'}${active ? ' &middot; <b>active</b>' : ''}${ev.notice && ev.notice.kind ? ` &middot; <span class="ev-notice-tag is-${attr(ev.notice.kind)}">${esc({ venue: 'Venue change', postponed: 'Postponed', cancelled: 'Cancelled', info: 'Update' }[ev.notice.kind] || 'Notice')}</span>` : ''}</p>
+            <p class="ev-banner-kicker">${kicker}${active ? ' &middot; <b>active</b>' : ''}${notice ? ` &middot; <span class="ev-notice-tag is-${attr(notice)}">${esc(NOTICE_WORD[notice] || 'Notice')}</span>` : ''}</p>
             <h2>${esc(ev.name || ev.id)}</h2>
             <p class="ev-banner-when">${esc(ev.dateLabel || ev.dateISO || 'No date set')}${ev.venue ? ' &middot; ' + esc(ev.venue) : ''}${ev.location ? ', ' + esc(ev.location) : ''}</p>
           </div>
@@ -362,19 +382,15 @@ export function eventCardHtml(ctx) {
 
         <div class="ev-banner-money">
           <div class="ev-money is-in"><span>Revenue</span><b>${f ? esc(money(revenue)) : '&mdash;'}</b><small>${f ? esc(money(f.vendorCents)) + ' vendors &middot; ' + esc(money(f.sponsorYes)) + ' sponsors' : 'open the event to see'}</small></div>
-          <div class="ev-money is-out"><span>Expenses</span><b>${f && lines.length ? esc(money(expenses)) : '&mdash;'}</b><small>${f && lines.length ? 'of ' + esc(money(t.plannedOut)) + ' planned' : 'no budget yet'}</small></div>
-          <div class="ev-money ${f && lines.length ? (profit < 0 ? 'is-bad' : 'is-good') : ''}"><span>Profit</span><b>${f && lines.length ? esc(money(profit)) : '&mdash;'}</b><small>${f && lines.length ? 'revenue minus expenses' : ''}</small></div>
+          <div class="ev-money is-out"><span>Expenses</span><b>${hasBudget ? esc(money(expenses)) : '&mdash;'}</b><small>${hasBudget ? 'of ' + esc(money(t.plannedOut)) + ' planned' : 'no budget yet'}</small></div>
+          <div class="ev-money ${profitTone}"><span>Profit</span><b>${hasBudget ? esc(money(profit)) : '&mdash;'}</b><small>${hasBudget ? 'revenue minus expenses' : ''}</small></div>
         </div>
 
         <div class="ad-actions-row ev-banner-acts">
           <button type="button" class="ad-btn ad-btn-primary" data-open-hub="${attr(ev.id)}">Open event</button>
           <a class="ad-btn" href="#/event?id=${attr(ev.id)}&tab=budget">Budget</a>
           <button type="button" class="ad-btn" data-edit-ev="${attr(ev.id)}">Edit</button>
-          ${
-              ev.status === 'open'
-                  ? `<button type="button" class="ad-btn" data-close-ev="${attr(ev.id)}" data-confirm="Close vendor signup for ${attr(ev.name || ev.id)}? Nobody new can take a site.">Close signup</button>`
-                  : `<button type="button" class="ad-btn" data-open-ev="${attr(ev.id)}" data-confirm="Open vendor signup for ${attr(ev.name || ev.id)}?">Open signup</button>`
-          }
+          ${signupBtn(ev, attr)}
         </div>
       </div>
     </article>`;
@@ -382,13 +398,9 @@ export function eventCardHtml(ctx) {
 
 /* ---------- the timeline across the top of the Events page ---------- */
 export function timelineHtml(events, activeId, h) {
-    const esc = h.esc,
-        attr = h.attr;
-    const dated = events
-        .filter((e) => e.dateISO)
-        .slice()
-        .sort((a, b) => a.dateISO.localeCompare(b.dateISO));
-    if (dated.length < 1) return '';
+    const { esc, attr } = h;
+    const dated = events.filter((e) => e.dateISO).sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+    if (!dated.length) return '';
     const day = (iso) => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86400000;
     const today = day(new Date().toISOString().slice(0, 10));
     const lo = Math.min(day(dated[0].dateISO), today) - 20,
@@ -410,37 +422,38 @@ export function timelineHtml(events, activeId, h) {
 }
 
 /* ---------- the Programme: everything happening on the night, in time order ---------- */
-export const PROGRAMME_KINDS = [
+const PROGRAMME_KINDS = [
     ['act', 'Live act / DJ'],
     ['activity', 'Activity'],
     ['food', 'Food & drink'],
     ['moment', 'Announcement / moment'],
     ['ops', 'Behind the scenes']
 ];
-const KIND = Object.fromEntries(PROGRAMME_KINDS);
 const ampm = (t) => {
     const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || ''));
     if (!r) return '';
     const h = +r[1];
     return (h % 12 || 12) + (r[2] === '00' ? '' : ':' + r[2]) + (h < 12 ? 'am' : 'pm');
 };
+/* "HH:MM" -> minutes, for sorting; times after midnight sort last */
 const minutes = (t) => {
     const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || ''));
     return r ? (+r[1] < 4 ? +r[1] + 24 : +r[1]) * 60 + +r[2] : 9999;
-}; // after midnight sorts last
+};
 
 function programmeHtml(ctx) {
-    const { ev, h } = ctx;
-    const esc = h.esc,
-        attr = h.attr,
-        money = h.money;
+    const { esc, attr, money } = ctx.h;
     const items = (ctx.programme || []).slice().sort((a, b) => minutes(a.start) - minutes(b.start) || (a.order || 0) - (b.order || 0));
     const total = items.reduce((t, p) => t + (p.costCents || 0), 0);
-    const acts = (ctx.talent || [])
-        .filter((t) => !t.hidden)
-        .slice()
-        .sort((a, b) => String(a.name).localeCompare(String(b.name)));
-    const dollars = (c) => (c ? (c / 100).toFixed(2) : '');
+    const actCount = items.filter((p) => p.kind === 'act').length;
+    // "6pm – 10pm": first start to the last item's finish (or start)
+    let runs = '&mdash;';
+    if (items.length && items[0].start) {
+        const last = items[items.length - 1];
+        const end = last.finish || last.start;
+        runs = esc(ampm(items[0].start)) + (end ? ' &ndash; ' + esc(ampm(end)) : '');
+    }
+    const acts = (ctx.talent || []).filter((t) => !t.hidden).sort((a, b) => String(a.name).localeCompare(String(b.name)));
     const row = (p) => `
     <tr class="ev-prog-row is-${attr(p.kind || 'activity')}" data-prog-row="${attr(p.id)}">
       <td class="ev-prog-time"><input class="ad-input" type="time" value="${attr(p.start || '')}" data-prog="start" data-id="${attr(p.id)}"><span class="ev-prog-to">&ndash;</span><input class="ad-input" type="time" value="${attr(p.finish || '')}" data-prog="finish" data-id="${attr(p.id)}"></td>
@@ -471,8 +484,8 @@ function programmeHtml(ctx) {
     }`;
     return `
     <div class="ev-grid ev-grid-3">
-      ${card('On the programme', String(items.length), items.length ? items.filter((p) => p.kind === 'act').length + ' act' + (items.filter((p) => p.kind === 'act').length === 1 ? '' : 's') + ' &middot; ' + items.filter((p) => p.kind !== 'act').length + ' other' : 'nothing yet')}
-      ${card('Runs', items.length && items[0].start ? esc(ampm(items[0].start)) + (items[items.length - 1].finish || items[items.length - 1].start ? ' &ndash; ' + esc(ampm(items[items.length - 1].finish || items[items.length - 1].start)) : '') : '&mdash;', 'first to last on the list')}
+      ${card('On the programme', String(items.length), items.length ? actCount + ' act' + (actCount === 1 ? '' : 's') + ' &middot; ' + (items.length - actCount) + ' other' : 'nothing yet')}
+      ${card('Runs', runs, 'first to last on the list')}
       ${card('Entertainment & activities', esc(money(total)), 'goes straight into the budget')}
     </div>
     <div class="ad-card ev-prog-card">
@@ -500,9 +513,8 @@ function programmeHtml(ctx) {
 
 /* ---------- Vendors tab: who's coming, Food and Market ---------- */
 function attendingHtml(ctx) {
-    const { ev, h } = ctx;
-    const esc = h.esc,
-        attr = h.attr;
+    const { ev } = ctx;
+    const { esc } = ctx.h;
     const catName = Object.fromEntries((ctx.categories || []).map((c) => [c.id, c.name || '']));
     const all = (ctx.bookings || []).filter((b) => b.eventId === ev.id && b.status !== 'cancelled');
     // by site number (F1, F2 ... M1, M2 ...), the ones with no site last
@@ -566,7 +578,7 @@ export const FAQ_STANDARD = [
 ];
 
 /* ---------- Volunteers: who put their hand up ---------- */
-export const VOL_STATUS = { new: ['New', 'blue'], yes: ['Confirmed', 'green'], maybe: ['Maybe', 'amber'], no: ['Not this time', 'grey'] };
+const VOL_STATUS = { new: ['New', 'blue'], yes: ['Confirmed', 'green'], maybe: ['Maybe', 'amber'], no: ['Not this time', 'grey'] };
 const VOL_ROLE = {
     setup: 'Setup',
     packdown: 'Pack-down',
@@ -577,9 +589,8 @@ const VOL_ROLE = {
     anything: 'Anything'
 };
 function volunteersHtml(ctx) {
-    const { ev, h } = ctx;
-    const esc = h.esc,
-        attr = h.attr;
+    const { ev } = ctx;
+    const { esc, attr } = ctx.h;
     const list = (ctx.volunteers || [])
         .slice()
         .sort((a, b) => ((b.createdAt && b.createdAt.seconds) || 0) - ((a.createdAt && a.createdAt.seconds) || 0));

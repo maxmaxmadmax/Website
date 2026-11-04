@@ -10,9 +10,9 @@
    counts in the month it was last paid (lastPaidAt / paidAt / acceptedAt).
    ========================================================================== */
 
-import { isBooked, pickLineProgress } from './stock.js?v=846';
-import { stageOf, lateFeeDue } from './sales-pipeline.js?v=846';
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=846';
+import { isBooked, pickLineProgress } from './stock.js?v=847';
+import { stageOf, lateFeeDue } from './sales-pipeline.js?v=847';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS } from './sponsor-data.js?v=847';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -26,15 +26,16 @@ function ms(t) {
     const n = Date.parse(t);
     return Number.isFinite(n) ? n : 0;
 }
-const isoToday = () => {
-    const d = new Date();
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-};
+/* a local Date -> 'yyyy-mm-dd' */
+const isoOf = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const isoToday = () => isoOf(new Date());
 function isoAdd(iso, n) {
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
     if (!m) return '';
     return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3] + n)).toISOString().slice(0, 10);
 }
+/* quotes that are real jobs (not vendor invoices, archived or templates) */
+const realJobs = (ctx) => (ctx.quotes || []).filter((q) => !q.vendor && !q.archived && !q.isTemplate);
 const dead = (q) => q.status === 'cancelled' || q.status === 'declined';
 const owingOf = (q) => Math.round(q.totalCents || 0) + Math.round(q.lateFeeCents || 0) - Math.round(q.amountPaidCents || 0);
 const soldAt = (q) => ms(q.acceptedAt) || (['accepted', 'invoiced', 'paid'].includes(q.status) ? ms(q.invoicedAt) || ms(q.paidAt) : 0);
@@ -47,12 +48,13 @@ const shortDate = (iso) => {
     const t = Date.parse(iso + 'T00:00:00');
     return t ? new Date(t).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
 };
+const paidBooking = (b) => b.status === 'confirmed' || b.paymentStatus === 'paid';
+const bookingCents = (b) => (b.totalCents != null ? b.totalCents : b.amountCents);
 
-/*  GRAND VIEW FRIDAYS: any Friday in the window with nobody booked at the
-    Grand View Hotel is flagged, so a DJ gets booked.                      */
-/*  KEEP IN STEP with pubCore() in js/admin-app.js + functions/index.js */
+/*  A pub's name boiled down, so "Grand View Hotel, Bowen" matches "Grand View".
+    KEEP IN STEP with pubCore() in js/admin-app.js + functions/index.js */
 const PUB_WORDS = /\b(hotel|tavern|pub|bar|club|the|inn|bowen|qld|queensland)\b/g;
-export function pubCore(v) {
+function pubCore(v) {
     return String(v || '')
         .toLowerCase()
         .split(',')[0]
@@ -76,7 +78,7 @@ export function openRegularNights(schedule, nights, days) {
     d.setHours(0, 0, 0, 0);
     for (let i = 0; i <= days; i++) {
         const x = new Date(d.getTime() + i * 86400000);
-        const iso = x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
+        const iso = isoOf(x);
         list.filter((n) => Number(n.weekday) === x.getDay()).forEach((n) => {
             if (!(schedule || []).some((b) => b.date === iso && samePub(b.venue, n.venue)))
                 out.push({ iso, venue: n.venue, weekday: n.weekday });
@@ -94,7 +96,7 @@ function monthStart(back) {
 
 /* ---------- the numbers ---------- */
 export function dashboardData(ctx) {
-    const jobs = (ctx.quotes || []).filter((q) => !q.vendor && !q.archived && !q.isTemplate);
+    const jobs = realJobs(ctx);
     const thisM = monthStart(0),
         nextM = monthStart(-1),
         lastM = monthStart(1);
@@ -176,8 +178,7 @@ export function dashboardData(ctx) {
     const bookedSoon = ourJobs.filter(isBooked);
     const next30 = sum(bookedSoon, (q) => q.totalCents);
 
-    const paidBooking = (b) => b.status === 'confirmed' || b.paymentStatus === 'paid';
-    const vendorCents = sum((ctx.bookings || []).filter(paidBooking), (b) => (b.totalCents != null ? b.totalCents : b.amountCents));
+    const vendorCents = sum((ctx.bookings || []).filter(paidBooking), bookingCents);
 
     // sales per month this year
     const year = new Date().getFullYear();
@@ -210,8 +211,8 @@ export function dashboardData(ctx) {
 }
 
 /* ---------- to-dos ---------- */
-export function todoGroups(ctx) {
-    const jobs = (ctx.quotes || []).filter((q) => !q.vendor && !q.archived && !q.isTemplate);
+function todoGroups(ctx) {
+    const jobs = realJobs(ctx);
     const today = isoToday();
     const weekAgo = Date.now() - 7 * 86400000;
     const out = [];
@@ -318,66 +319,22 @@ export function todoGroups(ctx) {
 }
 
 /* ---------- the next event ---------- */
-export function eventCard(ctx) {
+function eventCard(ctx) {
     const ev = (ctx.events || []).find((e) => e.id === ctx.activeEventId);
     if (!ev) return null;
     const today = isoToday();
     const days = ev.dateISO ? Math.round((Date.parse(ev.dateISO + 'T00:00:00') - Date.parse(today + 'T00:00:00')) / 86400000) : null;
     const sites = ctx.sites || [];
     const sold = sites.filter((s) => s.status === 'booked').length;
-    const paidBooking = (b) => b.status === 'confirmed' || b.paymentStatus === 'paid';
-    const vendorCents = (ctx.bookings || [])
-        .filter(paidBooking)
-        .reduce((t, b) => t + Math.round((b.totalCents != null ? b.totalCents : b.amountCents) || 0), 0);
+    const vendorCents = (ctx.bookings || []).filter(paidBooking).reduce((t, b) => t + Math.round(bookingCents(b) || 0), 0);
     const sponsorCents = (ctx.sponsors || [])
         .filter((p) => p.status === 'yes')
         .reduce((t, p) => t + (p.amountCents || (LEVEL[p.level] && LEVEL[p.level].priceCents) || 0), 0);
     return { ev, days, sold, total: sites.length, vendorCents, sponsorCents, goal: SPONSOR_GOAL_CENTS };
 }
 
-/* ---------- event-day weather ---------- */
-function wxIcon(code) {
-    if (code == null) return '';
-    if (code === 0) return '&#9728;&#65039;'; // sun
-    if (code <= 2) return '&#127780;&#65039;'; // sun + cloud
-    if (code === 3 || code === 45 || code === 48) return '&#9729;&#65039;'; // cloud / fog
-    if (code >= 95) return '&#9928;&#65039;'; // storm
-    if (code >= 51) return '&#127783;&#65039;'; // rain
-    return '&#9729;&#65039;';
-}
-export function weatherTag(w, esc) {
-    if (!w) return '';
-    if (w.later)
-        return (
-            '<span class="db-tag db-wx">Forecast from ' +
-            esc(
-                new Date(Date.parse(w.date + 'T00:00:00') - 15 * 86400000).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
-            ) +
-            '</span>'
-        );
-    if (w.rain == null && w.gust == null) return '';
-    const wet = (w.rain || 0) >= 50,
-        windy = (w.gust || 0) >= 40;
-    const warn = (w.rain || 0) >= 70 || (w.gust || 0) >= 55 || w.code >= 95;
-    return (
-        '<span class="db-tag db-wx' +
-        (warn ? ' is-bad' : wet || windy ? ' is-warn' : '') +
-        '" title="Forecast for the event day">' +
-        wxIcon(w.code) +
-        ' ' +
-        (w.temp != null ? Math.round(w.temp) + '&deg; &middot; ' : '') +
-        Math.round(w.rain || 0) +
-        '% rain' +
-        (w.mm != null ? ' (' + (w.mm >= 10 ? Math.round(w.mm) : Math.round(w.mm * 10) / 10) + ' mm)' : '') +
-        ' &middot; wind ' +
-        Math.round(w.wind || 0) +
-        ' km/h' +
-        (w.gust != null ? ' (gusts ' + Math.round(w.gust) + ')' : '') +
-        '</span>'
-    );
-}
-
-/*  The forecast as a small card, left of the Quote button. Amber when wet
+/* ---------- event-day weather ----------
+    The forecast as a small card, left of the Quote button. Amber when wet
     or windy, red for heavy rain, strong gusts or storms.                  */
 const WX_SVG = {
     sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
@@ -398,7 +355,7 @@ function wxKind(code) {
     if (code >= 51) return 'rain';
     return 'cloud';
 }
-export function weatherBox(w, esc) {
+function weatherBox(w, esc) {
     if (!w) return '';
     if (w.later) {
         const from = new Date(Date.parse(w.date + 'T00:00:00') - 15 * 86400000);
@@ -414,10 +371,14 @@ export function weatherBox(w, esc) {
     const wet = (w.rain || 0) >= 50 || (w.mm || 0) >= 5,
         windy = (w.gust || 0) >= 40;
     const bad = (w.rain || 0) >= 70 || (w.mm || 0) >= 15 || (w.gust || 0) >= 55 || w.code >= 95;
-    const mm = w.mm != null ? (w.mm >= 10 ? Math.round(w.mm) : Math.round(w.mm * 10) / 10) + 'mm' : '';
+    let tone = '';
+    if (bad) tone = ' is-bad';
+    else if (wet || windy) tone = ' is-warn';
+    let mm = '';
+    if (w.mm != null) mm = (w.mm >= 10 ? Math.round(w.mm) : Math.round(w.mm * 10) / 10) + 'mm';
     return (
         '<div class="db-wxbox' +
-        (bad ? ' is-bad' : wet || windy ? ' is-warn' : '') +
+        tone +
         '" title="Forecast for the event day">' +
         '<div class="wx-top">' +
         wxSvg(wxKind(w.code)) +
@@ -450,25 +411,25 @@ function withWeeks(list, row) {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     const toSun = (7 - d.getDay()) % 7; // days until Sunday (0 on a Sunday)
-    const iso = (x) => x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
-    const endThis = iso(new Date(d.getTime() + toSun * 86400000));
-    const endNext = iso(new Date(d.getTime() + (toSun + 7) * 86400000));
-    const groupOf = (q) => (q.hire.startDate <= endThis ? 'This week' : q.hire.startDate <= endNext ? 'Next week' : 'Later');
-    let last = '';
+    const endThis = isoOf(new Date(d.getTime() + toSun * 86400000));
+    const endNext = isoOf(new Date(d.getTime() + (toSun + 7) * 86400000));
+    const groupOf = (q) => {
+        if (q.hire.startDate <= endThis) return 'This week';
+        if (q.hire.startDate <= endNext) return 'Next week';
+        return 'Later';
+    };
+    const groups = list.map(groupOf);
+    const sizes = {};
+    groups.forEach((g) => {
+        sizes[g] = (sizes[g] || 0) + 1;
+    });
     return list
-        .map((q) => {
-            const g = groupOf(q);
+        .map((q, i) => {
+            const g = groups[i];
             const sep =
-                g !== last
-                    ? '<li class="db-sep' +
-                      (g === 'This week' ? ' is-now' : '') +
-                      '"><span>' +
-                      g +
-                      '</span><em>' +
-                      list.filter((x) => groupOf(x) === g).length +
-                      '</em></li>'
+                g !== groups[i - 1]
+                    ? '<li class="db-sep' + (g === 'This week' ? ' is-now' : '') + '"><span>' + g + '</span><em>' + sizes[g] + '</em></li>'
                     : '';
-            last = g;
             return sep + row(q);
         })
         .join('');
@@ -477,6 +438,15 @@ function withWeeks(list, row) {
 /*  CONFIRMED vs WAITING: confirmed rows get a green glow, waiting rows
     grey diagonal stripes, and a word under the date.                     */
 const stateTag = (ok) => (ok ? '<span class="db-state is-ok">&#10003; Confirmed</span>' : '<span class="db-state is-wait">Waiting</span>');
+
+/* days to the event, as words */
+function countdown(days) {
+    if (days == null) return '';
+    if (days > 1) return '<b>' + days + '</b> days to go';
+    if (days === 1) return '<b>Tomorrow</b>';
+    if (days === 0) return '<b>Today!</b>';
+    return 'Finished';
+}
 
 /* ---------- the page ---------- */
 export function dashboardHtml(ctx) {
@@ -497,6 +467,9 @@ export function dashboardHtml(ctx) {
         ${sub}${extra}
       </div>`;
     const hour = new Date().getHours();
+    let greeting = 'Evening';
+    if (hour < 12) greeting = 'Morning';
+    else if (hour < 17) greeting = 'Afternoon';
 
     const eventRow = (q) => {
         const c = q.customer;
@@ -522,43 +495,42 @@ export function dashboardHtml(ctx) {
           </div>
         </li>`;
     };
+    // the pub night invoice for a gig, as a tag
+    const invoiceTag = (q) => {
+        const venue = pubCore(q.customer.eventVenue);
+        const inv = (ctx.quotes || []).find(
+            (x) => x.pubNight && x.pubDate === q.hire.startDate && pubCore(x.pubVenue) === venue && x.status !== 'cancelled'
+        );
+        if (!inv) return '';
+        let word = 'Invoice sent';
+        if (inv.status === 'approved') word = 'Invoice ready';
+        else if (inv.paymentStatus === 'paid' || inv.status === 'paid') word = 'Paid';
+        return ` <a class="db-tag db-invtag" href="#/quoteDocs?q=${attr(inv.id)}">${esc(word)} &middot; ${esc(money(inv.totalCents))}</a>`;
+    };
+    const gigPills = (q) => {
+        if (q.noDj) return '<span class="ad-pill ad-pill-red">No DJ booked</span>';
+        let extra = '';
+        if (q.gigStatus === 'unconfirmed') extra = ' <span class="ent-unconf-tag">Unconfirmed &middot; unpaid</span>';
+        else if (q.gigStatus === 'pending') extra = ' <span class="ad-pill ad-pill-amber">Pending</span>';
+        return '<span class="ad-pill db-pill-gig">Gig</span>' + extra;
+    };
     const gigRow = (q) => {
         const c = q.customer;
         const ok = !q.noDj && q.gigStatus === 'confirmed';
+        const crew = ((ctx.gigCrew || {})[q.bookingId] || {}).crewAssigned || [];
+        const cu = (ctx.customers || []).find((x) => x.id === q.customerId);
         return `
         <li class="db-job is-gig ${ok ? 'is-confirmed' : 'is-pending'}">
           <div class="db-job-date"><b>${esc(shortDate(q.hire.startDate))}</b>${stateTag(ok)}</div>
           <div class="db-job-main">
             <p class="db-job-who">${esc(c.name)}${c.eventName ? ' &middot; <span>' + esc(c.eventName) + '</span>' : ''}</p>
             ${c.eventVenue ? `<p class="db-job-sub">${esc(c.eventVenue)}</p>` : ''}
-            ${(() => {
-                const crew = ((ctx.gigCrew || {})[q.bookingId] || {}).crewAssigned || [];
-                return crew.length ? `<p class="db-job-sub">Setup: ${esc(crew.map((x) => x.name).join(', '))}</p>` : '';
-            })()}
-            <p class="db-job-tags">${q.noDj ? '<span class="ad-pill ad-pill-red">No DJ booked</span>' : '<span class="ad-pill db-pill-gig">Gig</span>' + (q.gigStatus === 'unconfirmed' ? ' <span class="ent-unconf-tag">Unconfirmed &middot; unpaid</span>' : q.gigStatus === 'pending' ? ' <span class="ad-pill ad-pill-amber">Pending</span>' : '')}${(() => {
-                const inv = (ctx.quotes || []).find(
-                    (x) =>
-                        x.pubNight &&
-                        x.pubDate === q.hire.startDate &&
-                        pubCore(x.pubVenue) === pubCore(c.eventVenue) &&
-                        x.status !== 'cancelled'
-                );
-                if (!inv) return '';
-                const word =
-                    inv.status === 'approved'
-                        ? 'Invoice ready'
-                        : inv.paymentStatus === 'paid' || inv.status === 'paid'
-                          ? 'Paid'
-                          : 'Invoice sent';
-                return ` <a class="db-tag db-invtag" href="#/quoteDocs?q=${attr(inv.id)}">${esc(word)} &middot; ${esc(money(inv.totalCents))}</a>`;
-            })()}</p>
+            ${crew.length ? `<p class="db-job-sub">Setup: ${esc(crew.map((x) => x.name).join(', '))}</p>` : ''}
+            <p class="db-job-tags">${gigPills(q)}${invoiceTag(q)}</p>
           </div>
           <div class="db-job-wx">${weatherBox(ctx.weather && ctx.weather[q.id], esc)}</div>
           <div class="db-job-acts">
-            ${(() => {
-                const cu = (ctx.customers || []).find((x) => x.id === q.customerId);
-                return cu && cu.phone ? `<a class="ad-btn" href="tel:${attr(cu.phone)}">Call</a>` : '';
-            })()}
+            ${cu && cu.phone ? `<a class="ad-btn" href="tel:${attr(cu.phone)}">Call</a>` : ''}
             ${q.bookingId ? `<button type="button" class="ad-btn" data-gig-crew="${attr(q.bookingId)}">&#128119; Crew</button>` : ''}
             <a class="ad-btn${q.noDj ? ' ad-btn-primary' : ''}" href="#/entertainment">${q.noDj ? 'Book a DJ' : 'Entertainment'}</a>
           </div>
@@ -575,22 +547,25 @@ export function dashboardHtml(ctx) {
             .map((l) => String(l.name || '').trim())
             .filter(Boolean);
         const phone = String(c.phone || '').replace(/[^0-9+]/g, '');
+        const booked = isBooked(q);
+        const owing = owingOf(q);
+        let pill = st.status[0];
+        if (owing > 0 && booked)
+            pill = (q.jobConfirmedAt && !q.paymentStatus ? 'Confirmed · pay later · ' : 'Deposit in · ') + money(owing) + ' owing';
+        let crewTag = '';
+        if ((q.crewAssigned || []).length) {
+            crewTag = `<span class="db-tag db-crewtag">&#128119; ${esc(q.crewAssigned.map((x) => x.name.split(' ')[0]).join(', '))}</span>`;
+        } else if (booked) crewTag = '<span class="db-tag db-nocrew">No crew yet</span>';
         return `
-        <li class="db-job ${isBooked(q) ? 'is-confirmed' : 'is-pending'}">
-          <div class="db-job-date"><b>${esc(shortDate(q.hire.startDate))}</b>${stateTag(isBooked(q))}</div>
+        <li class="db-job ${booked ? 'is-confirmed' : 'is-pending'}">
+          <div class="db-job-date"><b>${esc(shortDate(q.hire.startDate))}</b>${stateTag(booked)}</div>
           <div class="db-job-main">
             <p class="db-job-who">${esc(who(q))}${c.eventName ? ' &middot; <span>' + esc(c.eventName) + '</span>' : ''}</p>
             ${c.eventVenue ? `<p class="db-job-sub">${esc(c.eventVenue)}</p>` : ''}
             <p class="db-job-tags">
-              <span class="ad-pill ad-pill-${st.status[1]}">${esc(owingOf(q) > 0 && isBooked(q) ? (q.jobConfirmedAt && !q.paymentStatus ? 'Confirmed · pay later · ' : 'Deposit in · ') + money(owingOf(q)) + ' owing' : st.status[0])}</span>
+              <span class="ad-pill ad-pill-${st.status[1]}">${esc(pill)}</span>
               ${pp && pp.lines ? `<span class="db-tag">${pp.returned === pp.lines ? 'All gear back' : pp.packed + ' of ' + pp.lines + ' packed'}</span>` : ''}
-              ${
-                  (q.crewAssigned || []).length
-                      ? `<span class="db-tag db-crewtag">&#128119; ${esc(q.crewAssigned.map((x) => x.name.split(' ')[0]).join(', '))}</span>`
-                      : isBooked(q)
-                        ? '<span class="db-tag db-nocrew">No crew yet</span>'
-                        : ''
-              }
+              ${crewTag}
               ${crew.length ? `<span class="db-tag">${esc(crew.slice(0, 3).join(', '))}${crew.length > 3 ? ' +' + (crew.length - 3) : ''}</span>` : ''}
             </p>
           </div>
@@ -612,11 +587,26 @@ export function dashboardHtml(ctx) {
             <ul>${rems.map((r) => `<li><label><input type="checkbox" data-rem-done="${attr(r.id)}"> <span>${esc(r.text)}</span></label></li>`).join('')}</ul>
             <form class="db-rem-add" data-rem-add><input type="text" placeholder="Add a reminder and press Enter" maxlength="300" aria-label="Add a reminder"></form>
           </div>`;
+    const shownOf = (g) => (g.key === 'pub' ? 20 : 4);
+    const todoHtml = (g) => `
+          <div class="db-todo">
+            <p class="db-todo-h"><a href="${attr(g.href)}">${esc(g.label)}</a> <span class="db-count">${g.items.length}</span></p>
+            <ul>${g.items
+                .slice(0, shownOf(g))
+                .map(
+                    (it) =>
+                        `<li><a href="${attr(it.href)}">${esc(it.text)}</a>${it.btns ? '<span class="db-todo-btns">' + it.btns + '</span>' : ''}</li>`
+                )
+                .join('')}
+              ${g.items.length > shownOf(g) ? `<li><a href="${attr(g.href)}">+ ${g.items.length - shownOf(g)} more</a></li>` : ''}</ul>
+          </div>`;
+    let todosHtml = todos.map(todoHtml).join('');
+    if (!todos.length && !rems.length) todosHtml = '<p class="db-empty">All caught up. Nothing waiting on you.</p>';
     return `
   <section class="db">
     <header class="db-head">
       <div>
-        <h1>${hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : 'Evening'}, Max</h1>
+        <h1>${greeting}, Max</h1>
         <p>${esc(new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))}${ctx.fyWeek ? ` <span class="db-week">Week ${esc(ctx.fyWeek.week)} &middot; ${esc(ctx.fyWeek.label)}</span>` : ''}</p>
       </div>
       <div class="db-quick">
@@ -638,28 +628,7 @@ export function dashboardHtml(ctx) {
       <div class="ad-card db-panel">
         <h2>To-dos ${todos.length || rems.length ? '<span class="db-count">' + (todos.reduce((t, g) => t + g.items.length, 0) + rems.length) + '</span>' : ''}</h2>
         ${remHtml}
-        ${
-            todos.length
-                ? todos
-                      .map(
-                          (g) => `
-          <div class="db-todo">
-            <p class="db-todo-h"><a href="${attr(g.href)}">${esc(g.label)}</a> <span class="db-count">${g.items.length}</span></p>
-            <ul>${g.items
-                .slice(0, g.key === 'pub' ? 20 : 4)
-                .map(
-                    (it) =>
-                        `<li><a href="${attr(it.href)}">${esc(it.text)}</a>${it.btns ? '<span class="db-todo-btns">' + it.btns + '</span>' : ''}</li>`
-                )
-                .join('')}
-              ${g.items.length > 4 ? `<li><a href="${attr(g.href)}">+ ${g.items.length - 4} more</a></li>` : ''}</ul>
-          </div>`
-                      )
-                      .join('')
-                : rems.length
-                  ? ''
-                  : '<p class="db-empty">All caught up. Nothing waiting on you.</p>'
-        }
+        ${todosHtml}
       </div>
 
       <div class="ad-card db-panel">
@@ -674,7 +643,7 @@ export function dashboardHtml(ctx) {
     <div class="ad-card db-panel db-event">
       <div class="db-event-head">
         <h2>${esc(evc.ev.name || 'Next event')}${evc.ev.subtitle ? ' <span>' + esc(evc.ev.subtitle) + '</span>' : ''}</h2>
-        <p class="db-countdown">${evc.days == null ? '' : evc.days > 1 ? '<b>' + evc.days + '</b> days to go' : evc.days === 1 ? '<b>Tomorrow</b>' : evc.days === 0 ? '<b>Today!</b>' : 'Finished'}</p>
+        <p class="db-countdown">${countdown(evc.days)}</p>
       </div>
       <div class="db-event-grid">
         <div><p class="db-stat-label">Sites sold</p><p class="db-stat-num">${evc.sold} <small>of ${evc.total}</small></p>

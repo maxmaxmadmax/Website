@@ -8,8 +8,8 @@
    the quotes and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=846'; // who still owes money
-import { isBooked, pickProgress } from './stock.js?v=846';
+import { owesMoney } from './messages.js?v=847'; // who still owes money
+import { isBooked, pickLineProgress } from './stock.js?v=847';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -40,7 +40,7 @@ const STAGES = {
 
 /* Delete forever is only for estimates / quotes with no money and no invoice
    number - tax invoices must be kept (ATO: 5 years), so those get Archive. */
-export function canDelete(q) {
+function canDelete(q) {
     return (
         ['draft', 'approved', 'sent', 'declined', 'cancelled'].includes(q.status) &&
         !q.invoiceNumber &&
@@ -74,6 +74,15 @@ export function lateFeeDue(q) {
     return allowed > (q.lateFees || []).length ? Math.round(owing * 0.02) : 0;
 }
 
+/* how far the crew's pick list has got, for booked jobs that have one */
+function packingText(q) {
+    const pp = isBooked(q) && q.crewToken ? pickLineProgress(q) : null;
+    if (!pp || !pp.lines) return '';
+    if (pp.returned === pp.lines) return 'All gear back in';
+    if (pp.packed) return pp.packed + ' of ' + pp.lines + ' packed';
+    return 'Pick list ready';
+}
+
 export function stageOf(q) {
     // TEMPLATES: a DJ gig invoice to copy - never sent
     if (q.isTemplate)
@@ -97,16 +106,7 @@ export function stageOf(q) {
         };
     }
     const s = STAGES[q.status] || STAGES.draft;
-    // payment detail for jobs waiting on money
-    const pp = isBooked(q) && q.crewToken ? pickProgress(q) : null;
-    const packing =
-        pp && pp.lines
-            ? pp.returned === pp.lines
-                ? 'All gear back in'
-                : pp.packed
-                  ? pp.packed + ' of ' + pp.lines + ' packed'
-                  : 'Pick list ready'
-            : '';
+    const packing = packingText(q);
     if (s.step === 4) return packing ? { ...s, next: [s.next[0], s.next[1], s.next[2], packing] } : s;
     if (s.step === 3 && q.jobConfirmedAt && !q.paymentStatus) {
         return { ...s, next: ['cal', 'green', 'Job confirmed', 'Paying later' + (packing ? ' · ' + packing : '')] };
@@ -123,7 +123,7 @@ export function stageOf(q) {
 }
 
 /* the tabs along the top: [key, label, which jobs] */
-export const TABS = [
+const TABS = [
     ['all', 'All', (q) => stageOf(q).tab !== 'archived' && !q.isTemplate],
     ['action', 'Needs action', (q) => q.status === 'draft' || q.status === 'approved'],
     ['estimates', 'Estimates', (q) => stageOf(q).tab === 'estimates'],
@@ -144,7 +144,7 @@ const ICON = {
 };
 const svg = (k) => '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICON[k] + '</svg>';
 
-/* "2026-10-20" -> sortable number; text dates fall back to the creation date */
+/* "2026-10-20" -> sortable number; text dates give 0 */
 function eventSortKey(q) {
     const iso = q.hire && q.hire.startDate;
     if (/^\d{4}-\d{2}-\d{2}$/.test(String(iso || ''))) return Date.parse(iso + 'T00:00:00');
@@ -165,7 +165,7 @@ function createdKey(q) {
 }
 
 /* search + tab + date filter + sort, all from the view's filter state */
-export function filterJobs(jobs, f) {
+function filterJobs(jobs, f) {
     const tab = TABS.find((t) => t[0] === f.tab) || TABS[0];
     const words = String(f.search || '')
         .toLowerCase()
@@ -177,7 +177,7 @@ export function filterJobs(jobs, f) {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
     const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime();
 
-    let out = jobs.filter(tab[2]).filter((q) => {
+    const out = jobs.filter(tab[2]).filter((q) => {
         if (words.length) {
             const c = q.customer || {};
             const hay = [c.name, c.business, c.email, c.eventName, c.eventType, q.number, q.invoiceNumber].join(' ').toLowerCase();
@@ -195,19 +195,19 @@ export function filterJobs(jobs, f) {
         {
             customer: (q) => String((q.customer && (q.customer.name || q.customer.business)) || '').toLowerCase(),
             total: (q) => q.totalCents || 0,
-            date: (q) => eventSortKey(q),
-            status: (q) => stageOf(q).step,
-            created: (q) => createdKey(q)
-        }[f.sort || 'created'] || ((q) => createdKey(q));
-    out = out.slice().sort((a, b) => {
+            date: eventSortKey,
+            status: (q) => stageOf(q).step
+        }[f.sort] || createdKey;
+    return out.sort((a, b) => {
         const x = by(a),
             y = by(b);
-        return (x < y ? -1 : x > y ? 1 : 0) * dir;
+        if (x < y) return -dir;
+        if (x > y) return dir;
+        return 0;
     });
-    return out;
 }
 
-export function counts(jobs) {
+function counts(jobs) {
     const n = {};
     TABS.forEach(([k, , test]) => {
         n[k] = jobs.filter(test).length;
@@ -286,8 +286,24 @@ function vendorSendBar(jobs, h) {
     <button type="button" class="ad-btn ad-btn-primary" data-sp-sendall>Email all ${unsent}</button></div>`;
 }
 
+/* the class on one progress step */
+function stepClass(skipped, done, step) {
+    if (skipped) return ' is-skip';
+    if (!done) return '';
+    return step === 4 ? ' is-done is-green' : ' is-done';
+}
+
+/* the job number shown under the name - templates show their name, not a number */
+function jobNumber(q) {
+    if (q.isTemplate) return '';
+    return q.kind === 'invoice' && q.invoiceNumber ? q.invoiceNumber : q.number;
+}
+
+const OPEN_STATUSES = ['approved', 'sent', 'accepted', 'invoiced'];
+const MORE_SUMMARY = '<summary aria-label="More"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>';
+
 /* the table rows */
-export function rowsHtml(rows, f, h) {
+function rowsHtml(rows, f, h) {
     if (!rows.length) {
         const msg = f.search ? 'Nothing matches that search.' : 'Nothing here yet. Hit &ldquo;New quote&rdquo; to start one.';
         return `<tr><td colspan="6" class="sp-empty">${msg}</td></tr>`;
@@ -297,88 +313,91 @@ export function rowsHtml(rows, f, h) {
         .map((q) => {
             const st = stageOf(q);
             const c = q.customer || {};
-            const num = q.isTemplate ? '' : q.kind === 'invoice' && q.invoiceNumber ? q.invoiceNumber : q.number; // templates show their name, not a number
+            const id = h.attr(q.id);
+            const num = jobNumber(q);
             // only the website bot makes estimates - a quote Max made himself skips that step
             const fromBot = q.source === 'bot' || q.createdBy === 'bot';
             const progress = steps
                 .map((label, i) => {
                     const done = i < st.step;
                     const skipped = q.vendor || (i === 0 && !fromBot); // vendors don't use these steps at all - all greyed
-                    const cls = skipped ? ' is-skip' : done ? (st.step === 4 ? ' is-done is-green' : ' is-done') : '';
-                    return `<span class="sp-step${cls}"${skipped ? ' title="Made as a quote - no estimate step"' : ''}><b>${done && !skipped ? '&#10003;' : ''}</b><em>${label}</em></span>`;
+                    return `<span class="sp-step${stepClass(skipped, done, st.step)}"${skipped ? ' title="Made as a quote - no estimate step"' : ''}><b>${done && !skipped ? '&#10003;' : ''}</b><em>${label}</em></span>`;
                 })
                 .join('');
             const [ico, tone, nTitle, nSub] = st.next;
+            const nextCell = `<td><span class="sp-next sp-${tone}">${svg(ico)}<span><b>${h.esc(nTitle)}</b><em>${h.esc(nSub)}</em></span></span></td>`;
+            const dateCell = `<td class="sp-date">${h.esc(eventDateText(q) || '—')}</td>`;
             if (q.vendor) {
+                const vendorBtn = (kind, label) => `<button type="button" data-sp-vendor="${kind}" data-id="${id}">${label}</button>`;
                 return `
-      <tr data-open-q="${h.attr(q.id)}"${q.jobCancelled && q.status === 'cancelled' ? ' class="sp-is-cancelled"' : ''}>
+      <tr data-open-q="${id}"${q.jobCancelled && q.status === 'cancelled' ? ' class="sp-is-cancelled"' : ''}>
         <td class="sp-cust">
           <strong>${h.esc(c.name || 'Vendor')}<span class="ad-bot-tag">Vendor</span></strong>
           <span>${h.esc(c.eventName || '')}${q.invoiceNumber ? ' <i>' + h.esc(q.invoiceNumber) + '</i>' : ''}</span>
         </td>
-        <td class="sp-date">${h.esc(eventDateText(q) || '—')}</td>
+        ${dateCell}
         <td><div class="sp-progress sp-off" title="Not used for vendors">${progress}</div></td>
-        <td><span class="sp-next sp-${tone}">${svg(ico)}<span><b>${h.esc(nTitle)}</b><em>${h.esc(nSub)}</em></span></span></td>
+        ${nextCell}
         <td class="sp-total">${h.esc(h.money(q.totalCents || 0))}</td>
         <td class="sp-act">
           <button type="button" class="sp-view">View</button>
           <details class="sp-more" data-no-open>
-            <summary aria-label="More"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            ${MORE_SUMMARY}
             <div class="sp-menu">
-              <button type="button" data-sp-vendor="view" data-id="${h.attr(q.id)}">Open invoice &amp; event guide</button>
-              <button type="button" data-sp-vendor="copy" data-id="${h.attr(q.id)}">Copy vendor link</button>
-              <button type="button" data-sp-vendor="test" data-id="${h.attr(q.id)}">Email test to me</button>
+              ${vendorBtn('view', 'Open invoice &amp; event guide')}
+              ${vendorBtn('copy', 'Copy vendor link')}
+              ${vendorBtn('test', 'Email test to me')}
             </div>
           </details>
         </td>
       </tr>`;
             }
+            const btn = (act, label, cls) =>
+                `<button type="button"${cls ? ` class="${cls}"` : ''} data-sp-act="${act}" data-id="${id}">${label}</button>`;
+            const isOpen = OPEN_STATUSES.includes(q.status);
+            const shelved = st.tab === 'archived' || st.tab === 'cancelled';
+            const late = lateFeeDue(q);
+            let links = '<span>Save it first to get a link</span>';
+            if (q.token) {
+                links = `<a href="/quote?t=${h.attr(q.token)}" target="_blank" rel="noopener">Open customer page</a>
+              <button type="button" data-sp-copy="${h.attr('https://www.soundzgood.com.au/quote?t=' + q.token)}">Copy customer link</button>
+              <a href="/quote?t=${h.attr(q.token)}&print=1" target="_blank" rel="noopener">Download PDF</a>`;
+            }
+            let crew = '';
+            if (q.status !== 'cancelled' && !q.isTemplate) {
+                crew = q.crewToken
+                    ? `<a href="/picklist?t=${h.attr(q.crewToken)}" target="_blank" rel="noopener">Open pick list</a>
+              <button type="button" data-sp-copy="${h.attr('https://www.soundzgood.com.au/picklist?t=' + q.crewToken)}">Copy crew link</button>`
+                    : btn('picklist', 'Make pick list');
+                crew += btn('gearlist', 'Email gear list') + btn('geartest', 'Test gear + pick list emails to me');
+            }
             return `
-      <tr data-open-q="${h.attr(q.id)}">
+      <tr data-open-q="${id}">
         <td class="sp-cust">
           <strong>${h.esc(q.isTemplate ? q.templateName || 'Untitled template' : c.name || c.business || 'No name yet')}${q.source === 'bot' ? '<span class="ad-bot-tag">Bot</span>' : ''}${q.detailsReceivedAt && ['draft', 'approved'].includes(q.status) ? '<span class="ad-bot-tag sp-details-tag">Details in</span>' : ''}</strong>
           <span>${h.esc(c.eventName || c.eventType || '')}${num ? ' <i>' + h.esc(num) + '</i>' : ''}</span>
         </td>
-        <td class="sp-date">${h.esc(eventDateText(q) || '—')}</td>
+        ${dateCell}
         <td><div class="sp-progress">${progress}</div></td>
-        <td><span class="sp-next sp-${tone}">${svg(ico)}<span><b>${h.esc(nTitle)}</b><em>${h.esc(nSub)}</em></span></span></td>
+        ${nextCell}
         <td class="sp-total">${h.esc(h.money((q.totalCents || 0) + (q.lateFeeCents || 0)))}${q.lateFeeCents ? '<span class="sp-late">incl. late fees</span>' : ''}</td>
         <td class="sp-act">
-          ${owesMoney(q) && (q.customer || {}).email ? `<button type="button" class="sp-remind" data-sp-act="remind" data-id="${h.attr(q.id)}" data-no-open title="Email them a payment reminder">Send reminder</button>` : ''}
+          ${owesMoney(q) && c.email ? `<button type="button" class="sp-remind" data-sp-act="remind" data-id="${id}" data-no-open title="Email them a payment reminder">Send reminder</button>` : ''}
           <button type="button" class="sp-view">View</button>
           <details class="sp-more" data-no-open>
-            <summary aria-label="More"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            ${MORE_SUMMARY}
             <div class="sp-menu">
-              ${lateFeeDue(q) ? `<button type="button" data-sp-act="latefee" data-id="${h.attr(q.id)}">Add 2% late fee ($${(lateFeeDue(q) / 100).toFixed(2)})</button>` : ''}
-              ${(q.lateFees || []).length ? `<button type="button" data-sp-act="unlatefee" data-id="${h.attr(q.id)}">Remove last late fee</button>` : ''}
-              ${
-                  q.token
-                      ? `<a href="/quote?t=${h.attr(q.token)}" target="_blank" rel="noopener">Open customer page</a>
-              <button type="button" data-sp-copy="${h.attr('https://www.soundzgood.com.au/quote?t=' + q.token)}">Copy customer link</button>`
-                      : '<span>Save it first to get a link</span>'
-              }
-              ${q.token ? `<a href="/quote?t=${h.attr(q.token)}&print=1" target="_blank" rel="noopener">Download PDF</a>` : ''}
-              ${
-                  q.status !== 'cancelled' && !q.isTemplate
-                      ? (q.crewToken
-                            ? `<a href="/picklist?t=${h.attr(q.crewToken)}" target="_blank" rel="noopener">Open pick list</a>
-              <button type="button" data-sp-copy="${h.attr('https://www.soundzgood.com.au/picklist?t=' + q.crewToken)}">Copy crew link</button>`
-                            : `<button type="button" data-sp-act="picklist" data-id="${h.attr(q.id)}">Make pick list</button>`) +
-                        `<button type="button" data-sp-act="gearlist" data-id="${h.attr(q.id)}">Email gear list</button>` +
-                        `<button type="button" data-sp-act="geartest" data-id="${h.attr(q.id)}">Test gear + pick list emails to me</button>`
-                      : ''
-              }
-              ${!isBooked(q) && ['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) ? `<button type="button" data-sp-act="deposit" data-id="${h.attr(q.id)}">Deposit received</button><button type="button" data-sp-act="confirmjob" data-id="${h.attr(q.id)}">Confirm job &ndash; pay later</button>` : ''}
-              ${q.jobConfirmedAt && q.status !== 'paid' && !q.paymentStatus ? `<button type="button" data-sp-act="unconfirmjob" data-id="${h.attr(q.id)}">Undo job confirmation</button>` : ''}
-              ${['approved', 'sent', 'accepted', 'invoiced'].includes(q.status) ? `<button type="button" data-sp-act="paid" data-id="${h.attr(q.id)}">Mark paid</button>` : ''}
-              ${(q.paymentStatus || q.status === 'paid') && q.paymentMethod !== 'card' && !(q.stripeSessions && q.stripeSessions.length) ? `<button type="button" data-sp-act="undopay" data-id="${h.attr(q.id)}">Undo deposit / payment</button>` : ''}
-              <button type="button" data-sp-act="duplicate" data-id="${h.attr(q.id)}">Duplicate</button>
-              ${
-                  st.tab === 'archived' || st.tab === 'cancelled'
-                      ? `<button type="button" data-sp-act="restore" data-id="${h.attr(q.id)}">Restore</button>`
-                      : `<button type="button" class="sp-danger" data-sp-act="canceljob" data-id="${h.attr(q.id)}">Cancel job</button><button type="button" data-sp-act="archive" data-id="${h.attr(q.id)}">Archive</button>`
-              }
-              ${canDelete(q) || st.tab === 'archived' || st.tab === 'cancelled' ? `<button type="button" class="sp-danger" data-sp-act="delete" data-id="${h.attr(q.id)}">Delete forever</button>` : ''}
+              ${late ? btn('latefee', `Add 2% late fee ($${(late / 100).toFixed(2)})`) : ''}
+              ${(q.lateFees || []).length ? btn('unlatefee', 'Remove last late fee') : ''}
+              ${links}
+              ${crew}
+              ${!isBooked(q) && isOpen ? btn('deposit', 'Deposit received') + btn('confirmjob', 'Confirm job &ndash; pay later') : ''}
+              ${q.jobConfirmedAt && q.status !== 'paid' && !q.paymentStatus ? btn('unconfirmjob', 'Undo job confirmation') : ''}
+              ${isOpen ? btn('paid', 'Mark paid') : ''}
+              ${(q.paymentStatus || q.status === 'paid') && q.paymentMethod !== 'card' && !(q.stripeSessions && q.stripeSessions.length) ? btn('undopay', 'Undo deposit / payment') : ''}
+              ${btn('duplicate', 'Duplicate')}
+              ${shelved ? btn('restore', 'Restore') : btn('canceljob', 'Cancel job', 'sp-danger') + btn('archive', 'Archive')}
+              ${canDelete(q) || shelved ? btn('delete', 'Delete forever', 'sp-danger') : ''}
             </div>
           </details>
         </td>
@@ -500,11 +519,12 @@ export function wirePipeline(getJobs, f, h, act) {
             paint();
         });
     // close any open ⌄ menu when clicking elsewhere (added once)
-    if (!window.__spMenuCloser)
-        ((window.__spMenuCloser = true),
-            document.addEventListener('click', (e) => {
-                document.querySelectorAll('.sp-more[open]').forEach((d) => {
-                    if (!d.contains(e.target)) d.open = false;
-                });
-            }));
+    if (!window.__spMenuCloser) {
+        window.__spMenuCloser = true;
+        document.addEventListener('click', (e) => {
+            document.querySelectorAll('.sp-more[open]').forEach((d) => {
+                if (!d.contains(e.target)) d.open = false;
+            });
+        });
+    }
 }

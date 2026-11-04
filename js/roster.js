@@ -102,10 +102,6 @@
         return list;
     }
 
-    /*  The built-in list on its own, for the admin page: it merges the
-        same way this file does, and needs to know which acts are in the
-        file - those cannot be deleted, only hidden.                  */
-
     /* ----------------------------------------------------------------------
        FRIDAY BOOKINGS ADDED BY HAND
 
@@ -120,6 +116,8 @@
         '2026-10-23': 'lucas'
     };
 
+    /*  The built-in list on its own, for the admin page: acts in this
+        file cannot be deleted, only hidden.                          */
     global.SG_ROSTER_BUILT_IN = TALENT;
 
     publish(TALENT);
@@ -129,18 +127,14 @@
         var out = {};
         Object.keys(fields || {}).forEach(function (k) {
             var v = fields[k];
-            out[k] =
-                v.stringValue !== undefined
-                    ? v.stringValue
-                    : v.booleanValue !== undefined
-                      ? v.booleanValue
-                      : v.integerValue !== undefined
-                        ? parseInt(v.integerValue, 10)
-                        : v.arrayValue !== undefined
-                          ? (v.arrayValue.values || []).map(function (x) {
-                                return x.stringValue || '';
-                            })
-                          : '';
+            if (v.stringValue !== undefined) out[k] = v.stringValue;
+            else if (v.booleanValue !== undefined) out[k] = v.booleanValue;
+            else if (v.integerValue !== undefined) out[k] = parseInt(v.integerValue, 10);
+            else if (v.arrayValue !== undefined) {
+                out[k] = (v.arrayValue.values || []).map(function (x) {
+                    return x.stringValue || '';
+                });
+            } else out[k] = '';
         });
         return out;
     }
@@ -181,22 +175,14 @@
                 };
             });
 
-            var merged = Object.keys(bySlug).map(function (k) {
-                return bySlug[k];
-            });
-
-            /*  Anything given an order in admin sorts by it; everything
-                else keeps the order it is written in above.            */
-            merged.sort(function (a, b) {
-                var ao = typeof a.order === 'number' ? a.order : 500;
-                var bo = typeof b.order === 'number' ? b.order : 500;
-                return ao - bo;
-            });
-
-            return publish(merged);
+            // publish() sorts A to Z
+            return publish(
+                Object.keys(bySlug).map(function (k) {
+                    return bySlug[k];
+                })
+            );
         })
         .catch(function (err) {
-            /*  The built-in eight. */
             if (global.console) console.warn('roster: using the built-in list', err);
             return publish(TALENT);
         });

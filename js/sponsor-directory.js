@@ -10,13 +10,13 @@
     One sponsor per industry: once a business in an industry has said yes
     to the event picked, the others in that industry show "industry taken". */
 
-import { spAvatar, spColor } from './messages.js?v=846';
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=846';
+import { spAvatar, spColor } from './messages.js?v=847';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=847';
 
 /* what to ask for, from the score */
 const ASK = { 5: 'gold', 4: 'silver', 3: 'bronze', 2: 'supporter', 1: 'supporter' };
 const LEVEL_OF = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
-export function suggestedAsk(b) {
+function suggestedAsk(b) {
     const hist = b.hist || {};
     if (hist.top) {
         // they have given before: ask for their best, rounded up a touch, and name the package it fits
@@ -31,22 +31,13 @@ export function suggestedAsk(b) {
     }
     if (hist.bestTier > 0 && hist.best) {
         // we know the tier they took elsewhere, not the dollars: pitch the matching package
-        const key =
-            hist.bestTier >= 3.5
-                ? 'gold'
-                : hist.bestTier >= 2.5
-                  ? 'gold'
-                  : hist.bestTier >= 1.5
-                    ? 'silver'
-                    : hist.bestTier >= 0.75
-                      ? 'bronze'
-                      : 'supporter';
+        const key = tierLevel(hist.bestTier);
         const lv = LEVEL_OF[key] || {};
         return {
             level: key,
             label: (lv.name || 'Supporter').split(' - ')[0],
             cents: lv.priceCents || 25000,
-            basis: (TIER_WORD(hist.bestTier) || hist.best.what) + ' at ' + hist.best.event + (hist.best.year ? ' ' + hist.best.year : '')
+            basis: (tierWord(hist.bestTier) || hist.best.what) + ' at ' + hist.best.event + (hist.best.year ? ' ' + hist.best.year : '')
         };
     }
     const lvl = LEVEL_OF[ASK[b.score] || 'supporter'] || {};
@@ -59,7 +50,7 @@ export function suggestedAsk(b) {
     };
 }
 /* why this score, in a few words */
-export function whyScore(b) {
+function whyScore(b) {
     const w = [];
     if (b.size === 'corp' || b.size === 'large') w.push('big employer');
     else if (b.size === 'medium') w.push('mid-size');
@@ -69,7 +60,7 @@ export function whyScore(b) {
         w.push('gave ' + money0(b.hist.last.amountCents) + ' to ' + b.hist.last.event + (b.hist.last.year ? ' ' + b.hist.last.year : ''));
     else if (b.hist && b.hist.best)
         w.push(
-            (TIER_WORD(b.hist.bestTier) || 'sponsor') +
+            (tierWord(b.hist.bestTier) || 'sponsor') +
                 ' at ' +
                 b.hist.best.event +
                 (b.hist.best.year ? ' ' + b.hist.best.year : '') +
@@ -82,7 +73,7 @@ export function whyScore(b) {
     return w.join(' · ') || 'no facts yet - open and fill in size, how local, budget';
 }
 
-export const STAGES = [
+const STAGES = [
     ['idea', 'Idea'],
     ['research', 'Researching'],
     ['ready', 'Ready to ask'],
@@ -94,7 +85,7 @@ const STAGE = Object.fromEntries(STAGES);
 const SIZE = { '': '—', small: 'Small (1-5 staff)', medium: 'Medium (6-20)', large: 'Large (20+)', corp: 'Corporate / chain' };
 const LOCAL = { '': '—', bowen: 'Bowen', whitsundays: 'Whitsundays', nq: 'North Queensland', far: 'Further away' };
 const GIVES = { '': '—', cash: 'Cash', inkind: 'In-kind', prize: 'Prizes', mix: 'Cash + prizes' };
-export const INDUSTRIES = [
+const INDUSTRIES = [
     'Automotive',
     'Real estate',
     'Building & trades',
@@ -128,10 +119,6 @@ const key = (s) =>
         .toLowerCase();
 const money0 = (c) => '$' + Math.round((c || 0) / 100).toLocaleString('en-AU');
 const today = () => new Date().toISOString().slice(0, 10);
-const niceDate = (iso) =>
-    iso
-        ? new Date(String(iso).slice(0, 10) + 'T12:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
-        : '';
 const secs = (t) => (t && typeof t.seconds === 'number' ? t.seconds : 0);
 const handle = (url) => {
     const m = /(?:facebook|instagram)\.com\/([A-Za-z0-9_.-]+)/i.exec(String(url || ''));
@@ -139,7 +126,7 @@ const handle = (url) => {
 };
 
 /* how big a tier is, from the words on a sponsor page */
-export function tierRank(what) {
+function tierRank(what) {
     const w = String(what || '').toLowerCase();
     const kind = /in.?kind/.test(w) ? -0.5 : 0; // in-kind counts a touch less than cash
     if (/naming|title|presenting|platinum|premium|major/.test(w)) return 4 + kind;
@@ -149,9 +136,34 @@ export function tierRank(what) {
     if (/sponsor|supporter|partner|donor|prize/.test(w)) return 0.5;
     return 0;
 }
-const TIER_WORD = (r) => (r >= 4 ? 'Naming / Platinum' : r >= 3 ? 'Gold' : r >= 2 ? 'Silver' : r >= 1 ? 'Bronze' : r > 0 ? 'Sponsor' : '');
+/* a tier rank as a word */
+function tierWord(r) {
+    if (r >= 4) return 'Naming / Platinum';
+    if (r >= 3) return 'Gold';
+    if (r >= 2) return 'Silver';
+    if (r >= 1) return 'Bronze';
+    return r > 0 ? 'Sponsor' : '';
+}
+/* the package that matches a tier taken elsewhere */
+function tierLevel(r) {
+    if (r >= 2.5) return 'gold';
+    if (r >= 1.5) return 'silver';
+    if (r >= 0.75) return 'bronze';
+    return 'supporter';
+}
+/* businesses grouped by industry, and the industry names A-Z (no industry last) */
+const NO_IND = 'No industry yet';
+function byIndustry(list) {
+    const groups = {};
+    list.forEach((b) => {
+        const k = b.industry || NO_IND;
+        (groups[k] = groups[k] || []).push(b);
+    });
+    const names = Object.keys(groups).sort((x, y) => (x === NO_IND) - (y === NO_IND) || x.localeCompare(y));
+    return { groups, names };
+}
 /* the suggested value, 1-5, from the facts; their own stars win if set */
-export function suggestedScore(b, hist) {
+function suggestedScore(b, hist) {
     let s = 0;
     s += { small: 1, medium: 2, large: 3, corp: 3 }[b.size] || 0;
     s += { bowen: 2, whitsundays: 1.5, nq: 1, far: 0 }[b.local] || 0;
@@ -193,7 +205,7 @@ function history(b, sponsors, evOf) {
     const bestTier = best ? best.rank : 0;
     const bestLabel = best
         ? (best.amountCents ? money0(best.amountCents) + ' ' : '') +
-          (TIER_WORD(best.rank) || best.what || 'sponsor') +
+          (tierWord(best.rank) || best.what || 'sponsor') +
           ' · ' +
           best.event +
           (best.year ? ' ' + best.year : '')
@@ -255,27 +267,25 @@ export function sponsorDirHtml(ctx) {
         );
     const industries = [...new Set(INDUSTRIES.concat(list.map((b) => b.industry).filter(Boolean)))];
 
+    // only web links become clickable (an imported javascript: link would run)
+    const web = (u) => (/^https?:\/\//i.test(String(u || '')) ? u : '');
     const row = (b) => {
         const t = taken(b);
         const h2 = b.hist || {};
+        const ask = suggestedAsk(b);
         return `<tr class="spd-row${state.spDirOpen === b.id ? ' is-open' : ''}${t ? ' is-taken' : ''}" data-spd-open="${h.attr(b.id)}" style="--sp-brand:${h.attr(spColor(b))}">
       <td class="spd-c-biz"><span class="spd-biz-in">${spAvatar(h, b)}<span><b>${h.esc(b.business)}</b>${b.address ? `<small>${h.esc(b.address)}</small>` : ''}</span></span></td>
       <td class="spd-c-val">${stars(b.score)}${b.stars ? '' : '<small class="spd-sugg">suggested</small>'}</td>
       <td><span class="spd-stage is-${h.attr(t ? 'taken' : b.stage || 'idea')}">${t ? 'Industry taken' : h.esc(STAGE[b.stage || 'idea'] || 'Idea')}</span></td>
       <td class="spd-c-contact">${b.contactName ? `<b>${h.esc(b.contactName)}</b>` : ''}${b.phone ? `<small>${h.esc(b.phone)}</small>` : ''}${b.email ? `<small>${h.esc(b.email)}</small>` : ''}${!b.contactName && !b.phone && !b.email ? '<small class="is-dim">no contact yet</small>' : ''}</td>
-      <td class="spd-c-hist">${h2.best ? `<b>${h2.best.amountCents ? money0(h2.best.amountCents) : h.esc(TIER_WORD(h2.best.rank) || h2.best.what || 'Sponsor')}</b><small>${h.esc(h2.best.event)}${h2.best.year ? ' ' + h2.best.year : ''}${h2.deals.length > 1 ? ' · ' + h2.deals.length + ' deals' : ''}</small>` : '<small class="is-dim">nothing known</small>'}</td>
-      <td class="spd-c-ask"><b>${suggestedAsk(b).cents ? money0(suggestedAsk(b).cents) : '—'}</b><small>${h.esc(suggestedAsk(b).label)}</small></td>
+      <td class="spd-c-hist">${h2.best ? `<b>${h2.best.amountCents ? money0(h2.best.amountCents) : h.esc(tierWord(h2.best.rank) || h2.best.what || 'Sponsor')}</b><small>${h.esc(h2.best.event)}${h2.best.year ? ' ' + h2.best.year : ''}${h2.deals.length > 1 ? ' · ' + h2.deals.length + ' deals' : ''}</small>` : '<small class="is-dim">nothing known</small>'}</td>
+      <td class="spd-c-ask"><b>${ask.cents ? money0(ask.cents) : '—'}</b><small>${h.esc(ask.label)}</small></td>
       <td class="spd-c-gives">${b.gives ? h.esc(GIVES[b.gives] || b.gives) : '<small class="is-dim">—</small>'}${b.givesWhat ? `<small>${h.esc(b.givesWhat)}</small>` : ''}</td>
-      <td class="spd-c-soc">${b.facebook ? `<a href="${h.attr(b.facebook)}" target="_blank" rel="noopener" title="Facebook">f</a>` : ''}${b.instagram ? `<a href="${h.attr(b.instagram)}" target="_blank" rel="noopener" title="Instagram">&#9711;</a>` : ''}${b.website ? `<a href="${h.attr(b.website)}" target="_blank" rel="noopener" title="Website">&#127760;</a>` : ''}${b.shared ? '<em title="They shared our event">&#128227;</em>' : ''}</td>
+      <td class="spd-c-soc">${web(b.facebook) ? `<a href="${h.attr(b.facebook)}" target="_blank" rel="noopener" title="Facebook">f</a>` : ''}${web(b.instagram) ? `<a href="${h.attr(b.instagram)}" target="_blank" rel="noopener" title="Instagram">&#9711;</a>` : ''}${web(b.website) ? `<a href="${h.attr(b.website)}" target="_blank" rel="noopener" title="Website">&#127760;</a>` : ''}${b.shared ? '<em title="They shared our event">&#128227;</em>' : ''}</td>
     </tr>`;
     };
     const tableHtml = () => {
-        const groups = {};
-        rows.forEach((b) => {
-            const k = b.industry || 'No industry yet';
-            (groups[k] = groups[k] || []).push(b);
-        });
-        const names = Object.keys(groups).sort((x, y) => (x === 'No industry yet') - (y === 'No industry yet') || x.localeCompare(y));
+        const { groups, names } = byIndustry(rows);
         return `<div class="ad-card spd-tablewrap"><table class="spd-table spd-list">
       <thead><tr><th>Business</th><th>Value</th><th>Stage</th><th>Contact</th><th>Best known deal</th><th>Suggested ask</th><th>Usually gives</th><th>Links</th></tr></thead>
       <tbody>${names
@@ -293,11 +303,7 @@ export function sponsorDirHtml(ctx) {
     /* POTENTIAL: per open industry, the best business we have not asked yet */
     const potentialTab = () => {
         const open = list.filter((b) => !['no', 'sponsor', 'asked'].includes(b.stage || 'idea') && !taken(b));
-        const byInd = {};
-        open.forEach((b) => {
-            const k = b.industry || 'No industry yet';
-            (byInd[k] = byInd[k] || []).push(b);
-        });
+        const byInd = byIndustry(open).groups;
         const rows = Object.keys(byInd)
             .map((ind) => {
                 const g = byInd[ind].sort(
@@ -344,12 +350,7 @@ export function sponsorDirHtml(ctx) {
     };
 
     const industryTab = () => {
-        const groups = {};
-        list.forEach((b) => {
-            const k = b.industry || 'No industry yet';
-            (groups[k] = groups[k] || []).push(b);
-        });
-        const names = Object.keys(groups).sort((a, b) => (a === 'No industry yet') - (b === 'No industry yet') || a.localeCompare(b));
+        const { groups, names } = byIndustry(list);
         return `<div class="spd-inds">${
             names
                 .map((n) => {
@@ -363,6 +364,16 @@ export function sponsorDirHtml(ctx) {
     };
 
     const opt = (v, label, cur) => `<option value="${h.attr(v)}"${cur === v ? ' selected' : ''}>${h.esc(label)}</option>`;
+    const businessTab = () => `
+      <div class="spd-filters">
+        <input class="ad-input spd-q" type="search" placeholder="Search businesses, industries, contacts" value="${h.attr(f.q)}" data-spd-f="q">
+        <select class="ad-select" data-spd-f="stage">${opt('', 'Stage: All', f.stage)}${STAGES.map(([k, l]) => opt(k, l, f.stage)).join('')}</select>
+        <select class="ad-select" data-spd-f="industry">${opt('', 'Industry: All', f.industry)}${industries.map((i) => opt(i, i, f.industry)).join('')}</select>
+      </div>
+      ${rows.length ? tableHtml() : `<p class="ad-empty">${q || f.stage || f.industry ? 'No business matches that.' : 'Nothing here yet. Add a business, or press Find businesses.'}</p>`}`;
+    let tabHtml = businessTab;
+    if (f.tab === 'pot') tabHtml = potentialTab;
+    else if (f.tab === 'ind') tabHtml = industryTab;
     const sponsorsNow = list.filter((b) => b.stage === 'sponsor');
     const tagList = list
         .filter((b) => b.hist.backed || b.stage === 'sponsor')
@@ -390,19 +401,7 @@ export function sponsorDirHtml(ctx) {
         <button type="button" class="ad-tab${f.tab === 'pot' ? ' is-on' : ''}" data-spd-tab="pot">&#9733; Potential</button>
         <button type="button" class="ad-tab${f.tab === 'ind' ? ' is-on' : ''}" data-spd-tab="ind">Industries</button>
       </div>
-      ${
-          f.tab === 'pot'
-              ? potentialTab()
-              : f.tab === 'ind'
-                ? industryTab()
-                : `
-      <div class="spd-filters">
-        <input class="ad-input spd-q" type="search" placeholder="Search businesses, industries, contacts" value="${h.attr(f.q)}" data-spd-f="q">
-        <select class="ad-select" data-spd-f="stage">${opt('', 'Stage: All', f.stage)}${STAGES.map(([k, l]) => opt(k, l, f.stage)).join('')}</select>
-        <select class="ad-select" data-spd-f="industry">${opt('', 'Industry: All', f.industry)}${industries.map((i) => opt(i, i, f.industry)).join('')}</select>
-      </div>
-      ${rows.length ? tableHtml() : `<p class="ad-empty">${q || f.stage || f.industry ? 'No business matches that.' : 'Nothing here yet. Add a business, or press Find businesses.'}</p>`}`
-      }
+      ${tabHtml()}
     </div>
     ${state.spDirOpen ? panelHtml(ctx, list, evOf, taken) : ''}
     ${state.spDirFind ? findHtml(ctx, list) : ''}
@@ -424,6 +423,15 @@ function panelHtml(ctx, list, evOf, taken) {
         .replace(/\/.*$/, '');
     const t = taken(b);
     const sugg = suggestedScore(b, b.hist);
+    const ask = suggestedAsk(b);
+    const gave = (d) => {
+        if (d.amountCents) return money0(d.amountCents);
+        return tierWord(d.rank) ? '<i>' + h.esc(tierWord(d.rank)) + '</i>' : '—';
+    };
+    const recordStage = (p) => {
+        if (p.status === 'yes') return 'sponsor';
+        return p.status === 'no' ? 'no' : 'asked';
+    };
     return `<aside class="spd-panel" style="--sp-brand:${h.attr(spColor(b))}">
     <div class="spd-panel-top"><span>Business profile</span><button type="button" class="ad-drawer-close" data-spd-close aria-label="Close">&times;</button></div>
     <div class="spd-panel-id">
@@ -434,7 +442,7 @@ function panelHtml(ctx, list, evOf, taken) {
       <div class="spd-panel-name">
         <h2>${h.esc(b.business)}</h2>
         <div class="spd-rate"><span class="spd-starpick" data-spd-stars>${[1, 2, 3, 4, 5].map((n) => `<button type="button" data-n="${n}" class="${n <= b.score ? 'is-on' : ''}" aria-label="${n} stars">★</button>`).join('')}</span><small>${b.stars ? `your rating · suggested ${sugg}/5 <button type="button" class="ad-linkish" data-spd-unstar>use suggested</button>` : 'suggested from the facts - click to set your own'}</small></div>
-        <p><span class="spd-stage is-${h.attr(b.stage || 'idea')}">${h.esc(STAGE[b.stage || 'idea'])}</span> <span class="spd-ask">Ask: <b>${suggestedAsk(b).cents ? money0(suggestedAsk(b).cents) : '—'}</b> ${h.esc(suggestedAsk(b).label)}</span>${t ? ` <span class="spd-stage is-taken">Industry taken by ${h.esc(t)}</span>` : ''}</p>
+        <p><span class="spd-stage is-${h.attr(b.stage || 'idea')}">${h.esc(STAGE[b.stage || 'idea'])}</span> <span class="spd-ask">Ask: <b>${ask.cents ? money0(ask.cents) : '—'}</b> ${h.esc(ask.label)}</span>${t ? ` <span class="spd-stage is-taken">Industry taken by ${h.esc(t)}</span>` : ''}</p>
       </div>
     </div>
     <div class="spd-panel-body">
@@ -475,8 +483,8 @@ function panelHtml(ctx, list, evOf, taken) {
       <section class="spd-box spd-deals"><h3>Sponsorship history <small>what they have given, to anyone</small></h3>
         ${
             b.hist.deals.length
-                ? `<table class="spd-deal-table"><thead><tr><th>Event</th><th>Year</th><th class="spd-num">Gave</th><th>What / how you know</th><th></th></tr></thead><tbody>${b.hist.deals.map((d) => `<tr><td>${h.esc(d.event)}${d.ours ? ' <i class="spd-ours">ours</i>' : ''}</td><td>${d.year || ''}</td><td class="spd-num">${d.amountCents ? money0(d.amountCents) : TIER_WORD(d.rank) ? '<i>' + h.esc(TIER_WORD(d.rank)) + '</i>' : '—'}</td><td>${h.esc([d.what, d.source].filter(Boolean).join(' · '))}</td><td>${d.ours ? '' : `<button type="button" class="ad-linkish" data-spd-dealdel="${h.attr(d.key || '')}" title="Remove">&times;</button>`}</td></tr>`).join('')}</tbody></table>
-        <p class="ad-seat-hint">Best known: <b>${h.esc(b.hist.bestLabel)}</b> &rarr; suggested ask <b>${money0(suggestedAsk(b).cents)}</b> (${h.esc(suggestedAsk(b).label)}).</p>`
+                ? `<table class="spd-deal-table"><thead><tr><th>Event</th><th>Year</th><th class="spd-num">Gave</th><th>What / how you know</th><th></th></tr></thead><tbody>${b.hist.deals.map((d) => `<tr><td>${h.esc(d.event)}${d.ours ? ' <i class="spd-ours">ours</i>' : ''}</td><td>${d.year || ''}</td><td class="spd-num">${gave(d)}</td><td>${h.esc([d.what, d.source].filter(Boolean).join(' · '))}</td><td>${d.ours ? '' : `<button type="button" class="ad-linkish" data-spd-dealdel="${h.attr(d.key || '')}" title="Remove">&times;</button>`}</td></tr>`).join('')}</tbody></table>
+        <p class="ad-seat-hint">Best known: <b>${h.esc(b.hist.bestLabel)}</b> &rarr; suggested ask <b>${money0(ask.cents)}</b> (${h.esc(ask.label)}).</p>`
                 : '<p class="ad-seat-hint">Nothing known yet. Look at the Show, the Fishing Classic, the footy club, the school fete - who they back and how much - and log it here. That sets the ask.</p>'
         }
         <form class="spd-deal-form" data-spd-dealform>
@@ -489,7 +497,7 @@ function panelHtml(ctx, list, evOf, taken) {
         </form>
       </section>
       <section class="spd-box"><h3>With us</h3>
-        ${b.hist.records.length ? `<ul class="spd-evlist">${b.hist.records.map((p) => `<li><a href="#/event?id=${encodeURIComponent(p.eventId)}&tab=sponsors">${h.esc((evOf[p.eventId] || {}).name || p.eventId)}</a><em>${h.esc((evOf[p.eventId] || {}).dateLabel || '')}</em><span class="spd-stage is-${p.status === 'yes' ? 'sponsor' : p.status === 'no' ? 'no' : 'asked'}">${h.esc({ yes: 'Sponsor', no: 'Said no', asked: 'Asked', interested: 'Interested', todo: 'To ask' }[p.status || 'todo'])}${p.level ? ' · ' + h.esc(p.level) : ''}${p.amountCents ? ' · ' + money0(p.amountCents) : ''}</span></li>`).join('')}</ul>` : '<p class="ad-seat-hint">Not on any event yet. Add them to an event\'s Sponsors tab to send the ask.</p>'}
+        ${b.hist.records.length ? `<ul class="spd-evlist">${b.hist.records.map((p) => `<li><a href="#/event?id=${encodeURIComponent(p.eventId)}&tab=sponsors">${h.esc((evOf[p.eventId] || {}).name || p.eventId)}</a><em>${h.esc((evOf[p.eventId] || {}).dateLabel || '')}</em><span class="spd-stage is-${recordStage(p)}">${h.esc({ yes: 'Sponsor', no: 'Said no', asked: 'Asked', interested: 'Interested', todo: 'To ask' }[p.status || 'todo'])}${p.level ? ' · ' + h.esc(p.level) : ''}${p.amountCents ? ' · ' + money0(p.amountCents) : ''}</span></li>`).join('')}</ul>` : '<p class="ad-seat-hint">Not on any event yet. Add them to an event\'s Sponsors tab to send the ask.</p>'}
       </section>
       <section class="spd-box"><h3>Research notes</h3><textarea class="ad-input" rows="4" data-spd-field="notes" placeholder="Who to talk to, what they care about, what they have sponsored before&hellip;">${h.esc(b.notes || '')}</textarea></section>
     </div>
@@ -508,25 +516,24 @@ function findHtml(ctx, list) {
     const { state, h } = ctx;
     const fd = state.spDirFind;
     const have = new Set(list.map((b) => key(b.business)));
+    let results = '';
+    if (fd.results && !fd.results.length) results = '<p class="ad-empty">Nothing found for that. Try another word, or add it by hand.</p>';
+    else if (fd.results) {
+        results = `<ul class="spd-find-list">${fd.results
+            .map((r, i) => {
+                const dup = have.has(key(r.business));
+                return `<li class="${dup ? 'is-dup' : ''}"><label><input type="checkbox" data-spd-findpick="${i}"${dup ? ' disabled' : ''}><span><b>${h.esc(r.business)}</b>${dup ? ' <i>already in the directory</i>' : ''}<small>${h.esc([r.kind, r.address].filter(Boolean).join(' · '))}</small><small>${h.esc([r.phone, r.website ? r.website.replace(/^https?:\/\//, '') : ''].filter(Boolean).join(' · ') || 'no phone or website listed')}</small></span></label></li>`;
+            })
+            .join('')}</ul>
+      <div class="spd-find-acts"><label class="sp-f"><span>Industry for these</span><input class="ad-input" list="spd-ind-list2" data-spd-findind placeholder="e.g. Automotive"><datalist id="spd-ind-list2">${INDUSTRIES.map((i) => `<option value="${h.attr(i)}">`).join('')}</datalist></label><button type="button" class="ad-btn ad-btn-primary" data-spd-findadd${fd.adding ? ' disabled' : ''}>${fd.adding ? 'Adding…' : 'Add ticked to the directory'}</button></div>`;
+    }
     return `<div class="sp-scrim" data-spd-findclose></div>
   <div class="spd-find" role="dialog" aria-label="Find businesses">
     <div class="spd-find-top"><b>Find businesses around Bowen</b><button type="button" class="ad-drawer-close" data-spd-findclose aria-label="Close">&times;</button></div>
     <form class="spd-find-form" data-spd-findform><input class="ad-input" placeholder="e.g. car dealers, cafes, real estate, or a name" value="${h.attr(fd.q || '')}" data-spd-findq autofocus><button type="submit" class="ad-btn ad-btn-primary"${fd.busy ? ' disabled' : ''}>${fd.busy ? 'Looking…' : 'Search'}</button></form>
     <p class="ad-seat-hint">From OpenStreetMap, so small places can be missing - add those by hand. Tick the ones to add; each gets a logo, blurb and socials from its website where it has one.</p>
     ${fd.error ? `<p class="ms-msg ms-bad">${h.esc(fd.error)}</p>` : ''}
-    ${
-        fd.results
-            ? fd.results.length
-                ? `<ul class="spd-find-list">${fd.results
-                      .map((r, i) => {
-                          const dup = have.has(key(r.business));
-                          return `<li class="${dup ? 'is-dup' : ''}"><label><input type="checkbox" data-spd-findpick="${i}"${dup ? ' disabled' : ''}><span><b>${h.esc(r.business)}</b>${dup ? ' <i>already in the directory</i>' : ''}<small>${h.esc([r.kind, r.address].filter(Boolean).join(' · '))}</small><small>${h.esc([r.phone, r.website ? r.website.replace(/^https?:\/\//, '') : ''].filter(Boolean).join(' · ') || 'no phone or website listed')}</small></span></label></li>`;
-                      })
-                      .join('')}</ul>
-      <div class="spd-find-acts"><label class="sp-f"><span>Industry for these</span><input class="ad-input" list="spd-ind-list2" data-spd-findind placeholder="e.g. Automotive"><datalist id="spd-ind-list2">${INDUSTRIES.map((i) => `<option value="${h.attr(i)}">`).join('')}</datalist></label><button type="button" class="ad-btn ad-btn-primary" data-spd-findadd${fd.adding ? ' disabled' : ''}>${fd.adding ? 'Adding…' : 'Add ticked to the directory'}</button></div>`
-                : '<p class="ad-empty">Nothing found for that. Try another word, or add it by hand.</p>'
-            : ''
-    }
+    ${results}
   </div>`;
 }
 
@@ -536,17 +543,23 @@ export function wireSponsorDir(ctx) {
     if (!root) return;
     const current = () => (state.sponsorBiz || []).find((x) => x.id === state.spDirOpen);
     const toCents = (v) => Math.max(0, Math.round(Number(String(v).replace(/[^0-9.]/g, '')) * 100) || 0);
+    // what their website gives that the record is still missing
     const lookup = async (b) => {
-        const r = await call('lookupBusiness', { website: b.website });
-        const d = r || {};
+        const d = (await call('lookupBusiness', { website: b.website })) || {};
         const patch = {};
-        if (d.logo && !b.logo) patch.logo = d.logo;
-        if (d.blurb && !b.blurb) patch.blurb = d.blurb;
-        if (d.facebook && !b.facebook) patch.facebook = d.facebook;
-        if (d.instagram && !b.instagram) patch.instagram = d.instagram;
-        if (d.phone && !b.phone) patch.phone = d.phone;
-        if (d.email && !b.email) patch.email = d.email;
+        ['logo', 'blurb', 'facebook', 'instagram', 'phone', 'email'].forEach((k) => {
+            if (d[k] && !b[k]) patch[k] = d[k];
+        });
         return patch;
+    };
+    // the first link to a site in a lead's socials text
+    const socialLink = (socials, site) => {
+        const m = String(socials || '').match(new RegExp('https?://[^\\s,]*' + site + '\\.com[^\\s,]*', 'i'));
+        return m ? m[0] : '';
+    };
+    const resetLookupBtn = (btn) => {
+        btn.disabled = false;
+        btn.textContent = 'Fill from website';
     };
 
     root.addEventListener('click', async (e) => {
@@ -601,12 +614,8 @@ export function wireSponsorDir(ctx) {
                             phone: l.phone || '',
                             email: l.email || '',
                             website: l.website || '',
-                            facebook: /facebook\.com/i.test(l.socials || '')
-                                ? String(l.socials).match(/https?:\/\/[^\s,]*facebook\.com[^\s,]*/i)[0]
-                                : '',
-                            instagram: /instagram\.com/i.test(l.socials || '')
-                                ? String(l.socials).match(/https?:\/\/[^\s,]*instagram\.com[^\s,]*/i)[0]
-                                : '',
+                            facebook: socialLink(l.socials, 'facebook'),
+                            instagram: socialLink(l.socials, 'instagram'),
                             address: l.address || l.suburb || '',
                             notes: l.notes || '',
                             local: 'bowen',
@@ -615,9 +624,10 @@ export function wireSponsorDir(ctx) {
                         }));
                 } else {
                     const r = await call('importMapBusinesses', { region: what });
-                    list = ((r && r.results) || []).map((b) => ({ ...b, kind: undefined, source: 'osm' }));
-                    list.forEach((b) => {
-                        delete b.kind;
+                    list = ((r && r.results) || []).map((b) => {
+                        const rec = { ...b, source: 'osm' };
+                        delete rec.kind;
+                        return rec;
                     });
                 }
             } catch (err) {
@@ -736,13 +746,11 @@ export function wireSponsorDir(ctx) {
                 const patch = await lookup(b);
                 if (!Object.keys(patch).length) {
                     window.alert('Nothing new found on their site.');
-                    btn.disabled = false;
-                    btn.textContent = 'Fill from website';
+                    resetLookupBtn(btn);
                 } else await biz.update(b.id, patch);
             } catch (err) {
                 window.alert(err.message || 'Could not read their website.');
-                btn.disabled = false;
-                btn.textContent = 'Fill from website';
+                resetLookupBtn(btn);
             }
             return;
         }
@@ -765,19 +773,17 @@ export function wireSponsorDir(ctx) {
             const b = current();
             if (!b) return;
             const fd = new FormData(e.target);
+            const text = (name) =>
+                String(fd.get(name) || '')
+                    .trim()
+                    .slice(0, 80);
             const deal = {
                 key: String(Date.now()),
-                event: String(fd.get('event') || '')
-                    .trim()
-                    .slice(0, 80),
+                event: text('event'),
                 year: +fd.get('year') || 0,
                 amountCents: toCents(fd.get('amount')),
-                what: String(fd.get('what') || '')
-                    .trim()
-                    .slice(0, 80),
-                source: String(fd.get('source') || '')
-                    .trim()
-                    .slice(0, 80)
+                what: text('what'),
+                source: text('source')
             };
             if (!deal.event) return;
             await biz.update(b.id, { past: (b.past || []).concat([deal]) });
@@ -830,7 +836,7 @@ export function wireSponsorDir(ctx) {
             const field = t.getAttribute('data-spd-field');
             let value = String(t.value || '')
                 .trim()
-                .slice(0, field === 'notes' ? 3000 : field === 'blurb' ? 300 : 200);
+                .slice(0, { notes: 3000, blurb: 300 }[field] || 200);
             if (field === 'color' && !/^#[0-9a-f]{6}$/i.test(value)) value = '';
             if (['website', 'facebook', 'instagram'].includes(field) && value && !/^https?:\/\//i.test(value)) value = 'https://' + value;
             if (field === 'business' && !value) return;

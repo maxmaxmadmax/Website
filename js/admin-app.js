@@ -16,16 +16,16 @@
    Allocation and money only change through the admin Cloud Functions.
    -------------------------------------------------------------------------- */
 
-import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=846';
+import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=847';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=846';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=846';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=846';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=846';
-import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=846';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=846';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=846';
-import { expandKit } from './kit.js?v=846';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=847';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=847';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=847';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=847';
+import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=847';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=847';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=847';
+import { expandKit } from './kit.js?v=847';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -41,7 +41,6 @@ const state = {
     events: [],
     bookings: [],
 
-    /*  Which DJ is on which Friday, keyed by date. Loaded when Settings opens. */
     /*  The roster and the schedule, for the Entertainment view. Loaded on
       arrival there rather than kept in sync everywhere.             */
     talent: [],
@@ -56,7 +55,6 @@ const state = {
     bookEditing: false,
     bookDraft: {},
     bookFilter: { text: '', tab: 'upcoming' },
-    showRoster: false,
     sites: [],
     categories: [],
 
@@ -123,7 +121,6 @@ const state = {
     leadContactFilter: 'all',
     leadRegionFilter: 'all',
     leadSizeFilter: 'all',
-    leadFitFilter: 'all',
     leadMonth: '', // 'YYYY-MM' picked on the calendar strip, '' = any
     leadWeek: '', // ISO week picked on the strip, e.g. '2026-W39', '' = any
     leadCalOffset: 0, // months the strip is scrolled from this month
@@ -295,8 +292,7 @@ async function loadPubSettings() {
         state.accomPlaces = accom.exists() && Array.isArray(accom.data().places) ? accom.data().places : [];
         /*  SAVED VENUES: each one gets its own tab on Gigs and shows in the
         booking form's venue list. Seeded with Arcadia Bar the first time. */
-        state.venues = [];
-        venues.forEach((d) => state.venues.push({ id: d.id, ...d.data() }));
+        state.venues = snapRows(venues);
         if (!venues.size && !state.venuesSeeded) {
             state.venuesSeeded = true;
             const { doc, setDoc } = fb.f;
@@ -312,8 +308,7 @@ async function loadPubSettings() {
             state.venues.push({ id: 'grand-view-hotel-bowen', ...gv });
         }
         state.venues.sort((a, b) => String(a.name).localeCompare(String(b.name)));
-        state.travelFees = [];
-        fees.forEach((d) => state.travelFees.push({ id: d.id, ...d.data() }));
+        state.travelFees = snapRows(fees);
         // first-time default fees - then they're his to change
         if (!fees.size && !state.travelSeeded) {
             state.travelSeeded = true;
@@ -368,8 +363,7 @@ async function loadPubSettings() {
             };
             fb.f.setDoc(fb.f.doc(fb.db, 'djSettings', 'fee'), state.djFee).catch(() => {});
         }
-        state.regularNights = [];
-        nights.forEach((d) => state.regularNights.push({ id: d.id, ...d.data() }));
+        state.regularNights = snapRows(nights);
         state.regularNights.sort((a, b) => a.weekday - b.weekday || String(a.venue).localeCompare(String(b.venue)));
     } catch (err) {
         state.actRates = state.actRates || {};
@@ -455,36 +449,41 @@ async function textDjTimes(bookingId) {
         const act = (state.talent || []).find((t) => t.slug === b.slug) || {};
         const res = await call('adminPubTimesLink', { bookingId });
         const first = String(act.name || '').split(' ')[0];
+        const hi = 'Hi' + (first ? ' ' + first : '');
+        const on = b.date ? ' on ' + prettyDate(b.date) : '';
         const after = b.date && b.date <= isoDay(new Date());
         const text = after
-            ? 'Hi' +
-              (first ? ' ' + first : '') +
+            ? hi +
               ', thanks for playing ' +
               (b.venue || 'the pub').split(',')[0] +
-              (b.date ? ' on ' + prettyDate(b.date) : '') +
+              on +
               '! Can you pop your start and finish times in here: ' +
               res.url
-            : 'Hi' +
-              (first ? ' ' + first : '') +
+            : hi +
               ", you're booked for " +
               (b.venue || 'the gig').split(',')[0] +
-              (b.date ? ' on ' + prettyDate(b.date) : '') +
+              on +
               (b.time ? ' (' + b.time + ')' : '') +
               ". Tap here to confirm you're in: " +
               res.url;
-        const phone = String(res.phone || '').replace(/[^0-9+]/g, '');
-        if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
-            location.href = 'sms:' + phone + '?&body=' + encodeURIComponent(text);
-        } else {
-            try {
-                await navigator.clipboard.writeText(text);
-                window.alert('Copied - paste it into a text to the DJ:\n\n' + text);
-            } catch (e) {
-                window.prompt('Copy this and text it to the DJ:', text);
-            }
-        }
+        await textTheDj(res.phone, text);
     } catch (err) {
         window.alert(friendly(err));
+    }
+}
+
+/*  A text to the DJ: on a phone it opens Messages, on a computer it is copied. */
+async function textTheDj(phoneRaw, text) {
+    const phone = String(phoneRaw || '').replace(/[^0-9+]/g, '');
+    if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+        location.href = 'sms:' + phone + '?&body=' + encodeURIComponent(text);
+        return;
+    }
+    try {
+        await navigator.clipboard.writeText(text);
+        window.alert('Copied - paste it into a text to the DJ:\n\n' + text);
+    } catch (e) {
+        window.prompt('Copy this and text it to the DJ:', text);
     }
 }
 /*  Send a pub invoice - with Max's OK */
@@ -519,8 +518,7 @@ async function loadSchedule() {
         const { collection, getDocs } = fb.f;
         const snap = await getDocs(collection(fb.db, 'talentSchedule'));
 
-        const rows = [];
-        snap.forEach((doc) => rows.push({ id: doc.id, ...doc.data() }));
+        const rows = snapRows(snap);
 
         /*  Everything, past included - the table can show past bookings and
         the calendar can be paged back into them. The filters decide what
@@ -785,8 +783,7 @@ async function loadEvents() {
     const { collection, getDocs } = fb.f;
     const snap = await getDocs(collection(fb.db, 'events'));
 
-    state.events = [];
-    snap.forEach((d) => state.events.push({ id: d.id, ...d.data() }));
+    state.events = snapRows(snap);
     state.events.sort((a, b) => (a.dateISO || '').localeCompare(b.dateISO || ''));
 
     if (!state.events.some((e) => e.id === state.activeEventId)) {
@@ -814,8 +811,7 @@ function subscribeToEvent() {
         onSnapshot(
             query(collection(fb.db, 'bookings'), where('eventId', '==', evId)),
             (snap) => {
-                state.bookings = [];
-                snap.forEach((d) => state.bookings.push({ id: d.id, ...d.data() }));
+                state.bookings = snapRows(snap);
                 state.bookings.sort((a, b) => secs(b.createdAt) - secs(a.createdAt));
                 state.ready = true;
                 render();
@@ -828,8 +824,7 @@ function subscribeToEvent() {
         onSnapshot(
             collection(fb.db, 'events', evId, 'sites'),
             (snap) => {
-                state.sites = [];
-                snap.forEach((d) => state.sites.push({ id: d.id, ...d.data() }));
+                state.sites = snapRows(snap);
                 state.sites.sort((a, b) => String(a.label).localeCompare(String(b.label), undefined, { numeric: true }));
                 render();
             },
@@ -843,8 +838,7 @@ function subscribeToEvent() {
         onSnapshot(
             query(collection(fb.db, 'sponsors'), where('eventId', '==', evId)),
             (snap) => {
-                state.sponsors = [];
-                snap.forEach((d) => state.sponsors.push({ id: d.id, ...d.data() }));
+                state.sponsors = snapRows(snap);
                 if ((state.view === 'vendorEmail' && !state.msgOpen && state.msgTab === 'sponsors') || state.view === 'dashboard') render();
             },
             (err) => console.error('sponsors', err)
@@ -857,8 +851,7 @@ function subscribeToEvent() {
         onSnapshot(
             query(collection(fb.db, 'waitlist'), where('eventId', '==', evId)),
             (snap) => {
-                state.waitlist = [];
-                snap.forEach((d) => state.waitlist.push({ id: d.id, ...d.data() }));
+                state.waitlist = snapRows(snap);
                 if ((state.view === 'vendorEmail' && !state.msgOpen) || state.view === 'dashboard') render();
             },
             (err) => console.error('waitlist', err)
@@ -874,8 +867,7 @@ function subscribeToEvent() {
         onSnapshot(
             query(collection(fb.db, 'messages'), where('eventId', '==', evId)),
             (snap) => {
-                state.messages = [];
-                snap.forEach((d) => state.messages.push({ id: d.id, ...d.data() }));
+                state.messages = snapRows(snap);
                 state.messagesLoaded = true;
                 if (state.view === 'vendorEmail' || state.view === 'dashboard') render();
             },
@@ -887,8 +879,7 @@ function subscribeToEvent() {
         onSnapshot(
             collection(fb.db, 'events', evId, 'categories'),
             (snap) => {
-                state.categories = [];
-                snap.forEach((d) => state.categories.push({ id: d.id, ...d.data() }));
+                state.categories = snapRows(snap);
                 state.categories.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
                 render();
             },
@@ -905,8 +896,7 @@ function subscribeToInventory() {
         onSnapshot(
             collection(fb.db, 'inventory'),
             (snap) => {
-                const items = [];
-                snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+                const items = snapRows(snap);
                 //  Category first, then A-Z by name within it. Names starting with a
                 //  letter come before ones starting with a number/symbol (so "A…"
                 //  beats "18…"), matching the column-sort behaviour.
@@ -952,9 +942,6 @@ function updateBotBadge() {
     }
 }
 
-/*  Quotes / invoices, live. Only re-render the list when it is on screen;
-    while the builder is open the draft is edited off to the side, so a
-    snapshot must not repaint over it.                                     */
 /*  ONE-OFF TIDY: only the website bot makes estimates, so any draft
     estimate not from the bot is turned into a quote. Once per session. */
 let promotedMine = false;
@@ -985,8 +972,7 @@ function subscribeToReminders() {
         onSnapshot(
             collection(fb.db, 'reminders'),
             (snap) => {
-                const all = [];
-                snap.forEach((d) => all.push({ id: d.id, ...d.data() }));
+                const all = snapRows(snap);
                 if (!all.length && !snap.metadata.fromCache && !state.remindersSeeding) {
                     state.remindersSeeding = true;
                     const t = Date.now();
@@ -1016,14 +1002,15 @@ const reminderStore = {
     }
 };
 
+/*  Quotes / invoices, live. Only re-render the list when it is on screen;
+    while the builder is open a snapshot must not repaint over the draft. */
 function subscribeToQuoteDocs() {
     const { collection, onSnapshot, query, orderBy } = fb.f;
     unsubscribes.push(
         onSnapshot(
             query(collection(fb.db, 'quotes'), orderBy('createdAt', 'desc')),
             (snap) => {
-                state.quoteDocs = [];
-                snap.forEach((d) => state.quoteDocs.push({ id: d.id, ...d.data() }));
+                state.quoteDocs = snapRows(snap);
                 updateBotBadge();
                 promoteMyEstimates();
                 if (state.pendingQuoteId && state.view === 'quoteDocs') {
@@ -1046,12 +1033,7 @@ function render() {
     const desk = document.getElementById('ad-desk');
     if (!desk || !state.user) return;
 
-    if (!BUILT.includes(state.view)) {
-        desk.innerHTML = comingSoon(state.view);
-        return;
-    }
-
-    const view = VIEWS[state.view];
+    const view = BUILT.includes(state.view) && VIEWS[state.view];
     if (!view) {
         desk.innerHTML = comingSoon(state.view);
         return;
@@ -1059,13 +1041,8 @@ function render() {
 
     desk.innerHTML = view.html();
 
-    /*  The bookings view lays itself out to the height of the desk rather
-      than to its content, so the desk has to know it is showing it. */
-    desk.classList.toggle('is-bookings', false); // Entertainment: a normal page like Crew & Vehicles
-    desk.classList.toggle(
-        'show-roster',
-        (state.view === 'entertainment' || (state.view === 'event' && state.eventTab === 'entertainment')) && state.showRoster
-    );
+    desk.classList.remove('is-bookings');
+    desk.classList.remove('show-roster');
 
     /*  Leads works like an app: one screen tall, the top fixed, only the
       list scrolls (see "LEADS: one-screen app layout" in css/admin/leads.css).  */
@@ -1085,11 +1062,20 @@ function render() {
                 (state.view === 'leadRate' ? ', maximum-scale=1.0, user-scalable=no' : '')
         );
 
-    /*  The page can only be one screen tall if the shell is, and that is
-      three boxes above the desk - see the note in css/admin/core.css.       */
-    document.body.classList.toggle('ad-fit', false);
+    document.body.classList.remove('ad-fit');
 
     if (view.wire) view.wire();
+}
+
+/*  render() rebuilds a search box, so put focus and the caret back (at
+    pos, or the end) or typing a second character would jump to the front. */
+function renderKeepCaret(id, pos) {
+    render();
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.focus();
+    const at = pos == null ? el.value.length : pos;
+    el.setSelectionRange(at, at);
 }
 
 function comingSoon(name) {
@@ -1147,6 +1133,16 @@ function attr(value) {
         .replace(/'/g, '&#39;');
 }
 
+/*  The markup helpers handed to the page modules (dashboard, event hub, kit builder, pipeline). */
+const H = { esc, attr, money };
+
+/*  A Firestore snapshot as plain rows: { id, ...fields }. */
+function snapRows(snap) {
+    const rows = [];
+    snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
+    return rows;
+}
+
 function secs(ts) {
     if (!ts) return 0;
     if (typeof ts === 'number') return ts / 1000;
@@ -1171,6 +1167,16 @@ function money(cents) {
     return '$' + (cents / 100).toLocaleString('en-AU', { minimumFractionDigits: dp, maximumFractionDigits: dp }); // e.g. $1,095.60
 }
 
+/*  Dollars typed into a box, as whole cents (never below 0). */
+function toCents(v) {
+    return Math.max(0, Math.round(Number(v || 0) * 100));
+}
+
+/*  Like toCents, but reads a leading number ("12abc" = $12). */
+function parseCents(v) {
+    return Math.max(0, Math.round((parseFloat(v) || 0) * 100));
+}
+
 function dateShort(ts) {
     const s = secs(ts);
     if (!s) return '—';
@@ -1181,16 +1187,15 @@ function dateShort(ts) {
     });
 }
 
-/*  The vendor's own name for themselves, falling back through the fields
-    most likely to be filled in on a half finished application. */
-/*  An event id turned into its name, for anywhere an application is read
-    on its own. Falls back to the id, which is readable enough.        */
+/*  An event id turned into its name; falls back to the id. */
 function eventNameOf(id) {
     if (!id) return 'No event';
     const ev = state.events.find((e) => e.id === id);
     return (ev && ev.name) || id;
 }
 
+/*  The vendor's own name, falling back through the fields most likely
+    to be filled in on a half finished application. */
 function vendorName(b) {
     return (b.business && (b.business.name || b.business.contactName)) || b.reference || 'Unnamed application';
 }
@@ -1425,16 +1430,8 @@ function wireFilters() {
         if (!el) return;
         el.addEventListener(evt, () => {
             state.filters[key] = el.value;
-            render();
-            /*  render() rebuilds the box, so put the caret back where it was or
-          typing a second character would jump to the front. */
-            if (evt === 'input') {
-                const again = document.getElementById(id);
-                if (again) {
-                    again.focus();
-                    again.setSelectionRange(again.value.length, again.value.length);
-                }
-            }
+            if (evt === 'input') renderKeepCaret(id);
+            else render();
         });
     };
 
@@ -1500,8 +1497,9 @@ function wireRows() {
 function listView(title, blurb, pick, opts = {}) {
     return {
         html() {
-            const rows = applyFilters(realApplications().filter(pick));
-            const total = realApplications().filter(pick).length;
+            const all = realApplications().filter(pick);
+            const rows = applyFilters(all);
+            const total = all.length;
             const ev = state.events.find((e) => e.id === state.activeEventId);
 
             return `
@@ -1665,6 +1663,31 @@ VIEWS.applications = listView('Applications', 'Still waiting on a decision.', (b
    Every button calls an admin Cloud Function (never Firestore directly) so
    seating and money change in one server-side transaction.
    ========================================================================= */
+/*  Clicks run `run`, asking first when the button has data-confirm. */
+function guarded(el, run) {
+    if (!el) return;
+    el.addEventListener('click', () => {
+        const ask = el.getAttribute('data-confirm');
+        if (ask && !window.confirm(ask)) return;
+        run();
+    });
+}
+
+/*  Text on a small .ad-quote-msg line; mod is '', 'is-ok' or 'is-bad'. */
+function setMsg(el, text, mod) {
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'ad-quote-msg' + (mod ? ' ' + mod : '');
+}
+
+/*  Show text on an .ad-action-msg line; mod is '', 'is-ok' or 'is-bad'. */
+function showMsg(bar, text, mod) {
+    if (!bar) return;
+    bar.hidden = false;
+    bar.className = 'ad-action-msg' + (mod ? ' ' + mod : '');
+    bar.textContent = text;
+}
+
 function row(label, value) {
     return `<div class="ad-kv"><dt>${esc(label)}</dt><dd>${value}</dd></div>`;
 }
@@ -1680,23 +1703,13 @@ async function runAction(button, name, data) {
         b.disabled = true;
     });
     if (button) button.classList.add('is-working');
-    if (bar) {
-        bar.hidden = false;
-        bar.className = 'ad-action-msg';
-        bar.textContent = 'Working…';
-    }
+    showMsg(bar, 'Working…', '');
 
     try {
         await call(name, data);
-        if (bar) {
-            bar.className = 'ad-action-msg is-ok';
-            bar.textContent = 'Saved.';
-        }
+        showMsg(bar, 'Saved.', 'is-ok');
     } catch (err) {
-        if (bar) {
-            bar.className = 'ad-action-msg is-bad';
-            bar.textContent = friendly(err);
-        }
+        showMsg(bar, friendly(err), 'is-bad');
         buttons.forEach((b) => {
             b.disabled = false;
         });
@@ -1993,17 +2006,6 @@ function wireDetail() {
     const id = state.openBookingId;
     if (!id) return;
 
-    /*  data-confirm on a button means it does something a person would want
-      to be asked about first - freeing a site, taking money. */
-    const guarded = (el, run) => {
-        if (!el) return;
-        el.addEventListener('click', () => {
-            const ask = el.getAttribute('data-confirm');
-            if (ask && !window.confirm(ask)) return;
-            run();
-        });
-    };
-
     document.querySelectorAll('[data-decide]').forEach((el) => {
         guarded(el, () =>
             runAction(el, 'adminReviewBooking', {
@@ -2022,7 +2024,7 @@ function wireDetail() {
         );
     });
     const cancelBtn = document.getElementById('ad-cancel-booking');
-    if (cancelBtn) guarded(cancelBtn, () => runAction(cancelBtn, 'adminCancelBooking', { bookingId: id }));
+    guarded(cancelBtn, () => runAction(cancelBtn, 'adminCancelBooking', { bookingId: id }));
 
     const save = document.getElementById('ad-seat-save');
     if (save)
@@ -2037,7 +2039,7 @@ function wireDetail() {
         });
 
     const free = document.getElementById('ad-seat-free');
-    if (free) guarded(free, () => runAction(free, 'adminAssignSite', { bookingId: id, siteIds: [] }));
+    guarded(free, () => runAction(free, 'adminAssignSite', { bookingId: id, siteIds: [] }));
     const tell = document.getElementById('ad-seat-tell');
     guarded(tell, () => runAction(tell, 'adminSendSiteChanged', { bookingId: id }));
 
@@ -2214,7 +2216,6 @@ function printVendorReport() {
     const ev = state.events.find((e) => e.id === state.activeEventId) || {};
     const size = ev.map || { width: 760, height: 1420 };
     const marks = (ev.landmarks || []).filter((m) => m.kind !== 'entry');
-    const who = (s) => bookingOnSite(s);
     // a business name over up to 3 short lines
     const lines = (text, max) => {
         const words = String(text || '')
@@ -2260,7 +2261,7 @@ function printVendorReport() {
             .join('') +
         state.sites
             .map((s) => {
-                const b = who(s);
+                const b = bookingOnSite(s);
                 const spin = s.rotate ? ' transform="rotate(' + s.rotate + ' ' + (s.x + s.w / 2) + ' ' + (s.y + s.h / 2) + ')"' : '';
                 const name = b ? lines((b.business || {}).name, s.type === 'food' ? 11 : 9) : [];
                 const fs2 = s.type === 'food' ? 12 : 9.5;
@@ -2308,20 +2309,16 @@ function printVendorReport() {
             .join('') +
         '</svg>';
     const rows = state.sites
-        .map((s) => ({ s, b: who(s) }))
+        .map((s) => ({ s, b: bookingOnSite(s) }))
         .filter((x) => x.b)
         .sort((x, y) => String(x.s.label).localeCompare(String(y.s.label), undefined, { numeric: true }));
     // one row per booking (a market stall can take several bays)
-    const seen = new Set();
-    const list = [];
+    const byId = new Map();
     rows.forEach(({ s, b }) => {
-        if (seen.has(b.id)) {
-            list.find((r) => r.b.id === b.id).sites.push(s.label);
-            return;
-        }
-        seen.add(b.id);
-        list.push({ b, sites: [s.label] });
+        if (byId.has(b.id)) byId.get(b.id).sites.push(s.label);
+        else byId.set(b.id, { b, sites: [s.label] });
     });
+    const list = [...byId.values()];
     const free = state.sites.filter((s) => s.status === 'available').length;
     const table =
         '<table><thead><tr><th>Site</th><th>Business</th><th>Contact</th><th>Phone</th><th>Type</th><th>&#10003;</th></tr></thead><tbody>' +
@@ -2385,13 +2382,11 @@ function printVendorReport() {
     w.document.close();
 }
 
+const SITE_PILL = { available: 'ad-pill-green', held: 'ad-pill-amber', booked: 'ad-pill-red' };
+
 function sitePanel(site) {
     const on = bookingOnSite(site);
 
-    /*  Who could go here: anyone of the right kind who is not already seated
-      somewhere. Somebody already on another site is moved from their own
-      drawer instead, so a move is one action rather than a free and a
-      seat that could half fail. */
     // vendors of this site's type: those without a site, and those who could be moved here
     const sameType = realApplications().filter(
         (b) => bucket(b) !== 'declined' && (b.vendorType === 'food' ? 'food' : 'market') === site.type
@@ -2403,15 +2398,7 @@ function sitePanel(site) {
     return `
     <header class="ad-site-panel-head">
       <h2>${esc(site.label)}</h2>
-      <span class="ad-pill ${
-          site.status === 'available'
-              ? 'ad-pill-green'
-              : site.status === 'held'
-                ? 'ad-pill-amber'
-                : site.status === 'booked'
-                  ? 'ad-pill-red'
-                  : 'ad-pill-grey'
-      }">${esc(siteWord(site.status))}</span>
+      <span class="ad-pill ${SITE_PILL[site.status] || 'ad-pill-grey'}">${esc(siteWord(site.status))}</span>
     </header>
 
     <dl class="ad-kvs">
@@ -2499,14 +2486,6 @@ function sitePanel(site) {
 function wireSitePanel() {
     const site = state.sites.find((s) => s.id === state.openSiteId);
     if (!site) return;
-
-    const guarded = (el, run) =>
-        el &&
-        el.addEventListener('click', () => {
-            const ask = el.getAttribute('data-confirm');
-            if (ask && !window.confirm(ask)) return;
-            run();
-        });
 
     const jump = document.querySelector('[data-open-booking]');
     if (jump)
@@ -2597,14 +2576,6 @@ function eventPill(status) {
 
 VIEWS.events = {
     html() {
-        /*  Fill counts are only known for the active event - it is the one
-        whose sites and bookings are subscribed. The rest show a dash
-        rather than a wrong number. */
-        const activeFill = (() => {
-            const filled = state.sites.filter((s) => s.status === 'booked' || s.status === 'held').length;
-            return { filled, total: state.sites.length };
-        })();
-
         return `
       <div class="ad-page-head">
         <div>
@@ -2624,7 +2595,7 @@ VIEWS.events = {
                             ev,
                             active: ev.id === state.activeEventId,
                             eventPill,
-                            h: { esc, attr, money },
+                            h: H,
                             figures:
                                 ev.id === state.activeEventId
                                     ? eventFigures({
@@ -2665,13 +2636,6 @@ VIEWS.events = {
     },
 
     wire() {
-        const guarded = (el, run) =>
-            el.addEventListener('click', () => {
-                const ask = el.getAttribute('data-confirm');
-                if (ask && !window.confirm(ask)) return;
-                run();
-            });
-
         if (state.budgetFor !== state.activeEventId) loadBudget(state.activeEventId);
         if (state.programmeFor !== state.activeEventId) loadProgramme(state.activeEventId);
         document.querySelectorAll('[data-open-hub]').forEach((el) => {
@@ -2681,23 +2645,7 @@ VIEWS.events = {
             });
         });
 
-        document.querySelectorAll('[data-open-ev]').forEach((el) =>
-            guarded(el, () =>
-                runAction(el, 'adminSaveEvent', {
-                    eventId: el.getAttribute('data-open-ev'),
-                    fields: { status: 'open' }
-                })
-            )
-        );
-
-        document.querySelectorAll('[data-close-ev]').forEach((el) =>
-            guarded(el, () =>
-                runAction(el, 'adminSaveEvent', {
-                    eventId: el.getAttribute('data-close-ev'),
-                    fields: { status: 'closed' }
-                })
-            )
-        );
+        wireEventButtons(document);
 
         const newBtn = document.getElementById('ad-ev-new');
         if (newBtn)
@@ -2706,16 +2654,25 @@ VIEWS.events = {
                 render();
             });
 
-        document.querySelectorAll('[data-edit-ev]').forEach((el) => {
-            el.addEventListener('click', () => {
-                state.editingEvent = { id: el.getAttribute('data-edit-ev') };
-                render();
-            });
-        });
-
         wireEventForm();
     }
 };
+
+/*  Edit / open signup / close signup buttons on an event card or the hub. */
+function wireEventButtons(root) {
+    root.querySelectorAll('[data-edit-ev]').forEach((el) =>
+        el.addEventListener('click', () => {
+            state.editingEvent = { id: el.getAttribute('data-edit-ev') };
+            render();
+        })
+    );
+    root.querySelectorAll('[data-open-ev]').forEach((el) =>
+        guarded(el, () => runAction(el, 'adminSaveEvent', { eventId: el.getAttribute('data-open-ev'), fields: { status: 'open' } }))
+    );
+    root.querySelectorAll('[data-close-ev]').forEach((el) =>
+        guarded(el, () => runAction(el, 'adminSaveEvent', { eventId: el.getAttribute('data-close-ev'), fields: { status: 'closed' } }))
+    );
+}
 
 /* =========================================================================
    EVENT HUB - the look lives in js/event-hub.js. Vendors, Sites & Map,
@@ -2749,7 +2706,7 @@ VIEWS.event = {
                 categories: state.categories || [],
                 progOpen: state.progOpen || '',
                 volunteers: state.volunteersFor === ev.id ? state.volunteers || [] : [],
-                h: { esc, attr, money }
+                h: H
             }) + eventForm()
         );
     },
@@ -2758,24 +2715,7 @@ VIEWS.event = {
         const sub = HUB_SUB[tab] ? VIEWS[HUB_SUB[tab]] : null;
         if (sub && sub.wire) sub.wire();
         const desk = document.getElementById('ad-desk');
-        const guarded = (el, run) =>
-            el.addEventListener('click', () => {
-                const ask = el.getAttribute('data-confirm');
-                if (ask && !window.confirm(ask)) return;
-                run();
-            });
-        desk.querySelectorAll('[data-edit-ev]').forEach((el) =>
-            el.addEventListener('click', () => {
-                state.editingEvent = { id: el.getAttribute('data-edit-ev') };
-                render();
-            })
-        );
-        desk.querySelectorAll('[data-open-ev]').forEach((el) =>
-            guarded(el, () => runAction(el, 'adminSaveEvent', { eventId: el.getAttribute('data-open-ev'), fields: { status: 'open' } }))
-        );
-        desk.querySelectorAll('[data-close-ev]').forEach((el) =>
-            guarded(el, () => runAction(el, 'adminSaveEvent', { eventId: el.getAttribute('data-close-ev'), fields: { status: 'closed' } }))
-        );
+        wireEventButtons(desk);
         desk.querySelectorAll('[data-notice]').forEach((b) =>
             b.addEventListener('click', () => eventNotice(b.getAttribute('data-notice')))
         );
@@ -2801,7 +2741,7 @@ VIEWS.event = {
             });
         // Enter / arrows move down and up the column, like a sheet
         const cells = [...desk.querySelectorAll('[data-bud]')];
-        cells.forEach((inp) =>
+        cells.forEach((inp) => {
             inp.addEventListener('keydown', (e) => {
                 if (!['Enter', 'ArrowDown', 'ArrowUp'].includes(e.key)) return;
                 const col = inp.getAttribute('data-bud');
@@ -2812,15 +2752,13 @@ VIEWS.event = {
                     same[i].focus();
                     same[i].select();
                 }
-            })
-        );
-        desk.querySelectorAll('[data-bud]').forEach((inp) => {
+            });
             let timer = null;
             inp.addEventListener('input', () => {
                 clearTimeout(timer);
                 timer = setTimeout(() => {
                     const field = inp.getAttribute('data-bud');
-                    const value = field === 'name' ? inp.value.trim().slice(0, 80) : Math.max(0, Math.round(Number(inp.value || 0) * 100));
+                    const value = field === 'name' ? inp.value.trim().slice(0, 80) : toCents(inp.value);
                     budgetStore.update(inp.getAttribute('data-id'), { [field]: value }, inp).catch((e) => window.alert(friendly(e)));
                 }, 500);
             });
@@ -2871,14 +2809,13 @@ VIEWS.event = {
             let timer = null;
             const save = () => {
                 const field = inp.getAttribute('data-prog');
-                const value =
-                    field === 'costCents'
-                        ? Math.max(0, Math.round(Number(inp.value || 0) * 100))
-                        : inp.type === 'checkbox'
-                          ? inp.checked
-                          : String(inp.value || '')
-                                .trim()
-                                .slice(0, field === 'blurb' ? 400 : 300);
+                let value;
+                if (field === 'costCents') value = toCents(inp.value);
+                else if (inp.type === 'checkbox') value = inp.checked;
+                else
+                    value = String(inp.value || '')
+                        .trim()
+                        .slice(0, field === 'blurb' ? 400 : 300);
                 programmeStore.update(inp.getAttribute('data-id'), { [field]: value }, inp).catch((e) => window.alert(friendly(e)));
             };
             inp.addEventListener('input', () => {
@@ -2991,7 +2928,7 @@ VIEWS.event = {
                             .trim()
                             .slice(0, 120),
                         kind: String(fd.get('kind') || 'activity'),
-                        costCents: Math.max(0, Math.round(Number(fd.get('cost') || 0) * 100))
+                        costCents: toCents(fd.get('cost'))
                     });
                 } catch (err) {
                     window.alert(friendly(err));
@@ -3009,7 +2946,7 @@ VIEWS.event = {
                             .trim()
                             .slice(0, 80),
                         kind: fd.get('kind') === 'income' ? 'income' : 'cost',
-                        plannedCents: Math.max(0, Math.round(Number(fd.get('planned') || 0) * 100))
+                        plannedCents: toCents(fd.get('planned'))
                     });
                 } catch (err) {
                     window.alert(friendly(err));
@@ -3114,10 +3051,7 @@ async function loadBudget(eventId) {
     try {
         const { collection, getDocs } = fb.f;
         const snap = await getDocs(collection(fb.db, 'events', eventId, 'budget'));
-        const rows = [];
-        snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
-        rows.sort((a, b) => (a.order || 0) - (b.order || 0));
-        state.budget = rows;
+        state.budget = snapRows(snap).sort((a, b) => (a.order || 0) - (b.order || 0));
         state.budgetFor = eventId;
         if (state.view === 'events' || (state.view === 'event' && ['overview', 'budget'].includes(state.eventTab || 'overview'))) render();
     } catch (e) {
@@ -3160,9 +3094,7 @@ async function loadVolunteers(eventId) {
     try {
         const { collection, getDocs } = fb.f;
         const snap = await getDocs(collection(fb.db, 'events', eventId, 'volunteers'));
-        const rows = [];
-        snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
-        state.volunteers = rows;
+        state.volunteers = snapRows(snap);
         state.volunteersFor = eventId;
         if (state.view === 'event' && state.eventTab === 'volunteers') render();
     } catch (e) {
@@ -3175,9 +3107,7 @@ async function loadProgramme(eventId) {
     try {
         const { collection, getDocs } = fb.f;
         const snap = await getDocs(collection(fb.db, 'events', eventId, 'programme'));
-        const rows = [];
-        snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
-        state.programme = rows;
+        state.programme = snapRows(snap);
         state.programmeFor = eventId;
         if (
             state.view === 'events' ||
@@ -3538,6 +3468,13 @@ VIEWS.entertainment = {
     }
 };
 
+const ENT_NEW_BTN = {
+    gigs: '<button type="button" class="ad-btn ad-btn-primary" id="ad-book-new">+ New booking</button>',
+    venues: '<button type="button" class="ad-btn ad-btn-primary" data-venue-new>+ New venue</button>',
+    accom: '<button type="button" class="ad-btn ad-btn-primary" data-accom-new>+ New place</button>',
+    djs: '<button type="button" class="ad-btn ad-btn-primary" data-dj-new>+ New DJ</button>'
+};
+
 function entHead(tab) {
     return `
         <div class="inv-head">
@@ -3555,24 +3492,16 @@ function entHead(tab) {
               <button type="button" class="ent-tab${tab === 'venues' ? ' is-on' : ''}" data-ent-tab="venues">Venues</button>
               <button type="button" class="ent-tab${tab === 'accom' ? ' is-on' : ''}" data-ent-tab="accom">Accommodation</button>
             </div>
-            ${
-                tab === 'gigs'
-                    ? '<button type="button" class="ad-btn ad-btn-primary" id="ad-book-new">+ New booking</button>'
-                    : tab === 'venues'
-                      ? '<button type="button" class="ad-btn ad-btn-primary" data-venue-new>+ New venue</button>'
-                      : tab === 'accom'
-                        ? '<button type="button" class="ad-btn ad-btn-primary" data-accom-new>+ New place</button>'
-                        : '<button type="button" class="ad-btn ad-btn-primary" data-dj-new>+ New DJ</button>'
-            }
+            ${ENT_NEW_BTN[tab] || ENT_NEW_BTN.djs}
           </div>
         </div>`;
 }
 
 /* the gig's invoice (made from a template), if it has one */
 const gigInvoice = (b) => (state.quoteDocs || []).find((q) => q.gigBookingId === b.id && q.status !== 'cancelled') || null;
-/*  THE GIG CHECKLIST: Enquiry > DJ confirmed > Quote
-    accepted > Deposit > Set times in > Invoice sent > Paid > Entertainer paid. Every step is
-    read from the booking and its quote - nothing to tick by hand.      */
+/*  THE GIG CHECKLIST: Enquiry > DJ confirmed > Quote accepted > Deposit >
+    Set times in > Invoice sent > Paid > Entertainer paid. Every step is read
+    from the booking and its quote - nothing to tick by hand.             */
 function gigTrail(b) {
     const inv = gigInvoice(b);
     const v = venueRecord(b.venue) || {}; // account venues (Grand View) pay no deposit
@@ -3620,6 +3549,11 @@ function gigSentTag(b) {
         '</span>'
     );
 }
+const GIG_NEXT_HINT = {
+    'DJ confirmed': ' &mdash; text the DJ their link below.',
+    'Set times in': ' &mdash; text the DJ their link below.',
+    'Quote accepted': ' &mdash; open the quote below and send it to the venue.'
+};
 function gigTrailHtml(b) {
     const steps = gigTrail(b);
     const next = steps.find(([, ok]) => !ok);
@@ -3639,15 +3573,7 @@ function gigTrailHtml(b) {
             .join('<b></b>') +
         '</div>' +
         (next
-            ? '<p class="ent-next">Next: <b>' +
-              esc(next[0]) +
-              '</b>' +
-              (next[0] === 'DJ confirmed' || next[0] === 'Set times in'
-                  ? ' &mdash; text the DJ their link below.'
-                  : next[0] === 'Quote accepted'
-                    ? ' &mdash; open the quote below and send it to the venue.'
-                    : '') +
-              '</p>'
+            ? '<p class="ent-next">Next: <b>' + esc(next[0]) + '</b>' + (GIG_NEXT_HINT[next[0]] || '') + '</p>'
             : '<p class="ent-next is-done">All done &#10003;</p>')
     );
 }
@@ -3902,27 +3828,21 @@ function djDetailHtml() {
 
 function wireEntPage() {
     const desk = document.getElementById('ad-desk');
+    const closePanels = () => {
+        state.entPanel = false;
+        state.bookEditing = false;
+        state.openDj = null;
+        state.openVenue = null;
+        state.openAccom = null;
+        render();
+    };
     desk.querySelectorAll('[data-ent-tab]').forEach((b) =>
         b.addEventListener('click', () => {
             state.entTab = b.getAttribute('data-ent-tab');
-            state.entPanel = false;
-            state.bookEditing = false;
-            state.openDj = null;
-            state.openVenue = null;
-            state.openAccom = null;
-            render();
+            closePanels();
         })
     );
-    desk.querySelectorAll('[data-ent-close]').forEach((b) =>
-        b.addEventListener('click', () => {
-            state.entPanel = false;
-            state.bookEditing = false;
-            state.openDj = null;
-            state.openVenue = null;
-            state.openAccom = null;
-            render();
-        })
-    );
+    desk.querySelectorAll('[data-ent-close]').forEach((b) => b.addEventListener('click', closePanels));
     wireVenuesTab(desk);
     wireAccomTab(desk);
     // DJs tab
@@ -3930,13 +3850,7 @@ function wireEntPage() {
     if (ds)
         ds.addEventListener('input', () => {
             state.djSearch = ds.value;
-            const pos = ds.selectionStart;
-            render();
-            const n = document.getElementById('dj-search');
-            if (n) {
-                n.focus();
-                n.setSelectionRange(pos, pos);
-            }
+            renderKeepCaret('dj-search', ds.selectionStart);
         });
     desk.querySelectorAll('[data-dj-open]').forEach((r) =>
         r.addEventListener('click', () => {
@@ -3993,25 +3907,16 @@ function wireEntPage() {
             const isNew = state.openDj === '__new__';
             const name = v('dj-f-name');
             if (!name) {
-                msg.textContent = 'Give the DJ a name.';
-                msg.className = 'ad-quote-msg is-bad';
+                setMsg(msg, 'Give the DJ a name.', 'is-bad');
                 return;
             }
-            const slug = isNew
-                ? name
-                      .toLowerCase()
-                      .replace(/&/g, ' and ')
-                      .replace(/[^a-z0-9]+/g, '-')
-                      .replace(/^-|-$/g, '')
-                      .slice(0, 60)
-                : state.openDj;
+            const slug = isNew ? slugify(name.replace(/&/g, ' and '), 60) : state.openDj;
             if (!slug) {
                 msg.textContent = 'That name has no letters or numbers in it.';
                 return;
             }
             save.disabled = true;
-            msg.textContent = 'Saving…';
-            msg.className = 'ad-quote-msg';
+            setMsg(msg, 'Saving…', '');
             try {
                 const { doc, setDoc, serverTimestamp } = fb.f;
                 await setDoc(
@@ -4032,7 +3937,7 @@ function wireEntPage() {
                 await setDoc(
                     doc(fb.db, 'actRates', slug),
                     {
-                        hourlyRateCents: Math.max(0, Math.round((parseFloat(v('dj-f-rate')) || 0) * 100)),
+                        hourlyRateCents: parseCents(v('dj-f-rate')),
                         location: v('dj-f-loc').slice(0, 80),
                         phone: v('dj-f-phone').slice(0, 40),
                         email: v('dj-f-email').toLowerCase().slice(0, 200),
@@ -4054,14 +3959,10 @@ function wireEntPage() {
                 state.openDj = slug;
                 render();
                 const m = document.getElementById('dj-msg');
-                if (m) {
-                    m.textContent = 'Saved.';
-                    m.className = 'ad-quote-msg is-ok';
-                }
+                setMsg(m, 'Saved.', 'is-ok');
             } catch (err) {
                 save.disabled = false;
-                msg.textContent = friendly(err);
-                msg.className = 'ad-quote-msg is-bad';
+                setMsg(msg, friendly(err), 'is-bad');
             }
         });
 }
@@ -4077,6 +3978,7 @@ function calendarHtml() {
     /*  getDay() is Sunday-first; this shifts it so Monday starts the row. */
     const lead = (first.getDay() + 6) % 7;
     const today = isoDay(new Date());
+    const noDjDays = state.scheduleLoaded ? new Set(openRegularNights(state.schedule, null, 56).map((n) => n.iso)) : new Set();
 
     const cells = [];
     /*  The days before the first, drawn greyed rather than left as holes -
@@ -4089,7 +3991,7 @@ function calendarHtml() {
     for (let d = 1; d <= days; d++) {
         const iso = isoDay(new Date(cursor.getFullYear(), cursor.getMonth(), d));
         const on = state.schedule.filter((b) => b.date === iso);
-        const noDj = !on.length && state.scheduleLoaded && openRegularNights(state.schedule, null, 56).some((n) => n.iso === iso);
+        const noDj = !on.length && noDjDays.has(iso);
 
         cells.push(`
       <div class="ad-cal-day${iso === today ? ' is-today' : ''}${on.length ? ' has-booking' : ''}${noDj ? ' is-nodj' : ''}${on.some((b) => b.status === 'unconfirmed') ? ' is-unconf' : ''}"
@@ -4227,14 +4129,10 @@ function bookingPanel(b) {
             <option value="unconfirmed"${draft.status === 'unconfirmed' ? ' selected' : ''}>Unconfirmed (DJ held until paid)</option>
           </select>
         </label>
-        <!--  UNCONFIRMED + PAY IN FULL (Max, 22 Oct 2026): a new venue's night.
-              The DJ is held; the quote has no deposit option; once it's paid
-              the booking turns Confirmed and the DJ gets their email.   -->
+        <!--  Pay in full: no deposit option; once paid the booking turns Confirmed. -->
         <label class="ad-field ent-payfull"><input type="checkbox" id="ad-f-payfull"${draft.payFull ? ' checked' : ''}> Pay in full up front (no deposit)</label>
 
-        <!--  A residency is the same act on the same night for weeks at a
-              time, which is most of this diary. Booking it a week at a
-              time is the same eight clicks over and over.            -->
+        <!--  Repeat: book a residency for several weeks at once. -->
         <label class="ad-field">Repeat
           <select id="ad-f-repeat">
             ${REPEATS.map(
@@ -4317,8 +4215,8 @@ function bookingPanel(b) {
               Remove
             </button>
             ${(() => {
-                const inv = (state.quoteDocs || []).find((q) => q.gigBookingId === b.id && q.status !== 'cancelled');
-                const dk = ((state.actRates || {})[b.slug] || {}).deck;
+                const inv = gigInvoice(b);
+                const dk = djRate(b.slug).deck;
                 // no invoice yet? say what's missing
                 const missing = [
                     !b.customerId && 'Invoice to',
@@ -4353,9 +4251,6 @@ function bookingPanel(b) {
     </section>`;
 }
 
-/*  REGULAR NIGHTS: pub + night + usual times. Booking a DJ
-    there makes that night's invoice; nights with nobody booked are flagged
-    on the dashboard.                                                      */
 /*  DJ BOOKING FEE: its own line on every DJ booking
     quote - a fixed $ or a % of the DJ's performance (not gear or travel).
     Saving it updates upcoming quotes that haven't been sent.          */
@@ -4380,6 +4275,8 @@ function djFeePanel() {
       </div>`;
 }
 
+/*  REGULAR NIGHTS: pub + night + usual times (kept hidden), then the DJ
+    booking fee and the DJ travel fees. */
 function regularNightsPanel() {
     const rows = state.regularNights || [];
     const daySel = (cur, id) =>
@@ -4484,38 +4381,6 @@ function wirePubBits() {
             document.getElementById('dj-fee-amt').value =
                 feeMode.value === 'percent' ? (Number.isFinite(f.pct) ? f.pct : 15) : (Number.isFinite(f.cents) ? f.cents : 8000) / 100;
         });
-    // DJ rates (private)
-    document.querySelectorAll('[data-rate-save]').forEach((btn) =>
-        btn.addEventListener('click', async () => {
-            const slug = btn.getAttribute('data-rate-save');
-            const val = (f) =>
-                ((document.querySelector('[data-rate="' + cssEsc(slug) + '"][data-rf="' + f + '"]') || {}).value || '').trim();
-            const cents = (v) => Math.max(0, Math.round((parseFloat(v) || 0) * 100));
-            btn.disabled = true;
-            try {
-                await setDoc(
-                    doc(fb.db, 'actRates', slug),
-                    {
-                        hourlyRateCents: cents(val('hourly')),
-                        location: val('location').slice(0, 80), // travel is worked out from this
-                        phone: val('phone').slice(0, 40),
-                        email: val('email').toLowerCase().slice(0, 200),
-                        updatedAt: Date.now()
-                    },
-                    { merge: true }
-                );
-                await loadPubSettings();
-                btn.textContent = 'Saved';
-                setTimeout(() => {
-                    btn.textContent = 'Save';
-                    btn.disabled = false;
-                }, 1200);
-            } catch (err) {
-                btn.disabled = false;
-                window.alert(friendly(err));
-            }
-        })
-    );
     // regular nights
     const rnVal = (id, f) => (document.querySelector('[data-rn="' + cssEsc(id) + '"][data-rnf="' + f + '"]') || {}).value || '';
     document.querySelectorAll('[data-rn-save]').forEach((btn) =>
@@ -4576,14 +4441,18 @@ function wirePubBits() {
         });
     // DJ travel fees
     const tfVal = (id, f) => (document.querySelector('[data-tfee="' + cssEsc(id) + '"][data-tff="' + f + '"]') || {}).value || '';
-    const dollars = (v) => Math.max(0, Math.round((parseFloat(v) || 0) * 100));
     document.querySelectorAll('[data-tfee-save]').forEach((btn) =>
         btn.addEventListener('click', async () => {
             const id = btn.getAttribute('data-tfee-save');
             try {
                 await setDoc(
                     doc(fb.db, 'travelFees', id),
-                    { from: tfVal(id, 'from').trim(), to: tfVal(id, 'to').trim(), cents: dollars(tfVal(id, 'fee')), updatedAt: Date.now() },
+                    {
+                        from: tfVal(id, 'from').trim(),
+                        to: tfVal(id, 'to').trim(),
+                        cents: parseCents(tfVal(id, 'fee')),
+                        updatedAt: Date.now()
+                    },
                     { merge: true }
                 );
                 await loadPubSettings();
@@ -4618,7 +4487,7 @@ function wirePubBits() {
                 await addDoc(collection(fb.db, 'travelFees'), {
                     from,
                     to,
-                    cents: dollars(document.getElementById('ad-tf-fee').value),
+                    cents: parseCents(document.getElementById('ad-tf-fee').value),
                     createdAt: Date.now()
                 });
                 await loadPubSettings();
@@ -4709,7 +4578,6 @@ function wirePubBits() {
             try {
                 const res = await call('adminGearListLink', { id: inv.id });
                 const act = (state.talent || []).find((t) => t.slug === b.slug) || {};
-                const phone = String(djRate(b.slug).phone || '').replace(/[^0-9+]/g, '');
                 const text =
                     'Hi ' +
                     String(act.name || '').split(' ')[0] +
@@ -4719,16 +4587,7 @@ function wirePubBits() {
                     prettyDate(b.date) +
                     ': ' +
                     res.url;
-                if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)
-                    location.href = 'sms:' + phone + '?&body=' + encodeURIComponent(text);
-                else {
-                    try {
-                        await navigator.clipboard.writeText(text);
-                        window.alert('Copied - paste it into a text to the DJ:\n\n' + text);
-                    } catch (e) {
-                        window.prompt('Copy this and text it to the DJ:', text);
-                    }
-                }
+                await textTheDj(djRate(b.slug).phone, text);
             } catch (err) {
                 window.alert(err.message || 'Could not make the link.');
             }
@@ -4772,13 +4631,6 @@ function mailtoFor(b, act) {
     );
 }
 
-const STAT_ICONS = {
-    blue: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
-    green: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>',
-    amber: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.5l3.5 2"/></svg>',
-    grey: '<svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19c0-3 2.4-4.8 5.5-4.8s5.5 1.8 5.5 4.8"/><circle cx="17" cy="10" r="2.6"/><path d="M15 19c0-2.2 1.3-3.6 3.2-3.6S21.4 16.8 21.4 19"/></svg>'
-};
-
 /*  A photograph of the venue, where we have one. */
 const VENUE_PHOTOS = {
     'grand view': 'images/venues/grand-view-hotel.jpg'
@@ -4793,9 +4645,6 @@ function venuePhoto(venue) {
     return key ? VENUE_PHOTOS[key] : '';
 }
 
-/*  The four ways of looking at the diary, as the tabs across the top of
-    the table. Venue tabs match loosely, so "Grand View Hotel, Bowen" and
-    "Grand View" are the same pub.                                     */
 /*  How many weeks a booking can be laid down in one go (half a year).
     Each night stays editable on its own afterwards. */
 const REPEATS = [
@@ -4806,6 +4655,8 @@ const REPEATS = [
     { weeks: 26, label: 'Weekly, 6 months' }
 ];
 
+/*  The fixed tabs across the top of the bookings table (saved venues go
+    in between - see bookTabs()). */
 const BOOK_TABS = [
     { key: 'upcoming', label: 'Upcoming' },
     { key: 'all', label: 'All Bookings' },
@@ -4993,13 +4844,7 @@ function wireVenuesTab(desk) {
     if (vs)
         vs.addEventListener('input', () => {
             state.venueSearch = vs.value;
-            const pos = vs.selectionStart;
-            render();
-            const n = document.getElementById('venue-search');
-            if (n) {
-                n.focus();
-                n.setSelectionRange(pos, pos);
-            }
+            renderKeepCaret('venue-search', vs.selectionStart);
         });
     desk.querySelectorAll('[data-venue-open]').forEach((r) =>
         r.addEventListener('click', () => {
@@ -5033,27 +4878,18 @@ function wireVenuesTab(desk) {
             const msg = document.getElementById('vn-msg');
             const name = val('vn-f-name').slice(0, 80);
             if (!name) {
-                msg.textContent = 'Give the venue a name.';
-                msg.className = 'ad-quote-msg is-bad';
+                setMsg(msg, 'Give the venue a name.', 'is-bad');
                 return;
             }
             const town = val('vn-f-town').slice(0, 60);
             const isNew = state.openVenue === '__new__';
-            const id = isNew
-                ? (name + ' ' + town)
-                      .toLowerCase()
-                      .replace(/[^a-z0-9]+/g, '-')
-                      .replace(/^-|-$/g, '')
-                      .slice(0, 80)
-                : state.openVenue;
+            const id = isNew ? slugify(name + ' ' + town, 80) : state.openVenue;
             if (isNew && (state.venues || []).some((x) => x.id === id)) {
-                msg.textContent = name + ' is already saved.';
-                msg.className = 'ad-quote-msg is-bad';
+                setMsg(msg, name + ' is already saved.', 'is-bad');
                 return;
             }
             save.disabled = true;
-            msg.textContent = 'Saving…';
-            msg.className = 'ad-quote-msg';
+            setMsg(msg, 'Saving…', '');
             try {
                 const { doc, setDoc } = fb.f;
                 await setDoc(
@@ -5080,14 +4916,10 @@ function wireVenuesTab(desk) {
                 state.openVenue = id;
                 render();
                 const m = document.getElementById('vn-msg');
-                if (m) {
-                    m.textContent = 'Saved.';
-                    m.className = 'ad-quote-msg is-ok';
-                }
+                setMsg(m, 'Saved.', 'is-ok');
             } catch (err) {
                 save.disabled = false;
-                msg.textContent = friendly(err);
-                msg.className = 'ad-quote-msg is-bad';
+                setMsg(msg, friendly(err), 'is-bad');
             }
         });
     const del = document.getElementById('vn-del');
@@ -5197,20 +5029,11 @@ function wireAccomTab(desk) {
             const msg = document.getElementById('ac-msg');
             const name = val('ac-f-name').slice(0, 80);
             if (!name) {
-                msg.textContent = 'Give the place a name.';
-                msg.className = 'ad-quote-msg is-bad';
+                setMsg(msg, 'Give the place a name.', 'is-bad');
                 return;
             }
             const isNew = state.openAccom === '__new__';
-            const id = isNew
-                ? name
-                      .toLowerCase()
-                      .replace(/[^a-z0-9]+/g, '-')
-                      .replace(/^-|-$/g, '')
-                      .slice(0, 60) +
-                  '-' +
-                  Date.now().toString(36)
-                : state.openAccom;
+            const id = isNew ? slugify(name, 60) + '-' + Date.now().toString(36) : state.openAccom;
             const place = {
                 id,
                 name,
@@ -5225,21 +5048,16 @@ function wireAccomTab(desk) {
                 .concat(place)
                 .sort((a, b) => String(a.name).localeCompare(String(b.name)));
             save.disabled = true;
-            msg.textContent = 'Saving…';
-            msg.className = 'ad-quote-msg';
+            setMsg(msg, 'Saving…', '');
             try {
                 await saveAccomPlaces(list);
                 state.openAccom = id;
                 render();
                 const m = document.getElementById('ac-msg');
-                if (m) {
-                    m.textContent = 'Saved. Upcoming gig quotes not yet sent are updated.';
-                    m.className = 'ad-quote-msg is-ok';
-                }
+                setMsg(m, 'Saved. Upcoming gig quotes not yet sent are updated.', 'is-ok');
             } catch (err) {
                 save.disabled = false;
-                msg.textContent = friendly(err);
-                msg.className = 'ad-quote-msg is-bad';
+                setMsg(msg, friendly(err), 'is-bad');
             }
         });
     const del = document.getElementById('ac-del');
@@ -5283,11 +5101,7 @@ async function promptNewVenue() {
     const name = (window.prompt('Venue name (e.g. Arcadia Bar)') || '').trim().slice(0, 80);
     if (!name) return null;
     const town = (window.prompt('Town (e.g. Mackay)') || '').trim().slice(0, 60);
-    const id = (name + ' ' + town)
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '')
-        .slice(0, 80);
+    const id = slugify(name + ' ' + town, 80);
     const have = (state.venues || []).find((v) => v.id === id);
     if (have) return have;
     try {
@@ -5324,6 +5138,15 @@ function filteredBookings() {
         return true;
     });
 }
+/*  Lower case, dashes for anything else, trimmed to max - used for ids. */
+function slugify(text, max) {
+    return String(text)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, max);
+}
+
 function isoDay(d) {
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
@@ -5334,13 +5157,7 @@ function bookingId(date, slug) {
 
 /* ---- wiring ---------------------------------------------------------- */
 function wireEntertainment() {
-    const say = (id, text, ok) => {
-        const bar = document.getElementById(id);
-        if (!bar) return;
-        bar.hidden = false;
-        bar.className = 'ad-action-msg ' + (ok ? 'is-ok' : 'is-bad');
-        bar.textContent = text;
-    };
+    const say = (id, text, ok) => showMsg(document.getElementById(id), text, ok ? 'is-ok' : 'is-bad');
 
     /* the month */
     document.querySelectorAll('[data-cal]').forEach((btn) => {
@@ -5408,6 +5225,10 @@ function wireEntertainment() {
 
             const startT = (document.getElementById('ad-f-start') || {}).value || '';
             const finishT = (document.getElementById('ad-f-finish') || {}).value || '';
+            const shout = (t) =>
+                ampmT(t)
+                    .toUpperCase()
+                    .replace(/(AM|PM)$/, ' $1');
             const base = {
                 slug,
                 venue: document.getElementById('ad-f-venue').value.trim(),
@@ -5416,47 +5237,36 @@ function wireEntertainment() {
                 customerId: (document.getElementById('ad-f-cust') || {}).value || '',
                 templateId: (document.getElementById('ad-f-tpl') || {}).value || '',
                 accomId: (document.getElementById('ad-f-accom') || {}).value || '',
-                time:
-                    startT && finishT
-                        ? ampmT(startT)
-                              .toUpperCase()
-                              .replace(/(AM|PM)$/, ' $1') +
-                          ' – ' +
-                          ampmT(finishT)
-                              .toUpperCase()
-                              .replace(/(AM|PM)$/, ' $1')
-                        : document.getElementById('ad-f-time').value.trim(),
+                time: startT && finishT ? shout(startT) + ' – ' + shout(finishT) : document.getElementById('ad-f-time').value.trim(),
                 status: document.getElementById('ad-f-status').value,
                 payFull: !!(document.getElementById('ad-f-payfull') || {}).checked,
                 notes: document.getElementById('ad-f-notes').value.trim()
             };
 
             const weeks = parseInt(document.getElementById('ad-f-repeat').value, 10) || 1;
+            const p = date.split('-');
+            const nights = [];
+            for (let i = 0; i < weeks; i++) nights.push(isoDay(new Date(+p[0], +p[1] - 1, +p[2] + i * 7)));
 
-            /*  THE DJ IS HELD: one DJ, one night. If they're
-          already booked or held that night somewhere else, say so first. */
-            {
-                const p0 = date.split('-');
-                for (let i = 0; i < weeks; i++) {
-                    const night = isoDay(new Date(+p0[0], +p0[1] - 1, +p0[2] + i * 7));
-                    const clash = (state.schedule || []).find((x) => x.id === bookingId(night, slug) && x.id !== state.bookDraft.id);
-                    if (clash) {
-                        const act = (state.talent || []).find((t) => t.slug === slug) || {};
-                        const what = clash.status === 'unconfirmed' ? 'held (unconfirmed)' : 'booked';
-                        if (
-                            !window.confirm(
-                                (act.name || slug) +
-                                    ' is already ' +
-                                    what +
-                                    ' on ' +
-                                    prettyDate(night) +
-                                    ' at ' +
-                                    (clash.venue || 'another venue') +
-                                    '.\n\nReplace that booking with this one?'
-                            )
+            /*  One DJ, one night: if they're already booked or held that night, ask first. */
+            for (const night of nights) {
+                const clash = (state.schedule || []).find((x) => x.id === bookingId(night, slug) && x.id !== state.bookDraft.id);
+                if (clash) {
+                    const act = (state.talent || []).find((t) => t.slug === slug) || {};
+                    const what = clash.status === 'unconfirmed' ? 'held (unconfirmed)' : 'booked';
+                    if (
+                        !window.confirm(
+                            (act.name || slug) +
+                                ' is already ' +
+                                what +
+                                ' on ' +
+                                prettyDate(night) +
+                                ' at ' +
+                                (clash.venue || 'another venue') +
+                                '.\n\nReplace that booking with this one?'
                         )
-                            return;
-                    }
+                    )
+                        return;
                 }
             }
 
@@ -5468,9 +5278,7 @@ function wireEntertainment() {
 
                 /*  One write per night (not a batch), so a failure halfway keeps the
             nights already written. */
-                const p = date.split('-');
-                for (let i = 0; i < weeks; i++) {
-                    const night = isoDay(new Date(+p[0], +p[1] - 1, +p[2] + i * 7));
+                for (const night of nights) {
                     const id = bookingId(night, slug);
 
                     await fb.f.setDoc(
@@ -5584,12 +5392,7 @@ function wireEntertainment() {
     if (search) {
         search.addEventListener('input', () => {
             state.bookFilter.text = search.value;
-            render();
-            const again = document.getElementById('ad-book-search');
-            if (again) {
-                again.focus();
-                again.setSelectionRange(again.value.length, again.value.length);
-            }
+            renderKeepCaret('ad-book-search');
         });
     }
 
@@ -5631,61 +5434,6 @@ function wireEntertainment() {
             } catch (err) {
                 window.alert(friendly(err));
                 imp.disabled = false;
-            }
-        });
-    }
-
-    /* the roster */
-    const rosterBtn = document.getElementById('ad-roster-toggle');
-    if (rosterBtn) {
-        rosterBtn.addEventListener('click', () => {
-            state.showRoster = !state.showRoster;
-            render();
-        });
-    }
-
-    const add = document.getElementById('ad-act-add');
-    if (add) {
-        add.addEventListener('click', async () => {
-            const name = document.getElementById('ad-act-name').value.trim();
-            const act = document.getElementById('ad-act-type').value;
-            const photo = document.getElementById('ad-act-photo').value.trim();
-
-            if (!name) {
-                say('ad-act-msg', 'Give the act a name.', false);
-                return;
-            }
-
-            /*  The slug is made from the name rather than asked for. It is the
-          id of the row and nobody should have to think about it.       */
-            const slug = name
-                .toLowerCase()
-                .replace(/&/g, ' and ')
-                .replace(/[^a-z0-9]+/g, '-')
-                .replace(/^-|-$/g, '')
-                .slice(0, 60);
-
-            if (!slug) {
-                say('ad-act-msg', 'That name has no letters or numbers in it.', false);
-                return;
-            }
-
-            add.disabled = true;
-
-            try {
-                await fb.f.setDoc(fb.f.doc(fb.db, 'talent', slug), {
-                    name,
-                    act,
-                    photo,
-                    hidden: false,
-                    updatedAt: fb.f.serverTimestamp()
-                });
-                await loadTalent();
-                render();
-                say('ad-act-msg', name + ' added.', true);
-            } catch (err) {
-                say('ad-act-msg', friendly(err), false);
-                add.disabled = false;
             }
         });
     }
@@ -5869,17 +5617,9 @@ VIEWS.settings = {
                         categoryId: input.getAttribute('data-limit'),
                         limit: Number(input.value)
                     });
-                    if (bar) {
-                        bar.hidden = false;
-                        bar.className = 'ad-action-msg is-ok';
-                        bar.textContent = 'Limit saved.';
-                    }
+                    showMsg(bar, 'Limit saved.', 'is-ok');
                 } catch (err) {
-                    if (bar) {
-                        bar.hidden = false;
-                        bar.className = 'ad-action-msg is-bad';
-                        bar.textContent = friendly(err);
-                    }
+                    showMsg(bar, friendly(err), 'is-bad');
                 }
 
                 input.disabled = false;
@@ -5893,9 +5633,7 @@ VIEWS.settings = {
             sync.addEventListener('click', async () => {
                 const bar = document.getElementById('ad-gig-msg');
                 sync.disabled = true;
-                bar.hidden = false;
-                bar.className = 'ad-action-msg';
-                bar.textContent = 'Looking… this can take a few minutes the first time.';
+                showMsg(bar, 'Looking… this can take a few minutes the first time.', '');
 
                 try {
                     const d = await call('syncGigGuideNow', {});
@@ -5923,9 +5661,7 @@ VIEWS.settings = {
 
             const bar = document.getElementById('ad-action-msg');
             seed.disabled = true;
-            bar.hidden = false;
-            bar.className = 'ad-action-msg';
-            bar.textContent = 'Working…';
+            showMsg(bar, 'Working…', '');
 
             try {
                 const d = await call('seedEvent', { eventId: state.activeEventId });
@@ -5973,20 +5709,15 @@ async function uploadImage(file, folder, max = 800) {
     await uploadBytes(ref(fb.storage, path), small, { contentType: small.type || file.type });
     return getDownloadURL(ref(fb.storage, path));
 }
-/*  Sponsors tab: the list of businesses to ask (admins write it directly). */
-/* the directory: one record per business, across events */
+/*  The sponsor directory: one record per business, across events. */
+function newBizDoc(p) {
+    const { serverTimestamp } = fb.f;
+    return { business: '', industry: '', stage: 'idea', stars: 0, ...p, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+}
 const bizStore = {
     async add(p) {
-        const { collection, addDoc, serverTimestamp } = fb.f;
-        const ref = await addDoc(collection(fb.db, 'sponsorBiz'), {
-            business: '',
-            industry: '',
-            stage: 'idea',
-            stars: 0,
-            ...p,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp()
-        });
+        const { collection, addDoc } = fb.f;
+        const ref = await addDoc(collection(fb.db, 'sponsorBiz'), newBizDoc(p));
         return ref.id;
     },
     async update(id, p) {
@@ -5995,20 +5726,10 @@ const bizStore = {
     },
     /* many at once (imports) - 400 a batch */
     async addMany(list) {
-        const { collection, doc, writeBatch, serverTimestamp } = fb.f;
+        const { collection, doc, writeBatch } = fb.f;
         for (let i = 0; i < list.length; i += 400) {
             const batch = writeBatch(fb.db);
-            list.slice(i, i + 400).forEach((p) =>
-                batch.set(doc(collection(fb.db, 'sponsorBiz')), {
-                    business: '',
-                    industry: '',
-                    stage: 'idea',
-                    stars: 0,
-                    ...p,
-                    createdAt: serverTimestamp(),
-                    updatedAt: serverTimestamp()
-                })
-            );
+            list.slice(i, i + 400).forEach((p) => batch.set(doc(collection(fb.db, 'sponsorBiz')), newBizDoc(p)));
             await batch.commit();
         }
     },
@@ -6046,13 +5767,10 @@ const sponsorStore = {
 async function loadLog() {
     const { collection, getDocs, query, orderBy, limit } = fb.f;
     const snap = await getDocs(query(collection(fb.db, 'emailLog'), orderBy('at', 'desc'), limit(150)));
-    const out = [];
-    snap.forEach((d) => out.push({ id: d.id, ...d.data() }));
-    return out;
+    return snapRows(snap);
 }
-/*  DASHBOARD - the look lives in js/dashboard.js.
-    The email log is not live (it's 150 docs), so it is read once when the
-    dashboard opens, for the "emails that failed" to-do.                   */
+/*  DASHBOARD - the look lives in js/dashboard.js. The email log is not
+    live, so it is read when the dashboard opens (the "emails that failed" to-do). */
 let dashLog = null;
 let dashLogAt = 0;
 
@@ -6256,8 +5974,7 @@ VIEWS.dashboard = {
             talent: state.talent || [],
             gigCrew: state.gigCrew,
             customers: state.customers || [],
-
-            h: { esc, attr, money }
+            h: H
         });
     },
     wire() {
@@ -6347,8 +6064,7 @@ function loadAllSponsors() {
     onSnapshot(
         collection(fb.db, 'sponsorBiz'),
         (snap) => {
-            state.sponsorBiz = [];
-            snap.forEach((d) => state.sponsorBiz.push({ id: d.id, ...d.data() }));
+            state.sponsorBiz = snapRows(snap);
             if (state.view === 'sponsorDir' || (state.view === 'event' && state.eventTab === 'sponsors')) render();
         },
         (err) => console.error('sponsorBiz', err)
@@ -6356,8 +6072,7 @@ function loadAllSponsors() {
     sponsorsAllUnsub = onSnapshot(
         collection(fb.db, 'sponsors'),
         (snap) => {
-            state.sponsorsAll = [];
-            snap.forEach((d) => state.sponsorsAll.push({ id: d.id, ...d.data() }));
+            state.sponsorsAll = snapRows(snap);
             if (state.view === 'sponsorDir') render();
         },
         (err) => console.error('sponsorsAll', err)
@@ -6486,10 +6201,7 @@ function invReqOptions(excludeId) {
 /*  itemsById for the kit engine, with the item being edited overlaid with
     the in-progress draft (and given a temp id when it is brand new).      */
 function invKitIndex(editId, editName) {
-    const byId = {};
-    invItems().forEach((it) => {
-        byId[it.id] = it;
-    });
+    const byId = invByIdMap();
     const id = editId && editId !== '__new__' ? editId : '__preview__';
     byId[id] = {
         id,
@@ -6595,6 +6307,9 @@ VIEWS.inventory = {
         const opt = (val, label, cur) => `<option value="${attr(val)}"${cur === val ? ' selected' : ''}>${esc(label)}</option>`;
 
         const open = state.openInvId != null || state.openSysId != null;
+        const oldPkgs = oldBotPackages().length;
+        const lowCount = invItems().filter(invLow).length;
+        const dates = invDates();
 
         return `
       <div class="inv-wrap${open ? ' has-detail' : ''}">
@@ -6623,16 +6338,16 @@ VIEWS.inventory = {
           </div>
 
           ${
-              oldBotPackages().length
+              oldPkgs
                   ? `<div class="inv-migrate">
-            <span>You have <b>${oldBotPackages().length}</b> website-bot package${oldBotPackages().length === 1 ? '' : 's'} in the old Packages section. Move them here so you can edit them with kits.</span>
+            <span>You have <b>${oldPkgs}</b> website-bot package${oldPkgs === 1 ? '' : 's'} in the old Packages section. Move them here so you can edit them with kits.</span>
             <button type="button" class="ad-btn ad-btn-small" id="inv-migrate-pkgs">Move into Inventory</button>
           </div>`
                   : ''
           }
           <div class="inv-tabs" role="tablist">
             <button type="button" class="inv-tab${state.invTab !== 'consumables' ? ' is-on' : ''}" data-inv-tab="gear">Equipment</button>
-            <button type="button" class="inv-tab${state.invTab === 'consumables' ? ' is-on' : ''}" data-inv-tab="consumables">Consumables${invItems().some(invLow) ? ' <span class="inv-low-dot" title="Something is low - reorder">' + invItems().filter(invLow).length + ' low</span>' : ''}</button>
+            <button type="button" class="inv-tab${state.invTab === 'consumables' ? ' is-on' : ''}" data-inv-tab="consumables">Consumables${lowCount ? ' <span class="inv-low-dot" title="Something is low - reorder">' + lowCount + ' low</span>' : ''}</button>
           </div>
           <div class="inv-toolbar">
             <input type="search" id="inv-search" class="ad-search" placeholder="Search items..."
@@ -6647,9 +6362,9 @@ VIEWS.inventory = {
             </select>
             <span class="inv-dates" title="Show what's on hire and left for these dates">
               <span>Stock for</span>
-              <input type="date" id="inv-d-from" class="ad-input" value="${attr(invDates().from)}" aria-label="From">
+              <input type="date" id="inv-d-from" class="ad-input" value="${attr(dates.from)}" aria-label="From">
               <span>to</span>
-              <input type="date" id="inv-d-to" class="ad-input" value="${attr(invDates().to)}" aria-label="To">
+              <input type="date" id="inv-d-to" class="ad-input" value="${attr(dates.to)}" aria-label="To">
             </span>
             <select id="inv-f-status" class="ad-select" aria-label="Filter by status">
               ${opt('all', 'All status', f.status)}
@@ -6682,7 +6397,7 @@ VIEWS.inventory = {
           <div class="inv-foot" id="inv-foot"></div>
         </div>
 
-        ${state.openSysId != null ? systemPanelHtml(sysDraft, invItems(), sysHelpers, invDistinct('category')) : open ? invDetail() : ''}
+        ${state.openSysId != null ? systemPanelHtml(sysDraft, invItems(), H, invDistinct('category')) : open ? invDetail() : ''}
       </div>
     `;
     },
@@ -6843,7 +6558,6 @@ async function migrateOldPackages(btn) {
 
 /*  KIT / PACKAGE BUILDER state (js/system-builder.js) */
 let sysDraft = sysDraftFrom(null);
-const sysHelpers = { esc, attr, money };
 function openSystem(id, type) {
     const it = id && id !== '__new__' ? invItems().find((x) => x.id === id) : null;
     clearPendingPhoto();
@@ -6880,20 +6594,15 @@ async function saveSystem(data) {
 /*  STOCK FOR CHOSEN DATES: booked jobs (deposit in) count
     against stock; quoted / accepted-but-unpaid jobs show as "pencilled".   */
 function todayIso() {
-    const d = new Date();
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    return isoDay(new Date());
 }
 function invDates() {
     const t = todayIso();
     const d = state.invDates || { from: t, to: t };
     return { from: d.from || t, to: d.to && d.to >= (d.from || t) ? d.to : d.from || t };
 }
-function invStockCells(it, use) {
+function invStockCells(it, use, byId) {
     if (it.isSystem) {
-        const byId = {};
-        invItems().forEach((x) => {
-            byId[x.id] = x;
-        });
         let build = Infinity;
         (it.requirements || []).forEach((r) => {
             const p = byId[r.itemId];
@@ -6922,7 +6631,9 @@ function invStockCells(it, use) {
     const u = use[it.id] || { booked: 0, pencilled: 0, jobs: [] };
     const repair = Math.min(it.quantityRepair || 0, it.quantityTotal);
     const left = Math.max(0, it.quantityTotal - repair - u.booked);
-    const tone = left <= 0 && (u.booked || u.pencilled) ? ' is-out' : u.pencilled > left ? ' is-tight' : '';
+    let tone = '';
+    if (left <= 0 && (u.booked || u.pencilled)) tone = ' is-out';
+    else if (u.pencilled > left) tone = ' is-tight';
     const jobs = u.jobs.length
         ? '<div class="inv-jobs">' +
           u.jobs
@@ -6950,6 +6661,7 @@ function invRowsHtml() {
     if (state.invPage > pages) state.invPage = pages;
     const start = (state.invPage - 1) * INV_PER_PAGE;
     const pageRows = rows.slice(start, start + INV_PER_PAGE);
+    const byId = pageRows.some((it) => it.isSystem) ? invByIdMap() : {};
 
     const body = pageRows.length
         ? pageRows
@@ -6965,7 +6677,7 @@ function invRowsHtml() {
       </td>
       <td>${it.category ? `<span class="inv-pill ${invCatClass(it.category)}">${esc(it.category)}</span>` : '<span class="ad-cell-muted">—</span>'}</td>
       <td class="inv-num">${esc(it.quantityTotal)}</td>
-      ${invStockCells(it, use)}
+      ${invStockCells(it, use, byId)}
       <td>${it.location ? esc(it.location) : '<span class="ad-cell-muted">—</span>'}</td>
       <td class="inv-num">${esc(money(it.priceCents))}</td>
       <td class="inv-num">${it.extraDayCents ? esc(money(it.extraDayCents)) : '<span class="ad-cell-muted">—</span>'}</td>
@@ -7183,7 +6895,7 @@ function wireInventory() {
     const mig = document.getElementById('inv-migrate-pkgs');
     if (mig) mig.addEventListener('click', () => migrateOldPackages(mig));
     if (state.openSysId != null) {
-        wireSystemPanel(sysDraft, invItems, sysHelpers, invDistinct('category'), {
+        wireSystemPanel(sysDraft, invItems, H, invDistinct('category'), {
             save: saveSystem,
             close() {
                 clearPendingPhoto();
@@ -7323,8 +7035,6 @@ function wireInventory() {
         }
         if (id) {
             state.openSysId = null;
-        }
-        if (id) {
             clearPendingPhoto();
             initInvReqDraft((state.inventory || []).find((x) => x.id === id));
             state.openInvId = id;
@@ -7341,7 +7051,6 @@ function wireInventory() {
 let pendingPhoto = null;
 /* the item the photo box belongs to: the open item, or the open system */
 const photoTargetId = () => (state.openSysId != null ? state.openSysId : state.openInvId);
-const isSystemId = (id) => !!id && invItems().some((x) => x.id === id && x.isSystem);
 let pendingPhotoUrl = '';
 
 function clearPendingPhoto() {
@@ -7463,10 +7172,7 @@ function wireInvPhoto() {
 function handlePhotoFile(file) {
     const msg = document.getElementById('inv-photo-msg');
     const bad = (t) => {
-        if (msg) {
-            msg.textContent = t;
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, t, 'is-bad');
     };
 
     if (!file || !/^image\//.test(file.type)) return bad('That’s not an image.');
@@ -7478,10 +7184,7 @@ function handlePhotoFile(file) {
         pendingPhotoUrl = URL.createObjectURL(file);
         if (state.openSysId != null) sysDraft.photoUrl = pendingPhotoUrl; // survives the panel redrawing
         setInvPhotoPreview(pendingPhotoUrl);
-        if (msg) {
-            msg.textContent = 'Photo ready — it’ll save with the item.';
-            msg.className = 'ad-quote-msg is-ok';
-        }
+        setMsg(msg, 'Photo ready — it’ll save with the item.', 'is-ok');
         return;
     }
     uploadInvPhoto(photoTargetId(), file);
@@ -7493,29 +7196,15 @@ function onRemovePhoto() {
         clearPendingPhoto();
         setInvPhotoPreview('');
         const msg = document.getElementById('inv-photo-msg');
-        if (msg) {
-            msg.textContent = '';
-            msg.className = 'ad-quote-msg';
-        }
+        setMsg(msg, '', '');
         return;
     }
     removeInvPhoto(photoTargetId());
 }
 
-/*  Push one image to Storage under inventory/<id> and record its URL on the
-    doc. Shared by the immediate upload (saved item) and the save-time upload
-    of a photo added to a brand-new item.                                   */
-/*  PHOTO SIZE + NAME: photos are shrunk to 800px WebP in
-    the browser before upload (a 700KB PNG becomes ~40KB) and saved under the
-    product's name, e.g. inventory/allen-heath-ab168-14w97n8h.webp.        */
-const photoSlug = (name, id) =>
-    (String(name || 'item')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, 60) || 'item') +
-    '-' +
-    String(id).slice(0, 8);
+/*  Photos are shrunk to 800px WebP in the browser before upload and saved
+    under the product's name, e.g. inventory/allen-heath-ab168-14w97n8h.webp. */
+const photoSlug = (name, id) => (slugify(name || 'item', 60) || 'item') + '-' + String(id).slice(0, 8);
 async function shrinkPhoto(file, max = 800) {
     try {
         const bmp = await createImageBitmap(file);
@@ -7530,6 +7219,7 @@ async function shrinkPhoto(file, max = 800) {
         return file;
     } // odd format - upload it as it is
 }
+/*  Push one image to Storage under inventory/ and record its URL on the doc. */
 async function doUploadPhoto(id, file, name) {
     const { ref, uploadBytes, getDownloadURL, deleteObject } = fb.st;
     const { doc, setDoc } = fb.f;
@@ -7562,24 +7252,15 @@ async function doUploadPhoto(id, file, name) {
 async function uploadInvPhoto(id, file) {
     if (!id || id === '__new__') return;
     const msg = document.getElementById('inv-photo-msg');
-    if (msg) {
-        msg.textContent = 'Uploading…';
-        msg.className = 'ad-quote-msg';
-    }
+    setMsg(msg, 'Uploading…', '');
 
     try {
         const { url } = await doUploadPhoto(id, file);
         if (state.openSysId === id) sysDraft.photoUrl = url;
         setInvPhotoPreview(url);
-        if (msg) {
-            msg.textContent = 'Photo saved.';
-            msg.className = 'ad-quote-msg is-ok';
-        }
+        setMsg(msg, 'Photo saved.', 'is-ok');
     } catch (err) {
-        if (msg) {
-            msg.textContent = err.message || 'Upload failed.';
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, err.message || 'Upload failed.', 'is-bad');
     }
 }
 
@@ -7602,15 +7283,9 @@ async function removeInvPhoto(id) {
         item.photoPath = '';
         if (state.openSysId === id) sysDraft.photoUrl = '';
         setInvPhotoPreview(''); // in place, keep the form
-        if (msg) {
-            msg.textContent = 'Photo removed.';
-            msg.className = 'ad-quote-msg is-ok';
-        }
+        setMsg(msg, 'Photo removed.', 'is-ok');
     } catch (err) {
-        if (msg) {
-            msg.textContent = err.message || 'Could not remove.';
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, err.message || 'Could not remove.', 'is-bad');
     }
 }
 
@@ -7660,13 +7335,14 @@ async function saveInvItem(btn) {
     };
     const dollarsToCents = (v) => Math.round(Number(v || 0) * 100);
     const int = (v) => Math.max(0, Math.round(Number(v || 0)));
+    const text = (f, max) =>
+        String(get(f) || '')
+            .trim()
+            .slice(0, max);
 
     const name = String(get('name') || '').trim();
     if (!name) {
-        if (msg) {
-            msg.textContent = 'Give it a name first.';
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, 'Give it a name first.', 'is-bad');
         return;
     }
 
@@ -7685,35 +7361,17 @@ async function saveInvItem(btn) {
         extraDayCents: dollarsToCents(get('extraDayCents')),
         replacementCents: dollarsToCents(get('replacementCents')),
         setupMins: int(get('setupMins')),
-        internalNotes: String(get('internalNotes') || '')
-            .trim()
-            .slice(0, 2000),
-        repairFault: String(get('repairFault') || '')
-            .trim()
-            .slice(0, 1000),
-        repairWith: String(get('repairWith') || '')
-            .trim()
-            .slice(0, 200),
-        repairDue: String(get('repairDue') || '')
-            .trim()
-            .slice(0, 100),
-        specs: String(get('specs') || '')
-            .trim()
-            .slice(0, 2000),
-        weight: String(get('weight') || '')
-            .trim()
-            .slice(0, 100),
-        powerDraw: String(get('powerDraw') || '')
-            .trim()
-            .slice(0, 100),
-        included: String(get('included') || '')
-            .trim()
-            .slice(0, 2000),
+        internalNotes: text('internalNotes', 2000),
+        repairFault: text('repairFault', 1000),
+        repairWith: text('repairWith', 200),
+        repairDue: text('repairDue', 100),
+        specs: text('specs', 2000),
+        weight: text('weight', 100),
+        powerDraw: text('powerDraw', 100),
+        included: text('included', 2000),
         inBot: !get('consumable') && !!get('inBot'),
         consumable: !!get('consumable'),
-        unit: String(get('unit') || '')
-            .trim()
-            .slice(0, 60),
+        unit: text('unit', 60),
         reorderAt: int(get('reorderAt')),
         // Requirements come from their own draft, not the field grid. Drop any
         // half-added row that never got an item chosen.
@@ -7723,10 +7381,7 @@ async function saveInvItem(btn) {
             .slice(0, 40)
     };
 
-    if (msg) {
-        msg.textContent = 'Saving…';
-        msg.className = 'ad-quote-msg';
-    }
+    setMsg(msg, 'Saving…', '');
     if (btn) btn.disabled = true;
 
     try {
@@ -7762,16 +7417,10 @@ async function saveInvItem(btn) {
         // state is already updated above, so nothing typed is lost.
         render();
         const m2 = document.getElementById('inv-msg'); // the repaint made a fresh one
-        if (m2) {
-            m2.textContent = 'Saved.';
-            m2.className = 'ad-quote-msg is-ok';
-        }
+        setMsg(m2, 'Saved.', 'is-ok');
     } catch (err) {
         if (btn) btn.disabled = false;
-        if (msg) {
-            msg.textContent = err.message || 'Could not save.';
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, err.message || 'Could not save.', 'is-bad');
     }
 }
 
@@ -7790,10 +7439,7 @@ async function deleteInvItem(btn) {
     } catch (err) {
         if (btn) btn.disabled = false;
         const msg = document.getElementById('inv-msg');
-        if (msg) {
-            msg.textContent = err.message || 'Could not delete.';
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, err.message || 'Could not delete.', 'is-bad');
     }
 }
 
@@ -7801,11 +7447,6 @@ async function deleteInvItem(btn) {
    Item requirements  -  the detail-panel editor + live kit preview
    ------------------------------------------------------------------------- */
 let invReqPreviewQty = 1;
-
-const invMoney = (c) => {
-    const n = Math.round(c || 0);
-    return '$' + (n / 100).toFixed(n % 100 ? 2 : 0);
-};
 
 function reqRowHtml(r, i, options) {
     const chosen = options.find((o) => o.id === r.itemId);
@@ -7928,8 +7569,7 @@ function renderInvReqPreview() {
 
     const kit = expandKit({ [id]: qty }, byId);
 
-    const chargeLabel = (r) =>
-        r.charge === 'free' ? 'included free' : r.charge === 'discounted' ? invMoney(r.unitCents) + ' ea' : invMoney(r.unitCents) + ' ea';
+    const chargeLabel = (r) => (r.charge === 'free' ? 'included free' : money(Math.round(r.unitCents || 0)) + ' ea');
 
     const lines = kit.required.length
         ? kit.required
@@ -7953,13 +7593,13 @@ function renderInvReqPreview() {
         <input class="ad-input inv-req-pv-num" type="number" id="inv-req-qty" min="1" step="1" value="${attr(qty)}">
         of this, the kit adds:</p>
       <ul class="inv-reqs-pv-list">${lines}</ul>
-      <p class="inv-reqs-pv-total">${kit.addCents ? 'Adds ' + invMoney(kit.addCents) : 'No extra charge'}</p>
+      <p class="inv-reqs-pv-total">${kit.addCents ? 'Adds ' + money(Math.round(kit.addCents)) : 'No extra charge'}</p>
       ${shorts}
     </div>`;
 }
 
 function applyReqField(r, f, val) {
-    if (f === 'discountCents') r.discountCents = Math.max(0, Math.round(Number(val || 0) * 100));
+    if (f === 'discountCents') r.discountCents = toCents(val);
     else if (f === 'qty') r.qty = Math.max(0, Math.round(Number(val || 0)));
     else if (f === 'coversN') r.coversN = Math.max(1, Math.round(Number(val || 0)));
     else r[f] = val; // itemId, rule, charge
@@ -8300,7 +7940,7 @@ function labourParts(setupMins, opts) {
 }
 
 function quoteSetupMins(d) {
-    const byId = typeof invByIdMap === 'function' ? invByIdMap() : {};
+    const byId = invByIdMap();
     let mins = 0;
     (d.lines || []).forEach((l) => {
         if (!l.itemId) return; // custom / crew / discount: no setup
@@ -8419,11 +8059,6 @@ VIEWS.quoteDocs = {
 /* -------------------------------------------------------------------------
    List
    ------------------------------------------------------------------------- */
-/*  SALES PIPELINE - the list of every job.
-    The look and the filtering live in js/sales-pipeline.js; this just hands
-    it the live quotes and opens a job when a row is clicked.               */
-const spHelpers = { esc, attr, money };
-
 /*  Paid vendor bookings shown as rows in the Sales Pipeline. They carry
     vendor:true, so they get their own Vendors tab and open the vendor's
     invoice page instead of the quote builder. */
@@ -8465,14 +8100,24 @@ function pipelineJobs() {
     }
     return (state.quoteDocs || []).concat(vend);
 }
+/*  SALES PIPELINE - the look and the filtering live in js/sales-pipeline.js;
+    this hands it the live quotes and the actions on each job. */
 function quoteListHtml() {
-    return pipelineHtml(pipelineJobs(), state.spFilter, spHelpers);
+    return pipelineHtml(pipelineJobs(), state.spFilter, H);
 }
 
 function wireQuoteList() {
     const findDoc = (id) => (state.quoteDocs || []).find((x) => x.id === id);
     const label = (d) => (d && d.customer && (d.customer.name || d.customer.business)) || (d && d.number) || 'this job';
-    wirePipeline(pipelineJobs, state.spFilter, spHelpers, {
+    // run an admin function; a failure is shown as an alert
+    const run = async (name, data, fail) => {
+        try {
+            await call(name, data);
+        } catch (e) {
+            window.alert(e.message || fail);
+        }
+    };
+    wirePipeline(pipelineJobs, state.spFilter, H, {
         open(id) {
             location.hash = '#/quoteDocs?q=' + id;
         },
@@ -8594,11 +8239,7 @@ function wireQuoteList() {
                 )
             )
                 return;
-            try {
-                await call('adminArchiveQuote', { id, archive: true });
-            } catch (e) {
-                window.alert(e.message || 'Could not archive.');
-            }
+            await run('adminArchiveQuote', { id, archive: true }, 'Could not archive.');
         },
         // money came in another way (bank transfer / cash): paid in full, becomes a tax invoice
         async paid(id) {
@@ -8613,11 +8254,7 @@ function wireQuoteList() {
                 )
             )
                 return;
-            try {
-                await call('adminSetQuoteStatus', { id, status: 'paid' });
-            } catch (e) {
-                window.alert(e.message || 'Could not mark paid.');
-            }
+            await run('adminSetQuoteStatus', { id, status: 'paid' }, 'Could not mark paid.');
         },
         // a bank-transfer deposit arrived: books the job (becomes an invoice) and unlocks the pick list
         async confirmjob(id) {
@@ -8631,36 +8268,20 @@ function wireQuoteList() {
                 )
             )
                 return;
-            try {
-                await call('adminConfirmJob', { id });
-            } catch (e) {
-                window.alert(e.message || 'Could not confirm the job.');
-            }
+            await run('adminConfirmJob', { id }, 'Could not confirm the job.');
         },
         async unconfirmjob(id) {
             if (!window.confirm('Undo the job confirmation for ' + label(findDoc(id)) + '?')) return;
-            try {
-                await call('adminConfirmJob', { id, undo: true });
-            } catch (e) {
-                window.alert(e.message || 'Could not undo it.');
-            }
+            await run('adminConfirmJob', { id, undo: true }, 'Could not undo it.');
         },
         async deposit(id) {
             const d = findDoc(id);
             if (!window.confirm('Deposit received for ' + label(d) + '?\n\nThis books the job and makes it a tax invoice.')) return;
-            try {
-                await call('adminDepositReceived', { id });
-            } catch (e) {
-                window.alert(e.message || 'Could not record the deposit.');
-            }
+            await run('adminDepositReceived', { id }, 'Could not record the deposit.');
         },
         // makes the private crew link (no prices) - the menu then shows Open / Copy
         async picklist(id) {
-            try {
-                await call('adminPickListLink', { id });
-            } catch (e) {
-                window.alert(e.message || 'Could not make the pick list.');
-            }
+            await run('adminPickListLink', { id }, 'Could not make the pick list.');
         },
         // GEAR LIST to the band / crew - no prices
         // TEST: the gear list + pick list emails, to Max only (nothing recorded)
@@ -8705,22 +8326,15 @@ function wireQuoteList() {
                 )
             )
                 return;
-            try {
-                await call('adminAddLateFee', { id });
-            } catch (e) {
-                window.alert(e.message || 'Could not add the late fee.');
-            }
+            await run('adminAddLateFee', { id }, 'Could not add the late fee.');
         },
+        // payment reminder
         async remind(id) {
             await sendReminder(call, findDoc(id));
-        }, // payment reminder
+        },
         async unlatefee(id) {
             if (!window.confirm('Remove the last late fee from ' + label(findDoc(id)) + '?')) return;
-            try {
-                await call('adminRemoveLateFee', { id });
-            } catch (e) {
-                window.alert(e.message || 'Could not remove it.');
-            }
+            await run('adminRemoveLateFee', { id }, 'Could not remove it.');
         },
         // back to a sent quote, as if nothing was paid (hand-marked payments only)
         async undopay(id) {
@@ -8733,24 +8347,16 @@ function wireQuoteList() {
                 )
             )
                 return;
-            try {
-                await call('adminUndoPayment', { id });
-            } catch (e) {
-                window.alert(e.message || 'Could not undo.');
-            }
+            await run('adminUndoPayment', { id }, 'Could not undo.');
         },
         async restore(id) {
-            try {
-                await call('adminArchiveQuote', { id, archive: false });
-            } catch (e) {
-                window.alert(e.message || 'Could not restore.');
-            }
+            await run('adminArchiveQuote', { id, archive: false }, 'Could not restore.');
         },
         async del(id) {
             const d = findDoc(id);
             // an archived job with an invoice or money on it: type DELETE (it may be a tax record)
-            const money = d && (d.invoiceNumber || (d.amountPaidCents || 0) > 0 || d.kind === 'invoice');
-            if (money) {
+            const hasMoney = d && (d.invoiceNumber || (d.amountPaidCents || 0) > 0 || d.kind === 'invoice');
+            if (hasMoney) {
                 const typed = window.prompt(
                     label(d) +
                         ' (' +
@@ -8769,11 +8375,7 @@ function wireQuoteList() {
                 )
             )
                 return;
-            try {
-                await call('adminDeleteQuote', { id, force: !!money });
-            } catch (e) {
-                window.alert(e.message || 'Could not delete.');
-            }
+            await run('adminDeleteQuote', { id, force: !!hasMoney }, 'Could not delete.');
         }
     });
 }
@@ -8900,21 +8502,23 @@ function quoteEmailedLine(doc) {
 }
 
 function quoteBuilderHtml() {
-    const isNew = state.openQuoteId === '__new__';
     const doc = currentQuoteDoc();
     const status = doc ? doc.status : 'approved'; // a new one made here is a quote, not an estimate
     const isInvoice = doc && doc.kind === 'invoice';
-    const docWord = isInvoice ? 'Tax Invoice' : status === 'draft' ? 'Estimate' : 'Quote';
+    let docWord = 'Quote';
+    if (isInvoice) docWord = 'Tax Invoice';
+    else if (status === 'draft') docWord = 'Estimate';
     const num = doc ? (isInvoice && doc.invoiceNumber ? doc.invoiceNumber : doc.number) : 'New';
     const created = doc && doc.createdAt ? dateShort(doc.createdAt) : dateShort(Math.floor(Date.now() / 1000));
     const c = quoteDraft.customer;
     const h = quoteDraft.hire;
 
-    const invOpts = (typeof invItems === 'function' ? invItems() : [])
-        .filter((it) => it.id && it.name)
-        .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
-        .map((it) => `<option value="${attr(it.id)}">${esc(it.name)} &middot; ${esc(money(it.priceCents))}/day</option>`)
-        .join('');
+    // the status pill: Template, the saved status, or New (bar) / Draft (paper) before the first save
+    const pill = (unsaved) => {
+        if (quoteDraft.isTemplate) return '<span class="ad-pill ad-pill-blue">Template</span>';
+        if (doc) return qdocPill(status);
+        return '<span class="ad-pill ad-pill-grey">' + unsaved + '</span>';
+    };
 
     const link = doc && doc.token ? window.location.origin + '/quote?t=' + doc.token : '';
 
@@ -8968,7 +8572,7 @@ function quoteBuilderHtml() {
       <!-- toolbar (not part of the printed paper) -->
       <div class="qb-bar">
         <button type="button" class="qb-back" id="q-back">&larr; Sales Pipeline</button>
-        <div class="qb-bar-title"><h1>${quoteDraft.isTemplate ? 'Template: ' + esc(quoteDraft.templateName || 'Untitled') : esc(docWord) + ' #' + esc(num)}</h1>${quoteDraft.isTemplate ? '<span class="ad-pill ad-pill-blue">Template</span>' : doc ? qdocPill(status) : '<span class="ad-pill ad-pill-grey">New</span>'}</div>
+        <div class="qb-bar-title"><h1>${quoteDraft.isTemplate ? 'Template: ' + esc(quoteDraft.templateName || 'Untitled') : esc(docWord) + ' #' + esc(num)}</h1>${pill('New')}</div>
         <div class="qb-bar-spacer"></div>
         ${link ? `<a class="ad-btn ad-btn-ghost" href="${attr(link)}" target="_blank" rel="noopener">Preview</a>` : ''}
         <span class="qb-auto" id="q-auto"></span>
@@ -9005,7 +8609,7 @@ function quoteBuilderHtml() {
             <p class="qb-tagline">Good People<br>Great Events</p>
             <div class="qb-mgrid">
               ${quoteDraft.isTemplate ? metaRow('Template', `<strong>${esc(quoteDraft.templateName || 'Untitled')}</strong>`) : metaRow(docWord + ' number', `<strong>${esc(num)}</strong>`)}
-              ${metaRow('Status', quoteDraft.isTemplate ? '<span class="ad-pill ad-pill-blue">Template</span>' : doc ? qdocPill(status) : '<span class="ad-pill ad-pill-grey">Draft</span>')}
+              ${metaRow('Status', pill('Draft'))}
               ${metaRow('Created', esc(created))}
               ${metaRow('Event / Job', `<input class="qb-min" data-qc="eventName" value="${attr(c.eventName)}" placeholder="Event name">`)}
               ${metaRow(
@@ -9134,10 +8738,7 @@ function quoteBuilderHtml() {
     </div>`;
 }
 
-/*  "2026-10-20" -> "Tue 20 Oct 2026" for the Event date box. */
 let quoteEventDateAuto = '';
-/*  "Tue 20 Oct 2026" -> "2026-10-20", for the event-date calendar.
-    A date typed without a year comes back blank - just pick the date. */
 /*  CC EMAILS AS CHIPS: type an address, press Enter or a
     comma, and it becomes a tag; x removes it. Saved as "a@b.com, c@d.com"
     in customer.ccEmail - everyone listed gets a copy. */
@@ -9151,7 +8752,6 @@ function ccList(str) {
 function ccChipsInner(str, ph) {
     const list = ccList(str);
     return (
-        '' +
         list
             .map(
                 (e, i) =>
@@ -9175,6 +8775,8 @@ function ccChipsInner(str, ph) {
     );
 }
 
+/*  "Tue 20 Oct 2026" -> "2026-10-20", for the event-date calendar.
+    A date typed without a year comes back blank - just pick the date. */
 function isoFromPretty(text) {
     const m = /(\d{1,2})\s+([A-Za-z]{3})[a-z]*\s+(\d{4})/.exec(String(text || ''));
     if (!m) return /^\d{4}-\d{2}-\d{2}$/.test(String(text || '')) ? text : '';
@@ -9183,11 +8785,10 @@ function isoFromPretty(text) {
     return m[3] + '-' + String(mon + 1).padStart(2, '0') + '-' + String(m[1]).padStart(2, '0');
 }
 
+/*  "2026-10-20" -> "Tue 20 Oct 2026" for the Event date box. */
 function prettyEventDate(iso) {
-    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
-    if (!m) return '';
-    const d = new Date(+m[1], +m[2] - 1, +m[3]);
-    return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).replace(/,/g, '');
+    if (!isoOk(iso)) return '';
+    return prettyDate(iso).replace(/,/g, '');
 }
 
 /*  INCLUDED / REQUIRED ROWS, GROUPED
@@ -9196,7 +8797,7 @@ function prettyEventDate(iso) {
     inside the item (no dividing line).                                  */
 function kitCategoryOf() {
     const cats = {};
-    (typeof invItems === 'function' ? invItems() : []).forEach((it) => {
+    invItems().forEach((it) => {
         cats[it.id] = it.category || '';
     });
     return (l) => {
@@ -9262,9 +8863,6 @@ function normalizePackages() {
     quoteDraft.lines = out;
 }
 
-/*  DJ JOBS IN TWO PARTS: the entertainment (DJ, travel, booking fee, super)
-    on top under Hours / Fee, then the production gear under its own heading,
-    with any discount last so it reads as a saving on production.          */
 /*  Admin-only: smart gig lines (filled in per gig by the server) get an
     orange box. The booking fee is a set fee, so it is left plain.        */
 function isSmartLine(l) {
@@ -9278,10 +8876,18 @@ function isSmartLine(l) {
     );
 }
 const isEntLine = (l) => !!(l.pubDj || l.djSlot || l.superLine || l.perf);
+/*  DJ JOBS IN TWO PARTS: the entertainment (DJ, travel, booking fee, super)
+    on top under Hours / Fee, then the production gear under its own heading,
+    with any discount last so it reads as a saving on production.          */
 function sortDjSections() {
     const units = quoteUnits(quoteDraft.lines);
     if (!units.some((u) => isEntLine(u[0]))) return false;
-    const rank = (l) => (isEntLine(l) ? 0 : l.type === 'fee' ? 3 : l.type === 'discount' && !l.pkgId ? 2 : 1);
+    const rank = (l) => {
+        if (isEntLine(l)) return 0;
+        if (l.type === 'fee') return 3;
+        if (l.type === 'discount' && !l.pkgId) return 2;
+        return 1;
+    };
     quoteDraft.lines = units
         .map((u, i) => [u, i])
         .sort((a, b) => rank(a[0][0]) - rank(b[0][0]) || a[1] - b[1])
@@ -9333,6 +8939,14 @@ function renderQuoteLines() {
     const djJob = sortDjSections();
     setQuoteHead(djJob);
     const kitCat = kitCategoryOf();
+    const inv = invByIdMap();
+    // a Kit / Package tag on a line that is one
+    const sysTag = (itemId) => {
+        const it = inv[itemId];
+        if (!it || !it.isSystem) return '';
+        const pkg = it.bundleType === 'package';
+        return '<span class="qb-sys-tag qb-sys-line' + (pkg ? ' is-pkg' : '') + '">' + (pkg ? 'Package' : 'Kit') + '</span>';
+    };
 
     /*  SHORT ON STOCK? For this quote's hire dates: what
       other BOOKED jobs (deposit in) already have out, against what this
@@ -9345,22 +8959,20 @@ function renderQuoteLines() {
         pickItems(quoteDraft.lines).forEach((p) => {
             if (p.itemId) need[p.itemId] = p.qty;
         });
-        const inv = {};
-        invItems().forEach((it) => {
-            inv[it.id] = it;
-        });
         const dayTxt = r[0] === r[1] ? prettyEventDate(r[0]) : prettyEventDate(r[0]) + ' – ' + prettyEventDate(r[1]);
         return (l) => {
             const it = l.itemId && inv[l.itemId];
             if (!it || it.isSystem || !need[l.itemId]) return '';
             const u = use[l.itemId] || { booked: 0, pencilled: 0 };
             const left = Math.max(0, it.quantityTotal - Math.min(it.quantityRepair || 0, it.quantityTotal) - u.booked);
-            if (need[l.itemId] <= left)
-                return u.pencilled && need[l.itemId] > left - u.pencilled
-                    ? '<span class="qb-stock is-tight" title="Other quotes not yet paid want some of these too">' +
-                          u.pencilled +
-                          ' also pencilled in elsewhere</span>'
-                    : '';
+            if (need[l.itemId] <= left) {
+                if (!u.pencilled || need[l.itemId] <= left - u.pencilled) return '';
+                return (
+                    '<span class="qb-stock is-tight" title="Other quotes not yet paid want some of these too">' +
+                    u.pencilled +
+                    ' also pencilled in elsewhere</span>'
+                );
+            }
             return '<span class="qb-stock is-out">&#9888; Only ' + left + ' left ' + esc(dayTxt) + ' (need ' + need[l.itemId] + ')</span>';
         };
     })();
@@ -9405,12 +9017,12 @@ function renderQuoteLines() {
             // a sub-heading each time the category changes (Cable, then Stands...)
             const prev = quoteDraft.lines[i - 1];
             const cat = kitCat(l);
+            // a kit's own parts sit straight under it, in Max's order, with no heading
+            const sameCat = prev && prev.type === 'kit' && prev.sysOrder == null && kitCat(prev) === cat;
             const header =
-                l.sysOrder != null
-                    ? '' // a kit's own parts: straight under it, in Max's order
-                    : prev && prev.type === 'kit' && prev.sysOrder == null && kitCat(prev) === cat
-                      ? ''
-                      : '<div class="qb-subhead' + (prev && prev.type === 'kit' ? ' qb-subhead-next' : '') + '">' + esc(cat) + '</div>';
+                l.sysOrder != null || sameCat
+                    ? ''
+                    : '<div class="qb-subhead' + (prev && prev.type === 'kit' ? ' qb-subhead-next' : '') + '">' + esc(cat) + '</div>';
             const free = l.charge === 'free' || !l.unitCents;
             return `${header}
         <div class="qb-row qb-row-sub" data-ql="${i}" data-sub>
@@ -9425,35 +9037,15 @@ function renderQuoteLines() {
         }
 
         // Editable item / custom line.
-        const rate =
-            l.resType === 'staff'
-                ? l.baseCents != null
-                    ? l.baseCents / 100
-                    : l.unitCents
-                      ? l.unitCents / 100
-                      : ''
-                : l.unitCents
-                  ? l.unitCents / 100
-                  : '';
+        // staff show their own day rate (before weekend / holiday loading)
+        let rate = l.unitCents ? l.unitCents / 100 : '';
+        if (l.resType === 'staff' && l.baseCents != null) rate = l.baseCents / 100;
         return `
       <div class="qb-row" data-ql="${i}" data-top>
         <div class="qb-cell qb-c-grip"><span class="qb-grip" title="Drag to reorder">&#10303;</span></div>
         <div class="qb-cell qb-c-desc${isSmartLine(l) ? ' is-smart' : ''}"${isSmartLine(l) ? ' title="Smart line - filled in per gig"' : ''}>
           <input class="qb-name" data-lf="name" value="${attr(l.name)}" placeholder="Item name">
-          ${
-              isSystemId(l.itemId)
-                  ? (() => {
-                        const b = (invItems().find((x) => x.id === l.itemId) || {}).bundleType;
-                        return (
-                            '<span class="qb-sys-tag qb-sys-line' +
-                            (b === 'package' ? ' is-pkg' : '') +
-                            '">' +
-                            (b === 'package' ? 'Package' : 'Kit') +
-                            '</span>'
-                        );
-                    })()
-                  : ''
-          }
+          ${sysTag(l.itemId)}
           ${l.description || isSmartLine(l) ? `<span class="qb-sub">${esc(l.description || '')}${isSmartLine(l) ? '<span class="qb-smart-note">Smart Calculator</span>' : ''}</span>` : ''}${stockWarn(l)}
         </div>
         <div class="qb-cell qb-c-qty"><input class="qb-num" type="number" min="0" step="${l.perf ? '0.25' : '1'}" data-lf="qty" value="${attr(l.qty)}"${l.perf ? ' title="Hours"' : ''}></div>
@@ -9469,10 +9061,6 @@ function renderQuoteLines() {
     const pkgOf = [];
     L.forEach((l, i) => {
         pkgOf[i] = l.type === 'kit' ? (i ? pkgOf[i - 1] : null) : l.pkgId || null;
-    });
-    const inv = {};
-    invItems().forEach((it) => {
-        inv[it.id] = it;
     });
     let html = '';
     const firstProd = djJob ? L.findIndex((l) => !isEntLine(l)) : -1;
@@ -9604,23 +9192,26 @@ function renderQuoteTotals() {
     // crew & vehicles, totted up on their own
     const crewDays = Math.max(1, Math.round(quoteDraft.hire.days || 1));
     const crewSum = (t) => (quoteDraft.lines || []).filter((l) => l.resType === t).reduce((n, l) => n + quoteLineCents(l, crewDays), 0);
+    const staffCents = crewSum('staff');
+    const vehicleCents = crewSum('vehicle') + crewSum('trailer');
+    const entCents = (quoteDraft.lines || []).filter(isEntLine).reduce((n, l) => n + quoteLineCents(l, crewDays), 0);
     const delCents = quoteDeliveryCents(quoteDraft);
     // "Bowen (local)" is free, and says so
     const isLocal = /local/i.test(quoteDraft.deliveryTown || '');
-    const deliveryRow = isLocal
-        ? `
+    let deliveryRow = '';
+    if (isLocal)
+        deliveryRow = `
     <div class="qb-sumrow">
       <span>Local delivery &amp; pickup</span>
       <span class="qb-free">FREE</span>
-    </div>`
-        : delCents
-          ? `
+    </div>`;
+    else if (delCents)
+        deliveryRow = `
     <div class="qb-sumrow">
       <span>Travel &amp; transport${quoteDraft.deliveryTown ? ' — ' + esc(quoteDraft.deliveryTown) : ''}
         <em class="qb-labnote" style="margin-left:0">Fuel and vehicle running costs · ${quoteDraft.deliveryKm} km each way (${quoteDraft.deliveryKm * 2} km return) @ $0.80/km</em></span>
       <span>${esc(money(delCents))}</span>
-    </div>`
-          : '';
+    </div>`;
     // 2% booking & admin fee row, with an on/off tick
     const feeRow = `
     <div class="qb-sumrow">
@@ -9639,19 +9230,14 @@ function renderQuoteTotals() {
             : '';
     host.innerHTML = `
     ${(() => {
-        const cats = {};
-        (typeof invItems === 'function' ? invItems() : []).forEach((it) => {
-            cats[it.id] = it.category;
-        });
-        const days = Math.max(1, Math.round(quoteDraft.hire.days || 1));
+        const inv = invByIdMap();
         const groups = costBreakdown(
             quoteDraft.lines,
-            (l) => quoteLineCents(l, days),
-            (l) => cats[l.itemId]
+            (l) => quoteLineCents(l, crewDays),
+            (l) => (inv[l.itemId] || {}).category
         );
-        const ent = (quoteDraft.lines || []).filter(isEntLine).reduce((n, l) => n + quoteLineCents(l, days), 0);
         return (
-            (ent ? '<div class="qb-sumrow"><span>Entertainment fee</span><span>' + esc(money(ent)) + '</span></div>' : '') +
+            (entCents ? '<div class="qb-sumrow"><span>Entertainment fee</span><span>' + esc(money(entCents)) + '</span></div>' : '') +
             (groups.length
                 ? '<div class="qb-sumhead">Equipment hire</div>' +
                   groups
@@ -9667,10 +9253,10 @@ function renderQuoteTotals() {
                 : '')
         );
     })()}
-    <div class="qb-sumrow"><span>Hire subtotal (ex GST)</span><span id="qsum-sub">${esc(money(m.subtotalCents - (quoteDraft.lines || []).filter(isEntLine).reduce((n, l) => n + quoteLineCents(l, crewDays), 0) - crewSum('staff') - crewSum('vehicle') - crewSum('trailer')))}</span></div>
+    <div class="qb-sumrow"><span>Hire subtotal (ex GST)</span><span id="qsum-sub">${esc(money(m.subtotalCents - entCents - staffCents - vehicleCents))}</span></div>
     ${labourRow}
-    ${crewSum('staff') ? '<div class="qb-sumrow"><span>Crew &amp; operators</span><span>' + esc(money(crewSum('staff'))) + '</span></div>' : ''}
-    ${crewSum('vehicle') + crewSum('trailer') ? '<div class="qb-sumrow"><span>Vehicles</span><span>' + esc(money(crewSum('vehicle') + crewSum('trailer'))) + '</span></div>' : ''}
+    ${staffCents ? '<div class="qb-sumrow"><span>Crew &amp; operators</span><span>' + esc(money(staffCents)) + '</span></div>' : ''}
+    ${vehicleCents ? '<div class="qb-sumrow"><span>Vehicles</span><span>' + esc(money(vehicleCents)) + '</span></div>' : ''}
     ${deliveryRow}
     ${feeRow}
     ${superRow}
@@ -9694,11 +9280,7 @@ function updateQuoteTotalsValues() {
 }
 
 function addInvLineToQuote(itemId) {
-    const items = typeof invItems === 'function' ? invItems() : [];
-    const byId = {};
-    items.forEach((it) => {
-        byId[it.id] = it;
-    });
+    const byId = invByIdMap();
     const it = byId[itemId];
     if (!it) return;
     const days = Math.max(1, Math.round(quoteDraft.hire.days || 1));
@@ -9793,8 +9375,10 @@ function crewRateFor(base, days, startIso, town) {
         }
         const r = labourDayRate(iso, town, false);
         total += Math.round(base * r.mult);
-        if (r.mult !== 1)
-            notes[Math.round((r.mult - 1) * 100) + '% ' + r.label] = (notes[Math.round((r.mult - 1) * 100) + '% ' + r.label] || 0) + 1;
+        if (r.mult !== 1) {
+            const key = Math.round((r.mult - 1) * 100) + '% ' + r.label;
+            notes[key] = (notes[key] || 0) + 1;
+        }
     }
     const note = Object.keys(notes)
         .map((k) => '+' + k + (days > 1 ? ' (' + notes[k] + ' day' + (notes[k] === 1 ? '' : 's') + ')' : ''))
@@ -9819,10 +9403,7 @@ function syncCrewRates() {
 function syncPackageDiscounts() {
     const L = quoteDraft.lines || [];
     if (!L.some((l) => l.type === 'discount' && l.pkgId)) return;
-    const byId = {};
-    invItems().forEach((it) => {
-        byId[it.id] = it;
-    });
+    const byId = invByIdMap();
     const days = Math.max(1, Math.round(quoteDraft.hire.days || 1));
     const full = {};
     const extra = {}; // weekend / public holiday surcharges on crew in the package
@@ -9883,23 +9464,20 @@ function kitLinesFor(itemId, qty, byId, days) {
     });
 }
 
-/*  An item's quantity changed: re-work its included / required lines so
-    3 Stage Decks bring 12 legs. Replaces the kit rows directly under it. */
 /*  Opening a quote re-works every item's included gear from its current
     qty, so older quotes correct themselves. */
 function rebuildAllKits() {
+    const byId = invByIdMap();
     for (let i = 0; i < quoteDraft.lines.length; i++) {
-        if (quoteDraft.lines[i].type === 'item') rebuildKitForLine(i);
+        if (quoteDraft.lines[i].type === 'item') rebuildKitForLine(i, byId);
     }
 }
 
-function rebuildKitForLine(i) {
+/*  An item's quantity changed: re-work its included / required lines so
+    3 Stage Decks bring 12 legs. Replaces the kit rows directly under it. */
+function rebuildKitForLine(i, byId = invByIdMap()) {
     const line = quoteDraft.lines[i];
     if (!line || line.type !== 'item' || !line.itemId) return false;
-    const byId = {};
-    (typeof invItems === 'function' ? invItems() : []).forEach((it) => {
-        byId[it.id] = it;
-    });
     if (!byId[line.itemId]) return false;
     let end = i + 1;
     while (end < quoteDraft.lines.length && quoteDraft.lines[end].type === 'kit') end++;
@@ -9917,7 +9495,7 @@ function rebuildKitForLine(i) {
    Inventory typeahead - the pinned bottom "add" row
    ------------------------------------------------------------------------- */
 function invSearchList() {
-    return (typeof invItems === 'function' ? invItems() : []).filter((it) => it.id && it.name);
+    return invItems().filter((it) => it.id && it.name);
 }
 
 /* -------------------------------------------------------------------------
@@ -9974,7 +9552,6 @@ function searchList(list, term, nameOf, moreOf, limit) {
 
 let invSearchActive = -1; // keyboard-highlighted result
 
-/*  Matches for the quote add-search: inventory + active crew/vehicles. */
 /*  THE DJ BOOKING FEE in the add-search: type "booking",
     "fee", "coordination"... and it's there to drop into a template or quote.
     Same name, wording and amount as the setting on Entertainment.        */
@@ -9992,6 +9569,7 @@ function djFeeItem() {
         description: f.description == null ? 'Sourcing, scheduling and managing your DJ, with backup cover' : f.description
     };
 }
+/*  Matches for the quote add-search: inventory + active crew/vehicles. */
 function quoteSearchMatches(term) {
     const t = String(term || '')
         .trim()
@@ -10294,70 +9872,66 @@ function wireQuoteBuilder() {
     const wrap = document.querySelector('.q-build');
     if (!wrap) return;
 
-    // email chips: billing CC and the gear list (band / crew)
-    [['qb-cc', 'ccEmail']].forEach(([boxId, field]) => {
-        const ccBox = document.getElementById(boxId);
-        if (ccBox) {
-            const ccSet = (list, keepFocus) => {
-                quoteDraft.customer[field] = list.join(', ');
-                ccBox.innerHTML = ccChipsInner(
-                    quoteDraft.customer[field],
-                    field === 'gearEmails' ? 'Band or crew email - press Enter' : 'Accounts email (optional) - press Enter'
-                );
-                if (keepFocus) ccBox.querySelector('.qb-cc-in').focus();
-                if (typeof scheduleQuoteAutosave === 'function') scheduleQuoteAutosave();
-            };
-            const ccAdd = (input, keepFocus) => {
-                const typed = ccList(input.value);
-                if (!typed.length) return;
-                const bad = typed.filter((x) => !CC_RE.test(x));
-                if (bad.length) {
-                    const msg = ccBox.querySelector('.qb-cc-msg');
-                    if (msg) {
-                        msg.hidden = false;
-                        msg.textContent = '"' + bad.join(', ') + '" doesn\'t look like an email address.';
-                    }
-                    return;
+    // the billing CC email chips
+    const field = 'ccEmail';
+    const ccBox = document.getElementById('qb-cc');
+    if (ccBox) {
+        const ccSet = (list, keepFocus) => {
+            quoteDraft.customer[field] = list.join(', ');
+            ccBox.innerHTML = ccChipsInner(quoteDraft.customer[field], 'Accounts email (optional) - press Enter');
+            if (keepFocus) ccBox.querySelector('.qb-cc-in').focus();
+            scheduleQuoteAutosave();
+        };
+        const ccAdd = (input, keepFocus) => {
+            const typed = ccList(input.value);
+            if (!typed.length) return;
+            const bad = typed.filter((x) => !CC_RE.test(x));
+            if (bad.length) {
+                const msg = ccBox.querySelector('.qb-cc-msg');
+                if (msg) {
+                    msg.hidden = false;
+                    msg.textContent = '"' + bad.join(', ') + '" doesn\'t look like an email address.';
                 }
-                const have = ccList(quoteDraft.customer[field]);
-                typed.forEach((x) => {
-                    if (!have.some((h) => h.toLowerCase() === x.toLowerCase())) have.push(x);
-                });
-                ccSet(have, keepFocus);
-            };
-            ccBox.addEventListener('click', (e) => {
-                const del = e.target.closest('[data-cc-del]');
-                if (del) {
-                    const list = ccList(quoteDraft.customer[field]);
-                    list.splice(Number(del.getAttribute('data-cc-del')), 1);
+                return;
+            }
+            const have = ccList(quoteDraft.customer[field]);
+            typed.forEach((x) => {
+                if (!have.some((h) => h.toLowerCase() === x.toLowerCase())) have.push(x);
+            });
+            ccSet(have, keepFocus);
+        };
+        ccBox.addEventListener('click', (e) => {
+            const del = e.target.closest('[data-cc-del]');
+            if (del) {
+                const list = ccList(quoteDraft.customer[field]);
+                list.splice(Number(del.getAttribute('data-cc-del')), 1);
+                ccSet(list, true);
+                return;
+            }
+            const inp = ccBox.querySelector('.qb-cc-in');
+            if (inp && e.target === ccBox) inp.focus();
+        });
+        ccBox.addEventListener('keydown', (e) => {
+            if (!e.target.classList.contains('qb-cc-in')) return;
+            if (e.key === 'Enter' || e.key === ',' || e.key === ';' || (e.key === 'Tab' && e.target.value.trim())) {
+                e.preventDefault();
+                ccAdd(e.target, true);
+            } else if (e.key === 'Backspace' && !e.target.value) {
+                const list = ccList(quoteDraft.customer[field]);
+                if (list.length) {
+                    list.pop();
                     ccSet(list, true);
-                    return;
                 }
-                const inp = ccBox.querySelector('.qb-cc-in');
-                if (inp && e.target === ccBox) inp.focus();
-            });
-            ccBox.addEventListener('keydown', (e) => {
-                if (!e.target.classList.contains('qb-cc-in')) return;
-                if (e.key === 'Enter' || e.key === ',' || e.key === ';' || (e.key === 'Tab' && e.target.value.trim())) {
-                    e.preventDefault();
-                    ccAdd(e.target, true);
-                } else if (e.key === 'Backspace' && !e.target.value) {
-                    const list = ccList(quoteDraft.customer[field]);
-                    if (list.length) {
-                        list.pop();
-                        ccSet(list, true);
-                    }
-                }
-            });
-            ccBox.addEventListener('paste', (e) => {
-                if (!e.target.classList.contains('qb-cc-in')) return;
-                setTimeout(() => ccAdd(e.target, true), 0);
-            });
-            ccBox.addEventListener('focusout', (e) => {
-                if (e.target.classList.contains('qb-cc-in') && e.target.value.trim()) ccAdd(e.target, false);
-            });
-        }
-    });
+            }
+        });
+        ccBox.addEventListener('paste', (e) => {
+            if (!e.target.classList.contains('qb-cc-in')) return;
+            setTimeout(() => ccAdd(e.target, true), 0);
+        });
+        ccBox.addEventListener('focusout', (e) => {
+            if (e.target.classList.contains('qb-cc-in') && e.target.value.trim()) ccAdd(e.target, false);
+        });
+    }
 
     // customer / hire / meta fields
     wrap.addEventListener('input', (e) => {
@@ -10388,7 +9962,7 @@ function wireQuoteBuilder() {
             return;
         }
         if (t.hasAttribute('data-qdisc')) {
-            quoteDraft.discountCents = Math.max(0, Math.round(Number(t.value || 0) * 100));
+            quoteDraft.discountCents = toCents(t.value);
             updateQuoteTotalsValues();
             return;
         }
@@ -10478,11 +10052,10 @@ function wireQuoteBuilder() {
             if (!l) return;
             const f = t.dataset.lf;
             if (f === 'unitCents' && l.resType === 'staff') {
-                l.baseCents = Math.max(0, Math.round(Number(t.value || 0) * 100));
+                l.baseCents = toCents(t.value);
                 syncCrewRates();
             } // crew: their own rate, surcharges added on top
-            else if (f === 'amountCents' || f === 'unitCents' || f === 'extraDayCents')
-                l[f] = Math.max(0, Math.round(Number(t.value || 0) * 100));
+            else if (f === 'amountCents' || f === 'unitCents' || f === 'extraDayCents') l[f] = toCents(t.value);
             else if (f === 'qty') l.qty = Math.max(0, l.perf ? Math.round(Number(t.value || 0) * 4) / 4 : Math.round(Number(t.value || 0)));
             else if (f === 'days') l.days = Math.max(1, Math.round(Number(t.value || 1)));
             else l[f] = t.value;
@@ -10624,22 +10197,13 @@ function wireQuoteActions() {
     const msg = () => document.getElementById('q-msg');
     const run = async (name, data, ok) => {
         const m = msg();
-        if (m) {
-            m.textContent = 'Working…';
-            m.className = 'ad-quote-msg';
-        }
+        setMsg(m, 'Working…', '');
         try {
             const res = await call(name, data);
-            if (m) {
-                m.textContent = ok || 'Done.';
-                m.className = 'ad-quote-msg is-ok';
-            }
+            setMsg(m, ok || 'Done.', 'is-ok');
             return res;
         } catch (err) {
-            if (m) {
-                m.textContent = err.message || 'Failed.';
-                m.className = 'ad-quote-msg is-bad';
-            }
+            setMsg(m, err.message || 'Failed.', 'is-bad');
             throw err;
         }
     };
@@ -10669,27 +10233,27 @@ function wireQuoteActions() {
             if (state.openQuoteId === '__new__') return;
             try {
                 const res = await run('adminSendQuote', { id: state.openQuoteId }, 'Sent to the customer.');
-                if (res && !res.sent) {
-                    const m = msg();
-                    if (m) {
-                        m.textContent = 'Not sent: ' + (res.error || res.reason || 'unknown');
-                        m.className = 'ad-quote-msg is-bad';
-                    }
-                }
+                if (res && !res.sent) setMsg(msg(), 'Not sent: ' + (res.error || res.reason || 'unknown'), 'is-bad');
                 render();
             } catch (e) {
                 /* message shown */
             }
         });
 
-    const accept = document.getElementById('q-accept');
-    if (accept)
-        accept.addEventListener('click', async () => {
+    // a button that moves the quote to a status, then redraws
+    const statusButton = (elId, status, ok) => {
+        const btn = document.getElementById(elId);
+        if (!btn) return;
+        btn.addEventListener('click', async () => {
             try {
-                await run('adminSetQuoteStatus', { id: state.openQuoteId, status: 'accepted' }, 'Accepted - now an invoice.');
+                await run('adminSetQuoteStatus', { id: state.openQuoteId, status }, ok);
                 render();
-            } catch (e) {}
+            } catch (e) {
+                /* message shown */
+            }
         });
+    };
+    statusButton('q-accept', 'accepted', 'Accepted - now an invoice.');
 
     // UNDO ACCEPT: puts the quote back to "sent" so the customer can accept again
     // (e.g. a test click). Refused on the server if any card money was taken.
@@ -10724,23 +10288,8 @@ function wireQuoteActions() {
             if (m) m.textContent = 'Copy made - this is the new quote.';
         });
 
-    const invoice = document.getElementById('q-invoice');
-    if (invoice)
-        invoice.addEventListener('click', async () => {
-            try {
-                await run('adminSetQuoteStatus', { id: state.openQuoteId, status: 'invoiced' }, 'Converted to invoice.');
-                render();
-            } catch (e) {}
-        });
-
-    const paid = document.getElementById('q-paid');
-    if (paid)
-        paid.addEventListener('click', async () => {
-            try {
-                await run('adminSetQuoteStatus', { id: state.openQuoteId, status: 'paid' }, 'Marked paid.');
-                render();
-            } catch (e) {}
-        });
+    statusButton('q-invoice', 'invoiced', 'Converted to invoice.');
+    statusButton('q-paid', 'paid', 'Marked paid.');
 
     const cancel = document.getElementById('q-cancel');
     if (cancel)
@@ -10814,11 +10363,10 @@ function quoteDraftForSave() {
             days: 1
         });
     }
-    const feeCents = quoteDraftMoney(quoteDraft).feeCents;
+    const { feeCents, superCents } = quoteDraftMoney(quoteDraft);
     if (feeCents > 0) {
         lines.push({ type: 'fee', name: 'Booking & admin', qty: 1, unitCents: feeCents, days: 1 });
     }
-    const superCents = quoteDraftMoney(quoteDraft).superCents;
     if (superCents > 0) {
         lines.push({
             type: 'custom',
@@ -11033,23 +10581,14 @@ async function saveQuoteDoc(btn, quiet) {
             state.quoteFromLeadId = '';
         }
         if (!quiet) {
-            if (m) {
-                m.textContent = 'Saved.';
-                m.className = 'ad-quote-msg is-ok';
-            }
+            setMsg(m, 'Saved.', 'is-ok');
             render(); // repaint so the number, link and actions appear
             const m2 = document.getElementById('q-msg');
-            if (m2) {
-                m2.textContent = 'Saved.';
-                m2.className = 'ad-quote-msg is-ok';
-            }
+            setMsg(m2, 'Saved.', 'is-ok');
         }
         return res;
     } catch (err) {
-        if (m) {
-            m.textContent = err.message || 'Could not save.';
-            m.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(m, err.message || 'Could not save.', 'is-bad');
         throw err;
     } finally {
         if (btn) btn.disabled = false;
@@ -11113,16 +10652,7 @@ function subscribeToPackages() {
         onSnapshot(
             collection(fb.db, 'packages'),
             (snap) => {
-                const rows = [];
-                snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
-                // Findo's new finds stay with Phil until he's checked and filled them in
-                state.withPhil = rows.filter((r) => (r.foundBy === 'Findo' || r.foundBy === 'Tell') && !r.enrichedAt).length;
-                for (let i = rows.length - 1; i >= 0; i--)
-                    if ((rows[i].foundBy === 'Findo' || rows[i].foundBy === 'Tell') && !rows[i].enrichedAt) rows.splice(i, 1);
-                // "Delete" is a safe delete (Max never hard-deletes): archived leads are kept
-                // so Findo won't re-add them and they can be restored from the menu
-                state.archivedLeads = rows.filter((r) => r.archived);
-                for (let i = rows.length - 1; i >= 0; i--) if (rows[i].archived) rows.splice(i, 1);
+                const rows = snapRows(snap);
                 rows.sort(
                     (a, b) =>
                         (a.eventType || '').localeCompare(b.eventType || '') ||
@@ -11143,9 +10673,8 @@ function subscribeToPackages() {
 
 /*  Every inventory item keyed by id, for the kit engine and lookups. */
 function invByIdMap() {
-    const items = typeof invItems === 'function' ? invItems() : [];
     const byId = {};
-    items.forEach((it) => {
+    invItems().forEach((it) => {
         byId[it.id] = it;
     });
     return byId;
@@ -11528,17 +11057,8 @@ function pkgSearchAdder(target) {
 function renderPkgTab() {
     const host = document.getElementById('pkg-tabbody');
     if (!host) return;
-    const tab = state.pkgTab || 'details';
-    host.innerHTML =
-        tab === 'details'
-            ? pkgDetailsTab()
-            : tab === 'equipment'
-              ? pkgEquipmentTab()
-              : tab === 'extras'
-                ? pkgExtrasTab()
-                : tab === 'pricing'
-                  ? pkgPricingTab()
-                  : pkgPreviewTab();
+    const tabs = { details: pkgDetailsTab, equipment: pkgEquipmentTab, extras: pkgExtrasTab, pricing: pkgPricingTab };
+    host.innerHTML = (tabs[state.pkgTab || 'details'] || pkgPreviewTab)();
 
     host.querySelectorAll('[data-pkg-search]').forEach((input) => {
         const box = input.parentElement.querySelector('[data-pkg-results]');
@@ -11733,17 +11253,17 @@ function wirePackageDetail() {
             return;
         }
         if (t.hasAttribute('data-poverride')) {
-            packageDraft.overrideCents = Math.max(0, Math.round(Number(t.value || 0) * 100));
+            packageDraft.overrideCents = toCents(t.value);
             updatePkgPriceView();
             return;
         }
         if (t.hasAttribute('data-pdisc')) {
-            packageDraft.discountCents = Math.max(0, Math.round(Number(t.value || 0) * 100));
+            packageDraft.discountCents = toCents(t.value);
             updatePkgPriceView();
             return;
         }
         if (t.hasAttribute('data-pmin')) {
-            packageDraft.minCents = Math.max(0, Math.round(Number(t.value || 0) * 100));
+            packageDraft.minCents = toCents(t.value);
             updatePkgPriceView();
             return;
         }
@@ -11758,31 +11278,22 @@ function wirePackageDetail() {
             return;
         }
 
-        const inc = e.target.closest('[data-pi-inc]');
-        const dec = e.target.closest('[data-pi-dec]');
-        const pdel = e.target.closest('[data-pi-del]');
-        if (inc || dec || pdel) {
-            const row = e.target.closest('[data-pi]');
+        // pi = an included gear row, xi = an extra
+        for (const [a, list] of [
+            ['pi', packageDraft.items],
+            ['xi', packageDraft.extras]
+        ]) {
+            const inc = e.target.closest('[data-' + a + '-inc]');
+            const dec = e.target.closest('[data-' + a + '-dec]');
+            const del = e.target.closest('[data-' + a + '-del]');
+            if (!inc && !dec && !del) continue;
+            const row = e.target.closest('[data-' + a + ']');
             if (!row) return;
-            const i = Number(row.getAttribute('data-pi'));
-            const it = packageDraft.items[i];
+            const i = Number(row.getAttribute('data-' + a));
+            const it = list[i];
             if (!it) return;
-            if (pdel) packageDraft.items.splice(i, 1);
+            if (del) list.splice(i, 1);
             else it.qty = Math.max(1, Math.round((it.qty || 1) + (inc ? 1 : -1)));
-            renderPkgTab();
-            return;
-        }
-        const xinc = e.target.closest('[data-xi-inc]');
-        const xdec = e.target.closest('[data-xi-dec]');
-        const xdel = e.target.closest('[data-xi-del]');
-        if (xinc || xdec || xdel) {
-            const row = e.target.closest('[data-xi]');
-            if (!row) return;
-            const i = Number(row.getAttribute('data-xi'));
-            const it = packageDraft.extras[i];
-            if (!it) return;
-            if (xdel) packageDraft.extras.splice(i, 1);
-            else it.qty = Math.max(1, Math.round((it.qty || 1) + (xinc ? 1 : -1)));
             renderPkgTab();
             return;
         }
@@ -11798,10 +11309,7 @@ async function savePackage(btn) {
     const msg = document.getElementById('pkg-msg');
     const p = packageDraft;
     if (!String(p.name || '').trim()) {
-        if (msg) {
-            msg.textContent = 'Give the package a name first.';
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, 'Give the package a name first.', 'is-bad');
         return;
     }
     const clean = {
@@ -11823,10 +11331,7 @@ async function savePackage(btn) {
         updatedAt: Date.now()
     };
 
-    if (msg) {
-        msg.textContent = 'Saving…';
-        msg.className = 'ad-quote-msg';
-    }
+    setMsg(msg, 'Saving…', '');
     if (btn) btn.disabled = true;
     try {
         const { collection, doc, setDoc, addDoc } = fb.f;
@@ -11844,16 +11349,10 @@ async function savePackage(btn) {
             if (cur) Object.assign(cur, clean);
             else state.packages.push({ id, ...clean });
         }
-        if (msg) {
-            msg.textContent = 'Saved.';
-            msg.className = 'ad-quote-msg is-ok';
-        }
+        setMsg(msg, 'Saved.', 'is-ok');
         render();
     } catch (err) {
-        if (msg) {
-            msg.textContent = err.message || 'Could not save.';
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, err.message || 'Could not save.', 'is-bad');
     } finally {
         if (btn) btn.disabled = false;
     }
@@ -11876,10 +11375,7 @@ async function deletePackage(btn) {
         render();
     } catch (err) {
         const msg = document.getElementById('pkg-msg');
-        if (msg) {
-            msg.textContent = err.message || 'Could not delete.';
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, err.message || 'Could not delete.', 'is-bad');
         if (btn) btn.disabled = false;
     }
 }
@@ -11918,8 +11414,7 @@ function subscribeToResources() {
         onSnapshot(
             collection(fb.db, 'resources'),
             (snap) => {
-                const rows = [];
-                snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
+                const rows = snapRows(snap);
                 rows.sort(
                     (a, b) =>
                         (rank[a.type] ?? 9) - (rank[b.type] ?? 9) ||
@@ -12109,7 +11604,6 @@ function wireResourceList() {
 }
 
 function resourceFromDoc(doc) {
-    const b = blankResource(doc.type);
     return {
         type: RES_TYPES[doc.type] ? doc.type : 'staff',
         name: doc.name || '',
@@ -12202,7 +11696,7 @@ function wireResourceDetail() {
         if (!t.dataset.rf) return;
         const f = t.dataset.rf;
         if (f === 'active') resourceDraft.active = t.checked;
-        else if (f === 'dayRateCents') resourceDraft.dayRateCents = Math.max(0, Math.round(Number(t.value || 0) * 100));
+        else if (f === 'dayRateCents') resourceDraft.dayRateCents = toCents(t.value);
         else resourceDraft[f] = t.value;
     });
 
@@ -12224,59 +11718,36 @@ async function saveResource(btn) {
     const msg = document.getElementById('res-msg');
     const r = resourceDraft;
     if (!String(r.name || '').trim()) {
-        if (msg) {
-            msg.textContent = 'Give it a name first.';
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, 'Give it a name first.', 'is-bad');
         return;
     }
     const type = RES_TYPES[r.type] ? r.type : 'staff';
+    const isStaff = type === 'staff';
+    const text = (v, max) =>
+        String(v || '')
+            .trim()
+            .slice(0, max);
+    // staff keep role / phone / email (for job emails); vehicles and trailers keep rego / capacity
     const clean = {
         type,
         name: String(r.name).trim().slice(0, 120),
-        role:
-            type === 'staff'
-                ? String(r.role || '')
-                      .trim()
-                      .slice(0, 80)
-                : '',
-        phone:
-            type === 'staff'
-                ? String(r.phone || '')
-                      .trim()
-                      .slice(0, 40)
-                : '',
-        email:
-            type === 'staff'
-                ? String(r.email || '')
-                      .trim()
-                      .toLowerCase()
-                      .slice(0, 200)
-                : '', // job emails
-        rego:
-            type !== 'staff'
-                ? String(r.rego || '')
-                      .trim()
-                      .slice(0, 40)
-                : '',
-        capacity:
-            type !== 'staff'
-                ? String(r.capacity || '')
-                      .trim()
-                      .slice(0, 80)
-                : '',
+        role: isStaff ? text(r.role, 80) : '',
+        phone: isStaff ? text(r.phone, 40) : '',
+        email: isStaff
+            ? String(r.email || '')
+                  .trim()
+                  .toLowerCase()
+                  .slice(0, 200)
+            : '',
+        rego: isStaff ? '' : text(r.rego, 40),
+        capacity: isStaff ? '' : text(r.capacity, 80),
         dayRateCents: Math.max(0, Math.round(r.dayRateCents || 0)),
         active: r.active !== false,
-        notes: String(r.notes || '')
-            .trim()
-            .slice(0, 1000),
+        notes: text(r.notes, 1000),
         updatedAt: Date.now()
     };
 
-    if (msg) {
-        msg.textContent = 'Saving…';
-        msg.className = 'ad-quote-msg';
-    }
+    setMsg(msg, 'Saving…', '');
     if (btn) btn.disabled = true;
     try {
         const { collection, doc, setDoc, addDoc } = fb.f;
@@ -12293,16 +11764,10 @@ async function saveResource(btn) {
             if (cur) Object.assign(cur, clean);
             else state.resources.push({ id, ...clean });
         }
-        if (msg) {
-            msg.textContent = 'Saved.';
-            msg.className = 'ad-quote-msg is-ok';
-        }
+        setMsg(msg, 'Saved.', 'is-ok');
         render();
     } catch (err) {
-        if (msg) {
-            msg.textContent = err.message || 'Could not save.';
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, err.message || 'Could not save.', 'is-bad');
     } finally {
         if (btn) btn.disabled = false;
     }
@@ -12325,10 +11790,7 @@ async function deleteResource(btn) {
         render();
     } catch (err) {
         const msg = document.getElementById('res-msg');
-        if (msg) {
-            msg.textContent = err.message || 'Could not delete.';
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, err.message || 'Could not delete.', 'is-bad');
         if (btn) btn.disabled = false;
     }
 }
@@ -12406,8 +11868,7 @@ function subscribeToCustomers() {
         onSnapshot(
             collection(fb.db, 'customers'),
             (snap) => {
-                const rows = [];
-                snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
+                const rows = snapRows(snap);
                 rows.sort((a, b) =>
                     (a.name || a.business || '').localeCompare(b.name || b.business || '', undefined, { sensitivity: 'base' })
                 );
@@ -12675,14 +12136,12 @@ function wireCustomerDetail() {
             state.openCustomerId = null;
             render();
         });
-    panel.addEventListener('input', (e) => {
+    const onField = (e) => {
         const f = e.target.dataset.cf;
         if (f) customerDraft[f] = e.target.value;
-    });
-    panel.addEventListener('change', (e) => {
-        const f = e.target.dataset.cf;
-        if (f) customerDraft[f] = e.target.value;
-    });
+    };
+    panel.addEventListener('input', onField);
+    panel.addEventListener('change', onField);
     const save = document.getElementById('cust-save');
     if (save) save.addEventListener('click', () => saveCustomer(save));
     const del = document.getElementById('cust-delete');
@@ -12704,10 +12163,7 @@ async function saveCustomer(btn) {
     const msg = document.getElementById('cust-msg');
     const c = customerDraft;
     if (!String(c.name || c.business || '').trim()) {
-        if (msg) {
-            msg.textContent = 'Add a name or business first.';
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, 'Add a name or business first.', 'is-bad');
         return;
     }
     const isNew = state.openCustomerId === '__new__';
@@ -12716,10 +12172,7 @@ async function saveCustomer(btn) {
 
     const clean = cleanCustomer(c);
     if (btn) btn.disabled = true;
-    if (msg) {
-        msg.textContent = 'Saving…';
-        msg.className = 'ad-quote-msg';
-    }
+    setMsg(msg, 'Saving…', '');
     try {
         const { collection, doc, setDoc, addDoc } = fb.f;
         state.customers = state.customers || [];
@@ -12737,15 +12190,9 @@ async function saveCustomer(btn) {
         }
         render();
         const m2 = document.getElementById('cust-msg');
-        if (m2) {
-            m2.textContent = 'Saved.';
-            m2.className = 'ad-quote-msg is-ok';
-        }
+        setMsg(m2, 'Saved.', 'is-ok');
     } catch (err) {
-        if (msg) {
-            msg.textContent = err.message || 'Could not save.';
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, err.message || 'Could not save.', 'is-bad');
     } finally {
         if (btn) btn.disabled = false;
     }
@@ -12764,10 +12211,7 @@ async function deleteCustomer(btn) {
         render();
     } catch (err) {
         const msg = document.getElementById('cust-msg');
-        if (msg) {
-            msg.textContent = err.message || 'Could not delete.';
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, err.message || 'Could not delete.', 'is-bad');
         if (btn) btn.disabled = false;
     }
 }
@@ -12815,10 +12259,7 @@ async function importCustomers(btn) {
             )
     );
     if (!fresh.length) {
-        if (msg) {
-            msg.textContent = 'Everyone from past quotes is already in Customers.';
-            msg.className = 'ad-quote-msg is-ok';
-        }
+        setMsg(msg, 'Everyone from past quotes is already in Customers.', 'is-ok');
         return;
     }
     if (!window.confirm(`Add ${fresh.length} customer${fresh.length === 1 ? '' : 's'} from past quotes and enquiries?`)) return;
@@ -12832,15 +12273,9 @@ async function importCustomers(btn) {
             clean.source = c.source;
             await addDoc(collection(fb.db, 'customers'), clean);
         }
-        if (msg) {
-            msg.textContent = `Added ${fresh.length} customer${fresh.length === 1 ? '' : 's'}.`;
-            msg.className = 'ad-quote-msg is-ok';
-        }
+        setMsg(msg, `Added ${fresh.length} customer${fresh.length === 1 ? '' : 's'}.`, 'is-ok');
     } catch (err) {
-        if (msg) {
-            msg.textContent = (err && err.message) || 'Import stopped part way - press Import again to finish.';
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, (err && err.message) || 'Import stopped part way - press Import again to finish.', 'is-bad');
     } finally {
         if (btn) btn.disabled = false;
     }
@@ -12913,8 +12348,14 @@ function pickQuoteCustomer(id) {
     const r = (state.customers || []).find((x) => x.id === id);
     if (!r) return;
     quoteCustomerId = id;
-    quoteDraft.customer = {
-        ...quoteDraft.customer,
+    quoteDraft.customer = { ...quoteDraft.customer, ...custContact(r) };
+    render();
+    scheduleQuoteAutosave();
+}
+
+/*  The contact details a saved customer puts on a quote. */
+function custContact(r) {
+    return {
         name: r.name || '',
         business: r.business || '',
         address: r.address || '',
@@ -12922,8 +12363,6 @@ function pickQuoteCustomer(id) {
         email: r.email || '',
         ccEmail: r.ccEmail || ''
     };
-    render();
-    scheduleQuoteAutosave();
 }
 
 /*  After a quote saves: update the picked customer's details, or add a new
@@ -12940,7 +12379,7 @@ async function syncCustomerFromQuote() {
             const changes = {};
             ['name', 'business', 'address', 'phone', 'email', 'ccEmail'].forEach((k) => {
                 const v = String(c[k] || '').trim();
-                if (v && v !== (target[k] || '')) changes[k] = v.slice(0, k === 'address' ? 300 : k === 'ccEmail' ? 600 : 200);
+                if (v && v !== (target[k] || '')) changes[k] = v.slice(0, { address: 300, ccEmail: 600 }[k] || 200);
             });
             if (Object.keys(changes).length) {
                 changes.updatedAt = Date.now();
@@ -12964,15 +12403,7 @@ function startQuoteForCustomer(id) {
     const r = (state.customers || []).find((x) => x.id === id);
     if (!r) return;
     quoteDraft = blankQuote();
-    quoteDraft.customer = {
-        ...quoteDraft.customer,
-        name: r.name || '',
-        business: r.business || '',
-        address: r.address || '',
-        phone: r.phone || '',
-        email: r.email || '',
-        ccEmail: r.ccEmail || ''
-    };
+    quoteDraft.customer = { ...quoteDraft.customer, ...custContact(r) };
     quoteCustomerId = id;
     state.openCustomerId = null;
     state.openQuoteId = '__new__';
@@ -13191,6 +12622,14 @@ function leadPriority(r) {
 
 let leadDraft = blankLead();
 
+/*  The rating deck redraws on outside changes, but not mid-save or while a tip is typed. */
+function rateDeckCanRedraw() {
+    if (state.view !== 'leadRate') return false;
+    if (state.rate && (state.rate.busy || state.rate.edit || state.rate.tip || state.rate.sheet)) return false;
+    const a = document.activeElement;
+    return !(a && a.matches && a.matches('[data-rate-tip-text]'));
+}
+
 function subscribeToScout() {
     const { doc, onSnapshot } = fb.f;
     unsubscribes.push(
@@ -13198,12 +12637,7 @@ function subscribeToScout() {
             doc(fb.db, 'scout', 'state'),
             (d) => {
                 state.scoutState = d.exists() ? d.data() : {};
-                if (
-                    state.view === 'leadRate' &&
-                    !(state.rate && (state.rate.busy || state.rate.edit || state.rate.tip || state.rate.sheet)) &&
-                    !(document.activeElement && document.activeElement.matches && document.activeElement.matches('[data-rate-tip-text]'))
-                )
-                    render();
+                if (rateDeckCanRedraw()) render();
             },
             (err) => console.error('scout', err)
         )
@@ -13216,8 +12650,13 @@ function subscribeToLeads() {
         onSnapshot(
             collection(fb.db, 'leads'),
             (snap) => {
-                const rows = [];
-                snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
+                let rows = snapRows(snap);
+                // Findo's new finds stay with Phil until he's checked and filled them in
+                const withPhil = (r) => (r.foundBy === 'Findo' || r.foundBy === 'Tell') && !r.enrichedAt;
+                state.withPhil = rows.filter(withPhil).length;
+                // "Delete" only archives: kept so Findo won't re-add them, restorable from the menu
+                state.archivedLeads = rows.filter((r) => r.archived);
+                rows = rows.filter((r) => !withPhil(r) && !r.archived);
                 /*  Open leads first (by pipeline order), then Max's stars, then the
           imported heat (Hot first) and win %, then name. Won/Lost fall to
           the bottom - they are done with.                                 */
@@ -13238,13 +12677,7 @@ function subscribeToLeads() {
                     if (state.openLeadId) renderLeadListParts(true);
                     else render();
                 }
-                // the rating deck redraws on outside changes, but not mid-save
-                if (
-                    state.view === 'leadRate' &&
-                    !(state.rate && (state.rate.busy || state.rate.edit || state.rate.tip || state.rate.sheet)) &&
-                    !(document.activeElement && document.activeElement.matches && document.activeElement.matches('[data-rate-tip-text]'))
-                )
-                    render();
+                if (rateDeckCanRedraw()) render();
             },
             (err) => console.error('leads', err)
         )
@@ -13287,7 +12720,6 @@ function leadFiltered(ignoreMonth) {
     const kf = state.leadContactFilter || 'all';
     const rf = state.leadRegionFilter || 'all';
     const sf = state.leadSizeFilter || 'all';
-    const ff = 'all'; // Fit filter is off
     const chip = state.leadChip || 'all';
     const needle = (state.leadSearch || '').trim().toLowerCase();
     return rows.filter((r) => {
@@ -13300,8 +12732,6 @@ function leadFiltered(ignoreMonth) {
         if (kf === 'phone' && !String(r.phone || '').trim()) return false;
         if (rf !== 'all' && leadRegion(r) !== rf) return false;
         if (sf !== 'all' && leadSize(r) !== sf) return false;
-        if (ff === 'unrated' && Math.round(r.rating || 0)) return false;
-        if (ff !== 'all' && ff !== 'unrated' && Math.round(r.rating || 0) !== Number(ff)) return false;
         if (!leadChipMatch(r, chip)) return false;
         if ((state.leadRange || 'all') !== 'all' && !leadInRange(r, state.leadRange)) return false;
         if (!ignoreMonth && state.leadMonth && leadMonthKey(r) !== state.leadMonth) return false;
@@ -13366,11 +12796,10 @@ function leadFollowState(r) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(fu)) return '';
     const st = r.stage || 'new';
     if (st === 'won' || st === 'lost') return '';
-    if (fu < leadTodayIso()) return 'overdue';
+    if (fu < todayIso()) return 'overdue';
     const wk = new Date();
     wk.setDate(wk.getDate() + 7);
-    const wkIso = wk.getFullYear() + '-' + String(wk.getMonth() + 1).padStart(2, '0') + '-' + String(wk.getDate()).padStart(2, '0');
-    return fu <= wkIso ? 'due' : '';
+    return fu <= isoDay(wk) ? 'due' : '';
 }
 
 /*  A published supplier deadline (EOI / tender): when it closes and how
@@ -13378,8 +12807,11 @@ function leadFollowState(r) {
 function leadEoi(r) {
     const d = String(r.eoiDate || '').slice(0, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return null;
-    const days = Math.round((new Date(d + 'T00:00:00') - new Date(leadTodayIso() + 'T00:00:00')) / 86400000);
-    return { date: d, days, state: days < 0 ? 'closed' : days <= 30 ? 'soon' : 'later', note: String(r.eoiNote || '').trim() };
+    const days = Math.round((new Date(d + 'T00:00:00') - new Date(todayIso() + 'T00:00:00')) / 86400000);
+    let when = 'later';
+    if (days < 0) when = 'closed';
+    else if (days <= 30) when = 'soon';
+    return { date: d, days, state: when, note: String(r.eoiNote || '').trim() };
 }
 const LEAD_POWER = { mains: 'Mains power on site', generator: 'Generator needed', unknown: 'Power unknown' };
 
@@ -13440,7 +12872,10 @@ function leadCrowdNum(r) {
 function leadSize(r) {
     const n = leadCrowdNum(r);
     if (!n) return 'unknown';
-    return n < 300 ? 'small' : n < 2000 ? 'medium' : n < 10000 ? 'large' : 'major';
+    if (n < 300) return 'small';
+    if (n < 2000) return 'medium';
+    if (n < 10000) return 'large';
+    return 'major';
 }
 
 /*  The next thing to do on a lead, worked out from where it's up to.
@@ -13519,6 +12954,9 @@ function leadFyWeek(monday) {
     return { week, fyYear, label };
 }
 
+const VERDICT_LANE = { chase: 'high', save: 'medium', pass: 'low' };
+const LANE_WORD = { won: 'won', high: 'chase', medium: 'maybe', low: 'skip' };
+
 function leadCalendarHtml() {
     const now = new Date();
     const nowKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
@@ -13554,18 +12992,8 @@ function leadCalendarHtml() {
             return;
         }
         const wk = leadWeekKey(r);
-        // only leads Max has rated get a dot - imported heat doesn't count
-        // calendar lanes follow Max's sorting: Won / Chase / Maybe (saved) / Skip (passed)
-        const p =
-            r.stage === 'won'
-                ? 'won'
-                : r.verdict === 'chase'
-                  ? 'high'
-                  : r.verdict === 'save'
-                    ? 'medium'
-                    : r.verdict === 'pass'
-                      ? 'low'
-                      : '';
+        // only leads Max has sorted get a dot: Won / Chase / Maybe (saved) / Skip (passed)
+        const p = r.stage === 'won' ? 'won' : VERDICT_LANE[r.verdict] || '';
         if (p) {
             (byMonth[k] = byMonth[k] || []).push(p);
             if (wk) (byWeek[wk] = byWeek[wk] || []).push(p);
@@ -13585,7 +13013,7 @@ function leadCalendarHtml() {
         const r = { eventDate: iso };
         const k = leadMonthKey(r);
         const wk = leadWeekKey(r);
-        if (!k || !byMonth) return;
+        if (!k) return;
         (byMonth[k] = byMonth[k] || []).push('won');
         if (wk) {
             (byWeek[wk] = byWeek[wk] || []).push('won');
@@ -13631,10 +13059,9 @@ function leadCalendarHtml() {
                           .map((p) => (cnt[p] ? `<i class="lead-cdot is-${p}">${cnt[p]}</i>` : '<i class="lead-cdot is-empty"></i>'))
                           .join('')
                     : '';
-                const LANE = { won: 'won', high: 'chase', medium: 'maybe', low: 'skip' };
                 const breakdown = ['won', 'high', 'medium', 'low']
                     .filter((p) => cnt[p])
-                    .map((p) => `${cnt[p]} ${LANE[p]}`)
+                    .map((p) => `${cnt[p]} ${LANE_WORD[p]}`)
                     .join(', ');
                 return `<button type="button" class="lead-wslot${on ? ' is-sel' : ''}${isToday ? ' is-today' : ''}${list.length ? '' : ' is-empty'}"
                 data-lead-week="${w.key}" aria-pressed="${on}"
@@ -13938,12 +13365,6 @@ function leadValueHtml(r) {
         : `<span class="lead-val is-est" title="Your estimate">~${leadDollars(v.cents)}</span>`;
 }
 
-function leadTodayIso() {
-    const t = new Date();
-    return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
-}
-
-/*  "2 days ago" for the last-contact column. */
 /*  How fresh a lead's info is: when the research last checked it (green
     under a month, amber under 3 months, red older) and when Max last
     changed it himself (the newest History entry).                     */
@@ -13953,7 +13374,9 @@ function leadFreshHtml(r) {
     let txt = "Phil hasn't checked this yet";
     if (/^\d{4}-\d{2}-\d{2}$/.test(at)) {
         const days = Math.round((new Date().setHours(0, 0, 0, 0) - new Date(at + 'T00:00:00')) / 86400000);
-        cls = days <= 30 ? 'is-fresh' : days <= 90 ? 'is-aging' : 'is-stale';
+        if (days <= 30) cls = 'is-fresh';
+        else if (days <= 90) cls = 'is-aging';
+        else cls = 'is-stale';
         const rel = leadRelDay(at);
         txt = 'Phil checked ' + fmtLeadDate(at) + (/ago|Today|Yesterday/.test(rel) ? ' · ' + rel.toLowerCase() : '');
     }
@@ -13986,9 +13409,9 @@ function leadHasExactDate(r) {
 /*  A month-only lead is taken as mid-month (the 15th) - the same day it
     sorts on - so late in a month, "Sep annual" counts as been and gone.  */
 function leadIsPast(r) {
-    if (leadHasExactDate(r)) return r.eventDate.slice(0, 10) < leadTodayIso();
+    if (leadHasExactDate(r)) return r.eventDate.slice(0, 10) < todayIso();
     const k = leadMonthKey(r);
-    return !!k && k + '-15' < leadTodayIso();
+    return !!k && k + '-15' < todayIso();
 }
 
 /*  The "Showing:" range. Past events never count as upcoming, even when
@@ -14001,7 +13424,7 @@ function leadInRange(r, rg) {
     if (rg === 'past') return past;
     if (past) return false;
     const now = new Date();
-    const span = rg === 'month' ? 1 : rg === 'next3' ? 3 : 12;
+    const span = { month: 1, next3: 3 }[rg] || 12;
     const end = new Date(now.getFullYear(), now.getMonth() + span - 1, 1);
     const endKey = end.getFullYear() + '-' + String(end.getMonth() + 1).padStart(2, '0');
     return k <= endKey;
@@ -14096,7 +13519,10 @@ function leadSorted(rows) {
     //  "Date (soonest)": upcoming first, then no-date-yet, then past (most
     //  recent first) - so the top of the list is always what's next.
     if (key === 'date' && dir === 'asc') {
-        const grp = (r) => (!leadMonthKey(r) ? 1 : leadIsPast(r) ? 2 : 0);
+        const grp = (r) => {
+            if (!leadMonthKey(r)) return 1;
+            return leadIsPast(r) ? 2 : 0;
+        };
         return out.sort((a, b) => {
             const g = grp(a) - grp(b);
             if (g) return g;
@@ -14114,7 +13540,9 @@ function leadSorted(rows) {
             vb = leadSortValue(b, key);
         const ea = blank(va),
             eb = blank(vb);
-        if (ea || eb) return ea && eb ? byName(a, b) : ea ? 1 : -1;
+        if (ea && eb) return byName(a, b);
+        if (ea) return 1;
+        if (eb) return -1;
         const c =
             typeof va === 'number' && typeof vb === 'number'
                 ? va - vb
@@ -14299,7 +13727,7 @@ function leadIcsDownload(r, id) {
     const start = day.replace(/-/g, '');
     const n = new Date(day + 'T00:00:00');
     n.setDate(n.getDate() + 1);
-    const end = n.getFullYear() + String(n.getMonth() + 1).padStart(2, '0') + String(n.getDate()).padStart(2, '0');
+    const end = isoDay(n).replace(/-/g, '');
     const ic = (s) =>
         String(s || '')
             .replace(/\\/g, '\\\\')
@@ -14388,7 +13816,6 @@ function leadMainHtml() {
     const cf = state.leadCatFilter;
     const rf = state.leadRegionFilter || 'all';
     const sf = state.leadSizeFilter || 'all';
-    const ff = 'all'; // Fit filter is off
     const opt = (cur, v, l) => `<option value="${attr(v)}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`;
     const c = leadChipCounts();
     const ch = state.leadChip || 'all';
@@ -14506,9 +13933,6 @@ function leadPageList(page, pages) {
     return out;
 }
 
-/*  Road km from Bowen: Max's own figure if he set one, else the km in the
-    research's haul note ("~4 hr / 340 km"), else the delivery-zone distance
-    of a town named in the venue / town / title. null = unknown, 0 = local. */
 /*  Approximate road km from Bowen for towns outside the delivery zones - only
     used to sort leads by distance and show "~km from Bowen" (not for pricing). */
 const LEAD_TOWN_KM = {
@@ -14586,23 +14010,26 @@ const LEAD_TOWN_KM = {
     Cunnamulla: 1500
 };
 
+/*  Road km from Bowen: Max's own figure if he set one, else the delivery-zone
+    or known-town distance of a town named in the venue / town / title, else
+    the km in the research's haul note. null = unknown, 0 = local.          */
 function leadKm(r) {
     const own = Number(r.km);
     if (String(r.km || '').trim() !== '' && own >= 0) return Math.round(own);
     const text = [r.town, r.venue, r.title].filter(Boolean).join(' ');
+    // the longest town name found in the text wins
+    const named = (name) => new RegExp('\\b' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i').test(text);
     let best = null;
     DELIVERY_ZONES.forEach((z) => {
         const name = String(z.town || '')
             .replace(/\s*\(.*\)\s*/, '')
             .trim();
         if (!name || !(z.km >= 0)) return;
-        const re = new RegExp('\\b' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
-        if (re.test(text) && (!best || name.length > best.name.length)) best = { name, km: z.km };
+        if (named(name) && (!best || name.length > best.name.length)) best = { name, km: z.km };
     });
     if (best) return best.km;
     Object.entries(LEAD_TOWN_KM).forEach(([name, km]) => {
-        const re = new RegExp('\\b' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
-        if (re.test(text) && (!best || name.length > best.name.length)) best = { name, km };
+        if (named(name) && (!best || name.length > best.name.length)) best = { name, km };
     });
     if (best) return best.km;
     // the imported travel note (e.g. "~0.5 hr / 40 km") only when the town isn't known - it is often wrong
@@ -14722,8 +14149,6 @@ function leadEventYear(r) {
     const y = leadHasExactDate(r) ? Number(r.eventDate.slice(0, 4)) : new Date().getFullYear();
     return leadIsPast(r) ? y + 1 : y;
 }
-/*  The intro SMS: Scout's draft if Max asked for one, otherwise written
-    from what the lead holds - the event, the year, what they need.       */
 /*  Intro SMS rules:
     1. ONE simple question. No either/or, no package upsell, no extra pitch.
     2. Default: "Do you have your entertainment booked for this event?"
@@ -14753,6 +14178,8 @@ function leadSampleJob(r) {
     const text = [r.title, r.eventName, r.category, r.summary].join(' ');
     return LEAD_SAMPLE_JOBS.find((j) => j.match.test(text)) || null;
 }
+/*  The intro SMS: Scout's draft if Max asked for one, otherwise written
+    from what the lead holds - the event, the year, what they need.       */
 function leadSmsBody(r) {
     if (r.smsDraft && String(r.smsDraft).trim()) return String(r.smsDraft).trim();
     const who = leadFirstName(r);
@@ -14808,10 +14235,11 @@ function leadSmsBody(r) {
             'Max'
         ].join('\n');
     }
-    const opener =
-        nextYear && (recent || !leadIsPast(r))
-            ? `Hope this year's ${/cup/i.test(ev) ? 'Cup' : /rodeo/i.test(ev) ? 'Rodeo Weekend' : /\bshow\b/i.test(ev) ? 'Show' : 'event'} went well. `
-            : '';
+    let evWord = 'event';
+    if (/cup/i.test(ev)) evWord = 'Cup';
+    else if (/rodeo/i.test(ev)) evWord = 'Rodeo Weekend';
+    else if (/\bshow\b/i.test(ev)) evWord = 'Show';
+    const opener = nextYear && (recent || !leadIsPast(r)) ? `Hope this year's ${evWord} went well. ` : '';
     if (!who) {
         middle = `${opener}I'm just reaching out regarding ${evFull}${where}${when}. Who would be the best person to speak with about the event production and entertainment for it?`;
     } else if (job) {
@@ -14854,6 +14282,23 @@ function leadSmsHref(r) {
     const sep = /iPad|iPhone|iPod/.test(navigator.userAgent) ? '&' : '?';
     return `sms:${num}${sep}body=${encodeURIComponent(leadSmsBody(r))}`;
 }
+/*  The card's SMS button: off for council events and non-mobiles; a
+    next-year target says when to send it.                               */
+function leadSmsButtonHtml(r, phone, mobile) {
+    if (leadIsCouncil(r)) return '<span class="lead-mc-btn is-sms is-off" title="Council event - email, not SMS">💬 SMS</span>';
+    if (!mobile)
+        return `<span class="lead-mc-btn is-sms is-off" title="${phone ? 'Not a mobile number' : 'No phone number'}">💬 SMS</span>`;
+    const later = r.verdict === 'nextyear' && !leadIsPast(r) && leadHasExactDate(r);
+    let label = r.smsDraft ? 'SMS ✓' : 'SMS';
+    let title = '';
+    if (later) {
+        const when = fmtLeadDate(r.eventDate.slice(0, 10));
+        label = 'After ' + esc(when.replace(/\s+20\d\d$/, ''));
+        title = ` title="Target next year - best sent after ${attr(when)}"`;
+    }
+    return `<a class="lead-mc-btn is-sms${r.smsDraft ? ' is-checked' : ''}" href="${attr(leadSmsHref(r))}"${title}>💬 ${label}</a>`;
+}
+
 function leadMobileCardHtml(r) {
     const verified = ['verified', 'added', 'updated'].includes(r.contactCheck);
     const tick = verified ? '<i class="lead-mc-ok" title="Checked on an official page">✓</i>' : '';
@@ -14909,13 +14354,7 @@ function leadMobileCardHtml(r) {
     <div class="lead-mc-acts">
       <button type="button" class="lead-mc-btn is-email" data-mc-email="${attr(r.id)}"${okEmail ? '' : ' disabled'}>✉️ Email</button>
       ${phone ? `<a class="lead-mc-btn is-call" href="tel:${attr(phone.replace(/[^\d+]/g, ''))}">📞 Call</a>` : '<span class="lead-mc-btn is-call is-off">📞 Call</span>'}
-      ${
-          leadIsCouncil(r)
-              ? '<span class="lead-mc-btn is-sms is-off" title="Council event - email, not SMS">💬 SMS</span>'
-              : mobile
-                ? `<a class="lead-mc-btn is-sms${r.smsDraft ? ' is-checked' : ''}" href="${attr(leadSmsHref(r))}"${r.verdict === 'nextyear' && !leadIsPast(r) && leadHasExactDate(r) ? ` title="Target next year - best sent after ${attr(fmtLeadDate(r.eventDate.slice(0, 10)))}"` : ''}>💬 ${r.verdict === 'nextyear' && !leadIsPast(r) && leadHasExactDate(r) ? 'After ' + esc(fmtLeadDate(r.eventDate.slice(0, 10)).replace(/\s+20\d\d$/, '')) : r.smsDraft ? 'SMS ✓' : 'SMS'}</a>`
-                : `<span class="lead-mc-btn is-sms is-off" title="${phone ? 'Not a mobile number' : 'No phone number'}">💬 SMS</span>`
-      }
+      ${leadSmsButtonHtml(r, phone, mobile)}
       <button type="button" class="lead-mc-btn is-view" data-mc-view="${attr(r.id)}">View</button>
       <button type="button" class="lead-mc-btn is-next" data-mc-next="${attr(r.id)}">Next ›</button>
     </div>
@@ -15087,7 +14526,6 @@ function wireLeadList() {
     onSel('lead-f-cat', 'leadCatFilter');
     onSel('lead-f-region', 'leadRegionFilter');
     onSel('lead-f-size', 'leadSizeFilter');
-    onSel('lead-f-fit', 'leadFitFilter');
     onSel('lead-range', 'leadRange');
     const sortSel = document.getElementById('lead-sort');
     if (sortSel)
@@ -15191,54 +14629,53 @@ function wireLeadList() {
             }
         });
     const host = document.getElementById('lead-rows');
-    if (host)
-        host.addEventListener('keydown', (e) => {
-            const el = e.target.closest('.lead-fitr.is-edit [data-fit]');
-            if (el && (e.key === 'Enter' || e.key === ' ')) {
-                e.preventDefault();
-                el.click();
-            }
-        });
-    if (host)
-        host.addEventListener('click', (e) => {
-            if (e.target.closest('a')) return; // contact icons / search links open themselves
-            const fitBar = e.target.closest('.lead-fitr.is-edit [data-fit]');
-            if (fitBar) {
-                const id = fitBar.closest('[data-fit-id]').getAttribute('data-fit-id');
-                setLeadFit(id, Number(fitBar.getAttribute('data-fit')));
+    if (!host) return;
+    host.addEventListener('keydown', (e) => {
+        const el = e.target.closest('.lead-fitr.is-edit [data-fit]');
+        if (el && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            el.click();
+        }
+    });
+    host.addEventListener('click', (e) => {
+        if (e.target.closest('a')) return; // contact icons / search links open themselves
+        const fitBar = e.target.closest('.lead-fitr.is-edit [data-fit]');
+        if (fitBar) {
+            const id = fitBar.closest('[data-fit-id]').getAttribute('data-fit-id');
+            setLeadFit(id, Number(fitBar.getAttribute('data-fit')));
+            return;
+        }
+        const act = e.target.closest('[data-lead-nact]');
+        if (act) {
+            // the Next Action button: open the lead and do the thing
+            if (!openLead(act.getAttribute('data-id'), 'overview')) return;
+            const k = act.getAttribute('data-lead-nact');
+            if (k === 'email') {
+                openLeadCompose();
                 return;
             }
-            const act = e.target.closest('[data-lead-nact]');
-            if (act) {
-                // the Next Action button: open the lead and do the thing
-                if (!openLead(act.getAttribute('data-id'), 'overview')) return;
-                const k = act.getAttribute('data-lead-nact');
-                if (k === 'email') {
-                    openLeadCompose();
-                    return;
+            if (k === 'quote') {
+                if (leadDraft.linkedQuoteId) {
+                    state.openLeadId = null;
+                    location.hash = '#/quoteDocs?q=' + leadDraft.linkedQuoteId;
+                } else {
+                    createQuoteFromLead();
                 }
-                if (k === 'quote') {
-                    if (leadDraft.linkedQuoteId) {
-                        state.openLeadId = null;
-                        location.hash = '#/quoteDocs?q=' + leadDraft.linkedQuoteId;
-                    } else {
-                        createQuoteFromLead();
-                    }
-                    return;
-                }
-                render();
                 return;
             }
-            const r = e.target.closest('[data-open-lead]');
-            if (!r) return;
-            // the row's More button reads Less while its lead is open, and closes the side panel
-            if (r.classList.contains('lead-more') && r.getAttribute('data-open-lead') === state.openLeadId) {
-                state.openLeadId = null;
-                render();
-                return;
-            }
-            if (openLead(r.getAttribute('data-open-lead'), 'overview')) render();
-        });
+            render();
+            return;
+        }
+        const r = e.target.closest('[data-open-lead]');
+        if (!r) return;
+        // the row's More button reads Less while its lead is open, and closes the side panel
+        if (r.classList.contains('lead-more') && r.getAttribute('data-open-lead') === state.openLeadId) {
+            state.openLeadId = null;
+            render();
+            return;
+        }
+        if (openLead(r.getAttribute('data-open-lead'), 'overview')) render();
+    });
 }
 
 function leadFromDoc(doc) {
@@ -15328,6 +14765,12 @@ function leadOverviewHtml(r, doc) {
     const fuDate = /^\d{4}-\d{2}-\d{2}/.test(String(r.followUp || '')) ? fmtLeadDate(String(r.followUp).slice(0, 10)) : '';
     const about = leadAbout(r, doc);
     const eoi = leadEoi(r);
+    let eoiLeft = '';
+    if (eoi && eoi.state === 'closed') eoiLeft = ' (closed)';
+    else if (eoi && eoi.state === 'soon') eoiLeft = ` — ${eoi.days} day${eoi.days === 1 ? '' : 's'} left`;
+    let fuTag = '';
+    if (fu === 'overdue') fuTag = ' <span class="lead-fu is-overdue">overdue</span>';
+    else if (fu === 'due') fuTag = ' <span class="lead-fu is-due">this week</span>';
 
     return `
     <div class="lead-actions">
@@ -15348,8 +14791,8 @@ function leadOverviewHtml(r, doc) {
     ${
         fuDate || r.nextAction || eoi
             ? `<div class="lead-next${fu === 'overdue' || (eoi && eoi.state === 'soon') ? ' is-overdue' : ''}">
-      ${eoi ? `<p title="${attr(eoi.note)}"><strong>Supplier deadline:</strong> ${esc(fmtLeadDate(eoi.date))}${eoi.state === 'closed' ? ' (closed)' : eoi.state === 'soon' ? ` — ${eoi.days} day${eoi.days === 1 ? '' : 's'} left` : ''}${eoi.note ? ' · ' + esc(eoi.note) : ''}</p>` : ''}
-      ${fuDate ? `<p><strong>Follow up:</strong> ${esc(fuDate)}${fu === 'overdue' ? ' <span class="lead-fu is-overdue">overdue</span>' : fu === 'due' ? ' <span class="lead-fu is-due">this week</span>' : ''}</p>` : ''}
+      ${eoi ? `<p title="${attr(eoi.note)}"><strong>Supplier deadline:</strong> ${esc(fmtLeadDate(eoi.date))}${eoiLeft}${eoi.note ? ' · ' + esc(eoi.note) : ''}</p>` : ''}
+      ${fuDate ? `<p><strong>Follow up:</strong> ${esc(fuDate)}${fuTag}</p>` : ''}
       ${r.nextAction ? `<p class="lead-next-note" title="${attr(r.nextAction)}"><strong>Next step:</strong> ${esc(r.nextAction)}</p>` : ''}
     </div>`
             : ''
@@ -15441,7 +14884,9 @@ function leadHistoryHtml(r) {
 /* ---- files: briefs, maps, stage plots - private to the admin ---- */
 function leadFileSize(n) {
     n = Number(n) || 0;
-    return n < 1024 ? n + ' B' : n < 1048576 ? Math.round(n / 1024) + ' KB' : (n / 1048576).toFixed(1) + ' MB';
+    if (n < 1024) return n + ' B';
+    if (n < 1048576) return Math.round(n / 1024) + ' KB';
+    return (n / 1048576).toFixed(1) + ' MB';
 }
 function leadFilesHtml(r) {
     const files = Array.isArray(r.files) ? r.files : [];
@@ -15476,12 +14921,7 @@ function leadFilesHtml(r) {
 async function uploadLeadFiles(fileList) {
     const id = state.openLeadId;
     const msg = document.getElementById('lead-file-msg');
-    const say = (t, cls) => {
-        if (msg) {
-            msg.textContent = t;
-            msg.className = 'ad-quote-msg' + (cls ? ' ' + cls : '');
-        }
-    };
+    const say = (t, cls) => setMsg(msg, t, cls);
     if (!id || id === '__new__') {
         say('Save the lead first, then add files.', 'is-bad');
         return;
@@ -15546,10 +14986,7 @@ async function deleteLeadFile(path) {
         render();
     } catch (err) {
         const msg = document.getElementById('lead-file-msg');
-        if (msg) {
-            msg.textContent = err.message || 'Could not delete.';
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, err.message || 'Could not delete.', 'is-bad');
     }
 }
 
@@ -15829,7 +15266,7 @@ function wireLeadDetail() {
             return;
         }
         if (!t.dataset.lf) return;
-        if (t.dataset.lf === 'estValue') leadDraft.estValueCents = Math.max(0, Math.round(Number(t.value || 0) * 100));
+        if (t.dataset.lf === 'estValue') leadDraft.estValueCents = toCents(t.value);
         else leadDraft[t.dataset.lf] = t.value;
         if (t.dataset.lf === 'contactName' || t.dataset.lf === 'phone' || t.dataset.lf === 'email') contactsTabLabel();
     });
@@ -16006,17 +15443,11 @@ async function saveLead(btn) {
     const msg = document.getElementById('lead-msg');
     const r = leadDraft;
     if (!String(r.title || '').trim() && !String(r.contactName || '').trim()) {
-        if (msg) {
-            msg.textContent = 'Give it a name or a contact first.';
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, 'Give it a name or a contact first.', 'is-bad');
         return;
     }
     const clean = leadClean(r);
-    if (msg) {
-        msg.textContent = 'Saving…';
-        msg.className = 'ad-quote-msg';
-    }
+    setMsg(msg, 'Saving…', '');
     if (btn) btn.disabled = true;
     try {
         const { collection, doc, setDoc, addDoc, arrayUnion } = fb.f;
@@ -16043,16 +15474,10 @@ async function saveLead(btn) {
                 cur.history = [...(cur.history || []), ...log];
             } else state.leads.push({ id, ...clean, history: log });
         }
-        if (msg) {
-            msg.textContent = 'Saved.';
-            msg.className = 'ad-quote-msg is-ok';
-        }
+        setMsg(msg, 'Saved.', 'is-ok');
         render();
     } catch (err) {
-        if (msg) {
-            msg.textContent = err.message || 'Could not save.';
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, err.message || 'Could not save.', 'is-bad');
     } finally {
         if (btn) btn.disabled = false;
     }
@@ -16075,10 +15500,7 @@ async function deleteLead(btn) {
         render();
     } catch (err) {
         const msg = document.getElementById('lead-msg');
-        if (msg) {
-            msg.textContent = err.message || 'Could not delete.';
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, err.message || 'Could not delete.', 'is-bad');
         if (btn) btn.disabled = false;
     }
 }
@@ -16087,7 +15509,7 @@ async function deleteLead(btn) {
 /*  Council / civic events: an introduction that lists what we do. */
 function leadCouncilEmail(r, who, ev) {
     return [
-        `Hi ${who === 'there' ? 'there' : who},`,
+        `Hi ${who},`,
         '',
         `My name is Max from SoundzGood in North Queensland. I'm reaching out to introduce ourselves ahead of ${ev}.`,
         '',
@@ -16113,10 +15535,7 @@ function openLeadCompose() {
     const r = leadDraft;
     if (!String(r.email || '').trim()) {
         const msg = document.getElementById('lead-msg');
-        if (msg) {
-            msg.textContent = 'Add an email address first.';
-            msg.className = 'ad-quote-msg is-bad';
-        }
+        setMsg(msg, 'Add an email address first.', 'is-bad');
         return;
     }
     const who = (r.contactName || '').trim().split(/\s+/)[0] || 'there';
@@ -16207,23 +15626,14 @@ function wireLeadCompose() {
             const body = document.getElementById('lc-body').value || '';
             const msg = document.getElementById('lc-msg');
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
-                if (msg) {
-                    msg.textContent = 'That email does not look right.';
-                    msg.className = 'ad-quote-msg is-bad';
-                }
+                setMsg(msg, 'That email does not look right.', 'is-bad');
                 return;
             }
             if (!subject || !body.trim()) {
-                if (msg) {
-                    msg.textContent = 'Add a subject and a message.';
-                    msg.className = 'ad-quote-msg is-bad';
-                }
+                setMsg(msg, 'Add a subject and a message.', 'is-bad');
                 return;
             }
-            if (msg) {
-                msg.textContent = 'Sending…';
-                msg.className = 'ad-quote-msg';
-            }
+            setMsg(msg, 'Sending…', '');
             send.disabled = true;
             try {
                 await call('sendLeadEmail', { to, subject, body, leadId: state.leadCompose.leadId || '' });
@@ -16249,15 +15659,9 @@ function wireLeadCompose() {
                 state.leadCompose = null;
                 render();
                 const m2 = document.getElementById('lead-msg');
-                if (m2) {
-                    m2.textContent = 'Email sent.';
-                    m2.className = 'ad-quote-msg is-ok';
-                }
+                setMsg(m2, 'Email sent.', 'is-ok');
             } catch (err) {
-                if (msg) {
-                    msg.textContent = (err && err.message) || 'Could not send.';
-                    msg.className = 'ad-quote-msg is-bad';
-                }
+                setMsg(msg, (err && err.message) || 'Could not send.', 'is-bad');
                 send.disabled = false;
             }
         });
@@ -16288,12 +15692,13 @@ function rateState() {
 function rateBand(r) {
     const km = leadKm(r);
     if (km == null) return 3;
-    return km <= 80 ? 0 : km <= 300 ? 1 : 2;
+    if (km <= 80) return 0;
+    return km <= 300 ? 1 : 2;
 }
 function rateSortKey(r) {
     let d = leadSortDate(r);
     if (d) {
-        const today = leadTodayIso();
+        const today = todayIso();
         while (d < today) d = Number(d.slice(0, 4)) + 1 + d.slice(4);
     }
     return rateBand(r) + (d ? '0' + d : '9');
@@ -16307,8 +15712,7 @@ function rateDeck() {
         .sort((a, b) => rateSortKey(a).localeCompare(rateSortKey(b)) || String(a.title || '').localeCompare(String(b.title || '')));
     // "Next" without a rating sends a lead to the back for this session
     const skipped = list.filter((r) => s.skip.includes(r.id));
-    const out = list.filter((r) => !s.skip.includes(r.id)).concat(skipped);
-    return out;
+    return list.filter((r) => !s.skip.includes(r.id)).concat(skipped);
 }
 
 /*  "Ask Scout now": Scout (a routine on Max's computer) checks every 15 min
@@ -16322,7 +15726,8 @@ function scoutBarHtml() {
     const done = Number(st.doneAt || 0);
     const ago = (ms) => {
         const m = Math.round((Date.now() - ms) / 60000);
-        return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : Math.round(m / 60) + ' h ago';
+        if (m < 1) return 'just now';
+        return m < 60 ? m + ' min ago' : Math.round(m / 60) + ' h ago';
     };
     let status = '';
     if (req > started) status = '🔭 Scout has your asks — he checks at 7am and 2pm';
@@ -16407,33 +15812,6 @@ function rateBrowse(dir) {
     if (card) card.classList.add(dir > 0 ? 'is-in-right' : 'is-in-left');
 }
 
-/*  Keys on a computer: 1-5 rate, W / I / L / P / N act. */
-let rateKeysWired = false;
-
-/*  "Add info" on a rating card: Max types what he already knows and it is
-    saved straight onto the lead (logged in its History).                 */
-const RATE_EDIT_FIELDS = [
-    ['eventDate', 'Date', 'date'],
-    ['startTime', 'Start time', 'text', 'e.g. Gates 5pm · main event 7pm'],
-    ['dateText', 'Date notes', 'text', 'e.g. Fri 23 – Sun 25 Oct'],
-    ['venue', 'Venue', 'text'],
-    ['town', 'Town', 'text'],
-    ['organiser', 'Organiser', 'text'],
-    ['crowd', 'Crowd', 'text', 'e.g. ~3,000'],
-    ['estValue', 'Est. value ($)', 'number'],
-    ['contactName', 'Contact person', 'text'],
-    ['phone', 'Phone', 'tel'],
-    ['email', 'Email', 'email'],
-    ['website', 'Website', 'url', 'https://'],
-    ['socials', 'Social links', 'text', 'Facebook / Instagram links'],
-    ['summary', 'What is this event?', 'textarea'],
-    ['pitch', 'Worth it for us?', 'textarea'],
-    ['liveMusic', 'Live music (who played?)', 'text', 'e.g. Yes — 2025: The Wolfe Brothers'],
-    ['needs', 'What they need', 'text'],
-    ['incumbent', 'Current supplier', 'text'],
-    ['notes', 'Notes', 'textarea']
-];
-
 /*  Notes for the researcher: Max jots what he knows or wants checked
     ("Luke Geiger played last year, ABMC did production, Heath was the
     contact - check the location"). Saving queues the lead for the next
@@ -16446,7 +15824,7 @@ function leadTipsHtml(r) {
         .sort((a, b) => (b.at || 0) - (a.at || 0))
         .map((t) => {
             const rep = String((t && t.reply) || '').trim();
-            if (rep && seen.has(rep)) return { ...t, reply: '', done: t.done, same: true };
+            if (rep && seen.has(rep)) return { ...t, reply: '', same: true };
             if (rep) seen.add(rep);
             return t;
         })
@@ -16483,12 +15861,9 @@ function r2Decided(r) {
 }
 function r2List(kind) {
     const all = state.leads || [];
-    const pick =
-        kind === 'saved'
-            ? (r) => r.verdict === 'save'
-            : kind === 'chasing'
-              ? (r) => r.verdict === 'chase' || r.stage === 'won'
-              : (r) => r.verdict === 'pass';
+    let pick = (r) => r.verdict === 'pass';
+    if (kind === 'saved') pick = (r) => r.verdict === 'save';
+    else if (kind === 'chasing') pick = (r) => r.verdict === 'chase' || r.stage === 'won';
     return all.filter(pick).sort((a, b) => rateSortKey(a).localeCompare(rateSortKey(b)));
 }
 function r2When(r) {
@@ -16505,13 +15880,18 @@ function r2PhotoTags(r) {
     let when = '';
     if (leadHasExactDate(r)) {
         const d = Math.round((new Date(r.eventDate.slice(0, 10) + 'T00:00:00') - new Date(new Date().toDateString())) / 864e5);
-        when = d === 0 ? '🎉 Today!' : d === 1 ? '⏳ Tomorrow' : d > 1 ? `⏳ ${d} days to go` : `Was ${-d} day${d === -1 ? '' : 's'} ago`;
+        if (d === 0) when = '🎉 Today!';
+        else if (d === 1) when = '⏳ Tomorrow';
+        else if (d > 1) when = `⏳ ${d} days to go`;
+        else when = `Was ${-d} day${d === -1 ? '' : 's'} ago`;
     } else {
         const k = leadMonthKey(r);
         if (k) when = '🗓️ ' + LEAD_MON[Number(k.slice(5, 7)) - 1].replace(/^./, (c) => c.toUpperCase()) + ' ' + k.slice(0, 4);
     }
     const km = leadKm(r);
-    const dist = km == null ? '' : km === 0 ? '📍 Local' : `🚚 ${km.toLocaleString('en-AU')} km`;
+    let dist = '';
+    if (km === 0) dist = '📍 Local';
+    else if (km != null) dist = `🚚 ${km.toLocaleString('en-AU')} km`;
     return (
         (when ? `<span class="r2-ptag is-when">${esc(when)}</span>` : '') + (dist ? `<span class="r2-ptag is-km">${esc(dist)}</span>` : '')
     );
@@ -16523,12 +15903,10 @@ function r2Meta(r) {
 function r2Tip(r) {
     const p = String(r.pitch || '').trim();
     if (!p) return '';
-    const warm = /not worth|skip|too far|too small|locked|pass/i.test(p)
-        ? 'is-cool'
-        : /2027|next year|after/i.test(p)
-          ? 'is-later'
-          : 'is-good';
-    const ico = warm === 'is-good' ? '📈' : warm === 'is-later' ? '🗓️' : '⚠️';
+    let warm = 'is-good';
+    if (/not worth|skip|too far|too small|locked|pass/i.test(p)) warm = 'is-cool';
+    else if (/2027|next year|after/i.test(p)) warm = 'is-later';
+    const ico = { 'is-good': '📈', 'is-later': '🗓️', 'is-cool': '⚠️' }[warm];
     return `<div class="r2-tip ${warm}"><span aria-hidden="true">${ico}</span><p>${esc(p.length > 150 ? p.slice(0, 147) + '…' : p)}</p></div>`;
 }
 function r2Buttons(r, withMore) {
@@ -16542,7 +15920,7 @@ function r2Buttons(r, withMore) {
     ${withMore ? `<button type="button" class="r2-act is-more" data-r2-more="${attr(r.id)}"><i>···</i><span>More info</span></button>` : ''}
   </div>`;
 }
-function r2CardHtml(r, pos, total) {
+function r2CardHtml(r) {
     return `
     <article class="r2-card rt-card" data-rate-id="${attr(r.id)}">
       ${r2Photo(r, 'r2-photo', r2PhotoTags(r))}
@@ -16562,13 +15940,10 @@ function r2DetailHtml(r) {
     const tab = s.dtab || 'overview';
     const v = leadValue(r);
     const music = String(r.liveMusic || '').trim();
-    const musicShort = !music
-        ? '—'
-        : /^\s*(none|no live|not found)/i.test(music)
-          ? 'None found'
-          : /^\s*yes/i.test(music)
-            ? 'Yes'
-            : 'See notes';
+    let musicShort = 'See notes';
+    if (!music) musicShort = '—';
+    else if (/^\s*(none|no live|not found)/i.test(music)) musicShort = 'None found';
+    else if (/^\s*yes/i.test(music)) musicShort = 'Yes';
     const runs = String(r.recurrence || '')
         .replace(/\s*[—–-].*$/, '')
         .trim();
@@ -16581,11 +15956,14 @@ function r2DetailHtml(r) {
         ['Needs', r.needs],
         ['Supplier deadline', r.eoiDate ? fmtLeadDate(r.eoiDate) + (r.eoiNote ? ' — ' + r.eoiNote : '') : '']
     ].filter(([, x]) => String(x || '').trim());
-    const src = leadSafeUrl(r.website) || leadSafeUrl(r.sourceUrl);
+    const site = leadSafeUrl(r.website);
+    const src = site || leadSafeUrl(r.sourceUrl);
     const phone = String(r.phone || '').trim();
     const email = String(r.email || '').trim();
     const okEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    const mobile = leadIsMobile(phone);
+    let sms = '<span class="r2-reachbtn is-off">💬 SMS</span>';
+    if (leadIsCouncil(r)) sms = '<span class="r2-reachbtn is-off">💬 SMS (council: email)</span>';
+    else if (leadIsMobile(phone)) sms = `<a class="r2-reachbtn is-sms" href="${attr(leadSmsHref(r))}">💬 SMS${r.smsDraft ? ' ✓' : ''}</a>`;
     const panes = {
         overview: `
       <div class="r2-tiles">
@@ -16605,17 +15983,11 @@ function r2DetailHtml(r) {
         ${r.decisionMaker ? `<div><dt>Decision maker</dt><dd>${esc(r.decisionMaker)}</dd></div>` : ''}
         <div><dt>Phone</dt><dd>${phone ? `<a href="tel:${attr(phone.replace(/[^\d+]/g, ''))}">${esc(phone)}</a>` : '<span class="lead-mc-none">Not provided</span>'}</dd></div>
         <div><dt>Email</dt><dd>${okEmail ? `<a href="mailto:${attr(email)}">${esc(email)}</a>` : '<span class="lead-mc-none">Not provided</span>'}</dd></div>
-        <div><dt>Website</dt><dd>${leadSafeUrl(r.website) ? `<a href="${attr(leadSafeUrl(r.website).href)}" target="_blank" rel="noopener noreferrer">${esc(leadSafeUrl(r.website).hostname.replace(/^www\./, ''))}</a>` : '<span class="lead-mc-none">Not provided</span>'}</dd></div>
+        <div><dt>Website</dt><dd>${site ? `<a href="${attr(site.href)}" target="_blank" rel="noopener noreferrer">${esc(site.hostname.replace(/^www\./, ''))}</a>` : '<span class="lead-mc-none">Not provided</span>'}</dd></div>
       </dl>
       <div class="r2-links">${leadContactIconsHtml(r)}</div>
       <div class="r2-reach">
-        ${
-            leadIsCouncil(r)
-                ? '<span class="r2-reachbtn is-off">💬 SMS (council: email)</span>'
-                : mobile
-                  ? `<a class="r2-reachbtn is-sms" href="${attr(leadSmsHref(r))}">💬 SMS${r.smsDraft ? ' ✓' : ''}</a>`
-                  : `<span class="r2-reachbtn is-off">💬 SMS</span>`
-        }
+        ${sms}
         ${phone ? `<a class="r2-reachbtn is-call" href="tel:${attr(phone.replace(/[^\d+]/g, ''))}">📞 Call</a>` : '<span class="r2-reachbtn is-off">📞 Call</span>'}
         ${okEmail ? `<button type="button" class="r2-reachbtn is-email" data-r2-email="${attr(r.id)}">✉️ Email</button>` : '<span class="r2-reachbtn is-off">✉️ Email</span>'}
       </div>`,
@@ -16734,7 +16106,7 @@ function leadSortHtml() {
         if (!Number.isInteger(s.pos) || s.pos < 0) s.pos = 0;
         if (s.pos >= deck.length) s.pos = Math.max(0, deck.length - 1);
         body = deck.length
-            ? r2CardHtml(deck[s.pos], s.pos + 1, deck.length)
+            ? r2CardHtml(deck[s.pos])
             : '<p class="rt-empty">🎉 All sorted. New leads show up here once Phil has filled them in.</p>';
     } else if (s.tab === 'deleted') {
         const rows = state.archivedLeads || [];
@@ -16832,12 +16204,13 @@ function wireLeadSort() {
             '[data-r2-forever], [data-r2-delete], [data-r2-restore], [data-rate-menu], [data-r2-list], [data-r2-act], [data-r2-more], [data-r2-open], [data-r2-back], [data-r2-tab], [data-r2-chip], [data-r2-savenext], [data-r2-skip], [data-r2-ask], [data-r2-email]'
         );
         if (!t) return;
-        if (t.hasAttribute('data-r2-forever')) {
-            r2DeleteForever(t.getAttribute('data-r2-forever'));
+        // "Delete this lead" archives it; only "Delete forever" in the Deleted list removes it
+        if (t.hasAttribute('data-r2-delete')) {
+            r2Archive(t.getAttribute('data-r2-delete'), true);
             return;
         }
-        if (t.hasAttribute('data-r2-delete')) {
-            r2DeleteForever(t.getAttribute('data-r2-delete'));
+        if (t.hasAttribute('data-r2-forever')) {
+            r2DeleteForever(t.getAttribute('data-r2-forever'));
             return;
         }
         if (t.hasAttribute('data-r2-restore')) {

@@ -19,7 +19,7 @@ export function isBooked(q) {
 }
 
 /* on its way but no money yet */
-export function isPencilled(q) {
+function isPencilled(q) {
     if (!q || isBooked(q)) return false;
     return ['approved', 'sent', 'accepted', 'invoiced'].includes(q.status);
 }
@@ -34,8 +34,20 @@ export function jobRange(q) {
 }
 
 /* do two date ranges share at least one day? (strings compare fine) */
-export function overlaps(a, b) {
+function overlaps(a, b) {
     return !!(a && b) && a[0] <= b[1] && b[0] <= a[1];
+}
+
+/* a job line that is gear to pack -> { qty, name }, else null
+   (crew, vehicles and pub DJ lines are not gear) */
+function gearLine(l) {
+    if (!l || !['item', 'kit', 'custom'].includes(l.type) || l.resType || l.noPick) return null;
+    const qty = Math.max(0, Math.round(Number(l.qty) || 0));
+    if (!qty) return null;
+    const name = String(l.name || '')
+        .replace(/ \(included\)$/i, '')
+        .trim();
+    return { qty, name };
 }
 
 /* the gear on a job, one entry per inventory item: items + included kit,
@@ -45,19 +57,14 @@ export function pickItems(lines) {
     const out = [];
     const byKey = {};
     (lines || []).forEach((l) => {
-        if (!l || !['item', 'kit', 'custom'].includes(l.type)) return;
-        if (l.resType || l.noPick) return; // crew & vehicles (and pub DJ lines) are not gear
-        const qty = Math.max(0, Math.round(Number(l.qty) || 0));
-        if (!qty) return;
-        const name = String(l.name || '')
-            .replace(/ \(included\)$/i, '')
-            .trim();
-        const key = l.itemId ? 'i:' + l.itemId : 'n:' + name.toLowerCase();
+        const g = gearLine(l);
+        if (!g) return;
+        const key = l.itemId ? 'i:' + l.itemId : 'n:' + g.name.toLowerCase();
         if (!byKey[key]) {
-            byKey[key] = { itemId: l.itemId || '', name, qty: 0 };
+            byKey[key] = { itemId: l.itemId || '', name: g.name, qty: 0 };
             out.push(byKey[key]);
         }
-        byKey[key].qty += qty;
+        byKey[key].qty += g.qty;
     });
     return out;
 }
@@ -89,12 +96,12 @@ export function stockUsage(jobs, from, to, excludeId) {
 
 /* the tick key the pick list saves under - KEEP IN STEP with pickKey() in
    functions/index.js, or admin's "x of y packed" won't match the crew's ticks */
-export function pickKey(p) {
+function pickKey(p) {
     return (p.itemId ? 'i_' + p.itemId : 'n_' + String(p.name || '').toLowerCase()).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 120);
 }
 
-/* { lines, packed, returned } for a job's pick list */
-/*  The pick list saves a tick per LINE (key = itemKey + '_L' + line
+/*  { lines, packed, returned } for a job's pick list.
+    The pick list saves a tick per LINE (key = itemKey + '_L' + line
     index - KEEP IN STEP with the rows in getPickList, functions/index.js).
     Older ticks are per item, so a line falls back to its item's tick.  */
 export function pickLineProgress(q) {
@@ -103,19 +110,13 @@ export function pickLineProgress(q) {
         packed = 0,
         returned = 0;
     ((q && q.lines) || []).forEach((l, idx) => {
-        if (!l || !['item', 'kit', 'custom'].includes(l.type) || l.resType || l.noPick) return;
-        if (!Math.max(0, Math.round(Number(l.qty) || 0))) return;
-        const name = String(l.name || '')
-            .replace(/ \(included\)$/i, '')
-            .trim();
-        const itemKey = pickKey({ itemId: l.itemId || '', name });
+        const g = gearLine(l);
+        if (!g) return;
+        const itemKey = pickKey({ itemId: l.itemId || '', name: g.name });
         const k = t[itemKey.slice(0, 110) + '_L' + idx] || t[itemKey] || {};
         lines++;
         if (k.packed) packed++;
         if (k.returned) returned++;
     });
     return { lines, packed, returned };
-}
-export function pickProgress(q) {
-    return pickLineProgress(q);
 }

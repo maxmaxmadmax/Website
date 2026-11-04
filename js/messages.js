@@ -16,9 +16,9 @@
    ctx = { state, h: { esc, attr }, call, render, money }
    ========================================================================== */
 
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=846';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=847';
 
-export const SEND_TIME = '9:35 am';
+const SEND_TIME = '9:35 am';
 
 /*  The fields a message can use - KEEP IN STEP with fieldsFor() in
     functions/lib/message-email.js.                                      */
@@ -82,6 +82,8 @@ const CLIENT_EMAILS = [
 ];
 
 /* ---------- small helpers ---------- */
+const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const lower = (s) => String(s || '').toLowerCase();
 function addDaysISO(iso, n) {
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
     if (!m) return '';
@@ -112,18 +114,10 @@ function whenText(msg, ev) {
     if (t.type === 'sponsorFollowup') return (t.days || 7) + ' days after the ask';
     const day = niceDay(sendDate(msg, ev));
     const n = Math.round(Number(t.days) || 0);
-    const rel =
-        t.type === 'daysBefore'
-            ? n === 1
-                ? 'Day before'
-                : n + ' days before'
-            : t.type === 'daysAfter'
-              ? n === 1
-                  ? 'Day after'
-                  : n + ' days after'
-              : t.type === 'date'
-                ? 'On a date'
-                : 'Not set';
+    let rel = 'Not set';
+    if (t.type === 'daysBefore') rel = n === 1 ? 'Day before' : n + ' days before';
+    else if (t.type === 'daysAfter') rel = n === 1 ? 'Day after' : n + ' days after';
+    else if (t.type === 'date') rel = 'On a date';
     return rel + (day ? ' · ' + day : '');
 }
 function paidVendors(bookings, eventId) {
@@ -192,26 +186,28 @@ function sampleValues(b, ev) {
 function sentenceHtml(ctx, d, m, ev) {
     const { state } = ctx;
     const esc = ctx.h.esc;
+    // "This sends “subject”", filled from a sample vendor
+    const sends = (b) => `This sends <b>&ldquo;${esc(fill(d.subject, sampleValues(b, ev), String) || '(no subject yet)')}&rdquo;</b>`;
     if (m.system === 'sponsor-ask') {
-        return `This sends <b>&ldquo;${esc(fill(d.subject, sampleValues(null, ev), String) || '(no subject yet)')}&rdquo;</b> to the businesses you tick on the <b>Sponsors</b> tab, when you press Send.`;
+        return `${sends(null)} to the businesses you tick on the <b>Sponsors</b> tab, when you press Send.`;
     }
     if (m.system === 'sponsor-followup') {
-        return `This sends <b>&ldquo;${esc(fill(d.subject, sampleValues(null, ev), String) || '(no subject yet)')}&rdquo;</b> to any business still &ldquo;Asked&rdquo; <b>7 days after the ask</b>, at ${SEND_TIME}. Anyone who replied or said yes or no is skipped.`;
+        return `${sends(null)} to any business still &ldquo;Asked&rdquo; <b>7 days after the ask</b>, at ${SEND_TIME}. Anyone who replied or said yes or no is skipped.`;
     }
     if (m.system === 'waitlist') {
-        return `This sends <b>&ldquo;${esc(fill(d.subject, sampleValues(null, ev), String) || '(no subject yet)')}&rdquo;</b> to <b>the next person on the waitlist</b> the moment a spot opens. They get <b>4 hours</b> to accept or decline from the email, then it goes to the next person.`;
+        return `${sends(null)} to <b>the next person on the waitlist</b> the moment a spot opens. They get <b>4 hours</b> to accept or decline from the email, then it goes to the next person.`;
     }
     if (m.system === 'site-moved') {
-        return `This sends <b>&ldquo;${esc(fill(d.subject, sampleValues(null, ev), String) || '(no subject yet)')}&rdquo;</b> to <b>a paid vendor the moment you move them</b> to a different site. Sent ${m.sentCount || 0} so far.`;
+        return `${sends(null)} to <b>a paid vendor the moment you move them</b> to a different site. Sent ${m.sentCount || 0} so far.`;
     }
     if (m.system) {
         const all = paidVendors(state.bookings, state.activeEventId);
-        return `This sends <b>&ldquo;${esc(fill(d.subject, sampleValues(all[0], ev), String) || '(no subject yet)')}&rdquo;</b> to <b>each vendor the moment they pay</b>. ${all.filter((b) => b.invoiceEmailedAt).length} of ${all.length} paid vendors have it.`;
+        return `${sends(all[0])} to <b>each vendor the moment they pay</b>. ${all.filter((b) => b.invoiceEmailedAt).length} of ${all.length} paid vendors have it.`;
     }
     const list = recipients(state.bookings, state.activeEventId, d);
     const day = sendDate(d, ev);
     return (
-        `This sends <b>&ldquo;${esc(fill(d.subject, sampleValues(list[0], ev), String) || '(no subject yet)')}&rdquo;</b> to <b>${list.length} ${esc(WHO_SHORT[d.who] || WHO_SHORT.all)}</b>` +
+        `${sends(list[0])} to <b>${list.length} ${esc(WHO_SHORT[d.who] || WHO_SHORT.all)}</b>` +
         (day ? ` on <b>${esc(niceDay(day))} at ${SEND_TIME}</b>.` : ' &mdash; <b>pick when</b>.')
     );
 }
@@ -249,42 +245,63 @@ export function messagesHtml(ctx) {
 
     const tab = state.msgTab || 'vendors';
     const inHub = state.view === 'event' && state.eventTab === 'messages';
+    // the invoice email first, then the waitlist one, then by send date
+    const rank = (x) => ({ invoice: 0, waitlist: 1 })[x.system] ?? 2;
     const list = (state.messages || [])
         .filter((m) => m.audience !== 'sponsors')
-        .slice()
         .sort((a, b) => {
-            const rank = (x) => (x.system === 'invoice' ? 0 : x.system === 'waitlist' ? 1 : 2);
             if (rank(a) !== rank(b)) return rank(a) - rank(b);
             return (sendDate(a, ev) || '9999').localeCompare(sendDate(b, ev) || '9999');
         });
+    const paid = paidVendors(state.bookings, state.activeEventId);
     const rows = list
         .map((m) => {
             const [label, tone] = STATUS[m.status] || STATUS.draft;
             const wl = m.system === 'waitlist';
             const mv = m.system === 'site-moved';
-            const total = mv
-                ? m.sentCount || 0
-                : wl
-                  ? (state.waitlist || []).length
-                  : m.system
-                    ? paidVendors(state.bookings, state.activeEventId).length
-                    : recipients(state.bookings, state.activeEventId, m).length;
-            const sent =
-                wl || mv
-                    ? m.sentCount || 0
-                    : m.system
-                      ? paidVendors(state.bookings, state.activeEventId).filter((b) => b.invoiceEmailedAt).length
-                      : m.sentCount || 0;
+            // how many it went to, out of how many
+            let sent = m.sentCount || 0;
+            let total, who;
+            if (!m.system) {
+                total = recipients(state.bookings, state.activeEventId, m).length;
+                who = WHO[m.who] || WHO.all;
+            } else if (mv) {
+                total = sent;
+                who = 'A vendor you move';
+            } else if (wl) {
+                total = (state.waitlist || []).length;
+                who = 'Next on the waitlist';
+            } else {
+                total = paid.length;
+                sent = paid.filter((b) => b.invoiceEmailedAt).length;
+                who = 'Each vendor as they pay';
+            }
             const failed = (m.failed || []).length;
             return `<tr data-ms-open="${h.attr(m.id)}">
       <td class="ms-when">${h.esc(whenText(m, ev))}</td>
       <td><strong>${h.esc(m.name || '(no name)')}</strong><span class="ms-sub">${h.esc(fill(m.subject || '', { event_name: ev.name || '', event_date: ev.dateLabel || '' }, String))}</span></td>
-      <td>${h.esc(wl ? 'Next on the waitlist' : mv ? 'A vendor you move' : m.system ? 'Each vendor as they pay' : WHO[m.who] || WHO.all)}${m.promo ? ' <span class="ms-tag">Promo</span>' : ''}</td>
+      <td>${h.esc(who)}${m.promo ? ' <span class="ms-tag">Promo</span>' : ''}</td>
       <td><span class="ms-chip ms-${tone}">${h.esc(label)}</span></td>
       <td class="ms-sent">${wl ? sent + ' offer' + (sent === 1 ? '' : 's') : sent + ' of ' + total}${failed ? ` <span class="ms-fail">${failed} failed</span>` : ''}</td>
     </tr>`;
         })
         .join('');
+
+    let body;
+    if (tab === 'sent') body = sentHtml(ctx);
+    else if (tab === 'reminders') body = remindersHtml(h, state);
+    else if (tab === 'sponsors') body = sponsorsHtml(ctx);
+    else if (tab === 'clients') body = clientsHtml(h, state);
+    else {
+        body = `<div class="ad-card ms-card">
+      <table class="ms-table">
+        <thead><tr><th>When</th><th>Message &amp; subject</th><th>Who</th><th>Status</th><th>Sent</th></tr></thead>
+        <tbody>${rows || `<tr><td colspan="5" class="ad-cell-muted">${state.msgSeeding ? 'Adding the starter messages&hellip;' : 'No messages yet.'}</td></tr>`}</tbody>
+      </table>
+    </div>
+    <p class="ms-key">You also get an office copy of every new vendor booking at info@soundzgood.com.au.</p>
+    ${waitlistHtml(ctx)}`;
+    }
 
     return `<div class="ms">
     <div class="ms-head">
@@ -302,24 +319,7 @@ export function messagesHtml(ctx) {
       <button type="button" class="ms-tab${tab === 'reminders' ? ' is-on' : ''}" role="tab" data-ms-tab="reminders">Reminders</button>
       <button type="button" class="ms-tab ms-tab-log${tab === 'sent' ? ' is-on' : ''}" role="tab" data-ms-tab="sent">Sent emails</button>
     </div>
-    ${
-        tab === 'sent'
-            ? sentHtml(ctx)
-            : tab === 'reminders'
-              ? remindersHtml(h, state)
-              : tab === 'sponsors'
-                ? sponsorsHtml(ctx)
-                : tab === 'clients'
-                  ? clientsHtml(h, state)
-                  : `<div class="ad-card ms-card">
-      <table class="ms-table">
-        <thead><tr><th>When</th><th>Message &amp; subject</th><th>Who</th><th>Status</th><th>Sent</th></tr></thead>
-        <tbody>${rows || `<tr><td colspan="5" class="ad-cell-muted">${state.msgSeeding ? 'Adding the starter messages&hellip;' : 'No messages yet.'}</td></tr>`}</tbody>
-      </table>
-    </div>
-    <p class="ms-key">You also get an office copy of every new vendor booking at info@soundzgood.com.au.</p>
-    ${waitlistHtml(ctx)}`
-    }
+    ${body}
     <p class="ms-key"><span class="ms-chip ms-grey">Draft</span> still being written &nbsp; <span class="ms-chip ms-amber">Your OK</span> ready &mdash; needs your approval &nbsp; <span class="ms-chip ms-green">Auto</span> approved, sends itself</p>
   </div>`;
 }
@@ -337,7 +337,9 @@ const KIND = {
     email: 'Email'
 };
 function whenSent(at) {
-    const ms = at && (at.seconds != null ? at.seconds * 1000 : typeof at.toMillis === 'function' ? at.toMillis() : 0);
+    let ms = 0;
+    if (at && at.seconds != null) ms = at.seconds * 1000;
+    else if (at && typeof at.toMillis === 'function') ms = at.toMillis();
     if (!ms) return '';
     return new Date(ms).toLocaleString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
 }
@@ -347,6 +349,11 @@ function sentHtml(ctx) {
     const q = String(state.emailLogFilter || '').toLowerCase();
     const rows = state.emailLog.filter((m) => !q || [m.to, m.cc, m.subject, KIND[m.kind]].join(' ').toLowerCase().includes(q));
     const open = state.emailLog.find((m) => m.id === state.emailLogOpen);
+    const chip = (m) => {
+        if (m.test) return '<span class="ms-chip ms-blue">Test</span>';
+        if (m.ok) return '<span class="ms-chip ms-green">Sent</span>';
+        return '<span class="ms-chip ms-red" title="' + h.attr(m.error || '') + '">Failed</span>';
+    };
     return `<div class="ms-log-bar">
       <input type="search" class="ad-input" data-ms-logq placeholder="Search by email, subject or type&hellip;" value="${h.attr(state.emailLogFilter || '')}">
       <button type="button" class="ad-btn" data-ms-logrefresh>Refresh</button>
@@ -362,7 +369,7 @@ function sentHtml(ctx) {
           <td>${h.esc(m.to)}${m.cc ? '<span class="ms-sub">cc ' + h.esc(m.cc) + '</span>' : ''}</td>
           <td>${h.esc(m.subject)}</td>
           <td>${h.esc(KIND[m.kind] || m.kind)}</td>
-          <td>${m.test ? '<span class="ms-chip ms-blue">Test</span>' : m.ok ? '<span class="ms-chip ms-green">Sent</span>' : '<span class="ms-chip ms-red" title="' + h.attr(m.error || '') + '">Failed</span>'}</td>
+          <td>${chip(m)}</td>
         </tr>`
                 )
                 .join('') || '<tr><td colspan="5" class="ad-cell-muted">No emails logged yet - they appear here from now on.</td></tr>'
@@ -435,8 +442,8 @@ function sponsorsHtml(ctx) {
     const askOk = !!(ask && ask.status === 'approved');
     const ticked = state.spTicked || {};
     const nTicked = list.filter((p) => ticked[p.id] && p.status === 'todo' && p.email).length;
-    const added = new Set(list.map((p) => String(p.business || '').toLowerCase()));
-    const leads = (state.leads || []).filter((l) => l.email && !added.has(String(l.title || '').toLowerCase()));
+    const added = new Set(list.map((p) => lower(p.business)));
+    const leads = (state.leads || []).filter((l) => l.email && !added.has(lower(l.title)));
     const evId = state.activeEventId;
     const evName = ((state.events || []).find((e) => e.id === evId) || {}).name || '';
     const taken = {};
@@ -478,15 +485,68 @@ function sponsorsHtml(ctx) {
     };
 
     const open = state.spOpen ? list.find((p) => p.id === state.spOpen) : null;
-    const drawer = open
-        ? (() => {
-              const p = open;
-              const f = (field, label, value, type, extra) =>
-                  `<label class="sp-f"><span>${label}</span><input class="ad-input" type="${type || 'text'}" value="${h.attr(value || '')}" data-sp-field="${field}" data-id="${h.attr(p.id)}"${extra || ''}></label>`;
-              const site = String(p.website || '')
-                  .replace(/^https?:\/\//, '')
-                  .replace(/\/.*$/, '');
-              return `
+    const drawer = open ? sponsorDrawerHtml(h, open, evId, askOk) : '';
+
+    return `<div class="sp-top">
+      <div class="ad-card sp-goal">
+        <p class="ev-card-t">Sponsorship</p>
+        <p class="sp-goal-big">${money0(yes)} <small>of ${money0(SPONSOR_GOAL_CENTS)}</small></p>
+        <div class="ms-sp-bar"><span style="width:${pct}%"></span><i style="width:${pct2}%"></i></div>
+        <p class="ev-card-sub">${maybe ? money0(maybe) + ' more interested &middot; ' : ''}<a href="/sponsor?e=${encodeURIComponent(evId)}" target="_blank" rel="noopener">Open the sponsor page &#8599;</a></p>
+      </div>
+      <div class="ad-card sp-slots">
+        <p class="ev-card-t">Spots</p>
+        <div class="sp-slot-row">${SPONSOR_LEVELS.filter((l) => l.spots)
+            .map(
+                (l) =>
+                    `<span class="sp-slot is-${l.key}${(taken[l.key] || 0) >= l.spots ? ' is-full' : ''}"><b>${taken[l.key] || 0}/${l.spots}</b>${h.esc(l.name.split(' - ')[0])}</span>`
+            )
+            .join('')}</div>
+        <p class="ev-card-sub">${list.filter((p) => p.status === 'yes').length} said yes &middot; ${list.filter((p) => p.status === 'asked').length} asked, waiting</p>
+      </div>
+    </div>
+    <div class="ad-card ms-card sp-emails"><table class="ms-table"><thead><tr><th>When</th><th>Email</th><th>Status</th><th>Sent</th></tr></thead><tbody>${msgRows}</tbody></table></div>
+    <div class="sp-bar">
+      <b>Businesses</b><span>${list.length}</span>
+      <button type="button" class="ad-btn ad-btn-small" data-sp-add>+ Add a business</button>
+      <button type="button" class="ad-btn ad-btn-small" data-sp-leads>From Lead Generator (${leads.length})</button>
+      <button type="button" class="ad-btn ad-btn-small" data-sp-big>Big Bowen businesses (${SUGGESTED_SPONSORS.filter((s) => !added.has(s.business.toLowerCase())).length})</button>
+      <button type="button" class="ad-btn ad-btn-small" data-sp-past>Past sponsors</button>
+      <button type="button" class="ad-btn ad-btn-small" data-sp-dir>From the directory (${(state.sponsorBiz || []).filter((b) => !added.has(lower(b.business))).length})</button>
+      <button type="button" class="ad-btn ad-btn-small" data-sp-mc title="One page for the MC: every sponsor to thank and every prize">&#128221; MC sheet</button>
+      <button type="button" class="ad-btn ad-btn-primary ms-sp-send" data-sp-send${nTicked ? '' : ' disabled'}>Send the ask to ${nTicked} ticked</button>
+    </div>
+    ${ask && !askOk ? '<p class="ms-note ms-sp-warn">Approve &ldquo;Sponsorship - the ask&rdquo; above before you can send.</p>' : ''}
+    ${
+        state.spAdding
+            ? `<form class="ms-sp-form ad-card" data-sp-form>
+      <input class="ad-input" name="business" placeholder="Business" required>
+      <input class="ad-input" name="contactName" placeholder="Contact name">
+      <input class="ad-input" name="email" type="email" placeholder="Email">
+      <input class="ad-input" name="phone" placeholder="Phone">
+      <button type="submit" class="ad-btn ad-btn-primary">Add</button><button type="button" class="ad-btn" data-sp-cancel>Cancel</button></form>`
+            : ''
+    }
+    ${
+        state.spPicking
+            ? `<div class="ms-sp-pick ad-card"><p>Tick the businesses to add (only ones with an email are shown):</p>
+      <div class="ms-sp-picklist">${leads.map((l) => `<label><input type="checkbox" data-sp-lead="${h.attr(l.id)}"> <b>${h.esc(l.title || '')}</b> <span>${h.esc(l.contactName || '')} &middot; ${h.esc(l.email || '')}</span></label>`).join('') || '<p class="ad-cell-muted">Nothing new in the Lead Generator with an email.</p>'}</div>
+      <button type="button" class="ad-btn ad-btn-primary" data-sp-leadadd>Add ticked</button> <button type="button" class="ad-btn" data-sp-cancel>Cancel</button></div>`
+            : ''
+    }
+    <div class="sp-board">${SP_COLS.map(col).join('')}</div>
+    ${drawer}
+    ${needsEmailHtml(h, added)}`;
+}
+
+/* the drawer for one business on the Sponsors board */
+function sponsorDrawerHtml(h, p, evId, askOk) {
+    const f = (field, label, value, type, extra) =>
+        `<label class="sp-f"><span>${label}</span><input class="ad-input" type="${type || 'text'}" value="${h.attr(value || '')}" data-sp-field="${field}" data-id="${h.attr(p.id)}"${extra || ''}></label>`;
+    const site = String(p.website || '')
+        .replace(/^https?:\/\//, '')
+        .replace(/\/.*$/, '');
+    return `
     <div class="sp-scrim" data-sp-close></div>
     <aside class="sp-drawer" role="dialog" aria-label="${h.attr(p.business)}" style="--sp-brand:${h.attr(spColor(p))}">
       <div class="sp-drawer-brand">
@@ -532,59 +592,6 @@ function sponsorsHtml(ctx) {
         <button type="button" class="ad-btn ms-sp-del-btn" data-sp-del="${h.attr(p.id)}">Remove</button>
       </div>
     </aside>`;
-          })()
-        : '';
-
-    return `<div class="sp-top">
-      <div class="ad-card sp-goal">
-        <p class="ev-card-t">Sponsorship</p>
-        <p class="sp-goal-big">${money0(yes)} <small>of ${money0(SPONSOR_GOAL_CENTS)}</small></p>
-        <div class="ms-sp-bar"><span style="width:${pct}%"></span><i style="width:${pct2}%"></i></div>
-        <p class="ev-card-sub">${maybe ? money0(maybe) + ' more interested &middot; ' : ''}<a href="/sponsor?e=${encodeURIComponent(evId)}" target="_blank" rel="noopener">Open the sponsor page &#8599;</a></p>
-      </div>
-      <div class="ad-card sp-slots">
-        <p class="ev-card-t">Spots</p>
-        <div class="sp-slot-row">${SPONSOR_LEVELS.filter((l) => l.spots)
-            .map(
-                (l) =>
-                    `<span class="sp-slot is-${l.key}${(taken[l.key] || 0) >= l.spots ? ' is-full' : ''}"><b>${taken[l.key] || 0}/${l.spots}</b>${h.esc(l.name.split(' - ')[0])}</span>`
-            )
-            .join('')}</div>
-        <p class="ev-card-sub">${list.filter((p) => p.status === 'yes').length} said yes &middot; ${list.filter((p) => p.status === 'asked').length} asked, waiting</p>
-      </div>
-    </div>
-    <div class="ad-card ms-card sp-emails"><table class="ms-table"><thead><tr><th>When</th><th>Email</th><th>Status</th><th>Sent</th></tr></thead><tbody>${msgRows}</tbody></table></div>
-    <div class="sp-bar">
-      <b>Businesses</b><span>${list.length}</span>
-      <button type="button" class="ad-btn ad-btn-small" data-sp-add>+ Add a business</button>
-      <button type="button" class="ad-btn ad-btn-small" data-sp-leads>From Lead Generator (${leads.length})</button>
-      <button type="button" class="ad-btn ad-btn-small" data-sp-big>Big Bowen businesses (${SUGGESTED_SPONSORS.filter((s) => !added.has(s.business.toLowerCase())).length})</button>
-      <button type="button" class="ad-btn ad-btn-small" data-sp-past>Past sponsors</button>
-      <button type="button" class="ad-btn ad-btn-small" data-sp-dir>From the directory (${(state.sponsorBiz || []).filter((b) => !added.has(String(b.business || '').toLowerCase())).length})</button>
-      <button type="button" class="ad-btn ad-btn-small" data-sp-mc title="One page for the MC: every sponsor to thank and every prize">&#128221; MC sheet</button>
-      <button type="button" class="ad-btn ad-btn-primary ms-sp-send" data-sp-send${nTicked ? '' : ' disabled'}>Send the ask to ${nTicked} ticked</button>
-    </div>
-    ${ask && !askOk ? '<p class="ms-note ms-sp-warn">Approve &ldquo;Sponsorship - the ask&rdquo; above before you can send.</p>' : ''}
-    ${
-        state.spAdding
-            ? `<form class="ms-sp-form ad-card" data-sp-form>
-      <input class="ad-input" name="business" placeholder="Business" required>
-      <input class="ad-input" name="contactName" placeholder="Contact name">
-      <input class="ad-input" name="email" type="email" placeholder="Email">
-      <input class="ad-input" name="phone" placeholder="Phone">
-      <button type="submit" class="ad-btn ad-btn-primary">Add</button><button type="button" class="ad-btn" data-sp-cancel>Cancel</button></form>`
-            : ''
-    }
-    ${
-        state.spPicking
-            ? `<div class="ms-sp-pick ad-card"><p>Tick the businesses to add (only ones with an email are shown):</p>
-      <div class="ms-sp-picklist">${leads.map((l) => `<label><input type="checkbox" data-sp-lead="${h.attr(l.id)}"> <b>${h.esc(l.title || '')}</b> <span>${h.esc(l.contactName || '')} &middot; ${h.esc(l.email || '')}</span></label>`).join('') || '<p class="ad-cell-muted">Nothing new in the Lead Generator with an email.</p>'}</div>
-      <button type="button" class="ad-btn ad-btn-primary" data-sp-leadadd>Add ticked</button> <button type="button" class="ad-btn" data-sp-cancel>Cancel</button></div>`
-            : ''
-    }
-    <div class="sp-board">${SP_COLS.map(col).join('')}</div>
-    ${drawer}
-    ${needsEmailHtml(h, added)}`;
 }
 
 /*  Worth asking, but no public email yet: find it, type it in, Add. */
@@ -641,21 +648,51 @@ function waitlistHtml(ctx) {
 /*  REMINDERS: the payment reminder email (click to see
     it) and everyone who still owes money, each with a Send button. Nothing
     goes until Max presses Send.                                          */
+const owingCents = (q) => (q.totalCents || 0) + (q.lateFeeCents || 0) - (q.amountPaidCents || 0);
 export function owesMoney(q) {
     if (!q || q.isTemplate || q.vendor) return false;
     if (!['sent', 'accepted', 'invoiced'].includes(q.status) || q.paymentStatus === 'paid') return false;
-    return (q.totalCents || 0) + (q.lateFeeCents || 0) - (q.amountPaidCents || 0) > 0;
+    return owingCents(q) > 0;
 }
+
+/* the client email preview, beside the list */
+function clientPrevAside(h, p) {
+    if (!p) return '';
+    return `<aside class="ad-card ms-card ms-pad ms-log-view">
+        <button type="button" class="ms-back" data-ms-cclose>&times; Close</button>
+        <p class="ms-log-meta"><b>${h.esc(p.subject || '')}</b>${p.note ? '<br>' + h.esc(p.note) : ''}</p>
+        ${p.loading ? '<p class="ad-cell-muted">Loading&hellip;</p>' : '<iframe sandbox="" class="ms-log-frame" id="ms-cprev-frame" title="Email preview"></iframe>'}
+      </aside>`;
+}
+
 function remindersHtml(h, state) {
     const p = state.clientPrev && state.clientPrev.key === 'reminder' ? state.clientPrev : null;
     const money = (c) => '$' + (Math.round(c || 0) / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const when = (t) => {
-        const ms = t && (t.toMillis ? t.toMillis() : t.seconds ? t.seconds * 1000 : +t);
+        let ms = 0;
+        if (t && t.toMillis) ms = t.toMillis();
+        else if (t && t.seconds) ms = t.seconds * 1000;
+        else if (t) ms = +t;
         return ms ? new Date(ms).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : '';
+    };
+    const lastReminder = (q) => {
+        if (!q.lastReminderAt) return '<span class="ad-cell-muted">—</span>';
+        return h.esc(when(q.lastReminderAt)) + (q.reminderCount > 1 ? ' <span class="ms-sub">' + q.reminderCount + ' sent</span>' : '');
     };
     const owed = (state.quoteDocs || [])
         .filter(owesMoney)
         .sort((a, b) => String((a.hire && a.hire.startDate) || '').localeCompare(String((b.hire && b.hire.startDate) || '')));
+    const rows = owed
+        .map((q) => {
+            const c = q.customer || {};
+            return `<tr class="ms-fixed">
+          <td><strong>${h.esc(c.name || c.business || 'No name')}</strong><span class="ms-sub">${h.esc(q.invoiceNumber || q.number || '')}${c.email ? '' : ' &middot; no email'}</span></td>
+          <td>${h.esc(c.eventName || '')}<span class="ms-sub">${h.esc(c.eventDate || '')}</span></td>
+          <td><strong>${money(owingCents(q))}</strong>${q.amountPaidCents ? '<span class="ms-sub">' + money(q.amountPaidCents) + ' paid</span>' : ''}</td>
+          <td>${lastReminder(q)}</td>
+          <td class="ad-cell-right">${c.email ? '<button type="button" class="ad-btn ad-btn-primary" data-ms-remind="' + h.attr(q.id) + '">Send reminder</button>' : ''}</td></tr>`;
+        })
+        .join('');
     return `<div class="ms-log-grid${p ? ' has-open' : ''}"><div>
     <div class="ad-card ms-card"><table class="ms-table">
       <thead><tr><th>When</th><th>Message &amp; subject</th><th>Who</th><th>Status</th></tr></thead>
@@ -667,32 +704,9 @@ function remindersHtml(h, state) {
     </table></div>
     <div class="ad-card ms-card"><table class="ms-table">
       <thead><tr><th>Client</th><th>Event</th><th>Owing</th><th>Last reminder</th><th></th></tr></thead>
-      <tbody>${
-          owed.length
-              ? owed
-                    .map((q) => {
-                        const c = q.customer || {};
-                        const owing = (q.totalCents || 0) + (q.lateFeeCents || 0) - (q.amountPaidCents || 0);
-                        return `<tr class="ms-fixed">
-          <td><strong>${h.esc(c.name || c.business || 'No name')}</strong><span class="ms-sub">${h.esc(q.invoiceNumber || q.number || '')}${c.email ? '' : ' &middot; no email'}</span></td>
-          <td>${h.esc(c.eventName || '')}<span class="ms-sub">${h.esc(c.eventDate || '')}</span></td>
-          <td><strong>${money(owing)}</strong>${q.amountPaidCents ? '<span class="ms-sub">' + money(q.amountPaidCents) + ' paid</span>' : ''}</td>
-          <td>${q.lastReminderAt ? h.esc(when(q.lastReminderAt)) + (q.reminderCount > 1 ? ' <span class="ms-sub">' + q.reminderCount + ' sent</span>' : '') : '<span class="ad-cell-muted">—</span>'}</td>
-          <td class="ad-cell-right">${c.email ? '<button type="button" class="ad-btn ad-btn-primary" data-ms-remind="' + h.attr(q.id) + '">Send reminder</button>' : ''}</td></tr>`;
-                    })
-                    .join('')
-              : '<tr class="ms-fixed"><td colspan="5" class="ad-cell-muted">Nobody owes you money right now.</td></tr>'
-      }</tbody>
+      <tbody>${rows || '<tr class="ms-fixed"><td colspan="5" class="ad-cell-muted">Nobody owes you money right now.</td></tr>'}</tbody>
     </table></div></div>
-    ${
-        p
-            ? `<aside class="ad-card ms-card ms-pad ms-log-view">
-        <button type="button" class="ms-back" data-ms-cclose>&times; Close</button>
-        <p class="ms-log-meta"><b>${h.esc(p.subject || '')}</b>${p.note ? '<br>' + h.esc(p.note) : ''}</p>
-        ${p.loading ? '<p class="ad-cell-muted">Loading&hellip;</p>' : '<iframe sandbox="" class="ms-log-frame" id="ms-cprev-frame" title="Email preview"></iframe>'}
-      </aside>`
-            : ''
-    }
+    ${clientPrevAside(h, p)}
     </div>
     <p class="ms-key">Only sent when you press Send. It asks for the deposit if nothing's paid yet, otherwise what's still owing, with the link to view &amp; pay.</p>`;
 }
@@ -724,17 +738,43 @@ function clientsHtml(h, state) {
         <td><span class="ms-chip ${st === 'Auto' ? 'ms-green' : 'ms-blue'}">${h.esc(st)}</span></td></tr>`
       ).join('')}</tbody>
     </table></div>
-    ${
-        p
-            ? `<aside class="ad-card ms-card ms-pad ms-log-view">
-        <button type="button" class="ms-back" data-ms-cclose>&times; Close</button>
-        <p class="ms-log-meta"><b>${h.esc(p.subject || '')}</b>${p.note ? '<br>' + h.esc(p.note) : ''}</p>
-        ${p.loading ? '<p class="ad-cell-muted">Loading&hellip;</p>' : '<iframe sandbox="" class="ms-log-frame" id="ms-cprev-frame" title="Email preview"></iframe>'}
-      </aside>`
-            : ''
-    }
+    ${clientPrevAside(h, p)}
     </div>
     <p class="ms-key">Click any of these to see the email. These client emails already go out today. Editing them here, plus the quote follow-ups, balance reminders and review requests, comes in step 2.</p>`;
+}
+
+/* the fixed Who / When line on the system emails (other messages pick their own) */
+const FIXED_WHEN = {
+    'sponsor-ask':
+        '<b>Who:</b> the businesses you tick on the Sponsors tab &nbsp;&middot;&nbsp; <b>When:</b> when you press Send (a &ldquo;See the sponsor options&rdquo; button with their personal link is added below your text)',
+    'sponsor-followup': '<b>Who:</b> anyone still &ldquo;Asked&rdquo; &nbsp;&middot;&nbsp; <b>When:</b> 7 days after the ask, at 9:35 am',
+    waitlist:
+        '<b>Who:</b> the next person on the waitlist &nbsp;&middot;&nbsp; <b>When:</b> the moment a spot opens (Accept and Decline buttons and the 4-hour note are added below your text)',
+    'site-moved':
+        '<b>Who:</b> a paid vendor you move to a different site &nbsp;&middot;&nbsp; <b>When:</b> the moment you press Save sites or Assign (a guide button is added below your text)'
+};
+const PAY_WHEN =
+    '<b>Who:</b> each vendor &nbsp;&middot;&nbsp; <b>When:</b> the moment they pay (total and guide button are added below your text)';
+
+/* the {{fields}} a message can use */
+function fieldsFor(m) {
+    if (m.system === 'waitlist') return FIELDS.concat(WAITLIST_FIELDS);
+    if (m.system === 'site-moved') return FIELDS.concat(MOVED_FIELDS);
+    return m.system ? FIELDS.concat(INVOICE_FIELDS) : FIELDS;
+}
+
+/*  who it goes to: vendors for vendor emails; for the sponsor emails, the
+    businesses on the Sponsors tab - NEVER the vendors */
+function editorList(state, m, d) {
+    if (m.audience === 'sponsors') {
+        const want = m.system === 'sponsor-followup' ? 'asked' : 'todo';
+        return (state.sponsors || [])
+            .filter((p) => p.email && p.status === want)
+            .map((p) => ({ business: { name: p.business, email: p.email } }));
+    }
+    if (m.system === 'waitlist') return [];
+    if (m.system) return paidVendors(state.bookings, state.activeEventId);
+    return recipients(state.bookings, state.activeEventId, d);
 }
 
 function editorHtml(ctx, ev) {
@@ -747,88 +787,94 @@ function editorHtml(ctx, ev) {
     const back = '<button type="button" class="ms-back" data-ms-back>&larr; All messages</button>';
 
     const sys = !!m.system;
-    const saved = isNew ? null : draftFrom(m);
-    const dirty = isNew || !sameDraft(saved, d);
-    /*  who it goes to: vendors for vendor emails; for the sponsor emails, the
-      businesses on the Sponsors tab - NEVER the vendors */
+    const dirty = isNew || !sameDraft(draftFrom(m), d);
     const spons = m.audience === 'sponsors';
-    const list = spons
-        ? (state.sponsors || [])
-              .filter((p) => p.email && (m.system === 'sponsor-followup' ? p.status === 'asked' : p.status === 'todo'))
-              .map((p) => ({ business: { name: p.business, email: p.email } }))
-        : m.system === 'waitlist'
-          ? []
-          : sys
-            ? paidVendors(state.bookings, state.activeEventId)
-            : recipients(state.bookings, state.activeEventId, d);
-    const sentence = sentenceHtml(ctx, d, m, ev);
+    const wl = m.system === 'waitlist';
+    const list = editorList(state, m, d);
     const locked = m.status === 'sent';
+    const off = locked ? ' disabled' : '';
     const t = d.trigger || {};
     const failed = m.failed || [];
+    const live = ['approved', 'paused', 'review'].includes(m.status);
 
-    return `<div class="ms">${back}
-    <div class="ms-title"><h1>${h.esc(d.name || (isNew ? 'New message' : 'Message'))}</h1><span class="ms-chip ms-${tone}">${h.esc(label)}</span>
-      ${!isNew ? `<span class="ms-count">${spons || m.system === 'waitlist' || m.system === 'site-moved' ? 'Sent ' + (m.sentCount || 0) : 'Sent ' + (sys ? list.filter((b) => b.invoiceEmailedAt).length : m.sentCount || 0) + ' of ' + list.length}</span>` : ''}</div>
-    <div class="ms-sentence" id="ms-sentence">${sentence}</div>
-    <div class="ms-grid">
-      <div class="ad-card ms-card ms-pad">
-        <label class="ms-f"><span>Name (just for you)</span><input class="ad-input" data-ms="name" value="${h.attr(d.name)}" placeholder="e.g. One week to go"${locked ? ' disabled' : ''}></label>
-        ${
-            m.system === 'sponsor-ask'
-                ? '<p class="ms-fixed-when"><b>Who:</b> the businesses you tick on the Sponsors tab &nbsp;&middot;&nbsp; <b>When:</b> when you press Send (a &ldquo;See the sponsor options&rdquo; button with their personal link is added below your text)</p>'
-                : m.system === 'sponsor-followup'
-                  ? '<p class="ms-fixed-when"><b>Who:</b> anyone still &ldquo;Asked&rdquo; &nbsp;&middot;&nbsp; <b>When:</b> 7 days after the ask, at 9:35 am</p>'
-                  : m.system === 'waitlist'
-                    ? '<p class="ms-fixed-when"><b>Who:</b> the next person on the waitlist &nbsp;&middot;&nbsp; <b>When:</b> the moment a spot opens (Accept and Decline buttons and the 4-hour note are added below your text)</p>'
-                    : m.system === 'site-moved'
-                      ? '<p class="ms-fixed-when"><b>Who:</b> a paid vendor you move to a different site &nbsp;&middot;&nbsp; <b>When:</b> the moment you press Save sites or Assign (a guide button is added below your text)</p>'
-                      : sys
-                        ? '<p class="ms-fixed-when"><b>Who:</b> each vendor &nbsp;&middot;&nbsp; <b>When:</b> the moment they pay (total and guide button are added below your text)</p>'
-                        : `<div class="ms-row">
-          <label class="ms-f"><span>Who</span><select class="ad-select" data-ms="who"${locked ? ' disabled' : ''}>
+    let count = 'Sent ' + (m.sentCount || 0);
+    if (!spons && !wl && m.system !== 'site-moved') {
+        count = 'Sent ' + (sys ? list.filter((b) => b.invoiceEmailedAt).length : m.sentCount || 0) + ' of ' + list.length;
+    }
+
+    let when;
+    if (Object.hasOwn(FIXED_WHEN, m.system)) when = `<p class="ms-fixed-when">${FIXED_WHEN[m.system]}</p>`;
+    else if (sys) when = `<p class="ms-fixed-when">${PAY_WHEN}</p>`;
+    else {
+        const opt = (v, text) => `<option value="${v}"${t.type === v ? ' selected' : ''}>${text}</option>`;
+        when = `<div class="ms-row">
+          <label class="ms-f"><span>Who</span><select class="ad-select" data-ms="who"${off}>
             ${Object.keys(WHO)
                 .map((k) => `<option value="${k}"${d.who === k ? ' selected' : ''}>${WHO[k]}</option>`)
                 .join('')}
           </select></label>
-          <label class="ms-f"><span>When</span><select class="ad-select" data-ms="trigger.type"${locked ? ' disabled' : ''}>
-            <option value="daysBefore"${t.type === 'daysBefore' ? ' selected' : ''}>Days before the event</option>
-            <option value="daysAfter"${t.type === 'daysAfter' ? ' selected' : ''}>Days after the event</option>
-            <option value="date"${t.type === 'date' ? ' selected' : ''}>On a date</option>
+          <label class="ms-f"><span>When</span><select class="ad-select" data-ms="trigger.type"${off}>
+            ${opt('daysBefore', 'Days before the event')}
+            ${opt('daysAfter', 'Days after the event')}
+            ${opt('date', 'On a date')}
           </select></label>
           ${
               t.type === 'date'
-                  ? `<label class="ms-f"><span>Date</span><input type="date" class="ad-input" data-ms="trigger.date" value="${h.attr(t.date || '')}"${locked ? ' disabled' : ''}></label>`
-                  : `<label class="ms-f ms-days"><span>Days</span><input type="number" min="0" max="365" class="ad-input" data-ms="trigger.days" value="${h.attr(t.days || 0)}"${locked ? ' disabled' : ''}></label>`
+                  ? `<label class="ms-f"><span>Date</span><input type="date" class="ad-input" data-ms="trigger.date" value="${h.attr(t.date || '')}"${off}></label>`
+                  : `<label class="ms-f ms-days"><span>Days</span><input type="number" min="0" max="365" class="ad-input" data-ms="trigger.days" value="${h.attr(t.days || 0)}"${off}></label>`
           }
-        </div>`
-        }
-        ${m.system === 'waitlist' ? '<div hidden>' : `<details class="ms-list"><summary>${spons ? (m.system === 'sponsor-followup' ? 'Businesses still waiting on a reply' : 'Businesses ready to ask (tick them on the Sponsors tab)') : 'See who gets it'} (${list.length})</summary>`}
+        </div>`;
+    }
+
+    let summary = 'See who gets it';
+    if (spons)
+        summary =
+            m.system === 'sponsor-followup'
+                ? 'Businesses still waiting on a reply'
+                : 'Businesses ready to ask (tick them on the Sponsors tab)';
+    const listOpen = wl ? '<div hidden>' : `<details class="ms-list"><summary>${summary} (${list.length})</summary>`;
+
+    let prevFor = 'as ' + h.esc(((list[0] || {}).business || {}).name || 'a vendor') + ' sees it';
+    if (spons) prevFor = 'as a business sees it (sample details)';
+    else if (wl) prevFor = 'as the next person on the waitlist sees it (sample details)';
+
+    return `<div class="ms">${back}
+    <div class="ms-title"><h1>${h.esc(d.name || (isNew ? 'New message' : 'Message'))}</h1><span class="ms-chip ms-${tone}">${h.esc(label)}</span>
+      ${!isNew ? `<span class="ms-count">${count}</span>` : ''}</div>
+    <div class="ms-sentence" id="ms-sentence">${sentenceHtml(ctx, d, m, ev)}</div>
+    <div class="ms-grid">
+      <div class="ad-card ms-card ms-pad">
+        <label class="ms-f"><span>Name (just for you)</span><input class="ad-input" data-ms="name" value="${h.attr(d.name)}" placeholder="e.g. One week to go"${off}></label>
+        ${when}
+        ${listOpen}
           <ul>${list.map((b) => `<li>${h.esc((b.business || {}).name || '')} <span>${h.esc((b.business || {}).email || '')}${b.siteLabel ? ' · site ' + h.esc(b.siteLabel) : ''}</span></li>`).join('') || (spons ? '<li>No businesses yet - add them on the Sponsors tab.</li>' : '<li>No paid vendors match yet.</li>')}</ul>
-        ${m.system === 'waitlist' ? '</div>' : '</details>'}
-        <label class="ms-f"><span>Subject</span><input class="ad-input" data-ms="subject" value="${h.attr(d.subject)}"${locked ? ' disabled' : ''}></label>
-        <label class="ms-f"><span>Message</span><textarea class="ad-input ms-body" data-ms="body" rows="14"${locked ? ' disabled' : ''}>${h.esc(d.body)}</textarea></label>
+        ${wl ? '</div>' : '</details>'}
+        <label class="ms-f"><span>Subject</span><input class="ad-input" data-ms="subject" value="${h.attr(d.subject)}"${off}></label>
+        <label class="ms-f"><span>Message</span><textarea class="ad-input ms-body" data-ms="body" rows="14"${off}>${h.esc(d.body)}</textarea></label>
         <p class="ms-help">Blank line = new paragraph. Start a line with &ldquo;- &rdquo; for a bullet. Click to add:</p>
-        <div class="ms-chips">${(m.system === 'waitlist' ? FIELDS.concat(WAITLIST_FIELDS) : m.system === 'site-moved' ? FIELDS.concat(MOVED_FIELDS) : sys ? FIELDS.concat(INVOICE_FIELDS) : FIELDS).map(([k, l]) => `<button type="button" data-ms-field="${k}" title="${h.attr(l)}"${locked ? ' disabled' : ''}>{{${k}}}</button>`).join('')}</div>
-        ${sys ? '' : `<label class="ms-check"><input type="checkbox" data-ms="promo"${d.promo ? ' checked' : ''}${locked ? ' disabled' : ''}> Promotional (news about other events) &mdash; adds an unsubscribe link</label>`}
+        <div class="ms-chips">${fieldsFor(m)
+            .map(([k, l]) => `<button type="button" data-ms-field="${k}" title="${h.attr(l)}"${off}>{{${k}}}</button>`)
+            .join('')}</div>
+        ${sys ? '' : `<label class="ms-check"><input type="checkbox" data-ms="promo"${d.promo ? ' checked' : ''}${off}> Promotional (news about other events) &mdash; adds an unsubscribe link</label>`}
         <div class="ms-actions">
           ${locked ? '' : `<button type="button" class="ad-btn${dirty ? ' ad-btn-primary' : ''}" data-ms-act="save">${dirty ? 'Save' : 'Saved'}</button>`}
           ${!isNew ? '<button type="button" class="ad-btn" data-ms-act="test">Test to me</button>' : ''}
           ${!isNew && !dirty && m.status === 'review' ? '<button type="button" class="ad-btn ms-approve" data-ms-act="approve">Approve</button>' : ''}
           ${!isNew && m.status === 'approved' ? '<button type="button" class="ad-btn" data-ms-act="pause">Pause</button>' : ''}
           ${!isNew && m.status === 'paused' ? '<button type="button" class="ad-btn ad-btn-primary" data-ms-act="resume">Resume</button>' : ''}
-          ${!isNew && !dirty && !sys && ['approved', 'paused', 'review'].includes(m.status) ? '<button type="button" class="ad-btn ad-btn-primary" data-ms-act="sendnow">Send now</button>' : ''}
-          ${!isNew && !sys && ['approved', 'paused', 'review'].includes(m.status) ? '<button type="button" class="ad-btn" data-ms-act="cancel">Cancel</button>' : ''}
+          ${!isNew && !dirty && !sys && live ? '<button type="button" class="ad-btn ad-btn-primary" data-ms-act="sendnow">Send now</button>' : ''}
+          ${!isNew && !sys && live ? '<button type="button" class="ad-btn" data-ms-act="cancel">Cancel</button>' : ''}
           ${!isNew && !sys && !(m.sentCount > 0) ? '<button type="button" class="ad-btn ms-del" data-ms-act="delete">Delete</button>' : ''}
         </div>
         ${dirty && !isNew && m.status !== 'draft' ? `<p class="ms-note">Changes need your OK again after you save.${sys ? ' Vendors keep getting the approved wording until then.' : ''}</p>` : ''}
         ${m.system === 'invoice' && m.status === 'review' && !dirty ? '<p class="ms-note">Vendors are still getting the last approved wording &mdash; press Approve to switch to this.</p>' : ''}
-        ${m.system === 'waitlist' && m.status !== 'approved' && m.status !== 'paused' && !dirty ? '<p class="ms-note">The waitlist sends no offers until you approve this email.</p>' : ''}
+        ${wl && m.status !== 'approved' && m.status !== 'paused' && !dirty ? '<p class="ms-note">The waitlist sends no offers until you approve this email.</p>' : ''}
         ${m.system === 'site-moved' && m.status !== 'approved' && !dirty ? '<p class="ms-note">Vendors you move get no email until you approve this.</p>' : ''}
         <p class="ms-msg" id="ms-msg" hidden></p>
         ${failed.length ? `<div class="ms-failed"><p><b>${failed.length} didn&rsquo;t go</b></p>${failed.map((f) => `<div><span>${h.esc(f.name)} &middot; ${h.esc(f.to)}<em>${h.esc(f.error)}</em></span><button type="button" class="ad-btn ad-btn-small" data-ms-resend="${h.attr(f.bookingId)}">Resend</button></div>`).join('')}</div>` : ''}
       </div>
       <aside class="ad-card ms-card ms-pad">
-        <p class="ms-prev-h">Preview &mdash; ${m.audience === 'sponsors' ? 'as a business sees it (sample details)' : m.system === 'waitlist' ? 'as the next person on the waitlist sees it (sample details)' : 'as ' + h.esc(((list[0] || {}).business || {}).name || 'a vendor') + ' sees it'} &middot; buttons and links open for real</p>
+        <p class="ms-prev-h">Preview &mdash; ${prevFor} &middot; buttons and links open for real</p>
         <div class="ms-prev" id="ms-prev"></div>
       </aside>
     </div>
@@ -846,6 +892,14 @@ const pbtn = (h, label, url, cls) =>
         ? '<a class="' + (cls || '') + '" href="' + h.attr(url) + '" target="_blank" rel="noopener">' + label + '</a>'
         : '<span class="' + (cls || '') + '" title="Opens when a vendor has paid">' + label + '</span>';
 
+/* one email as it lands: header, subject, body, then what the server adds */
+function mailHtml(h, d, values, extra, foot, top = '') {
+    return `<div class="ms-mail"><div class="ms-mail-top">SOUNDZGOOD WHITSUNDAYS${top}</div>
+    <p class="ms-mail-subj">${h.esc(fill(d.subject, values, String))}</p>
+    <div class="ms-mail-body">${bodyHtml(d.body, values, h.esc)}${extra}</div>
+    <div class="ms-mail-foot">${foot}</div></div>`;
+}
+
 function previewHtml(ctx) {
     const { state, h } = ctx;
     const guide = guideLinkFor(state);
@@ -854,45 +908,36 @@ function previewHtml(ctx) {
     const m = (state.messages || []).find((x) => x.id === state.msgOpen) || {};
     const first = (m.system ? paidVendors(state.bookings, state.activeEventId) : recipients(state.bookings, state.activeEventId, d))[0];
     const v = sampleValues(first, ev);
+    const guideBtn = `
+      <p class="ms-mail-btn">${pbtn(h, 'View your invoice &amp; event guide &rarr;', guide)}</p>`;
     if (m.audience === 'sponsors') {
         const sv = { ...v, vendor_name: 'Sam', business_name: 'Sample Business' };
-        return `<div class="ms-mail"><div class="ms-mail-top">SOUNDZGOOD WHITSUNDAYS</div>
-    <p class="ms-mail-subj">${h.esc(fill(d.subject, sv, String))}</p>
-    <div class="ms-mail-body">${bodyHtml(d.body, sv, h.esc)}
+        const extra = `
       <p class="ms-mail-btn">${pbtn(h, 'See the sponsor options', '/sponsor?e=' + encodeURIComponent(state.activeEventId || ''))}</p>
-      <p class="ms-mail-note">Not for you? Just reply and let us know - we won't email you about it again.</p></div>
-    <div class="ms-mail-foot">SoundzGood Whitsundays</div></div>`;
+      <p class="ms-mail-note">Not for you? Just reply and let us know - we won't email you about it again.</p>`;
+        return mailHtml(h, d, sv, extra, 'SoundzGood Whitsundays');
     }
     if (m.system === 'waitlist') {
         const wv = { ...v, vendor_name: 'Sam', business_name: 'Sample Food Co', site_number: 'F4', expires_at: 'Sat 24 Oct, 1:35 pm' };
-        return `<div class="ms-mail"><div class="ms-mail-top">SOUNDZGOOD WHITSUNDAYS</div>
-    <p class="ms-mail-subj">${h.esc(fill(d.subject, wv, String))}</p>
-    <div class="ms-mail-body">${bodyHtml(d.body, wv, h.esc)}
+        const extra = `
       <p class="ms-mail-btn">${pbtn(h, 'Accept &amp; book my spot', '/vendor-signup')} <span class="ms-mail-btn2" title="In the real email this passes the spot to the next person">No thanks - decline</span></p>
-      <p class="ms-mail-note">This spot is held for you until ${h.esc(wv.expires_at)}. It is only yours once payment is received.</p></div>
-    <div class="ms-mail-foot">SoundzGood Whitsundays</div></div>`;
+      <p class="ms-mail-note">This spot is held for you until ${h.esc(wv.expires_at)}. It is only yours once payment is received.</p>`;
+        return mailHtml(h, d, wv, extra, 'SoundzGood Whitsundays');
     }
-    if (m.system === 'site-moved') {
-        const mv = { ...v, old_site: 'F2' };
-        return `<div class="ms-mail"><div class="ms-mail-top">SOUNDZGOOD WHITSUNDAYS</div>
-    <p class="ms-mail-subj">${h.esc(fill(d.subject, mv, String))}</p>
-    <div class="ms-mail-body">${bodyHtml(d.body, mv, h.esc)}
-      <p class="ms-mail-btn">${pbtn(h, 'View your invoice &amp; event guide &rarr;', guide)}</p></div>
-    <div class="ms-mail-foot">SoundzGood Whitsundays</div></div>`;
-    }
+    if (m.system === 'site-moved') return mailHtml(h, d, { ...v, old_site: 'F2' }, guideBtn, 'SoundzGood Whitsundays');
     if (m.system) {
-        return `<div class="ms-mail"><div class="ms-mail-top">SOUNDZGOOD WHITSUNDAYS<b>Thank you &mdash; you&rsquo;re booked in</b></div>
-    <p class="ms-mail-subj">${h.esc(fill(d.subject, v, String))}</p>
-    <div class="ms-mail-body">${bodyHtml(d.body, v, h.esc)}
-      <div class="ms-mail-total"><small>TOTAL PAID (INCL GST)</small><b>${h.esc(v.total_paid)}</b><span>Invoice ${h.esc(v.invoice_number)}</span></div>
-      <p class="ms-mail-btn">${pbtn(h, 'View your invoice &amp; event guide &rarr;', guide)}</p></div>
-    <div class="ms-mail-foot">SoundzGood Whitsundays &middot; 34a Williams St, Bowen QLD 4805</div></div>`;
+        const total = `
+      <div class="ms-mail-total"><small>TOTAL PAID (INCL GST)</small><b>${h.esc(v.total_paid)}</b><span>Invoice ${h.esc(v.invoice_number)}</span></div>`;
+        return mailHtml(
+            h,
+            d,
+            v,
+            total + guideBtn,
+            'SoundzGood Whitsundays &middot; 34a Williams St, Bowen QLD 4805',
+            '<b>Thank you &mdash; you&rsquo;re booked in</b>'
+        );
     }
-    return `<div class="ms-mail"><div class="ms-mail-top">SOUNDZGOOD WHITSUNDAYS</div>
-    <p class="ms-mail-subj">${h.esc(fill(d.subject, v, String))}</p>
-    <div class="ms-mail-body">${bodyHtml(d.body, v, h.esc)}
-      <p class="ms-mail-btn">${pbtn(h, 'View your invoice &amp; event guide &rarr;', guide)}</p></div>
-    <div class="ms-mail-foot">SoundzGood Whitsundays${d.promo ? '<br><u>Unsubscribe from event news</u>' : ''}</div></div>`;
+    return mailHtml(h, d, v, guideBtn, 'SoundzGood Whitsundays' + (d.promo ? '<br><u>Unsubscribe from event news</u>' : ''));
 }
 
 /* ==========================================================================
@@ -913,6 +958,8 @@ export function wireMessages(ctx) {
                 state.msgSeeding = false;
             });
     }
+
+    const sponsorNames = () => new Set((state.sponsors || []).map((p) => lower(p.business)));
 
     // Sent emails: load, search, show the chosen one
     const refreshLog = () => {
@@ -1007,7 +1054,7 @@ export function wireMessages(ctx) {
             const name = needAdd.getAttribute('data-need-add');
             const box = [...root.querySelectorAll('[data-need-email]')].find((x) => x.getAttribute('data-need-email') === name);
             const email = String((box && box.value) || '').trim();
-            if (!/^[^s@]+@[^s@]+.[^s@]+$/.test(email)) {
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                 window.alert('Type their email first.');
                 return;
             }
@@ -1016,11 +1063,11 @@ export function wireMessages(ctx) {
             return;
         }
         if (e.target.closest('[data-sp-big]')) {
-            const have = new Set((state.sponsors || []).map((p) => String(p.business || '').toLowerCase()));
+            const have = sponsorNames();
             const add = SUGGESTED_SPONSORS.filter((s) => !have.has(s.business.toLowerCase()));
             // ones added earlier without an email get it filled in now
             const fill = (state.sponsors || []).filter(
-                (p) => !p.email && SUGGESTED_SPONSORS.some((s) => s.business.toLowerCase() === String(p.business || '').toLowerCase())
+                (p) => !p.email && SUGGESTED_SPONSORS.some((s) => s.business.toLowerCase() === lower(p.business))
             );
             if (!add.length && !fill.length) {
                 window.alert('They are all on your list already.');
@@ -1038,7 +1085,7 @@ export function wireMessages(ctx) {
             return;
         }
         if (e.target.closest('[data-sp-dir]')) {
-            const have = new Set((state.sponsors || []).map((p) => String(p.business || '').toLowerCase()));
+            const have = sponsorNames();
             const pool = (state.sponsorBiz || [])
                 .filter((b) => b.business && !have.has(String(b.business).toLowerCase()))
                 .sort((a, b) => (b.stars || 0) - (a.stars || 0) || a.business.localeCompare(b.business));
@@ -1077,7 +1124,7 @@ export function wireMessages(ctx) {
             return;
         }
         if (e.target.closest('[data-sp-past]')) {
-            const have = new Set((state.sponsors || []).map((p) => String(p.business || '').toLowerCase()));
+            const have = sponsorNames();
             const add = PAST_SPONSORS.filter((n) => !have.has(n.toLowerCase()));
             if (!add.length) {
                 window.alert('Your past sponsors are already on the list.');
@@ -1290,6 +1337,13 @@ export function wireMessages(ctx) {
         if (!act) return;
         const what = act.getAttribute('data-ms-act');
         const id = state.msgOpen;
+        const m = (state.messages || []).find((x) => x.id === id) || {};
+        // asks first; a "no" turns the button back on and stops
+        const declined = (question) => {
+            if (window.confirm(question)) return false;
+            act.disabled = false;
+            return true;
+        };
         act.disabled = true;
         try {
             if (what === 'save') {
@@ -1309,86 +1363,57 @@ export function wireMessages(ctx) {
                     r.sent ? 'Test sent to ' + r.to + ' only. No vendor was emailed.' : 'Test did not send: ' + (r.error || r.reason || ''),
                     !r.sent
                 );
-            } else if (what === 'approve' && ((state.messages || []).find((x) => x.id === id) || {}).system) {
-                const wlMsg = ((state.messages || []).find((x) => x.id === id) || {}).system === 'waitlist';
-                const spMsg = ((state.messages || []).find((x) => x.id === id) || {}).audience === 'sponsors';
-                const mvMsg = ((state.messages || []).find((x) => x.id === id) || {}).system === 'site-moved';
-                if (spMsg) {
-                    if (
-                        !window.confirm(
-                            'Approve this sponsorship email? It only goes when you press Send on the Sponsors tab (or 7 days later for the follow-up).'
-                        )
-                    ) {
-                        act.disabled = false;
-                        return;
-                    }
-                    await call('adminMessageAction', { id, action: 'approve' });
-                    say('Approved.');
-                    act.disabled = false;
-                    return;
-                }
+            } else if (what === 'approve' && m.audience === 'sponsors' && m.system) {
                 if (
-                    !window.confirm(
-                        wlMsg
-                            ? 'Approve this email? From now on, when a spot opens the next person on the waitlist is emailed automatically and gets 4 hours to claim it.'
-                            : mvMsg
-                              ? 'Approve this email? From now on, a paid vendor you move to a different site is emailed automatically.'
-                              : 'Approve this wording? Every vendor who pays from now on gets it.'
+                    declined(
+                        'Approve this sponsorship email? It only goes when you press Send on the Sponsors tab (or 7 days later for the follow-up).'
                     )
-                ) {
-                    act.disabled = false;
+                )
                     return;
-                }
                 await call('adminMessageAction', { id, action: 'approve' });
-                say(mvMsg ? 'Approved - vendors you move get this email.' : 'Approved - new vendors get this wording.');
+                say('Approved.');
+            } else if (what === 'approve' && m.system) {
+                const mv = m.system === 'site-moved';
+                let question = 'Approve this wording? Every vendor who pays from now on gets it.';
+                if (m.system === 'waitlist') {
+                    question =
+                        'Approve this email? From now on, when a spot opens the next person on the waitlist is emailed automatically and gets 4 hours to claim it.';
+                } else if (mv)
+                    question = 'Approve this email? From now on, a paid vendor you move to a different site is emailed automatically.';
+                if (declined(question)) return;
+                await call('adminMessageAction', { id, action: 'approve' });
+                say(mv ? 'Approved - vendors you move get this email.' : 'Approved - new vendors get this wording.');
             } else if (what === 'approve') {
-                const m = (state.messages || []).find((x) => x.id === id) || {};
                 const ev = (state.events || []).find((x) => x.id === state.activeEventId) || {};
                 const n = recipients(state.bookings, state.activeEventId, m).length;
-                if (
-                    !window.confirm(
-                        'Approve "' +
-                            (m.name || m.subject) +
-                            '"?\n\nIt will send itself to ' +
-                            n +
-                            ' vendor' +
-                            (n === 1 ? '' : 's') +
-                            ' (and anyone who books before then) on ' +
-                            niceDay(sendDate(m, ev)) +
-                            ' at ' +
-                            SEND_TIME +
-                            '.\n\nYou can pause or cancel it any time before then.'
-                    )
-                ) {
-                    act.disabled = false;
-                    return;
-                }
+                const question =
+                    'Approve "' +
+                    (m.name || m.subject) +
+                    '"?\n\nIt will send itself to ' +
+                    n +
+                    ' vendor' +
+                    (n === 1 ? '' : 's') +
+                    ' (and anyone who books before then) on ' +
+                    niceDay(sendDate(m, ev)) +
+                    ' at ' +
+                    SEND_TIME +
+                    '.\n\nYou can pause or cancel it any time before then.';
+                if (declined(question)) return;
                 const r = await call('adminMessageAction', { id, action: 'approve' });
                 say('Approved - it sends on ' + niceDay(r.sendDate) + ' at ' + SEND_TIME + '.');
             } else if (what === 'delete') {
-                if (!window.confirm('Delete this message? It has not been sent to anyone.')) {
-                    act.disabled = false;
-                    return;
-                }
+                if (declined('Delete this message? It has not been sent to anyone.')) return;
                 await call('adminMessageAction', { id, action: 'delete' });
                 close();
                 return;
             } else if (what === 'sendnow') {
-                const mm = (state.messages || []).find((x) => x.id === id) || {};
-                const n = recipients(state.bookings, state.activeEventId, mm).length;
-                if (
-                    !window.confirm('Send "' + (mm.name || 'this message') + '" to ' + n + ' vendor' + (n === 1 ? '' : 's') + ' RIGHT NOW?')
-                ) {
-                    act.disabled = false;
+                const n = recipients(state.bookings, state.activeEventId, m).length;
+                if (declined('Send "' + (m.name || 'this message') + '" to ' + n + ' vendor' + (n === 1 ? '' : 's') + ' RIGHT NOW?'))
                     return;
-                }
                 const r = await call('adminMessageAction', { id, action: 'sendNow' });
                 say('Sent to ' + r.sent + ' of ' + r.total + (r.failed ? ' - ' + r.failed + ' failed (see below)' : '.'), !!r.failed);
             } else if (what === 'cancel') {
-                if (!window.confirm('Cancel this message? It will not send.')) {
-                    act.disabled = false;
-                    return;
-                }
+                if (declined('Cancel this message? It will not send.')) return;
                 await call('adminMessageAction', { id, action: 'cancel' });
             } else {
                 await call('adminMessageAction', { id, action: what }); // pause / resume
@@ -1479,15 +1504,6 @@ export function wireMessages(ctx) {
             await ctx.sponsors.update(t.getAttribute('data-sp-amount'), {
                 amountCents: Math.max(0, Math.round(Number(String(t.value).replace(/[^0-9.]/g, '')) * 100) || 0)
             });
-            return;
-        }
-        if (t.matches('[data-sp-email]')) {
-            const v = String(t.value || '').trim();
-            if (v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
-                window.alert("That doesn't look like an email address.");
-                return;
-            }
-            await ctx.sponsors.update(t.getAttribute('data-sp-email'), { email: v });
         }
     });
     root.addEventListener('submit', async (e) => {
@@ -1496,7 +1512,7 @@ export function wireMessages(ctx) {
         const f = e.target;
         const v = (n) => String((f.querySelector('[name="' + n + '"]') || {}).value || '').trim();
         if (!v('business')) return;
-        if (v('email') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v('email'))) {
+        if (v('email') && !EMAIL_OK.test(v('email'))) {
             window.alert("That doesn't look like an email address.");
             return;
         }

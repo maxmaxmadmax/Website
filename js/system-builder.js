@@ -14,7 +14,7 @@
 
    Pure HTML + wiring; admin-app.js hands in the items and does the saving.
    ========================================================================== */
-import { expandKit, resolveTotals } from './kit.js?v=846';
+import { expandKit, resolveTotals } from './kit.js?v=847';
 
 /* the working copy of the system being built */
 export function sysDraftFrom(item, type) {
@@ -176,13 +176,7 @@ export function systemPanelHtml(d, items, h, cats) {
           ${save > 0 ? `<em>Saves the customer ${save}%</em>` : ''}
         </div>
 
-        <p class="sys-build${s.build ? '' : ' is-none'}">${
-            d.parts.length
-                ? s.build
-                    ? '&#10003; You can ' + w.make + ' <b>' + s.build + '</b> of these with what you own'
-                    : '&#9888; You don’t own enough gear to ' + w.make + ' one'
-                : w.hint
-        }</p>
+        <p class="sys-build${s.build ? '' : ' is-none'}">${buildLine(d, s, w)}</p>
 
         ${
             d.bundleType === 'package'
@@ -209,26 +203,35 @@ export function systemPanelHtml(d, items, h, cats) {
 
 function partsHtml(d, byId, h, covered) {
     if (!d.parts.length) return '<p class="sys-empty">No parts yet.</p>';
+    const row = (i, qty, name, own) => `<div class="sys-part" data-sys-i="${i}">
+        <span class="qb-grip sys-grip" title="Drag to reorder">&#10303;</span>
+        <span class="sys-pname">${name}</span>
+        <span class="sys-qty"><button type="button" data-sys-minus="${i}" aria-label="Less">&minus;</button><b>${qty}</b><button type="button" data-sys-plus="${i}" aria-label="More">+</button></span>
+        <span class="sys-own">${own}</span>
+      </div>`;
     return d.parts
         .map((p, i) => {
             if (p.resourceId) {
                 const r = crewOf(d, p.resourceId) || { name: '(crew member removed)' };
-                return `<div class="sys-part" data-sys-i="${i}">
-        <span class="qb-grip sys-grip" title="Drag to reorder">&#10303;</span>
-        <span class="sys-pname"><span class="qb-sys-tag is-crew">Crew</span>${h.esc(r.name)}<small>${h.esc(h.money(r.dayRateCents || 0))}/day</small></span>
-        <span class="sys-qty"><button type="button" data-sys-minus="${i}" aria-label="Less">&minus;</button><b>${p.qty}</b><button type="button" data-sys-plus="${i}" aria-label="More">+</button></span>
-        <span class="sys-own"></span>
-      </div>`;
+                const name = `<span class="qb-sys-tag is-crew">Crew</span>${h.esc(r.name)}<small>${h.esc(h.money(r.dayRateCents || 0))}/day</small>`;
+                return row(i, p.qty, name, '');
             }
             const it = byId[p.itemId] || { name: '(missing item)' };
-            return `<div class="sys-part" data-sys-i="${i}">
-        <span class="qb-grip sys-grip" title="Drag to reorder">&#10303;</span>
-        <span class="sys-pname">${it.isSystem ? '<span class="qb-sys-tag">Kit</span>' : ''}${h.esc(it.name)}<small>${h.esc(it.category || '')}</small>${covered && covered[p.itemId] ? '<em class="sys-covered">' + covered[p.itemId] + ' already comes with another part - only counted once</em>' : ''}</span>
-        <span class="sys-qty"><button type="button" data-sys-minus="${i}" aria-label="Less">&minus;</button><b>${p.qty}</b><button type="button" data-sys-plus="${i}" aria-label="More">+</button></span>
-        <span class="sys-own">${h.esc(it.quantityTotal != null ? it.quantityTotal : '?')} owned</span>
-      </div>`;
+            const note =
+                covered && covered[p.itemId]
+                    ? '<em class="sys-covered">' + covered[p.itemId] + ' already comes with another part - only counted once</em>'
+                    : '';
+            const name = `${it.isSystem ? '<span class="qb-sys-tag">Kit</span>' : ''}${h.esc(it.name)}<small>${h.esc(it.category || '')}</small>${note}`;
+            return row(i, p.qty, name, h.esc(it.quantityTotal != null ? it.quantityTotal : '?') + ' owned');
         })
         .join('');
+}
+
+/* the "you can build N" line under the price */
+function buildLine(d, s, w) {
+    if (!d.parts.length) return w.hint;
+    if (s.build) return '&#10003; You can ' + w.make + ' <b>' + s.build + '</b> of these with what you own';
+    return '&#9888; You don’t own enough gear to ' + w.make + ' one';
 }
 
 /* search results: a kit takes single gear; a package takes single gear AND
@@ -255,24 +258,14 @@ function resultsHtml(d, items, h) {
                 `<button type="button" data-sys-add="res:${h.attr(r.id)}"><span class="qb-sys-tag is-crew">Crew</span>${h.esc(r.name)}<small>${h.esc(h.money(r.dayRateCents || 0))}/day</small></button>`
         )
         .join('');
-    if (!hits.length && crew.length) return crewHtml;
-    if (!hits.length) return '<p class="sys-none">No gear matches.</p>';
-    if (crewHtml)
-        return (
-            crewHtml +
-            hits
-                .map(
-                    (it) =>
-                        `<button type="button" data-sys-add="${h.attr(it.id)}">${it.isSystem ? '<span class="qb-sys-tag">Kit</span>' : ''}${h.esc(it.name)}<small>${h.esc(it.category || '')} &middot; ${h.esc(h.money(it.priceCents || 0))}/day</small></button>`
-                )
-                .join('')
-        );
-    return hits
+    if (!hits.length) return crew.length ? crewHtml : '<p class="sys-none">No gear matches.</p>';
+    const hitsHtml = hits
         .map(
             (it) =>
                 `<button type="button" data-sys-add="${h.attr(it.id)}">${it.isSystem ? '<span class="qb-sys-tag">Kit</span>' : ''}${h.esc(it.name)}<small>${h.esc(it.category || '')} &middot; ${h.esc(h.money(it.priceCents || 0))}/day</small></button>`
         )
         .join('');
+    return crewHtml + hitsHtml;
 }
 
 /* clicks and typing. act = { save(data), close() }. Re-draws the panel in
@@ -384,18 +377,11 @@ export function wireSystemPanel(d, getItems, h, cats, act) {
         const add = e.target.closest('[data-sys-add]');
         if (add) {
             const v = add.getAttribute('data-sys-add');
-            if (v.startsWith('res:')) {
-                // crew member
-                const resourceId = v.slice(4);
-                const ex = d.parts.find((p) => p.resourceId === resourceId);
-                if (ex) ex.qty++;
-                else d.parts.push({ resourceId, qty: 1 });
-            } else {
-                const itemId = v;
-                const ex = d.parts.find((p) => p.itemId === itemId);
-                if (ex) ex.qty++;
-                else d.parts.push({ itemId, qty: 1 });
-            }
+            const key = v.startsWith('res:') ? 'resourceId' : 'itemId'; // 'res:' = crew member
+            const id = key === 'resourceId' ? v.slice(4) : v;
+            const ex = d.parts.find((p) => p[key] === id);
+            if (ex) ex.qty++;
+            else d.parts.push({ [key]: id, qty: 1 });
             d.search = '';
             redraw();
             return;

@@ -26,8 +26,10 @@
    fixed point: keep pulling in what the current kit needs until it settles.
    ========================================================================== */
 
-function reqsOf(item) {
-    return item && Array.isArray(item.requirements) ? item.requirements : [];
+/* the requirements of an item that point at a real inventory item */
+function reqsOf(item, itemsById) {
+    const reqs = item && Array.isArray(item.requirements) ? item.requirements : [];
+    return reqs.filter((r) => r && r.itemId && itemsById[r.itemId]);
 }
 
 /*  Total quantity of every item in the kit (what the customer hired, plus
@@ -42,9 +44,8 @@ function resolveTotals(base, itemsById) {
 
         Object.keys(total).forEach((x) => {
             const qx = total[x];
-            if (!qx || !itemsById[x]) return;
-            reqsOf(itemsById[x]).forEach((r) => {
-                if (!r || !r.itemId || !itemsById[r.itemId]) return;
+            if (!qx) return;
+            reqsOf(itemsById[x], itemsById).forEach((r) => {
                 if (r.rule === 'shared') {
                     const coversN = Math.max(1, Math.round(r.coversN || 1));
                     const qtyPer = Math.max(1, Math.round(r.qty || 1));
@@ -67,10 +68,7 @@ function resolveTotals(base, itemsById) {
         });
 
         const keys = new Set([...Object.keys(total), ...Object.keys(next)]);
-        let settled = true;
-        keys.forEach((k) => {
-            if ((total[k] || 0) !== (next[k] || 0)) settled = false;
-        });
+        const settled = [...keys].every((k) => (total[k] || 0) === (next[k] || 0));
         total = next;
         if (settled) break;
     }
@@ -82,6 +80,13 @@ function unitPriceFor(reqLike, item) {
     if (reqLike.charge === 'free') return 0;
     if (reqLike.charge === 'discounted') return Math.max(0, Math.round(reqLike.discountCents || 0));
     return Math.max(0, Math.round((item && item.priceCents) || 0));
+}
+
+/* how many we have: available, else total, else no limit */
+function stockOf(item) {
+    if (item && item.quantityAvailable != null) return item.quantityAvailable;
+    if (item && item.quantityTotal != null) return item.quantityTotal;
+    return Infinity;
 }
 
 /*  Build the priced kit for a cart.
@@ -106,19 +111,18 @@ function expandKit(cart, itemsById) {
 
     const totals = resolveTotals(base, itemsById);
 
-    // SYSTEMS: everything inside a system - its parts and the
-    // gear they bring along - is covered by the system's own price, so it is free.
+    // Everything inside a system (its parts and the gear they bring) is
+    // covered by the system's own price, so it is free.
     const inSys = new Set();
     const walk = (id) => {
-        reqsOf(itemsById[id]).forEach((r) => {
-            if (r && r.itemId && itemsById[r.itemId] && !inSys.has(r.itemId)) {
-                inSys.add(r.itemId);
-                walk(r.itemId);
-            }
+        reqsOf(itemsById[id], itemsById).forEach((r) => {
+            if (inSys.has(r.itemId)) return;
+            inSys.add(r.itemId);
+            walk(r.itemId);
         });
     };
     Object.keys(base).forEach((id) => {
-        if (itemsById[id] && itemsById[id].isSystem) walk(id);
+        if (itemsById[id].isSystem) walk(id);
     });
     const sysFree = (x) => inSys.has(x) || !!(itemsById[x] && itemsById[x].isSystem);
 
@@ -131,20 +135,15 @@ function expandKit(cart, itemsById) {
         a.qty += qty;
     };
 
-    // per-item add-ons
-    Object.keys(totals).forEach((x) => {
-        const qx = totals[x];
-        reqsOf(itemsById[x]).forEach((r) => {
-            if (!r || !r.itemId || !itemsById[r.itemId] || r.rule === 'shared') return;
-            add(r.itemId, sysFree(x) ? 'free' : r.charge || 'normal', r.discountCents, qx * Math.max(0, Math.round(r.qty || 0)));
-        });
-    });
-
-    // shared add-ons (recompute the pools from the settled totals)
+    // per-item add-ons now; shared ones pooled from the settled totals
     const pool = {};
     Object.keys(totals).forEach((x) => {
-        reqsOf(itemsById[x]).forEach((r) => {
-            if (!r || r.rule !== 'shared' || !r.itemId || !itemsById[r.itemId]) return;
+        const qx = totals[x];
+        reqsOf(itemsById[x], itemsById).forEach((r) => {
+            if (r.rule !== 'shared') {
+                add(r.itemId, sysFree(x) ? 'free' : r.charge || 'normal', r.discountCents, qx * Math.max(0, Math.round(r.qty || 0)));
+                return;
+            }
             const coversN = Math.max(1, Math.round(r.coversN || 1));
             const p =
                 pool[r.itemId] ||
@@ -155,7 +154,7 @@ function expandKit(cart, itemsById) {
                     charge: r.charge || 'normal',
                     discountCents: r.discountCents || 0
                 });
-            p.load += totals[x];
+            p.load += qx;
             if (sysFree(x)) p.charge = 'free';
             p.coversN = Math.min(p.coversN, coversN);
         });
@@ -168,14 +167,12 @@ function expandKit(cart, itemsById) {
     const nameOf = (id) => (itemsById[id] && itemsById[id].name) || id;
 
     const baseLines = Object.keys(base).map((id) => {
-        const it = itemsById[id];
-        const unit = Math.max(0, Math.round((it && it.priceCents) || 0));
+        const unit = unitPriceFor({}, itemsById[id]);
         return { itemId: id, name: nameOf(id), qty: base[id], unitCents: unit, lineCents: unit * base[id] };
     });
 
-    const required = Object.keys(agg)
-        .map((k) => {
-            const a = agg[k];
+    const required = Object.values(agg)
+        .map((a) => {
             const unit = unitPriceFor(a, itemsById[a.itemId]);
             return {
                 itemId: a.itemId,
@@ -193,12 +190,8 @@ function expandKit(cart, itemsById) {
 
     const shortages = [];
     Object.keys(totals).forEach((id) => {
-        const it = itemsById[id];
-        const avail =
-            it && it.quantityAvailable != null ? it.quantityAvailable : it && it.quantityTotal != null ? it.quantityTotal : Infinity;
-        if (totals[id] > avail) {
-            shortages.push({ itemId: id, name: nameOf(id), needed: totals[id], available: avail });
-        }
+        const avail = stockOf(itemsById[id]);
+        if (totals[id] > avail) shortages.push({ itemId: id, name: nameOf(id), needed: totals[id], available: avail });
     });
 
     return { base: baseLines, required, totals, addCents, shortages };

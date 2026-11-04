@@ -54,6 +54,14 @@ function baysTouch(a, b) {
     return false;
 }
 
+/* an SVG element with its attributes set */
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs) {
+    const el = document.createElementNS(SVG_NS, tag);
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+}
+
 export class VendorMap {
     /**
      * @param {HTMLElement} host       element to draw into
@@ -122,7 +130,8 @@ export class VendorMap {
 
     /* Accepts one id or a list, so a whole group lights up. */
     setSelected(ids) {
-        this.selectedIds = !ids ? [] : Array.isArray(ids) ? ids : [ids];
+        if (!ids) this.selectedIds = [];
+        else this.selectedIds = Array.isArray(ids) ? ids : [ids];
         this._openTierByCol = null;
         this.render();
     }
@@ -136,7 +145,9 @@ export class VendorMap {
             // A hold whose clock ran out is really available again; the scheduled
             // function will tidy the record shortly.
             const expiry = site.holdExpiresAt;
-            const ms = expiry && expiry.toMillis ? expiry.toMillis() : typeof expiry === 'number' ? expiry : null;
+            let ms = null;
+            if (expiry && expiry.toMillis) ms = expiry.toMillis();
+            else if (typeof expiry === 'number') ms = expiry;
             if (ms !== null && ms <= Date.now()) return 'available';
 
             return 'held';
@@ -152,8 +163,7 @@ export class VendorMap {
 
     matchesVendor(site) {
         const wanted = this.siteTypeWanted();
-        if (!wanted) return false;
-        return site.type === wanted;
+        return !!wanted && site.type === wanted;
     }
 
     /* The bays touching this one. Food sites have none - they stand alone.
@@ -182,10 +192,7 @@ export class VendorMap {
 
         let open = Infinity;
         for (const site of this.sites) {
-            if (!site.tier) continue;
-            if (site.type !== 'market') continue;
-            if ((site.column || '') !== key) continue;
-            if (!this.isFree(site)) continue;
+            if (!site.tier || site.type !== 'market' || (site.column || '') !== key || !this.isFree(site)) continue;
             if (site.tier < open) open = site.tier;
         }
 
@@ -305,35 +312,22 @@ export class VendorMap {
         if (!this.host) return;
 
         const { width, height } = this.mapSize;
-        const ns = 'http://www.w3.org/2000/svg';
-
-        const svg = document.createElementNS(ns, 'svg');
-        svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-        svg.setAttribute('class', 'vmap-svg');
-        svg.setAttribute('role', 'group');
-        svg.setAttribute('aria-label', 'Vendor site map');
+        const svg = svgEl('svg', { viewBox: `0 0 ${width} ${height}`, class: 'vmap-svg', role: 'group', 'aria-label': 'Vendor site map' });
 
         // ---- fixed furniture, drawn first so sites sit on top ----------------
         /*  The ENTRY box is not drawn (it covered bays M20 and M30); the live
         event still has it saved. */
         for (const mark of this.landmarks.filter((m) => m.kind !== 'entry')) {
-            const g = document.createElementNS(ns, 'g');
-            g.setAttribute('class', `vmap-landmark vmap-landmark-${mark.kind || 'other'}`);
-
-            const rect = document.createElementNS(ns, 'rect');
-            rect.setAttribute('x', mark.x);
-            rect.setAttribute('y', mark.y);
-            rect.setAttribute('width', mark.w);
-            rect.setAttribute('height', mark.h);
-            rect.setAttribute('rx', mark.kind === 'barrier' ? 2 : 8);
-            g.appendChild(rect);
+            const g = svgEl('g', { class: `vmap-landmark vmap-landmark-${mark.kind || 'other'}` });
+            g.appendChild(svgEl('rect', { x: mark.x, y: mark.y, width: mark.w, height: mark.h, rx: mark.kind === 'barrier' ? 2 : 8 }));
 
             if (mark.label) {
-                const label = document.createElementNS(ns, 'text');
-                label.setAttribute('x', mark.x + mark.w / 2);
-                label.setAttribute('y', mark.y + mark.h / 2 + 6);
-                label.setAttribute('text-anchor', 'middle');
-                label.setAttribute('class', 'vmap-landmark-text');
+                const label = svgEl('text', {
+                    x: mark.x + mark.w / 2,
+                    y: mark.y + mark.h / 2 + 6,
+                    'text-anchor': 'middle',
+                    class: 'vmap-landmark-text'
+                });
                 label.textContent = mark.label;
                 g.appendChild(label);
             }
@@ -350,10 +344,8 @@ export class VendorMap {
             // Free, but held back until the bays in front of it are gone.
             const waiting = this.isFree(site) && this.isBeyondWave(site) && !isSelected && !selectable;
 
-            const g = document.createElementNS(ns, 'g');
-            g.setAttribute(
-                'class',
-                [
+            const g = svgEl('g', {
+                class: [
                     'vmap-site',
                     `is-${status}`,
                     `type-${site.type}`,
@@ -364,7 +356,7 @@ export class VendorMap {
                 ]
                     .filter(Boolean)
                     .join(' ')
-            );
+            });
 
             // The two vans at the bottom of the food run sit on an angle.
             if (site.rotate) {
@@ -377,7 +369,8 @@ export class VendorMap {
                 g.setAttribute('tabindex', '0');
                 g.setAttribute('role', 'button');
 
-                const action = isSelected ? 'selected, choose again to remove' : this.selectedIds.length ? 'add to your stall' : 'choose';
+                let action = this.selectedIds.length ? 'add to your stall' : 'choose';
+                if (isSelected) action = 'selected, choose again to remove';
                 g.setAttribute('aria-label', `Site ${site.label}, ${site.type}, ${status === 'mine' ? 'your hold' : status}, ${action}`);
                 g.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
 
@@ -393,30 +386,22 @@ export class VendorMap {
                 g.setAttribute('aria-hidden', 'true');
             }
 
-            const rect = document.createElementNS(ns, 'rect');
-            rect.setAttribute('x', site.x);
-            rect.setAttribute('y', site.y);
-            rect.setAttribute('width', site.w);
-            rect.setAttribute('height', site.h);
-            rect.setAttribute('rx', 6);
-            g.appendChild(rect);
+            g.appendChild(svgEl('rect', { x: site.x, y: site.y, width: site.w, height: site.h, rx: 6 }));
 
-            const label = document.createElementNS(ns, 'text');
-            label.setAttribute('x', site.x + site.w / 2);
-            label.setAttribute('y', site.y + site.h / 2 + (site.h > 70 ? 0 : 3));
-            label.setAttribute('text-anchor', 'middle');
-            label.setAttribute('class', 'vmap-site-label');
+            const cx = site.x + site.w / 2;
+            const label = svgEl('text', {
+                x: cx,
+                y: site.y + site.h / 2 + (site.h > 70 ? 0 : 3),
+                'text-anchor': 'middle',
+                class: 'vmap-site-label'
+            });
             label.textContent = site.label;
             g.appendChild(label);
 
             // A short word under the label, so the map is readable without
             // relying on colour alone. Small bays have no room for it.
             if (site.h > 60) {
-                const sub = document.createElementNS(ns, 'text');
-                sub.setAttribute('x', site.x + site.w / 2);
-                sub.setAttribute('y', site.y + site.h / 2 + 18);
-                sub.setAttribute('text-anchor', 'middle');
-                sub.setAttribute('class', 'vmap-site-sub');
+                const sub = svgEl('text', { x: cx, y: site.y + site.h / 2 + 18, 'text-anchor': 'middle', class: 'vmap-site-sub' });
                 sub.textContent = this.subLabel(site, status, wrongType, isSelected, waiting);
                 g.appendChild(sub);
             }
