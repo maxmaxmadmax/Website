@@ -12,15 +12,6 @@
    ========================================================================== */
 
 /* Date and place line */
-.ev-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 14px;
-    font-family: var(--sg-font-accent);
-    font-size: 0.82rem;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-}
 
 .ev-meta-date {
     color: var(--sg-gold);
@@ -98,16 +89,6 @@
     fill: none;
     stroke: #fff;
     stroke-width: 1.4;
-}
-
-.ev-feature-eyebrow {
-    font-family: var(--sg-font-accent);
-    font-size: 0.72rem;
-    font-weight: bold;
-    letter-spacing: 0.34em;
-    text-transform: uppercase;
-    color: var(--sg-dim);
-    margin-bottom: 20px;
 }
 
 .ev-feature-name {
@@ -279,30 +260,16 @@
 .ev-vol-form label {
     display: block;
     margin: 0 0 14px;
-    font-weight: bold;
-    font-size: 0.9rem;
-    color: #eee;
 }
 
 .ev-vol-form input,
 .ev-vol-form textarea {
     display: block;
-    width: 100%;
     margin-top: 6px;
-    padding: 12px 14px;
-    border: 1px solid #333;
-    border-radius: 10px;
-    font: inherit;
-    font-size: 1rem;
-    color: #fff;
-    background: #1a1a1a;
-    box-sizing: border-box;
 }
 
-.ev-vol-form input:focus,
-.ev-vol-form textarea:focus {
-    outline: none;
-    border-color: var(--sg-orange-bright);
+.ev-vol-form .pill input {
+    display: none;
 }
 
 .ev-vol-2 {
@@ -326,30 +293,6 @@
     font-size: 0.9rem;
     color: #eee;
     margin-bottom: 8px;
-}
-
-.ev-vol-roles label {
-    display: inline-flex;
-    align-items: center;
-    margin: 0;
-    padding: 9px 14px;
-    border-radius: 999px;
-    background: #222;
-    border: 1px solid #333;
-    font-weight: normal;
-    color: #ddd;
-    cursor: pointer;
-}
-
-.ev-vol-roles label:has(input:checked) {
-    background: var(--sg-orange-bright);
-    border-color: var(--sg-orange-bright);
-    color: #000;
-    font-weight: bold;
-}
-
-.ev-vol-roles input {
-    display: none;
 }
 
 .ev-vol-form .btn-ticket {
@@ -515,17 +458,6 @@
     padding: 26px 6%;
 }
 
-.ev-res-kicker,
-.ev-res-label {
-    font-family: var(--sg-font-accent);
-    font-size: 0.68rem;
-    font-weight: bold;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--sg-gold);
-    margin-bottom: 8px;
-}
-
 .ev-res-name {
     font-family: var(--sg-font-display);
     font-size: clamp(1.9rem, 4.4vw, 3.1rem);
@@ -580,21 +512,6 @@
 .ev-res-facts b {
     color: #fff;
     font-weight: bold;
-}
-
-.ev-res-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--sg-gold);
-    color: #140800;
-    border-color: var(--sg-gold);
-}
-
-.ev-res-btn:hover {
-    background: #ffc933;
-    border-color: #ffc933;
-    color: #140800;
 }
 
 /* Handwritten line in the corner (decorative) */
@@ -799,25 +716,6 @@
     margin-top: clamp(40px, 6vw, 72px);
 }
 
-.ev-weekend-head {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 20px;
-    flex-wrap: wrap;
-    margin-bottom: 24px;
-}
-
-.ev-weekend-head h2 {
-    text-align: left;
-    margin: 0;
-}
-
-.ev-weekend-head .section-intro {
-    margin: 6px 0 0;
-    text-align: left;
-}
-
 .ev-weekend-actions {
     display: flex;
     align-items: center;
@@ -840,20 +738,6 @@
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 24px;
     margin-top: 26px;
-}
-
-.ev-card {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border: 1px solid var(--sg-border);
-    border-radius: 18px;
-    background: var(--sg-panel);
-    transition:
-        transform 0.25s ease,
-        border-color 0.25s ease,
-        box-shadow 0.25s ease;
 }
 
 /* One stretched link makes the whole card clickable */
@@ -882,22 +766,6 @@
     filter: brightness(0.75);
 }
 
-.ev-card-body {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 22px 22px 24px;
-    flex: 1;
-}
-
-.ev-card-body h3 {
-    font-family: var(--sg-font-display);
-    font-size: 1.5rem;
-    letter-spacing: -0.5px;
-    text-transform: uppercase;
-}
-
 .ev-card-artists {
     color: var(--sg-dim);
     font-size: 0.92rem;
@@ -913,12 +781,6 @@
         border-color 0.25s ease;
 }
 
-.ev-card:hover {
-    transform: translateY(-4px);
-    border-color: #3a3a3a;
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
-}
-
 .ev-card:hover .ev-card-art {
     filter: brightness(0.86) saturate(0.95);
     transform: scale(1.04);
@@ -928,10 +790,6 @@
     background: var(--sg-orange);
     border-color: var(--sg-orange);
     color: #0a0a0a;
-}
-
-.ev-card:focus-within {
-    border-color: var(--sg-orange);
 }
 
 .ev-card.is-nolink .ev-card-link {
@@ -1082,20 +940,14 @@
     .ev-feature-inner {
         padding-bottom: 44px;
     }
-
-    .ev-card-body {
-        padding: 18px 18px 20px;
-    }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .ev-card,
     .ev-card-art,
     .ev-card-btn {
         transition: none;
     }
 
-    .ev-card:hover,
     .ev-card:hover .ev-card-art {
         transform: none;
     }

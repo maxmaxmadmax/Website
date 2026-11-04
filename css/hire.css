@@ -41,34 +41,6 @@
     margin: 0 auto 26px;
 }
 
-.hire-chip {
-    appearance: none;
-    cursor: pointer;
-    padding: 8px 16px;
-    border-radius: 999px;
-    border: 1.5px solid var(--sg-border, #222);
-    background: transparent;
-    color: var(--sg-muted, #d0d0d0);
-    font: inherit;
-    font-size: 0.86rem;
-    font-weight: 600;
-    transition:
-        border-color 0.15s,
-        color 0.15s,
-        background 0.15s;
-}
-
-.hire-chip:hover {
-    color: #fff;
-    border-color: var(--sg-orange, #ff6b00);
-}
-
-.hire-chip.is-on {
-    background: linear-gradient(135deg, var(--sg-orange, #ff6b00), var(--sg-orange-bright, #ff8c00));
-    border-color: transparent;
-    color: #fff;
-}
-
 /* ==========================================================================
    CARDS
    ========================================================================== */
@@ -90,23 +62,6 @@
 
 .hire-empty a {
     color: var(--sg-orange, #ff6b00);
-}
-
-.hire-card {
-    display: flex;
-    flex-direction: column;
-    background: var(--sg-panel, #111);
-    border: 1px solid var(--sg-border, #222);
-    border-radius: 14px;
-    overflow: hidden;
-    transition:
-        transform 0.15s,
-        border-color 0.15s;
-}
-
-.hire-card:hover {
-    transform: translateY(-3px);
-    border-color: #333;
 }
 
 /* Product shots sit on white, shown whole */
@@ -139,11 +94,7 @@
 }
 
 .hire-body {
-    display: flex;
-    flex-direction: column;
     gap: 6px;
-    padding: 16px;
-    flex: 1 1 auto;
 }
 
 .hire-cat {
@@ -154,12 +105,6 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-}
-
-.hire-name {
-    margin: 2px 0 0;
-    font-size: 1.05rem;
-    color: #fff;
 }
 
 .hire-sub {
@@ -188,22 +133,6 @@
     font-size: 0.74rem;
     font-weight: 600;
     color: var(--sg-dim, #aaa);
-}
-
-.hire-enquire {
-    cursor: pointer;
-    padding: 9px 16px;
-    border: none;
-    border-radius: 10px;
-    background: linear-gradient(135deg, var(--sg-orange, #ff6b00), var(--sg-orange-bright, #ff8c00));
-    color: #fff;
-    font: inherit;
-    font-weight: 700;
-    font-size: 0.86rem;
-}
-
-.hire-enquire:hover {
-    filter: brightness(1.06);
 }
 
 /* ==========================================================================
@@ -262,7 +191,8 @@
         align-items: stretch;
     }
 
-    .hire-enquire {
+    .hire-foot .btn {
         width: 100%;
+        max-width: none;
     }
 }

@@ -10,7 +10,7 @@
    page shows a friendly empty state rather than throwing.
    ========================================================================== */
 
-import { firebaseConfig, isFirebaseConfigured } from './firebase-config.js?v=830';
+import { firebaseConfig, isFirebaseConfigured } from './firebase-config.js?v=831';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -81,7 +81,7 @@ function renderFilters() {
     }
 
     const chip = (val, label) =>
-        `<button type="button" class="hire-chip${activeCat === val ? ' is-on' : ''}"
+        `<button type="button" class="pill${activeCat === val ? ' is-on' : ''}"
              data-cat="${esc(val)}">${esc(label)}</button>`;
 
     host.innerHTML = chip('all', 'All gear') + cats.map((c) => chip(c, c)).join('');
@@ -120,15 +120,15 @@ function card(it) {
     const price = it.priceCents ? `<p class="hire-price">${money(it.priceCents)} <span>/ day</span></p>` : '';
 
     return `
-    <article class="hire-card">
+    <article class="card hire-card">
       <div class="hire-media">${media}</div>
-      <div class="hire-body">
+      <div class="card-body hire-body">
         ${it.category ? `<span class="hire-cat ${cls}">${esc(it.category)}</span>` : ''}
-        <h3 class="hire-name">${esc(it.name)}</h3>
+        <h3 class="h-card">${esc(it.name)}</h3>
         ${it.subtitle ? `<p class="hire-sub">${esc(it.subtitle)}</p>` : ''}
         <div class="hire-foot">
           ${price}
-          <button type="button" class="hire-enquire" data-open-quote-bot>Enquire</button>
+          <button type="button" class="btn btn-small" data-open-quote-bot>Enquire</button>
         </div>
       </div>
     </article>`;

@@ -187,72 +187,6 @@
     margin-top: 26px;
 }
 
-.sgs-btn {
-    display: inline-block;
-    padding: 16px 30px;
-    border-radius: 50px;
-    border: 2px solid transparent;
-    font-family: var(--sg-font-accent);
-    font-size: 0.8rem;
-    font-weight: bold;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    text-align: center;
-    text-decoration: none;
-    cursor: pointer;
-    transition:
-        background-color 0.2s,
-        color 0.2s,
-        border-color 0.2s,
-        transform 0.2s;
-}
-
-.sgs-btn-primary {
-    background: var(--sgs-yellow);
-    border-color: var(--sgs-yellow);
-    color: #0a0a0a;
-}
-
-.sgs-btn-primary:hover {
-    background: #ffc93a;
-    border-color: #ffc93a;
-    transform: translateY(-2px);
-}
-
-.sgs-btn-ghost {
-    background: rgba(0, 0, 0, 0.35);
-    border-color: rgba(255, 255, 255, 0.55);
-    color: #fff;
-}
-
-.sgs-btn-ghost:hover {
-    background: #fff;
-    border-color: #fff;
-    color: #0a0a0a;
-    transform: translateY(-2px);
-}
-
-.sgs-btn-outline {
-    background: transparent;
-    border-color: var(--sgs-yellow);
-    color: var(--sgs-yellow);
-    white-space: nowrap;
-}
-
-.sgs-btn-outline:hover {
-    background: var(--sgs-yellow);
-    color: #0a0a0a;
-}
-
-.sgs-btn-outline span {
-    margin-left: 10px;
-}
-
-.sgs-btn:focus-visible {
-    outline: 3px solid var(--sgs-yellow);
-    outline-offset: 3px;
-}
-
 /* Arrows either side */
 .sgs-arrow {
     position: absolute;
@@ -452,8 +386,8 @@
         gap: 10px;
     }
 
-    .sgs-actions .sgs-btn,
-    .sgs-content > .sgs-btn {
+    .sgs-actions .btn,
+    .sgs-content > .btn {
         display: block;
         width: 100%;
         padding: 17px 20px;
@@ -481,16 +415,6 @@
     text-transform: uppercase;
     color: #fff;
     margin: 0 0 24px;
-}
-
-.sgs-kicker {
-    font-family: var(--sg-font-accent);
-    font-size: 0.74rem;
-    font-weight: bold;
-    letter-spacing: 0.34em;
-    text-transform: uppercase;
-    color: var(--sgs-yellow);
-    margin: 0 0 16px;
 }
 
 /* ==========================================================================
@@ -870,15 +794,6 @@
     margin-bottom: clamp(28px, 4vw, 44px);
 }
 
-.sgs-an-eyebrow {
-    color: var(--sg-orange);
-    font-size: 0.7rem;
-    font-weight: bold;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    margin-bottom: 14px;
-}
-
 .sgs-annual-intro h2 {
     font-family: var(--sg-font-display);
     font-size: clamp(2.4rem, 6vw, 4.4rem);
@@ -1032,18 +947,6 @@
     list-style: none;
     margin: 14px 0 0;
     padding: 0;
-}
-
-.sgs-an-tags li {
-    padding: 5px 10px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.07);
-    color: #ddd;
-    font-size: 0.6rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    white-space: nowrap;
 }
 
 /* Job story link, stretched so the whole card clicks */
@@ -1222,7 +1125,7 @@
     stroke-linecap: round;
 }
 
-.sgs-cta .sgs-btn-primary {
+.sgs-cta .btn-gold {
     display: inline-flex;
     align-items: center;
     gap: 10px;
@@ -1265,7 +1168,6 @@
         scroll-behavior: auto;
     }
 
-    .sgs-btn,
     .sgs-arrow,
     .sgs-progress span,
     .sgs-an-card,
@@ -1274,7 +1176,6 @@
         transition: none;
     }
 
-    .sgs-btn:hover,
     .sgs-an-card:hover,
     .sgs-an-card:hover .sgs-an-art {
         transform: none;

@@ -656,6 +656,18 @@ textarea:focus-visible {
     display: none;
 }
 
+/* A pill that is a label keeps the pill type, not the form label type */
+.form label.pill {
+    font-family: var(--sg-font);
+    font-size: 0.76rem;
+    letter-spacing: 0.06em;
+    color: #ccc;
+}
+
+.form label.pill:has(input:checked) {
+    color: #0a0a0a;
+}
+
 .tag {
     padding: 5px 10px;
     border: 1px solid rgba(255, 255, 255, 0.16);
@@ -1088,15 +1100,6 @@ nav a.nav-cta.active {
     margin: auto;
     padding: 50px 40px;
     text-align: center;
-}
-
-.featured-event .eyebrow {
-    font-family: var(--sg-font-accent);
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--sg-gold);
-    font-size: 0.85rem;
-    margin-bottom: 12px;
 }
 
 .featured-event h2 {
