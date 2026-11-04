@@ -681,7 +681,7 @@ exports.createCheckout = onCall({ secrets: [STRIPE_SECRET_KEY, SMTP_USER, SMTP_P
 
     /* The Vendor Terms tick. Nothing moves to payment (or free confirmation)
      without it, and we keep when and which version was agreed. Keep the
-     version in step with js/site/vendor-terms-data.js. */
+     version in step with js/data/vendor-terms-data.js. */
     if (termsAccepted !== true) {
         throw new HttpsError('failed-precondition', 'Please agree to the Eatz & Beatz Vendor Terms & Conditions first.');
     }
@@ -5321,7 +5321,7 @@ exports.waitlistRespond = onRequest(async (req, res) => {
    sponsors/{id}: eventId, business, contactName, email, phone, source,
      status todo | asked | interested | yes | no, level, amountCents, notes,
      message, token, askedAt, followedUpAt, interestedAt
-   KEEP IN STEP: SPONSOR_LEVELS in js/site/sponsor-data.js (same keys / spots).
+   KEEP IN STEP: SPONSOR_LEVELS in js/data/sponsor-data.js (same keys / spots).
    ========================================================================= */
 const SPONSOR_LEVELS = {
     platinum: { name: 'Platinum - Presenting Partner', priceCents: 500000, spots: 1 },
