@@ -1,0 +1,258 @@
+/* ==========================================================================
+   ENGINEER PRINT - the one-page A4 for a production manager.
+   Loaded with media="print" on top of max.css.
+   ========================================================================== */
+
+/* ==========================================================================
+   PRINT - one A4 page for a production manager. In the order the rules were
+   tuned: later rules win. Check with Print preview after editing.
+   ========================================================================== */
+@media print {
+    @page {
+        size: A4;
+        margin: 0;
+    }
+
+    html,
+    body.eng-page {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        font-size: 9pt;
+        margin: 0;
+    }
+
+    #navbar,
+    #footer,
+    .navbar,
+    .footer,
+    .eng-actions {
+        display: none;
+    }
+
+    .eng-wrap {
+        max-width: none;
+        padding: 0 12mm;
+    }
+
+    .eng-tags {
+        font-size: 7pt;
+    }
+
+    .eng-kicker {
+        font-size: 7pt;
+        margin-bottom: 2mm;
+    }
+
+    .eng-contact {
+        font-size: 9pt;
+        gap: 1.5mm;
+    }
+
+    .eng-h2 {
+        font-size: 13pt;
+        margin-bottom: 2mm;
+    }
+
+    .eng-h2::before {
+        width: 7mm;
+        height: 1mm;
+    }
+
+    .eng-p {
+        font-size: 9pt;
+        margin-bottom: 2mm;
+        max-width: none;
+    }
+
+    .eng-cols3 {
+        gap: 6mm;
+    }
+
+    .eng-skills .eng-h2 {
+        font-size: 11pt;
+    }
+
+    .eng-strip {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        font-size: 7.5pt;
+        padding: 3.5mm 0;
+        border-top-width: 1mm;
+    }
+
+    .eng-photos {
+        gap: 3mm;
+        margin-top: 4mm;
+    }
+
+    .eng-photos .eng-photo {
+        aspect-ratio: 16 / 9;
+    }
+
+    .eng-photo {
+        font-size: 7pt;
+        padding: 2mm;
+    }
+
+    .eng-studio {
+        gap: 5mm;
+    }
+
+    .eng-credits {
+        font-size: 7.8pt;
+    }
+
+    .eng-credits th {
+        font-size: 10.5pt;
+        width: 12mm;
+        padding: 0.8mm 0;
+    }
+
+    .eng-cols3 ul {
+        font-size: 8pt;
+        gap: 0.3mm;
+    }
+
+    .eng-a-photos {
+        margin-top: 4mm;
+        gap: 2.5mm;
+    }
+
+    .eng-role {
+        margin: 2mm 0 0.5mm;
+        font-size: 10pt;
+    }
+
+    .eng-sec {
+        break-inside: avoid;
+        margin-top: 3.5mm;
+    }
+
+    .eng-cols3 h3 {
+        font-size: 9.5pt;
+        margin-bottom: 0.5mm;
+    }
+
+    .eng-sec,
+    .eng-layout {
+        break-inside: auto;
+    }
+
+    .eng-a-photos .eng-photo:nth-child(4) {
+        display: none;
+    }
+
+    .eng-credits tbody {
+        break-inside: avoid;
+    }
+
+    .eng-a-photos .eng-photo:nth-child(n + 3) {
+        display: none;
+    }
+
+    .eng-a-photos .eng-photo {
+        aspect-ratio: auto;
+        height: 30mm;
+    }
+
+    .eng-a-studio {
+        margin-top: 4mm;
+    }
+
+    .eng-a-studio .eng-p {
+        margin-bottom: 1.5mm;
+        font-size: 8pt;
+        line-height: 1.35;
+    }
+
+    .eng-a-studio .eng-cols3 {
+        grid-template-columns: 1fr 1fr;
+        gap: 2mm 4mm;
+    }
+
+    .eng-a-studio .eng-cols3 ul {
+        font-size: 7.6pt;
+    }
+
+    .eng-hero {
+        border-bottom-width: 2mm;
+        padding: 6mm 0 4mm;
+    }
+
+    .eng-name {
+        font-size: 34pt;
+    }
+
+    .eng-main {
+        padding-top: 3mm;
+        padding-bottom: 11mm;
+    }
+
+    .eng-scroll-hint {
+        display: none;
+    }
+
+    .eng-layout {
+        column-gap: 7mm;
+        grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
+        grid-template-areas:
+            'intro   intro'
+            'actions actions'
+            'credits photos'
+            'credits studio'
+            'credits skills';
+        grid-template-rows: auto auto auto auto 1fr;
+    }
+
+    .eng-a-photos .eng-photo:nth-child(n + 2) {
+        display: none;
+    }
+
+    .eng-a-skills {
+        grid-template-columns: 1fr 1fr;
+        gap: 3mm 4mm;
+        margin-top: 4mm;
+    }
+
+    .eng-a-skills > div:nth-child(2) {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+    }
+
+    .eng-a-skills .eng-h2 {
+        margin-bottom: 1mm;
+        font-size: 9.5pt;
+    }
+
+    .eng-a-skills ul {
+        gap: 0;
+        font-size: 7.4pt;
+    }
+
+    .eng-acts {
+        -webkit-box-orient: vertical;
+        display: block;
+        -webkit-line-clamp: unset;
+        overflow: visible;
+        font-size: 6.4pt;
+        line-height: 1.2;
+    }
+
+    .eng-credits td {
+        padding: 0.3mm 2mm 0.3mm 0;
+    }
+
+    .eng-intro {
+        margin: 0 0 2mm;
+        max-width: none;
+        font-size: 8.8pt;
+        line-height: 1.4;
+        margin-bottom: 0;
+    }
+
+    .eng-a-credits {
+        margin-top: 3mm;
+    }
+}
