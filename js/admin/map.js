@@ -7,7 +7,7 @@
    MAP AND SITES
    The ground, drawn from the same x/y/w/h as the public map, coloured by
    what is on each site. Click a site to free it, block it or seat someone.
-   It has its own SVG (not js/vendor-map.js) so a change to one can't break
+   It has its own SVG (not js/site/vendor-map.js) so a change to one can't break
    the other.
    ========================================================================= */
 

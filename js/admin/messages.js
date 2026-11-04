@@ -1,413 +1,1589 @@
-/* SOUNDZGOOD ADMIN - messages.js
-   Messages, Dashboard and Sponsors directory: the glue for js/messages.js, js/dashboard.js and js/sponsor-directory.js.
-   A plain script: every admin file shares one page scope, loaded in order by admin.html. */
-'use strict';
+/* ==========================================================================
+   MESSAGES  -  admin page
 
-/* =========================================================================
-   MESSAGES - the page lives in js/messages.js. The view key stays
-   'vendorEmail' so old links still land here.
-   ========================================================================= */
-function msgCtx() {
-    return { state, h: { esc, attr }, call, render, loadLog, sponsors: sponsorStore, biz: bizStore, upload: uploadImage };
-}
-/*  Any file into our Storage, as is. Returns the download link. */
-async function uploadFile(file, folder) {
-    const { ref, uploadBytes, getDownloadURL } = fb.st;
-    const safe = String(file.name || 'file')
-        .replace(/[^\w.-]+/g, '-')
-        .slice(0, 80);
-    const path = folder + Date.now() + '-' + safe;
-    await uploadBytes(ref(fb.storage, path), file, { contentType: file.type || 'application/octet-stream' });
-    return getDownloadURL(ref(fb.storage, path));
-}
-/*  A picture into our Storage (shrunk first). Returns the download link. */
-async function uploadImage(file, folder, max = 800) {
-    const { ref, uploadBytes, getDownloadURL } = fb.st;
-    const small = await shrinkPhoto(file, max);
-    const path = folder + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + (small.type === 'image/webp' ? '.webp' : '');
-    await uploadBytes(ref(fb.storage, path), small, { contentType: small.type || file.type });
-    return getDownloadURL(ref(fb.storage, path));
-}
-/*  The sponsor directory: one record per business, across events. */
-function newBizDoc(p) {
-    const { serverTimestamp } = fb.f;
-    return { business: '', industry: '', stage: 'idea', stars: 0, ...p, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
-}
-const bizStore = {
-    async add(p) {
-        const { collection, addDoc } = fb.f;
-        const ref = await addDoc(collection(fb.db, 'sponsorBiz'), newBizDoc(p));
-        return ref.id;
-    },
-    async update(id, p) {
-        const { doc, updateDoc, serverTimestamp } = fb.f;
-        await updateDoc(doc(fb.db, 'sponsorBiz', id), { ...p, updatedAt: serverTimestamp() });
-    },
-    /* many at once (imports) - 400 a batch */
-    async addMany(list) {
-        const { collection, doc, writeBatch } = fb.f;
-        for (let i = 0; i < list.length; i += 400) {
-            const batch = writeBatch(fb.db);
-            list.slice(i, i + 400).forEach((p) => batch.set(doc(collection(fb.db, 'sponsorBiz')), newBizDoc(p)));
-            await batch.commit();
-        }
-    },
-    async remove(id) {
-        const { doc, deleteDoc } = fb.f;
-        await deleteDoc(doc(fb.db, 'sponsorBiz', id));
-    }
+   Emails are sorted by WHO they go to (tabs) and then by WHEN they go
+   (rows). Each row shows When | Subject | Who | Status | Sent.
+
+   Status:  Draft      still being written
+            Your OK    complete - waiting for Max to approve
+            Auto       approved - sends itself at 9:35 am on its day
+            Paused / Cancelled / Sent
+
+   NOTHING SENDS UNTIL MAX APPROVES IT. Editing an approved message puts it
+   back to "Your OK". The server does the sending (functions/index.js,
+   MESSAGES section); this page only shows, edits and approves.
+
+   ctx = { state, h: { esc, attr }, call, render, money }
+   ========================================================================== */
+
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from '../site/sponsor-data.js?v=855';
+
+const SEND_TIME = '9:35 am';
+
+/*  The fields a message can use - KEEP IN STEP with fieldsFor() in
+    functions/lib/message-email.js.                                      */
+const FIELDS = [
+    ['vendor_name', 'Contact name'],
+    ['business_name', 'Business name'],
+    ['site_number', 'Site number'],
+    ['event_name', 'Event name'],
+    ['event_date', 'Event date'],
+    ['event_venue', 'Venue']
+];
+const INVOICE_FIELDS = [
+    ['total_paid', 'Total paid'],
+    ['invoice_number', 'Invoice number']
+];
+const WAITLIST_FIELDS = [['expires_at', 'Hold ends (4 hours)']];
+const MOVED_FIELDS = [['old_site', 'Old site']];
+
+const STATUS = {
+    draft: ['Draft', 'grey'],
+    review: ['Your OK', 'amber'],
+    approved: ['Auto', 'green'],
+    paused: ['Paused', 'blue'],
+    cancelled: ['Cancelled', 'grey'],
+    sent: ['Sent', 'green']
 };
-const sponsorStore = {
-    async add(p) {
-        const { collection, addDoc, serverTimestamp } = fb.f;
-        await addDoc(collection(fb.db, 'sponsors'), {
-            business: '',
-            contactName: '',
-            email: '',
-            phone: '',
-            source: 'manual',
-            ...p,
-            eventId: p.eventId || state.activeEventId,
-            status: 'todo',
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp()
+
+const WHO = { all: 'All paid vendors', food: 'Food vendors', market: 'Market stalls' };
+const WHO_SHORT = { all: 'paid vendors', food: 'food vendors', market: 'market stalls' };
+
+/*  EMAILS ALREADY GOING OUT TO CLIENTS (shown so everything is in one place).
+    Their wording lives in the server (functions/lib/quote-email.js
+    and quote-doc-email.js).                                                */
+const CLIENT_EMAILS = [
+    // [when, name, subject, who, status, preview key]
+    [
+        'When they finish the website quote bot',
+        'Instant estimate',
+        'Your SoundzGood estimate - (event type)',
+        'The person who used the bot',
+        'Auto',
+        'estimate'
+    ],
+    [
+        'When you press Send on a quote',
+        'Quote ready',
+        'Your quote SG-Q-0000 from SoundzGood',
+        'That client (and their CC email)',
+        'You send it',
+        'quote'
+    ],
+    [
+        'When you press Send on an invoice',
+        'Invoice ready',
+        'Your invoice SG-I-0000 from SoundzGood',
+        'That client (and their CC email)',
+        'You send it',
+        'invoice'
+    ],
+    ['When you email a lead from the Lead Generator', 'Lead outreach', 'You write it each time', 'That business', 'You send it', 'lead']
+];
+
+/* ---------- small helpers ---------- */
+const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const lower = (s) => String(s || '').toLowerCase();
+function addDaysISO(iso, n) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+    if (!m) return '';
+    return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3] + n)).toISOString().slice(0, 10);
+}
+/*  Same rule as messageSendDate() on the server. */
+function sendDate(msg, ev) {
+    const t = msg.trigger || {};
+    const days = Math.max(0, Math.round(Number(t.days) || 0));
+    if (t.type === 'daysBefore') return addDaysISO(ev.dateISO, -days);
+    if (t.type === 'daysAfter') return addDaysISO(ev.dateISO, days);
+    if (t.type === 'date') return t.date || '';
+    return '';
+}
+function niceDay(iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+    if (!m) return '';
+    return new Date(+m[1], +m[2] - 1, +m[3])
+        .toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+        .replace(',', '');
+}
+function whenText(msg, ev) {
+    const t = msg.trigger || {};
+    if (t.type === 'payment') return 'As each vendor pays';
+    if (t.type === 'waitlist') return 'When a spot opens';
+    if (t.type === 'siteMoved') return 'When you move a vendor';
+    if (t.type === 'manual') return 'When you press Send';
+    if (t.type === 'sponsorFollowup') return (t.days || 7) + ' days after the ask';
+    const day = niceDay(sendDate(msg, ev));
+    const n = Math.round(Number(t.days) || 0);
+    let rel = 'Not set';
+    if (t.type === 'daysBefore') rel = n === 1 ? 'Day before' : n + ' days before';
+    else if (t.type === 'daysAfter') rel = n === 1 ? 'Day after' : n + ' days after';
+    else if (t.type === 'date') rel = 'On a date';
+    return rel + (day ? ' · ' + day : '');
+}
+function paidVendors(bookings, eventId) {
+    return (bookings || []).filter(
+        (b) =>
+            b.eventId === eventId &&
+            (b.status === 'confirmed' || b.paymentStatus === 'paid' || b.paymentStatus === 'free') &&
+            b.status !== 'cancelled' &&
+            b.business &&
+            b.business.email
+    );
+}
+/*  Same filter as messageRecipients() on the server. */
+function recipients(bookings, eventId, msg) {
+    return paidVendors(bookings, eventId).filter((b) => {
+        if (msg.who === 'food' && b.vendorType !== 'food') return false;
+        if (msg.who === 'market' && b.vendorType !== 'market') return false;
+        if (msg.promo && b.promoOptOut) return false;
+        return true;
+    });
+}
+
+/* ---------- preview: KEEP IN STEP with bodyHtml() in functions/lib/message-email.js ---------- */
+function fill(text, values, clean) {
+    return String(text || '').replace(/\{\{\s*([a-z_]+)\s*\}\}/gi, (whole, key) => {
+        const v = values[key.toLowerCase()];
+        return v === undefined ? whole : clean(v);
+    });
+}
+function linkify(html) {
+    return html.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+}
+function bodyHtml(body, values, esc) {
+    return String(body || '')
+        .replace(/\r/g, '')
+        .split(/\n\s*\n/)
+        .map((block) => {
+            const lines = block.split('\n').filter((l) => l.trim() !== '');
+            if (!lines.length) return '';
+            if (lines.every((l) => /^\s*-\s+/.test(l))) {
+                return (
+                    '<ul>' +
+                    lines.map((l) => '<li>' + linkify(fill(esc(l.replace(/^\s*-\s+/, '')), values, esc)) + '</li>').join('') +
+                    '</ul>'
+                );
+            }
+            return '<p>' + lines.map((l) => linkify(fill(esc(l), values, esc))).join('<br>') + '</p>';
+        })
+        .join('');
+}
+function sampleValues(b, ev) {
+    const biz = (b && b.business) || {};
+    return {
+        vendor_name: biz.contactName || biz.name || 'Jess',
+        business_name: biz.name || 'Sample Business',
+        site_number: (b && b.siteLabel) || 'F4',
+        event_name: ev.name || 'Your event',
+        event_date: ev.dateLabel || ev.dateISO || '',
+        event_venue: [ev.venue, ev.location].filter(Boolean).join(', '),
+        total_paid: '$' + (((b && (b.totalCents != null ? b.totalCents : b.amountCents)) || 11549) / 100).toFixed(2),
+        invoice_number: (b && b.invoiceNumber) || 'SG-I-0000'
+    };
+}
+
+/*  The plain sentence at the top of a message. */
+function sentenceHtml(ctx, d, m, ev) {
+    const { state } = ctx;
+    const esc = ctx.h.esc;
+    // "This sends “subject”", filled from a sample vendor
+    const sends = (b) => `This sends <b>&ldquo;${esc(fill(d.subject, sampleValues(b, ev), String) || '(no subject yet)')}&rdquo;</b>`;
+    if (m.system === 'sponsor-ask') {
+        return `${sends(null)} to the businesses you tick on the <b>Sponsors</b> tab, when you press Send.`;
+    }
+    if (m.system === 'sponsor-followup') {
+        return `${sends(null)} to any business still &ldquo;Asked&rdquo; <b>7 days after the ask</b>, at ${SEND_TIME}. Anyone who replied or said yes or no is skipped.`;
+    }
+    if (m.system === 'waitlist') {
+        return `${sends(null)} to <b>the next person on the waitlist</b> the moment a spot opens. They get <b>4 hours</b> to accept or decline from the email, then it goes to the next person.`;
+    }
+    if (m.system === 'site-moved') {
+        return `${sends(null)} to <b>a paid vendor the moment you move them</b> to a different site. Sent ${m.sentCount || 0} so far.`;
+    }
+    if (m.system) {
+        const all = paidVendors(state.bookings, state.activeEventId);
+        return `${sends(all[0])} to <b>each vendor the moment they pay</b>. ${all.filter((b) => b.invoiceEmailedAt).length} of ${all.length} paid vendors have it.`;
+    }
+    const list = recipients(state.bookings, state.activeEventId, d);
+    const day = sendDate(d, ev);
+    return (
+        `${sends(list[0])} to <b>${list.length} ${esc(WHO_SHORT[d.who] || WHO_SHORT.all)}</b>` +
+        (day ? ` on <b>${esc(niceDay(day))} at ${SEND_TIME}</b>.` : ' &mdash; <b>pick when</b>.')
+    );
+}
+
+/* ---------- the draft being edited ---------- */
+function blankMessage() {
+    return { name: '', subject: '', body: '', who: 'all', promo: false, trigger: { type: 'daysBefore', days: 7, date: '' } };
+}
+function draftFrom(m) {
+    return {
+        name: m.name || '',
+        subject: m.subject || '',
+        body: m.body || '',
+        who: m.who || 'all',
+        promo: !!m.promo,
+        trigger: {
+            type: (m.trigger && m.trigger.type) || 'daysBefore',
+            days: (m.trigger && m.trigger.days) || 0,
+            date: (m.trigger && m.trigger.date) || ''
+        }
+    };
+}
+function sameDraft(a, b) {
+    return JSON.stringify(a) === JSON.stringify(b);
+}
+
+/* ==========================================================================
+   HTML
+   ========================================================================== */
+export function messagesHtml(ctx) {
+    const { state, h } = ctx;
+    const ev = (state.events || []).find((e) => e.id === state.activeEventId) || {};
+    if (!state.activeEventId) return '<div class="ms"><p class="ad-cell-muted">Choose an event at the top first.</p></div>';
+    if (state.msgOpen) return editorHtml(ctx, ev);
+
+    const tab = state.msgTab || 'vendors';
+    const inHub = state.view === 'event' && state.eventTab === 'messages';
+    // the invoice email first, then the waitlist one, then by send date
+    const rank = (x) => ({ invoice: 0, waitlist: 1 })[x.system] ?? 2;
+    const list = (state.messages || [])
+        .filter((m) => m.audience !== 'sponsors')
+        .sort((a, b) => {
+            if (rank(a) !== rank(b)) return rank(a) - rank(b);
+            return (sendDate(a, ev) || '9999').localeCompare(sendDate(b, ev) || '9999');
         });
-    },
-    async update(id, p) {
-        const { doc, updateDoc, serverTimestamp } = fb.f;
-        await updateDoc(doc(fb.db, 'sponsors', id), { ...p, updatedAt: serverTimestamp() });
-    },
-    async remove(id) {
-        const { doc, deleteDoc } = fb.f;
-        await deleteDoc(doc(fb.db, 'sponsors', id));
+    const paid = paidVendors(state.bookings, state.activeEventId);
+    const rows = list
+        .map((m) => {
+            const [label, tone] = STATUS[m.status] || STATUS.draft;
+            const wl = m.system === 'waitlist';
+            const mv = m.system === 'site-moved';
+            // how many it went to, out of how many
+            let sent = m.sentCount || 0;
+            let total, who;
+            if (!m.system) {
+                total = recipients(state.bookings, state.activeEventId, m).length;
+                who = WHO[m.who] || WHO.all;
+            } else if (mv) {
+                total = sent;
+                who = 'A vendor you move';
+            } else if (wl) {
+                total = (state.waitlist || []).length;
+                who = 'Next on the waitlist';
+            } else {
+                total = paid.length;
+                sent = paid.filter((b) => b.invoiceEmailedAt).length;
+                who = 'Each vendor as they pay';
+            }
+            const failed = (m.failed || []).length;
+            return `<tr data-ms-open="${h.attr(m.id)}">
+      <td class="ms-when">${h.esc(whenText(m, ev))}</td>
+      <td><strong>${h.esc(m.name || '(no name)')}</strong><span class="ms-sub">${h.esc(fill(m.subject || '', { event_name: ev.name || '', event_date: ev.dateLabel || '' }, String))}</span></td>
+      <td>${h.esc(who)}${m.promo ? ' <span class="ad-pill ad-pill-grey">Promo</span>' : ''}</td>
+      <td><span class="ms-chip ms-${tone}">${h.esc(label)}</span></td>
+      <td class="ms-sent">${wl ? sent + ' offer' + (sent === 1 ? '' : 's') : sent + ' of ' + total}${failed ? ` <span class="ms-fail">${failed} failed</span>` : ''}</td>
+    </tr>`;
+        })
+        .join('');
+
+    let body;
+    if (tab === 'sent') body = sentHtml(ctx);
+    else if (tab === 'reminders') body = remindersHtml(h, state);
+    else if (tab === 'sponsors') body = sponsorsHtml(ctx);
+    else if (tab === 'clients') body = clientsHtml(h, state);
+    else {
+        body = `<div class="ad-card ms-card">
+      <table class="ad-table ms-table">
+        <thead><tr><th>When</th><th>Message &amp; subject</th><th>Who</th><th>Status</th><th>Sent</th></tr></thead>
+        <tbody>${rows || `<tr><td colspan="5" class="ad-cell-muted">${state.msgSeeding ? 'Adding the starter messages&hellip;' : 'No messages yet.'}</td></tr>`}</tbody>
+      </table>
+    </div>
+    <p class="ms-key">You also get an office copy of every new vendor booking at info@soundzgood.com.au.</p>
+    ${waitlistHtml(ctx)}`;
     }
+
+    return `<div class="ms">
+    <div class="ms-head">
+      <div>
+        <h1>Messages</h1>
+        <p>Emails for <b>${h.esc(ev.name || 'this event')}</b>. Nothing sends until you approve it &mdash; approved emails go at ${SEND_TIME} on their day.</p>
+      </div>
+      <button type="button" class="ad-btn ad-btn-primary" data-ms-new>+ New message</button>
+    </div>
+    <div class="ad-tabs" role="tablist">
+      <button type="button" class="ad-tab${tab === 'vendors' ? ' is-on' : ''}" role="tab" data-ms-tab="vendors">Vendors</button>
+      ${inHub ? '' : `<button type="button" class="ad-tab${tab === 'clients' ? ' is-on' : ''}" role="tab" data-ms-tab="clients">Clients</button>`}
+      <button type="button" class="ad-tab" disabled title="Coming soon">Crew &amp; performers</button>
+      ${inHub ? `<a class="ad-tab" role="tab" href="#/event?id=${h.attr(state.activeEventId || '')}&tab=sponsors">Sponsors</a>` : `<button type="button" class="ad-tab${tab === 'sponsors' ? ' is-on' : ''}" role="tab" data-ms-tab="sponsors">Sponsors</button>`}
+      <button type="button" class="ad-tab${tab === 'reminders' ? ' is-on' : ''}" role="tab" data-ms-tab="reminders">Reminders</button>
+      <button type="button" class="ad-tab ms-tab-log${tab === 'sent' ? ' is-on' : ''}" role="tab" data-ms-tab="sent">Sent emails</button>
+    </div>
+    ${body}
+    <p class="ms-key"><span class="ms-chip ms-grey">Draft</span> still being written &nbsp; <span class="ms-chip ms-amber">Your OK</span> ready &mdash; needs your approval &nbsp; <span class="ms-chip ms-green">Auto</span> approved, sends itself</p>
+  </div>`;
+}
+
+/*  SENT EMAILS: everything the system has sent, newest first. Click one to
+    see exactly what went. Filled by functions/lib/mail-log.js. */
+const KIND = {
+    quote: 'Quote / invoice',
+    estimate: 'Bot estimate',
+    'vendor-invoice': 'Vendor invoice',
+    message: 'Message',
+    lead: 'Lead outreach',
+    'office-copy': 'Office copy',
+    'vendor-confirmation': 'Vendor confirmation',
+    email: 'Email'
 };
-/*  The last 150 emails the system sent (Messages > Sent emails). */
-async function loadLog() {
-    const { collection, getDocs, query, orderBy, limit } = fb.f;
-    const snap = await getDocs(query(collection(fb.db, 'emailLog'), orderBy('at', 'desc'), limit(150)));
-    return snapRows(snap);
+function whenSent(at) {
+    let ms = 0;
+    if (at && at.seconds != null) ms = at.seconds * 1000;
+    else if (at && typeof at.toMillis === 'function') ms = at.toMillis();
+    if (!ms) return '';
+    return new Date(ms).toLocaleString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
 }
-/*  DASHBOARD - the look lives in js/dashboard.js. The email log is not
-    live, so it is read when the dashboard opens (the "emails that failed" to-do). */
-let dashLog = null;
-let dashLogAt = 0;
-
-/*  The crew picker: a small box over the dashboard with every active staff
-    member. Save -> confirm who'll be emailed -> adminAssignCrew.          */
-function openCrewPicker(jobId, isGig) {
-    const g = isGig && (state.schedule || []).find((x) => x.id === jobId);
-    const q = isGig
-        ? g && {
-              ...(state.gigCrew[jobId] || {}),
-              customer: { business: 'Setup', eventName: String(g.venue || '').split(',')[0] },
-              hire: { startDate: g.date }
-          }
-        : (state.quoteDocs || []).find((x) => x.id === jobId);
-    if (!q) return;
-    const staff = (state.resources || []).filter((r) => (r.type || 'staff') === 'staff' && r.active !== false);
-    const on = new Set((q.crewAssigned || []).map((x) => x.id));
-    const c = q.customer || {};
-    const box = document.createElement('div');
-    box.className = 'db-modal';
-    box.innerHTML =
-        '<div class="db-modal-card" role="dialog" aria-label="Assign crew">' +
-        '<h3>Who\'s working this job?</h3><p class="db-modal-sub">' +
-        esc((c.business || c.name || 'Job') + (c.eventName ? ' · ' + c.eventName : '') + ' · ' + ((q.hire && q.hire.startDate) || '')) +
-        '</p>' +
-        (staff.length
-            ? '<ul class="db-modal-list">' +
-              staff
-                  .map(
-                      (s) =>
-                          '<li><label><input type="checkbox" value="' +
-                          attr(s.id) +
-                          '"' +
-                          (on.has(s.id) ? ' checked' : '') +
-                          '> <b>' +
-                          esc(s.name) +
-                          '</b>' +
-                          (s.role ? ' <span>' + esc(s.role) + '</span>' : '') +
-                          (s.email ? '' : ' <em>no email</em>') +
-                          '</label></li>'
-                  )
-                  .join('') +
-              '</ul>'
-            : '<p>No staff yet - add them in <a href="#/resources">Crew &amp; Vehicles</a>.</p>') +
-        '<p class="db-modal-note">Anyone newly ticked gets an email with the job details and their pick list.</p>' +
-        '<div class="db-modal-acts"><button type="button" class="ad-btn" data-x>Cancel</button><button type="button" class="ad-btn ad-btn-primary" data-save>Save</button></div></div>';
-    document.body.appendChild(box);
-    const close = () => box.remove();
-    box.addEventListener('click', (e) => {
-        if (e.target === box || e.target.closest('[data-x]')) close();
-    });
-    box.querySelector('[data-save]').addEventListener('click', async () => {
-        const ids = [...box.querySelectorAll('input:checked')].map((i) => i.value);
-        const fresh = staff.filter((s) => ids.includes(s.id) && !on.has(s.id));
-        const mailable = fresh.filter((s) => s.email);
-        if (
-            mailable.length &&
-            !window.confirm(
-                'Email the job details + pick list to:\n\n' + mailable.map((s) => s.name + ' (' + s.email + ')').join('\n') + '\n\nOK?'
-            )
-        )
-            return;
-        const btn = box.querySelector('[data-save]');
-        btn.disabled = true;
-        btn.textContent = 'Saving…';
-        try {
-            const r = await call('adminAssignCrew', isGig ? { bookingId: jobId, staffIds: ids } : { id: jobId, staffIds: ids });
-            if (isGig)
-                state.gigCrew[jobId] = { crewAssigned: staff.filter((s) => ids.includes(s.id)).map((s) => ({ id: s.id, name: s.name })) };
-            close();
-            if (isGig) render();
-            const bits = [];
-            if (r.sent && r.sent.length) bits.push('Emailed: ' + r.sent.join(', '));
-            if (r.noEmail && r.noEmail.length) bits.push('No email on file (add it in Crew & Vehicles): ' + r.noEmail.join(', '));
-            if (r.failed && r.failed.length) bits.push('Could not email: ' + r.failed.join(', '));
-            if (bits.length) window.alert(bits.join('\n'));
-        } catch (err) {
-            btn.disabled = false;
-            btn.textContent = 'Save';
-            window.alert(friendly(err));
-        }
-    });
-}
-
-/*  EVENT-DAY WEATHER: rain and wind for each job in the
-    next 30 days, from Open-Meteo (free, no account, no key). Only the town
-    and the date are sent - never a customer's details. Forecasts reach ~16
-    days ahead; further out the job just says when the forecast will show.
-    Kept in memory for an hour so the dashboard doesn't keep asking.     */
-const dashWeather = {}; // jobId -> { day } | { later: true }
-const geoCache = {}; // place -> { lat, lon } | null
-async function geocode(place) {
-    const key = String(place || '').toLowerCase();
-    if (key in geoCache) return geoCache[key];
-    geoCache[key] = null;
-    try {
-        const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?count=10&country_code=AU&name=' + encodeURIComponent(place));
-        const d = await r.json();
-        // only somewhere within ~250 km of Bowen, so a same-named town elsewhere isn't picked
-        const near = (x) => Math.hypot(x.latitude + 20.01, (x.longitude - 148.25) * 0.94) < 2.3;
-        const hit = d && d.results && d.results.find(near);
-        if (hit) geoCache[key] = { lat: hit.latitude, lon: hit.longitude };
-    } catch (e) {
-        /* no place found */
-    }
-    return geoCache[key];
-}
-/*  where to forecast: the delivery town, else the venue, else Bowen */
-async function jobPlace(q) {
-    const town = String((q.delivery && q.delivery.town) || '')
-        .replace(/\(.*?\)/g, '')
-        .trim();
-    // each part of the venue ("Grand View Hotel, Bowen" -> "Grand View", "Bowen"), building words taken out
-    const venueParts = String((q.customer && q.customer.eventVenue) || '')
-        .split(',')
-        .map((x) =>
-            x
-                .replace(
-                    /\b(resort|hotel|club|hall|showgrounds?|park|centre|center|tavern|pub|bowls|sports?|complex|beach house|queensland|qld)\b/gi,
-                    ''
+function sentHtml(ctx) {
+    const { state, h } = ctx;
+    if (!state.emailLog) return '<div class="ad-card ms-card ms-pad"><p class="ad-cell-muted">Loading sent emails&hellip;</p></div>';
+    const q = String(state.emailLogFilter || '').toLowerCase();
+    const rows = state.emailLog.filter((m) => !q || [m.to, m.cc, m.subject, KIND[m.kind]].join(' ').toLowerCase().includes(q));
+    const open = state.emailLog.find((m) => m.id === state.emailLogOpen);
+    const chip = (m) => {
+        if (m.test) return '<span class="ms-chip ms-blue">Test</span>';
+        if (m.ok) return '<span class="ms-chip ms-green">Sent</span>';
+        return '<span class="ms-chip ms-red" title="' + h.attr(m.error || '') + '">Failed</span>';
+    };
+    return `<div class="ms-log-bar">
+      <input type="search" class="ad-input" data-ms-logq placeholder="Search by email, subject or type&hellip;" value="${h.attr(state.emailLogFilter || '')}">
+      <button type="button" class="ad-btn" data-ms-logrefresh>Refresh</button>
+    </div>
+    <div class="ms-log-grid${open ? ' has-open' : ''}">
+      <div class="ad-card ms-card"><table class="ad-table ms-table">
+        <thead><tr><th>When</th><th>To</th><th>Subject</th><th>Type</th><th>Status</th></tr></thead>
+        <tbody>${
+            rows
+                .map(
+                    (m) => `<tr data-ms-log="${h.attr(m.id)}"${open && open.id === m.id ? ' class="is-sel"' : ''}>
+          <td class="ms-when">${h.esc(whenSent(m.at))}</td>
+          <td>${h.esc(m.to)}${m.cc ? '<span class="ms-sub">cc ' + h.esc(m.cc) + '</span>' : ''}</td>
+          <td>${h.esc(m.subject)}</td>
+          <td>${h.esc(KIND[m.kind] || m.kind)}</td>
+          <td>${chip(m)}</td>
+        </tr>`
                 )
-                .replace(/\d+/g, '')
-                .trim()
+                .join('') || '<tr><td colspan="5" class="ad-cell-muted">No emails logged yet - they appear here from now on.</td></tr>'
+        }</tbody>
+      </table></div>
+      ${
+          open
+              ? `<aside class="ad-card ms-card ms-pad ms-log-view">
+        <button type="button" class="ms-back" data-ms-logclose>&times; Close</button>
+        <p class="ms-log-meta"><b>${h.esc(open.subject)}</b><br>To: ${h.esc(open.to)}${open.cc ? '<br>CC: ' + h.esc(open.cc) : ''}${open.bcc ? '<br>Copy: ' + h.esc(open.bcc) : ''}<br>${h.esc(whenSent(open.at))}${open.ok ? '' : '<br><span class="ms-fail">Failed: ' + h.esc(open.error || '') + '</span>'}</p>
+        <iframe sandbox="" class="ms-log-frame" id="ms-log-frame" title="Email"></iframe>
+      </aside>`
+              : ''
+      }
+    </div>`;
+}
+
+/*  SPONSORS: the two sponsor emails, the $10k goal, and the
+    list of businesses - add from the Lead Generator, by hand or past sponsors;
+    tick and Send; track Asked / Interested / Yes / No.                    */
+const SP_STATUS = {
+    todo: ['To ask', 'grey'],
+    asked: ['Asked', 'blue'],
+    interested: ['Interested', 'amber'],
+    yes: ['Yes!', 'green'],
+    no: ['No', 'grey']
+};
+const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
+const money0 = (c) => '$' + Math.round((c || 0) / 100).toLocaleString('en-AU');
+function sponsorCents(p) {
+    if (p.amountCents) return p.amountCents;
+    return (LEVEL[p.level] && LEVEL[p.level].priceCents) || 0;
+}
+/*  SPONSORS - a board: To ask -> Asked -> Interested -> Yes (and No).
+    Click a business to open its drawer: logo, website, brand colour,
+    contact, level, notes, and the buttons to send the ask or open their
+    proposal page (which uses their logo and colour).                     */
+const SP_COLS = ['todo', 'asked', 'interested', 'yes', 'no'];
+const SP_PALETTE = ['#ff6b00', '#0f9d58', '#4a7bd0', '#b25b00', '#7a3fd0', '#c5322b', '#0a8f8f', '#d0486b'];
+export const spColor = (p) =>
+    p.color && /^#[0-9a-f]{6}$/i.test(p.color)
+        ? p.color
+        : SP_PALETTE[[...String(p.business || '')].reduce((t, c) => t + c.charCodeAt(0), 0) % SP_PALETTE.length];
+const spInitials = (name) =>
+    String(name || '?')
+        .replace(/[^\w ]/g, '')
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((w) => w[0].toUpperCase())
+        .join('') || '?';
+const spLogoOk = (u) => /^(https:\/\/|\/)[^\s'"()<>\\]*$/.test(String(u || ''));
+export const spAvatar = (h, p, big) =>
+    p.logo && spLogoOk(p.logo)
+        ? `<img class="sp-logo${big ? ' is-big' : ''}" src="${h.attr(p.logo)}" alt="">`
+        : `<span class="sp-logo sp-initials${big ? ' is-big' : ''}" style="background:${h.attr(spColor(p))}">${h.esc(spInitials(p.business))}</span>`;
+const spLink = (evId, p) => '/sponsor?e=' + encodeURIComponent(evId) + (p.token ? '&t=' + encodeURIComponent(p.token) : '');
+
+function sponsorsHtml(ctx) {
+    const { state, h } = ctx;
+    const list = (state.sponsors || []).slice().sort((a, b) => (a.business || '').localeCompare(b.business || ''));
+    const msgs = (state.messages || [])
+        .filter((m) => m.audience === 'sponsors')
+        .sort((a, b) => (a.system === 'sponsor-ask' ? -1 : 1) - (b.system === 'sponsor-ask' ? -1 : 1));
+    const yes = list.filter((p) => p.status === 'yes').reduce((t, p) => t + sponsorCents(p), 0);
+    const maybe = list.filter((p) => p.status === 'interested').reduce((t, p) => t + sponsorCents(p), 0);
+    const pct = Math.min(100, Math.round((yes / SPONSOR_GOAL_CENTS) * 100));
+    const pct2 = Math.min(100 - pct, Math.round((maybe / SPONSOR_GOAL_CENTS) * 100));
+    const ask = msgs.find((m) => m.system === 'sponsor-ask');
+    const askOk = !!(ask && ask.status === 'approved');
+    const ticked = state.spTicked || {};
+    const nTicked = list.filter((p) => ticked[p.id] && p.status === 'todo' && p.email).length;
+    const added = new Set(list.map((p) => lower(p.business)));
+    const leads = (state.leads || []).filter((l) => l.email && !added.has(lower(l.title)));
+    const evId = state.activeEventId;
+    const evName = ((state.events || []).find((e) => e.id === evId) || {}).name || '';
+    const taken = {};
+    list.filter((p) => p.status === 'yes' && p.level).forEach((p) => {
+        taken[p.level] = (taken[p.level] || 0) + 1;
+    });
+
+    const msgRows = msgs
+        .map((m) => {
+            const [label, tone] = STATUS[m.status] || STATUS.draft;
+            return `<tr data-ms-open="${h.attr(m.id)}"><td class="ms-when">${h.esc(whenText(m, {}))}</td>
+      <td><strong>${h.esc(m.name)}</strong><span class="ms-sub">${h.esc(fill(m.subject || '', { event_name: evName }, String))}</span></td>
+      <td><span class="ms-chip ms-${tone}">${h.esc(label)}</span></td><td class="ms-sent">${m.sentCount || 0} sent</td></tr>`;
+        })
+        .join('');
+
+    const card = (p) => {
+        const can = p.status === 'todo' && !!p.email;
+        const lv = LEVEL[p.level];
+        return `<article class="sp-card${state.spOpen === p.id ? ' is-open' : ''}" data-sp-open="${h.attr(p.id)}">
+      ${spAvatar(h, p)}
+      <div class="sp-card-main">
+        <b>${h.esc(p.business)}</b>
+        <span>${h.esc(p.contactName || p.email || 'no contact yet')}</span>
+        ${lv ? `<em class="sp-lvl is-${h.attr(p.level)}">${h.esc(lv.name.split(' - ')[0])}${sponsorCents(p) ? ' &middot; ' + money0(sponsorCents(p)) : ''}</em>` : ''}
+        ${p.message ? '<i class="sp-card-msg" title="They left a message">&#128172;</i>' : ''}
+      </div>
+      ${can ? `<label class="sp-card-tick" title="Tick to include in the ask"><input type="checkbox" data-sp-tick="${h.attr(p.id)}"${ticked[p.id] ? ' checked' : ''} aria-label="Ask ${h.attr(p.business)}"></label>` : ''}
+    </article>`;
+    };
+    const col = (key) => {
+        const [lab] = SP_STATUS[key];
+        const items = list.filter((p) => (p.status || 'todo') === key);
+        const sum = items.reduce((t, p) => t + sponsorCents(p), 0);
+        return `<section class="sp-col is-${key}">
+      <header><b>${h.esc(lab)}</b><span>${items.length}${sum && key !== 'no' ? ' &middot; ' + money0(sum) : ''}</span></header>
+      <div class="sp-col-body">${items.map(card).join('') || '<p class="sp-col-empty">&mdash;</p>'}</div>
+    </section>`;
+    };
+
+    const open = state.spOpen ? list.find((p) => p.id === state.spOpen) : null;
+    const drawer = open ? sponsorDrawerHtml(h, open, evId, askOk) : '';
+
+    return `<div class="sp-top">
+      <div class="ad-card sp-goal">
+        <p class="ev-card-t">Sponsorship</p>
+        <p class="sp-goal-big">${money0(yes)} <small>of ${money0(SPONSOR_GOAL_CENTS)}</small></p>
+        <div class="ms-sp-bar"><span style="width:${pct}%"></span><i style="width:${pct2}%"></i></div>
+        <p class="ev-card-sub">${maybe ? money0(maybe) + ' more interested &middot; ' : ''}<a href="/sponsor?e=${encodeURIComponent(evId)}" target="_blank" rel="noopener">Open the sponsor page &#8599;</a></p>
+      </div>
+      <div class="ad-card sp-slots">
+        <p class="ev-card-t">Spots</p>
+        <div class="sp-slot-row">${SPONSOR_LEVELS.filter((l) => l.spots)
+            .map(
+                (l) =>
+                    `<span class="sp-slot is-${l.key}${(taken[l.key] || 0) >= l.spots ? ' is-full' : ''}"><b>${taken[l.key] || 0}/${l.spots}</b>${h.esc(l.name.split(' - ')[0])}</span>`
+            )
+            .join('')}</div>
+        <p class="ev-card-sub">${list.filter((p) => p.status === 'yes').length} said yes &middot; ${list.filter((p) => p.status === 'asked').length} asked, waiting</p>
+      </div>
+    </div>
+    <div class="ad-card ms-card sp-emails"><table class="ad-table ms-table"><thead><tr><th>When</th><th>Email</th><th>Status</th><th>Sent</th></tr></thead><tbody>${msgRows}</tbody></table></div>
+    <div class="sp-bar">
+      <b>Businesses</b><span>${list.length}</span>
+      <button type="button" class="ad-btn ad-btn-small" data-sp-add>+ Add a business</button>
+      <button type="button" class="ad-btn ad-btn-small" data-sp-leads>From Lead Generator (${leads.length})</button>
+      <button type="button" class="ad-btn ad-btn-small" data-sp-big>Big Bowen businesses (${SUGGESTED_SPONSORS.filter((s) => !added.has(s.business.toLowerCase())).length})</button>
+      <button type="button" class="ad-btn ad-btn-small" data-sp-past>Past sponsors</button>
+      <button type="button" class="ad-btn ad-btn-small" data-sp-dir>From the directory (${(state.sponsorBiz || []).filter((b) => !added.has(lower(b.business))).length})</button>
+      <button type="button" class="ad-btn ad-btn-small" data-sp-mc title="One page for the MC: every sponsor to thank and every prize">&#128221; MC sheet</button>
+      <button type="button" class="ad-btn ad-btn-primary ms-sp-send" data-sp-send${nTicked ? '' : ' disabled'}>Send the ask to ${nTicked} ticked</button>
+    </div>
+    ${ask && !askOk ? '<p class="ms-note ms-sp-warn">Approve &ldquo;Sponsorship - the ask&rdquo; above before you can send.</p>' : ''}
+    ${
+        state.spAdding
+            ? `<form class="ms-sp-form ad-card" data-sp-form>
+      <input class="ad-input" name="business" placeholder="Business" required>
+      <input class="ad-input" name="contactName" placeholder="Contact name">
+      <input class="ad-input" name="email" type="email" placeholder="Email">
+      <input class="ad-input" name="phone" placeholder="Phone">
+      <button type="submit" class="ad-btn ad-btn-primary">Add</button><button type="button" class="ad-btn" data-sp-cancel>Cancel</button></form>`
+            : ''
+    }
+    ${
+        state.spPicking
+            ? `<div class="ms-sp-pick ad-card"><p>Tick the businesses to add (only ones with an email are shown):</p>
+      <div class="ms-sp-picklist">${leads.map((l) => `<label><input type="checkbox" data-sp-lead="${h.attr(l.id)}"> <b>${h.esc(l.title || '')}</b> <span>${h.esc(l.contactName || '')} &middot; ${h.esc(l.email || '')}</span></label>`).join('') || '<p class="ad-cell-muted">Nothing new in the Lead Generator with an email.</p>'}</div>
+      <button type="button" class="ad-btn ad-btn-primary" data-sp-leadadd>Add ticked</button> <button type="button" class="ad-btn" data-sp-cancel>Cancel</button></div>`
+            : ''
+    }
+    <div class="sp-board">${SP_COLS.map(col).join('')}</div>
+    ${drawer}
+    ${needsEmailHtml(h, added)}`;
+}
+
+/* the drawer for one business on the Sponsors board */
+function sponsorDrawerHtml(h, p, evId, askOk) {
+    const f = (field, label, value, type, extra) =>
+        `<label class="sp-f"><span>${label}</span><input class="ad-input" type="${type || 'text'}" value="${h.attr(value || '')}" data-sp-field="${field}" data-id="${h.attr(p.id)}"${extra || ''}></label>`;
+    const site = String(p.website || '')
+        .replace(/^https?:\/\//, '')
+        .replace(/\/.*$/, '');
+    return `
+    <div class="sp-scrim" data-sp-close></div>
+    <aside class="sp-drawer" role="dialog" aria-label="${h.attr(p.business)}" style="--sp-brand:${h.attr(spColor(p))}">
+      <div class="sp-drawer-brand">
+        ${spAvatar(h, p, true)}
+        <div class="sp-drawer-brandbtns">
+          <label class="ad-btn ad-btn-small">&#128444; ${p.logo ? 'Change logo' : 'Upload logo'}<input type="file" accept="image/*" data-sp-logo-file="${h.attr(p.id)}" hidden></label>
+          ${site ? `<button type="button" class="ad-btn ad-btn-small" data-sp-findlogo="${h.attr(p.id)}" title="Grabs the icon from ${h.attr(site)}">Find from website</button>` : ''}
+          ${p.logo ? `<button type="button" class="ad-btn ad-btn-small" data-sp-field-clear="logo" data-id="${h.attr(p.id)}">Remove</button>` : ''}
+        </div>
+        <button type="button" class="ad-drawer-close" data-sp-close aria-label="Close">&times;</button>
+      </div>
+      <div class="sp-drawer-body">
+        ${f('business', 'Business', p.business)}
+        <div class="sp-2">${f('contactName', 'Contact', p.contactName)}${f('phone', 'Phone', p.phone, 'tel')}</div>
+        ${f('email', 'Email', p.email, 'email')}
+        <div class="sp-2">${f('website', 'Website', p.website, 'url', ' placeholder="https://"')}
+          <label class="sp-f"><span>Brand colour</span><span class="sp-color"><input type="color" value="${h.attr(spColor(p))}" data-sp-field="color" data-id="${h.attr(p.id)}"><code>${h.esc(spColor(p))}</code></span></label></div>
+        <div class="sp-2">
+          <label class="sp-f"><span>Status</span><select class="ad-select" data-sp-status="${h.attr(p.id)}">${Object.keys(SP_STATUS)
+              .map((k) => `<option value="${k}"${(p.status || 'todo') === k ? ' selected' : ''}>${SP_STATUS[k][0]}</option>`)
+              .join('')}</select></label>
+          <label class="sp-f"><span>Level</span><select class="ad-select" data-sp-level="${h.attr(p.id)}"><option value="">Level&hellip;</option>${SPONSOR_LEVELS.map((l) => `<option value="${l.key}"${p.level === l.key ? ' selected' : ''}>${h.esc(l.name.split(' - ')[0])}${l.priceCents ? ' ' + money0(l.priceCents) : ''}</option>`).join('')}</select></label>
+        </div>
+        <div class="sp-2">
+          <label class="sp-f"><span>Type</span><select class="ad-select" data-sp-field="kind" data-id="${h.attr(p.id)}">${[
+              ['cash', 'Cash'],
+              ['inkind', 'In-kind'],
+              ['prize', 'Prize']
+          ]
+              .map(([k, l]) => `<option value="${k}"${(p.kind || 'cash') === k ? ' selected' : ''}>${l}</option>`)
+              .join('')}</select></label>
+          <label class="sp-f"><span>What they give</span><input class="ad-input" data-sp-field="gives" data-id="${h.attr(p.id)}" value="${h.attr(p.gives || '')}" placeholder="${p.kind === 'prize' ? 'e.g. a $100 voucher' : 'e.g. the PA, printing'}"></label>
+        </div>
+        ${p.level === 'supporter' ? `<label class="sp-f"><span>Value of their support</span><input class="ad-input" data-sp-amount="${h.attr(p.id)}" placeholder="$" value="${p.amountCents ? Math.round(p.amountCents / 100) : ''}"></label>` : ''}
+        <label class="sp-f"><span>Notes (just for you)</span><textarea class="ad-input" rows="3" data-sp-field="notes" data-id="${h.attr(p.id)}">${h.esc(p.notes || '')}</textarea></label>
+        ${p.message ? `<div class="sp-theirs"><b>Their message</b><p>${h.esc(p.message)}</p></div>` : ''}
+        <p class="ad-seat-hint">${h.esc({ lead: 'From the Lead Generator', past: 'A past sponsor', manual: 'Added by you', website: 'Came in through the sponsor page', suggested: 'Big Bowen business' }[p.source] || '')}${p.askedAt ? ' &middot; asked' : ''}</p>
+      </div>
+      <div class="sp-drawer-acts">
+        ${p.status === 'todo' && p.email ? `<button type="button" class="ad-btn ad-btn-primary" data-sp-sendone="${h.attr(p.id)}"${askOk ? '' : ' disabled title="Approve the ask email first"'}>Send them the ask</button>` : ''}
+        <a class="ad-btn" href="${h.attr(spLink(evId, p))}" target="_blank" rel="noopener">Open their proposal &#8599;</a>
+        <button type="button" class="ad-btn" data-sp-copylink="${h.attr(p.id)}">Copy proposal link</button>
+        <button type="button" class="ad-btn ms-sp-del-btn" data-sp-del="${h.attr(p.id)}">Remove</button>
+      </div>
+    </aside>`;
+}
+
+/*  Worth asking, but no public email yet: find it, type it in, Add. */
+function needsEmailHtml(h, added) {
+    const todo = NEEDS_EMAIL.filter((n) => !added.has(n.business.toLowerCase()));
+    if (!todo.length) return '';
+    return `<div class="ad-card ms-card ms-sp ms-sp-need"><div class="ms-sp-bar2"><b>Worth asking &mdash; find their email</b><span>${todo.length}</span></div>
+    <table class="ad-table ms-table"><tbody>${todo
+        .map(
+            (n) => `<tr class="ms-fixed"><td><strong>${h.esc(n.business)}</strong><span class="ms-sub ms-sp-tip">${h.esc(n.tip)}</span></td>
+      <td><input class="ad-input ms-sp-email" type="email" placeholder="Their email" data-need-email="${h.attr(n.business)}"></td>
+      <td class="ad-cell-right"><button type="button" class="ad-btn ad-btn-small" data-need-add="${h.attr(n.business)}">Add</button></td></tr>`
         )
-        .filter(Boolean);
-    for (const p of [town].concat(venueParts, ['Bowen'])) {
-        if (p && p.toLowerCase() !== 'other') {
-            const g = await geocode(p);
-            if (g) return g;
-        }
-    }
-    return null;
+        .join('')}</tbody></table></div>`;
 }
-async function loadDashWeather(jobs) {
-    const today = new Date();
-    const limit = new Date(today.getTime() + 15 * 86400000).toISOString().slice(0, 10);
-    let changed = false;
-    for (const q of jobs) {
-        const day = q.hire && q.hire.startDate;
-        const have = dashWeather[q.id];
-        if (!day || (have && have.date === day && Date.now() - have.at < 3600000)) continue;
-        if (day > limit) {
-            dashWeather[q.id] = { date: day, at: Date.now(), later: true };
-            changed = true;
-            continue;
-        }
-        const g = await jobPlace(q);
-        if (!g) continue;
-        try {
-            const r = await fetch(
-                'https://api.open-meteo.com/v1/forecast?latitude=' +
-                    g.lat +
-                    '&longitude=' +
-                    g.lon +
-                    '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max' +
-                    '&timezone=Australia%2FBrisbane&start_date=' +
-                    day +
-                    '&end_date=' +
-                    day
-            );
-            const d = (await r.json()).daily || {};
-            dashWeather[q.id] = {
-                date: day,
-                at: Date.now(),
-                code: (d.weather_code || [])[0],
-                temp: (d.temperature_2m_max || [])[0],
-                low: (d.temperature_2m_min || [])[0],
-                rain: (d.precipitation_probability_max || [])[0],
-                mm: (d.precipitation_sum || [])[0],
-                wind: (d.wind_speed_10m_max || [])[0],
-                gust: (d.wind_gusts_10m_max || [])[0]
-            };
-            changed = true;
-        } catch (e) {
-            /* leave it blank */
-        }
+
+/*  THE WAITLIST for this event. */
+const WL_STATUS = {
+    waiting: ['Waiting', 'grey'],
+    offered: ['Offered - 4 hrs', 'amber'],
+    claimed: ['Booking now', 'blue'],
+    booked: ['Booked', 'green'],
+    declined: ['Declined', 'grey'],
+    expired: ['Ran out of time', 'grey']
+};
+function waitlistHtml(ctx) {
+    const { state, h } = ctx;
+    const list = (state.waitlist || [])
+        .slice()
+        .sort((a, b) => ((a.createdAt && a.createdAt.seconds) || 0) - ((b.createdAt && b.createdAt.seconds) || 0));
+    const msg = (state.messages || []).find((m) => m.system === 'waitlist');
+    const off = !msg || msg.status !== 'approved';
+    let pos = { food: 0, market: 0 };
+    return `<div class="ad-card ms-card ms-wl">
+    <div class="ms-wl-head"><b>Waitlist</b><span>${list.filter((w) => w.status === 'waiting').length} waiting</span>
+      ${off ? '<em>Offers are switched off until you approve &ldquo;Waitlist - a spot opened&rdquo; above.</em>' : '<em>When a spot opens the next person is emailed automatically.</em>'}</div>
+    <table class="ad-table ms-table"><thead><tr><th>#</th><th>Business</th><th>Type</th><th>Contact</th><th>Status</th></tr></thead><tbody>
+    ${
+        list
+            .map((w) => {
+                const [lab, tone] = WL_STATUS[w.status] || WL_STATUS.waiting;
+                const n = w.status === 'waiting' ? ++pos[w.vendorType] : '';
+                return `<tr class="ms-fixed"><td>${n}</td><td><strong>${h.esc(w.name)}</strong><span class="ms-sub">${h.esc(w.description || '')}</span></td>
+        <td>${w.vendorType === 'food' ? 'Food van' : 'Market stall'}</td>
+        <td>${h.esc(w.contactName)}<span class="ms-sub">${h.esc(w.email)}${w.phone ? ' · ' + h.esc(w.phone) : ''}</span></td>
+        <td><span class="ms-chip ms-${tone}">${h.esc(lab)}</span>${w.siteLabel && ['offered', 'claimed', 'booked'].includes(w.status) ? '<span class="ms-sub">site ' + h.esc(w.siteLabel) + '</span>' : ''}</td></tr>`;
+            })
+            .join('') ||
+        '<tr class="ms-fixed"><td colspan="5" class="ad-cell-muted">Nobody on the waitlist yet. The form appears on the vendor page when a type sells out.</td></tr>'
     }
-    if (changed && state.view === 'dashboard') render();
+    </tbody></table></div>`;
 }
-VIEWS.dashboard = {
-    html() {
-        return dashboardHtml({
-            quotes: state.quoteDocs || [],
-            bookings: state.bookings || [],
-            sites: state.sites || [],
-            sponsors: state.sponsors || [],
-            waitlist: state.waitlist || [],
-            messages: state.messages || [],
-            events: state.events || [],
-            activeEventId: state.activeEventId,
-            emailLog: dashLog || [],
-            reminders: state.reminders || [],
-            weather: dashWeather,
-            fyWeek: (() => {
-                const t = new Date();
-                t.setHours(0, 0, 0, 0);
-                t.setDate(t.getDate() - ((t.getDay() + 6) % 7));
-                return leadFyWeek(t);
-            })(),
-            schedule: state.scheduleLoaded ? state.schedule : null,
-            talent: state.talent || [],
-            gigCrew: state.gigCrew,
-            customers: state.customers || [],
-            h: H
-        });
-    },
-    wire() {
-        const desk = document.getElementById('ad-desk');
-        // PUB INVOICES: send with Max's OK; text the DJ their times link
-        desk.querySelectorAll('[data-pub-send]').forEach((b) =>
-            b.addEventListener('click', () => sendPubInvoice(b.getAttribute('data-pub-send')))
+
+/*  REMINDERS: the payment reminder email (click to see
+    it) and everyone who still owes money, each with a Send button. Nothing
+    goes until Max presses Send.                                          */
+const owingCents = (q) => (q.totalCents || 0) + (q.lateFeeCents || 0) - (q.amountPaidCents || 0);
+export function owesMoney(q) {
+    if (!q || q.isTemplate || q.vendor) return false;
+    if (!['sent', 'accepted', 'invoiced'].includes(q.status) || q.paymentStatus === 'paid') return false;
+    return owingCents(q) > 0;
+}
+
+/* the client email preview, beside the list */
+function clientPrevAside(h, p) {
+    if (!p) return '';
+    return `<aside class="ad-card ms-card ms-pad ms-log-view">
+        <button type="button" class="ms-back" data-ms-cclose>&times; Close</button>
+        <p class="ms-log-meta"><b>${h.esc(p.subject || '')}</b>${p.note ? '<br>' + h.esc(p.note) : ''}</p>
+        ${p.loading ? '<p class="ad-cell-muted">Loading&hellip;</p>' : '<iframe sandbox="" class="ms-log-frame" id="ms-cprev-frame" title="Email preview"></iframe>'}
+      </aside>`;
+}
+
+function remindersHtml(h, state) {
+    const p = state.clientPrev && state.clientPrev.key === 'reminder' ? state.clientPrev : null;
+    const money = (c) => '$' + (Math.round(c || 0) / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const when = (t) => {
+        let ms = 0;
+        if (t && t.toMillis) ms = t.toMillis();
+        else if (t && t.seconds) ms = t.seconds * 1000;
+        else if (t) ms = +t;
+        return ms ? new Date(ms).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : '';
+    };
+    const lastReminder = (q) => {
+        if (!q.lastReminderAt) return '<span class="ad-cell-muted">—</span>';
+        return h.esc(when(q.lastReminderAt)) + (q.reminderCount > 1 ? ' <span class="ms-sub">' + q.reminderCount + ' sent</span>' : '');
+    };
+    const owed = (state.quoteDocs || [])
+        .filter(owesMoney)
+        .sort((a, b) => String((a.hire && a.hire.startDate) || '').localeCompare(String((b.hire && b.hire.startDate) || '')));
+    const rows = owed
+        .map((q) => {
+            const c = q.customer || {};
+            return `<tr class="ms-fixed">
+          <td><strong>${h.esc(c.name || c.business || 'No name')}</strong><span class="ms-sub">${h.esc(q.invoiceNumber || q.number || '')}${c.email ? '' : ' &middot; no email'}</span></td>
+          <td>${h.esc(c.eventName || '')}<span class="ms-sub">${h.esc(c.eventDate || '')}</span></td>
+          <td><strong>${money(owingCents(q))}</strong>${q.amountPaidCents ? '<span class="ms-sub">' + money(q.amountPaidCents) + ' paid</span>' : ''}</td>
+          <td>${lastReminder(q)}</td>
+          <td class="ad-cell-right">${c.email ? '<button type="button" class="ad-btn ad-btn-primary" data-ms-remind="' + h.attr(q.id) + '">Send reminder</button>' : ''}</td></tr>`;
+        })
+        .join('');
+    return `<div class="ms-log-grid${p ? ' has-open' : ''}"><div>
+    <div class="ad-card ms-card"><table class="ad-table ms-table">
+      <thead><tr><th>When</th><th>Message &amp; subject</th><th>Who</th><th>Status</th></tr></thead>
+      <tbody><tr data-ms-cprev="reminder"${p ? ' class="is-sel"' : ''}>
+        <td class="ms-when">When you press Send reminder</td>
+        <td><strong>Payment reminder</strong><span class="ms-sub">Payment reminder - SG-I-0000 from SoundzGood</span></td>
+        <td>That client (and their CC email)</td>
+        <td><span class="ms-chip ms-blue">You send it</span></td></tr></tbody>
+    </table></div>
+    <div class="ad-card ms-card"><table class="ad-table ms-table">
+      <thead><tr><th>Client</th><th>Event</th><th>Owing</th><th>Last reminder</th><th></th></tr></thead>
+      <tbody>${rows || '<tr class="ms-fixed"><td colspan="5" class="ad-cell-muted">Nobody owes you money right now.</td></tr>'}</tbody>
+    </table></div></div>
+    ${clientPrevAside(h, p)}
+    </div>
+    <p class="ms-key">Only sent when you press Send. It asks for the deposit if nothing's paid yet, otherwise what's still owing, with the link to view &amp; pay.</p>`;
+}
+
+/*  Send one reminder - asks first, says who it went to. */
+export async function sendReminder(call, q) {
+    const c = (q && q.customer) || {};
+    const to = [c.email, c.ccEmail].filter(Boolean).join(', ');
+    if (!window.confirm('Email a payment reminder to ' + (c.name || c.business || 'this client') + '?\n\n' + to)) return false;
+    try {
+        await call('adminSendPaymentReminder', { id: q.id });
+        window.alert('Reminder sent to ' + to + '.');
+        return true;
+    } catch (err) {
+        window.alert(err.message || 'Could not send the reminder.');
+        return false;
+    }
+}
+
+function clientsHtml(h, state) {
+    const p = state.clientPrev;
+    return `<div class="ms-log-grid${p ? ' has-open' : ''}"><div class="ad-card ms-card"><table class="ad-table ms-table">
+      <thead><tr><th>When</th><th>Message &amp; subject</th><th>Who</th><th>Status</th></tr></thead>
+      <tbody>${CLIENT_EMAILS.map(
+          ([when, name, subj, who, st, key]) => `<tr data-ms-cprev="${key}"${p && p.key === key ? ' class="is-sel"' : ''}>
+        <td class="ms-when">${h.esc(when)}</td>
+        <td><strong>${h.esc(name)}</strong><span class="ms-sub">${h.esc(subj)}</span></td>
+        <td>${h.esc(who)}</td>
+        <td><span class="ms-chip ${st === 'Auto' ? 'ms-green' : 'ms-blue'}">${h.esc(st)}</span></td></tr>`
+      ).join('')}</tbody>
+    </table></div>
+    ${clientPrevAside(h, p)}
+    </div>
+    <p class="ms-key">Click any of these to see the email. These client emails already go out today. Editing them here, plus the quote follow-ups, balance reminders and review requests, comes in step 2.</p>`;
+}
+
+/* the fixed Who / When line on the system emails (other messages pick their own) */
+const FIXED_WHEN = {
+    'sponsor-ask':
+        '<b>Who:</b> the businesses you tick on the Sponsors tab &nbsp;&middot;&nbsp; <b>When:</b> when you press Send (a &ldquo;See the sponsor options&rdquo; button with their personal link is added below your text)',
+    'sponsor-followup': '<b>Who:</b> anyone still &ldquo;Asked&rdquo; &nbsp;&middot;&nbsp; <b>When:</b> 7 days after the ask, at 9:35 am',
+    waitlist:
+        '<b>Who:</b> the next person on the waitlist &nbsp;&middot;&nbsp; <b>When:</b> the moment a spot opens (Accept and Decline buttons and the 4-hour note are added below your text)',
+    'site-moved':
+        '<b>Who:</b> a paid vendor you move to a different site &nbsp;&middot;&nbsp; <b>When:</b> the moment you press Save sites or Assign (a guide button is added below your text)'
+};
+const PAY_WHEN =
+    '<b>Who:</b> each vendor &nbsp;&middot;&nbsp; <b>When:</b> the moment they pay (total and guide button are added below your text)';
+
+/* the {{fields}} a message can use */
+function fieldsFor(m) {
+    if (m.system === 'waitlist') return FIELDS.concat(WAITLIST_FIELDS);
+    if (m.system === 'site-moved') return FIELDS.concat(MOVED_FIELDS);
+    return m.system ? FIELDS.concat(INVOICE_FIELDS) : FIELDS;
+}
+
+/*  who it goes to: vendors for vendor emails; for the sponsor emails, the
+    businesses on the Sponsors tab - NEVER the vendors */
+function editorList(state, m, d) {
+    if (m.audience === 'sponsors') {
+        const want = m.system === 'sponsor-followup' ? 'asked' : 'todo';
+        return (state.sponsors || [])
+            .filter((p) => p.email && p.status === want)
+            .map((p) => ({ business: { name: p.business, email: p.email } }));
+    }
+    if (m.system === 'waitlist') return [];
+    if (m.system) return paidVendors(state.bookings, state.activeEventId);
+    return recipients(state.bookings, state.activeEventId, d);
+}
+
+function editorHtml(ctx, ev) {
+    const { state, h } = ctx;
+    const isNew = state.msgOpen === 'new';
+    const m = isNew ? { status: 'draft' } : (state.messages || []).find((x) => x.id === state.msgOpen) || { status: 'draft' };
+    if (!state.msgDraft) state.msgDraft = isNew ? blankMessage() : draftFrom(m);
+    const d = state.msgDraft;
+    const [label, tone] = STATUS[m.status] || STATUS.draft;
+    const back = '<button type="button" class="ms-back" data-ms-back>&larr; All messages</button>';
+
+    const sys = !!m.system;
+    const dirty = isNew || !sameDraft(draftFrom(m), d);
+    const spons = m.audience === 'sponsors';
+    const wl = m.system === 'waitlist';
+    const list = editorList(state, m, d);
+    const locked = m.status === 'sent';
+    const off = locked ? ' disabled' : '';
+    const t = d.trigger || {};
+    const failed = m.failed || [];
+    const live = ['approved', 'paused', 'review'].includes(m.status);
+
+    let count = 'Sent ' + (m.sentCount || 0);
+    if (!spons && !wl && m.system !== 'site-moved') {
+        count = 'Sent ' + (sys ? list.filter((b) => b.invoiceEmailedAt).length : m.sentCount || 0) + ' of ' + list.length;
+    }
+
+    let when;
+    if (Object.hasOwn(FIXED_WHEN, m.system)) when = `<p class="ms-fixed-when">${FIXED_WHEN[m.system]}</p>`;
+    else if (sys) when = `<p class="ms-fixed-when">${PAY_WHEN}</p>`;
+    else {
+        const opt = (v, text) => `<option value="${v}"${t.type === v ? ' selected' : ''}>${text}</option>`;
+        when = `<div class="ms-row">
+          <label class="ms-f"><span>Who</span><select class="ad-select" data-ms="who"${off}>
+            ${Object.keys(WHO)
+                .map((k) => `<option value="${k}"${d.who === k ? ' selected' : ''}>${WHO[k]}</option>`)
+                .join('')}
+          </select></label>
+          <label class="ms-f"><span>When</span><select class="ad-select" data-ms="trigger.type"${off}>
+            ${opt('daysBefore', 'Days before the event')}
+            ${opt('daysAfter', 'Days after the event')}
+            ${opt('date', 'On a date')}
+          </select></label>
+          ${
+              t.type === 'date'
+                  ? `<label class="ms-f"><span>Date</span><input type="date" class="ad-input" data-ms="trigger.date" value="${h.attr(t.date || '')}"${off}></label>`
+                  : `<label class="ms-f ms-days"><span>Days</span><input type="number" min="0" max="365" class="ad-input" data-ms="trigger.days" value="${h.attr(t.days || 0)}"${off}></label>`
+          }
+        </div>`;
+    }
+
+    let summary = 'See who gets it';
+    if (spons)
+        summary =
+            m.system === 'sponsor-followup'
+                ? 'Businesses still waiting on a reply'
+                : 'Businesses ready to ask (tick them on the Sponsors tab)';
+    const listOpen = wl ? '<div hidden>' : `<details class="ms-list"><summary>${summary} (${list.length})</summary>`;
+
+    let prevFor = 'as ' + h.esc(((list[0] || {}).business || {}).name || 'a vendor') + ' sees it';
+    if (spons) prevFor = 'as a business sees it (sample details)';
+    else if (wl) prevFor = 'as the next person on the waitlist sees it (sample details)';
+
+    return `<div class="ms">${back}
+    <div class="ms-title"><h1>${h.esc(d.name || (isNew ? 'New message' : 'Message'))}</h1><span class="ms-chip ms-${tone}">${h.esc(label)}</span>
+      ${!isNew ? `<span class="ms-count">${count}</span>` : ''}</div>
+    <div class="ms-sentence" id="ms-sentence">${sentenceHtml(ctx, d, m, ev)}</div>
+    <div class="ms-grid">
+      <div class="ad-card ms-card ms-pad">
+        <label class="ms-f"><span>Name (just for you)</span><input class="ad-input" data-ms="name" value="${h.attr(d.name)}" placeholder="e.g. One week to go"${off}></label>
+        ${when}
+        ${listOpen}
+          <ul>${list.map((b) => `<li>${h.esc((b.business || {}).name || '')} <span>${h.esc((b.business || {}).email || '')}${b.siteLabel ? ' · site ' + h.esc(b.siteLabel) : ''}</span></li>`).join('') || (spons ? '<li>No businesses yet - add them on the Sponsors tab.</li>' : '<li>No paid vendors match yet.</li>')}</ul>
+        ${wl ? '</div>' : '</details>'}
+        <label class="ms-f"><span>Subject</span><input class="ad-input" data-ms="subject" value="${h.attr(d.subject)}"${off}></label>
+        <label class="ms-f"><span>Message</span><textarea class="ad-input ms-body" data-ms="body" rows="14"${off}>${h.esc(d.body)}</textarea></label>
+        <p class="ms-help">Blank line = new paragraph. Start a line with &ldquo;- &rdquo; for a bullet. Click to add:</p>
+        <div class="ms-chips">${fieldsFor(m)
+            .map(([k, l]) => `<button type="button" data-ms-field="${k}" title="${h.attr(l)}"${off}>{{${k}}}</button>`)
+            .join('')}</div>
+        ${sys ? '' : `<label class="ms-check"><input type="checkbox" data-ms="promo"${d.promo ? ' checked' : ''}${off}> Promotional (news about other events) &mdash; adds an unsubscribe link</label>`}
+        <div class="ms-actions">
+          ${locked ? '' : `<button type="button" class="ad-btn${dirty ? ' ad-btn-primary' : ''}" data-ms-act="save">${dirty ? 'Save' : 'Saved'}</button>`}
+          ${!isNew ? '<button type="button" class="ad-btn" data-ms-act="test">Test to me</button>' : ''}
+          ${!isNew && !dirty && m.status === 'review' ? '<button type="button" class="ad-btn ms-approve" data-ms-act="approve">Approve</button>' : ''}
+          ${!isNew && m.status === 'approved' ? '<button type="button" class="ad-btn" data-ms-act="pause">Pause</button>' : ''}
+          ${!isNew && m.status === 'paused' ? '<button type="button" class="ad-btn ad-btn-primary" data-ms-act="resume">Resume</button>' : ''}
+          ${!isNew && !dirty && !sys && live ? '<button type="button" class="ad-btn ad-btn-primary" data-ms-act="sendnow">Send now</button>' : ''}
+          ${!isNew && !sys && live ? '<button type="button" class="ad-btn" data-ms-act="cancel">Cancel</button>' : ''}
+          ${!isNew && !sys && !(m.sentCount > 0) ? '<button type="button" class="ad-btn ms-del" data-ms-act="delete">Delete</button>' : ''}
+        </div>
+        ${dirty && !isNew && m.status !== 'draft' ? `<p class="ms-note">Changes need your OK again after you save.${sys ? ' Vendors keep getting the approved wording until then.' : ''}</p>` : ''}
+        ${m.system === 'invoice' && m.status === 'review' && !dirty ? '<p class="ms-note">Vendors are still getting the last approved wording &mdash; press Approve to switch to this.</p>' : ''}
+        ${wl && m.status !== 'approved' && m.status !== 'paused' && !dirty ? '<p class="ms-note">The waitlist sends no offers until you approve this email.</p>' : ''}
+        ${m.system === 'site-moved' && m.status !== 'approved' && !dirty ? '<p class="ms-note">Vendors you move get no email until you approve this.</p>' : ''}
+        <p class="ms-msg" id="ms-msg" hidden></p>
+        ${failed.length ? `<div class="ms-failed"><p><b>${failed.length} didn&rsquo;t go</b></p>${failed.map((f) => `<div><span>${h.esc(f.name)} &middot; ${h.esc(f.to)}<em>${h.esc(f.error)}</em></span><button type="button" class="ad-btn ad-btn-small" data-ms-resend="${h.attr(f.bookingId)}">Resend</button></div>`).join('')}</div>` : ''}
+      </div>
+      <aside class="ad-card ms-card ms-pad">
+        <p class="ms-prev-h">Preview &mdash; ${prevFor} &middot; buttons and links open for real</p>
+        <div class="ms-prev" id="ms-prev"></div>
+      </aside>
+    </div>
+  </div>`;
+}
+
+/*  PREVIEW LINKS ARE REAL: every button in a preview opens
+    the page it goes to, in a new tab, so Max can test it.               */
+function guideLinkFor(state) {
+    const b = paidVendors(state.bookings, state.activeEventId).find((x) => x.invoiceToken);
+    return b ? '/vendor-invoice?t=' + b.invoiceToken : '';
+}
+const pbtn = (h, label, url, cls) =>
+    url
+        ? '<a class="' + (cls || '') + '" href="' + h.attr(url) + '" target="_blank" rel="noopener">' + label + '</a>'
+        : '<span class="' + (cls || '') + '" title="Opens when a vendor has paid">' + label + '</span>';
+
+/* one email as it lands: header, subject, body, then what the server adds */
+function mailHtml(h, d, values, extra, foot, top = '') {
+    return `<div class="ms-mail"><div class="ms-mail-top">SOUNDZGOOD WHITSUNDAYS${top}</div>
+    <p class="ms-mail-subj">${h.esc(fill(d.subject, values, String))}</p>
+    <div class="ms-mail-body">${bodyHtml(d.body, values, h.esc)}${extra}</div>
+    <div class="ms-mail-foot">${foot}</div></div>`;
+}
+
+function previewHtml(ctx) {
+    const { state, h } = ctx;
+    const guide = guideLinkFor(state);
+    const ev = (state.events || []).find((e) => e.id === state.activeEventId) || {};
+    const d = state.msgDraft || blankMessage();
+    const m = (state.messages || []).find((x) => x.id === state.msgOpen) || {};
+    const first = (m.system ? paidVendors(state.bookings, state.activeEventId) : recipients(state.bookings, state.activeEventId, d))[0];
+    const v = sampleValues(first, ev);
+    const guideBtn = `
+      <p class="ms-mail-btn">${pbtn(h, 'View your invoice &amp; event guide &rarr;', guide)}</p>`;
+    if (m.audience === 'sponsors') {
+        const sv = { ...v, vendor_name: 'Sam', business_name: 'Sample Business' };
+        const extra = `
+      <p class="ms-mail-btn">${pbtn(h, 'See the sponsor options', '/sponsor?e=' + encodeURIComponent(state.activeEventId || ''))}</p>
+      <p class="ms-mail-note">Not for you? Just reply and let us know - we won't email you about it again.</p>`;
+        return mailHtml(h, d, sv, extra, 'SoundzGood Whitsundays');
+    }
+    if (m.system === 'waitlist') {
+        const wv = { ...v, vendor_name: 'Sam', business_name: 'Sample Food Co', site_number: 'F4', expires_at: 'Sat 24 Oct, 1:35 pm' };
+        const extra = `
+      <p class="ms-mail-btn">${pbtn(h, 'Accept &amp; book my spot', '/vendor-signup')} <span class="ms-mail-btn2" title="In the real email this passes the spot to the next person">No thanks - decline</span></p>
+      <p class="ms-mail-note">This spot is held for you until ${h.esc(wv.expires_at)}. It is only yours once payment is received.</p>`;
+        return mailHtml(h, d, wv, extra, 'SoundzGood Whitsundays');
+    }
+    if (m.system === 'site-moved') return mailHtml(h, d, { ...v, old_site: 'F2' }, guideBtn, 'SoundzGood Whitsundays');
+    if (m.system) {
+        const total = `
+      <div class="ms-mail-total"><small>TOTAL PAID (INCL GST)</small><b>${h.esc(v.total_paid)}</b><span>Invoice ${h.esc(v.invoice_number)}</span></div>`;
+        return mailHtml(
+            h,
+            d,
+            v,
+            total + guideBtn,
+            'SoundzGood Whitsundays &middot; 34a Williams St, Bowen QLD 4805',
+            '<b>Thank you &mdash; you&rsquo;re booked in</b>'
         );
-        desk.querySelectorAll('[data-pub-times]').forEach((b) =>
-            b.addEventListener('click', () => textDjTimes(b.getAttribute('data-pub-times')))
-        );
-        // ASSIGN CREW: tick who's working, they get emailed
-        desk.querySelectorAll('[data-crew]').forEach((b) => b.addEventListener('click', () => openCrewPicker(b.getAttribute('data-crew'))));
-        desk.querySelectorAll('[data-gig-crew]').forEach((b) =>
-            b.addEventListener('click', () => openCrewPicker(b.getAttribute('data-gig-crew'), true))
-        );
-        // copy a share link (waitlist / vendor signup)
-        desk.querySelectorAll('[data-copy]').forEach((b) =>
-            b.addEventListener('click', async () => {
-                const url = b.getAttribute('data-copy');
-                try {
-                    await navigator.clipboard.writeText(url);
-                    const old = b.textContent;
-                    b.textContent = 'Copied!';
-                    setTimeout(() => {
-                        b.textContent = old;
-                    }, 1500);
-                } catch (e) {
-                    window.prompt('Copy this link:', url);
-                }
-            })
-        );
-        desk.querySelectorAll('[data-rem-done]').forEach((box) =>
-            box.addEventListener('change', () => {
-                box.closest('li').classList.add('is-done');
-                reminderStore.done(box.getAttribute('data-rem-done')).catch((e) => {
-                    window.alert(friendly(e));
-                    box.checked = false;
-                });
-            })
-        );
-        const form = desk.querySelector('[data-rem-add]');
-        if (form)
-            form.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const inp = form.querySelector('input');
-                const text = inp.value.trim();
-                if (!text) return;
-                inp.value = '';
-                reminderStore.add(text).catch((err) => window.alert(friendly(err)));
+    }
+    return mailHtml(h, d, v, guideBtn, 'SoundzGood Whitsundays' + (d.promo ? '<br><u>Unsubscribe from event news</u>' : ''));
+}
+
+/* ==========================================================================
+   WIRING
+   ========================================================================== */
+export function wireMessages(ctx) {
+    const { state, call, render } = ctx;
+    const root = document.querySelector('.ms');
+    if (!root) return;
+
+    // first visit to an event with no messages: add the starters
+    if (state.activeEventId && state.messagesLoaded && !state.msgSeeding && state.msgSeededFor !== state.activeEventId) {
+        state.msgSeeding = true;
+        state.msgSeededFor = state.activeEventId;
+        call('adminMessagesSeed', { eventId: state.activeEventId })
+            .catch((e) => window.alert(e.message || 'Could not add the starter messages.'))
+            .finally(() => {
+                state.msgSeeding = false;
             });
-        loadDashWeather(
-            dashboardData({
-                quotes: state.quoteDocs || [],
-                bookings: state.bookings || [],
-                events: state.events || [],
-                schedule: state.scheduleLoaded ? state.schedule : null,
-                talent: state.talent || []
-            }).upcoming
-        ).catch(() => {});
-        if (Date.now() - dashLogAt < 5 * 60000) return; // at most every 5 minutes
-        dashLogAt = Date.now();
-        loadLog()
-            .then((log) => {
-                dashLog = log;
-                if (state.view === 'dashboard') render();
+    }
+
+    const sponsorNames = () => new Set((state.sponsors || []).map((p) => lower(p.business)));
+
+    // Sent emails: load, search, show the chosen one
+    const refreshLog = () => {
+        if (!ctx.loadLog) return;
+        ctx.loadLog()
+            .then((list) => {
+                state.emailLog = list;
+                render();
             })
-            .catch(() => {});
+            .catch((err) => {
+                state.emailLog = [];
+                window.alert(err.message || 'Could not load sent emails.');
+                render();
+            });
+    };
+    if (state.msgTab === 'sent' && !state.emailLog) refreshLog();
+    const cFrame = document.getElementById('ms-cprev-frame');
+    if (cFrame && state.clientPrev && state.clientPrev.html) cFrame.srcdoc = state.clientPrev.html;
+    const logFrame = document.getElementById('ms-log-frame');
+    if (logFrame) {
+        const m = (state.emailLog || []).find((x) => x.id === state.emailLogOpen);
+        if (m)
+            logFrame.srcdoc =
+                m.html || '<pre style="white-space:pre-wrap;font-family:Arial;padding:16px">' + ctx.h.esc(m.text || '') + '</pre>';
     }
-};
+    const logQ = root.querySelector('[data-ms-logq]');
+    if (logQ)
+        logQ.addEventListener('input', () => {
+            state.emailLogFilter = logQ.value;
+            const pos = logQ.selectionStart;
+            render();
+            const again = document.querySelector('[data-ms-logq]');
+            if (again) {
+                again.focus();
+                again.selectionStart = again.selectionEnd = pos;
+            }
+        });
 
-VIEWS.vendorEmail = {
-    html() {
-        return messagesHtml(msgCtx());
-    },
-    wire() {
-        wireMessages(msgCtx());
-    }
-};
+    const prev = document.getElementById('ms-prev');
+    const paintPreview = () => {
+        if (prev) prev.innerHTML = previewHtml(ctx);
+    };
+    paintPreview();
 
-/*  SPONSORS DIRECTORY - every business across every event. Reads the whole
-    sponsors collection once, kept live while the admin is open.          */
-let sponsorsAllUnsub = null;
-function loadAllSponsors() {
-    if (sponsorsAllUnsub) return;
-    const { collection, onSnapshot } = fb.f;
-    onSnapshot(
-        collection(fb.db, 'sponsorBiz'),
-        (snap) => {
-            state.sponsorBiz = snapRows(snap);
-            if (state.view === 'sponsorDir' || (state.view === 'event' && state.eventTab === 'sponsors')) render();
-        },
-        (err) => console.error('sponsorBiz', err)
-    );
-    sponsorsAllUnsub = onSnapshot(
-        collection(fb.db, 'sponsors'),
-        (snap) => {
-            state.sponsorsAll = snapRows(snap);
-            if (state.view === 'sponsorDir') render();
-        },
-        (err) => console.error('sponsorsAll', err)
-    );
+    const say = (t, bad) => {
+        const el = document.getElementById('ms-msg');
+        if (el) {
+            el.hidden = false;
+            el.textContent = t;
+            el.className = 'ms-msg' + (bad ? ' ms-bad' : '');
+        }
+    };
+    const close = () => {
+        state.msgOpen = null;
+        state.msgDraft = null;
+        render();
+    };
+
+    root.addEventListener('click', async (e) => {
+        const tabBtn = e.target.closest('[data-ms-tab]');
+        if (tabBtn) {
+            state.msgTab = tabBtn.getAttribute('data-ms-tab');
+            if (state.msgTab === 'sent' && !state.emailLog) refreshLog();
+            render();
+            return;
+        }
+        if (e.target.closest('[data-ms-logrefresh]')) {
+            refreshLog();
+            return;
+        }
+        // ---- Sponsors tab ----
+        if (e.target.closest('[data-sp-add]')) {
+            state.spAdding = !state.spAdding;
+            state.spPicking = false;
+            render();
+            return;
+        }
+        if (e.target.closest('[data-sp-leads]')) {
+            state.spPicking = !state.spPicking;
+            state.spAdding = false;
+            render();
+            return;
+        }
+        if (e.target.closest('[data-sp-cancel]')) {
+            state.spAdding = false;
+            state.spPicking = false;
+            render();
+            return;
+        }
+        const needAdd = e.target.closest('[data-need-add]');
+        if (needAdd) {
+            const name = needAdd.getAttribute('data-need-add');
+            const box = [...root.querySelectorAll('[data-need-email]')].find((x) => x.getAttribute('data-need-email') === name);
+            const email = String((box && box.value) || '').trim();
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                window.alert('Type their email first.');
+                return;
+            }
+            const n = NEEDS_EMAIL.find((x) => x.business === name) || {};
+            await ctx.sponsors.add({ business: name, email, notes: n.tip || '', source: 'suggested' });
+            return;
+        }
+        if (e.target.closest('[data-sp-big]')) {
+            const have = sponsorNames();
+            const add = SUGGESTED_SPONSORS.filter((s) => !have.has(s.business.toLowerCase()));
+            // ones added earlier without an email get it filled in now
+            const fill = (state.sponsors || []).filter(
+                (p) => !p.email && SUGGESTED_SPONSORS.some((s) => s.business.toLowerCase() === lower(p.business))
+            );
+            if (!add.length && !fill.length) {
+                window.alert('They are all on your list already.');
+                return;
+            }
+            for (const s of add) await ctx.sponsors.add({ business: s.business, email: s.email, notes: s.note, source: 'suggested' });
+            for (const p of fill) {
+                const s = SUGGESTED_SPONSORS.find((x) => x.business.toLowerCase() === String(p.business).toLowerCase());
+                await ctx.sponsors.update(p.id, { email: s.email, notes: s.note });
+            }
+            return;
+        }
+        if (e.target.closest('[data-sp-mc]')) {
+            openMcSheet(ctx);
+            return;
+        }
+        if (e.target.closest('[data-sp-dir]')) {
+            const have = sponsorNames();
+            const pool = (state.sponsorBiz || [])
+                .filter((b) => b.business && !have.has(String(b.business).toLowerCase()))
+                .sort((a, b) => (b.stars || 0) - (a.stars || 0) || a.business.localeCompare(b.business));
+            if (!pool.length) {
+                window.alert('Everyone in the directory is already on this event.');
+                return;
+            }
+            const pick = window.prompt(
+                'Type the number of the business to add:\n' +
+                    pool
+                        .slice(0, 40)
+                        .map(
+                            (b, i) =>
+                                i +
+                                1 +
+                                '. ' +
+                                b.business +
+                                (b.industry ? ' (' + b.industry + ')' : '') +
+                                (b.stars ? ' ' + '\u2605'.repeat(b.stars) : '')
+                        )
+                        .join('\n')
+            );
+            const b = pool[(+pick || 0) - 1];
+            if (!b) return;
+            await ctx.sponsors.add({
+                business: b.business,
+                bizId: b.id,
+                contactName: b.contactName || '',
+                email: b.email || '',
+                phone: b.phone || '',
+                website: b.website || '',
+                logo: b.logo || '',
+                color: b.color || '',
+                source: 'directory'
+            });
+            return;
+        }
+        if (e.target.closest('[data-sp-past]')) {
+            const have = sponsorNames();
+            const add = PAST_SPONSORS.filter((n) => !have.has(n.toLowerCase()));
+            if (!add.length) {
+                window.alert('Your past sponsors are already on the list.');
+                return;
+            }
+            for (const n of add) await ctx.sponsors.add({ business: n, source: 'past' });
+            return;
+        }
+        if (e.target.closest('[data-sp-leadadd]')) {
+            const ids = [...root.querySelectorAll('[data-sp-lead]:checked')].map((x) => x.getAttribute('data-sp-lead'));
+            for (const id of ids) {
+                const l = (state.leads || []).find((x) => x.id === id);
+                if (l)
+                    await ctx.sponsors.add({
+                        business: l.title || '',
+                        contactName: l.contactName || '',
+                        email: l.email || '',
+                        phone: l.phone || '',
+                        source: 'lead',
+                        leadId: l.id
+                    });
+            }
+            state.spPicking = false;
+            render();
+            return;
+        }
+        if (e.target.closest('[data-sp-close]')) {
+            state.spOpen = null;
+            render();
+            return;
+        }
+        const openCard = e.target.closest('[data-sp-open]');
+        if (openCard && !e.target.closest('input, label, button, a')) {
+            state.spOpen = openCard.getAttribute('data-sp-open');
+            render();
+            return;
+        }
+        const clr = e.target.closest('[data-sp-field-clear]');
+        if (clr) {
+            await ctx.sponsors.update(clr.getAttribute('data-id'), { [clr.getAttribute('data-sp-field-clear')]: '' });
+            return;
+        }
+        const findLogo = e.target.closest('[data-sp-findlogo]');
+        if (findLogo) {
+            const p = (state.sponsors || []).find((x) => x.id === findLogo.getAttribute('data-sp-findlogo'));
+            const host = String((p && p.website) || '')
+                .replace(/^https?:\/\//, '')
+                .replace(/\/.*$/, '')
+                .trim();
+            if (!host) {
+                window.alert('Add their website first.');
+                return;
+            }
+            await ctx.sponsors.update(p.id, { logo: 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(host) + '&sz=256' });
+            return;
+        }
+        const sendOne = e.target.closest('[data-sp-sendone]');
+        if (sendOne) {
+            const p = (state.sponsors || []).find((x) => x.id === sendOne.getAttribute('data-sp-sendone'));
+            if (!p || !window.confirm('Send the sponsorship email to ' + p.business + ' (' + p.email + ')?')) return;
+            sendOne.disabled = true;
+            sendOne.textContent = 'Sending...';
+            try {
+                const r = await call('adminSponsorSend', { eventId: state.activeEventId, ids: [p.id] });
+                window.alert(r.sent ? 'Sent.' : 'Not sent: ' + ((r.failed || []).join(', ') || 'unknown'));
+            } catch (err) {
+                window.alert(err.message || 'Could not send.');
+            }
+            render();
+            return;
+        }
+        const copyLink = e.target.closest('[data-sp-copylink]');
+        if (copyLink) {
+            const p = (state.sponsors || []).find((x) => x.id === copyLink.getAttribute('data-sp-copylink'));
+            const url = 'https://www.soundzgood.com.au' + spLink(state.activeEventId, p || {});
+            (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject())
+                .then(() => {
+                    copyLink.textContent = 'Copied';
+                })
+                .catch(() => window.prompt('Copy this link:', url));
+            return;
+        }
+        const del = e.target.closest('[data-sp-del]');
+        if (del) {
+            const p = (state.sponsors || []).find((x) => x.id === del.getAttribute('data-sp-del'));
+            if (p && window.confirm('Remove ' + (p.business || 'this business') + ' from the list?')) await ctx.sponsors.remove(p.id);
+            return;
+        }
+        if (e.target.closest('[data-sp-send]')) {
+            const ticked = state.spTicked || {};
+            const go = (state.sponsors || []).filter((p) => ticked[p.id] && p.status === 'todo' && p.email);
+            if (!go.length) return;
+            if (
+                !window.confirm(
+                    'Send the sponsorship email to ' +
+                        go.length +
+                        ' business' +
+                        (go.length === 1 ? '' : 'es') +
+                        '?\n\n' +
+                        go.map((p) => '- ' + p.business).join('\n')
+                )
+            )
+                return;
+            const b = e.target.closest('[data-sp-send]');
+            b.disabled = true;
+            b.textContent = 'Sending...';
+            try {
+                const r = await call('adminSponsorSend', { eventId: state.activeEventId, ids: go.map((p) => p.id) });
+                state.spTicked = {};
+                window.alert('Sent ' + r.sent + '.' + (r.failed && r.failed.length ? '\n\nNot sent:\n' + r.failed.join('\n') : ''));
+            } catch (err) {
+                window.alert(err.message || 'Could not send.');
+            }
+            render();
+            return;
+        }
+        if (e.target.closest('[data-ms-cclose]')) {
+            state.clientPrev = null;
+            render();
+            return;
+        }
+        const remBtn = e.target.closest('[data-ms-remind]');
+        if (remBtn) {
+            const q = (state.quoteDocs || []).find((x) => x.id === remBtn.getAttribute('data-ms-remind'));
+            if (q) {
+                remBtn.disabled = true;
+                sendReminder(call, q).then(() => {
+                    remBtn.disabled = false;
+                });
+            }
+            return;
+        }
+        const cRow = e.target.closest('[data-ms-cprev]');
+        if (cRow) {
+            const key = cRow.getAttribute('data-ms-cprev');
+            state.clientPrev = { key, loading: true };
+            render();
+            call('adminPreviewClientEmail', { kind: key })
+                .then((r) => {
+                    if (state.clientPrev && state.clientPrev.key === key) {
+                        state.clientPrev = { key, ...r };
+                        render();
+                    }
+                })
+                .catch((err) => {
+                    state.clientPrev = { key, subject: err.message || 'Could not load the preview.' };
+                    render();
+                });
+            return;
+        }
+        if (e.target.closest('[data-ms-logclose]')) {
+            state.emailLogOpen = null;
+            render();
+            return;
+        }
+        const logRow = e.target.closest('[data-ms-log]');
+        if (logRow) {
+            state.emailLogOpen = logRow.getAttribute('data-ms-log');
+            render();
+            return;
+        }
+        const open = e.target.closest('[data-ms-open]');
+        if (open) {
+            state.msgOpen = open.getAttribute('data-ms-open');
+            state.msgDraft = null;
+            render();
+            return;
+        }
+        if (e.target.closest('[data-ms-new]')) {
+            state.msgOpen = 'new';
+            state.msgDraft = blankMessage();
+            render();
+            return;
+        }
+        if (e.target.closest('[data-ms-back]')) {
+            const m = (state.messages || []).find((x) => x.id === state.msgOpen);
+            const dirty =
+                state.msgOpen === 'new'
+                    ? !!(state.msgDraft && (state.msgDraft.subject || state.msgDraft.body))
+                    : m && !m.system && state.msgDraft && !sameDraft(draftFrom(m), state.msgDraft);
+            if (dirty && !window.confirm('Leave without saving your changes?')) return;
+            close();
+            return;
+        }
+        const field = e.target.closest('[data-ms-field]');
+        if (field) {
+            const box = root.querySelector('[data-ms="body"]');
+            if (!box) return;
+            const tag = '{{' + field.getAttribute('data-ms-field') + '}}';
+            const at = box.selectionStart != null ? box.selectionStart : box.value.length;
+            box.value = box.value.slice(0, at) + tag + box.value.slice(box.selectionEnd || at);
+            box.focus();
+            box.selectionStart = box.selectionEnd = at + tag.length;
+            box.dispatchEvent(new Event('input', { bubbles: true }));
+            return;
+        }
+        const resend = e.target.closest('[data-ms-resend]');
+        if (resend) {
+            resend.disabled = true;
+            resend.textContent = 'Sending...';
+            try {
+                const r = await call('adminMessageResend', { id: state.msgOpen, bookingId: resend.getAttribute('data-ms-resend') });
+                say(r.sent ? 'Sent.' : 'Still did not send: ' + (r.error || r.reason || ''), !r.sent);
+            } catch (err) {
+                say(err.message || 'Could not resend.', true);
+            }
+            return;
+        }
+        const act = e.target.closest('[data-ms-act]');
+        if (!act) return;
+        const what = act.getAttribute('data-ms-act');
+        const id = state.msgOpen;
+        const m = (state.messages || []).find((x) => x.id === id) || {};
+        // asks first; a "no" turns the button back on and stops
+        const declined = (question) => {
+            if (window.confirm(question)) return false;
+            act.disabled = false;
+            return true;
+        };
+        act.disabled = true;
+        try {
+            if (what === 'save') {
+                const res = await call('adminMessageSave', {
+                    id: id === 'new' ? null : id,
+                    eventId: state.activeEventId,
+                    ...state.msgDraft
+                });
+                state.msgOpen = res.id;
+                state.msgDraft = null;
+                render();
+                return;
+            }
+            if (what === 'test') {
+                const r = await call('adminMessageTest', { id });
+                say(
+                    r.sent ? 'Test sent to ' + r.to + ' only. No vendor was emailed.' : 'Test did not send: ' + (r.error || r.reason || ''),
+                    !r.sent
+                );
+            } else if (what === 'approve' && m.audience === 'sponsors' && m.system) {
+                if (
+                    declined(
+                        'Approve this sponsorship email? It only goes when you press Send on the Sponsors tab (or 7 days later for the follow-up).'
+                    )
+                )
+                    return;
+                await call('adminMessageAction', { id, action: 'approve' });
+                say('Approved.');
+            } else if (what === 'approve' && m.system) {
+                const mv = m.system === 'site-moved';
+                let question = 'Approve this wording? Every vendor who pays from now on gets it.';
+                if (m.system === 'waitlist') {
+                    question =
+                        'Approve this email? From now on, when a spot opens the next person on the waitlist is emailed automatically and gets 4 hours to claim it.';
+                } else if (mv)
+                    question = 'Approve this email? From now on, a paid vendor you move to a different site is emailed automatically.';
+                if (declined(question)) return;
+                await call('adminMessageAction', { id, action: 'approve' });
+                say(mv ? 'Approved - vendors you move get this email.' : 'Approved - new vendors get this wording.');
+            } else if (what === 'approve') {
+                const ev = (state.events || []).find((x) => x.id === state.activeEventId) || {};
+                const n = recipients(state.bookings, state.activeEventId, m).length;
+                const question =
+                    'Approve "' +
+                    (m.name || m.subject) +
+                    '"?\n\nIt will send itself to ' +
+                    n +
+                    ' vendor' +
+                    (n === 1 ? '' : 's') +
+                    ' (and anyone who books before then) on ' +
+                    niceDay(sendDate(m, ev)) +
+                    ' at ' +
+                    SEND_TIME +
+                    '.\n\nYou can pause or cancel it any time before then.';
+                if (declined(question)) return;
+                const r = await call('adminMessageAction', { id, action: 'approve' });
+                say('Approved - it sends on ' + niceDay(r.sendDate) + ' at ' + SEND_TIME + '.');
+            } else if (what === 'delete') {
+                if (declined('Delete this message? It has not been sent to anyone.')) return;
+                await call('adminMessageAction', { id, action: 'delete' });
+                close();
+                return;
+            } else if (what === 'sendnow') {
+                const n = recipients(state.bookings, state.activeEventId, m).length;
+                if (declined('Send "' + (m.name || 'this message') + '" to ' + n + ' vendor' + (n === 1 ? '' : 's') + ' RIGHT NOW?'))
+                    return;
+                const r = await call('adminMessageAction', { id, action: 'sendNow' });
+                say('Sent to ' + r.sent + ' of ' + r.total + (r.failed ? ' - ' + r.failed + ' failed (see below)' : '.'), !!r.failed);
+            } else if (what === 'cancel') {
+                if (declined('Cancel this message? It will not send.')) return;
+                await call('adminMessageAction', { id, action: 'cancel' });
+            } else {
+                await call('adminMessageAction', { id, action: what }); // pause / resume
+            }
+        } catch (err) {
+            say(err.message || 'Could not do that.', true);
+        }
+        act.disabled = false;
+    });
+
+    // typing: keep the draft in state (so a live update can't lose it), refresh preview + sentence
+    const onEdit = (e) => {
+        const k = e.target.getAttribute && e.target.getAttribute('data-ms');
+        if (!k || !state.msgDraft) return;
+        const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+        if (k.startsWith('trigger.')) {
+            const sub = k.slice(8);
+            state.msgDraft.trigger = {
+                ...(state.msgDraft.trigger || {}),
+                [sub]: sub === 'days' ? Math.max(0, Math.round(Number(val) || 0)) : val
+            };
+            if (sub === 'type') {
+                render();
+                return;
+            } // swaps Days <-> Date box
+        } else {
+            state.msgDraft[k] = val;
+        }
+        if (k === 'who' || k === 'promo') {
+            render();
+            return;
+        }
+        paintPreview();
+        const s = document.getElementById('ms-sentence');
+        if (s) {
+            const ev = (state.events || []).find((x) => x.id === state.activeEventId) || {};
+            const m = (state.messages || []).find((x) => x.id === state.msgOpen) || {};
+            s.innerHTML = sentenceHtml(ctx, state.msgDraft, m, ev);
+        }
+        const save = root.querySelector('[data-ms-act="save"]');
+        if (save) {
+            save.textContent = 'Save';
+            save.classList.add('ad-btn-primary');
+        }
+        const appr = root.querySelector('[data-ms-act="approve"]');
+        if (appr) appr.remove(); // changed: save first, then approve
+    };
+    root.addEventListener('input', onEdit);
+    root.addEventListener('change', onEdit);
+    root.addEventListener('change', async (e) => {
+        const t = e.target;
+        if (t.matches('[data-sp-tick]')) {
+            state.spTicked = { ...(state.spTicked || {}), [t.getAttribute('data-sp-tick')]: t.checked };
+            render();
+            return;
+        }
+        if (t.matches('[data-sp-field]')) {
+            const field = t.getAttribute('data-sp-field');
+            let value = String(t.value || '')
+                .trim()
+                .slice(0, field === 'notes' ? 2000 : 200);
+            if (field === 'color' && !/^#[0-9a-f]{6}$/i.test(value)) value = '';
+            if (field === 'website' && value && !/^https?:\/\//i.test(value)) value = 'https://' + value;
+            await ctx.sponsors.update(t.getAttribute('data-id'), { [field]: value });
+            return;
+        }
+        if (t.matches('[data-sp-logo-file]')) {
+            const file = t.files && t.files[0];
+            if (!file || !ctx.upload) return;
+            const id = t.getAttribute('data-sp-logo-file');
+            try {
+                const url = await ctx.upload(file, 'sponsor-logos/' + id + '/');
+                await ctx.sponsors.update(id, { logo: url });
+            } catch (err) {
+                window.alert('Upload failed - ' + (err.message || 'try again'));
+            }
+            return;
+        }
+        if (t.matches('[data-sp-status]')) {
+            await ctx.sponsors.update(t.getAttribute('data-sp-status'), { status: t.value });
+            return;
+        }
+        if (t.matches('[data-sp-level]')) {
+            await ctx.sponsors.update(t.getAttribute('data-sp-level'), { level: t.value });
+            return;
+        }
+        if (t.matches('[data-sp-amount]')) {
+            await ctx.sponsors.update(t.getAttribute('data-sp-amount'), {
+                amountCents: Math.max(0, Math.round(Number(String(t.value).replace(/[^0-9.]/g, '')) * 100) || 0)
+            });
+        }
+    });
+    root.addEventListener('submit', async (e) => {
+        if (!e.target.matches('[data-sp-form]')) return;
+        e.preventDefault();
+        const f = e.target;
+        const v = (n) => String((f.querySelector('[name="' + n + '"]') || {}).value || '').trim();
+        if (!v('business')) return;
+        if (v('email') && !EMAIL_OK.test(v('email'))) {
+            window.alert("That doesn't look like an email address.");
+            return;
+        }
+        await ctx.sponsors.add({
+            business: v('business'),
+            contactName: v('contactName'),
+            email: v('email'),
+            phone: v('phone'),
+            source: 'manual'
+        });
+        state.spAdding = false;
+        render();
+    });
 }
-VIEWS.sponsorDir = {
-    html() {
-        return sponsorDirHtml(msgCtx());
-    },
-    wire() {
-        wireSponsorDir(msgCtx());
-    }
-};
 
-/*  A value safe to drop inside a CSS attribute selector. Ids are Firestore's
-    own, so this is belt and braces rather than a real threat.             */
-function cssEsc(v) {
-    return String(v == null ? '' : v).replace(/["\\]/g, '\\$&');
+/*  THE MC SHEET - one printable page for the night: every confirmed sponsor
+    with the thank-yous we promised, and every prize with who gave it.
+    Opens in a new tab; print or save as PDF from there.                   */
+function openMcSheet(ctx) {
+    const { state, h } = ctx;
+    const ev = (state.events || []).find((e) => e.id === state.activeEventId) || {};
+    const yes = (state.sponsors || []).filter((p) => p.status === 'yes');
+    const order = { platinum: 0, gold: 1, silver: 2, bronze: 3, supporter: 4 };
+    const lv = (p) => (LEVEL[p.level] ? LEVEL[p.level].name.split(' - ')[0] : '');
+    const thanks = (p) => {
+        const m = /(\d+)\s*thank-you/i.exec(((LEVEL[p.level] || {}).perks || []).join(' '));
+        return m ? +m[1] : p.level ? 1 : 0;
+    };
+    const sponsors = yes
+        .filter((p) => p.kind !== 'prize')
+        .sort(
+            (a, b) =>
+                (order[a.level] ?? 9) - (order[b.level] ?? 9) ||
+                sponsorCents(b) - sponsorCents(a) ||
+                String(a.business).localeCompare(String(b.business))
+        );
+    const prizes = yes.filter((p) => p.kind === 'prize').sort((a, b) => String(a.business).localeCompare(String(b.business)));
+    const logo = (p) => (p.logo && /^(https:\/\/|\/)/.test(p.logo) ? `<img src="${h.attr(p.logo)}" alt="">` : '');
+    const spRow = (
+        p
+    ) => `<tr><td class="logo">${logo(p)}</td><td><b>${h.esc(p.business)}</b>${p.website ? `<br><small>${h.esc(String(p.website).replace(/^https?:\/\//, ''))}</small>` : ''}</td>
+    <td>${h.esc(lv(p) || (p.kind === 'inkind' ? 'In-kind' : 'Supporter'))}${p.gives ? `<br><small>${h.esc(p.gives)}</small>` : ''}</td>
+    <td class="num">${thanks(p) || '—'}</td><td class="tick">${Array.from({ length: Math.max(1, thanks(p)) }, () => '<span></span>').join('')}</td><td>${h.esc(p.notes || '')}</td></tr>`;
+    const przRow = (p) =>
+        `<tr><td class="logo">${logo(p)}</td><td><b>${h.esc(p.business)}</b>${p.contactName ? `<br><small>${h.esc(p.contactName)}${p.phone ? ' &middot; ' + h.esc(p.phone) : ''}</small>` : ''}</td><td>${h.esc(p.gives || '—')}</td><td class="tick"><span></span></td><td>${h.esc(p.notes || '')}</td></tr>`;
+    const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>MC sheet - ${h.esc(ev.name || 'event')}</title>
+<style>
+  body{ font:14px/1.45 Arial, Helvetica, sans-serif; color:#111; margin:0; padding:28px 32px; }
+  h1{ font-size:26px; margin:0 0 2px; } h1 small{ font-size:14px; font-weight:normal; color:#666; display:block; margin-top:4px; }
+  h2{ font-size:16px; margin:26px 0 8px; padding-bottom:6px; border-bottom:2px solid #ff6b00; }
+  table{ width:100%; border-collapse:collapse; } th{ text-align:left; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#666; padding:6px 8px; border-bottom:1px solid #ddd; }
+  td{ padding:8px; border-bottom:1px solid #e6e6e6; vertical-align:top; } td.logo{ width:46px; } td.logo img{ width:40px; height:40px; object-fit:contain; border:1px solid #e6e6e6; border-radius:6px; background:#fff; }
+  td.num{ text-align:center; width:60px; } td.tick{ white-space:nowrap; } td.tick span{ display:inline-block; width:16px; height:16px; border:1.5px solid #333; border-radius:4px; margin-right:4px; vertical-align:middle; }
+  small{ color:#666; } .bar{ display:flex; gap:10px; margin:0 0 18px; } .bar button{ font:inherit; padding:8px 14px; border:1px solid #333; border-radius:8px; background:#fff; cursor:pointer; }
+  .note{ margin-top:22px; padding:12px 14px; border:1px dashed #bbb; border-radius:8px; color:#444; }
+  @media print{ .bar{ display:none; } body{ padding:0; } h2{ break-after:avoid; } tr{ break-inside:avoid; } }
+</style></head><body>
+<div class="bar"><button onclick="print()">Print / save as PDF</button></div>
+<h1>MC sheet - ${h.esc(ev.name || '')}${ev.subtitle ? ' ' + h.esc(ev.subtitle) : ''}<small>${h.esc(ev.dateLabel || '')}${ev.venue ? ' &middot; ' + h.esc(ev.venue) : ''} &middot; tick each thank-you as you do it</small></h1>
+<h2>Sponsors to thank (${sponsors.length})</h2>
+${sponsors.length ? `<table><thead><tr><th></th><th>Business</th><th>Package / what they gave</th><th>Thank-yous</th><th>Done</th><th>Notes</th></tr></thead><tbody>${sponsors.map(spRow).join('')}</tbody></table>` : '<p><small>No confirmed sponsors yet.</small></p>'}
+<h2>Prizes (${prizes.length})</h2>
+${prizes.length ? `<table><thead><tr><th></th><th>From</th><th>The prize</th><th>Given</th><th>Notes</th></tr></thead><tbody>${prizes.map(przRow).join('')}</tbody></table>` : "<p><small>No prizes yet - set a sponsor's type to Prize and say what they give.</small></p>"}
+<div class="note">Platinum = presenting partner: say "${h.esc(ev.name || 'the event')} presented by [them]" on opening and closing. Thank every sponsor at least once before the headline act and again at the end of the night.</div>
+</body></html>`;
+    const w = window.open('', '_blank');
+    if (!w) {
+        window.alert('Your browser blocked the new tab - allow pop-ups for this site.');
+        return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
 }

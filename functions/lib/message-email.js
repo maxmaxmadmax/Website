@@ -6,7 +6,7 @@
    text into the SoundzGood letterhead, and sends it. Never throws - the
    caller decides what to do with { sent }.
 
-   KEEP IN STEP with renderBody() / fillFields() in js/messages.js, which
+   KEEP IN STEP with renderBody() / fillFields() in js/admin/messages.js, which
    draws the live preview in the admin page.
 
    Writing rules (the same ones the preview uses):
@@ -42,7 +42,7 @@ function transport() {
     return nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user, pass } });
 }
 
-/*  The fields a message can use. Same list as FIELDS in js/messages.js. */
+/*  The fields a message can use. Same list as FIELDS in js/admin/messages.js. */
 function fieldsFor(booking, event, guideLink) {
     const biz = booking.business || {};
     return {

@@ -1,8 +1,8 @@
 /* ==========================================================================
-   KIT  -  the item-requirements engine (server copy of js/kit.js)
+   KIT  -  the item-requirements engine (server copy of js/admin/kit.js)
 
-   Kept in step with js/kit.js. CommonJS so Cloud Functions can require it.
-   See js/kit.js for the full commentary.
+   Kept in step with js/admin/kit.js. CommonJS so Cloud Functions can require it.
+   See js/admin/kit.js for the full commentary.
    ========================================================================== */
 
 function reqsOf(item) {

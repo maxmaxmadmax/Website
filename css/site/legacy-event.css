@@ -180,7 +180,7 @@
 }
 
 /*  SCRAPBOOK SCROLL ANIMATION
-    js/main.js puts .has-scroll-anim on <html>, then .is-visible on each act
+    js/site/main.js puts .has-scroll-anim on <html>, then .is-visible on each act
     as it scrolls into view. Without JavaScript everything just shows.     */
 
 /*  Each act flies in from its own side, tilted back in 3D and blurred,
@@ -473,7 +473,7 @@
     position: relative;
     z-index: 2;
     /*  Sized in vh so the whole poster fits the screen. The top clears the
-        menu using --sg-nav-height (set by js/main.js).                  */
+        menu using --sg-nav-height (set by js/site/main.js).                  */
     padding: calc(var(--sg-nav-height, 88px) + 8px) 20px 1.4vh;
 
     width: 100%;
@@ -731,7 +731,7 @@
 }
 
 /* ==========================================================================
-   SCROLL ANIMATIONS - acts fly in as they scroll into view (js/main.js adds .is-visible)
+   SCROLL ANIMATIONS - acts fly in as they scroll into view (js/site/main.js adds .is-visible)
    ========================================================================== */
 .has-scroll-anim .act {
     opacity: 0;
@@ -871,7 +871,7 @@
         visibility 0.35s;
 }
 
-/* Hidden by js/main.js once the checkout section is on screen, since the
+/* Hidden by js/site/main.js once the checkout section is on screen, since the
    real ticket form is right there. */
 .ticket-bar.is-hidden {
     opacity: 0;

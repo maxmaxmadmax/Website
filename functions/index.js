@@ -267,7 +267,7 @@ function siteIsFree(site, uid, now) {
    of 20 joins bays that back on to each other but never across a walkway.
    Market bays only - food vans never join anything.
 
-   KEEP IN STEP with js/vendor-map.js, or the page will offer a shape this
+   KEEP IN STEP with js/site/vendor-map.js, or the page will offer a shape this
    function then refuses to allocate. */
 const BAY_TOUCH_GAP = 20;
 
@@ -681,7 +681,7 @@ exports.createCheckout = onCall({ secrets: [STRIPE_SECRET_KEY, SMTP_USER, SMTP_P
 
     /* The Vendor Terms tick. Nothing moves to payment (or free confirmation)
      without it, and we keep when and which version was agreed. Keep the
-     version in step with js/vendor-terms-data.js. */
+     version in step with js/site/vendor-terms-data.js. */
     if (termsAccepted !== true) {
         throw new HttpsError('failed-precondition', 'Please agree to the Eatz & Beatz Vendor Terms & Conditions first.');
     }
@@ -2649,14 +2649,14 @@ exports.adminDeleteQuote = onCall(async (request) => {
    saved here so the office can see progress. Separate from the customer token.
    ========================================================================= */
 
-/* deposit in, or paid - the booking is confirmed (same rule as js/stock.js) */
+/* deposit in, or paid - the booking is confirmed (same rule as js/admin/stock.js) */
 function pickReady(q) {
     if (!q || q.status === 'cancelled' || q.status === 'declined') return false;
     return q.status === 'paid' || q.paymentStatus === 'deposit' || q.paymentStatus === 'paid' || !!q.jobConfirmedAt; // confirmed, paying later
 }
 
 /* the gear on a job, one entry per item (items + included kit added up).
-   KEEP IN STEP with pickItems() in js/stock.js.                          */
+   KEEP IN STEP with pickItems() in js/admin/stock.js.                          */
 function pickItems(lines) {
     const out = [];
     const byKey = {};
@@ -4873,7 +4873,7 @@ exports.vendorUnsubscribe = onRequest(async (req, res) => {
    ITSELF - the Sales Pipeline shows "Late fee due" and Max presses Add.
    Kept separate from the hire lines: quotes/{id}.lateFees [{cents, date, by}]
    and lateFeeCents, so the original invoice is unchanged. No GST on them.
-   KEEP IN STEP with lateFeeDue() in js/sales-pipeline.js.
+   KEEP IN STEP with lateFeeDue() in js/admin/sales-pipeline.js.
    ========================================================================= */
 function quoteGrandTotal(q) {
     return Math.round(q.totalCents || 0) + Math.round(q.lateFeeCents || 0);
@@ -5321,7 +5321,7 @@ exports.waitlistRespond = onRequest(async (req, res) => {
    sponsors/{id}: eventId, business, contactName, email, phone, source,
      status todo | asked | interested | yes | no, level, amountCents, notes,
      message, token, askedAt, followedUpAt, interestedAt
-   KEEP IN STEP: SPONSOR_LEVELS in js/sponsor-data.js (same keys / spots).
+   KEEP IN STEP: SPONSOR_LEVELS in js/site/sponsor-data.js (same keys / spots).
    ========================================================================= */
 const SPONSOR_LEVELS = {
     platinum: { name: 'Platinum - Presenting Partner', priceCents: 500000, spots: 1 },

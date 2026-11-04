@@ -405,7 +405,7 @@ function pipelineJobs() {
     }
     return (state.quoteDocs || []).concat(vend);
 }
-/*  SALES PIPELINE - the look and the filtering live in js/sales-pipeline.js;
+/*  SALES PIPELINE - the look and the filtering live in js/admin/sales-pipeline.js;
     this hands it the live quotes and the actions on each job. */
 function quoteListHtml() {
     return pipelineHtml(pipelineJobs(), state.spFilter, H);
@@ -1409,7 +1409,7 @@ function renderQuoteLines() {
 }
 
 /*  COST BREAKDOWN GROUPS - KEEP IN STEP between
-    js/quote-view.js and js/admin/quotes.js. Inventory category -> group shown
+    js/site/quote-view.js and js/admin/quotes.js. Inventory category -> group shown
     in the totals ("Audio $180, Staging $180, Lighting $60").            */
 const COST_GROUP = {
     audio: 'Audio',
@@ -1733,7 +1733,7 @@ function syncPackageDiscounts() {
     });
 }
 
-/*  The included / required lines for qty of one item (via js/kit.js). */
+/*  The included / required lines for qty of one item (via js/admin/kit.js). */
 function kitLinesFor(itemId, qty, byId, days) {
     if (!qty) return [];
     const kit = expandKit({ [itemId]: qty }, byId);

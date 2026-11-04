@@ -9,7 +9,7 @@
    margin: 1 cover | 2 food | 3 entertainment + times | 4 market, FAQ and
    the black sponsors band. The live page prints its times on the cover and
    its generated entertainment page instead of sheet 3.
-   js/event-page.js tags the food section and sheet 4 with data-size
+   js/site/event-page.js tags the food section and sheet 4 with data-size
    (s / m / l / xl / xxl) from how many vendors there are: more columns and
    smaller type as the list grows, so nothing spills onto a fifth sheet.
    ========================================================================== */

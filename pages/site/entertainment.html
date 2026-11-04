@@ -23,11 +23,11 @@ permalink: /entertainment.html
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="images/logo.png">
-  <link rel="stylesheet" href="css/site/site.css?v=854">
-  <link rel="stylesheet" href="css/site/entertainment.css?v=854">
-  <script src="js/main.js?v=854" defer></script>
-  <script src="js/roster.js?v=854" defer></script>
-  <script src="js/entertainment.js?v=854" defer></script>
+  <link rel="stylesheet" href="css/site/site.css?v=855">
+  <link rel="stylesheet" href="css/site/entertainment.css?v=855">
+  <script src="js/site/main.js?v=855" defer></script>
+  <script src="js/site/roster.js?v=855" defer></script>
+  <script src="js/site/entertainment.js?v=855" defer></script>
 </head>
 
 <body>
@@ -37,8 +37,8 @@ permalink: /entertainment.html
 <!-- ==========================================================================
      SOUNDZGOOD ENTERTAINMENT
      Everything below lives inside #sg-ent-page; entertainment.css and
-     js/entertainment.js are scoped to that id.
-     THE ROSTER is one array at the top of js/entertainment.js - add an act there.
+     js/site/entertainment.js are scoped to that id.
+     THE ROSTER is one array at the top of js/site/entertainment.js - add an act there.
      PHOTOS: set photo: 'images/talent/name.webp' on the act (portrait, ~900px wide).
      No photo yet shows a gradient instead.
      ========================================================================== -->
@@ -81,7 +81,7 @@ permalink: /entertainment.html
     </div>
   </header>
 
-  <!-- ACT TYPE BAR - built by js/entertainment.js; a tab only shows for act types on the roster.
+  <!-- ACT TYPE BAR - built by js/site/entertainment.js; a tab only shows for act types on the roster.
        Kept in step with the dropdown below by the script.
        A div, not a <nav>: style.css styles bare nav for the site menu. -->
   <div class="ent-types" id="ent-types" role="group" aria-label="Filter by act type"></div>
@@ -132,7 +132,7 @@ permalink: /entertainment.html
       </label>
     </div>
 
-    <!-- Built by js/entertainment.js from the roster -->
+    <!-- Built by js/site/entertainment.js from the roster -->
     <div class="ent-grid" id="ent-grid"></div>
 
     <p class="ent-empty" id="ent-empty" hidden>

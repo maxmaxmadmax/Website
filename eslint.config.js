@@ -3,57 +3,52 @@ import js from '@eslint/js';
 import globals from 'globals';
 import fs from 'fs';
 
-/* The admin files (js/admin/) are plain scripts sharing one page scope, so each one may use what the
-   others declare at the top level, plus what boot.js hands over. */
+/* The admin page's plain scripts (the defer tags in admin.html) share one page scope, so each may use
+   what the others declare at the top level, plus what boot.js hands over. Everything else is a module. */
+const adminHtml = fs.readFileSync('pages/admin/admin.html', 'utf8');
+const adminScripts = [...adminHtml.matchAll(/src="(js\/admin\/[\w-]+\.js)\?v=\d+" defer/g)].map((m) => m[1]);
 const adminNames = {};
-for (const f of fs.readdirSync('js/admin').filter((x) => x.endsWith('.js'))) {
-    const s = fs.readFileSync('js/admin/' + f, 'utf8');
+for (const f of adminScripts.concat('js/admin/boot.js')) {
+    const s = fs.readFileSync(f, 'utf8');
     for (const m of s.matchAll(/^(?:async )?function\*? (\w+)|^(?:const|let|var) (\w+)/gm)) adminNames[m[1] || m[2]] = 'writable';
-    for (const m of s.matchAll(/^import \{([^}]*)\}/gm))
-        m[1].split(',').forEach(
-            (x) =>
-                (adminNames[
-                    x
-                        .trim()
-                        .split(/\s+as\s+/)
-                        .pop()
-                ] = 'readonly')
-        );
+    for (const m of s.matchAll(/^import \{([^}]*)\}/gm)) {
+        for (const name of m[1].split(','))
+            adminNames[
+                name
+                    .trim()
+                    .split(/\s+as\s+/)
+                    .pop()
+            ] = 'readonly';
+    }
 }
+
+const rules = {
+    'no-unused-vars': ['warn', { args: 'none', caughtErrors: 'none' }],
+    'no-empty': ['warn', { allowEmptyCatch: true }]
+};
 
 export default [
     js.configs.recommended,
     {
         files: ['js/**/*.js'],
-        ignores: ['js/admin/*.js'],
+        ignores: adminScripts,
         languageOptions: { ecmaVersion: 2022, sourceType: 'module', globals: { ...globals.browser } },
-        rules: {
-            'no-unused-vars': ['warn', { args: 'none', caughtErrors: 'none' }],
-            'no-empty': ['warn', { allowEmptyCatch: true }]
-        }
+        rules
     },
     {
-        files: ['js/admin/*.js'],
-        ignores: ['js/admin/boot.js'],
+        files: adminScripts,
         languageOptions: { ecmaVersion: 2022, sourceType: 'script', globals: { ...globals.browser, ...adminNames } },
         rules: {
+            ...rules,
             // top-level names are used by the other admin files, so only local ones are checked here
             'no-unused-vars': ['warn', { vars: 'local', args: 'none', caughtErrors: 'none' }],
-            'no-redeclare': 'off',
-            'no-empty': ['warn', { allowEmptyCatch: true }]
+            'no-redeclare': 'off'
         }
-    },
-    {
-        files: ['js/admin/boot.js'],
-        languageOptions: { ecmaVersion: 2022, sourceType: 'module', globals: { ...globals.browser } }
     },
     {
         files: ['functions/**/*.js'],
         languageOptions: { ecmaVersion: 2022, sourceType: 'commonjs', globals: { ...globals.node } },
-        rules: {
-            'no-unused-vars': ['warn', { args: 'none', caughtErrors: 'none' }],
-            'no-empty': ['warn', { allowEmptyCatch: true }]
-        }
+        rules
     },
     { ignores: ['node_modules/**', 'functions/node_modules/**'] }
 ];

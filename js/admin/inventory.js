@@ -76,7 +76,7 @@ function invItems() {
 const invLow = (it) => it.consumable && it.reorderAt > 0 && it.quantityTotal - it.quantityRepair <= it.reorderAt;
 
 /* -------------------------------------------------------------------------
-   Item requirements  -  the gear an item needs (see js/kit.js for the maths)
+   Item requirements  -  the gear an item needs (see js/admin/kit.js for the maths)
    ------------------------------------------------------------------------- */
 function normalizeReq(r) {
     r = r || {};
@@ -463,7 +463,7 @@ async function migrateOldPackages(btn) {
     btn.textContent = done + ' moved';
 }
 
-/*  KIT / PACKAGE BUILDER state (js/system-builder.js) */
+/*  KIT / PACKAGE BUILDER state (js/admin/system-builder.js) */
 let sysDraft = sysDraftFrom(null);
 function openSystem(id, type) {
     const it = id && id !== '__new__' ? invItems().find((x) => x.id === id) : null;

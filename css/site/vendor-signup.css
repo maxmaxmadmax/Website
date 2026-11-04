@@ -7,7 +7,7 @@
    RAIL        sticky step bar under the hero
    LAYOUT      the one-page flow: sections down the middle, summary at the side
    SECTIONS    a card per step: heading, number, lock, intro, actions
-   EVENTS      the event cards (js/vendor-signup.js builds them)
+   EVENTS      the event cards (js/site/vendor-signup.js builds them)
    PICKED      the event you chose
    TYPE        food van / market stall choice
    CATEGORIES  food category chips

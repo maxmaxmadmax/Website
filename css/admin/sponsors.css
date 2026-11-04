@@ -1,5 +1,5 @@
 /* ==========================================================================
-   SPONSORS BOARD (js/messages.js sponsorsHtml)
+   SPONSORS BOARD (js/admin/messages.js sponsorsHtml)
    ========================================================================== */
 .sp-top {
     display: grid;
@@ -368,7 +368,7 @@ a.ad-tab {
 }
 
 /* =========================================================================
-   SPONSOR DIRECTORY (js/sponsor-directory.js)
+   SPONSOR DIRECTORY (js/admin/sponsor-directory.js)
    ========================================================================= */
 .spd {
     display: grid;

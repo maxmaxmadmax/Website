@@ -11,7 +11,7 @@
    ========================================================================= */
 
 /*  What the desk calls each status. The vendor signup page has its own
-    wording for the four it shows - EVENT_STATUS in js/vendor-signup.js.
+    wording for the four it shows - EVENT_STATUS in js/site/vendor-signup.js.
 
     draft and archived never appear on the signup page at all. They are
     how an event is worked on before it opens, or put away afterwards. */
@@ -130,7 +130,7 @@ function wireEventButtons(root) {
 }
 
 /* =========================================================================
-   EVENT HUB - the look lives in js/event-hub.js. Vendors, Sites & Map,
+   EVENT HUB - the look lives in js/admin/event-hub.js. Vendors, Sites & Map,
    Entertainment, Messages and Sponsors are the existing pages drawn
    inside the hub's tabs. The budget is events/{id}/budget/ (admin only).
    ========================================================================= */

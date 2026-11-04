@@ -342,7 +342,7 @@ textarea:focus-visible {
         min-height: auto;
     }
 
-    /* Top padding clears the menu (js/main.js measures --sg-nav-height) */
+    /* Top padding clears the menu (js/site/main.js measures --sg-nav-height) */
     .header-content {
         padding: calc(var(--sg-nav-height, 118px) + 18px) 20px 50px;
     }
@@ -883,7 +883,7 @@ nav a:hover {
     color: var(--sg-gold);
 }
 
-/* Current page (js/main.js sets .active) */
+/* Current page (js/site/main.js sets .active) */
 nav a.active {
     color: var(--sg-orange);
     border-bottom-color: var(--sg-orange);
@@ -996,7 +996,7 @@ nav a.nav-cta.active {
 }
 
 /* Home page: menu hides over the hero, slides in as a fixed bar further down
-   (js/main.js toggles .is-tucked) */
+   (js/site/main.js toggles .is-tucked) */
 .home nav {
     position: fixed;
     background: rgba(10, 10, 10, 0.94);
@@ -1422,7 +1422,7 @@ nav a.nav-cta.active {
         min-height: auto;
     }
 
-    /* Top padding clears the menu (js/main.js measures --sg-nav-height) */
+    /* Top padding clears the menu (js/site/main.js measures --sg-nav-height) */
     .hero-content {
         padding: calc(var(--sg-nav-height, 120px) + 20px) 20px 60px;
     }

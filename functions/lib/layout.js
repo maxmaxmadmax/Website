@@ -27,7 +27,7 @@
    while every aisle is 120. So a stall can straddle the middle pair and
    make an L or a block, and still cannot reach across a walkway.
 
-   The rule that decides it lives in js/vendor-map.js and in index.js, next
+   The rule that decides it lives in js/site/vendor-map.js and in index.js, next
    to the check that allocates the group.
    -------------------------------------------------------------------------- */
 

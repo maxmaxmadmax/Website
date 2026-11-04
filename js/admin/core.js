@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
     if (!isFirebaseConfigured) {
-        showLoginError('Firebase is not connected. Fill in js/firebase-config.js.');
+        showLoginError('Firebase is not connected. Fill in js/site/firebase-config.js.');
         return;
     }
 
@@ -216,7 +216,7 @@ function prettyDate(iso) {
     });
 }
 
-/*  The roster as the site sees it: the built-in list in js/roster.js with
+/*  The roster as the site sees it: the built-in list in js/site/roster.js with
     whatever is saved in Firestore merged over it. Read through roster.js
     rather than queried here, so the desk and the site can never disagree
     about who is on the books.                                          */
