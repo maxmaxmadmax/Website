@@ -10,8 +10,8 @@
     One sponsor per industry: once a business in an industry has said yes
     to the event picked, the others in that industry show "industry taken". */
 
-import { spAvatar, spColor } from './messages.js?v=853';
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=853';
+import { spAvatar, spColor } from './messages.js?v=854';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=854';
 
 /* what to ask for, from the score */
 const ASK = { 5: 'gold', 4: 'silver', 3: 'bronze', 2: 'supporter', 1: 'supporter' };

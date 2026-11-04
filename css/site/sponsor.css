@@ -9,7 +9,7 @@
    FOR        "a proposal prepared for" - their logo on their link
    DETAILS    the customer details form
    DJ TIMES   the DJ set times form
-   PHONE      keep last on screen
+   Each section carries its own phone rules.
    PRINT      the sponsor pack
    ========================================================================== */
 
@@ -127,6 +127,12 @@
 
 .spn-hero .spn-btn {
     background: var(--spn-brand);
+}
+
+@media (max-width: 760px) {
+    .spn-hero {
+        padding: 20px;
+    }
 }
 
 /* ==========================================================================
@@ -331,6 +337,18 @@
     margin-top: 6px;
 }
 
+@media (max-width: 760px) {
+    .spn-why {
+        grid-template-columns: 1fr;
+    }
+    .spn-form {
+        grid-template-columns: 1fr;
+    }
+    .spn-costs ul {
+        columns: 1;
+    }
+}
+
 /* ==========================================================================
    FOR - their logo and colour on their personal link
    ========================================================================== */
@@ -528,25 +546,4 @@
     font-size: 14px;
     line-height: 1.5;
     text-align: left;
-}
-
-/* ==========================================================================
-   PHONE
-   ========================================================================== */
-@media (max-width: 760px) {
-    .spn-why {
-        grid-template-columns: 1fr;
-    }
-
-    .spn-form {
-        grid-template-columns: 1fr;
-    }
-
-    .spn-costs ul {
-        columns: 1;
-    }
-
-    .spn-hero {
-        padding: 20px;
-    }
 }

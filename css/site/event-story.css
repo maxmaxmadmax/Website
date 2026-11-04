@@ -7,7 +7,7 @@
    TITLE      breadcrumb, eyebrow, heading, lead, hero photo
    COPY       body text, gear list, stats, verdict, links
    CTA        the dark call-to-action box
-   PHONE      keep last
+   Each section carries its own phone rules.
    ========================================================================== */
 
 /* ==========================================================================
@@ -33,6 +33,12 @@ body:has(.bl-wrap) #navbar > nav {
     color: var(--sg-ink-soft);
     font-size: 17px;
     line-height: 1.7;
+}
+
+@media (max-width: 600px) {
+    .bl-wrap {
+        padding-top: 90px;
+    }
 }
 
 /* ==========================================================================
@@ -96,6 +102,12 @@ body:has(.bl-wrap) #navbar > nav {
     color: var(--sg-grey);
     margin-top: 6px;
     text-align: right;
+}
+
+@media (max-width: 600px) {
+    .bl-lead {
+        font-size: 17px;
+    }
 }
 
 /* ==========================================================================
@@ -281,26 +293,13 @@ body:has(.bl-wrap) #navbar > nav {
     background: var(--sg-border);
 }
 
-/* ==========================================================================
-   PHONE
-   ========================================================================== */
 @media (max-width: 600px) {
-    .bl-wrap {
-        padding-top: 90px;
-    }
-
     .bl-post {
         font-size: 16px;
     }
-
-    .bl-lead {
-        font-size: 17px;
-    }
-
     .bl-post .bl-stats {
         grid-template-columns: repeat(2, 1fr);
     }
-
     .bl-post .bl-btn {
         width: 100%;
         text-align: center;

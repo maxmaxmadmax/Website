@@ -5,7 +5,7 @@
    HEAD       intro and the filter chips
    CARDS      the grid of items
    COLOURS    one colour per category
-   PHONE      keep last
+   Each section carries its own phone rules.
    ========================================================================== */
 
 /* ==========================================================================
@@ -135,6 +135,24 @@
     color: var(--sg-dim, var(--sg-dim));
 }
 
+@media (max-width: 560px) {
+    .hire-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 14px;
+    }
+    .hire-body {
+        padding: 13px;
+    }
+    .hire-foot {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .hire-foot .btn {
+        width: 100%;
+        max-width: none;
+    }
+}
+
 /* ==========================================================================
    COLOURS - category pill and placeholder, by category number
    ========================================================================== */
@@ -171,28 +189,4 @@
 .hc6 {
     background: var(--sg-purple-dark);
     color: var(--sg-red-light);
-}
-
-/* ==========================================================================
-   PHONE
-   ========================================================================== */
-@media (max-width: 560px) {
-    .hire-grid {
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-        gap: 14px;
-    }
-
-    .hire-body {
-        padding: 13px;
-    }
-
-    .hire-foot {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .hire-foot .btn {
-        width: 100%;
-        max-width: none;
-    }
 }

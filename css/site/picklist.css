@@ -10,7 +10,7 @@
    LIST       categories, rows, the tick boxes, item photos
    EXTRAS     extra gear added on the day, with the search
    FOOT       save button and message
-   PHONE      keep last on screen
+   Each section carries its own phone rules.
    PRINT
    ========================================================================== */
 
@@ -42,6 +42,12 @@ body {
     text-align: center;
     padding: 80px 16px;
     color: var(--sg-ink-muted);
+}
+
+@media (max-width: 600px) {
+    .pl-wrap {
+        padding: 0 0 40px;
+    }
 }
 
 /* ==========================================================================
@@ -78,6 +84,12 @@ body {
     margin: 2px 0 0;
     font-weight: 700;
     font-size: 14px;
+}
+
+@media (max-width: 600px) {
+    .pl-head h1 {
+        font-size: 24px;
+    }
 }
 
 /* ==========================================================================
@@ -149,6 +161,12 @@ body {
     margin-top: 0;
 }
 
+@media (max-width: 600px) {
+    .pl-info {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* ==========================================================================
    PROGRESS
    ========================================================================== */
@@ -185,6 +203,13 @@ body {
 
 .pl-prog.is-returned em {
     background: var(--sg-green);
+}
+
+@media (max-width: 600px) {
+    .pl-progress {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
 }
 
 /* ==========================================================================
@@ -407,6 +432,22 @@ body {
     opacity: 0.7;
 }
 
+@media (max-width: 600px) {
+    .pl-head,
+    .pl-job,
+    .pl-progress,
+    .pl-list {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+    .pl-row {
+        grid-template-columns: 40px 1fr auto;
+    }
+    .pl-box {
+        width: 56px;
+    }
+}
+
 /* ==========================================================================
    EXTRAS
    ========================================================================== */
@@ -558,43 +599,7 @@ body {
     display: none;
 }
 
-/* ==========================================================================
-   PHONE
-   ========================================================================== */
 @media (max-width: 600px) {
-    .pl-wrap {
-        padding: 0 0 40px;
-    }
-
-    .pl-head,
-    .pl-job,
-    .pl-progress,
-    .pl-list {
-        padding-left: 16px;
-        padding-right: 16px;
-    }
-
-    .pl-head h1 {
-        font-size: 24px;
-    }
-
-    .pl-info {
-        grid-template-columns: 1fr;
-    }
-
-    .pl-progress {
-        grid-template-columns: 1fr;
-        gap: 10px;
-    }
-
-    .pl-row {
-        grid-template-columns: 40px 1fr auto;
-    }
-
-    .pl-box {
-        width: 56px;
-    }
-
     .pl-foot {
         padding: 0 16px;
     }

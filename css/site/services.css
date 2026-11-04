@@ -1138,7 +1138,7 @@
 }
 
 /* ==========================================================================
-   PHONE - every block gets less padding. Last so it beats the bands above.
+   SMALLER SCREENS - every block gets less padding. Last so it beats the bands above.
    ========================================================================== */
 @media (max-width: 900px) {
     .sgs-block {

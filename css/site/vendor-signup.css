@@ -16,7 +16,7 @@
    SIDE        your application, sticky at the side
    CHECKOUT    the review cards and pay button
    CONFIRM     the all-done card
-   PHONE       keep last
+   Each section carries its own phone rules.
    ========================================================================== */
 
 /* ==========================================================================
@@ -185,6 +185,16 @@
     color: var(--sg-ink);
 }
 
+@media (max-width: 768px) {
+    .vs-hero-inner {
+        padding: 100px 20px 54px;
+    }
+    .vs-web {
+        width: 88px;
+        height: 88px;
+    }
+}
+
 /* ==========================================================================
    RAIL - the steps, sticky under the hero
    ========================================================================== */
@@ -287,6 +297,19 @@
     color: var(--sg-muted);
 }
 
+@media (max-width: 768px) {
+    /* The rail shows numbers only */
+    .vs-rail-list {
+        padding: 10px 5%;
+    }
+    .vs-rail-list li {
+        justify-content: center;
+    }
+    .vs-rail-label {
+        display: none;
+    }
+}
+
 /* ==========================================================================
    LAYOUT - the flow band and its two columns
    ========================================================================== */
@@ -343,6 +366,19 @@
     text-transform: none;
     letter-spacing: -0.4px;
     font-weight: 600;
+}
+
+/* Tablet: one column, summary first and no longer sticky */
+@media (max-width: 980px) {
+    .vs-apply-inner {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    #vs-flow {
+        padding: 20px 5%;
+    }
 }
 
 /* ==========================================================================
@@ -948,6 +984,16 @@
     border-top: 1px solid var(--sg-poster-cream);
 }
 
+@media (max-width: 768px) {
+    .vs-picked-fact {
+        padding-left: 0;
+        border-left: 0;
+        border-top: 1px solid var(--sg-poster-cream);
+        padding-top: 10px;
+        flex-basis: 100%;
+    }
+}
+
 /* ==========================================================================
    TYPE - food van or market stall
    ========================================================================== */
@@ -1189,6 +1235,12 @@
     background: var(--sg-poster-ink);
     border-radius: 4px;
     padding: 2px 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vs-category:hover:not(:disabled) {
+        transform: none;
+    }
 }
 
 /* ==========================================================================
@@ -1608,6 +1660,21 @@
 
 .vs-claim-banner.is-bad {
     background: var(--sg-red);
+}
+
+@media (max-width: 768px) {
+    .vs-file-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .vs-wl-grid {
+        grid-template-columns: 1fr;
+    }
+    .vs-claim-banner {
+        margin: 80px 12px 0;
+    }
 }
 
 /* ==========================================================================
@@ -2052,6 +2119,16 @@
     line-height: 1.55;
 }
 
+/* Tablet: one column, summary first and no longer sticky */
+@media (max-width: 980px) {
+    .vs-side {
+        order: -1;
+    }
+    .vs-side-inner {
+        position: static;
+    }
+}
+
 /* ==========================================================================
    CHECKOUT - one column of small cards
    ========================================================================== */
@@ -2487,6 +2564,51 @@
     filter: grayscale(1);
 }
 
+@media (max-width: 768px) {
+    .vs-sec {
+        padding: 20px 16px;
+        border-radius: 14px;
+    }
+    .vs-sec-intro {
+        margin-bottom: 18px;
+    }
+    .vendor-signup .vs-sec-intro {
+        margin-left: 0;
+    }
+    .vs-sec-actions .btn {
+        width: 100%;
+        max-width: none;
+    }
+    .vs-summary-list > div {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+    /* A tighter checkout */
+    .vs-checkout {
+        gap: 12px;
+    }
+    .vs-card {
+        padding: 16px;
+        border-radius: 14px;
+    }
+    .vs-card-head {
+        gap: 10px;
+    }
+    .vs-pill {
+        padding: 7px 12px;
+        font-size: 0.78rem;
+    }
+    .vs-secure-row {
+        gap: 8px 14px;
+    }
+    .vs-secure-row li {
+        font-size: 0.74rem;
+    }
+    .vs-yourdetails summary {
+        padding: 14px 16px;
+    }
+}
+
 /* ==========================================================================
    CONFIRM - paying, then paid
    ========================================================================== */
@@ -2553,137 +2675,10 @@
     }
 }
 
-/* ==========================================================================
-   PHONE - keep last
-   ========================================================================== */
-
-/* Tablet: one column, summary first and no longer sticky */
-@media (max-width: 980px) {
-    .vs-apply-inner {
-        grid-template-columns: 1fr;
-    }
-
-    .vs-side {
-        order: -1;
-    }
-
-    .vs-side-inner {
-        position: static;
-    }
-}
-
-@media (max-width: 768px) {
-    .vs-hero-inner {
-        padding: 100px 20px 54px;
-    }
-
-    .vs-web {
-        width: 88px;
-        height: 88px;
-    }
-
-    #vs-flow {
-        padding: 20px 5%;
-    }
-
-    /* The rail shows numbers only */
-    .vs-rail-list {
-        padding: 10px 5%;
-    }
-
-    .vs-rail-label {
-        display: none;
-    }
-
-    .vs-rail-list li {
-        justify-content: center;
-    }
-
-    .vs-sec {
-        padding: 20px 16px;
-        border-radius: 14px;
-    }
-
-    .vs-sec-intro {
-        margin-bottom: 18px;
-    }
-
-    .vendor-signup .vs-sec-intro {
-        margin-left: 0;
-    }
-
-    .vs-sec-actions .btn {
-        width: 100%;
-        max-width: none;
-    }
-
-    .vs-file-row {
-        grid-template-columns: 1fr;
-    }
-
-    .vs-picked-fact {
-        padding-left: 0;
-        border-left: 0;
-        border-top: 1px solid var(--sg-poster-cream);
-        padding-top: 10px;
-        flex-basis: 100%;
-    }
-
-    .vs-summary-list > div {
-        grid-template-columns: 1fr;
-        gap: 4px;
-    }
-
-    /* A tighter checkout */
-    .vs-checkout {
-        gap: 12px;
-    }
-
-    .vs-card {
-        padding: 16px;
-        border-radius: 14px;
-    }
-
-    .vs-card-head {
-        gap: 10px;
-    }
-
-    .vs-pill {
-        padding: 7px 12px;
-        font-size: 0.78rem;
-    }
-
-    .vs-secure-row {
-        gap: 8px 14px;
-    }
-
-    .vs-secure-row li {
-        font-size: 0.74rem;
-    }
-
-    .vs-yourdetails summary {
-        padding: 14px 16px;
-    }
-}
-
-@media (max-width: 640px) {
-    .vs-wl-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .vs-claim-banner {
-        margin: 80px 12px 0;
-    }
-}
-
 @media (prefers-reduced-motion: reduce) {
     .vs-spinner,
     .vs-event.is-loading .vs-event-art,
     .vs-skel {
         animation: none;
-    }
-
-    .vs-category:hover:not(:disabled) {
-        transform: none;
     }
 }

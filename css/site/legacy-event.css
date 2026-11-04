@@ -413,6 +413,22 @@
 .poster-tagline + .poster-tagline {
     margin-bottom: 0;
 }
+
+@media (max-width: 768px) {
+    /* Two-up instead of one long column */
+    .event-flow .detail-card {
+        flex: 1 1 40%;
+        padding: 18px 12px;
+        border-bottom: 2px solid rgba(0, 0, 0, 0.28);
+    }
+    .event-flow .detail-card:nth-child(2n) {
+        border-right: none;
+    }
+    .event-flow .detail-card:nth-last-child(-n + 2) {
+        border-bottom: none;
+    }
+}
+
 /* ==========================================================================
    EVENT HERO - the poster-style header
    ========================================================================== */
@@ -561,6 +577,46 @@
     font-size: clamp(0.9rem, 2.6vw, 1.1rem);
     text-transform: uppercase;
 }
+
+@media (max-width: 768px) {
+    .event-hero {
+        min-height: auto;
+    }
+    .event-hero-content {
+        padding: calc(var(--sg-nav-height, 84px) + 10px) 20px 3.5vh;
+    }
+    /* Height-driven (never width) so the square logo keeps its shape */
+    .event-logo {
+        height: clamp(150px, 38vh, 340px);
+        width: auto;
+        margin-bottom: 2vh;
+    }
+    .poster-tagline {
+        letter-spacing: 0.26em;
+        text-indent: 0.26em;
+        margin-bottom: 1vh;
+    }
+    .event-headline-date {
+        margin: 2.4vh 0 0.7vh;
+    }
+    .event-hero .event-location {
+        padding: 11px 22px;
+        margin-top: 12px;
+    }
+    .event-hero .poster-tagline {
+        margin-bottom: 4px;
+    }
+    .event-headline-date {
+        margin: 8px 0 2px;
+    }
+    .event-hero .event-location {
+        margin-bottom: 16px;
+    }
+    .event-date {
+        margin: 10px 0 22px;
+    }
+}
+
 /* ==========================================================================
    LINEUP - the wall of artist names
    ========================================================================== */
@@ -654,6 +710,26 @@
 
     opacity: 0.75;
 }
+
+@media (max-width: 768px) {
+    .lineup-wall {
+        margin: 2.4vh auto 0;
+    }
+    .lw-line {
+        gap: 0.08em 0.45em;
+        margin-bottom: 0.2em;
+    }
+    .lineup {
+        padding: 60px 6%;
+    }
+}
+
+@media (max-width: 400px) {
+    .lineup {
+        padding: 50px 5%;
+    }
+}
+
 /* ==========================================================================
    SCROLL ANIMATIONS - acts fly in as they scroll into view (js/main.js adds .is-visible)
    ========================================================================== */
@@ -720,6 +796,54 @@
     opacity: 1;
     transform: scaleX(1);
 }
+
+@media (max-width: 768px) {
+    .act {
+        padding: 32px 0;
+    }
+    /* Gentler entry on a narrow screen. The acts are tall, so a big
+       rotation swings them a long way sideways on the way in. */
+    .has-scroll-anim .act {
+        transform: perspective(1100px) translate3d(-26px, 70px, 0) rotateX(34deg) rotate(-5deg) scale(0.82);
+        filter: blur(5px);
+    }
+    .has-scroll-anim .act:nth-of-type(even) {
+        transform: perspective(1100px) translate3d(26px, 70px, 0) rotateX(34deg) rotate(5deg) scale(0.82);
+    }
+    /* Not enough width for a photo beside a long name, so stack them.
+       The left/right alternation is kept so the zig-zag still reads. */
+    .act:has(.artist-photo),
+    .act:nth-of-type(even):has(.artist-photo) {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        gap: 10px;
+    }
+    .act:has(.artist-photo) .artist-photo,
+    .act:nth-of-type(even):has(.artist-photo) .artist-photo {
+        grid-column: 1;
+        grid-row: 1;
+    }
+    .act:has(.artist-photo) h3,
+    .act:nth-of-type(even):has(.artist-photo) h3 {
+        grid-column: 1;
+        grid-row: 2;
+    }
+    .act:has(.artist-photo) p,
+    .act:nth-of-type(even):has(.artist-photo) p {
+        grid-column: 1;
+        grid-row: 3;
+    }
+    /* Smaller so the longest name ("Brothas Entertainment") still fits */
+    .act h3 {
+        font-size: clamp(1.7rem, 7.5vw, 3rem);
+        letter-spacing: -1px;
+    }
+    .artist-photo {
+        height: clamp(180px, 42vw, 230px);
+        max-width: 80vw;
+    }
+}
+
 /* ==========================================================================
    TICKET BAR - sticky buy-tickets strip under the hero
    ========================================================================== */
@@ -769,6 +893,19 @@
     padding: 12px 30px;
     min-height: 46px;
 }
+
+@media (max-width: 768px) {
+    .ticket-bar {
+        flex-direction: column;
+        gap: 10px;
+        padding: 14px 20px;
+    }
+    .ticket-bar .btn {
+        width: 100%;
+        max-width: 320px;
+    }
+}
+
 /* ==========================================================================
    WEEKEND - accommodation and things-to-do cards
    ========================================================================== */
@@ -888,152 +1025,4 @@
     text-align: center;
     color: var(--sg-dim);
     font-size: 0.92rem;
-}
-/* ==========================================================================
-   PHONE
-   ========================================================================== */
-@media (max-width: 768px) {
-    .event-hero {
-        min-height: auto;
-    }
-
-    .event-hero-content {
-        padding: calc(var(--sg-nav-height, 84px) + 10px) 20px 3.5vh;
-    }
-
-    /* Height-driven (never width) so the square logo keeps its shape */
-    .event-logo {
-        height: clamp(150px, 38vh, 340px);
-        width: auto;
-        margin-bottom: 2vh;
-    }
-
-    .poster-tagline {
-        letter-spacing: 0.26em;
-        text-indent: 0.26em;
-        margin-bottom: 1vh;
-    }
-
-    .lineup-wall {
-        margin: 2.4vh auto 0;
-    }
-
-    .event-headline-date {
-        margin: 2.4vh 0 0.7vh;
-    }
-
-    .lw-line {
-        gap: 0.08em 0.45em;
-        margin-bottom: 0.2em;
-    }
-
-    .event-hero .event-location {
-        padding: 11px 22px;
-        margin-top: 12px;
-    }
-
-    .event-hero .poster-tagline {
-        margin-bottom: 4px;
-    }
-
-    .event-headline-date {
-        margin: 8px 0 2px;
-    }
-
-    .event-hero .event-location {
-        margin-bottom: 16px;
-    }
-
-    /* Two-up instead of one long column */
-    .event-flow .detail-card {
-        flex: 1 1 40%;
-        padding: 18px 12px;
-        border-bottom: 2px solid rgba(0, 0, 0, 0.28);
-    }
-
-    .event-flow .detail-card:nth-child(2n) {
-        border-right: none;
-    }
-
-    .event-flow .detail-card:nth-last-child(-n + 2) {
-        border-bottom: none;
-    }
-
-    .event-date {
-        margin: 10px 0 22px;
-    }
-
-    .act {
-        padding: 32px 0;
-    }
-
-    /* Gentler entry on a narrow screen. The acts are tall, so a big
-       rotation swings them a long way sideways on the way in. */
-    .has-scroll-anim .act {
-        transform: perspective(1100px) translate3d(-26px, 70px, 0) rotateX(34deg) rotate(-5deg) scale(0.82);
-        filter: blur(5px);
-    }
-
-    .has-scroll-anim .act:nth-of-type(even) {
-        transform: perspective(1100px) translate3d(26px, 70px, 0) rotateX(34deg) rotate(5deg) scale(0.82);
-    }
-
-    /* Not enough width for a photo beside a long name, so stack them.
-       The left/right alternation is kept so the zig-zag still reads. */
-    .act:has(.artist-photo),
-    .act:nth-of-type(even):has(.artist-photo) {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto;
-        gap: 10px;
-    }
-
-    .act:has(.artist-photo) .artist-photo,
-    .act:nth-of-type(even):has(.artist-photo) .artist-photo {
-        grid-column: 1;
-        grid-row: 1;
-    }
-
-    .act:has(.artist-photo) h3,
-    .act:nth-of-type(even):has(.artist-photo) h3 {
-        grid-column: 1;
-        grid-row: 2;
-    }
-
-    .act:has(.artist-photo) p,
-    .act:nth-of-type(even):has(.artist-photo) p {
-        grid-column: 1;
-        grid-row: 3;
-    }
-
-    /* Smaller so the longest name ("Brothas Entertainment") still fits */
-    .act h3 {
-        font-size: clamp(1.7rem, 7.5vw, 3rem);
-        letter-spacing: -1px;
-    }
-
-    .artist-photo {
-        height: clamp(180px, 42vw, 230px);
-        max-width: 80vw;
-    }
-
-    .lineup {
-        padding: 60px 6%;
-    }
-
-    .ticket-bar {
-        flex-direction: column;
-        gap: 10px;
-        padding: 14px 20px;
-    }
-
-    .ticket-bar .btn {
-        width: 100%;
-        max-width: 320px;
-    }
-}
-
-@media (max-width: 400px) {
-    .lineup {
-        padding: 50px 5%;
-    }
 }
