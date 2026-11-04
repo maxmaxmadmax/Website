@@ -393,7 +393,7 @@
 
 .eng-hero {
     position: relative;
-    background: #000 url('../images/services/festivals.webp') center 40% / cover no-repeat;
+    background: #000 url('../../images/services/festivals.webp') center 40% / cover no-repeat;
 }
 
 .eng-hero::before {

@@ -660,8 +660,8 @@
    ========================================================================== */
 .sgs-region {
     --sgs-split: 50%;
-    --sgs-coast: url('../images/services/region-coast.jpg');
-    --sgs-outback: url('../images/services/region-outback.jpg');
+    --sgs-coast: url('../../images/services/region-coast.jpg');
+    --sgs-outback: url('../../images/services/region-outback.jpg');
     position: relative;
     overflow: hidden;
     padding-top: 0;
@@ -1049,7 +1049,7 @@
 .sgs-cta-media {
     position: absolute;
     inset: 0;
-    --sgs-cta-img: url('../images/services/cta.webp');
+    --sgs-cta-img: url('../../images/services/cta.webp');
     background:
         linear-gradient(90deg, rgba(8, 8, 8, 0.95) 26%, rgba(8, 8, 8, 0.55) 70%, rgba(8, 8, 8, 0.8) 100%), var(--sgs-cta-img, none),
         radial-gradient(90% 120% at 20% 0%, #2a1403 0%, #0a0a0a 58%);
