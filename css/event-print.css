@@ -1,0 +1,1040 @@
+/* ==========================================================================
+   EVENT PRINT - the A4 mini magazine for the event pages. Loaded with
+   media="print" by event.html and the Halloween page, on top of
+   event-page.css. Everything is .ep-
+   ========================================================================== */
+
+/* ==========================================================================
+   PRINT - the A4 mini magazine. Four sheets, orange to the edge, 12mm
+   margin: 1 cover | 2 food | 3 entertainment + times | 4 market, FAQ and
+   the black sponsors band. The live page prints its times on the cover and
+   its generated entertainment page instead of sheet 3.
+   js/event-page.js tags the food section and sheet 4 with data-size
+   (s / m / l / xl / xxl) from how many vendors there are: more columns and
+   smaller type as the list grows, so nothing spills onto a fifth sheet.
+   ========================================================================== */
+@media print {
+    @page {
+        size: A4;
+        margin: 0;
+    }
+
+    html,
+    body.event-page {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        background: #f39243;
+        font-size: 12pt;
+        margin: 0;
+    }
+
+    /* Web-only things */
+    #navbar,
+    #footer,
+    .ep-actions,
+    .ep-share-note,
+    .ep-fv-go,
+    .ep-ent-link,
+    .ep-poster-link,
+    .ep-going,
+    .ep-print-url,
+    .ep-page-4 .ep-sponsors > p {
+        display: none;
+    }
+
+    .ep-notice {
+        position: static;
+    }
+
+    .ep-print-only {
+        display: block;
+    }
+
+    /* One sheet each: the orange sunset as a picture, so every printer agrees */
+    .ep-page {
+        box-sizing: border-box;
+        height: 297mm;
+        padding: 12mm 13mm;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        break-after: page;
+        max-width: none;
+        margin: 0;
+        background: #f39243 url('../images/events/print-bg-orange.jpg') center / 100% 100% no-repeat;
+    }
+
+    .ep-page-4 {
+        break-after: auto;
+        padding-bottom: 0;
+    }
+
+    .ep-page > .ep-section {
+        max-width: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    /* Shadows and hover lifts are for screens */
+    .ep-fv,
+    .ep-mt,
+    .ep-ent-card,
+    .ep-times li,
+    .ep-know li,
+    .ep-facts li,
+    .ep-faq-item,
+    .ep-sponsors {
+        box-shadow: none;
+        transform: none;
+    }
+
+    .ep-h2 {
+        font-size: 30pt;
+        margin: 0 0 6mm;
+    }
+
+    .ep-head {
+        margin: 0 0 6mm;
+    }
+
+    .ep-head .ep-h2 {
+        margin: 0;
+    }
+
+    .ep-strap {
+        font-size: 8.5pt;
+    }
+
+    /* ---------------- SHEET 1: THE COVER ---------------- */
+    .ep-hero-inner {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        height: 100%;
+        padding: 0;
+        max-width: none;
+    }
+
+    .ep-hero-body {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        position: relative;
+        z-index: 2;
+    }
+
+    .ep-hero-body .ep-presents {
+        order: -1;
+        align-self: stretch;
+        text-align: center;
+        font-size: 10pt;
+        margin: 0 0 4mm;
+    }
+
+    .ep-logo {
+        position: static;
+        width: 92mm;
+        margin: 0 0 5mm;
+        transform: rotate(-3deg);
+        filter: none;
+    }
+
+    .ep-title {
+        font-size: 98pt;
+        line-height: 0.86;
+        color: #fff3d6;
+        -webkit-text-stroke: 4px var(--sg-poster-ink);
+        text-shadow: 7px 7px 0 var(--sg-poster-ink);
+        margin: 0;
+    }
+
+    .ep-subline {
+        font-size: 21pt;
+        margin: 5mm 0 6mm;
+    }
+
+    .ep-intro {
+        max-width: 100mm;
+        font-size: 12.5pt;
+        line-height: 1.5;
+        margin: 0 0 7mm;
+    }
+
+    .ep-facts {
+        width: 112mm;
+        max-width: none;
+        grid-template-columns: 1fr 1fr;
+        gap: 3.5mm;
+        margin: 0;
+    }
+
+    .ep-facts li {
+        font-size: 13pt;
+        padding: 4mm 5mm;
+    }
+
+    .ep-facts b {
+        font-size: 8pt;
+    }
+
+    /* The skeleton art tucked bottom right, off the words */
+    .ep-hero-art {
+        position: absolute;
+        right: -13mm;
+        bottom: -12mm;
+        width: 88mm;
+        min-height: 0;
+        margin: 0;
+        padding: 0;
+        z-index: 1;
+    }
+
+    .ep-skeleton {
+        width: 100%;
+        max-width: none;
+        filter: none;
+    }
+
+    .ep-palm-1 {
+        right: 2mm;
+        width: 42mm;
+        height: 66mm;
+    }
+
+    .ep-palm-2 {
+        left: -6mm;
+        width: 30mm;
+        height: 48mm;
+    }
+
+    .ep-bat-1 {
+        width: 16mm;
+    }
+
+    .ep-bat-2 {
+        width: 12mm;
+    }
+
+    .ep-bat-3 {
+        width: 10mm;
+    }
+
+    .ep-badge-round {
+        top: 46mm;
+        left: auto;
+        right: 4mm;
+        width: 32mm;
+        height: 32mm;
+        font-size: 12pt;
+        box-shadow: 3px 3px 0 var(--sg-poster-ink);
+    }
+
+    .ep-badge-free {
+        bottom: 16mm;
+        left: -16mm;
+        font-size: 17pt;
+        box-shadow: 3px 3px 0 var(--sg-poster-ink);
+    }
+
+    /* The live page's cover: words left, the times and the poster right */
+    .ep-hero-live .ep-hero-inner {
+        display: grid;
+        grid-template-columns: 0.9fr 1.1fr;
+        gap: 10mm;
+        align-items: start;
+    }
+
+    .ep-hero-live .ep-title {
+        font-size: 44pt;
+        line-height: 0.9;
+    }
+
+    .ep-hero-live .ep-subline {
+        font-size: 12pt;
+        margin: 2mm 0 3mm;
+    }
+
+    .ep-hero-live .ep-intro {
+        font-size: 9.5pt;
+        line-height: 1.4;
+        margin: 0 0 4mm;
+    }
+
+    .ep-hero-live .ep-facts {
+        width: auto;
+        max-width: none;
+        grid-template-columns: 1fr;
+        gap: 2mm;
+    }
+
+    .ep-hero-live .ep-facts li {
+        padding: 2mm 3mm;
+        font-size: 9.5pt;
+    }
+
+    .ep-times-cover {
+        display: block;
+        margin: 5mm 0 0;
+    }
+
+    .ep-times-cover li {
+        padding: 1.4mm 0;
+        font-size: 8.5pt;
+    }
+
+    .ep-times-cover b {
+        min-width: 52px;
+        font-size: 8.5pt;
+    }
+
+    .ep-times-cover small {
+        font-size: 7.5pt;
+    }
+
+    .ep-poster-hero {
+        display: block;
+        width: 100%;
+        max-width: none;
+        height: auto;
+        margin: 0;
+    }
+
+    .ep-poster-hero img {
+        width: 100%;
+        height: auto;
+        max-height: 258mm;
+        object-fit: contain;
+        border-radius: 4mm;
+        box-shadow: none;
+    }
+
+    /* ---------------- SHEET 2: FOOD ---------------- */
+    .ep-food {
+        flex: 1;
+        grid-template-columns: 1fr 1fr;
+        grid-auto-rows: 1fr;
+        gap: 4mm;
+    }
+
+    .ep-fv {
+        min-height: 0;
+        border: none;
+    }
+
+    .ep-fv-pic {
+        width: 44%;
+        max-width: none;
+    }
+
+    .ep-fv-text {
+        padding: 4mm 5mm;
+        gap: 1.5mm;
+    }
+
+    .ep-fv-text small {
+        font-size: 8pt;
+    }
+
+    .ep-fv-text b {
+        font-size: 16pt;
+    }
+
+    .ep-fv-text span {
+        font-size: 10pt;
+        line-height: 1.4;
+    }
+
+    /* More vendors: more columns, smaller type */
+    #ep-food[data-size='m'] .ep-food,
+    #ep-food[data-size='l'] .ep-food {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 3mm;
+    }
+
+    #ep-food[data-size='m'] .ep-fv-pic {
+        width: 40%;
+    }
+
+    #ep-food[data-size='m'] .ep-fv-text {
+        padding: 3mm 3.5mm;
+    }
+
+    #ep-food[data-size='m'] .ep-fv-text b {
+        font-size: 12.5pt;
+    }
+
+    #ep-food[data-size='m'] .ep-fv-text span {
+        font-size: 8.5pt;
+    }
+
+    #ep-food[data-size='l'] .ep-fv-pic {
+        width: 36%;
+    }
+
+    #ep-food[data-size='l'] .ep-fv-text {
+        padding: 2mm 3mm;
+        gap: 1mm;
+    }
+
+    #ep-food[data-size='l'] .ep-fv-text small {
+        font-size: 6.5pt;
+    }
+
+    #ep-food[data-size='l'] .ep-fv-text b {
+        font-size: 11pt;
+    }
+
+    #ep-food[data-size='l'] .ep-fv-text span {
+        font-size: 7.5pt;
+        line-height: 1.3;
+    }
+
+    #ep-food[data-size='xl'] .ep-food,
+    #ep-food[data-size='xxl'] .ep-food {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 2.5mm;
+    }
+
+    #ep-food[data-size='xl'] .ep-fv-pic {
+        width: 34%;
+    }
+
+    #ep-food[data-size='xxl'] .ep-fv-pic,
+    #ep-food[data-size='xl'] .ep-fv-text span,
+    #ep-food[data-size='xxl'] .ep-fv-text span {
+        display: none;
+    }
+
+    #ep-food[data-size='xl'] .ep-fv-text,
+    #ep-food[data-size='xxl'] .ep-fv-text {
+        padding: 2mm 2.5mm;
+        gap: 0.8mm;
+    }
+
+    #ep-food[data-size='xl'] .ep-fv-text small,
+    #ep-food[data-size='xxl'] .ep-fv-text small {
+        font-size: 6pt;
+    }
+
+    #ep-food[data-size='xl'] .ep-fv-text b,
+    #ep-food[data-size='xxl'] .ep-fv-text b {
+        font-size: 9.5pt;
+    }
+
+    /* ---------------- SHEET 3: ENTERTAINMENT + TIMES (the Halloween page) ---------------- */
+    .ep-page-3 > .ep-section:first-child {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .ep-page-3 {
+        --g: 3.5mm; /* one gap everywhere on this sheet */
+    }
+
+    .ep-page-3 .ep-head {
+        margin-bottom: var(--g);
+    }
+
+    .ep-top2 {
+        grid-template-columns: 1fr 1fr;
+        gap: var(--g);
+        margin: 0 0 var(--g);
+    }
+
+    .ep-top2 .ep-ent-card {
+        padding: 3.5mm 5mm;
+    }
+
+    /* The band tall on the left, three tiles beside it, the cricket fixture across the bottom */
+    .ep-ent {
+        flex: 1;
+        min-height: 0;
+        grid-template-columns: 1.35fr 1fr;
+        grid-template-rows: 1fr 1fr 1fr auto;
+        gap: var(--g);
+    }
+
+    .ep-ent-band {
+        grid-row: 1 / span 3;
+    }
+
+    .ep-ent-hosts {
+        grid-row: 1;
+    }
+
+    .ep-ent-bingo {
+        grid-row: 2;
+    }
+
+    .ep-ent-castle {
+        grid-row: 3;
+    }
+
+    .ep-page-3 .ep-ent-band .ep-ent-photo {
+        flex: 1 1 auto;
+        aspect-ratio: auto;
+        height: auto;
+        min-height: 38mm;
+    }
+
+    .ep-ent-band-text {
+        padding: 4mm 5mm 5mm;
+    }
+
+    .ep-ent-band h3 {
+        font-size: 26pt;
+    }
+
+    .ep-ent-band-text p:not(.ep-kicker) {
+        font-size: 10pt;
+        line-height: 1.45;
+        margin: 0;
+    }
+
+    .ep-ent-card:not(.ep-ent-band) {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 3mm 5mm;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .ep-ent-card:not(.ep-ent-band) .ep-kicker {
+        margin: 0 0 1.5mm;
+        font-size: 7pt;
+    }
+
+    .ep-ent-card:not(.ep-ent-band) h3 {
+        font-size: 16pt;
+        line-height: 0.95;
+        margin: 0 0 1.5mm;
+    }
+
+    .ep-ent-card:not(.ep-ent-band) p:last-child {
+        font-size: 10pt;
+        line-height: 1.35;
+        margin: 0;
+    }
+
+    .ep-ent-badge {
+        position: absolute;
+        top: 3mm;
+        right: 3mm;
+        font-size: 8.5pt;
+        padding: 1.5mm 3mm;
+    }
+
+    .ep-ent-bingo .ep-kicker {
+        padding-right: 24mm; /* clear of the stamp */
+        white-space: nowrap;
+    }
+
+    .ep-ent .ep-ent-bingo {
+        padding-top: 2.5mm;
+        padding-bottom: 2.5mm;
+    }
+
+    .ep-ent .ep-ent-bingo h3 {
+        margin-bottom: 1mm;
+    }
+
+    .ep-ent .ep-ent-bingo p:last-child {
+        font-size: 9.2pt;
+        line-height: 1.3;
+    }
+
+    /* Hosts: photo left, names right */
+    .ep-ent .ep-ent-card.ep-ent-hosts {
+        display: grid;
+        grid-template-columns: 40% 1fr;
+        grid-template-rows: 1fr;
+        align-items: stretch;
+        padding: 0 4mm 0 0;
+        gap: 4mm;
+    }
+
+    .ep-ent .ep-ent-hosts-pic {
+        grid-column: 1;
+        grid-row: 1;
+        height: 100%;
+        min-height: 0;
+    }
+
+    .ep-ent .ep-ent-hosts > div {
+        grid-column: 2;
+        grid-row: 1;
+        align-self: center;
+    }
+
+    .ep-ent-hosts h3 {
+        font-size: 16pt;
+    }
+
+    /* Jumping castle: picture left, words right */
+    .ep-ent-card.ep-ent-castle {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 5mm;
+    }
+
+    .ep-ent-castle .ep-kicker {
+        display: none;
+    }
+
+    .ep-ent-castle h3 {
+        font-size: 15pt;
+    }
+
+    .ep-castle-pic {
+        width: 24mm;
+        max-height: 18mm;
+    }
+
+    .ep-castle-by {
+        white-space: nowrap;
+        margin: 0;
+        gap: 2mm;
+        font-size: 8.5pt;
+    }
+
+    .ep-castle-by img {
+        height: 8mm;
+    }
+
+    /* Cricket: a full-width fixture banner, a big logo each side */
+    .ep-ent .ep-ent-card.ep-ent-cricket {
+        grid-column: 1 / -1;
+        grid-row: 4;
+        display: grid;
+        grid-template-columns: 34mm 1fr 34mm;
+        grid-template-areas: 'a k b' 'a s b' 'a h b' 'a p b';
+        grid-template-rows: auto auto auto auto;
+        align-items: center;
+        column-gap: 4mm;
+        padding: 3.5mm 7mm;
+        margin: 0;
+        overflow: hidden;
+    }
+
+    .ep-ent-cricket .ep-vs {
+        display: contents;
+    }
+
+    .ep-ent-cricket .ep-vs img {
+        width: auto;
+        height: 24mm;
+        margin: 0;
+        align-self: center;
+    }
+
+    .ep-ent-cricket .ep-vs img:first-child {
+        grid-area: a;
+        justify-self: start;
+    }
+
+    .ep-ent-cricket .ep-vs img:last-child {
+        grid-area: b;
+        justify-self: end;
+    }
+
+    .ep-ent-cricket .ep-vs span {
+        grid-area: s;
+        justify-self: center;
+        font-size: 16pt;
+        line-height: 1;
+        margin: 0.5mm 0;
+    }
+
+    .ep-ent-cricket .ep-kicker {
+        grid-area: k;
+        text-align: center;
+        margin: 0;
+        font-size: 7.5pt;
+        letter-spacing: 0.1em;
+        white-space: nowrap;
+    }
+
+    .ep-ent .ep-ent-card.ep-ent-cricket h3 {
+        grid-area: h;
+        text-align: center;
+        font-size: 16pt;
+        margin: 0.5mm 0 1mm;
+        white-space: nowrap;
+    }
+
+    .ep-ent .ep-ent-card.ep-ent-cricket h3 br {
+        display: none;
+    }
+
+    .ep-ent .ep-ent-card.ep-ent-cricket p:last-child {
+        grid-area: p;
+        display: block;
+        text-align: center;
+        font-size: 9.5pt;
+        line-height: 1.35;
+        margin: 0;
+    }
+
+    /* The run sheet under the tiles, poster beside it */
+    .ep-page-3 .ep-times-poster {
+        display: grid;
+        grid-template-columns: 1fr 44mm;
+        gap: var(--g);
+        align-items: stretch;
+        margin-top: 3mm;
+    }
+
+    .ep-page-3 .ep-times-poster .ep-h2 {
+        font-size: 17pt;
+        margin-bottom: 1.5mm;
+    }
+
+    .ep-page-3 .ep-times {
+        gap: 1.6mm;
+    }
+
+    .ep-page-3 .ep-times li {
+        padding: 0.9mm 4mm;
+        font-size: 9.2pt;
+        line-height: 1.15;
+    }
+
+    .ep-page-3 .ep-times li > span {
+        letter-spacing: 0;
+    }
+
+    .ep-page-3 .ep-times b {
+        min-width: 19mm;
+    }
+
+    .ep-page-3 .ep-times small {
+        display: inline;
+        font-size: 7pt;
+        margin-left: 1.5mm;
+    }
+
+    .ep-poster {
+        width: 44mm;
+        transform: rotate(2deg);
+        border-width: 2px;
+        box-shadow: 3px 3px 0 var(--sg-poster-ink);
+    }
+
+    .ep-page-3 .ep-poster img {
+        max-height: 230mm;
+        width: auto;
+        max-width: 100%;
+    }
+
+    /* The live page prints its times on the cover, and this sheet instead */
+    .ep-hero-live ~ .ep-page-3 {
+        display: none;
+    }
+
+    .ep-page-ent {
+        padding: 12mm 13mm;
+    }
+
+    .ep-page-ent .ep-head {
+        flex: none;
+        margin-bottom: 6mm;
+    }
+
+    .ep-page-ent .ep-kicker {
+        font-size: 7.5pt;
+    }
+
+    .ep-page-ent .ep-ent-wrap {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    /* Two on top, the headline down the left, four beside it; the rest stays on the web */
+    .ep-page-ent .ep-ent-gen {
+        flex: 1;
+        grid-template-rows: repeat(4, 1fr);
+        gap: 4mm;
+        min-height: 0;
+    }
+
+    .ep-page-ent .ep-ent-side:nth-of-type(n + 6) {
+        display: none;
+    }
+
+    .ep-page-ent .ep-ent-band {
+        grid-row: 1 / span 4;
+        overflow: hidden;
+    }
+
+    .ep-page-ent .ep-ent-band .ep-ent-photo {
+        height: 62mm;
+    }
+
+    .ep-page-ent .ep-ent-band h3 {
+        font-size: 22pt;
+    }
+
+    .ep-page-ent .ep-ent-band p:not(.ep-kicker) {
+        font-size: 9.5pt;
+        display: -webkit-box;
+        -webkit-line-clamp: 8;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .ep-page-ent .ep-ent-side {
+        overflow: hidden;
+        min-height: 0;
+    }
+
+    .ep-page-ent .ep-ent-side h3 {
+        font-size: 15pt;
+    }
+
+    .ep-page-ent .ep-ent-side p:not(.ep-kicker) {
+        font-size: 9pt;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .ep-page-ent .ep-ent-hosts {
+        grid-template-columns: 38% 1fr;
+    }
+
+    .ep-page-ent .ep-ent-hosts-pic {
+        height: 100%;
+    }
+
+    .ep-page-ent .ep-top2 .ep-ent-card p:not(.ep-kicker) {
+        font-size: 9pt;
+    }
+
+    /* ---------------- SHEET 4: MARKET, GOOD TO KNOW, SPONSORS ---------------- */
+    .ep-page-4 > .ep-section + .ep-section {
+        margin-top: 3.5mm;
+    }
+
+    .ep-page-4 .ep-h2 {
+        font-size: 24pt;
+        margin-bottom: 4mm;
+    }
+
+    /* Title across the top, strap beside it, tiles full width under */
+    .ep-market-panel {
+        grid-template-columns: 1fr;
+        gap: 2.5mm;
+    }
+
+    .ep-market-title {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        column-gap: 10mm;
+        align-items: end;
+    }
+
+    .ep-market-title .ep-kicker {
+        grid-column: 1 / -1;
+    }
+
+    .ep-page-4 .ep-big {
+        font-size: 18pt;
+        margin-bottom: 0;
+    }
+
+    .ep-page-4 .ep-big::after {
+        height: 6px;
+        bottom: -8px;
+    }
+
+    .ep-market-strap {
+        font-size: 9pt;
+        margin-bottom: 2mm;
+    }
+
+    .ep-market {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2.5mm;
+    }
+
+    .ep-page-4 .ep-mt {
+        padding: 1.8mm 3mm;
+    }
+
+    .ep-page-4 .ep-mt-head {
+        padding-bottom: 1mm;
+        margin-bottom: 1mm;
+    }
+
+    .ep-page-4 .ep-mt svg {
+        width: 6.5mm;
+        height: 6.5mm;
+    }
+
+    .ep-mt b {
+        font-size: 9pt;
+    }
+
+    .ep-page-4 .ep-mt ul {
+        gap: 0.4mm;
+    }
+
+    .ep-mt li {
+        font-size: 8pt;
+    }
+
+    .ep-mt a {
+        text-decoration: none;
+    }
+
+    /* More stalls: four across, smaller */
+    .ep-page-4[data-size='m'] .ep-market,
+    .ep-page-4[data-size='l'] .ep-market {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .ep-page-4[data-size='m'] .ep-mt-head,
+    .ep-page-4[data-size='l'] .ep-mt-head {
+        gap: 2mm;
+    }
+
+    .ep-page-4[data-size='m'] .ep-mt svg,
+    .ep-page-4[data-size='l'] .ep-mt svg {
+        width: 6mm;
+        height: 6mm;
+    }
+
+    .ep-page-4[data-size='m'] .ep-mt b {
+        font-size: 7.5pt;
+    }
+
+    .ep-page-4[data-size='l'] .ep-mt b {
+        font-size: 7pt;
+    }
+
+    .ep-page-4[data-size='m'] .ep-mt li {
+        font-size: 6.8pt;
+    }
+
+    .ep-page-4[data-size='l'] .ep-mt li {
+        font-size: 6.2pt;
+    }
+
+    .ep-page-4[data-size='l'] .ep-mt ul {
+        gap: 0.3mm;
+    }
+
+    /* Good to know: two tight columns */
+    .ep-faq-head {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        column-gap: 5mm;
+        margin-bottom: 2.5mm;
+    }
+
+    .ep-faq-tag {
+        font-size: 12pt;
+        padding: 1mm 4mm;
+        margin: 0;
+        box-shadow: 2px 2px 0 var(--sg-poster-ink);
+    }
+
+    .ep-faq-head .ep-h2 {
+        font-size: 19pt;
+        margin: 0;
+    }
+
+    .ep-faq-sub {
+        flex-basis: 100%;
+        font-size: 8.5pt;
+        margin-top: 1mm;
+    }
+
+    .ep-faq {
+        gap: 1.8mm;
+    }
+
+    .ep-faq-item {
+        padding: 1.7mm 3.2mm;
+        gap: 3mm;
+        align-items: center;
+        break-inside: avoid;
+    }
+
+    .ep-faq-ic {
+        width: 8.5mm;
+        height: 8.5mm;
+    }
+
+    .ep-faq-ic svg {
+        width: 5.2mm;
+        height: 5.2mm;
+    }
+
+    .ep-faq-item b {
+        font-size: 9.2pt;
+        margin-bottom: 0.8mm;
+        letter-spacing: 0.01em;
+    }
+
+    .ep-faq-item p {
+        font-size: 8.3pt;
+        line-height: 1.25;
+        color: var(--sg-poster-ink);
+    }
+
+    /* Sponsors: the bottom third of the sheet, one black band edge to edge */
+    .ep-page-4 > .ep-section:has(.ep-sponsors) {
+        margin: auto -13mm 0;
+        padding: 0;
+    }
+
+    .ep-sponsors {
+        height: 99mm;
+        box-sizing: border-box;
+        border-radius: 0;
+        padding: 5mm 13mm 5mm;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+    }
+
+    .ep-sponsors .ep-h2 {
+        margin: 0;
+        font-size: 23pt;
+        color: #fff;
+    }
+
+    .ep-sponsor-grid {
+        gap: 3mm;
+        flex: 1;
+        align-content: center;
+        margin: 3mm 0;
+    }
+
+    .ep-sponsor-grid li {
+        width: calc((100% - 12mm) / 5); /* five across */
+        height: 26mm;
+        padding: 2mm;
+        border-color: #333;
+    }
+
+    .ep-sponsor-grid img {
+        max-height: 22mm;
+    }
+
+    .ep-sponsors p {
+        margin: 0;
+        font-size: 10.5pt;
+    }
+}
