@@ -34,25 +34,6 @@
 .ms-pad {
     padding: 18px 20px;
 }
-.ms-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-}
-.ms-table th {
-    text-align: left;
-    font-size: 11px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--ad-muted);
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--ad-line);
-}
-.ms-table td {
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--ad-desk);
-    vertical-align: top;
-}
 .ms-table tbody tr {
     cursor: pointer;
 }

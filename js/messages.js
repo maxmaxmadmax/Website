@@ -16,7 +16,7 @@
    ctx = { state, h: { esc, attr }, call, render, money }
    ========================================================================== */
 
-import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=849';
+import { SPONSOR_LEVELS, SPONSOR_GOAL_CENTS, PAST_SPONSORS, SUGGESTED_SPONSORS, NEEDS_EMAIL } from './sponsor-data.js?v=850';
 
 const SEND_TIME = '9:35 am';
 
@@ -294,7 +294,7 @@ export function messagesHtml(ctx) {
     else if (tab === 'clients') body = clientsHtml(h, state);
     else {
         body = `<div class="ad-card ms-card">
-      <table class="ms-table">
+      <table class="ad-table ms-table">
         <thead><tr><th>When</th><th>Message &amp; subject</th><th>Who</th><th>Status</th><th>Sent</th></tr></thead>
         <tbody>${rows || `<tr><td colspan="5" class="ad-cell-muted">${state.msgSeeding ? 'Adding the starter messages&hellip;' : 'No messages yet.'}</td></tr>`}</tbody>
       </table>
@@ -359,7 +359,7 @@ function sentHtml(ctx) {
       <button type="button" class="ad-btn" data-ms-logrefresh>Refresh</button>
     </div>
     <div class="ms-log-grid${open ? ' has-open' : ''}">
-      <div class="ad-card ms-card"><table class="ms-table">
+      <div class="ad-card ms-card"><table class="ad-table ms-table">
         <thead><tr><th>When</th><th>To</th><th>Subject</th><th>Type</th><th>Status</th></tr></thead>
         <tbody>${
             rows
@@ -505,7 +505,7 @@ function sponsorsHtml(ctx) {
         <p class="ev-card-sub">${list.filter((p) => p.status === 'yes').length} said yes &middot; ${list.filter((p) => p.status === 'asked').length} asked, waiting</p>
       </div>
     </div>
-    <div class="ad-card ms-card sp-emails"><table class="ms-table"><thead><tr><th>When</th><th>Email</th><th>Status</th><th>Sent</th></tr></thead><tbody>${msgRows}</tbody></table></div>
+    <div class="ad-card ms-card sp-emails"><table class="ad-table ms-table"><thead><tr><th>When</th><th>Email</th><th>Status</th><th>Sent</th></tr></thead><tbody>${msgRows}</tbody></table></div>
     <div class="sp-bar">
       <b>Businesses</b><span>${list.length}</span>
       <button type="button" class="ad-btn ad-btn-small" data-sp-add>+ Add a business</button>
@@ -599,7 +599,7 @@ function needsEmailHtml(h, added) {
     const todo = NEEDS_EMAIL.filter((n) => !added.has(n.business.toLowerCase()));
     if (!todo.length) return '';
     return `<div class="ad-card ms-card ms-sp ms-sp-need"><div class="ms-sp-bar2"><b>Worth asking &mdash; find their email</b><span>${todo.length}</span></div>
-    <table class="ms-table"><tbody>${todo
+    <table class="ad-table ms-table"><tbody>${todo
         .map(
             (n) => `<tr class="ms-fixed"><td><strong>${h.esc(n.business)}</strong><span class="ms-sub ms-sp-tip">${h.esc(n.tip)}</span></td>
       <td><input class="ad-input ms-sp-email" type="email" placeholder="Their email" data-need-email="${h.attr(n.business)}"></td>
@@ -628,7 +628,7 @@ function waitlistHtml(ctx) {
     return `<div class="ad-card ms-card ms-wl">
     <div class="ms-wl-head"><b>Waitlist</b><span>${list.filter((w) => w.status === 'waiting').length} waiting</span>
       ${off ? '<em>Offers are switched off until you approve &ldquo;Waitlist - a spot opened&rdquo; above.</em>' : '<em>When a spot opens the next person is emailed automatically.</em>'}</div>
-    <table class="ms-table"><thead><tr><th>#</th><th>Business</th><th>Type</th><th>Contact</th><th>Status</th></tr></thead><tbody>
+    <table class="ad-table ms-table"><thead><tr><th>#</th><th>Business</th><th>Type</th><th>Contact</th><th>Status</th></tr></thead><tbody>
     ${
         list
             .map((w) => {
@@ -694,7 +694,7 @@ function remindersHtml(h, state) {
         })
         .join('');
     return `<div class="ms-log-grid${p ? ' has-open' : ''}"><div>
-    <div class="ad-card ms-card"><table class="ms-table">
+    <div class="ad-card ms-card"><table class="ad-table ms-table">
       <thead><tr><th>When</th><th>Message &amp; subject</th><th>Who</th><th>Status</th></tr></thead>
       <tbody><tr data-ms-cprev="reminder"${p ? ' class="is-sel"' : ''}>
         <td class="ms-when">When you press Send reminder</td>
@@ -702,7 +702,7 @@ function remindersHtml(h, state) {
         <td>That client (and their CC email)</td>
         <td><span class="ms-chip ms-blue">You send it</span></td></tr></tbody>
     </table></div>
-    <div class="ad-card ms-card"><table class="ms-table">
+    <div class="ad-card ms-card"><table class="ad-table ms-table">
       <thead><tr><th>Client</th><th>Event</th><th>Owing</th><th>Last reminder</th><th></th></tr></thead>
       <tbody>${rows || '<tr class="ms-fixed"><td colspan="5" class="ad-cell-muted">Nobody owes you money right now.</td></tr>'}</tbody>
     </table></div></div>
@@ -728,7 +728,7 @@ export async function sendReminder(call, q) {
 
 function clientsHtml(h, state) {
     const p = state.clientPrev;
-    return `<div class="ms-log-grid${p ? ' has-open' : ''}"><div class="ad-card ms-card"><table class="ms-table">
+    return `<div class="ms-log-grid${p ? ' has-open' : ''}"><div class="ad-card ms-card"><table class="ad-table ms-table">
       <thead><tr><th>When</th><th>Message &amp; subject</th><th>Who</th><th>Status</th></tr></thead>
       <tbody>${CLIENT_EMAILS.map(
           ([when, name, subj, who, st, key]) => `<tr data-ms-cprev="${key}"${p && p.key === key ? ' class="is-sel"' : ''}>

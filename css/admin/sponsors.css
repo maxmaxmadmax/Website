@@ -843,27 +843,6 @@ a.ad-tab {
     overflow: auto;
     margin-top: 10px;
 }
-.spd-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-}
-.spd-table th {
-    text-align: left;
-    font-size: 11px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: var(--ad-muted);
-    padding: 12px 12px;
-    border-bottom: 1px solid var(--ad-line);
-    background: var(--ad-soft);
-    white-space: nowrap;
-}
-.spd-table td {
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--ad-line);
-    vertical-align: middle;
-}
 .spd-table td small {
     display: block;
     font-size: 11px;
@@ -925,24 +904,7 @@ a.ad-tab {
     margin-left: 6px;
 }
 .spd-deal-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12.5px;
     margin-bottom: 8px;
-}
-.spd-deal-table th {
-    text-align: left;
-    font-size: 10px;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    color: var(--ad-muted);
-    padding: 4px 6px;
-    border-bottom: 1px solid var(--ad-line);
-}
-.spd-deal-table td {
-    padding: 5px 6px;
-    border-bottom: 1px solid var(--ad-line);
-    vertical-align: top;
 }
 .spd-ours {
     font-style: normal;

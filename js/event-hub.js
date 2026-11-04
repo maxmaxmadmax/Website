@@ -9,7 +9,7 @@
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=849';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=850';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 
@@ -247,7 +247,7 @@ function budgetHtml(ctx) {
       ${card('Still to spend', esc(money(Math.max(0, t.plannedOut - t.actualOut))), 'of the planned costs')}
     </div>
     <div class="ad-card ev-bud-card">
-      <table class="ev-bud">
+      <table class="ad-table ev-bud">
         ${section('income', 'Income', t.plannedIn, t.actualIn)}
         ${section('cost', 'Costs', t.plannedOut, t.actualOut)}
       </table>
@@ -493,7 +493,7 @@ function programmeHtml(ctx) {
       ${
           items.length
               ? `
-      <table class="ev-prog">
+      <table class="ad-table ev-prog">
         <thead><tr><th>Time</th><th>What</th><th>Who</th><th>Kind</th><th>Cost</th><th>Notes</th><th></th></tr></thead>
         <tbody>${items.map(row).join('')}</tbody>
       </table>`
@@ -611,7 +611,7 @@ function volunteersHtml(ctx) {
       ${card('The form', 'Live', `on the Events page &middot; <a href="/events#volunteer" target="_blank" rel="noopener">open it &#8599;</a>`)}
     </div>
     <div class="ad-card ms-card">
-      <table class="ms-table"><thead><tr><th>Who</th><th>Happy to help with</th><th>When / notes</th><th>Status</th><th></th></tr></thead>
+      <table class="ad-table ms-table"><thead><tr><th>Who</th><th>Happy to help with</th><th>When / notes</th><th>Status</th><th></th></tr></thead>
       <tbody>${list.map(row).join('') || '<tr><td colspan="5" class="ad-cell-muted">Nobody yet. The "Volunteer with us" form is on the live event page - share the link.</td></tr>'}</tbody></table>
     </div>`;
 }

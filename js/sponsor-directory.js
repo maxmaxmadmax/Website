@@ -10,8 +10,8 @@
     One sponsor per industry: once a business in an industry has said yes
     to the event picked, the others in that industry show "industry taken". */
 
-import { spAvatar, spColor } from './messages.js?v=849';
-import { SPONSOR_LEVELS } from './sponsor-data.js?v=849';
+import { spAvatar, spColor } from './messages.js?v=850';
+import { SPONSOR_LEVELS } from './sponsor-data.js?v=850';
 
 /* what to ask for, from the score */
 const ASK = { 5: 'gold', 4: 'silver', 3: 'bronze', 2: 'supporter', 1: 'supporter' };
@@ -286,7 +286,7 @@ export function sponsorDirHtml(ctx) {
     };
     const tableHtml = () => {
         const { groups, names } = byIndustry(rows);
-        return `<div class="ad-card spd-tablewrap"><table class="spd-table spd-list">
+        return `<div class="ad-card spd-tablewrap"><table class="ad-table spd-table spd-list">
       <thead><tr><th>Business</th><th>Value</th><th>Stage</th><th>Contact</th><th>Best known deal</th><th>Suggested ask</th><th>Usually gives</th><th>Links</th></tr></thead>
       <tbody>${names
           .map((n) => {
@@ -329,7 +329,7 @@ export function sponsorDirHtml(ctx) {
       <p class="ad-seat-hint">The strongest business we have not asked yet in each open industry, best first. Suggested ask comes from the stars (5 = Gold, 4 = Silver, 3 = Bronze) or your budget guess. Set stars and facts in the profile to sharpen it.</p>
       ${
           rows.length
-              ? `<div class="ad-card spd-tablewrap"><table class="spd-table"><thead><tr><th>Industry</th><th>Best candidate</th><th>Why</th><th class="spd-num">Suggested ask</th><th>Stage</th><th></th></tr></thead><tbody>
+              ? `<div class="ad-card spd-tablewrap"><table class="ad-table spd-table"><thead><tr><th>Industry</th><th>Best candidate</th><th>Why</th><th class="spd-num">Suggested ask</th><th>Stage</th><th></th></tr></thead><tbody>
       ${rows
           .map((r) => {
               const b = r.best;
@@ -483,7 +483,7 @@ function panelHtml(ctx, list, evOf, taken) {
       <section class="spd-box spd-deals"><h3>Sponsorship history <small>what they have given, to anyone</small></h3>
         ${
             b.hist.deals.length
-                ? `<table class="spd-deal-table"><thead><tr><th>Event</th><th>Year</th><th class="spd-num">Gave</th><th>What / how you know</th><th></th></tr></thead><tbody>${b.hist.deals.map((d) => `<tr><td>${h.esc(d.event)}${d.ours ? ' <i class="spd-ours">ours</i>' : ''}</td><td>${d.year || ''}</td><td class="spd-num">${gave(d)}</td><td>${h.esc([d.what, d.source].filter(Boolean).join(' · '))}</td><td>${d.ours ? '' : `<button type="button" class="ad-linkish" data-spd-dealdel="${h.attr(d.key || '')}" title="Remove">&times;</button>`}</td></tr>`).join('')}</tbody></table>
+                ? `<table class="ad-table spd-deal-table"><thead><tr><th>Event</th><th>Year</th><th class="spd-num">Gave</th><th>What / how you know</th><th></th></tr></thead><tbody>${b.hist.deals.map((d) => `<tr><td>${h.esc(d.event)}${d.ours ? ' <i class="spd-ours">ours</i>' : ''}</td><td>${d.year || ''}</td><td class="spd-num">${gave(d)}</td><td>${h.esc([d.what, d.source].filter(Boolean).join(' · '))}</td><td>${d.ours ? '' : `<button type="button" class="ad-linkish" data-spd-dealdel="${h.attr(d.key || '')}" title="Remove">&times;</button>`}</td></tr>`).join('')}</tbody></table>
         <p class="ad-seat-hint">Best known: <b>${h.esc(b.hist.bestLabel)}</b> &rarr; suggested ask <b>${money0(ask.cents)}</b> (${h.esc(ask.label)}).</p>`
                 : '<p class="ad-seat-hint">Nothing known yet. Look at the Show, the Fishing Classic, the footy club, the school fete - who they back and how much - and log it here. That sets the ask.</p>'
         }

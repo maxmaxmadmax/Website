@@ -103,8 +103,6 @@
     overflow-x: auto;
 }
 .ev-bud {
-    width: 100%;
-    border-collapse: collapse;
     font-variant-numeric: tabular-nums;
 }
 .ev-bud th,
@@ -113,20 +111,8 @@
     padding: 0;
     height: 38px;
 }
-.ev-bud th {
-    text-align: right;
-    font-size: 11px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: var(--ad-muted);
-    background: var(--ad-desk);
-    padding: 0 12px;
-}
 .ev-bud th:first-child {
     text-align: left;
-}
-.ev-bud td {
-    vertical-align: middle;
 }
 .ev-bud-h th:first-child {
     color: var(--ad-ink);
@@ -536,26 +522,13 @@
     padding: 0 0 14px;
     overflow-x: auto;
 }
-.ev-prog {
-    width: 100%;
-    border-collapse: collapse;
-}
 .ev-prog th {
-    text-align: left;
-    font-size: 11px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: var(--ad-muted);
-    background: var(--ad-desk);
-    padding: 0 10px;
     height: 34px;
     border: 1px solid var(--ad-line);
 }
 .ev-prog td {
     border: 1px solid var(--ad-line);
-    padding: 0;
     height: 40px;
-    vertical-align: middle;
 }
 .ev-prog input.ad-input,
 .ev-prog select.ad-select {

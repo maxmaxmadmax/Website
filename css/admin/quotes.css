@@ -1104,21 +1104,7 @@
     overflow-x: auto;
 }
 .sp-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13.5px;
     min-width: 900px;
-}
-.sp-table th {
-    text-align: left;
-    font-size: 11px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--ad-muted);
-    font-weight: 700;
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--ad-line);
-    white-space: nowrap;
 }
 .sp-sort {
     border: 0;
@@ -1136,11 +1122,6 @@
 }
 .sp-sort.is-on {
     color: var(--ad-ink);
-}
-.sp-table td {
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--ad-desk);
-    vertical-align: middle;
 }
 .sp-table tbody tr {
     cursor: pointer;

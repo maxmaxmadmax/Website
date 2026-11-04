@@ -8,8 +8,8 @@
    the quotes and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=849'; // who still owes money
-import { isBooked, pickLineProgress } from './stock.js?v=849';
+import { owesMoney } from './messages.js?v=850'; // who still owes money
+import { isBooked, pickLineProgress } from './stock.js?v=850';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -262,7 +262,7 @@ export function pipelineHtml(jobs, f, h) {
 
       ${vendorSendBar(jobs, h)}
       <div class="sp-table-wrap">
-        <table class="sp-table">
+        <table class="ad-table sp-table">
           <thead><tr>
             ${head('customer', 'Customer / event')}
             ${head('date', 'Event date')}
