@@ -1,0 +1,1340 @@
+/* ==========================================================================
+   SOUNDZGOOD ADMIN
+
+   The only stylesheet this page loads (style.css is left out on purpose).
+   Everything is prefixed .ad- so it cannot reach the public pages.
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+/* [hidden] must beat the gate's and shell's display:grid, or they stack. */
+[hidden] {
+    display: none !important;
+}
+
+:root {
+    --ad-orange: #ff6b00;
+    --ad-orange-soft: #fff2e8;
+
+    --ad-ink: #12141a; /* the rail */
+    --ad-ink-2: #1b1e26; /* raised things on the rail */
+    --ad-ink-line: #282c37;
+
+    --ad-desk: #f4f5f7; /* the working area */
+    --ad-card: #fff;
+    --ad-line: #e4e6eb;
+
+    --ad-text: #171a21;
+    --ad-muted: #6b7280;
+    --ad-faint: #9aa1ac;
+
+    --ad-green: #0f9d58;
+    --ad-green-bg: #e7f6ee;
+    --ad-amber: #b26a00;
+    --ad-amber-bg: #fdf0dc;
+    --ad-red: #c5322b;
+    --ad-red-bg: #fdecea;
+    --ad-blue: #2563eb;
+    --ad-blue-bg: #e8effd;
+    --ad-grey-bg: #eef0f3;
+
+    --ad-rail-w: 236px;
+    --ad-radius: 12px;
+    --ad-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: var(--ad-font);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ad-text);
+    background: var(--ad-desk);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* SHELL and SHARED FURNITURE must stay above the sections that override them. */
+
+/* --------------------------------------------------------------------------
+   SHELL
+   -------------------------------------------------------------------------- */
+.ad-shell {
+    display: grid;
+    grid-template-columns: var(--ad-rail-w) minmax(0, 1fr);
+    min-height: 100vh;
+    min-height: 100svh;
+}
+
+/* ---- the rail ---- */
+.ad-rail {
+    background: var(--ad-ink);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100svh;
+    overflow-y: auto;
+}
+
+.ad-brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 20px 18px;
+    border-bottom: 1px solid var(--ad-ink-line);
+}
+
+.ad-brand-mark {
+    width: 30px;
+    height: auto;
+}
+
+.ad-brand-name {
+    margin: 0;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    font-size: 0.94rem;
+}
+
+.ad-brand-sub {
+    margin: 0;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ad-faint);
+}
+
+.ad-nav {
+    padding: 12px 10px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.ad-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    padding: 9px 12px;
+    border: 0;
+    border-radius: 9px;
+    background: none;
+    color: #c7ccd6;
+    font: inherit;
+    font-size: 0.875rem;
+    text-align: left;
+    cursor: pointer;
+    transition:
+        background 0.15s,
+        color 0.15s;
+}
+
+.ad-nav-item:hover {
+    background: var(--ad-ink-2);
+    color: #fff;
+}
+.ad-nav-badge {
+    margin-left: auto;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--ad-orange);
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.ad-bot-tag {
+    display: inline-block;
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    background: var(--ad-orange-soft);
+    color: var(--ad-orange);
+    padding: 1px 6px;
+    border-radius: 999px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.ad-nav-item.is-active {
+    background: var(--ad-orange);
+    color: #fff;
+    font-weight: 600;
+}
+
+.ad-nav-item.is-active .ad-ico {
+    opacity: 1;
+}
+
+.ad-ico {
+    width: 17px;
+    text-align: center;
+    opacity: 0.75;
+    font-size: 0.92rem;
+}
+
+.ad-nav-item[data-soon] {
+    color: #7f8797;
+}
+.ad-nav-item[data-soon]:hover {
+    color: #c7ccd6;
+}
+
+.ad-rail-foot {
+    border-top: 1px solid var(--ad-ink-line);
+    padding: 14px 16px 18px;
+}
+
+.ad-who {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ad-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--ad-orange);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: 0.8rem;
+    flex: 0 0 auto;
+}
+
+.ad-who-name {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ad-who-role {
+    margin: 0;
+    font-size: 0.68rem;
+    color: var(--ad-faint);
+}
+
+.ad-signout {
+    margin-top: 12px;
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--ad-ink-line);
+    border-radius: 8px;
+    background: none;
+    color: #c7ccd6;
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.ad-signout:hover {
+    background: var(--ad-ink-2);
+    color: #fff;
+}
+
+/* ---- main column ---- */
+.ad-main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.ad-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 24px;
+    background: var(--ad-card);
+    border-bottom: 1px solid var(--ad-line);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.ad-rail-toggle {
+    display: none;
+    border: 1px solid var(--ad-line);
+    background: #fff;
+    border-radius: 8px;
+    padding: 7px 11px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.ad-desk {
+    padding: 24px;
+    flex: 1;
+    min-width: 0;
+}
+
+.ad-loading {
+    color: var(--ad-muted);
+}
+
+/* --------------------------------------------------------------------------
+   SHARED FURNITURE
+   -------------------------------------------------------------------------- */
+.ad-page-head {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.ad-page-head h1 {
+    font-size: 1.5rem;
+    margin: 0 0 3px;
+    letter-spacing: -0.4px;
+}
+.ad-page-head p {
+    margin: 0;
+    color: var(--ad-muted);
+}
+.ad-page-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.ad-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 15px;
+    border: 1px solid var(--ad-line);
+    border-radius: 9px;
+    background: #fff;
+    color: var(--ad-text);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.ad-btn:hover {
+    background: #f8f9fb;
+}
+.ad-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.ad-btn-primary {
+    background: var(--ad-ink);
+    border-color: var(--ad-ink);
+    color: #fff;
+}
+.ad-btn-primary:hover {
+    background: #000;
+}
+
+.ad-btn-orange {
+    background: var(--ad-orange);
+    border-color: var(--ad-orange);
+    color: #fff;
+}
+.ad-btn-orange:hover {
+    background: #e85f00;
+}
+
+.ad-btn-danger {
+    color: var(--ad-red);
+    border-color: #f2c6c3;
+    background: #fff;
+}
+.ad-btn-danger:hover {
+    background: var(--ad-red-bg);
+}
+
+.ad-card {
+    background: var(--ad-card);
+    border: 1px solid var(--ad-line);
+    border-radius: var(--ad-radius);
+}
+
+.ad-error {
+    background: var(--ad-red-bg);
+    color: var(--ad-red);
+    border: 1px solid #f2c6c3;
+    border-radius: 9px;
+    padding: 10px 13px;
+    margin: 14px 0 0;
+    font-size: 0.85rem;
+}
+
+.ad-empty {
+    padding: 44px 20px;
+    text-align: center;
+    color: var(--ad-muted);
+}
+
+/* Status pills - one class per state so a table cell is one line of markup */
+.ad-pill {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.ad-pill-green {
+    background: var(--ad-green-bg);
+    color: var(--ad-green);
+}
+.ad-pill-amber {
+    background: var(--ad-amber-bg);
+    color: var(--ad-amber);
+}
+.ad-pill-red {
+    background: var(--ad-red-bg);
+    color: var(--ad-red);
+}
+.ad-pill-blue {
+    background: var(--ad-blue-bg);
+    color: var(--ad-blue);
+}
+.ad-pill-grey {
+    background: var(--ad-grey-bg);
+    color: var(--ad-muted);
+}
+
+/* --------------------------------------------------------------------------
+   COMING SOON
+   -------------------------------------------------------------------------- */
+.ad-soon {
+    display: grid;
+    place-items: center;
+    min-height: 60vh;
+    text-align: center;
+}
+
+.ad-soon-inner {
+    max-width: 420px;
+}
+
+.ad-soon-mark {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 18px;
+    border-radius: 16px;
+    background: var(--ad-orange-soft);
+    color: var(--ad-orange);
+    display: grid;
+    place-items: center;
+    font-size: 1.6rem;
+}
+
+.ad-soon h1 {
+    font-size: 1.4rem;
+    margin: 0 0 8px;
+}
+.ad-soon p {
+    color: var(--ad-muted);
+    margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   DETAIL DRAWER
+   Slides in from the right over the list, so the list keeps its scroll
+   position and its filters while one row is being looked at.
+   -------------------------------------------------------------------------- */
+.ad-scrim {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 12, 16, 0.42);
+    z-index: 50;
+}
+
+.ad-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(520px, 100vw);
+    background: var(--ad-card);
+    z-index: 51;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -16px 0 44px rgba(0, 0, 0, 0.22);
+    animation: ad-slide-in 0.2s ease;
+}
+
+@keyframes ad-slide-in {
+    from {
+        transform: translateX(24px);
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ad-drawer {
+        animation: none;
+    }
+}
+
+.ad-drawer-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--ad-line);
+}
+
+.ad-drawer-head h2 {
+    font-size: 1.15rem;
+    margin: 0 0 7px;
+    letter-spacing: -0.3px;
+}
+.ad-drawer-head p {
+    margin: 0;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.ad-drawer-close {
+    margin-left: auto;
+    border: 0;
+    background: none;
+    font-size: 1.7rem;
+    line-height: 1;
+    color: var(--ad-muted);
+    cursor: pointer;
+    padding: 0 4px;
+}
+
+.ad-drawer-close:hover {
+    color: var(--ad-text);
+}
+
+.ad-drawer-body {
+    padding: 4px 20px 28px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.ad-drawer-h {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ad-muted);
+    margin: 22px 0 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--ad-line);
+}
+
+.ad-drawer-text {
+    margin: 0 0 4px;
+}
+
+.ad-kvs {
+    margin: 0;
+}
+
+.ad-kv {
+    display: flex;
+    gap: 12px;
+    padding: 6px 0;
+    font-size: 0.86rem;
+}
+
+.ad-kv dt {
+    flex: 0 0 128px;
+    color: var(--ad-muted);
+}
+
+.ad-kv dd {
+    margin: 0;
+    min-width: 0;
+    word-break: break-word;
+}
+
+.ad-kv a {
+    color: var(--ad-orange);
+}
+
+.ad-docs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.ad-docs li {
+    padding: 9px 0;
+    border-bottom: 1px solid var(--ad-line);
+}
+
+.ad-docs li:last-child {
+    border-bottom: 0;
+}
+.ad-docs a {
+    color: var(--ad-orange);
+    font-weight: 600;
+    text-decoration: none;
+}
+.ad-docs a:hover {
+    text-decoration: underline;
+}
+
+/* a document whose URL did not come from our own storage - shown, not linked */
+.ad-doc-bad {
+    font-weight: 600;
+    color: var(--ad-red);
+}
+
+/* --------------------------------------------------------------------------
+   DRAWER ACTIONS
+   -------------------------------------------------------------------------- */
+.ad-actions {
+    background: #fafbfc;
+    border: 1px solid var(--ad-line);
+    border-radius: var(--ad-radius);
+    padding: 14px 15px;
+    margin: 16px 0 4px;
+}
+
+.ad-actions-h {
+    margin: 0 0 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ad-muted);
+}
+
+.ad-actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.ad-actions-row:last-of-type {
+    margin-bottom: 0;
+}
+
+.ad-actions button.is-working {
+    opacity: 0.6;
+}
+
+.ad-action-msg {
+    margin: 12px 0 0;
+    padding: 8px 11px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    background: var(--ad-grey-bg);
+    color: var(--ad-muted);
+}
+
+.ad-action-msg.is-ok {
+    background: var(--ad-green-bg);
+    color: var(--ad-green);
+}
+.ad-action-msg.is-bad {
+    background: var(--ad-red-bg);
+    color: var(--ad-red);
+}
+
+/* ---- seating ---- */
+.ad-seat {
+    margin-bottom: 14px;
+}
+
+.ad-seat select {
+    width: 100%;
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 6px;
+    border: 1px solid var(--ad-line);
+    border-radius: 9px;
+    background: #fff;
+}
+
+.ad-seat select:focus {
+    outline: none;
+    border-color: var(--ad-orange);
+    box-shadow: 0 0 0 3px var(--ad-orange-soft);
+}
+
+.ad-seat-hint {
+    margin: 6px 0 10px;
+    font-size: 0.76rem;
+    color: var(--ad-faint);
+}
+
+/* ---- notes ---- */
+.ad-notes {
+    list-style: none;
+    margin: 0 0 14px;
+    padding: 0;
+}
+
+.ad-notes li {
+    background: #fafbfc;
+    border: 1px solid var(--ad-line);
+    border-radius: 9px;
+    padding: 9px 11px;
+    margin-bottom: 8px;
+}
+
+.ad-note-text {
+    margin: 0 0 4px;
+    font-size: 0.86rem;
+    white-space: pre-wrap;
+}
+.ad-note-by {
+    margin: 0;
+    font-size: 0.72rem;
+    color: var(--ad-faint);
+}
+
+.ad-note-form textarea {
+    width: 100%;
+    font: inherit;
+    font-size: 0.86rem;
+    padding: 9px 11px;
+    border: 1px solid var(--ad-line);
+    border-radius: 9px;
+    resize: vertical;
+    margin-bottom: 8px;
+    background: #fff;
+    color: var(--ad-text);
+}
+
+.ad-note-form textarea:focus {
+    outline: none;
+    border-color: var(--ad-orange);
+    box-shadow: 0 0 0 3px var(--ad-orange-soft);
+}
+
+/* --------------------------------------------------------------------------
+   EVENT CARDS
+   -------------------------------------------------------------------------- */
+.ad-ev-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 14px;
+}
+
+/* The active event is the one everything else on the page is about */
+
+/* --------------------------------------------------------------------------
+   FILTER BAR
+   -------------------------------------------------------------------------- */
+.ad-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.ad-filters select,
+.ad-search {
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 8px 11px;
+    border: 1px solid var(--ad-line);
+    border-radius: 9px;
+    background: #fff;
+    color: var(--ad-text);
+}
+
+.ad-search {
+    flex: 1 1 240px;
+    min-width: 0;
+}
+
+.ad-filters select:focus,
+.ad-search:focus {
+    outline: none;
+    border-color: var(--ad-orange);
+    box-shadow: 0 0 0 3px var(--ad-orange-soft);
+}
+
+.ad-count {
+    align-self: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ad-muted);
+}
+
+/* --------------------------------------------------------------------------
+   MODAL
+   -------------------------------------------------------------------------- */
+.ad-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(520px, calc(100vw - 32px));
+    max-height: calc(100vh - 48px);
+    background: var(--ad-card);
+    border-radius: 14px;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.32);
+    z-index: 51;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.ad-modal form {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.ad-modal-head {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--ad-line);
+}
+
+.ad-modal-head h2 {
+    font-size: 1.1rem;
+    margin: 0;
+}
+.ad-modal-head .ad-drawer-close {
+    margin-left: auto;
+}
+
+.ad-modal-body {
+    padding: 16px 20px;
+    overflow-y: auto;
+}
+
+.ad-modal-body label {
+    display: block;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--ad-muted);
+    margin: 12px 0 5px;
+}
+
+.ad-modal-body label:first-child {
+    margin-top: 0;
+}
+
+.ad-modal-body input,
+.ad-modal-body select,
+.ad-modal-body textarea {
+    width: 100%;
+    font: inherit;
+    font-size: 0.88rem;
+    padding: 9px 11px;
+    border: 1px solid var(--ad-line);
+    border-radius: 9px;
+    background: #fff;
+    color: var(--ad-text);
+    resize: vertical;
+}
+
+.ad-modal-body input:focus,
+.ad-modal-body select:focus,
+.ad-modal-body textarea:focus {
+    outline: none;
+    border-color: var(--ad-orange);
+    box-shadow: 0 0 0 3px var(--ad-orange-soft);
+}
+
+.ad-modal-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--ad-line);
+    background: #fafbfc;
+}
+
+/* --------------------------------------------------------------------------
+   PANELS AND TABLES
+   -------------------------------------------------------------------------- */
+.ad-panel {
+    overflow: hidden;
+}
+
+.ad-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--ad-line);
+}
+
+.ad-panel-head h2 {
+    font-size: 1rem;
+    margin: 0;
+}
+.ad-panel-head .ad-btn {
+    margin-left: auto;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+}
+
+.ad-panel-intro {
+    padding: 14px 18px 16px;
+}
+.ad-panel-intro p {
+    margin: 0 0 8px;
+    max-width: 64ch;
+}
+.ad-panel-intro p:last-of-type {
+    margin-bottom: 0;
+}
+
+.ad-limit {
+    width: 78px;
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 6px 8px;
+    border: 1px solid var(--ad-line);
+    border-radius: 7px;
+    background: #fff;
+    color: var(--ad-text);
+}
+
+.ad-limit:focus {
+    outline: none;
+    border-color: var(--ad-orange);
+    box-shadow: 0 0 0 3px var(--ad-orange-soft);
+}
+
+.ad-limit:disabled {
+    opacity: 0.5;
+}
+
+/* Tables scroll inside their own box so the page never scrolls sideways */
+.ad-table-wrap {
+    overflow-x: auto;
+}
+
+.ad-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.ad-table th {
+    text-align: left;
+    padding: 10px 18px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ad-muted);
+    background: #fafbfc;
+    border-bottom: 1px solid var(--ad-line);
+    white-space: nowrap;
+}
+
+.ad-table td {
+    padding: 11px 18px;
+    border-bottom: 1px solid var(--ad-line);
+    vertical-align: middle;
+}
+
+.ad-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.ad-table tbody tr[data-open] {
+    cursor: pointer;
+}
+.ad-table tbody tr[data-open]:hover {
+    background: #fafbfc;
+}
+
+.ad-cell-strong {
+    display: block;
+    font-weight: 600;
+}
+.ad-cell-sub {
+    display: block;
+    font-size: 0.76rem;
+    color: var(--ad-faint);
+}
+.ad-cell-muted {
+    color: var(--ad-muted);
+    white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   SIGN IN
+   -------------------------------------------------------------------------- */
+.ad-gate {
+    min-height: 100vh;
+    min-height: 100svh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: radial-gradient(90% 70% at 50% 0%, #23262f 0%, var(--ad-ink) 70%);
+}
+
+.ad-gate-card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--ad-card);
+    border-radius: 16px;
+    padding: 34px 30px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+}
+
+.ad-gate-brand {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ad-orange);
+    margin: 0 0 6px;
+}
+
+.ad-gate-card h1 {
+    font-size: 1.6rem;
+    margin: 0 0 4px;
+    letter-spacing: -0.4px;
+}
+
+.ad-gate-sub {
+    color: var(--ad-muted);
+    margin: 0 0 22px;
+}
+
+.ad-gate-card label {
+    display: block;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--ad-muted);
+    margin: 14px 0 6px;
+}
+
+.ad-gate-card input {
+    width: 100%;
+    padding: 11px 13px;
+    border: 1px solid var(--ad-line);
+    border-radius: 9px;
+    font: inherit;
+    background: #fff;
+    color: var(--ad-text);
+}
+
+.ad-gate-card input:focus {
+    outline: none;
+    border-color: var(--ad-orange);
+    box-shadow: 0 0 0 3px var(--ad-orange-soft);
+}
+
+.ad-gate-card .ad-btn {
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* --------------------------------------------------------------------------
+   STAT CARDS
+   Auto-fit so the row reflows from eight across down to two without any
+   breakpoints of its own.
+   -------------------------------------------------------------------------- */
+.ad-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+    gap: 12px;
+    margin-bottom: 22px;
+}
+
+.ad-stat {
+    background: var(--ad-card);
+    border: 1px solid var(--ad-line);
+    border-radius: var(--ad-radius);
+    padding: 15px 16px;
+    border-top: 3px solid var(--ad-line);
+
+    /* most are divs, the ones that filter the list are buttons */
+    font: inherit;
+    text-align: left;
+    width: 100%;
+    display: block;
+}
+
+.ad-stat.is-clickable {
+    cursor: pointer;
+}
+
+/*  Only the background moves on hover. Setting border-color here would
+    out-specify the .is-green / .is-amber top edge and grey it out. */
+.ad-stat.is-clickable:hover {
+    background: #fafbfc;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+}
+
+.ad-stat.is-clickable:focus-visible {
+    outline: 2px solid var(--ad-orange);
+    outline-offset: 2px;
+}
+
+.ad-stat.is-green {
+    border-top-color: var(--ad-green);
+}
+.ad-stat.is-amber {
+    border-top-color: var(--ad-amber);
+}
+.ad-stat.is-red {
+    border-top-color: var(--ad-red);
+}
+.ad-stat.is-blue {
+    border-top-color: var(--ad-blue);
+}
+
+.ad-stat-label {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ad-muted);
+}
+
+.ad-stat-value {
+    margin: 6px 0 2px;
+    font-size: 1.85rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -1px;
+}
+
+.ad-stat-note {
+    margin: 0;
+    font-size: 0.74rem;
+    color: var(--ad-faint);
+}
+
+/* --------------------------------------------------------------------------
+   RESPONSIVE
+   The rail slides over the desk rather than squeezing it.
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+    .ad-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .ad-rail {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: var(--ad-rail-w);
+        z-index: 40;
+        transform: translateX(-100%);
+        transition: transform 0.22s ease;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .ad-rail.is-open {
+        transform: translateX(0);
+    }
+
+    .ad-rail-toggle {
+        display: block;
+    }
+
+    .ad-desk {
+        padding: 16px;
+    }
+    .ad-top {
+        padding: 10px 16px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ad-rail {
+        transition: none;
+    }
+}
+
+/* ==========================================================================
+   THE RAIL, GROUPED
+
+   Vendors has its own sub-items and opens by default.
+   ========================================================================== */
+.ad-nav-group {
+    display: grid;
+}
+
+/* The group's own button never takes the active look - the item inside does. */
+
+/* The caret glyph points up, so the closed state is the rotated one. */
+
+/* Sub-items line up under the group's word, not its icon. */
+
+/* ---- the panel at the foot -------------------------------------------- */
+/* Text here instead of a photo. */
+
+/* ==========================================================================
+   VENDOR EMAILS
+
+   Editor on the left, preview on the right, the sent list underneath.
+   Placeholders sit in a strip under the body.
+   ========================================================================== */
+
+.ad-mail-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--ad-orange-soft);
+    color: var(--ad-orange);
+    font-size: 1.2rem;
+}
+
+/* ---- the two columns ---------------------------------------------------- */
+
+/* ---- the toolbar -------------------------------------------------------- */
+
+/* ---- the body box -------------------------------------------------------- */
+
+.ad-mail-body ul,
+
+/* ---- the placeholder strip ------------------------------------------------ */
+
+/* ---- the preview ---------------------------------------------------------- */
+
+/* Orange written out: var(--sg-orange) does not exist here (style.css is
+   not loaded). */
+
+.ad-mail-inner ul,
+
+/* ---- who got one ----------------------------------------------------------- */
+/* The sent table sits under the two columns. */
+
+.ad-cell-right {
+    text-align: right;
+}
+
+/* Status dot: grey means not sent yet. */
+
+.ad-btn-small {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+}
+
+/* Error messages look like errors. */
+.ad-action-msg.is-bad {
+    color: var(--ad-red);
+    background: var(--ad-red-bg);
+    border: 1px solid #f3c2c2;
+    border-radius: 8px;
+    padding: 10px 12px;
+
+    /* Long SMTP errors wrap instead of running off the side. */
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* =========================================================================
+   ESTIMATE BOT  -  admin styling (Quote Leads + Quote Pricing)
+   ========================================================================= */
+
+/* Shared small controls for the quote views. */
+.ad-input,
+.ad-select {
+    padding: 8px 10px;
+    border: 1px solid var(--ad-line);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--ad-text);
+    font: inherit;
+    font-size: 0.88rem;
+}
+.ad-input:focus,
+.ad-select:focus {
+    outline: none;
+    border-color: var(--ad-blue);
+}
+
+.ad-field em {
+    display: block;
+    margin-top: 3px;
+    color: var(--ad-faint);
+    font-weight: 400;
+    font-size: 0.72rem;
+}
+
+/* ---- Quote Leads --------------------------------------------------- */
+
+.ad-quote-msg {
+    font-size: 0.82rem;
+    color: var(--ad-muted);
+}
+.ad-quote-msg.is-ok {
+    color: var(--ad-green);
+}
+.ad-quote-msg.is-bad {
+    color: var(--ad-red);
+}
+
+/* ---- Quote Pricing ------------------------------------------------- */
+
+/* =========================================================================
+   EQUIPMENT  -  inventory / price-list table
+   ========================================================================= */
+.ad-inv-cols,
+.ad-inv-row .ad-input,
+@media (max-width: 900px) {
+    /* Phone: each row becomes a small card with its own labels. */
+}
+@keyframes rtInRight {
+    from {
+        transform: translateX(40px);
+        opacity: 0.4;
+    }
+    to {
+        transform: none;
+        opacity: 1;
+    }
+}
+@keyframes rtInLeft {
+    from {
+        transform: translateX(-40px);
+        opacity: 0.4;
+    }
+    to {
+        transform: none;
+        opacity: 1;
+    }
+}
+@keyframes ad-busy {
+    to {
+        left: 100%;
+    }
+}
+@keyframes ad-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

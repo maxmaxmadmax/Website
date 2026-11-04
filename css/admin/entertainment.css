@@ -1,0 +1,934 @@
+/* ==========================================================================
+   DJ BOOKINGS
+
+   Built to fit one screen: the top is fixed height and the table
+   underneath scrolls inside itself.
+   ========================================================================== */
+.ad-desk.is-bookings {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.ad-desk.is-bookings .ad-page-head {
+    margin-bottom: 14px;
+}
+
+/* ---- the four counts ---- */
+
+.ad-bstat {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 15px;
+    border: 1px solid var(--ad-line);
+    border-radius: 12px;
+    background: #fff;
+}
+
+.ad-bstat-icon {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 auto;
+    border-radius: 10px;
+}
+
+.ad-bstat-icon svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.ad-bstat-icon.is-blue {
+    background: var(--ad-blue-bg);
+    color: var(--ad-blue);
+}
+.ad-bstat-icon.is-green {
+    background: var(--ad-green-bg);
+    color: var(--ad-green);
+}
+.ad-bstat-icon.is-amber {
+    background: var(--ad-amber-bg);
+    color: var(--ad-amber);
+}
+.ad-bstat-icon.is-grey {
+    background: var(--ad-blue-bg);
+    color: var(--ad-blue);
+}
+
+.ad-bstat-text {
+    display: block;
+    min-width: 0;
+}
+
+.ad-bstat-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+}
+
+.ad-bstat-label {
+    display: block;
+    color: var(--ad-muted);
+    font-size: 0.78rem;
+}
+
+/* ---- month beside the booking ---- */
+/* The month first at a fixed width (square days); the booking takes the rest. */
+
+@media (max-width: 1000px) {
+    /* Stacked. The month keeps its width so the days stay square. */
+
+    .ad-cal {
+        max-width: 452px;
+    }
+}
+
+.ad-cal {
+    padding: 14px 16px 16px;
+}
+
+.ad-cal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.ad-cal-head h2 {
+    font-size: 1.05rem;
+    margin: 0;
+}
+.ad-cal-nav {
+    display: flex;
+    gap: 6px;
+}
+.ad-cal-nav .ad-btn {
+    padding: 5px 10px;
+}
+
+.ad-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 3px;
+}
+
+.ad-cal-name {
+    padding: 2px 0 6px;
+    color: var(--ad-muted);
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.ad-cal-day {
+    aspect-ratio: 1;
+    padding: 4px 5px;
+    overflow: hidden;
+    border: 1px solid var(--ad-line);
+    border-radius: 7px;
+    background: #fff;
+}
+
+.ad-cal-day.is-empty {
+    border-color: transparent;
+    background: none;
+}
+
+/*  A day with something on it is a button in all but name, so it says so. */
+.ad-cal-day.has-booking {
+    cursor: pointer;
+    border-color: #cfd4dc;
+}
+.ad-cal-day.has-booking:hover {
+    background: #f8f9fb;
+}
+
+.ad-cal-day.is-today {
+    border-color: var(--ad-blue);
+    box-shadow: inset 0 0 0 1px var(--ad-blue);
+}
+
+.ad-cal-num {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    margin-bottom: 3px;
+}
+
+/* The act's name in the day, not just a dot. */
+.ad-cal-act {
+    display: block;
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: var(--ad-green-bg);
+    color: var(--ad-green);
+    font-size: 0.58rem;
+    font-weight: 600;
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ad-cal-act.is-pending {
+    background: var(--ad-amber-bg);
+    color: var(--ad-amber);
+}
+
+/* ---- the one being looked at ---- */
+.ad-book-panel {
+    overflow: hidden;
+}
+
+/* The pub leads the panel. */
+.ad-book-photo {
+    height: 104px;
+    background-size: cover;
+    background-position: center 58%;
+}
+
+.ad-book-inner {
+    padding: 14px 16px 16px;
+}
+
+.ad-book-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.ad-book-head h3 {
+    margin: 0 0 6px;
+    font-size: 1.02rem;
+}
+
+.ad-book-split-2 {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 150px);
+    gap: 14px;
+    align-items: start;
+}
+
+@media (max-width: 560px) {
+    .ad-book-split-2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ad-book-facts {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 9px 12px;
+    margin: 0;
+}
+
+.ad-book-facts dt {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ad-muted);
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+
+.ad-book-facts dt svg {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.ad-book-facts dd {
+    margin: 0;
+    font-size: 0.88rem;
+}
+
+/* Actions stacked, not in a row. */
+.ad-book-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.ad-book-actions .ad-btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+    text-decoration: none;
+}
+
+/* The editor: one field per line (the panel is narrow). */
+.ad-field {
+    display: block;
+    margin-bottom: 9px;
+    color: var(--ad-muted);
+    font-size: 0.74rem;
+    font-weight: 600;
+}
+
+.ad-field input,
+.ad-field select,
+.ad-field textarea {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    padding: 8px 10px;
+    border: 1px solid var(--ad-line);
+    border-radius: 8px;
+    background: #fff;
+    color: #12141a;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 400;
+}
+
+.ad-field input:focus,
+.ad-field select:focus,
+.ad-field textarea:focus {
+    outline: none;
+    border-color: var(--ad-blue);
+}
+
+/* ---- the table underneath ---- */
+/* Takes the leftover height and scrolls inside itself. */
+
+/* The heading row stays put while the rows scroll. */
+
+.ad-book-tabs {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--ad-line);
+}
+
+.ad-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.ad-tab {
+    padding: 7px 14px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: none;
+    color: var(--ad-muted);
+    font: inherit;
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        background-color 0.15s,
+        color 0.15s;
+}
+
+.ad-tab:hover {
+    background: #f4f5f8;
+    color: #12141a;
+}
+
+.ad-tab.is-on {
+    background: #12141a;
+    border-color: #12141a;
+    color: #fff;
+}
+
+.ad-book-search {
+    width: min(260px, 100%);
+    padding: 8px 12px;
+    border: 1px solid var(--ad-line);
+    border-radius: 8px;
+    font: inherit;
+    font-size: 0.86rem;
+}
+
+.ad-book-search:focus {
+    outline: none;
+    border-color: var(--ad-blue);
+}
+
+/* ---- an act, with its face ---- */
+.ad-act {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+}
+
+/* Act thumbnail; no photo shows a grey disc. */
+.ad-act-face {
+    width: 26px;
+    height: 26px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background-color: #e4e6eb;
+    background-size: cover;
+    background-position: center 20%;
+}
+
+/* ---- the roster ----
+   Folded away behind a toggle. */
+.ad-roster {
+    margin-top: 14px;
+}
+
+.ad-desk.is-bookings .ad-roster {
+    display: none;
+}
+
+.ad-desk.is-bookings.show-roster {
+    overflow-y: auto;
+}
+
+.ad-desk.is-bookings.show-roster .ad-roster {
+    display: block;
+}
+
+/* Height chain for one-screen views: every box from the shell down needs
+   a definite height and min-height:0, or the table pushes the page down.
+   Set on the body because it has to reach upwards. */
+body.ad-fit .ad-shell {
+    height: 100vh;
+    height: 100svh;
+    min-height: 0;
+    overflow: hidden;
+}
+
+body.ad-fit .ad-main {
+    min-height: 0;
+}
+
+/* --------------------------------------------------------------------------
+   BOOKINGS: finishing touches
+   -------------------------------------------------------------------------- */
+
+/* Softer cards with a light shadow. */
+.ad-desk.is-bookings .ad-card,
+.ad-desk.is-bookings .ad-bstat {
+    border-radius: 14px;
+    border-color: #eceef2;
+    box-shadow:
+        0 1px 2px rgba(16, 24, 40, 0.05),
+        0 1px 3px rgba(16, 24, 40, 0.06);
+}
+
+.ad-desk.is-bookings .ad-page-head h1 {
+    font-size: 1.9rem;
+    font-weight: 700;
+    letter-spacing: -0.8px;
+}
+
+.ad-desk.is-bookings .ad-bstat {
+    padding: 15px 17px;
+}
+.ad-desk.is-bookings .ad-bstat-value {
+    font-size: 1.65rem;
+}
+.ad-desk.is-bookings .ad-bstat-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+}
+.ad-desk.is-bookings .ad-bstat-icon svg {
+    width: 21px;
+    height: 21px;
+}
+
+/* Tighter calendar rows. */
+.ad-desk.is-bookings .ad-cal-day {
+    padding: 4px 6px;
+}
+.ad-desk.is-bookings .ad-cal-num {
+    font-size: 0.75rem;
+    color: #3f4350;
+}
+.ad-desk.is-bookings .ad-cal-name {
+    font-size: 0.66rem;
+    padding-bottom: 4px;
+}
+
+/* Days outside this month are drawn, not left blank. */
+.ad-desk.is-bookings .ad-cal-day.is-empty {
+    border-color: #f2f3f6;
+    background: #fbfbfc;
+}
+
+/* The dot before the name. */
+.ad-cal-act::before {
+    content: '';
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    margin-right: 4px;
+    border-radius: 50%;
+    background: currentColor;
+    vertical-align: middle;
+}
+
+/* Bookings set in the site file, shown with how to fix it. */
+.ad-import {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    border: 1px solid #fde3b8;
+    border-radius: 12px;
+    background: var(--ad-amber-bg);
+}
+
+.ad-import p {
+    margin: 0;
+    color: #7a4a00;
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+.ad-import strong {
+    color: #5c3800;
+}
+
+/* The event an application belongs to, under its status pills. */
+.ad-drawer-event {
+    margin-top: 6px;
+    color: var(--ad-muted);
+    font-size: 0.82rem;
+}
+
+/* ENTERTAINMENT - styled like Crew & Vehicles */
+.ent-tabs {
+    display: inline-flex;
+    background: var(--ad-grey-bg);
+    border-radius: 10px;
+    padding: 3px;
+    margin-right: 8px;
+}
+.ent-tab {
+    border: 0;
+    background: transparent;
+    padding: 7px 16px;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ad-muted);
+    cursor: pointer;
+}
+.ent-tab.is-on {
+    background: #fff;
+    color: var(--ad-text);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+.ent-split {
+    display: grid;
+    grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+.ent-split .ad-cal {
+    margin: 0;
+}
+.ent-list .ad-book-tabs {
+    padding: 12px 14px;
+}
+.ent-list .ad-search {
+    max-width: 240px;
+}
+.ent-face {
+    width: 30px;
+    height: 30px;
+    flex: none;
+}
+.ent-date {
+    white-space: nowrap;
+}
+.ent-dots {
+    display: inline-flex;
+    gap: 4px;
+    vertical-align: middle;
+}
+.ent-dots i {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #dfe2e8;
+}
+.ent-dots i.is-on {
+    background: var(--ad-green);
+}
+.ent-detail {
+    position: relative;
+}
+.ent-x {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    z-index: 2;
+}
+.ent-trail {
+    display: flex;
+    align-items: flex-start;
+    padding: 16px 16px 4px;
+    gap: 0;
+}
+.ent-trail > b {
+    flex: 1;
+    height: 2px;
+    background: #dfe2e8;
+    margin-top: 11px;
+}
+.ent-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 52px;
+    text-align: center;
+}
+.ent-step span {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid #dfe2e8;
+    background: #fff;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ent-step.is-on span {
+    background: var(--ad-green);
+    border-color: var(--ad-green);
+}
+.ent-step em {
+    font-style: normal;
+    font-size: 10.5px;
+    line-height: 1.2;
+    color: var(--ad-muted);
+}
+.ent-step.is-on em {
+    color: var(--ad-text);
+    font-weight: 700;
+}
+.ent-next {
+    margin: 6px 16px 0;
+    font-size: 13px;
+    color: var(--ad-muted);
+}
+.ent-next.is-done {
+    color: var(--ad-green);
+    font-weight: 700;
+}
+.ent-deck {
+    margin: 0 0 8px;
+    font-size: 13px;
+    padding: 8px 10px;
+    background: var(--ad-orange-soft);
+    border-radius: 8px;
+    width: 100%;
+}
+.ent-djphoto {
+    height: 140px;
+    border-radius: 12px;
+    background: #eee center/cover;
+    margin-bottom: 12px;
+}
+.ent-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 12px;
+}
+.ent-private {
+    font-size: 12px;
+    margin: 4px 0 12px;
+}
+.ent-sub {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ad-muted);
+    margin: 10px 0 4px;
+}
+.ent-gigs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 13px;
+}
+.ent-gigs li {
+    padding: 6px 0;
+    border-top: 1px solid var(--ad-line);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+@media (max-width: 1100px) {
+    .ent-split {
+        grid-template-columns: 1fr;
+    }
+}
+/* nights with no DJ */
+.ent-date {
+    font-weight: 600;
+    white-space: nowrap;
+}
+.ent-open td {
+    background: repeating-linear-gradient(135deg, #fff 0 9px, #fdf1f0 9px 18px);
+}
+.ent-book {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+.ent-noinv {
+    margin: 0 0 8px;
+    font-size: 13px;
+    padding: 8px 10px;
+    background: var(--ad-amber-bg);
+    color: var(--ad-amber);
+    border-radius: 8px;
+    width: 100%;
+}
+.ent-styles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin-top: 6px;
+}
+.ent-styles label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    cursor: pointer;
+}
+.ent-styles input {
+    accent-color: var(--ad-orange);
+}
+.ent-add-venue {
+    border: 1px dashed #c9ccd6;
+    color: #5b6070;
+} /* + Add venue */
+/* Gigs: list left, calendar / open gig right */
+.ent-split {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+}
+.ent-side {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    position: sticky;
+    top: 0;
+}
+.ent-side .ad-book-panel {
+    border: none;
+    box-shadow: none;
+    margin: 0;
+}
+@media (max-width: 1100px) {
+    .ent-split {
+        grid-template-columns: 1fr;
+    }
+}
+.ent-unconf-tag {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    border: 1px dashed #854f0b;
+    color: #633806;
+    background: #faeeda;
+    white-space: nowrap;
+}
+.ent-sent {
+    display: inline-block;
+    margin-left: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    color: #0f6e3d;
+    background: #e3f4ea;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+.ent-sent.is-not {
+    color: #6b7280;
+    background: #f1f2f4;
+}
+.ent-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.ent-payfull {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+.ent-payfull input {
+    width: auto;
+}
+/* DJ booking fee setting */
+.ent-fee {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 220px));
+    gap: 10px 16px;
+    padding: 4px 18px 16px;
+    align-items: end;
+}
+.ent-fee-wide {
+    grid-column: 1 / -1;
+    max-width: 560px;
+}
+/* text or email the details link */
+/* Venues tab */
+.ent-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-top: 6px;
+}
+.ent-gigline {
+    margin: 0 0 6px;
+    font-size: 14px;
+}
+/* 7-step gig checklist fits the side panel */
+.ent-trail {
+    padding: 16px 10px 4px;
+}
+.ent-step {
+    width: 50px;
+}
+.ent-step em {
+    font-size: 10.5px;
+    line-height: 1.2;
+}
+.ent-trail > b {
+    min-width: 4px;
+}
+.ent-djok {
+    border-color: #b9dfc6;
+    color: #0f6e3d;
+} /* Mark DJ confirmed */
+.ent-djok.is-on {
+    background: #e8f4ec;
+}
+.ent-loading {
+    padding: 22px 16px !important;
+}
+/* music style tick boxes: box and words side by side */
+.ent-styles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px 14px;
+}
+.ent-styles label {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    white-space: nowrap;
+    font-size: 13px;
+}
+.ent-styles input[type='checkbox'] {
+    width: 16px !important;
+    height: 16px;
+    margin: 0;
+    flex: none;
+}
+
+/* =========================================================================
+   PHONE LAYOUT - ENTERTAINMENT + LISTS. Desktop untouched.
+   ========================================================================= */
+@media (max-width: 1100px) {
+    .ent-split {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .ent-split > * {
+        min-width: 0;
+    }
+    /* an open gig slides over the page, like every other detail panel */
+    .ent-split .ent-side {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 60;
+        width: min(440px, 100vw);
+        max-height: none;
+        overflow-y: auto;
+        border-radius: 0;
+        box-shadow: -12px 0 40px rgba(0, 0, 0, 0.25);
+        margin: 0;
+    }
+}
+@media (max-width: 760px) {
+    .ent-tabs {
+        max-width: 100%;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+    }
+    .ent-tab {
+        white-space: nowrap;
+    }
+    .ad-book-tabs {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .ad-book-tabs .ad-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        max-width: 100%;
+        padding-bottom: 2px;
+    }
+    .ad-book-tabs .ad-tab {
+        white-space: nowrap;
+        flex: none;
+    }
+    .ent-list .ad-search {
+        max-width: none;
+        width: 100%;
+    }
+    .ent-split .ent-side {
+        width: 100vw;
+    }
+    .ent-trail {
+        overflow-x: auto;
+    }
+}

@@ -1,0 +1,884 @@
+/* ==========================================================================
+   DASHBOARD - js/dashboard.js
+   ========================================================================== */
+.db {
+    padding: 22px;
+    max-width: 1400px;
+}
+.db h2 {
+    font-size: 15px;
+    margin: 0 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.db-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+.db-head h1 {
+    margin: 0;
+    font-size: 24px;
+}
+.db-head p {
+    margin: 2px 0 0;
+    color: var(--ad-muted);
+    font-size: 13px;
+}
+.db-quick {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.db-quick .ad-btn {
+    text-decoration: none;
+}
+
+.db-stats {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.db-stat {
+    min-width: 0;
+    background: var(--ad-card);
+    border: 1px solid var(--ad-line);
+    border-radius: var(--ad-radius);
+    padding: 14px 16px;
+}
+.db-stat-label {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ad-muted);
+}
+.db-stat-num {
+    margin: 4px 0 2px;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--ad-text);
+}
+.db-stat-num small {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ad-muted);
+}
+.db-trend {
+    display: block;
+    font-size: 12px;
+    color: var(--ad-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.db-trend.is-up {
+    color: var(--ad-green);
+}
+.db-trend.is-down {
+    color: var(--ad-red);
+}
+
+.db-cols {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 16px;
+    margin-bottom: 16px;
+    align-items: start;
+}
+.db-panel {
+    padding: 16px 18px;
+    margin-bottom: 16px;
+}
+.db-cols .db-panel {
+    margin-bottom: 0;
+}
+.db-count {
+    display: inline-block;
+    min-width: 20px;
+    padding: 1px 7px;
+    border-radius: 20px;
+    background: var(--ad-orange);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    text-align: center;
+}
+.db-empty {
+    color: var(--ad-muted);
+    font-size: 14px;
+    margin: 4px 0;
+}
+
+.db-todo {
+    border-top: 1px solid var(--ad-line);
+    padding: 10px 0 4px;
+}
+.db-todo:first-of-type {
+    border-top: 0;
+    padding-top: 0;
+}
+.db-todo-h {
+    margin: 0 0 4px;
+    font-weight: 700;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.db-todo-h a {
+    color: var(--ad-text);
+    text-decoration: none;
+}
+.db-todo ul {
+    margin: 0;
+    padding: 0 0 0 2px;
+    list-style: none;
+}
+.db-todo li {
+    font-size: 13px;
+    padding: 3px 0;
+}
+.db-todo li a {
+    color: var(--ad-blue);
+    text-decoration: none;
+}
+.db-todo li a:hover {
+    text-decoration: underline;
+}
+
+.db-jobs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.db-job {
+    display: grid;
+    grid-template-columns: 86px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 0;
+    border-top: 1px solid var(--ad-line);
+}
+.db-job:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+.db-job-date b {
+    display: block;
+    font-size: 13px;
+}
+.db-job-who {
+    margin: 0;
+    font-weight: 700;
+    font-size: 14px;
+}
+.db-job-who span {
+    font-weight: 500;
+    color: var(--ad-muted);
+}
+.db-job-sub {
+    margin: 1px 0 0;
+    font-size: 12px;
+    color: var(--ad-muted);
+}
+.db-job-tags {
+    margin: 5px 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.db-tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--ad-grey-bg);
+    color: var(--ad-text);
+}
+.db-job-acts {
+    display: flex;
+    gap: 6px;
+}
+.db-job-acts .ad-btn {
+    text-decoration: none;
+    padding: 6px 10px;
+    font-size: 12px;
+}
+
+.db-event-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.db-event-head h2 span {
+    font-weight: 500;
+    color: var(--ad-muted);
+}
+.db-countdown {
+    margin: 0;
+    color: var(--ad-muted);
+    font-size: 14px;
+}
+.db-countdown b {
+    color: var(--ad-orange);
+    font-size: 22px;
+}
+.db-event-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+.db-bar {
+    height: 8px;
+    background: var(--ad-grey-bg);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 6px;
+}
+.db-bar i {
+    display: block;
+    height: 100%;
+    background: var(--ad-orange);
+    border-radius: 8px;
+}
+.db-event-links {
+    margin: 12px 0 0;
+    font-size: 13px;
+}
+.db-event-links a {
+    color: var(--ad-blue);
+    text-decoration: none;
+}
+
+.db-chart {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 8px;
+    align-items: end;
+    height: 180px;
+    padding-top: 18px;
+}
+.db-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    height: 100%;
+}
+.db-col i {
+    display: block;
+    width: 100%;
+    max-width: 38px;
+    min-height: 2px;
+    background: #ffc9a3;
+    border-radius: 6px 6px 0 0;
+}
+.db-col.is-now i {
+    background: var(--ad-orange);
+}
+.db-col-val {
+    font-size: 10px;
+    color: var(--ad-muted);
+    margin-bottom: 3px;
+    white-space: nowrap;
+}
+.db-col-lab {
+    font-size: 11px;
+    color: var(--ad-muted);
+    margin-top: 4px;
+}
+
+@media (max-width: 1100px) {
+    .db-stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .db-cols {
+        grid-template-columns: 1fr;
+    }
+}
+@media (max-width: 640px) {
+    .db {
+        padding: 14px;
+    }
+    .db-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .db-stat-num {
+        font-size: 20px;
+    }
+    .db-event-grid {
+        grid-template-columns: 1fr;
+    }
+    .db-job {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+    .db-chart {
+        gap: 3px;
+    }
+    .db-col-val {
+        display: none;
+    }
+}
+
+/* dashboard reminders */
+.db-rem {
+    background: var(--ad-orange-soft);
+    border-radius: 10px;
+    padding: 10px 12px 12px !important;
+    margin-bottom: 8px;
+    border-top: 0 !important;
+}
+.db-rem li {
+    padding: 4px 0;
+}
+.db-rem label {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--ad-text);
+}
+.db-rem input[type='checkbox'] {
+    margin-top: 2px;
+    accent-color: var(--ad-orange);
+    width: 16px;
+    height: 16px;
+    flex: none;
+}
+.db-rem li.is-done span {
+    text-decoration: line-through;
+    color: var(--ad-faint);
+}
+.db-rem-add input {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--ad-line);
+    border-radius: 8px;
+    font: inherit;
+    font-size: 13px;
+    background: #fff;
+}
+/* event-day weather on dashboard jobs */
+.db-wx {
+    background: #e8f3fd;
+    color: #0b4a7a;
+}
+.db-wx.is-warn {
+    background: var(--ad-amber-bg);
+    color: var(--ad-amber);
+    font-weight: 700;
+}
+.db-wx.is-bad {
+    background: var(--ad-red-bg);
+    color: var(--ad-red);
+    font-weight: 700;
+}
+/* the weather card beside the job buttons */
+.db-job-acts {
+    align-items: center;
+}
+.db-wxbox {
+    width: 116px;
+    box-sizing: border-box;
+    padding: 9px 10px;
+    border-radius: 14px;
+    color: #fff;
+    background: linear-gradient(155deg, #5ab8ff 0%, #2f80ed 100%);
+    box-shadow: 0 6px 16px rgba(47, 128, 237, 0.28);
+}
+.db-wxbox.is-warn {
+    background: linear-gradient(155deg, #ffc14d 0%, #f08a00 100%);
+    box-shadow: 0 6px 16px rgba(240, 138, 0, 0.28);
+}
+.db-wxbox.is-bad {
+    background: linear-gradient(155deg, #ff7a6b 0%, #d6332a 100%);
+    box-shadow: 0 6px 16px rgba(214, 51, 42, 0.3);
+}
+.db-wxbox.is-later {
+    background: var(--ad-grey-bg);
+    color: var(--ad-muted);
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.db-wxbox svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex: none;
+}
+.db-wxbox .wx-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+.db-wxbox .wx-top svg {
+    width: 26px;
+    height: 26px;
+    stroke-width: 1.7;
+}
+.db-wxbox .wx-temp {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+.db-wxbox .wx-temp span {
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0.75;
+    margin-left: 3px;
+}
+.db-wxbox .wx-row {
+    margin: 2px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.db-wxbox .wx-row em {
+    font-style: normal;
+    font-weight: 500;
+    opacity: 0.85;
+    margin-left: 2px;
+}
+.db-wxbox .wx-later {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.25;
+}
+.db-wxbox .wx-later span {
+    font-weight: 500;
+}
+.db-wxbox.is-later svg {
+    width: 20px;
+    height: 20px;
+}
+@media (max-width: 640px) {
+    .db-job-acts {
+        flex-wrap: wrap;
+    }
+}
+/* our own events in "Next 30 days" */
+.db-pill-ours {
+    background: var(--ad-orange-soft);
+    color: var(--ad-orange);
+}
+.db-job.is-event .db-job-date b {
+    color: var(--ad-orange);
+}
+.db-pill-gig {
+    background: #efe9fd;
+    color: #6d3fd1;
+} /* entertainment gigs (Grand View etc.) */
+.db-copy {
+    padding: 5px 10px;
+    font-size: 12px;
+    margin-right: 4px;
+}
+
+/* Next 30 days: weather in its own column so the cards line up; week separators */
+.db-job {
+    grid-template-columns: 86px minmax(0, 1fr) 120px 300px;
+}
+.db-job-wx {
+    display: flex;
+    justify-content: center;
+}
+.db-job-acts {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+.db-sep {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 14px 0 2px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: var(--ad-grey-bg);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ad-muted);
+}
+.db-sep:first-child {
+    margin-top: 0;
+}
+.db-sep em {
+    font-style: normal;
+    font-weight: 700;
+    background: #fff;
+    border-radius: 20px;
+    padding: 0 7px;
+    color: var(--ad-text);
+}
+.db-sep.is-now {
+    background: var(--ad-orange);
+    color: #fff;
+}
+.db-sep.is-now em {
+    color: var(--ad-orange);
+}
+.db-sep + .db-job {
+    border-top: 0;
+}
+@media (max-width: 1100px) {
+    .db-job {
+        grid-template-columns: 86px minmax(0, 1fr) 120px;
+    }
+    .db-job-acts {
+        grid-column: 2 / -1;
+    }
+}
+@media (max-width: 640px) {
+    .db-job {
+        grid-template-columns: 1fr;
+    }
+    .db-job-acts {
+        grid-column: auto;
+    }
+    .db-job-wx {
+        justify-content: flex-start;
+    }
+}
+/* the financial-year week number, same as the Gig Opportunities calendar */
+.db-week {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 9px;
+    border-radius: 20px;
+    background: var(--ad-orange);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+/* CONFIRMED vs WAITING rows in Next 30 days */
+.db-jobs .db-job {
+    border-top: 0;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-top: 8px;
+}
+.db-job.is-confirmed {
+    background: linear-gradient(90deg, #e3f6ea 0%, #f3fbf6 45%, #fff 100%);
+    box-shadow: inset 4px 0 0 var(--ad-green);
+}
+.db-job.is-pending {
+    background: repeating-linear-gradient(135deg, #f7f8fa 0 9px, #eceef2 9px 18px);
+    box-shadow: inset 4px 0 0 #c4c9d2;
+}
+.db-job.is-pending .db-job-who,
+.db-job.is-pending .db-job-date b {
+    color: #4b5563;
+}
+.db-state {
+    display: block;
+    margin-top: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.db-state.is-ok {
+    color: var(--ad-green);
+}
+.db-state.is-wait {
+    color: #8a919c;
+}
+.db-sep + .db-job {
+    margin-top: 6px;
+}
+
+/* crew on a job + the crew picker */
+.db-crewtag {
+    background: #e3f6ea;
+    color: var(--ad-green);
+    font-weight: 700;
+}
+.db-nocrew {
+    background: var(--ad-amber-bg);
+    color: var(--ad-amber);
+    font-weight: 700;
+}
+.db-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(15, 18, 25, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+.db-modal-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px 22px;
+    width: min(440px, 100%);
+    max-height: 85vh;
+    overflow: auto;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+.db-modal-card h3 {
+    margin: 0 0 2px;
+    font-size: 18px;
+}
+.db-modal-sub {
+    margin: 0 0 12px;
+    color: var(--ad-muted);
+    font-size: 13px;
+}
+.db-modal-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.db-modal-list li {
+    border-top: 1px solid var(--ad-line);
+}
+.db-modal-list label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 2px;
+    cursor: pointer;
+    font-size: 14px;
+}
+.db-modal-list input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--ad-orange);
+}
+.db-modal-list span {
+    color: var(--ad-muted);
+    font-size: 12px;
+}
+.db-modal-list em {
+    margin-left: auto;
+    font-style: normal;
+    font-size: 11px;
+    color: var(--ad-amber);
+    background: var(--ad-amber-bg);
+    padding: 1px 7px;
+    border-radius: 20px;
+}
+.db-modal-note {
+    font-size: 12px;
+    color: var(--ad-muted);
+    margin: 12px 0;
+}
+.db-modal-acts {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+/* compact weather cards */
+.db-wxbox {
+    zoom: 0.75;
+}
+.db-job {
+    grid-template-columns: 86px minmax(0, 1fr) 92px 300px;
+}
+@media (max-width: 1100px) {
+    .db-job {
+        grid-template-columns: 86px minmax(0, 1fr) 92px;
+    }
+}
+@media (max-width: 640px) {
+    .db-job {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* pub nights: rates on the roster, regular nights, start/finish */
+.ad-rate-in {
+    width: 80px;
+    padding: 6px 8px;
+    border: 1px solid var(--ad-line);
+    border-radius: 8px;
+    font: inherit;
+    font-size: 13px;
+}
+.ad-rate-wide {
+    width: 170px;
+}
+.ad-regular select {
+    padding: 6px 8px;
+    border: 1px solid var(--ad-line);
+    border-radius: 8px;
+    font: inherit;
+    font-size: 13px;
+}
+.ad-rn-new {
+    background: var(--ad-orange-soft);
+}
+.ad-book-times {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+/* pub invoices on the dashboard */
+.db-todo li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+.db-todo-btns {
+    display: inline-flex;
+    gap: 5px;
+    margin-left: auto;
+}
+.db-mini {
+    padding: 3px 9px !important;
+    font-size: 11.5px !important;
+}
+.db-invtag {
+    background: #fff3e6;
+    color: #b45309;
+    font-weight: 700;
+    text-decoration: none;
+}
+/* roster rows line up; location box */
+.ad-roster .ad-table td {
+    vertical-align: middle;
+}
+.ad-roster .ad-act {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+.ad-rate-mid {
+    width: 120px;
+}
+.ad-roster td.ad-cell-strong {
+    display: table-cell;
+} /* must not be display:block - it knocks the rows out of line */
+.ad-desk.is-bookings .ad-regular {
+    display: none;
+    margin-top: 14px;
+}
+.ad-desk.is-bookings.show-roster .ad-regular {
+    display: block;
+}
+.ent .ad-regular {
+    margin-top: 16px;
+}
+/* quotes Max made himself skip the Estimate step - greyed out */
+.sp-step.is-skip b {
+    background: #eceef2;
+    border-color: #d5d8de;
+}
+.sp-step.is-skip em {
+    color: #c0c4cc;
+}
+.sp-step.is-skip + .sp-step.is-done::before {
+    background: #d5d8de;
+}
+.ad-cal-day.is-nodj {
+    border-color: #f2c6c3;
+    background: #fff7f6;
+    cursor: pointer;
+}
+.ad-cal-nodj {
+    display: block;
+    margin-top: 2px;
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--ad-red);
+}
+.ent .inv-tiles:has(> :nth-child(5)) {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+@media (max-width: 900px) {
+    .ent .inv-tiles:has(> :nth-child(5)) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+.ad-cal-day.is-unconf {
+    border: 2px dashed #ba7517;
+    background: #faeeda;
+}
+.ad-cal-act.is-unconf {
+    background: #faeeda;
+    color: #633806;
+    font-weight: 600;
+}
+.sp-remind {
+    margin-right: 6px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid #ffd9b3;
+    background: #fff7ef;
+    color: #9a4a00;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.sp-remind:hover {
+    background: #ffefe0;
+}
+/* loading bar + spinner */
+#ad-busy {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    z-index: 9999;
+    pointer-events: none;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+#ad-busy.is-on {
+    opacity: 1;
+}
+#ad-busy::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -40%;
+    width: 40%;
+    background: linear-gradient(90deg, transparent, #ff6b00, transparent);
+    animation: ad-busy 1s ease-in-out infinite;
+}
+.ad-spin {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-right: 8px;
+    vertical-align: -2px;
+    border: 2px solid #e3e5ea;
+    border-top-color: #ff6b00;
+    border-radius: 50%;
+    animation: ad-spin 0.7s linear infinite;
+}

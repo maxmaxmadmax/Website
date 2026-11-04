@@ -16,16 +16,16 @@
    Allocation and money only change through the admin Cloud Functions.
    -------------------------------------------------------------------------- */
 
-import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=839';
+import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=840';
 
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=839';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=839';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=839';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=839';
-import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=839';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=839';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=839';
-import { expandKit } from './kit.js?v=839';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=840';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=840';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=840';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=840';
+import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=840';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=840';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=840';
+import { expandKit } from './kit.js?v=840';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -1090,7 +1090,7 @@ function render() {
     );
 
     /*  Leads works like an app: one screen tall, the top fixed, only the
-      list scrolls (see "LEADS: one-screen app layout" in admin.css).  */
+      list scrolls (see "LEADS: one-screen app layout" in css/admin/leads.css).  */
     desk.classList.toggle('is-leads', state.view === 'leads');
     document.body.classList.toggle('ad-fit-leads', state.view === 'leads');
     // Inventory too: one screen tall, only the item list scrolls
@@ -1108,7 +1108,7 @@ function render() {
         );
 
     /*  The page can only be one screen tall if the shell is, and that is
-      three boxes above the desk - see the note in admin.css.         */
+      three boxes above the desk - see the note in css/admin/core.css.       */
     document.body.classList.toggle('ad-fit', false);
 
     if (view.wire) view.wire();

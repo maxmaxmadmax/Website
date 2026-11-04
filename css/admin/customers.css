@@ -1,0 +1,46 @@
+/* ==========================================================================
+   CUSTOMERS
+   ========================================================================== */
+.cust-quotes {
+    margin-top: 18px;
+    display: grid;
+    gap: 6px;
+}
+.cust-quotes-h {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8a8a94;
+    margin: 0 0 2px;
+}
+.cust-q {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 10px;
+    align-items: center;
+    text-align: left;
+    font: inherit;
+    background: #fafafa;
+    border: 1px solid #ececf0;
+    border-radius: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+}
+.cust-q:hover {
+    border-color: #ff6b00;
+}
+.cust-q span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #555;
+}
+.cust-q-amt {
+    font-weight: 600;
+    color: #222 !important;
+}
+.cust-quotes .ad-btn {
+    justify-self: start;
+    margin-top: 4px;
+}

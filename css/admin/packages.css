@@ -1,0 +1,320 @@
+.pkg-head-pill {
+    vertical-align: middle;
+    margin-left: 6px;
+}
+
+/* search results drop DOWNWARD here (there's room) */
+.pkg-results {
+    top: calc(100% + 5px);
+    bottom: auto;
+    box-shadow: 0 12px 30px rgba(20, 22, 30, 0.16);
+}
+
+/* tab bar */
+.pkg-tabs {
+    display: flex;
+    gap: 2px;
+    padding: 0 14px;
+    border-bottom: 1px solid var(--ad-line);
+    overflow-x: auto;
+}
+.pkg-tab {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--ad-muted);
+    padding: 11px 12px;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+}
+.pkg-tab:hover {
+    color: var(--ad-text);
+}
+.pkg-tab.is-on {
+    color: var(--ad-orange);
+    border-bottom-color: var(--ad-orange);
+}
+
+.pkg-sec-h {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 6px 0 10px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--ad-text);
+}
+.pkg-sec-h:not(:first-child) {
+    margin-top: 22px;
+}
+.pkg-sec-req {
+    color: var(--ad-muted);
+}
+.pkg-addbtn {
+    margin-left: auto;
+}
+.pkg-auto {
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    background: var(--ad-blue-bg);
+    color: var(--ad-blue);
+    padding: 2px 7px;
+    border-radius: 999px;
+}
+.pkg-empty {
+    color: var(--ad-faint);
+    font-size: 0.85rem;
+    padding: 8px 2px;
+}
+
+.pkg-searchwrap {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+/* gear table */
+.pkg-gearhead {
+    display: grid;
+    grid-template-columns: 1fr 84px 60px 64px 24px;
+    gap: 8px;
+    align-items: center;
+    padding: 0 6px 6px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ad-faint);
+}
+.pkg-gearhead span:nth-child(2),
+.pkg-gearhead span:nth-child(3),
+.pkg-gearhead span:nth-child(4) {
+    text-align: right;
+}
+.pkg-gearlist {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.pkg-gearrow {
+    display: grid;
+    grid-template-columns: 1fr 84px 60px 64px 24px;
+    gap: 8px;
+    align-items: center;
+    background: #fff;
+    border: 1px solid var(--ad-line);
+    border-radius: 10px;
+    padding: 7px 8px;
+}
+.pkg-gear-name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--ad-text);
+}
+.pkg-gear-name span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.pkg-gthumb {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid var(--ad-line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+.pkg-gthumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+.pkg-gear-qty {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+}
+.pkg-step {
+    width: 22px;
+    height: 22px;
+    border: 1px solid var(--ad-line);
+    background: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--ad-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.pkg-step:hover {
+    border-color: var(--ad-orange);
+    color: var(--ad-orange);
+}
+.pkg-qtyval {
+    min-width: 18px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+.pkg-gear-rate {
+    text-align: right;
+    font-size: 0.85rem;
+    color: var(--ad-muted);
+    white-space: nowrap;
+}
+.pkg-gear-total {
+    text-align: right;
+    font-size: 0.86rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.pkg-gearrow .qb-del {
+    justify-self: center;
+}
+
+/* required (auto) rows - read only */
+.pkg-reqrow {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 10px;
+    align-items: center;
+    padding: 7px 8px;
+    border: 1px dashed var(--ad-line);
+    border-radius: 10px;
+    background: var(--ad-desk);
+}
+.pkg-req-qty {
+    color: var(--ad-muted);
+    font-size: 0.82rem;
+}
+.pkg-req-tag {
+    font-size: 0.78rem;
+    font-style: italic;
+    color: var(--ad-green);
+    white-space: nowrap;
+}
+
+/* pricing */
+.pkg-pricebox {
+    background: var(--ad-desk);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-top: 12px;
+}
+.pkg-priceline {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    padding: 5px 0;
+    color: var(--ad-text);
+}
+.pkg-priceline span:first-child {
+    color: var(--ad-muted);
+}
+.pkg-pricecust {
+    border-top: 2px solid var(--ad-text);
+    margin-top: 6px;
+    padding-top: 10px;
+    font-weight: 800;
+    font-size: 1.15rem;
+}
+.pkg-pricecust span:first-child {
+    color: var(--ad-text);
+}
+.pkg-pricecust span:last-child {
+    color: var(--ad-orange);
+}
+.pkg-discinput {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+}
+.pkg-discinput .qb-num-total {
+    max-width: 78px;
+    background: #fff;
+}
+.pkg-savechip {
+    margin: 10px 0 0;
+    display: inline-block;
+    font-size: 0.74rem;
+    font-weight: 700;
+    background: var(--ad-green-bg);
+    color: var(--ad-green);
+    padding: 4px 10px;
+    border-radius: 999px;
+}
+.pkg-minhint {
+    font-style: normal;
+    color: var(--ad-faint);
+    font-size: 0.72rem;
+}
+
+/* preview */
+.pkg-preview h3 {
+    margin: 0 0 2px;
+    font-size: 1.15rem;
+}
+.pkg-prev-type {
+    margin: 0 0 8px;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ad-faint);
+}
+.pkg-prev-price {
+    margin: 12px 0;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--ad-orange);
+}
+.pkg-prev-price span {
+    font-size: 0.9rem;
+    color: var(--ad-muted);
+    font-weight: 600;
+}
+.pkg-preview h4 {
+    margin: 16px 0 6px;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ad-faint);
+}
+.pkg-preview ul {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 0.9rem;
+    color: var(--ad-text);
+}
+.pkg-preview li {
+    padding: 2px 0;
+}
+
+/* Crew & Vehicles - reuses the package editor grid and card styles */
+
+.res-addbtns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.res-addbtns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
