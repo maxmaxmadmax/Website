@@ -10,7 +10,7 @@
    RENDER     category pills, the grid, the empty state
    ========================================================================== */
 
-import { firebaseConfig, isFirebaseConfigured } from './firebase-config.js?v=861';
+import { firebaseConfig, isFirebaseConfigured } from './firebase-config.js?v=862';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = window.SG.esc;

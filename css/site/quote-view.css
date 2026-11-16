@@ -525,6 +525,11 @@
         padding: 16px 8px 40px;
     }
 
+    /* an invoice (no photo at the top) starts below the menu, not under it */
+    .quote-page .qv-wrap:not(:has(.qp-hero)) {
+        padding-top: calc(var(--sg-nav-height, 80px) + 12px);
+    }
+
     .qv-doc {
         padding: 20px 14px;
         border-radius: 10px;
