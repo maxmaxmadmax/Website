@@ -649,6 +649,7 @@ function bookingPanel(b) {
 
     if (editing) {
         const draft = state.bookDraft;
+        const vd = draft.id ? {} : venueRecord(draft.venue || 'Grand View Hotel, Bowen') || {}; // a new booking starts with the venue's defaults
         return `
       <section class="ad-card ad-book-panel">
         <h3>${draft.id ? 'Edit booking' : 'New booking'}</h3>
@@ -696,9 +697,9 @@ function bookingPanel(b) {
         </label>
         <label class="ad-field">Accommodation
           <select id="ad-f-accom">
-            <option value=""${!draft.accomId ? ' selected' : ''}>Auto - the venue's place if the DJ is from out of town</option>
-            <option value="none"${draft.accomId === 'none' ? ' selected' : ''}>None - driving home</option>
-            ${accomOptions(draft.accomId === 'none' ? '' : draft.accomId || '')}
+            <option value=""${!(draft.accomId || vd.accomId) ? ' selected' : ''}>Auto - the venue's place if the DJ is from out of town</option>
+            <option value="none"${(draft.accomId || vd.accomId) === 'none' ? ' selected' : ''}>None - driving home</option>
+            ${accomOptions((draft.accomId || vd.accomId) === 'none' ? '' : draft.accomId || vd.accomId || '')}
           </select>
         </label>
         <label class="ad-field">Template
@@ -708,8 +709,8 @@ function bookingPanel(b) {
 
         ${(() => {
             const rn = regularNightFor(draft.venue || 'Grand View Hotel, Bowen');
-            const st = draft.start || (!draft.id && rn ? rn.start : '') || (!draft.id ? '21:30' : '');
-            const fi = draft.finish || (!draft.id && rn ? rn.finish : '') || (!draft.id ? '01:30' : '');
+            const st = draft.start || vd.start || (!draft.id && rn ? rn.start : '') || (!draft.id ? '21:30' : '');
+            const fi = draft.finish || vd.finish || (!draft.id && rn ? rn.finish : '') || (!draft.id ? '01:30' : '');
             return `
         <div class="ad-book-times">
           <label class="ad-field">Start
@@ -721,7 +722,7 @@ function bookingPanel(b) {
         </div>`;
         })()}
         <label class="ad-field">Time (shown on the website)
-          <input type="text" id="ad-f-time" value="${attr(draft.time || '9:30 PM – Late')}">
+          <input type="text" id="ad-f-time" value="${attr(draft.time || vd.time || '9:30 PM – Late')}">
         </label>
 
         <label class="ad-field">Status
@@ -732,7 +733,10 @@ function bookingPanel(b) {
           </select>
         </label>
         <!--  Pay in full: no deposit option; once paid the booking turns Confirmed. -->
-        <label class="ad-field ent-payfull"><input type="checkbox" id="ad-f-payfull"${draft.payFull ? ' checked' : ''}> Pay in full up front (no deposit)</label>
+        <label class="ad-field ent-payfull"><input type="checkbox" id="ad-f-payfull"${draft.payFull || (!draft.id && vd.payFull) ? ' checked' : ''}> Pay in full up front (no deposit)</label>
+
+        <!--  Saves Invoice to, Template, Accommodation, times and Pay in full as this venue's defaults. -->
+        <button type="button" class="ad-btn" id="ad-f-defaults">&#9733; Make these ${esc(String(draft.venue || 'Grand View Hotel, Bowen').split(',')[0])}'s defaults</button>
 
         <!--  Repeat: book a residency for several weeks at once. -->
         <label class="ad-field">Repeat
@@ -1502,6 +1506,38 @@ function wireVenuesTab(desk) {
         })
     );
     const save = document.getElementById('vn-save');
+    const defs = document.getElementById('ad-f-defaults');
+    if (defs)
+        defs.addEventListener('click', async () => {
+            const val = (id) => String((document.getElementById(id) || {}).value || '').trim();
+            const venue = val('ad-f-venue') || 'Grand View Hotel, Bowen';
+            const rec = venueRecord(venue);
+            const [name, town] = venue.split(',').map((x) => x.trim());
+            const id = rec ? rec.id : slugify(name + ' ' + (town || ''), 80);
+            defs.disabled = true;
+            try {
+                await fb.f.setDoc(
+                    fb.f.doc(fb.db, 'venues', id),
+                    {
+                        ...(rec ? {} : { name, town: town || '', createdAt: Date.now() }),
+                        customerId: val('ad-f-cust'),
+                        templateId: val('ad-f-tpl'),
+                        accomId: val('ad-f-accom'),
+                        start: val('ad-f-start'),
+                        finish: val('ad-f-finish'),
+                        time: val('ad-f-time').slice(0, 60),
+                        payFull: !!(document.getElementById('ad-f-payfull') || {}).checked,
+                        updatedAt: Date.now()
+                    },
+                    { merge: true }
+                );
+                await loadPubSettings();
+                defs.textContent = '✓ Saved - new ' + name + ' bookings start with these';
+            } catch (err) {
+                defs.disabled = false;
+                window.alert(friendly(err));
+            }
+        });
     if (save)
         save.addEventListener('click', async () => {
             const val = (id) => String((document.getElementById(id) || {}).value || '').trim();
