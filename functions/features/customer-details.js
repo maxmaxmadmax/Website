@@ -34,6 +34,9 @@ exports.getDetailsForm = onCall(async (request) => {
     const q = doc.data();
     const c = q.customer || {};
     const ready = ['approved', 'sent', 'accepted', 'invoiced', 'paid'].includes(q.status) && q.token;
+    const quoteLink = ready ? SITE_URL + '/quote?t=' + q.token : '';
+    // details already on the quote: the link only leads to the quote now (they can't be changed here)
+    if (hasPayDetails(c)) return { locked: true, quoteLink };
     return {
         customer: {
             name: c.name || '',
@@ -52,7 +55,7 @@ exports.getDetailsForm = onCall(async (request) => {
         startDate: (q.hire && q.hire.startDate) || '',
         received: !!q.detailsReceivedAt,
         autoSend: !!(q.autoSendOnDetails && ready && !q.autoSentOnDetailsAt), // quote goes out the moment they submit
-        quoteLink: ready ? SITE_URL + '/quote?t=' + q.token : ''
+        quoteLink
     };
 });
 

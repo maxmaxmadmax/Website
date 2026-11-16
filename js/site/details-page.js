@@ -16,7 +16,7 @@
      START      load the form
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=860';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=861';
 
 /* ---- SETUP ---- */
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
@@ -72,6 +72,18 @@ function submitLabel(d) {
 }
 
 function render(d) {
+    // details already on the quote: no form, just the way to the quote
+    if (d.locked) {
+        document.getElementById('dt-root').innerHTML = `<section class="spn-sec spn-thanks-big">
+    <h2>We have your details</h2>
+    ${
+        d.quoteLink
+            ? `<p>Your quote is ready to look at:</p><p><a class="spn-btn" href="${esc(d.quoteLink)}">View your quote &rarr;</a></p>`
+            : '<p>Your quote will be emailed to you shortly.</p>'
+    }
+    <p class="spn-sub">Need to change something? Call Max on 0422 393 022.</p></section>`;
+        return;
+    }
     const c = d.customer || {};
     const date = isoFromPretty(c.eventDate) || d.startDate || '';
     // first / last name boxes - the quote still keeps one "name"

@@ -16,7 +16,7 @@
      START        load the booking
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=860';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=861';
 
 /* ---- SETUP ---- */
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
