@@ -24,9 +24,9 @@
 
 /* ---------- 1  Setup ---------- */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=862';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=862'; // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=862';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=863';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=863'; // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=863';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -673,9 +673,9 @@ function render(q) {
         : '';
 
     document.getElementById('quote-root').innerHTML =
-        (proposal ? proposalTop(q, days, totals) : '') +
+        proposalTop(q, days, totals) + // quotes and invoices both open with the photo and summary
         `
-    ${proposal ? '<h2 class="qp-h2 qp-h2-doc" id="qp-itemised">Itemised quote</h2>' : ''}
+    <h2 class="qp-h2 qp-h2-doc" id="qp-itemised">${isInvoice ? 'Itemised invoice' : 'Itemised quote'}</h2>
     <div class="qv-doc" id="qv-doc">
       ${statusBanner(q, isInvoice)}
       <div class="qv-top">
@@ -991,9 +991,33 @@ function includedList(p) {
     return items;
 }
 
-/*  What's included + quote details, under the investment table. */
+/*  What's included + quote (or invoice) details, under the investment table. */
 function quoteDetails(p) {
     const q = p.q;
+    if (q.kind === 'invoice') {
+        const m = paymentFacts(q);
+        return (
+            '<div class="qp-inv-extra">' +
+            '<div class="qp-incl' +
+            (p.isDj ? ' is-premium' : '') +
+            '"><p class="qp-mini">What&rsquo;s included</p><ul>' +
+            includedList(p)
+                .map((t) => '<li>' + t + '</li>')
+                .join('') +
+            '</ul></div>' +
+            '<div class="qp-qd"><p class="qp-mini">Invoice details</p><dl>' +
+            '<div><dt>Invoice</dt><dd>' +
+            esc(m.ref) +
+            '</dd></div>' +
+            (q.createdAt ? '<div><dt>Issued</dt><dd>' + esc(fmtDate(q.createdAt)) + '</dd></div>' : '') +
+            '<div><dt>' +
+            (m.owing ? 'To pay' : 'Paid') +
+            '</dt><dd>' +
+            money(m.owing || m.paid) +
+            '</dd></div>' +
+            '</dl></div></div>'
+        );
+    }
     const pct = q.depositPct || 50;
     const validUntil = q.createdAt ? fmtDate(q.createdAt + QUOTE_VALID_DAYS * 86400) : '';
     const toSecure = fullOnly(q)
@@ -1043,7 +1067,7 @@ function proposalTop(q, days, totals) {
       <div class="qp-hero-body">
         ${heroIntro(p)}
         ${tiles ? '<div class="qp-tiles">' + tiles + '</div>' : ''}
-        <p class="qp-ref">Quote ${esc(q.number || '')}${c.name ? ' &middot; Prepared for ' + esc(c.name) : ''}</p>
+        <p class="qp-ref">${q.kind === 'invoice' ? 'Invoice ' + esc(q.invoiceNumber || q.number || '') : 'Quote ' + esc(q.number || '')}${c.name ? ' &middot; Prepared for ' + esc(c.name) : ''}</p>
       </div>
     </section>
 
@@ -1057,7 +1081,7 @@ function proposalTop(q, days, totals) {
         <tfoot><tr><td>Total inc. GST</td><td></td><td></td><td>${money(q.totalCents)}</td></tr></tfoot>
       </table>
       ${quoteDetails(p)}
-      <a class="qp-jump" href="#qp-book">Accept &amp; secure your booking &darr;</a>
+      <a class="qp-jump" href="#qp-book">${q.kind !== 'invoice' ? 'Accept &amp; secure your booking' : paymentFacts(q).owing ? 'Pay your invoice' : 'Your payment'} &darr;</a>
     </section>`;
 }
 
