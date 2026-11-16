@@ -226,7 +226,7 @@ function gigsMainHtml(side) {
                                     }
                                     const b = row.b;
                                     const act = (state.talent || []).find((t) => t.slug === b.slug) || {};
-                                    return `<tr class="inv-row${state.bookingOpen === b.id && state.entPanel ? ' is-open' : ''}${b.date < today ? ' is-past' : ''}${b.status === 'unconfirmed' ? ' is-unconf' : ''}" data-book-open="${attr(b.id)}">
+                                    return `<tr class="inv-row${state.bookingOpen === b.id && state.entPanel ? ' is-open' : ''}${b.djPaidAt ? ' is-done' : ''}${b.status === 'unconfirmed' ? ' is-unconf' : ''}" data-book-open="${attr(b.id)}">
                       <td class="ent-date">${esc(prettyDate(b.date))}</td>
                       <td><span class="inv-item-cell"><span class="ad-act-face ent-face" style="${act.photo ? `background-image:url('/${attr(act.photo)}')` : ''}"></span><span class="inv-item-name">${esc(act.name || b.slug)}</span></span></td>
                       <td class="ad-cell-muted">${esc(String(b.venue || '—').split(',')[0])}</td>
@@ -448,6 +448,27 @@ function wireEntPage() {
             b.textContent = notes.length ? 'Done - see note' : 'Updated ✓';
             if (notes.length) window.alert(notes.join('\n\n'));
             setTimeout(() => render(), 900);
+        })
+    );
+    desk.querySelectorAll('[data-gig-make]').forEach((b) =>
+        b.addEventListener('click', async () => {
+            const id = b.getAttribute('data-gig-make');
+            b.disabled = true;
+            b.textContent = 'Making…';
+            try {
+                await fb.f.updateDoc(fb.f.doc(fb.db, 'talentSchedule', id), {
+                    customerId: b.getAttribute('data-cust'),
+                    templateId: b.getAttribute('data-tpl'),
+                    updatedAt: fb.f.serverTimestamp()
+                });
+                const notes = await gigSyncBookings([id]);
+                if (notes.length) window.alert(notes.join('\n\n'));
+                await loadSchedule();
+                render();
+            } catch (err) {
+                b.textContent = 'Could not make it';
+                window.alert(friendly(err));
+            }
         })
     );
     desk.querySelectorAll('[data-book-night]').forEach((b) =>
@@ -804,12 +825,36 @@ function bookingPanel(b) {
                     !b.templateId && 'Template',
                     (b.status || 'confirmed') !== 'confirmed' && 'Confirmed status'
                 ].filter(Boolean);
-                const noInv =
-                    !inv && missing.length
-                        ? '<p class="ent-noinv">&#9888; No invoice yet - press <b>Edit</b> and set ' +
-                          missing.join(' + ') +
-                          ', then Save.</p>'
-                        : '';
+                /* the venue's usual client + template (Venues tab, else its last booking) make it one click */
+                const venRec = venueRecord(b.venue) || {};
+                const lastAtVenue =
+                    (state.schedule || [])
+                        .filter((x) => x.customerId && x.templateId && samePub(x.venue, b.venue))
+                        .sort((x, y) => String(y.date).localeCompare(String(x.date)))[0] || {};
+                const useCust = b.customerId || venRec.customerId || lastAtVenue.customerId || '';
+                const useTpl = b.templateId || venRec.templateId || lastAtVenue.templateId || '';
+                const canMake = !inv && useCust && useTpl && (b.status || 'confirmed') === 'confirmed';
+                const noInv = canMake
+                    ? '<button type="button" class="ad-btn ad-btn-orange" data-gig-make="' +
+                      attr(b.id) +
+                      '" data-cust="' +
+                      attr(useCust) +
+                      '" data-tpl="' +
+                      attr(useTpl) +
+                      '">&#10010; Make invoice</button>'
+                    : !inv && missing.length
+                      ? '<p class="ent-noinv">&#9888; No invoice yet - press <b>Edit</b> and set ' +
+                        missing.join(' + ') +
+                        ', then Save.</p>'
+                      : '';
+                const paidBtn = b.djPaidAt
+                    ? '<button type="button" class="ad-btn ent-djok is-on" data-dj-paid="' +
+                      attr(b.id) +
+                      '" data-undo="1" title="Click to undo">&#10003; Entertainer paid</button>'
+                    : '<button type="button" class="ad-btn ent-djok" data-dj-paid="' +
+                      attr(b.id) +
+                      '">&#36; Mark entertainer paid</button>';
+                const invPaid = inv && (inv.status === 'paid' || inv.paymentStatus === 'paid');
                 return `${noInv}${dk ? '<p class="ent-deck">&#127911; Their deck: <b>' + esc(dk) + '</b></p>' : ''}${
                     b.djConfirmedAt
                         ? '<button type="button" class="ad-btn ent-djok is-on" data-dj-confirm="' +
@@ -818,10 +863,14 @@ function bookingPanel(b) {
                         : '<button type="button" class="ad-btn ent-djok" data-dj-confirm="' +
                           attr(b.id) +
                           '">&#10003; Mark DJ confirmed</button>'
-                }<button type="button" class="ad-btn" data-pub-times="${attr(b.id)}">&#128241; Text DJ their link</button>' + (b.djPaidAt
-                ? '<button type="button" class="ad-btn ent-djok is-on" data-dj-paid="' + attr(b.id) + '" data-undo="1" title="Click to undo">&#10003; Entertainer paid</button>'
-                : '<button type="button" class="ad-btn ent-djok" data-dj-paid="' + attr(b.id) + '">&#36; Mark entertainer paid</button>') + '${inv ? '<button type="button" class="ad-btn" data-dj-brief="' + attr(b.id) + '">&#128203; Text DJ the brief &amp; gear</button>' : ''}
-              ${b.templateId && b.customerId ? `<button type="button" class="ad-btn" data-gig-resync="${attr(b.id)}">&#8635; Update quote</button>` : ''}
+                }<button type="button" class="ad-btn" data-pub-times="${attr(b.id)}">&#128241; Text DJ their link</button>${paidBtn}${
+                    inv
+                        ? '<button type="button" class="ad-btn" data-dj-brief="' +
+                          attr(b.id) +
+                          '">&#128203; Text DJ the brief &amp; gear</button>'
+                        : ''
+                }
+              ${inv && !invPaid ? `<button type="button" class="ad-btn" data-gig-resync="${attr(b.id)}">&#8635; Update ${inv.kind === 'invoice' ? 'invoice' : 'quote'}</button>` : ''}
               ${inv ? `<a class="ad-btn" href="#/quoteDocs?q=${attr(inv.id)}">${inv.kind === 'invoice' ? 'Invoice' : 'Quote'} ${esc(money(inv.totalCents))} &middot; ${esc({ approved: 'ready', sent: 'sent', accepted: 'accepted', invoiced: 'unpaid', paid: 'paid' }[inv.status] || inv.status)}</a>` : ''}`;
             })()}
           </div>

@@ -318,17 +318,13 @@ async function gigSync(bookingId, opts = {}) {
     const b = bSnap.exists ? bSnap.data() : null;
     // UNCONFIRMED: a new venue's night, DJ held - it gets its quote too
     const live = b && ['confirmed', 'unconfirmed'].includes(b.status || 'confirmed') && b.templateId && b.customerId;
-    /*  A SENT quote nobody has accepted or paid can be updated when Max says
-      so - the venue's link shows the new version and it
-      stays "sent". Accepted / invoiced / paid ones never change.        */
-    const sentOk =
-        ex &&
-        ex.status === 'sent' &&
-        opts.force === true &&
-        !ex.acceptedAt &&
-        !(ex.amountPaidCents > 0) &&
-        !['bank', 'deposit', 'paid'].includes(ex.paymentStatus);
-    if (ex && !['approved', 'cancelled'].includes(ex.status) && !sentOk) return { locked: true, id: existing.id, status: ex.status };
+    /*  Sent, accepted or invoiced but NOT PAID: Max can still update it (he is asked first) -
+      the venue's link shows the new version and it keeps its status and kind.
+      Only once money has come in does it never change.                       */
+    const paid = !!ex && (ex.status === 'paid' || ex.amountPaidCents > 0 || ['bank', 'deposit', 'paid'].includes(ex.paymentStatus));
+    const sentOk = !!ex && opts.force === true && !paid && ['sent', 'accepted', 'invoiced'].includes(ex.status);
+    if (ex && !['approved', 'cancelled'].includes(ex.status) && !sentOk)
+        return { locked: true, paid, id: existing.id, status: ex.status, kind: ex.kind || 'quote' };
     if (!live) {
         if (existing && ex.status === 'approved')
             await existing.ref.update({
@@ -569,7 +565,8 @@ async function gigSync(bookingId, opts = {}) {
             ...clean,
             ...money,
             ...meta,
-            status: sentOk ? 'sent' : 'approved',
+            status: sentOk ? ex.status : 'approved',
+            kind: sentOk ? ex.kind || 'quote' : clean.kind,
             updatedAt: FieldValue.serverTimestamp()
         });
         return { updated: true, id: existing.id, totalCents: money.totalCents, hours, noRate: notes, askPrice };

@@ -1180,7 +1180,8 @@
     border-radius: 12px;
     font-size: 14px;
 }
-.inv-row.is-past td {
+/* a gig whose entertainer has been paid: done with */
+.inv-row.is-done td {
     opacity: 0.6;
 }
 

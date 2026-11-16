@@ -405,12 +405,14 @@ async function gigSyncBookings(ids) {
     for (const id of [...new Set(ids.filter(Boolean))]) {
         try {
             let r = await call('adminGigSync', { bookingId: id });
-            // SENT BUT NOT ACCEPTED: ask, then update it - the venue's link shows the new version
+            // ALREADY SENT / ACCEPTED / INVOICED, NOT PAID: ask, then update it - the venue's link shows the new version
             if (
                 r.locked &&
-                r.status === 'sent' &&
+                !r.paid &&
                 window.confirm(
-                    'This quote was already sent to the venue.\n\nUpdate it anyway? Their link will show the new times and price straight away (it is not emailed again).'
+                    'This ' +
+                        (r.kind === 'invoice' ? 'invoice' : 'quote') +
+                        ' has already gone to the venue.\n\nUpdate it anyway? Their link will show the new times and price straight away (it is not emailed again).'
                 )
             ) {
                 r = await call('adminGigSync', { bookingId: id, force: true });
@@ -423,12 +425,7 @@ async function gigSyncBookings(ids) {
                     r.askPrice.join(', ') +
                         ' is price on request - ask them for their fee, then open the quote and type it in (Amount = per hour).'
                 );
-            if (r.locked)
-                notes.push(
-                    r.status === 'sent'
-                        ? 'The quote was left as it was.'
-                        : "That gig's quote has been accepted or paid, so it was not changed."
-                );
+            if (r.locked) notes.push(r.paid ? "That gig's invoice has been paid, so it was not changed." : 'It was left as it was.');
         } catch (e) {
             notes.push('Invoice not updated: ' + friendly(e));
         }
