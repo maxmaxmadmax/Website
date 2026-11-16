@@ -408,8 +408,7 @@ async function gigSync(bookingId, opts = {}) {
             ? {
                   type: 'custom',
                   name: 'Accommodation',
-                  description:
-                      'Accommodation is required for this booking - provided by ' + (/^the\s/i.test(place.name) ? '' : 'the ') + place.name,
+                  description: 'Accommodation is required for this booking - provided by the venue',
                   qty: 1,
                   unitCents: 0,
                   days: 1,
@@ -558,7 +557,8 @@ async function gigSync(bookingId, opts = {}) {
         pubBookings: [id],
         pubNoRate: notes,
         gigHours: hours,
-        gigTemplateId: String(b.templateId)
+        gigTemplateId: String(b.templateId),
+        customerId: String(b.customerId) // the Customers record it bills, so saving it never makes a new one
     };
     if (existing) {
         await existing.ref.update({

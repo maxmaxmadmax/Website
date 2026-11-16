@@ -48,13 +48,21 @@ function custNameKey(v) {
         .replace(/\s+/g, ' ');
 }
 
-/*  The saved customer this contact belongs to: same email, else same phone. */
+/*  The saved customer this contact belongs to: same email, else same phone, else the same
+    name or business (unless both have emails and they differ - then they are different people). */
 function findCustomerMatch(c, skipId) {
     const e = custEmailKey(c.email),
         p = custPhoneKey(c.phone);
+    const list = (state.customers || []).filter((x) => x.id !== skipId);
+    const byContact = list.find((x) => (e && custEmailKey(x.email) === e) || (p && custPhoneKey(x.phone) === p));
+    if (byContact) return byContact;
+    const names = [custNameKey(c.name), custNameKey(c.business)].filter(Boolean);
+    if (!names.length) return null;
     return (
-        (state.customers || []).find(
-            (x) => x.id !== skipId && ((e && custEmailKey(x.email) === e) || (p && custPhoneKey(x.phone) === p))
+        list.find(
+            (x) =>
+                [custNameKey(x.name), custNameKey(x.business)].some((k) => k && names.includes(k)) &&
+                !(e && x.email && custEmailKey(x.email) !== e)
         ) || null
     );
 }

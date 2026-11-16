@@ -735,7 +735,9 @@ function routeFromHash() {
             if (doc) {
                 quoteDraft = quoteFromDoc(doc);
                 rebuildAllKits();
-                const cm = findCustomerMatch(doc.customer || {});
+                const cm =
+                    (doc.customerId && (state.customers || []).find((x) => x.id === doc.customerId)) ||
+                    findCustomerMatch(doc.customer || {});
                 quoteCustomerId = cm ? cm.id : '';
                 state.openQuoteId = q;
                 state.quoteLoadedId = q;
