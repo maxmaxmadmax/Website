@@ -595,6 +595,19 @@ exports.adminPreviewClientEmail = onCall(async (request) => {
     }
     if (kind === 'quote' || kind === 'invoice') {
         const { renderQuoteLinkEmail } = require('../lib/quote-doc-email');
+        // one quote ("See the email" beside Send Quote), else the most recent one
+        const quoteId = String((request.data || {}).quoteId || '');
+        if (quoteId) {
+            const one = await db.collection('quotes').doc(quoteId.slice(0, 200)).get();
+            if (!one.exists) throw new HttpsError('not-found', 'That quote was not found.');
+            const d = one.data();
+            const out = renderQuoteLinkEmail(d, SITE_URL + '/quote?t=' + (d.token || ''));
+            const c = d.customer || {};
+            return {
+                ...out,
+                note: 'To ' + (c.email || '(no email yet)') + (c.ccEmail ? ', cc ' + c.ccEmail : '') + '. Nothing has been sent.'
+            };
+        }
         const snap = await db.collection('quotes').orderBy('createdAt', 'desc').limit(40).get();
         const doc = snap.docs.find((d) =>
             kind === 'invoice' ? d.data().kind === 'invoice' : d.data().kind !== 'invoice' && d.data().status !== 'draft'

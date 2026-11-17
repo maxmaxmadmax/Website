@@ -884,6 +884,7 @@ function quoteBuilderHtml() {
         <button type="button" class="ad-btn${doc ? '' : ' ad-btn-primary'}" id="q-save">Save</button>
         <label class="qb-tpl" title="A template is copied for DJ gig invoices and can't be sent"><input type="checkbox" data-qtpl${quoteDraft.isTemplate ? ' checked' : ''}> Template</label>
         ${!quoteDraft.isTemplate && doc && status === 'draft' ? '<button type="button" class="ad-btn ad-btn-primary" id="q-approve">&#10003; Approve as quote</button>' : ''}
+        ${!quoteDraft.isTemplate && doc && status !== 'draft' ? '<button type="button" class="ad-btn ad-btn-ghost" id="q-emailprev">&#128065; See the email</button>' : ''}
         ${!quoteDraft.isTemplate && doc && status !== 'draft' ? `<button type="button" class="ad-btn ad-btn-primary" id="q-send">${status === 'approved' ? '&#9993; Send Quote' : '&#9993; Resend'}</button>` : ''}
       </div>
       ${
@@ -2531,6 +2532,29 @@ function wireQuoteActions() {
                 render();
             } catch (e) {
                 /* message shown */
+            }
+        });
+
+    // SEE THE EMAIL: saves, then shows the email Send Quote would send (sends nothing)
+    const emailPrev = document.getElementById('q-emailprev');
+    if (emailPrev)
+        emailPrev.addEventListener('click', async () => {
+            try {
+                await saveQuoteDoc(emailPrev, true);
+                const r = await call('adminPreviewClientEmail', { kind: 'quote', quoteId: state.openQuoteId });
+                const box = document.createElement('div');
+                box.innerHTML = `<div class="ad-scrim"></div>
+    <div class="ad-modal qb-email-modal" role="dialog" aria-label="Email preview">
+      <header class="ad-modal-head"><h2>${esc(r.subject || 'Email')}</h2><button type="button" class="ad-drawer-close" aria-label="Close">&times;</button></header>
+      <div class="ad-modal-body"><p class="ad-cell-muted">${esc(r.note || '')}</p><iframe sandbox="" class="ms-log-frame" title="Email preview"></iframe></div>
+    </div>`;
+                box.querySelector('iframe').srcdoc = r.html || '';
+                const close = () => box.remove();
+                box.querySelector('.ad-scrim').addEventListener('click', close);
+                box.querySelector('.ad-drawer-close').addEventListener('click', close);
+                document.body.appendChild(box);
+            } catch (e) {
+                setMsg(msg(), (e && e.message) || 'Could not show the email.', 'is-bad');
             }
         });
 

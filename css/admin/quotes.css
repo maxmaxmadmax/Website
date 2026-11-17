@@ -17,6 +17,13 @@
     margin-bottom: 16px;
     flex-wrap: wrap;
 }
+/* "See the email" popup: wide enough for the email */
+.qb-email-modal {
+    width: min(760px, calc(100vw - 32px));
+}
+.qb-email-modal .ms-log-frame {
+    height: 70vh;
+}
 .qb-back {
     background: none;
     border: none;
