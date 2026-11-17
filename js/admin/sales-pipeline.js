@@ -8,8 +8,8 @@
    the quotes and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=868'; // who still owes money
-import { isBooked, pickLineProgress } from './stock.js?v=868';
+import { owesMoney } from './messages.js?v=869'; // who still owes money
+import { isBooked, pickLineProgress } from './stock.js?v=869';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -190,6 +190,20 @@ function filterJobs(jobs, f) {
         return true;
     });
 
+    /*  DEFAULT ("when"): upcoming jobs soonest first, then past jobs most recent
+        first, then jobs with no date. The orange "today" line goes between.  */
+    if (f.sort === 'when') {
+        const rank = (q) => {
+            const t = eventSortKey(q);
+            if (!t) return [2, 0];
+            return t >= today ? [0, t] : [1, -t];
+        };
+        return out.sort((a, b) => {
+            const [ra, ta] = rank(a),
+                [rb, tb] = rank(b);
+            return ra - rb || ta - tb;
+        });
+    }
     const dir = f.sortDir === 'asc' ? 1 : -1;
     const by =
         {
@@ -225,7 +239,7 @@ export function pipelineHtml(jobs, f, h) {
     </button>`;
     const withClient = jobs.filter((q) => q.status === 'approved' || q.status === 'sent').length;
     const head = (key, label) => {
-        const on = f.sort === key;
+        const on = f.sort === key || (key === 'date' && f.sort === 'when'); // the default sort is by event date
         return `<th><button type="button" class="sp-sort${on ? ' is-on' : ''}" data-sp-sort="${key}">${label}
       <span aria-hidden="true">${on ? (f.sortDir === 'asc' ? '&#8593;' : '&#8595;') : '&#8645;'}</span></button></th>`;
     };
@@ -302,6 +316,18 @@ function jobNumber(q) {
 const OPEN_STATUSES = ['approved', 'sent', 'accepted', 'invoiced'];
 const MORE_SUMMARY = '<summary aria-label="More"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>';
 
+/*  ROW COLOUR: green = paid in full, light green = deposit paid, red = event
+    has passed and it is still not paid in full; past events are faded.     */
+function rowTone(q, today) {
+    const t = eventSortKey(q);
+    const past = !!t && t < today;
+    if (q.isTemplate || ['cancelled', 'declined'].includes(q.status)) return past ? ' sp-is-past' : '';
+    if (q.vendor || q.status === 'paid' || q.paymentStatus === 'paid') return ' sp-is-paid' + (past ? ' sp-is-past' : '');
+    if (past && OPEN_STATUSES.includes(q.status)) return ' sp-is-overdue';
+    if (q.paymentStatus === 'deposit') return ' sp-is-deposit' + (past ? ' sp-is-past' : '');
+    return past ? ' sp-is-past' : '';
+}
+
 /* the table rows */
 function rowsHtml(rows, f, h) {
     if (!rows.length) {
@@ -309,28 +335,51 @@ function rowsHtml(rows, f, h) {
         return `<tr><td colspan="6" class="sp-empty">${msg}</td></tr>`;
     }
     const steps = ['Estimate', 'Quote', 'Payment', 'Job'];
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const today = now.getTime();
+    // the orange "today" line: between the last upcoming job and the first past one (date sorts only)
+    let lineDone = !['when', 'date'].includes(f.sort);
+    const todayLine = () =>
+        `<tr class="sp-today"><td colspan="6"><span>Today &middot; ${now.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}</span></td></tr>`;
     return rows
-        .map((q) => {
-            const st = stageOf(q);
-            const c = q.customer || {};
-            const id = h.attr(q.id);
-            const num = jobNumber(q);
-            // only the website bot makes estimates - a quote Max made himself skips that step
-            const fromBot = q.source === 'bot' || q.createdBy === 'bot';
-            const progress = steps
-                .map((label, i) => {
-                    const done = i < st.step;
-                    const skipped = q.vendor || (i === 0 && !fromBot); // vendors don't use these steps at all - all greyed
-                    return `<span class="sp-step${stepClass(skipped, done, st.step)}"${skipped ? ' title="Made as a quote - no estimate step"' : ''}><b>${done && !skipped ? '&#10003;' : ''}</b><em>${label}</em></span>`;
-                })
-                .join('');
-            const [ico, tone, nTitle, nSub] = st.next;
-            const nextCell = `<td><span class="sp-next sp-${tone}">${svg(ico)}<span><b>${h.esc(nTitle)}</b><em>${h.esc(nSub)}</em></span></span></td>`;
-            const dateCell = `<td class="sp-date">${h.esc(eventDateText(q) || '—')}</td>`;
-            if (q.vendor) {
-                const vendorBtn = (kind, label) => `<button type="button" data-sp-vendor="${kind}" data-id="${id}">${label}</button>`;
-                return `
-      <tr data-open-q="${id}"${q.jobCancelled && q.status === 'cancelled' ? ' class="sp-is-cancelled"' : ''}>
+        .map((q, i) => {
+            let before = '';
+            const t = eventSortKey(q);
+            if (!lineDone && t && i > 0) {
+                const prev = eventSortKey(rows[i - 1]);
+                if (prev && prev >= today !== t >= today) {
+                    before = todayLine();
+                    lineDone = true;
+                }
+            }
+            return before + jobRow(q, h, steps, rowTone(q, today));
+        })
+        .join('');
+}
+
+/* one job's row */
+function jobRow(q, h, steps, rowCls) {
+    const st = stageOf(q);
+    const c = q.customer || {};
+    const id = h.attr(q.id);
+    const num = jobNumber(q);
+    // only the website bot makes estimates - a quote Max made himself skips that step
+    const fromBot = q.source === 'bot' || q.createdBy === 'bot';
+    const progress = steps
+        .map((label, i) => {
+            const done = i < st.step;
+            const skipped = q.vendor || (i === 0 && !fromBot); // vendors don't use these steps at all - all greyed
+            return `<span class="sp-step${stepClass(skipped, done, st.step)}"${skipped ? ' title="Made as a quote - no estimate step"' : ''}><b>${done && !skipped ? '&#10003;' : ''}</b><em>${label}</em></span>`;
+        })
+        .join('');
+    const [ico, tone, nTitle, nSub] = st.next;
+    const nextCell = `<td><span class="sp-next sp-${tone}">${svg(ico)}<span><b>${h.esc(nTitle)}</b><em>${h.esc(nSub)}</em></span></span></td>`;
+    const dateCell = `<td class="sp-date">${h.esc(eventDateText(q) || '—')}</td>`;
+    if (q.vendor) {
+        const vendorBtn = (kind, label) => `<button type="button" data-sp-vendor="${kind}" data-id="${id}">${label}</button>`;
+        return `
+      <tr data-open-q="${id}" class="${rowCls}${q.jobCancelled && q.status === 'cancelled' ? ' sp-is-cancelled' : ''}">
         <td class="sp-cust">
           <strong>${h.esc(c.name || 'Vendor')}<span class="ad-bot-tag">Vendor</span></strong>
           <span>${h.esc(c.eventName || '')}${q.invoiceNumber ? ' <i>' + h.esc(q.invoiceNumber) + '</i>' : ''}</span>
@@ -351,28 +400,28 @@ function rowsHtml(rows, f, h) {
           </details>
         </td>
       </tr>`;
-            }
-            const btn = (act, label, cls) =>
-                `<button type="button"${cls ? ` class="${cls}"` : ''} data-sp-act="${act}" data-id="${id}">${label}</button>`;
-            const isOpen = OPEN_STATUSES.includes(q.status);
-            const shelved = st.tab === 'archived' || st.tab === 'cancelled';
-            const late = lateFeeDue(q);
-            let links = '<span>Save it first to get a link</span>';
-            if (q.token) {
-                links = `<a href="/quote?t=${h.attr(q.token)}" target="_blank" rel="noopener">Open customer page</a>
+    }
+    const btn = (act, label, cls) =>
+        `<button type="button"${cls ? ` class="${cls}"` : ''} data-sp-act="${act}" data-id="${id}">${label}</button>`;
+    const isOpen = OPEN_STATUSES.includes(q.status);
+    const shelved = st.tab === 'archived' || st.tab === 'cancelled';
+    const late = lateFeeDue(q);
+    let links = '<span>Save it first to get a link</span>';
+    if (q.token) {
+        links = `<a href="/quote?t=${h.attr(q.token)}" target="_blank" rel="noopener">Open customer page</a>
               <button type="button" data-sp-copy="${h.attr('https://www.soundzgood.com.au/quote?t=' + q.token)}">Copy customer link</button>
               <a href="/quote?t=${h.attr(q.token)}&print=1" target="_blank" rel="noopener">Download PDF</a>`;
-            }
-            let crew = '';
-            if (q.status !== 'cancelled' && !q.isTemplate) {
-                crew = q.crewToken
-                    ? `<a href="/picklist?t=${h.attr(q.crewToken)}" target="_blank" rel="noopener">Open pick list</a>
+    }
+    let crew = '';
+    if (q.status !== 'cancelled' && !q.isTemplate) {
+        crew = q.crewToken
+            ? `<a href="/picklist?t=${h.attr(q.crewToken)}" target="_blank" rel="noopener">Open pick list</a>
               <button type="button" data-sp-copy="${h.attr('https://www.soundzgood.com.au/picklist?t=' + q.crewToken)}">Copy crew link</button>`
-                    : btn('picklist', 'Make pick list');
-                crew += btn('gearlist', 'Email gear list') + btn('geartest', 'Test gear + pick list emails to me');
-            }
-            return `
-      <tr data-open-q="${id}">
+            : btn('picklist', 'Make pick list');
+        crew += btn('gearlist', 'Email gear list') + btn('geartest', 'Test gear + pick list emails to me');
+    }
+    return `
+      <tr data-open-q="${id}" class="${rowCls}">
         <td class="sp-cust">
           <strong>${h.esc(q.isTemplate ? q.templateName || 'Untitled template' : (c.eventName || c.eventType || c.name || c.business || 'No name yet') + (q.gigDj && q.gigDj.name ? ' · ' + q.gigDj.name : ''))}${q.source === 'bot' ? '<span class="ad-bot-tag">Bot</span>' : ''}${q.detailsReceivedAt && ['draft', 'approved'].includes(q.status) ? '<span class="ad-bot-tag sp-details-tag">Details in</span>' : ''}</strong>
           <span>${h.esc(q.isTemplate ? '' : c.eventName || c.eventType ? c.name || c.business || '' : '')}${num ? ' <i>' + h.esc(num) + '</i>' : ''}</span>
@@ -402,8 +451,6 @@ function rowsHtml(rows, f, h) {
           </details>
         </td>
       </tr>`;
-        })
-        .join('');
 }
 
 /* the clicks: tabs, stat cards, sort headers, search, dates, copy link,
