@@ -426,6 +426,10 @@ function wireQuoteList() {
         open(id) {
             location.hash = '#/quoteDocs?q=' + id;
         },
+        // the dashboard's crew picker - saves to the job, so both pages show it
+        crew(id) {
+            openCrewPicker(id, false);
+        },
         // email every paid vendor (not yet emailed) their invoice & event guide
         async sendAllVendors(btn) {
             const unsent = vendorInvoiceJobs().filter((v) => !v.emailedAt);

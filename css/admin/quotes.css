@@ -1183,6 +1183,13 @@
 .sp-cust strong {
     font-size: 14px;
 }
+.sp-cust .sp-crew {
+    color: var(--ad-text-soft);
+    font-size: 0.78rem;
+}
+.sp-cust .sp-crew.is-none {
+    color: var(--ad-amber);
+}
 .sp-cust span {
     display: block;
     color: var(--ad-muted);

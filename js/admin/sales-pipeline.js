@@ -8,8 +8,8 @@
    the quotes and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=870'; // who still owes money
-import { isBooked, pickLineProgress } from './stock.js?v=870';
+import { owesMoney } from './messages.js?v=871'; // who still owes money
+import { isBooked, pickLineProgress } from './stock.js?v=871';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -358,6 +358,13 @@ function rowsHtml(rows, f, h) {
         .join('');
 }
 
+/* who's working the job (same crew as the dashboard); booked jobs with nobody say so */
+function crewLine(q, h) {
+    const crew = q.crewAssigned || [];
+    if (crew.length) return '<span class="sp-crew">&#128119; ' + h.esc(crew.map((x) => x.name).join(', ')) + '</span>';
+    return isBooked(q) && !q.isTemplate && q.status !== 'cancelled' ? '<span class="sp-crew is-none">No crew yet</span>' : '';
+}
+
 /* one job's row */
 function jobRow(q, h, steps, rowCls) {
     const st = stageOf(q);
@@ -418,6 +425,7 @@ function jobRow(q, h, steps, rowCls) {
             ? `<a href="/picklist?t=${h.attr(q.crewToken)}" target="_blank" rel="noopener">Open pick list</a>
               <button type="button" data-sp-copy="${h.attr('https://www.soundzgood.com.au/picklist?t=' + q.crewToken)}">Copy crew link</button>`
             : btn('picklist', 'Make pick list');
+        crew = btn('crew', (q.crewAssigned || []).length ? 'Change crew' : 'Assign crew') + crew;
         crew += btn('gearlist', 'Email gear list') + btn('geartest', 'Test gear + pick list emails to me');
     }
     return `
@@ -425,6 +433,7 @@ function jobRow(q, h, steps, rowCls) {
         <td class="sp-cust">
           <strong>${h.esc(q.isTemplate ? q.templateName || 'Untitled template' : (c.eventName || c.eventType || c.name || c.business || 'No name yet') + (q.gigDj && q.gigDj.name ? ' · ' + q.gigDj.name : ''))}${q.source === 'bot' ? '<span class="ad-bot-tag">Bot</span>' : ''}${q.detailsReceivedAt && ['draft', 'approved'].includes(q.status) ? '<span class="ad-bot-tag sp-details-tag">Details in</span>' : ''}</strong>
           <span>${h.esc(q.isTemplate ? '' : c.eventName || c.eventType ? c.name || c.business || '' : '')}${num ? ' <i>' + h.esc(num) + '</i>' : ''}</span>
+          ${crewLine(q, h)}
         </td>
         ${dateCell}
         <td><div class="sp-progress">${progress}</div></td>
@@ -532,7 +541,8 @@ export function wirePipeline(getJobs, f, h, act) {
                 geartest: act.geartest,
                 remind: act.remind,
                 confirmjob: act.confirmjob,
-                unconfirmjob: act.unconfirmjob
+                unconfirmjob: act.unconfirmjob,
+                crew: act.crew
             }[a.getAttribute('data-sp-act')];
             if (fn) fn(a.getAttribute('data-id'));
             return;
