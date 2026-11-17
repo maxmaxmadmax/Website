@@ -8,8 +8,8 @@
    the quotes and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=865'; // who still owes money
-import { isBooked, pickLineProgress } from './stock.js?v=865';
+import { owesMoney } from './messages.js?v=866'; // who still owes money
+import { isBooked, pickLineProgress } from './stock.js?v=866';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -374,8 +374,8 @@ function rowsHtml(rows, f, h) {
             return `
       <tr data-open-q="${id}">
         <td class="sp-cust">
-          <strong>${h.esc(q.isTemplate ? q.templateName || 'Untitled template' : c.name || c.business || 'No name yet')}${q.source === 'bot' ? '<span class="ad-bot-tag">Bot</span>' : ''}${q.detailsReceivedAt && ['draft', 'approved'].includes(q.status) ? '<span class="ad-bot-tag sp-details-tag">Details in</span>' : ''}</strong>
-          <span>${h.esc(c.eventName || c.eventType || '')}${num ? ' <i>' + h.esc(num) + '</i>' : ''}</span>
+          <strong>${h.esc(q.isTemplate ? q.templateName || 'Untitled template' : (c.eventName || c.eventType || c.name || c.business || 'No name yet') + (q.gigDj && q.gigDj.name ? ' · ' + q.gigDj.name : ''))}${q.source === 'bot' ? '<span class="ad-bot-tag">Bot</span>' : ''}${q.detailsReceivedAt && ['draft', 'approved'].includes(q.status) ? '<span class="ad-bot-tag sp-details-tag">Details in</span>' : ''}</strong>
+          <span>${h.esc(q.isTemplate ? '' : c.eventName || c.eventType ? c.name || c.business || '' : '')}${num ? ' <i>' + h.esc(num) + '</i>' : ''}</span>
         </td>
         ${dateCell}
         <td><div class="sp-progress">${progress}</div></td>
