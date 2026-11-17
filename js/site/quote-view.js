@@ -24,9 +24,9 @@
 
 /* ---------- 1  Setup ---------- */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=867';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=867'; // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=867';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=868';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=868'; // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=868';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -323,6 +323,26 @@ function operatorRole(name) {
     if (/light/i.test(name)) return 'Runs lighting during your event';
     if (/audio|sound|\bav\b|visual/i.test(name)) return 'Runs sound & AV during your event';
     return 'On site to run your event';
+}
+
+/*  What's included: "AV technician on site to run your sound and lighting during the event (5 hrs)" -
+    the job title from the line, how many, the gear actually on the quote, and the hours when the
+    line gives them. groups = the quote's gear groups (Audio, Lighting, Vision...). */
+function technicianLine(l, groups) {
+    const name = String(l.name || '');
+    const has = (g) => groups.includes(g);
+    const avGear = [has('Audio') && 'sound', has('Lighting') && 'lighting', has('Vision') && 'vision'].filter(Boolean);
+    const [role, job] = /light/i.test(name)
+        ? ['Lighting technician', 'your lighting']
+        : /audio|sound|\bav\b|visual/i.test(name)
+          ? ['AV technician', 'your ' + (avGear.length ? joinAnd(avGear).replace(' & ', ' and ') : 'sound')]
+          : [name || 'Technician', 'your show'];
+    const n = Math.max(1, Math.round(l.qty || 1));
+    const hrs = /([\d.]+)\s*hrs?\b/i.exec(String(l.description || ''));
+    return (
+        esc((n > 1 ? n + ' x ' + role + 's' : role) + ' on site to run ' + job + ' during the event') +
+        (hrs ? ' (' + esc(hrs[1]) + ' hrs)' : '')
+    );
 }
 
 function crewDesc(l) {
@@ -991,7 +1011,16 @@ function includedList(p) {
         items.push('Bump-in &amp; bump-out crew' + (hours ? ' (' + hours + ' crew hours)' : ''));
     }
     // an AV / lighting technician on the job (charged on top of bump-in and bump-out)
-    if ((p.q.lines || []).some((l) => l.resType === 'staff')) items.push('Experienced crew to operate your show');
+    (p.q.lines || [])
+        .filter((l) => l.resType === 'staff')
+        .forEach((l) =>
+            items.push(
+                technicianLine(
+                    l,
+                    t.groups.map((g) => g.name)
+                )
+            )
+        );
     items.push('GST included in the total');
     return items;
 }

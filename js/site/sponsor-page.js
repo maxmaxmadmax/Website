@@ -15,8 +15,8 @@
      START      load the event
    ========================================================================== */
 
-import { SPONSOR_LEVELS, EVENT_COSTS } from './sponsor-data.js?v=867';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured, eventId as defaultEventId } from './firebase-config.js?v=867';
+import { SPONSOR_LEVELS, EVENT_COSTS } from './sponsor-data.js?v=868';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured, eventId as defaultEventId } from './firebase-config.js?v=868';
 
 /* ---- SETUP ---- */
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';

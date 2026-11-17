@@ -9,7 +9,7 @@
    state and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { SPONSOR_LEVELS } from '../site/sponsor-data.js?v=867';
+import { SPONSOR_LEVELS } from '../site/sponsor-data.js?v=868';
 
 const LEVEL = Object.fromEntries(SPONSOR_LEVELS.map((l) => [l.key, l]));
 
