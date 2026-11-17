@@ -667,8 +667,11 @@
     display: block;
     font-size: 0.72rem;
     color: var(--ad-faint);
-    margin: 2px 0 0 21px;
+    margin: 2px 0 0 21px; /* lines up under the tick-box text */
     font-style: normal;
+}
+.qb-labnote.is-flush {
+    margin-left: 0; /* a row with no tick box */
 }
 .qb-laboff {
     color: var(--ad-faint);

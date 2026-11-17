@@ -1,15 +1,15 @@
 /* SOUNDZGOOD ADMIN - boot.js
    The one module: brings in the helper modules and hands what the admin files use to the page.
    admin.html loads this first, then js/admin/core.js and the feature files. */
-import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from '../site/firebase-config.js?v=872';
-import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=872';
-import { stockUsage, pickItems, jobRange } from './stock.js?v=872';
-import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=872';
-import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=872';
-import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=872';
-import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=872';
-import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=872';
-import { expandKit } from './kit.js?v=872';
+import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from '../site/firebase-config.js?v=873';
+import { sysDraftFrom, systemPanelHtml, wireSystemPanel, sysSummary } from './system-builder.js?v=873';
+import { stockUsage, pickItems, jobRange } from './stock.js?v=873';
+import { pipelineHtml, wirePipeline } from './sales-pipeline.js?v=873';
+import { messagesHtml, wireMessages, sendReminder } from './messages.js?v=873';
+import { sponsorDirHtml, wireSponsorDir } from './sponsor-directory.js?v=873';
+import { dashboardHtml, dashboardData, openRegularNights } from './dashboard.js?v=873';
+import { eventHubHtml, eventGroup, BUDGET_STARTER, eventCardHtml, eventFigures, timelineHtml, FAQ_STANDARD } from './event-hub.js?v=873';
+import { expandKit } from './kit.js?v=873';
 
 Object.assign(window, {
     firebaseConfig,

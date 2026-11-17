@@ -1523,7 +1523,7 @@ function renderQuoteTotals() {
         deliveryRow = `
     <div class="qb-sumrow">
       <span>Travel &amp; transport${quoteDraft.deliveryTown ? ' — ' + esc(quoteDraft.deliveryTown) : ''}
-        <em class="qb-labnote" style="margin-left:0">Fuel and vehicle running costs · ${quoteDraft.deliveryKm} km each way (${quoteDraft.deliveryKm * 2} km return) @ $0.80/km</em></span>
+        <em class="qb-labnote is-flush">Fuel and vehicle running costs · ${quoteDraft.deliveryKm} km each way (${quoteDraft.deliveryKm * 2} km return) @ $0.80/km</em></span>
       <span>${esc(money(delCents))}</span>
     </div>`;
     // 2% booking & admin fee row, with an on/off tick
@@ -1538,7 +1538,7 @@ function renderQuoteTotals() {
             ? `
     <div class="qb-sumrow">
       <span><label class="qb-labtoggle"><input type="checkbox" data-qsuper${quoteDraft.superExcluded ? '' : ' checked'}> Performer super (${SUPER_PCT}%)</label>
-        <em class="qb-labnote" style="margin-left:0">Of the DJ's performance fee - required by law for performers</em></span>
+        <em class="qb-labnote">Of the DJ's performance fee - required by law for performers</em></span>
       <span class="${quoteDraft.superExcluded ? 'qb-laboff' : ''}">${quoteDraft.superExcluded ? 'off' : esc(money(m.superCents))}</span>
     </div>`
             : '';
@@ -1580,7 +1580,7 @@ function renderQuoteTotals() {
     <div class="qb-sumrow qb-sumgrand"><span>Total (incl GST)</span><span id="qsum-total">${esc(money(m.totalCents))}</span></div>
     <div class="qb-sumrow">
       <span><label class="qb-labtoggle"><input type="checkbox" data-qpayfull${quoteDraft.payFull ? ' checked' : ''}> Pay in full up front</label>
-        <em class="qb-labnote" style="margin-left:0">No deposit option - the customer pays the whole total to book</em></span>
+        <em class="qb-labnote">No deposit option - the customer pays the whole total to book</em></span>
     </div>`;
 }
 

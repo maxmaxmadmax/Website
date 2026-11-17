@@ -24,9 +24,9 @@
 
 /* ---------- 1  Setup ---------- */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=872';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=872'; // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=872';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=873';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=873'; // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=873';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -1010,17 +1010,9 @@ function includedList(p) {
         const hours = labourHours(t.labour);
         items.push('Bump-in &amp; bump-out crew' + (hours ? ' (' + hours + ' crew hours)' : ''));
     }
-    // an AV / lighting technician on the job (charged on top of bump-in and bump-out)
-    (p.q.lines || [])
-        .filter((l) => l.resType === 'staff')
-        .forEach((l) =>
-            items.push(
-                technicianLine(
-                    l,
-                    t.groups.map((g) => g.name)
-                )
-            )
-        );
+    // each AV / lighting technician (charged on top of bump-in and bump-out)
+    const gearGroups = t.groups.map((g) => g.name);
+    (p.q.lines || []).filter((l) => l.resType === 'staff').forEach((l) => items.push(technicianLine(l, gearGroups)));
     items.push('GST included in the total');
     return items;
 }
@@ -1028,53 +1020,35 @@ function includedList(p) {
 /*  What's included + quote (or invoice) details, under the investment table. */
 function quoteDetails(p) {
     const q = p.q;
+    const row = (dt, dd) => '<div><dt>' + dt + '</dt><dd>' + dd + '</dd></div>';
+    const issued = q.createdAt ? row('Issued', esc(fmtDate(q.createdAt))) : '';
+    let details;
     if (q.kind === 'invoice') {
         const m = paymentFacts(q);
-        return (
-            '<div class="qp-inv-extra">' +
-            '<div class="qp-incl' +
-            (p.isDj ? ' is-premium' : '') +
-            '"><p class="qp-mini">What&rsquo;s included</p><ul>' +
-            includedList(p)
-                .map((t) => '<li>' + t + '</li>')
-                .join('') +
-            '</ul></div>' +
-            '<div class="qp-qd"><p class="qp-mini">Invoice details</p><dl>' +
-            '<div><dt>Invoice</dt><dd>' +
-            esc(m.ref) +
-            '</dd></div>' +
-            (q.createdAt ? '<div><dt>Issued</dt><dd>' + esc(fmtDate(q.createdAt)) + '</dd></div>' : '') +
-            '<div><dt>' +
-            (m.owing ? 'To pay' : 'Paid') +
-            '</dt><dd>' +
-            money(m.owing || m.paid) +
-            '</dd></div>' +
-            '</dl></div></div>'
-        );
+        details =
+            'Invoice details</p><dl>' + row('Invoice', esc(m.ref)) + issued + row(m.owing ? 'To pay' : 'Paid', money(m.owing || m.paid));
+    } else {
+        const pct = q.depositPct || 50;
+        const validUntil = q.createdAt ? fmtDate(q.createdAt + QUOTE_VALID_DAYS * 86400) : '';
+        const toSecure = fullOnly(q)
+            ? 'Payment in full &middot; ' + money(q.totalCents || 0)
+            : pct + '% deposit &middot; ' + money(Math.round(((q.totalCents || 0) * pct) / 100));
+        details =
+            'Quote details</p><dl>' +
+            row('Quote', esc(q.number || '')) +
+            issued +
+            (validUntil ? row('Valid until', esc(validUntil)) : '') +
+            row('To secure', toSecure);
     }
-    const pct = q.depositPct || 50;
-    const validUntil = q.createdAt ? fmtDate(q.createdAt + QUOTE_VALID_DAYS * 86400) : '';
-    const toSecure = fullOnly(q)
-        ? 'Payment in full &middot; ' + money(q.totalCents || 0)
-        : pct + '% deposit &middot; ' + money(Math.round(((q.totalCents || 0) * pct) / 100));
     return (
-        '<div class="qp-inv-extra">' +
-        '<div class="qp-incl' +
+        '<div class="qp-inv-extra"><div class="qp-incl' +
         (p.isDj ? ' is-premium' : '') +
         '"><p class="qp-mini">What&rsquo;s included</p><ul>' +
         includedList(p)
             .map((t) => '<li>' + t + '</li>')
             .join('') +
-        '</ul></div>' +
-        '<div class="qp-qd"><p class="qp-mini">Quote details</p><dl>' +
-        '<div><dt>Quote</dt><dd>' +
-        esc(q.number || '') +
-        '</dd></div>' +
-        (q.createdAt ? '<div><dt>Issued</dt><dd>' + esc(fmtDate(q.createdAt)) + '</dd></div>' : '') +
-        (validUntil ? '<div><dt>Valid until</dt><dd>' + esc(validUntil) + '</dd></div>' : '') +
-        '<div><dt>To secure</dt><dd>' +
-        toSecure +
-        '</dd></div>' +
+        '</ul></div><div class="qp-qd"><p class="qp-mini">' +
+        details +
         '</dl></div></div>'
     );
 }
