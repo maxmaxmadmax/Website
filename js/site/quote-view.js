@@ -24,9 +24,9 @@
 
 /* ---------- 1  Setup ---------- */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=863';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=863'; // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=863';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=864';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=864'; // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=864';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -272,6 +272,9 @@ const COST_GROUP = {
     backline: 'Backline',
     'dj mixer': 'DJ equipment',
     vision: 'Vision',
+    computer: 'Vision', // laptops, presenters and iPads sit with the screens
+    laptop: 'Vision',
+    ipad: 'Vision',
     power: 'Audio' // power & cables count as Audio
 };
 const COST_GROUP_ORDER = ['Audio', 'Backline', 'Lighting', 'Staging', 'DJ equipment', 'Vision', 'Other']; // display order

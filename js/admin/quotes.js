@@ -1433,6 +1433,9 @@ const COST_GROUP = {
     backline: 'Backline',
     'dj mixer': 'DJ equipment',
     vision: 'Vision',
+    computer: 'Vision', // laptops, presenters and iPads sit with the screens
+    laptop: 'Vision',
+    ipad: 'Vision',
     power: 'Audio' // power & cables count as Audio
 };
 const COST_GROUP_ORDER = ['Audio', 'Backline', 'Lighting', 'Staging', 'DJ equipment', 'Vision', 'Other']; // Max's order
