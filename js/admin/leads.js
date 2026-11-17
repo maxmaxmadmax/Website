@@ -205,8 +205,8 @@ function subscribeToLeads() {
             collection(fb.db, 'leads'),
             (snap) => {
                 let rows = snapRows(snap);
-                // Findo's new finds stay with Phil until he's checked and filled them in
-                const withPhil = (r) => (r.foundBy === 'Findo' || r.foundBy === 'Tell') && !r.enrichedAt;
+                // older Findo / Tell finds stay with Phil until he's checked them; Findo now fills in as he finds (findoFilled), so those show straight away
+                const withPhil = (r) => (r.foundBy === 'Findo' || r.foundBy === 'Tell') && !r.enrichedAt && !r.findoFilled;
                 state.withPhil = rows.filter(withPhil).length;
                 // "Delete" only archives: kept so Findo won't re-add them, restorable from the menu
                 state.archivedLeads = rows.filter((r) => r.archived);

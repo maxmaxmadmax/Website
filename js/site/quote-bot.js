@@ -15,7 +15,7 @@
    MOUNT       the floating launcher and the chat panel
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=876';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=877';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 const esc = window.SG.esc;

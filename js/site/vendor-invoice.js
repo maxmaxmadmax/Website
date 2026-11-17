@@ -23,9 +23,9 @@
 
 /* ---------- 1  Setup ---------- */
 
-import { termBodyHtml } from './terms-data.js?v=876';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=876';
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=876';
+import { termBodyHtml } from './terms-data.js?v=877';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO } from './vendor-terms-data.js?v=877';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=877';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
