@@ -758,6 +758,7 @@ function quoteFromDoc(doc) {
         superExcluded: doc.superExcluded === true,
         accomOff: doc.accomOff === true,
         autoSendOnDetails: doc.autoSendOnDetails === true,
+        payFull: doc.payFull === true,
         isTemplate: doc.isTemplate === true,
         templateName: doc.templateName || '',
         posterUrl: doc.posterUrl || '',
@@ -1572,7 +1573,11 @@ function renderQuoteTotals() {
     <div class="qb-sumrow qb-sumdisc"><span>Discount</span>
       <span class="qb-discinput">&minus;<span class="qb-inline-dollar">$</span><input class="qb-num qb-num-total" type="number" min="0" step="1" data-qdisc value="${attr(discVal)}" placeholder="0"></span></div>
     <div class="qb-sumrow"><span>GST (10%)</span><span id="qsum-gst">${esc(money(m.gstCents))}</span></div>
-    <div class="qb-sumrow qb-sumgrand"><span>Total (incl GST)</span><span id="qsum-total">${esc(money(m.totalCents))}</span></div>`;
+    <div class="qb-sumrow qb-sumgrand"><span>Total (incl GST)</span><span id="qsum-total">${esc(money(m.totalCents))}</span></div>
+    <div class="qb-sumrow">
+      <span><label class="qb-labtoggle"><input type="checkbox" data-qpayfull${quoteDraft.payFull ? ' checked' : ''}> Pay in full up front</label>
+        <em class="qb-labnote" style="margin-left:0">No deposit option - the customer pays the whole total to book</em></span>
+    </div>`;
 }
 
 /*  Update just the computed figures (used while typing in the discount box,
@@ -2280,6 +2285,10 @@ function wireQuoteBuilder() {
             renderQuoteTotals();
             return;
         }
+        if (t.hasAttribute('data-qpayfull')) {
+            quoteDraft.payFull = t.checked; // no deposit option on the quote page
+            return;
+        }
         if (t.hasAttribute('data-qsuper')) {
             // performer super on / off
             quoteDraft.superExcluded = !t.checked;
@@ -2719,6 +2728,7 @@ function quoteDraftForSave() {
         superExcluded: quoteDraft.superExcluded === true,
         accomOff: quoteDraft.accomOff === true,
         autoSendOnDetails: quoteDraft.autoSendOnDetails === true,
+        payFull: quoteDraft.payFull === true,
         isTemplate: quoteDraft.isTemplate === true,
         templateName: String(quoteDraft.templateName || '').slice(0, 80),
         labourExcluded: quoteDraft.labourExcluded === true,

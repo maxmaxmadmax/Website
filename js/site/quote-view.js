@@ -24,9 +24,9 @@
 
 /* ---------- 1  Setup ---------- */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=866';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=866'; // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=866';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=867';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=867'; // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=867';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -990,6 +990,8 @@ function includedList(p) {
         const hours = labourHours(t.labour);
         items.push('Bump-in &amp; bump-out crew' + (hours ? ' (' + hours + ' crew hours)' : ''));
     }
+    // an AV / lighting technician on the job (charged on top of bump-in and bump-out)
+    if ((p.q.lines || []).some((l) => l.resType === 'staff')) items.push('Experienced crew to operate your show');
     items.push('GST included in the total');
     return items;
 }
@@ -1425,7 +1427,9 @@ function bankTransferDue(q, m) {
     if (fullOnly(q)) {
         return (
             accepted +
-            '<p class="qp-full-note qp-overdue"><b>Payment due now.</b> Your event is less than 7 days away. Please transfer the full <strong>' +
+            '<p class="qp-full-note qp-overdue"><b>Payment due now.</b> ' +
+            (q.payFull === true ? 'This booking is paid in full up front.' : 'Your event is less than 7 days away.') +
+            ' Please transfer the full <strong>' +
             money(m.owing) +
             '</strong> today to keep your booking.</p>' +
             bank +

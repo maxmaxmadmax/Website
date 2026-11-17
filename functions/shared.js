@@ -525,6 +525,7 @@ function sanitizeQuote(q) {
         superExcluded: q.superExcluded === true, // performer super off
         accomOff: q.accomOff === true, // accommodation note removed (DJ driving home)
         autoSendOnDetails: q.autoSendOnDetails === true, // send the quote when the customer fills in their details
+        payFull: q.payFull === true, // "pay in full up front" - no deposit option
         isTemplate: q.isTemplate === true, // Sales Pipeline > Templates: a DJ gig invoice to copy - never sent
         templateName: text(q.templateName, 80), // its own name, e.g. "Grand View Friday"
         posterUrl: /^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/soundzgood-8c86f[\w.-]*\/o\/quote-images%2F[^\s"'<>]+$/.test(
