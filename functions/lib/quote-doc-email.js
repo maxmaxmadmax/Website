@@ -43,24 +43,28 @@ function docLabel(q) {
     return q.kind === 'invoice' ? 'invoice' : 'quote';
 }
 
-function html(q, link) {
+/*  opts.updated: it went out before, so the email says it has been updated.
+    opts.note: Max's own words (what changed), shown first. */
+function html(q, link, opts = {}) {
     const isInvoice = q.kind === 'invoice';
     const ref = isInvoice ? q.invoiceNumber || q.number : q.number;
     const who = (q.customer && q.customer.name) || 'there';
     const verb = isInvoice ? 'View your invoice' : 'View &amp; accept your quote';
+    const note = String(opts.note || '').trim();
 
     return `<!doctype html>
 <html><body style="margin:0;padding:24px;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
   <div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;overflow:hidden;">
     <div style="background:#111;padding:24px;">
       <p style="margin:0;color:#ff6b00;font-size:12px;letter-spacing:2px;text-transform:uppercase;">SoundzGood Whitsundays</p>
-      <h1 style="margin:6px 0 0;color:#fff;font-size:22px;">Your ${esc(docLabel(q))} is ready</h1>
+      <h1 style="margin:6px 0 0;color:#fff;font-size:22px;">Your ${esc(docLabel(q))} ${opts.updated ? 'has been updated' : 'is ready'}</h1>
     </div>
     <div style="padding:24px;">
       <p style="margin:0 0 16px;font-size:15px;color:#111;">
-        Hi ${esc(who)}, here's your ${esc(docLabel(q))}
+        Hi ${esc(who)}, ${opts.updated ? "here's your updated" : "here's your"} ${esc(docLabel(q))}
         <strong>${esc(ref)}</strong>${q.customer && q.customer.eventName ? ' for ' + esc(q.customer.eventName) : ''}.
       </p>
+      ${note ? '<p style="margin:0 0 16px;font-size:15px;color:#111;line-height:1.6;white-space:pre-wrap;">' + esc(note) + '</p>' : ''}
       <div style="background:#fff7ef;border:1px solid #ffd9b3;border-radius:10px;padding:16px 20px;margin:0 0 20px;text-align:center;">
         <p style="margin:0 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#b25b00;">Total (incl GST)</p>
         <p style="margin:0;font-size:28px;font-weight:bold;color:#111;">${esc(money(q.totalCents))}</p>
@@ -93,12 +97,14 @@ function html(q, link) {
 </body></html>`;
 }
 
-function text(q, link) {
+function text(q, link, opts = {}) {
     const ref = q.kind === 'invoice' ? q.invoiceNumber || q.number : q.number;
+    const note = String(opts.note || '').trim();
     return [
-        `Your ${docLabel(q)} ${ref} - SoundzGood Whitsundays`,
+        `Your ${docLabel(q)} ${ref} ${opts.updated ? 'has been updated' : ''}- SoundzGood Whitsundays`.replace('  ', ' '),
         '',
-        `Hi ${(q.customer && q.customer.name) || 'there'}, here's your ${docLabel(q)}.`,
+        `Hi ${(q.customer && q.customer.name) || 'there'}, here's your ${opts.updated ? 'updated ' : ''}${docLabel(q)}.`,
+        ...(note ? ['', note] : []),
         `Total (incl GST): ${money(q.totalCents)}`,
         '',
         `View it here: ${link}`,
@@ -108,7 +114,7 @@ function text(q, link) {
     ].join('\n');
 }
 
-async function sendQuoteLinkEmail(q, link) {
+async function sendQuoteLinkEmail(q, link, opts = {}) {
     const tx = transport();
     if (!tx) {
         logger.warn('quote email: SMTP not configured');
@@ -134,9 +140,9 @@ async function sendQuoteLinkEmail(q, link) {
             // a copy of every email goes to the office
             bcc: OFFICE,
             replyTo: OFFICE,
-            subject: `Your ${docLabel(q)} ${q.kind === 'invoice' ? q.invoiceNumber || q.number : q.number} from SoundzGood`,
-            text: text(q, link),
-            html: html(q, link)
+            subject: quoteSubject(q, opts),
+            text: text(q, link, opts),
+            html: html(q, link, opts)
         });
         return { sent: true };
     } catch (err) {
@@ -234,9 +240,13 @@ function renderPaymentReminder(q, link, info) {
 }
 
 /*  For the Messages page preview. */
-function renderQuoteLinkEmail(q, link) {
+function quoteSubject(q, opts = {}) {
     const ref = q.kind === 'invoice' ? q.invoiceNumber || q.number : q.number;
-    return { subject: `Your ${docLabel(q)} ${ref} from SoundzGood`, html: html(q, link) };
+    return `Your ${opts.updated ? 'updated ' : ''}${docLabel(q)} ${ref} from SoundzGood`;
+}
+
+function renderQuoteLinkEmail(q, link, opts = {}) {
+    return { subject: quoteSubject(q, opts), html: html(q, link, opts) };
 }
 
 module.exports = { sendQuoteLinkEmail, renderQuoteLinkEmail, sendPaymentReminderEmail, renderPaymentReminder };

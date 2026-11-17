@@ -17,12 +17,20 @@
     margin-bottom: 16px;
     flex-wrap: wrap;
 }
-/* "See the email" popup: wide enough for the email */
+/* "Preview & send" popup: wide enough for the email, no sideways scroll */
 .qb-email-modal {
     width: min(760px, calc(100vw - 32px));
 }
+.qb-email-modal .ad-modal-body {
+    overflow-x: hidden;
+}
+.qb-email-to {
+    overflow-wrap: anywhere; /* long cc lists wrap */
+}
 .qb-email-modal .ms-log-frame {
-    height: 70vh;
+    height: 55vh;
+    display: block;
+    box-sizing: border-box;
 }
 .qb-back {
     background: none;

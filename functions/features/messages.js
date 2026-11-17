@@ -601,11 +601,16 @@ exports.adminPreviewClientEmail = onCall(async (request) => {
             const one = await db.collection('quotes').doc(quoteId.slice(0, 200)).get();
             if (!one.exists) throw new HttpsError('not-found', 'That quote was not found.');
             const d = one.data();
-            const out = renderQuoteLinkEmail(d, SITE_URL + '/quote?t=' + (d.token || ''));
+            // same note and 'updated' wording that Send uses
+            const updated = d.status !== 'approved' && !!(d.sentAt || d.lastEmailedAt || d.emailCount);
+            const out = renderQuoteLinkEmail(d, SITE_URL + '/quote?t=' + (d.token || ''), {
+                note: String((request.data || {}).note || '').slice(0, 1500),
+                updated
+            });
             const c = d.customer || {};
             return {
                 ...out,
-                note: 'To ' + (c.email || '(no email yet)') + (c.ccEmail ? ', cc ' + c.ccEmail : '') + '. Nothing has been sent.'
+                note: 'To ' + (c.email || '(no email yet)') + (c.ccEmail ? ', cc ' + c.ccEmail : '') + '. Nothing has been sent yet.'
             };
         }
         const snap = await db.collection('quotes').orderBy('createdAt', 'desc').limit(40).get();

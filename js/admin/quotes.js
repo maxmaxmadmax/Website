@@ -889,8 +889,7 @@ function quoteBuilderHtml() {
         <button type="button" class="ad-btn${doc ? '' : ' ad-btn-primary'}" id="q-save">Save</button>
         <label class="qb-tpl" title="A template is copied for DJ gig invoices and can't be sent"><input type="checkbox" data-qtpl${quoteDraft.isTemplate ? ' checked' : ''}> Template</label>
         ${!quoteDraft.isTemplate && doc && status === 'draft' ? '<button type="button" class="ad-btn ad-btn-primary" id="q-approve">&#10003; Approve as quote</button>' : ''}
-        ${!quoteDraft.isTemplate && doc && status !== 'draft' ? '<button type="button" class="ad-btn ad-btn-ghost" id="q-emailprev">&#128065; See the email</button>' : ''}
-        ${!quoteDraft.isTemplate && doc && status !== 'draft' ? `<button type="button" class="ad-btn ad-btn-primary" id="q-send">${status === 'approved' ? '&#9993; Send Quote' : '&#9993; Resend'}</button>` : ''}
+        ${!quoteDraft.isTemplate && doc && status !== 'draft' ? '<button type="button" class="ad-btn ad-btn-primary" id="q-send">&#9993; Preview &amp; send</button>' : ''}
       </div>
       ${
           quoteDraft.isTemplate
@@ -2548,40 +2547,62 @@ function wireQuoteActions() {
             }
         });
 
-    // SEE THE EMAIL: saves, then shows the email Send Quote would send (sends nothing)
-    const emailPrev = document.getElementById('q-emailprev');
-    if (emailPrev)
-        emailPrev.addEventListener('click', async () => {
-            try {
-                await saveQuoteDoc(emailPrev, true);
-                const r = await call('adminPreviewClientEmail', { kind: 'quote', quoteId: state.openQuoteId });
-                const box = document.createElement('div');
-                box.innerHTML = `<div class="ad-scrim"></div>
-    <div class="ad-modal qb-email-modal" role="dialog" aria-label="Email preview">
-      <header class="ad-modal-head"><h2>${esc(r.subject || 'Email')}</h2><button type="button" class="ad-drawer-close" aria-label="Close">&times;</button></header>
-      <div class="ad-modal-body"><p class="ad-cell-muted">${esc(r.note || '')}</p><iframe sandbox="" class="ms-log-frame" title="Email preview"></iframe></div>
-    </div>`;
-                box.querySelector('iframe').srcdoc = r.html || '';
-                const close = () => box.remove();
-                box.querySelector('.ad-scrim').addEventListener('click', close);
-                box.querySelector('.ad-drawer-close').addEventListener('click', close);
-                document.body.appendChild(box);
-            } catch (e) {
-                setMsg(msg(), (e && e.message) || 'Could not show the email.', 'is-bad');
-            }
-        });
-
+    /*  PREVIEW & SEND: saves, shows the exact email (plus an optional note on what
+        changed, e.g. "we've removed the TVs as asked"), and only sends on
+        Confirm & send. A quote that went out before says "updated".          */
     const send = document.getElementById('q-send');
     if (send)
         send.addEventListener('click', async () => {
-            await saveQuoteDoc(send, true);
-            if (state.openQuoteId === '__new__') return;
             try {
-                const res = await run('adminSendQuote', { id: state.openQuoteId }, 'Sent to the customer.');
-                if (res && !res.sent) setMsg(msg(), 'Not sent: ' + (res.error || res.reason || 'unknown'), 'is-bad');
-                render();
+                await saveQuoteDoc(send, true);
+                if (state.openQuoteId === '__new__') return;
+                const id = state.openQuoteId;
+                const box = document.createElement('div');
+                box.innerHTML = `<div class="ad-scrim"></div>
+    <div class="ad-modal qb-email-modal" role="dialog" aria-label="Preview and send">
+      <header class="ad-modal-head"><h2 data-subj>Loading…</h2><button type="button" class="ad-drawer-close" aria-label="Close">&times;</button></header>
+      <div class="ad-modal-body">
+        <p class="ad-cell-muted qb-email-to" data-to></p>
+        <label>Add a note (optional) - e.g. what changed<textarea data-note rows="2" maxlength="1500" placeholder="As asked, we've removed the TVs."></textarea></label>
+        <iframe sandbox="" class="ms-log-frame" title="Email preview"></iframe>
+      </div>
+      <footer class="ad-modal-foot"><button type="button" class="ad-btn" data-x>Cancel</button><button type="button" class="ad-btn ad-btn-primary" data-go>&#9993; Confirm &amp; send</button></footer>
+    </div>`;
+                document.body.appendChild(box);
+                const close = () => box.remove();
+                box.querySelector('.ad-scrim').addEventListener('click', close);
+                box.querySelector('.ad-drawer-close').addEventListener('click', close);
+                box.querySelector('[data-x]').addEventListener('click', close);
+                const noteBox = box.querySelector('[data-note]');
+                // the preview follows the note as it's typed (a short pause, then redraw)
+                const draw = async () => {
+                    const r = await call('adminPreviewClientEmail', { kind: 'quote', quoteId: id, note: noteBox.value });
+                    box.querySelector('[data-subj]').textContent = r.subject || 'Email';
+                    box.querySelector('[data-to]').textContent = r.note || '';
+                    box.querySelector('iframe').srcdoc = r.html || '';
+                };
+                let wait = 0;
+                noteBox.addEventListener('input', () => {
+                    clearTimeout(wait);
+                    wait = setTimeout(() => draw().catch(() => {}), 600);
+                });
+                await draw();
+                box.querySelector('[data-go]').addEventListener('click', async (e) => {
+                    e.target.disabled = true;
+                    e.target.textContent = 'Sending…';
+                    try {
+                        const res = await run('adminSendQuote', { id, note: noteBox.value }, 'Sent to the customer.');
+                        if (res && !res.sent) setMsg(msg(), 'Not sent: ' + (res.error || res.reason || 'unknown'), 'is-bad');
+                        close();
+                        render();
+                    } catch (err) {
+                        window.alert((err && err.message) || 'Could not send.'); // the page message sits behind the popup
+                        e.target.disabled = false;
+                        e.target.textContent = '✉ Confirm & send';
+                    }
+                });
             } catch (e) {
-                /* message shown */
+                setMsg(msg(), (e && e.message) || 'Could not show the email.', 'is-bad');
             }
         });
 
