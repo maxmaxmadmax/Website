@@ -8,8 +8,8 @@
    the quotes and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=873'; // who still owes money
-import { isBooked, pickLineProgress } from './stock.js?v=873';
+import { owesMoney } from './messages.js?v=874'; // who still owes money
+import { isBooked, pickLineProgress } from './stock.js?v=874';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -190,20 +190,9 @@ function filterJobs(jobs, f) {
         return true;
     });
 
-    /*  DEFAULT ("when"): upcoming jobs soonest first, then past jobs most recent
-        first, then jobs with no date. The orange "today" line goes between.  */
-    if (f.sort === 'when') {
-        const rank = (q) => {
-            const t = eventSortKey(q);
-            if (!t) return [2, 0];
-            return t >= today ? [0, t] : [1, -t];
-        };
-        return out.sort((a, b) => {
-            const [ra, ta] = rank(a),
-                [rb, tb] = rank(b);
-            return ra - rb || ta - tb;
-        });
-    }
+    /*  DEFAULT ("when"): in order of the event, oldest first, jobs with no date last.
+        The orange "today" line sits between past and upcoming.              */
+    if (f.sort === 'when') return out.sort((a, b) => (eventSortKey(a) || Infinity) - (eventSortKey(b) || Infinity));
     const dir = f.sortDir === 'asc' ? 1 : -1;
     const by =
         {
@@ -466,6 +455,10 @@ function jobRow(q, h, steps, rowCls) {
    and opening a job. f is the view's filter state (kept by the caller so it
    survives re-renders). act = { open(id), newQuote(), duplicate(id),
    archive(id), restore(id), del(id), paid(id) } - the admin page does the real work. */
+let atToday = false; // the list has been scrolled to the Today line on this visit
+window.addEventListener('hashchange', () => {
+    atToday = false; // left the list (or opened a job) - next time it opens at today again
+});
 export function wirePipeline(getJobs, f, h, act) {
     const body = document.getElementById('q-rows');
     const paint = () => {
@@ -480,6 +473,12 @@ export function wirePipeline(getJobs, f, h, act) {
         wirePipeline(getJobs, f, h, act);
     };
     paint();
+    // opens at today, not at the oldest job (once each time you come to the list, not on every live update)
+    const line = body && f.sort === 'when' && body.querySelector('.ad-today');
+    if (line && !atToday) {
+        line.scrollIntoView({ block: 'center' });
+        atToday = true;
+    }
 
     const root = document.querySelector('.sp');
     if (!root) return;
