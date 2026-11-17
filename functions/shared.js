@@ -858,6 +858,9 @@ async function autoGearOnDeposit(id) {
         if (!snap.exists) return;
         const q = snap.data();
         if (!pickReady(q) || q.gearAutoDepositAt) return;
+        // the event is already over (e.g. marked paid weeks later): no gear / pick list email
+        const end = (q.hire && (q.hire.endDate || q.hire.startDate)) || '';
+        if (/^\d{4}-\d{2}-\d{2}$/.test(end) && end < brisbaneTodayISO()) return;
         await ref.update({ gearAutoDepositAt: FieldValue.serverTimestamp() }); // claim it first - a webhook retry can't double-send
         await sendGearListEmail(ref, { ...q }, 'deposit');
     } catch (err) {

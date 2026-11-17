@@ -8,8 +8,8 @@
    the quotes and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=869'; // who still owes money
-import { isBooked, pickLineProgress } from './stock.js?v=869';
+import { owesMoney } from './messages.js?v=870'; // who still owes money
+import { isBooked, pickLineProgress } from './stock.js?v=870';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -125,7 +125,7 @@ export function stageOf(q) {
 /* the tabs along the top: [key, label, which jobs] */
 const TABS = [
     ['all', 'All', (q) => stageOf(q).tab !== 'archived' && !q.isTemplate],
-    ['action', 'Needs action', (q) => q.status === 'draft' || q.status === 'approved'],
+    ['action', 'Needs action', (q) => !q.isTemplate && (q.status === 'draft' || q.status === 'approved')],
     ['estimates', 'Estimates', (q) => stageOf(q).tab === 'estimates'],
     ['quotes', 'Quotes', (q) => stageOf(q).tab === 'quotes'],
     ['payment', 'Awaiting payment', (q) => stageOf(q).tab === 'payment'],
@@ -237,7 +237,7 @@ export function pipelineHtml(jobs, f, h) {
       <span class="ad-tile-ico is-${tone}">${svg(icon)}</span>
       <span class="ad-tile-body"><b class="ad-tile-value">${num}</b><span class="ad-tile-label">${title}</span><em class="ad-tile-note">${sub}</em></span>
     </button>`;
-    const withClient = jobs.filter((q) => q.status === 'approved' || q.status === 'sent').length;
+    const withClient = jobs.filter((q) => !q.isTemplate && (q.status === 'approved' || q.status === 'sent')).length;
     const head = (key, label) => {
         const on = f.sort === key || (key === 'date' && f.sort === 'when'); // the default sort is by event date
         return `<th><button type="button" class="sp-sort${on ? ' is-on' : ''}" data-sp-sort="${key}">${label}
