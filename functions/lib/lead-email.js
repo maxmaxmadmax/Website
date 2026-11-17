@@ -6,9 +6,9 @@
    and edited by hand first. NEVER auto-sends - it is always a human pressing
    the button.
 
-   The body is plain text the admin wrote/edited, so we send it as-is (text)
-   and also wrap it in the same dark letterhead as the other SoundzGood mail so
-   it looks like it came from the business.
+   The body is plain text the admin wrote/edited, and it goes out as PLAIN
+   TEXT ONLY - no letterhead, no colours - so it reads like a normal email
+   Max typed himself (Max, 17 Nov 2026).
 
    SENDING NEVER THROWS to the caller beyond a returned { sent:false }.
    ========================================================================== */
@@ -18,8 +18,7 @@ const logger = require('firebase-functions/logger');
 
 const SELLER = {
     name: 'SoundzGood Whitsundays',
-    email: process.env.SG_FROM_EMAIL || 'bookings@soundzgood.com.au',
-    site: 'www.soundzgood.com.au'
+    email: process.env.SG_FROM_EMAIL || 'bookings@soundzgood.com.au'
 };
 const OFFICE = process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au';
 
@@ -38,22 +37,9 @@ function transport() {
     return nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user, pass } });
 }
 
-/*  The admin's plain-text message, wrapped in the letterhead. Line breaks
-    become <br> so the paragraphing they typed survives.                   */
+/*  Preview only (Messages page): the message as the reader sees plain text. */
 function leadHtml(body) {
-    const safe = esc(body).replace(/\n/g, '<br>');
-    return `<!doctype html>
-<html><body style="margin:0;padding:24px;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
-  <div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;overflow:hidden;">
-    <div style="background:#111;padding:20px 24px;">
-      <p style="margin:0;color:#ff6b00;font-size:12px;letter-spacing:2px;text-transform:uppercase;">SoundzGood Whitsundays</p>
-    </div>
-    <div style="padding:24px;font-size:15px;color:#111;line-height:1.6;">${safe}</div>
-    <div style="padding:16px 24px;background:#fafafa;border-top:1px solid #eee;">
-      <p style="margin:0;font-size:12px;color:#777;">${esc(SELLER.name)} &middot; ${esc(SELLER.email)} &middot; ${esc(SELLER.site)}</p>
-    </div>
-  </div>
-</body></html>`;
+    return '<div style="white-space:pre-wrap;font-family:Arial,Helvetica,sans-serif;font-size:14px;">' + esc(body) + '</div>';
 }
 
 /*  Send one outreach email. Returns { sent, reason?, error? }. */
@@ -72,8 +58,7 @@ async function sendLeadEmail({ to, subject, body }) {
             to,
             replyTo: OFFICE,
             subject: subject || 'SoundzGood Whitsundays',
-            text: String(body || ''),
-            html: leadHtml(body || '')
+            text: String(body || '') // plain text only - no html, so no theming
         });
         return { sent: true };
     } catch (err) {

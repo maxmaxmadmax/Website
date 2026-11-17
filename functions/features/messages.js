@@ -567,7 +567,7 @@ exports.adminPreviewClientEmail = onCall(async (request) => {
             html: leadHtml(
                 'Hi there,\n\nThis is where your own message goes - you write it each time in the Lead Generator.\n\nCheers,\nMax'
             ),
-            note: 'You write these each time - this shows the letterhead it goes out in.'
+            note: 'You write these each time - they go out as plain text, like a normal email.'
         };
     }
     if (kind === 'reminder') {
