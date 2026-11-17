@@ -68,8 +68,9 @@ function quoteEventISO(q) {
     return (q.hire && q.hire.startDate) || '';
 }
 
-/* GEAR + PICK LIST REMINDERS for jobs 3 days out and jobs on today: staff get the pick list at 6am; the
-   customer / band gear list goes at 9:35am. Each part is marked once sent
+/* GEAR + PICK LIST REMINDERS for jobs 3 days out and jobs on today: staff get the pick list at 6am
+   (booked jobs, 3 days out and on the day); the customer's team gets the gear list at 9:35am 3 days out
+   only - accepted jobs too, not just booked ones (Max, 18 Nov 2026). Each part is marked once sent
    ("staff_" / "gear_" + reason + date), and the 9:35 run also sends any
    staff list the 6am run missed. Older jobs with one shared key count as
    done. */
@@ -78,7 +79,8 @@ async function runGearReminders(which) {
     const snap = await db.collection('quotes').where('status', 'in', ['invoiced', 'paid']).get();
     for (const doc of snap.docs) {
         const q = doc.data();
-        if (!pickReady(q) || q.archived) continue;
+        const booked = pickReady(q);
+        if (!(booked || q.acceptedAt) || q.archived) continue;
         const ev = quoteEventISO(q);
         if (!ev) continue;
         const reason = addDaysISO(ev, -3) === today ? '3days' : ev === today ? 'today' : '';
@@ -86,8 +88,11 @@ async function runGearReminders(which) {
         const key = reason + '_' + ev; // a new date = new reminders
         const done = q.gearReminders || {};
         const old = !!done[key];
-        const needStaff = !old && !done['staff_' + key];
-        const needGear = which === 'customers' && !old && !done['gear_' + key];
+        const needStaff = booked && !old && !done['staff_' + key];
+        // the team's copy: 3 days out only, and not twice in a day (accepted today = already sent)
+        const sentToday =
+            q.gearAutoAcceptAt && new Intl.DateTimeFormat('en-CA', { timeZone: MSG_TZ }).format(q.gearAutoAcceptAt.toDate()) === today;
+        const needGear = which === 'customers' && reason === '3days' && !sentToday && !old && !done['gear_' + key];
         if (!needStaff && !needGear) continue;
         try {
             await doc.ref.update({

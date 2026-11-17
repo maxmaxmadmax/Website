@@ -14,6 +14,7 @@ const {
     db,
     emailList,
     gearLinkToken,
+    autoGearOnAccept,
     hasPayDetails,
     limitIp,
     listOpen
@@ -183,7 +184,7 @@ exports.getGearShareLink = onCall(async (request) => {
 /*  PUBLIC: "Share the gear list with your team" on the quote page. The
     customer keeps their own list of band / tour manager / tech emails
     (customer.gearEmails, max 10). They get the gear list with NO prices
-    when the deposit is in, 3 days before and on the day. The office is told. */
+    when the quote is accepted and 3 days before. The office is told. */
 exports.setGearTeam = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
     await limitIp(request, 'gearteam', 20, 60);
     const d = request.data || {};
@@ -222,6 +223,8 @@ exports.setGearTeam = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request
     } catch (err) {
         logger.warn('gear team: office email', err && err.message);
     }
+    // already accepted but no list went out yet (nobody was on it then): send it now
+    if (q.acceptedAt && !q.gearAutoAcceptAt) await autoGearOnAccept(doc.id);
     return { gearEmails };
 });
 

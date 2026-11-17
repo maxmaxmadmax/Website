@@ -14,6 +14,7 @@ const {
     SMTP_USER,
     STRIPE_SECRET_KEY,
     addDaysISO,
+    autoGearOnAccept,
     autoGearOnDeposit,
     brisbaneToday,
     brisbaneTodayISO,
@@ -173,6 +174,7 @@ exports.adminSetQuoteStatus = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async 
     }
 
     await ref.update(update);
+    if (status === 'accepted') await autoGearOnAccept(ref.id); // accepted for them - their team gets the gear list
     if (update.status === 'paid') await autoGearOnDeposit(ref.id); // paid in full by bank / cash - gear list out
     return { ok: true, invoiceNumber: update.invoiceNumber || snap.data().invoiceNumber || '' };
 });
@@ -720,7 +722,7 @@ exports.getQuote = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
 });
 
 /*  PUBLIC - the customer accepts, by token. Idempotent once accepted.     */
-exports.acceptQuote = onCall(async (request) => {
+exports.acceptQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
     await limitIp(request, 'tok', 120, 60);
     const data = request.data || {};
     const token = String(data.token || '').trim();
@@ -756,6 +758,7 @@ exports.acceptQuote = onCall(async (request) => {
             ? { paymentMethod: 'bank', paymentStatus: 'bank', bankPlan: data.plan === 'full' || q.payFull === true ? 'full' : 'deposit' }
             : {})
     });
+    await autoGearOnAccept(doc.id); // their team gets the gear list now
     return { ok: true };
 });
 

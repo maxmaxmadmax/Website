@@ -24,9 +24,9 @@
 
 /* ---------- 1  Setup ---------- */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=878';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=878'; // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=878';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=879';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=879'; // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=879';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -1548,7 +1548,7 @@ function proposalBottom(q, opts = {}) {
       <p class="qp-terms-link">Also at <a href="/${djQuote ? 'dj-terms' : 'terms'}" target="_blank" rel="noopener">soundzgood.com.au/${djQuote ? 'dj-terms' : 'terms'}</a></p>
     </section>`
         : '';
-    const teamSec = showTerms && !djQuote && q.status !== 'draft' ? gearTeamSec(q) : '';
+    const teamSec = q.status !== 'draft' ? gearTeamSec(q) : ''; // every job, quotes and invoices (Max, 18 Nov 2026)
     const locked = q.needsDetails && q.status !== 'draft' && !q.paymentStatus;
     return (
         teamSec +
@@ -1577,8 +1577,8 @@ function gearTeamSec(q) {
     const list = gearEmailList(q);
     return `<section class="qp-sec qp-team" id="qp-team">
       <p class="qp-eyebrow">Your team</p>
-      <h2 class="qp-h2">Share the gear list</h2>
-      <p class="qp-sub">Add your band, tour manager or tech. They&rsquo;ll get the gear list when your booking is confirmed, 3 days before and on the day.</p>
+      <h2 class="qp-h2">Share the itemised gear list</h2>
+      <p class="qp-sub">It lists the exact make and model of everything we&rsquo;re supplying &mdash; amps, in-ears, microphones and cables. Add your venue manager, event coordinator, band or tech and we&rsquo;ll email it to them when you accept your quote, and again 3 days before your event.</p>
       <ul class="qp-team-list">${list.map((e) => `<li><span>${esc(e)}</span><button type="button" data-team-rm="${esc(e)}" aria-label="Remove ${esc(e)}">&times;</button></li>`).join('')}</ul>
       ${list.length < 10 ? `<form class="qp-team-add" id="qp-team-add" novalidate><input type="email" id="qp-team-in" placeholder="Team member&rsquo;s email" autocomplete="off"><button type="submit">Add</button></form>` : ''}
       <div class="qp-team-share">

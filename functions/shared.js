@@ -780,7 +780,7 @@ const hasPayDetails = (c) =>
 const brisbaneTodayISO = () => new Intl.DateTimeFormat('en-CA', { timeZone: MSG_TZ }).format(new Date());
 
 /*  Sends the gear list to "Gear list to" and (for automatic sends) the pick
-    list link to the office. reason: 'manual' | 'deposit' | '3days' | 'today'. */
+    list link to the office. reason: 'manual' | 'accepted' | 'deposit' | '3days' | 'today'. */
 async function sendGearListEmail(ref, q, reason, testTo, parts = { gear: true, staff: true }) {
     let token = q.crewToken;
     if (!token) {
@@ -800,10 +800,10 @@ async function sendGearListEmail(ref, q, reason, testTo, parts = { gear: true, s
                 body:
                     'Hi,\n\n' +
                     (reason === 'today' ? 'See you today! ' : reason === '3days' ? 'Your event is 3 days away. ' : '') +
-                    'Here is the gear SoundzGood Whitsundays is supplying for ' +
+                    'Here is the itemised gear list for ' +
                     ev +
                     (when ? ' on ' + when : '') +
-                    '. Have a look and let us know if anything is missing or needs changing.\n\nThanks,\nMax\nSoundzGood Whitsundays - 0422 393 022'
+                    ': the exact make and model of everything SoundzGood Whitsundays is supplying - amps, in-ears, microphones, cables and more. Please check it against your requirements and let us know if anything is missing or needs changing.\n\nThanks,\nMax\nSoundzGood Whitsundays - 0422 393 022'
             },
             {},
             {
@@ -850,7 +850,24 @@ async function sendGearListEmail(ref, q, reason, testTo, parts = { gear: true, s
     return { ...r, to };
 }
 
-/*  Once per job, the moment the deposit (or full payment) lands. */
+/*  Once per job, the moment the customer ACCEPTS the quote: the gear list goes to
+    their team (Max, 18 Nov 2026). The office pick list still waits for the booking. */
+async function autoGearOnAccept(id) {
+    try {
+        const ref = db.collection('quotes').doc(String(id || ''));
+        const snap = await ref.get();
+        if (!snap.exists) return;
+        const q = snap.data();
+        if (q.gearAutoAcceptAt || !emailList((q.customer || {}).gearEmails)) return;
+        await ref.update({ gearAutoAcceptAt: FieldValue.serverTimestamp() }); // claim it first - no double send
+        await sendGearListEmail(ref, { ...q }, 'accepted', undefined, { gear: true, staff: false });
+    } catch (err) {
+        logger.error('gear list on accept', { id, err: err && err.message });
+    }
+}
+
+/*  Once per job, the moment the deposit (or full payment) lands: the office pick list,
+    plus the team's gear list if it didn't already go out when the quote was accepted. */
 async function autoGearOnDeposit(id) {
     try {
         const ref = db.collection('quotes').doc(String(id || ''));
@@ -862,7 +879,7 @@ async function autoGearOnDeposit(id) {
         const end = (q.hire && (q.hire.endDate || q.hire.startDate)) || '';
         if (/^\d{4}-\d{2}-\d{2}$/.test(end) && end < brisbaneTodayISO()) return;
         await ref.update({ gearAutoDepositAt: FieldValue.serverTimestamp() }); // claim it first - a webhook retry can't double-send
-        await sendGearListEmail(ref, { ...q }, 'deposit');
+        await sendGearListEmail(ref, { ...q }, 'deposit', undefined, { gear: !q.gearAutoAcceptAt, staff: true });
     } catch (err) {
         logger.error('gear list on deposit', { id, err: err && err.message });
     }
@@ -982,6 +999,7 @@ module.exports = {
     requireAuth,
     sanitizeQuote,
     sendGearListEmail,
+    autoGearOnAccept,
     sendMessageTo,
     sendVendorInvoice,
     siteRef,
