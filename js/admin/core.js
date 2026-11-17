@@ -81,7 +81,7 @@ const state = {
       the list, an id (or '__new__') when the builder is open.            */
     quoteDocs: [],
     openQuoteId: null,
-    spFilter: { tab: 'all', search: '', dates: 'all', sort: 'when', sortDir: 'asc' }, // Sales Pipeline list
+    spFilter: { tab: 'all', search: '', dates: 'all', sort: 'when', sortDir: 'desc' }, // Sales Pipeline list
 
     /*  Packages - reusable bundles the bot will draw on. null until first
       load; openPackageId is null on the list, an id (or '__new__') in the

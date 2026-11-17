@@ -8,8 +8,8 @@
    the quotes and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=874'; // who still owes money
-import { isBooked, pickLineProgress } from './stock.js?v=874';
+import { owesMoney } from './messages.js?v=875'; // who still owes money
+import { isBooked, pickLineProgress } from './stock.js?v=875';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -190,9 +190,9 @@ function filterJobs(jobs, f) {
         return true;
     });
 
-    /*  DEFAULT ("when"): in order of the event, oldest first, jobs with no date last.
-        The orange "today" line sits between past and upcoming.              */
-    if (f.sort === 'when') return out.sort((a, b) => (eventSortKey(a) || Infinity) - (eventSortKey(b) || Infinity));
+    /*  DEFAULT ("when"): in order of the event, furthest-out first, jobs with no date last.
+        The orange "today" line sits between upcoming and past.            */
+    if (f.sort === 'when') return out.sort((a, b) => (eventSortKey(b) || -1e15) - (eventSortKey(a) || -1e15));
     const dir = f.sortDir === 'asc' ? 1 : -1;
     const by =
         {
