@@ -8,8 +8,8 @@
    the quotes and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=875'; // who still owes money
-import { isBooked, pickLineProgress } from './stock.js?v=875';
+import { owesMoney } from './messages.js?v=876'; // who still owes money
+import { isBooked, pickLineProgress } from './stock.js?v=876';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -37,6 +37,8 @@ const STAGES = {
     declined: { step: 2, tab: 'archived', status: ['Declined', 'red'], next: ['doc', 'grey', 'Archived', 'Customer declined'] },
     cancelled: { step: 1, tab: 'archived', status: ['Cancelled', 'grey'], next: ['doc', 'grey', 'Archived', 'Cancelled'] }
 };
+
+const OPEN_STATUSES = ['approved', 'sent', 'accepted', 'invoiced']; // quoted or invoiced, not paid yet
 
 /* Delete forever is only for estimates / quotes with no money and no invoice
    number - tax invoices must be kept (ATO: 5 years), so those get Archive. */
@@ -128,7 +130,7 @@ const TABS = [
     ['action', 'Needs action', (q) => !q.isTemplate && (q.status === 'draft' || q.status === 'approved')],
     ['estimates', 'Estimates', (q) => stageOf(q).tab === 'estimates'],
     ['quotes', 'Quotes', (q) => stageOf(q).tab === 'quotes'],
-    ['payment', 'Awaiting payment', (q) => stageOf(q).tab === 'payment'],
+    ['payment', 'Awaiting payment', (q) => stageOf(q).tab === 'payment' || isOverdue(q)], // invoices + anything unpaid after the event
     ['confirmed', 'Jobs confirmed', (q) => stageOf(q).tab === 'confirmed'],
     ['vendors', 'Vendors', (q) => !!q.vendor],
     ['archived', 'Archived', (q) => stageOf(q).tab === 'archived'],
@@ -149,6 +151,13 @@ function eventSortKey(q) {
     const iso = q.hire && q.hire.startDate;
     if (/^\d{4}-\d{2}-\d{2}$/.test(String(iso || ''))) return Date.parse(iso + 'T00:00:00');
     return 0;
+}
+/* OVERDUE: the event has passed and it is still not paid in full */
+function isOverdue(q) {
+    const t = eventSortKey(q);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return !!t && t < now.getTime() && !q.isTemplate && !q.vendor && q.paymentStatus !== 'paid' && OPEN_STATUSES.includes(q.status);
 }
 function eventDateText(q) {
     const t = eventSortKey(q);
@@ -302,7 +311,6 @@ function jobNumber(q) {
     return q.kind === 'invoice' && q.invoiceNumber ? q.invoiceNumber : q.number;
 }
 
-const OPEN_STATUSES = ['approved', 'sent', 'accepted', 'invoiced'];
 const MORE_SUMMARY = '<summary aria-label="More"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>';
 
 /*  ROW COLOUR: green = paid in full, light green = deposit paid, red = event
@@ -312,7 +320,7 @@ function rowTone(q, today) {
     const past = !!t && t < today;
     if (q.isTemplate || ['cancelled', 'declined'].includes(q.status)) return past ? ' is-past' : '';
     if (q.vendor || q.status === 'paid' || q.paymentStatus === 'paid') return ' is-paid' + (past ? ' is-past' : '');
-    if (past && OPEN_STATUSES.includes(q.status)) return ' is-overdue';
+    if (isOverdue(q)) return ' is-overdue';
     if (q.paymentStatus === 'deposit') return ' is-deposit' + (past ? ' is-past' : '');
     return past ? ' is-past' : '';
 }
