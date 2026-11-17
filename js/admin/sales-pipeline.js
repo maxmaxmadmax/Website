@@ -8,8 +8,8 @@
    the quotes and the helpers (esc, attr, money) and wires the clicks.
    ========================================================================== */
 
-import { owesMoney } from './messages.js?v=871'; // who still owes money
-import { isBooked, pickLineProgress } from './stock.js?v=871';
+import { owesMoney } from './messages.js?v=872'; // who still owes money
+import { isBooked, pickLineProgress } from './stock.js?v=872';
 
 /* which of the 4 steps a job has reached, and how it shows in the list */
 const STAGES = {
@@ -321,11 +321,11 @@ const MORE_SUMMARY = '<summary aria-label="More"><svg viewBox="0 0 24 24" aria-h
 function rowTone(q, today) {
     const t = eventSortKey(q);
     const past = !!t && t < today;
-    if (q.isTemplate || ['cancelled', 'declined'].includes(q.status)) return past ? ' sp-is-past' : '';
-    if (q.vendor || q.status === 'paid' || q.paymentStatus === 'paid') return ' sp-is-paid' + (past ? ' sp-is-past' : '');
-    if (past && OPEN_STATUSES.includes(q.status)) return ' sp-is-overdue';
-    if (q.paymentStatus === 'deposit') return ' sp-is-deposit' + (past ? ' sp-is-past' : '');
-    return past ? ' sp-is-past' : '';
+    if (q.isTemplate || ['cancelled', 'declined'].includes(q.status)) return past ? ' is-past' : '';
+    if (q.vendor || q.status === 'paid' || q.paymentStatus === 'paid') return ' is-paid' + (past ? ' is-past' : '');
+    if (past && OPEN_STATUSES.includes(q.status)) return ' is-overdue';
+    if (q.paymentStatus === 'deposit') return ' is-deposit' + (past ? ' is-past' : '');
+    return past ? ' is-past' : '';
 }
 
 /* the table rows */
@@ -341,7 +341,7 @@ function rowsHtml(rows, f, h) {
     // the orange "today" line: between the last upcoming job and the first past one (date sorts only)
     let lineDone = !['when', 'date'].includes(f.sort);
     const todayLine = () =>
-        `<tr class="sp-today"><td colspan="6"><span>Today &middot; ${now.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}</span></td></tr>`;
+        `<tr class="ad-today"><td colspan="6"><span>Today &middot; ${now.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}</span></td></tr>`;
     return rows
         .map((q, i) => {
             let before = '';

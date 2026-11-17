@@ -964,6 +964,44 @@ body {
     vertical-align: middle;
 }
 
+/* ROW COLOURS for dated lists (Sales Pipeline, DJ bookings): paid in full green, deposit
+   paid half green, unpaid after the event red, other past rows faded (the action cell
+   stays bright); the orange "Today" line sits between past and upcoming. */
+.ad-table tbody tr.is-paid {
+    background: var(--ad-green-bg);
+}
+.ad-table tbody tr.is-deposit {
+    background: linear-gradient(90deg, var(--ad-green-bg) 50%, transparent 50%);
+}
+.ad-table tbody tr.is-overdue {
+    background: var(--ad-red-bg);
+}
+.ad-table tbody tr.is-past td:not(.sp-act):not(.ad-cell-right) {
+    opacity: 0.6;
+    filter: saturate(0.4);
+}
+.ad-table tbody tr.ad-today {
+    cursor: default;
+}
+.ad-table tbody tr.ad-today td,
+.ad-table tbody tr.ad-today:hover td {
+    padding: 0;
+    height: 0;
+    border-bottom: 2px solid var(--ad-orange);
+    background: none;
+    position: relative;
+}
+.ad-today span {
+    position: absolute;
+    left: 12px;
+    top: -10px;
+    background: var(--ad-orange);
+    color: var(--ad-white);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
 .ad-table tbody tr:last-child td {
     border-bottom: 0;
 }

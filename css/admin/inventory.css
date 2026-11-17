@@ -1180,10 +1180,6 @@
     border-radius: 12px;
     font-size: 14px;
 }
-/* a gig whose entertainer has been paid: done with */
-.inv-row.is-done td {
-    opacity: 0.6;
-}
 
 /* UNCONFIRMED bookings - DJ held until paid */
 .inv-row.is-unconf td {

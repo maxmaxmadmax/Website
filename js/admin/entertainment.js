@@ -159,6 +159,17 @@ function gigTrailHtml(b) {
     );
 }
 
+/*  Row colour, same rules as the Sales Pipeline: venue paid in full green, deposit half
+    green, gig over and still unpaid red, other past gigs faded. */
+function gigTone(b, today) {
+    const past = b.date < today;
+    if (b.status === 'cancelled') return past ? ' is-past' : '';
+    const inv = gigInvoice(b);
+    if (inv && (inv.status === 'paid' || inv.paymentStatus === 'paid')) return ' is-paid' + (past ? ' is-past' : '');
+    if (past) return ' is-overdue';
+    return inv && inv.paymentStatus === 'deposit' ? ' is-deposit' : '';
+}
+
 function gigsMainHtml(side) {
     const today = isoDay(new Date());
     const all = state.schedule || [];
@@ -213,27 +224,40 @@ function gigsMainHtml(side) {
                   ${
                       rowsAll.length
                           ? rowsAll
-                                .map((row) => {
+                                .map((row, i) => {
+                                    // the orange Today line, before the first night from today on
+                                    const line =
+                                        i > 0 && row.date >= today && rowsAll[i - 1].date < today
+                                            ? '<tr class="ad-today"><td colspan="6"><span>Today &middot; ' +
+                                              esc(prettyDate(today)) +
+                                              '</span></td></tr>'
+                                            : '';
                                     if (row.kind === 'open') {
-                                        return `<tr class="inv-row ent-open">
+                                        return (
+                                            line +
+                                            `<tr class="inv-row ent-open">
                       <td class="ent-date">${esc(prettyDate(row.date))}</td>
                       <td><span class="ad-pill ad-pill-red">No DJ booked</span></td>
                       <td class="ad-cell-muted">${esc(String(row.n.venue).split(',')[0])}</td>
                       <td class="ad-cell-muted">—</td>
                       <td></td>
                       <td class="ad-cell-right"><button type="button" class="ad-btn ad-btn-primary ent-book" data-book-night="${attr(row.date)}" data-book-venue="${attr(row.n.venue)}">Book a DJ</button></td>
-                    </tr>`;
+                    </tr>`
+                                        );
                                     }
                                     const b = row.b;
                                     const act = (state.talent || []).find((t) => t.slug === b.slug) || {};
-                                    return `<tr class="inv-row${state.bookingOpen === b.id && state.entPanel ? ' is-open' : ''}${b.djPaidAt ? ' is-done' : ''}${b.status === 'unconfirmed' ? ' is-unconf' : ''}" data-book-open="${attr(b.id)}">
+                                    return (
+                                        line +
+                                        `<tr class="inv-row${state.bookingOpen === b.id && state.entPanel ? ' is-open' : ''}${gigTone(b, today)}${b.status === 'unconfirmed' ? ' is-unconf' : ''}" data-book-open="${attr(b.id)}">
                       <td class="ent-date">${esc(prettyDate(b.date))}</td>
                       <td><span class="inv-item-cell"><span class="ad-act-face ent-face" style="${act.photo ? `background-image:url('/${attr(act.photo)}')` : ''}"></span><span class="inv-item-name">${esc(act.name || b.slug)}</span></span></td>
                       <td class="ad-cell-muted">${esc(String(b.venue || '—').split(',')[0])}</td>
                       <td class="ad-cell-muted">${esc(b.time || '—')}</td>
                       <td>${b.status === 'unconfirmed' ? '<span class="ent-unconf-tag">Unconfirmed &middot; unpaid</span>' : gigDots(b)}${gigSentTag(b)}</td>
                       <td class="ad-cell-right"><button type="button" class="inv-open-btn" data-book-open="${attr(b.id)}" aria-label="Open">&#8250;</button></td>
-                    </tr>`;
+                    </tr>`
+                                    );
                                 })
                                 .join('')
                           : loading
