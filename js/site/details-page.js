@@ -16,7 +16,7 @@
      START      load the form
    ========================================================================== */
 
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=879';
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=880';
 
 /* ---- SETUP ---- */
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';

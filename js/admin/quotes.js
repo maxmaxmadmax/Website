@@ -2547,8 +2547,8 @@ function wireQuoteActions() {
             }
         });
 
-    /*  PREVIEW & SEND: saves, shows the exact email (plus an optional note on what
-        changed, e.g. "we've removed the TVs as asked"), and only sends on
+    /*  PREVIEW & SEND: saves, shows the exact email with its subject, heading and
+        message in boxes Max can edit (the preview follows), and only sends on
         Confirm & send. A quote that went out before says "updated".          */
     const send = document.getElementById('q-send');
     if (send)
@@ -2563,7 +2563,9 @@ function wireQuoteActions() {
       <header class="ad-modal-head"><h2 data-subj>Loading…</h2><button type="button" class="ad-drawer-close" aria-label="Close">&times;</button></header>
       <div class="ad-modal-body">
         <p class="ad-cell-muted qb-email-to" data-to></p>
-        <label>Add a note (optional) - e.g. what changed<textarea data-note rows="2" maxlength="1500" placeholder="As asked, we've removed the TVs."></textarea></label>
+        <label>Subject<input data-f="subject" maxlength="200"></label>
+        <label>Heading<input data-f="heading" maxlength="120"></label>
+        <label>Message<textarea data-f="message" rows="4" maxlength="3000"></textarea></label>
         <iframe sandbox="" class="ms-log-frame" title="Email preview"></iframe>
       </div>
       <footer class="ad-modal-foot"><button type="button" class="ad-btn" data-x>Cancel</button><button type="button" class="ad-btn ad-btn-primary" data-go>&#9993; Confirm &amp; send</button></footer>
@@ -2573,25 +2575,29 @@ function wireQuoteActions() {
                 box.querySelector('.ad-scrim').addEventListener('click', close);
                 box.querySelector('.ad-drawer-close').addEventListener('click', close);
                 box.querySelector('[data-x]').addEventListener('click', close);
-                const noteBox = box.querySelector('[data-note]');
-                // the preview follows the note as it's typed (a short pause, then redraw)
-                const draw = async () => {
-                    const r = await call('adminPreviewClientEmail', { kind: 'quote', quoteId: id, note: noteBox.value });
-                    box.querySelector('[data-subj]').textContent = r.subject || 'Email';
+                const fields = [...box.querySelectorAll('[data-f]')];
+                const words = () => Object.fromEntries(fields.map((f) => [f.dataset.f, f.value]));
+                // first draw fills the boxes; after that the preview follows the typing
+                const draw = async (first) => {
+                    const r = await call('adminPreviewClientEmail', { kind: 'quote', quoteId: id, ...(first ? {} : words()) });
+                    if (first) fields.forEach((f) => (f.value = (r.fields || {})[f.dataset.f] || ''));
+                    box.querySelector('[data-subj]').textContent = 'Preview & send';
                     box.querySelector('[data-to]').textContent = r.note || '';
                     box.querySelector('iframe').srcdoc = r.html || '';
                 };
                 let wait = 0;
-                noteBox.addEventListener('input', () => {
-                    clearTimeout(wait);
-                    wait = setTimeout(() => draw().catch(() => {}), 600);
-                });
-                await draw();
+                fields.forEach((f) =>
+                    f.addEventListener('input', () => {
+                        clearTimeout(wait);
+                        wait = setTimeout(() => draw().catch(() => {}), 600);
+                    })
+                );
+                await draw(true);
                 box.querySelector('[data-go]').addEventListener('click', async (e) => {
                     e.target.disabled = true;
                     e.target.textContent = 'Sending…';
                     try {
-                        const res = await run('adminSendQuote', { id, note: noteBox.value }, 'Sent to the customer.');
+                        const res = await run('adminSendQuote', { id, ...words() }, 'Sent to the customer.');
                         if (res && !res.sent) setMsg(msg(), 'Not sent: ' + (res.error || res.reason || 'unknown'), 'is-bad');
                         close();
                         render();

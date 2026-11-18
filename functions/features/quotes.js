@@ -617,9 +617,7 @@ exports.setPickTick = onCall(async (request) => {
 exports.adminSendQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request) => {
     requireAdmin(request);
     const { id } = request.data || {};
-    const note = String((request.data || {}).note || '')
-        .trim()
-        .slice(0, 1500); // Max's words: what changed
+    const { subject, heading, message } = request.data || {}; // Max's edits in Preview & send
     const ref = db.collection('quotes').doc(String(id || ''));
     const snap = await ref.get();
     if (!snap.exists) throw new HttpsError('not-found', 'No such quote.');
@@ -632,7 +630,7 @@ exports.adminSendQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
     if (q.isTemplate) throw new HttpsError('failed-precondition', "This is a template - it can't be sent.");
     const link = SITE_URL + '/quote?t=' + q.token;
     const updated = q.status !== 'approved' && !!(q.sentAt || q.lastEmailedAt || q.emailCount); // went out before
-    const mail = await sendQuoteLinkEmail(q, link, { note, updated });
+    const mail = await sendQuoteLinkEmail(q, link, { subject, heading, message, updated });
 
     const update = { updatedAt: FieldValue.serverTimestamp() };
     if (mail.sent && q.status === 'approved') {

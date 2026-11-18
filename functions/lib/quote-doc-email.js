@@ -42,28 +42,37 @@ function docLabel(q) {
     return q.kind === 'invoice' ? 'invoice' : 'quote';
 }
 
-/*  opts.updated: it went out before, so the email says it has been updated.
-    opts.note: Max's own words (what changed), shown first. */
-function html(q, link, opts = {}) {
-    const isInvoice = q.kind === 'invoice';
-    const ref = isInvoice ? q.invoiceNumber || q.number : q.number;
+/*  The words Max can change in Preview & send: subject, heading and message.
+    opts.updated: it went out before, so the wording says "updated".
+    opts.subject / opts.heading / opts.message: his edits (plain text) win. */
+function wording(q, opts = {}) {
+    const ref = q.kind === 'invoice' ? q.invoiceNumber || q.number : q.number;
     const who = (q.customer && q.customer.name) || 'there';
-    const verb = isInvoice ? 'View your invoice' : 'View &amp; accept your quote';
-    const note = String(opts.note || '').trim();
+    const ev = q.customer && q.customer.eventName ? ' for ' + q.customer.eventName : '';
+    const pick = (v, d, max) =>
+        String(v || '')
+            .trim()
+            .slice(0, max) || d;
+    return {
+        subject: pick(opts.subject, `Your ${opts.updated ? 'updated ' : ''}${docLabel(q)} ${ref} from SoundzGood`, 200),
+        heading: pick(opts.heading, `Your ${docLabel(q)} ${opts.updated ? 'has been updated' : 'is ready'}`, 120),
+        message: pick(opts.message, `Hi ${who}, here's your ${opts.updated ? 'updated ' : ''}${docLabel(q)} ${ref}${ev}.`, 3000)
+    };
+}
+
+function html(q, link, opts = {}) {
+    const verb = q.kind === 'invoice' ? 'View your invoice' : 'View &amp; accept your quote';
+    const w = wording(q, opts);
 
     return `<!doctype html>
 <html><body style="margin:0;padding:24px;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
   <div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;overflow:hidden;">
     <div style="background:#111;padding:24px;">
       <p style="margin:0;color:#ff6b00;font-size:12px;letter-spacing:2px;text-transform:uppercase;">SoundzGood Whitsundays</p>
-      <h1 style="margin:6px 0 0;color:#fff;font-size:22px;">Your ${esc(docLabel(q))} ${opts.updated ? 'has been updated' : 'is ready'}</h1>
+      <h1 style="margin:6px 0 0;color:#fff;font-size:22px;">${esc(w.heading)}</h1>
     </div>
     <div style="padding:24px;">
-      <p style="margin:0 0 16px;font-size:15px;color:#111;">
-        Hi ${esc(who)}, ${opts.updated ? "here's your updated" : "here's your"} ${esc(docLabel(q))}
-        <strong>${esc(ref)}</strong>${q.customer && q.customer.eventName ? ' for ' + esc(q.customer.eventName) : ''}.
-      </p>
-      ${note ? '<p style="margin:0 0 16px;font-size:15px;color:#111;line-height:1.6;white-space:pre-wrap;">' + esc(note) + '</p>' : ''}
+      <p style="margin:0 0 16px;font-size:15px;color:#111;line-height:1.6;white-space:pre-wrap;">${esc(w.message)}</p>
       <div style="background:#fff7ef;border:1px solid #ffd9b3;border-radius:10px;padding:16px 20px;margin:0 0 20px;text-align:center;">
         <p style="margin:0 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#b25b00;">Total (incl GST)</p>
         <p style="margin:0;font-size:28px;font-weight:bold;color:#111;">${esc(money(q.totalCents))}</p>
@@ -93,13 +102,12 @@ function html(q, link, opts = {}) {
 }
 
 function text(q, link, opts = {}) {
-    const ref = q.kind === 'invoice' ? q.invoiceNumber || q.number : q.number;
-    const note = String(opts.note || '').trim();
+    const w = wording(q, opts);
     return [
-        `Your ${docLabel(q)} ${ref} ${opts.updated ? 'has been updated' : ''}- SoundzGood Whitsundays`.replace('  ', ' '),
+        w.heading + ' - SoundzGood Whitsundays',
         '',
-        `Hi ${(q.customer && q.customer.name) || 'there'}, here's your ${opts.updated ? 'updated ' : ''}${docLabel(q)}.`,
-        ...(note ? ['', note] : []),
+        w.message,
+        '',
         `Total (incl GST): ${money(q.totalCents)}`,
         '',
         `View it here: ${link}`,
@@ -136,7 +144,7 @@ async function sendQuoteLinkEmail(q, link, opts = {}) {
             // a copy of every email goes to the office
             bcc: OFFICE,
             replyTo: OFFICE,
-            subject: quoteSubject(q, opts),
+            subject: wording(q, opts).subject,
             text: text(q, link, opts),
             html: html(q, link, opts)
         });
@@ -235,14 +243,10 @@ function renderPaymentReminder(q, link, info) {
     return { subject: reminderSubject(q), html: reminderHtml(q, link, info) };
 }
 
-/*  For the Messages page preview. */
-function quoteSubject(q, opts = {}) {
-    const ref = q.kind === 'invoice' ? q.invoiceNumber || q.number : q.number;
-    return `Your ${opts.updated ? 'updated ' : ''}${docLabel(q)} ${ref} from SoundzGood`;
-}
-
+/*  For the previews: the email plus its editable words. */
 function renderQuoteLinkEmail(q, link, opts = {}) {
-    return { subject: quoteSubject(q, opts), html: html(q, link, opts) };
+    const w = wording(q, opts);
+    return { subject: w.subject, html: html(q, link, opts), fields: w };
 }
 
 module.exports = { sendQuoteLinkEmail, renderQuoteLinkEmail, sendPaymentReminderEmail, renderPaymentReminder };
