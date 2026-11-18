@@ -94,6 +94,11 @@ const reviewHtml = () =>
       <a href="${REVIEW_URL}" style="display:inline-block;margin-top:10px;background:${ORANGE};color:#fff;text-decoration:none;font-weight:bold;font-size:15px;padding:12px 24px;border-radius:10px;">Leave a Google review &rarr;</a>
     </div>`;
 
+/*  PAUSED (Max, 18 Nov 2026: "Don't email the customer"): until SG_CUSTOMER_EMAILS=on
+    is set in functions/.env, these emails go to the office ONLY, marked with who
+    they would have gone to. Nothing reaches a customer. */
+const LIVE = process.env.SG_CUSTOMER_EMAILS === 'on';
+
 async function send(q, mail) {
     const tx = transport();
     if (!tx) return { sent: false, reason: 'no-smtp' };
@@ -104,14 +109,24 @@ async function send(q, mail) {
         .map((e) => e.trim())
         .filter((e) => e && e.toLowerCase() !== String(to).toLowerCase());
     try {
-        await tx.sendMail({
-            from: `${SELLER.name} <${SELLER.email}>`,
-            to,
-            ...(cc.length ? { cc: cc.join(', ') } : {}),
-            bcc: OFFICE,
-            replyTo: OFFICE,
-            ...mail
-        });
+        await tx.sendMail(
+            LIVE
+                ? {
+                      from: `${SELLER.name} <${SELLER.email}>`,
+                      to,
+                      ...(cc.length ? { cc: cc.join(', ') } : {}),
+                      bcc: OFFICE,
+                      replyTo: OFFICE,
+                      ...mail
+                  }
+                : {
+                      from: `${SELLER.name} <${SELLER.email}>`,
+                      to: OFFICE,
+                      replyTo: OFFICE,
+                      ...mail,
+                      subject: '[NOT SENT - would go to ' + to + (cc.length ? ', cc ' + cc.join(', ') : '') + '] ' + mail.subject
+                  }
+        );
         return { sent: true };
     } catch (err) {
         logger.error(mail.kind + ' email failed', { to, smtpError: err && err.message });
