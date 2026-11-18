@@ -16,6 +16,8 @@ const {
     addDaysISO,
     autoGearOnAccept,
     autoGearOnDeposit,
+    autoInvoiceOnAccept,
+    autoReceipt,
     brisbaneToday,
     brisbaneTodayISO,
     db,
@@ -174,6 +176,10 @@ exports.adminSetQuoteStatus = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async 
     }
 
     await ref.update(update);
+    if (update.status === 'paid') {
+        const before = snap.data();
+        await autoReceipt(ref.id, update.amountPaidCents - (before.amountPaidCents || 0), update.paymentMethod, true); // "payment received"
+    }
     if (status === 'accepted') await autoGearOnAccept(ref.id); // accepted for them - their team gets the gear list
     if (update.status === 'paid') await autoGearOnDeposit(ref.id); // paid in full by bank / cash - gear list out
     return { ok: true, invoiceNumber: update.invoiceNumber || snap.data().invoiceNumber || '' };
@@ -298,6 +304,7 @@ exports.adminDepositReceived = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async
     }
     if (!q.crewToken) update.crewToken = crypto.randomBytes(16).toString('hex');
     await ref.update(update);
+    await autoReceipt(ref.id, update.amountPaidCents - (q.amountPaidCents || 0), update.paymentMethod, true); // "payment received"
     await autoGearOnDeposit(ref.id); // gear list out once the deposit is in
     return { ok: true };
 });
@@ -645,7 +652,28 @@ exports.adminSendQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
     }
     await ref.update(update);
     return mail;
-}); // deposit to secure a booking
+});
+
+/*  HOW DID WE DO? Every morning, jobs whose event ended yesterday get one
+    "How did we do?" email with the Google review button (Max, 18 Nov 2026).
+    Booked jobs only (tax invoices), not pub-night DJ invoices, once per job. */
+exports.reviewRequests = onSchedule(
+    { schedule: '0 10 * * *', timeZone: 'Australia/Brisbane', timeoutSeconds: 300, secrets: [SMTP_USER, SMTP_PASS] },
+    async () => {
+        const { sendReviewEmail, addDays } = require('../lib/payment-email');
+        const yesterday = addDays(brisbaneTodayISO(), -1);
+        const snap = await db.collection('quotes').where('kind', '==', 'invoice').get();
+        for (const d of snap.docs) {
+            const q = d.data();
+            const end = (q.hire && (q.hire.endDate || q.hire.startDate)) || '';
+            if (end !== yesterday || q.reviewAskedAt || q.status === 'cancelled') continue;
+            if (q.isTemplate || q.vendor || q.gigBookingId || q.gigDj || !(q.customer && q.customer.email)) continue;
+            await d.ref.update({ reviewAskedAt: FieldValue.serverTimestamp() }); // claim it first - once per job
+            const out = await sendReviewEmail(q);
+            logger.info('review email', { id: d.id, sent: out.sent });
+        }
+    }
+); // deposit to secure a booking
 
 exports.getQuote = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
     await limitIp(request, 'tok', 120, 60);
@@ -757,6 +785,7 @@ exports.acceptQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request
             : {})
     });
     await autoGearOnAccept(doc.id); // their team gets the gear list now
+    await autoInvoiceOnAccept(doc.id); // and they get their tax invoice PDF
     return { ok: true };
 });
 

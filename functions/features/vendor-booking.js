@@ -12,6 +12,7 @@ const {
     STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET,
     autoGearOnDeposit,
+    autoReceipt,
     categoryRef,
     checkBayCount,
     confirmAndNotify,
@@ -675,12 +676,15 @@ function eventBlurb(event) {
     Stripe session, so a webhook retry can't count the money twice.   */
 async function recordQuotePayment(session) {
     const ref = db.collection('quotes').doc(String(session.metadata.quoteId));
+    let fresh = false; // true = this payment is new (not a webhook retry)
     await db.runTransaction(async (tx) => {
+        fresh = false;
         const snap = await tx.get(ref);
         if (!snap.exists) return;
         const q = snap.data();
         const seen = Array.isArray(q.stripeSessions) ? q.stripeSessions : [];
         if (seen.includes(session.id)) return;
+        fresh = true;
         const paidNow = (q.amountPaidCents || 0) + (session.amount_total || 0);
         const fullyPaid = paidNow >= quoteGrandTotal(q); // includes any late payment charges
         // accept = invoice: take an invoice number the first time money comes in
@@ -702,6 +706,7 @@ async function recordQuotePayment(session) {
         });
     });
     logger.info('Quote payment recorded', { quoteId: session.metadata.quoteId, cents: session.amount_total });
+    return fresh;
 }
 
 exports.stripeWebhook = onRequest(
@@ -739,7 +744,8 @@ exports.stripeWebhook = onRequest(
                     // A quote payment (quoteCheckout), not a vendor booking.
                     if (session.metadata && session.metadata.quoteId) {
                         if (session.payment_status === 'paid') {
-                            await recordQuotePayment(session);
+                            const fresh = await recordQuotePayment(session);
+                            if (fresh) await autoReceipt(String(session.metadata.quoteId), session.amount_total, 'card', false); // "payment received"
                             await autoGearOnDeposit(String(session.metadata.quoteId)); // gear list out once the deposit is in
                         }
                         break;

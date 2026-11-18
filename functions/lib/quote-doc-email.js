@@ -14,7 +14,11 @@ const SELLER = {
     legal: process.env.SG_LEGAL_NAME || '',
     abn: process.env.SG_ABN || '',
     email: process.env.SG_FROM_EMAIL || 'bookings@soundzgood.com.au',
-    site: 'www.soundzgood.com.au'
+    site: 'www.soundzgood.com.au',
+    // bank transfer details - KEEP IN STEP with SELLER in js/site/quote-view.js
+    bankName: 'SoundzGood Whitsundays',
+    bankBsb: '014504',
+    bankAcc: '815818305'
 };
 const OFFICE = process.env.SG_OFFICE_EMAIL || 'info@soundzgood.com.au';
 
@@ -296,4 +300,14 @@ function renderQuoteLinkEmail(q, link, opts = {}) {
     return { subject: w.subject, html: html(q, link, opts), fields: w };
 }
 
-module.exports = { sendQuoteLinkEmail, renderQuoteLinkEmail, sendPaymentReminderEmail, renderPaymentReminder };
+module.exports = {
+    sendQuoteLinkEmail,
+    renderQuoteLinkEmail,
+    sendPaymentReminderEmail,
+    renderPaymentReminder,
+    SELLER,
+    OFFICE,
+    transport,
+    esc,
+    money
+};

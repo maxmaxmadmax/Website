@@ -884,6 +884,42 @@ async function autoGearOnDeposit(id) {
         logger.error('gear list on deposit', { id, err: err && err.message });
     }
 }
+/*  INVOICE ON ACCEPT: once per job, the customer gets their tax invoice PDF,
+    what's due and how to pay (lib/payment-email.js). */
+async function autoInvoiceOnAccept(id) {
+    try {
+        const ref = db.collection('quotes').doc(String(id || ''));
+        const snap = await ref.get();
+        if (!snap.exists) return;
+        const q = snap.data();
+        if (q.invoiceEmailAt || q.isTemplate || q.vendor || !(q.customer && q.customer.email)) return;
+        await ref.update({ invoiceEmailAt: FieldValue.serverTimestamp() }); // claim it first - no double send
+        await require('./lib/payment-email').sendInvoiceEmail(q, SITE_URL);
+    } catch (err) {
+        logger.error('invoice email on accept', { id, err: err && err.message });
+    }
+}
+
+/*  RECEIPT: money came in (Stripe card, or Max marks a deposit / paid in admin).
+    cents = this payment. fromAdmin + the event already over = an old job being
+    tidied up, so no email (same rule as the gear list). */
+async function autoReceipt(id, cents, method, fromAdmin) {
+    try {
+        if (!(cents > 0)) return;
+        const ref = db.collection('quotes').doc(String(id || ''));
+        const snap = await ref.get();
+        if (!snap.exists) return;
+        const q = snap.data();
+        if (q.isTemplate || q.vendor || !(q.customer && q.customer.email)) return;
+        const end = (q.hire && (q.hire.endDate || q.hire.startDate)) || '';
+        if (fromAdmin && /^d{4}-d{2}-d{2}$/.test(end) && end < brisbaneTodayISO()) return;
+        const { sendReceiptEmail } = require('./lib/payment-email');
+        const out = await sendReceiptEmail(q, SITE_URL, { cents, day: brisbaneTodayISO(), method: method === 'card' ? 'card' : 'bank' });
+        if (out.sent) await ref.update({ lastReceiptAt: FieldValue.serverTimestamp(), receiptCount: FieldValue.increment(1) });
+    } catch (err) {
+        logger.error('receipt email', { id, err: err && err.message });
+    }
+}
 const prettyDay = (iso) => {
     const [y, m, d] = String(iso).split('-').map(Number);
     return new Date(Date.UTC(y, m - 1, d))
@@ -1000,6 +1036,8 @@ module.exports = {
     sanitizeQuote,
     sendGearListEmail,
     autoGearOnAccept,
+    autoInvoiceOnAccept,
+    autoReceipt,
     sendMessageTo,
     sendVendorInvoice,
     siteRef,
