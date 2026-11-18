@@ -56,13 +56,44 @@ function wording(q, opts = {}) {
     return {
         subject: pick(opts.subject, `Your ${opts.updated ? 'updated ' : ''}${docLabel(q)} ${ref} from SoundzGood`, 200),
         heading: pick(opts.heading, `Your ${docLabel(q)} ${opts.updated ? 'has been updated' : 'is ready'}`, 120),
-        message: pick(opts.message, `Hi ${who}, here's your ${opts.updated ? 'updated ' : ''}${docLabel(q)} ${ref}${ev}.`, 3000)
+        message: pick(
+            opts.message,
+            `Hi ${who},
+
+Here's your ${opts.updated ? 'updated ' : ''}${docLabel(q)}${ev} (${ref}).`,
+            3000
+        )
     };
 }
+
+/*  How to accept: quotes not yet accepted only. Pay-in-full quotes skip the deposit words. */
+function acceptSteps(q) {
+    if (q.kind === 'invoice' || q.acceptedAt) return null;
+    return {
+        steps: [
+            'Tap <b>View &amp; accept your quote</b> above.',
+            'Scroll to <b>Accept &amp; secure your booking</b> at the bottom.',
+            q.payFull
+                ? 'Choose how you&rsquo;d like to pay: bank transfer or card.'
+                : 'Choose how you&rsquo;d like to pay: bank transfer or card, deposit or in full.',
+            'Tick the box to accept the terms, then press <b>Accept</b>.'
+        ],
+        after:
+            'Your date is secured once ' +
+            (q.payFull ? 'payment is' : 'the deposit is') +
+            ' received. If you pick bank transfer, we&rsquo;ll email your invoice with our bank details.'
+    };
+}
+const plain = (h) =>
+    h
+        .replace(/<[^>]+>/g, '')
+        .replace(/&amp;/g, '&')
+        .replace(/&rsquo;/g, "'");
 
 function html(q, link, opts = {}) {
     const verb = q.kind === 'invoice' ? 'View your invoice' : 'View &amp; accept your quote';
     const w = wording(q, opts);
+    const how = acceptSteps(q);
 
     return `<!doctype html>
 <html><body style="margin:0;padding:24px;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
@@ -80,11 +111,22 @@ function html(q, link, opts = {}) {
       <p style="text-align:center;margin:0 0 22px;">
         <a href="${esc(link)}" style="display:inline-block;background:#ff6b00;color:#fff;text-decoration:none;font-weight:bold;font-size:15px;padding:13px 26px;border-radius:10px;">${verb} &rarr;</a>
       </p>
+      ${
+          how
+              ? `<p style="margin:0 0 6px;font-size:15px;font-weight:bold;color:#111;">To accept your quote:</p>
+      <ol style="margin:0 0 10px;padding-left:22px;font-size:14px;color:#111;line-height:1.7;">${how.steps.map((t) => '<li>' + t + '</li>').join('')}</ol>
+      <p style="margin:0 0 20px;font-size:14px;color:#555;line-height:1.6;">${how.after}</p>`
+              : ''
+      }
       <div style="border:1px solid #eee;border-radius:10px;padding:14px 18px;margin:0 0 20px;">
         <p style="margin:0 0 4px;font-size:15px;font-weight:bold;color:#111;">Share the itemised gear list</p>
         <p style="margin:0 0 10px;font-size:13px;color:#555;line-height:1.5;">It lists the exact make and model of everything we&rsquo;re supplying &mdash; amps, in-ears, microphones and cables. Add your venue manager, event coordinator, band or tech and we&rsquo;ll email it to them when you accept your quote, and again 3 days before your event.</p>
         <a href="${esc(link)}#qp-team" style="color:#ff6b00;font-weight:bold;font-size:14px;text-decoration:none;">Add your team &rarr;</a>
       </div>
+      <p style="margin:0 0 20px;font-size:15px;color:#111;line-height:1.6;">
+        Any questions, just reply to this email.<br><br>
+        Cheers,<br>Max<br>SoundzGood Whitsundays &middot; 0422 393 022
+      </p>
       <p style="margin:0;font-size:13px;color:#666;line-height:1.6;">
         Or paste this link into your browser:<br>
         <a href="${esc(link)}" style="color:#ff6b00;word-break:break-all;">${esc(link)}</a>
@@ -103,6 +145,7 @@ function html(q, link, opts = {}) {
 
 function text(q, link, opts = {}) {
     const w = wording(q, opts);
+    const how = acceptSteps(q);
     return [
         w.heading + ' - SoundzGood Whitsundays',
         '',
@@ -112,7 +155,14 @@ function text(q, link, opts = {}) {
         '',
         `View it here: ${link}`,
         '',
+        ...(how ? ['To accept your quote:', ...how.steps.map((t, i) => i + 1 + '. ' + plain(t)), '', plain(how.after), ''] : []),
         `Share the itemised gear list (exact make and model of everything we're supplying) with your venue manager, event coordinator, band or tech: ${link}#qp-team`,
+        '',
+        'Any questions, just reply to this email.',
+        '',
+        'Cheers,',
+        'Max',
+        'SoundzGood Whitsundays - 0422 393 022',
         '',
         `${SELLER.name} - ${SELLER.email} - ${SELLER.site}`
     ].join('\n');
