@@ -33,10 +33,11 @@ async function printRules() {
         .replace(/\}\s*$/, '')
         .replace(/@page[^{]*\{[^}]*\}/g, '');
     // the print pages' 12mm side margins (the cover stays full bleed), and no
-    // footer line or spare bottom space spilling onto a page of its own - the ABN is on page 2
+    // footer line or spare bottom space spilling onto a page of its own - the ABN is on page 2.
+    // No Terms & Conditions in the PDF (Max, 18 Nov 2026) - they stay on the online page.
     return (
         rules +
-        '#quote-root > :not(.qp-hero) { padding-left: 12mm; padding-right: 12mm; box-sizing: border-box; } .qv-foot { display: none; } #quote-root, #quote-root > :last-child, .qv-doc, .qv-pay { margin-bottom: 0 !important; padding-bottom: 0 !important; } .qp-hero, .qp-invest { break-after: auto !important; }'
+        '#quote-root > :not(.qp-hero) { padding-left: 12mm; padding-right: 12mm; box-sizing: border-box; } .qv-foot, .qp-terms { display: none !important; } #quote-root, #quote-root > :last-child, .qv-doc, .qv-pay { margin-bottom: 0 !important; padding-bottom: 0 !important; } .qp-hero, .qp-invest { break-after: auto !important; }'
     );
 }
 
@@ -48,10 +49,19 @@ async function invoicePdfBlob() {
     const st = document.createElement('style');
     st.textContent = await printRules();
     document.head.appendChild(st);
-    document.querySelectorAll('.qp-term').forEach((d) => {
-        d.open = true; // every booking term, like printing
-    });
-    return window
+    // every photo fully loaded first (the cover photo comes from Firebase Storage,
+    // which allows soundzgood.com.au to copy it - bucket CORS, 18 Nov 2026)
+    await Promise.all(
+        [...document.querySelectorAll('#quote-root img')].map((img) =>
+            img.complete
+                ? null
+                : new Promise((done) => {
+                      img.addEventListener('load', done, { once: true });
+                      img.addEventListener('error', done, { once: true });
+                  })
+        )
+    );
+    const worker = window
         .html2pdf()
         .set({
             margin: 0,
@@ -61,7 +71,25 @@ async function invoicePdfBlob() {
             pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.qv-pay'] } // never cut a row or the bank box in half
         })
         .from(document.getElementById('quote-root'))
-        .outputPdf('blob');
+        .toPdf();
+    const pdf = await worker.get('pdf');
+    dropBlankEnd(pdf, await worker.get('canvas'));
+    return pdf.output('blob');
+}
+
+/*  Leftover space at the bottom can make an empty last page - drop any blank
+    pages off the end (each page is one A4-tall slice of the drawn canvas). */
+function dropBlankEnd(pdf, canvas) {
+    const pageH = Math.round((canvas.width * 297) / 210);
+    const ctx = canvas.getContext('2d');
+    const blank = (top) => {
+        const h = Math.min(pageH, canvas.height - top);
+        if (h <= 0) return true;
+        const px = ctx.getImageData(0, top, canvas.width, h).data;
+        for (let i = 0; i < px.length; i += 4 * 16) if (px[i] < 245 || px[i + 1] < 245 || px[i + 2] < 245) return false;
+        return true;
+    };
+    while (pdf.getNumberOfPages() > 1 && blank((pdf.getNumberOfPages() - 1) * pageH)) pdf.deletePage(pdf.getNumberOfPages());
 }
 
 const toBase64 = (blob) =>
