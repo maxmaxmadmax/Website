@@ -180,7 +180,10 @@ exports.adminSetQuoteStatus = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async 
         const before = snap.data();
         await autoReceipt(ref.id, update.amountPaidCents - (before.amountPaidCents || 0), update.paymentMethod, true); // "payment received"
     }
-    if (status === 'accepted') await autoGearOnAccept(ref.id); // accepted for them - their team gets the gear list
+    if (status === 'accepted') {
+        await autoGearOnAccept(ref.id); // accepted for them - their team gets the gear list
+        await autoInvoiceOnAccept(ref.id, true); // and the customer gets their tax invoice PDF
+    }
     if (update.status === 'paid') await autoGearOnDeposit(ref.id); // paid in full by bank / cash - gear list out
     return { ok: true, invoiceNumber: update.invoiceNumber || snap.data().invoiceNumber || '' };
 });

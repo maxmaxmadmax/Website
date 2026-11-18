@@ -885,14 +885,17 @@ async function autoGearOnDeposit(id) {
     }
 }
 /*  INVOICE ON ACCEPT: once per job, the customer gets their tax invoice PDF,
-    what's due and how to pay (lib/payment-email.js). */
-async function autoInvoiceOnAccept(id) {
+    what's due and how to pay (lib/payment-email.js). Online accept, or Max
+    marking it accepted in admin (not for an event that's already over). */
+async function autoInvoiceOnAccept(id, fromAdmin) {
     try {
         const ref = db.collection('quotes').doc(String(id || ''));
         const snap = await ref.get();
         if (!snap.exists) return;
         const q = snap.data();
         if (q.invoiceEmailAt || q.isTemplate || q.vendor || !(q.customer && q.customer.email)) return;
+        const end = (q.hire && (q.hire.endDate || q.hire.startDate)) || '';
+        if (fromAdmin && /^\d{4}-\d{2}-\d{2}$/.test(end) && end < brisbaneTodayISO()) return; // old job being tidied up
         await ref.update({ invoiceEmailAt: FieldValue.serverTimestamp() }); // claim it first - no double send
         await require('./lib/payment-email').sendInvoiceEmail(q, SITE_URL);
     } catch (err) {
@@ -912,7 +915,7 @@ async function autoReceipt(id, cents, method, fromAdmin) {
         const q = snap.data();
         if (q.isTemplate || q.vendor || !(q.customer && q.customer.email)) return;
         const end = (q.hire && (q.hire.endDate || q.hire.startDate)) || '';
-        if (fromAdmin && /^d{4}-d{2}-d{2}$/.test(end) && end < brisbaneTodayISO()) return;
+        if (fromAdmin && /^\d{4}-\d{2}-\d{2}$/.test(end) && end < brisbaneTodayISO()) return;
         const { sendReceiptEmail } = require('./lib/payment-email');
         const out = await sendReceiptEmail(q, SITE_URL, { cents, day: brisbaneTodayISO(), method: method === 'card' ? 'card' : 'bank' });
         if (out.sent) await ref.update({ lastReceiptAt: FieldValue.serverTimestamp(), receiptCount: FieldValue.increment(1) });
