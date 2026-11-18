@@ -17,18 +17,35 @@
     margin-bottom: 16px;
     flex-wrap: wrap;
 }
-/* "Preview & send" popup: wide enough for the email, no sideways scroll */
+/* "Preview & send" popup: edit boxes on the left, the email on the right
+   (stacked on a phone), no sideways scroll */
 .qb-email-modal {
-    width: min(760px, calc(100vw - 32px));
+    width: min(1180px, calc(100vw - 32px));
 }
 .qb-email-modal .ad-modal-body {
     overflow-x: hidden;
+}
+.qb-email-split {
+    display: grid;
+    grid-template-columns: minmax(260px, 2fr) 3fr;
+    gap: 20px;
+    align-items: start;
+}
+.qb-email-edit textarea {
+    width: 100%;
+    box-sizing: border-box;
+}
+@media (max-width: 800px) {
+    .qb-email-split {
+        grid-template-columns: 1fr;
+    }
 }
 .qb-email-to {
     overflow-wrap: anywhere; /* long cc lists wrap */
 }
 .qb-email-modal .ms-log-frame {
-    height: 55vh;
+    height: 65vh;
+    width: 100%;
     display: block;
     box-sizing: border-box;
 }

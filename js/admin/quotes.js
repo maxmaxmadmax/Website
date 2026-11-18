@@ -2561,11 +2561,13 @@ function wireQuoteActions() {
                 box.innerHTML = `<div class="ad-scrim"></div>
     <div class="ad-modal qb-email-modal" role="dialog" aria-label="Preview and send">
       <header class="ad-modal-head"><h2 data-subj>Loading…</h2><button type="button" class="ad-drawer-close" aria-label="Close">&times;</button></header>
-      <div class="ad-modal-body">
-        <p class="ad-cell-muted qb-email-to" data-to></p>
-        <label>Subject<input data-f="subject" maxlength="200"></label>
-        <label>Heading<input data-f="heading" maxlength="120"></label>
-        <label>Message<textarea data-f="message" rows="4" maxlength="3000"></textarea></label>
+      <div class="ad-modal-body qb-email-split">
+        <div class="qb-email-edit">
+          <p class="ad-cell-muted qb-email-to" data-to></p>
+          <label>Subject<input data-f="subject" maxlength="200"></label>
+          <label>Heading<input data-f="heading" maxlength="120"></label>
+          <label>Message<textarea data-f="message" rows="10" maxlength="3000"></textarea></label>
+        </div>
         <iframe sandbox="" class="ms-log-frame" title="Email preview"></iframe>
       </div>
       <footer class="ad-modal-foot"><button type="button" class="ad-btn" data-x>Cancel</button><button type="button" class="ad-btn ad-btn-primary" data-go>&#9993; Confirm &amp; send</button></footer>
