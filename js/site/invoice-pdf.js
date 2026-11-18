@@ -37,7 +37,7 @@ async function printRules() {
     // No Terms & Conditions in the PDF (Max, 18 Nov 2026) - they stay on the online page.
     return (
         rules +
-        '#quote-root > :not(.qp-hero) { padding-left: 12mm; padding-right: 12mm; box-sizing: border-box; } .qv-foot, .qp-terms { display: none !important; } #quote-root, #quote-root > :last-child, .qv-doc, .qv-pay { margin-bottom: 0 !important; padding-bottom: 0 !important; } .qp-hero, .qp-invest { break-after: auto !important; }'
+        '#quote-root > :not(.qp-hero) { padding-left: 12mm; padding-right: 12mm; box-sizing: border-box; } .qv-foot, .qp-terms { display: none !important; } #quote-root, #quote-root > :last-child, .qv-doc, .qv-pay { margin-bottom: 0 !important; padding-bottom: 0 !important; } .qp-hero, .qp-invest { break-after: auto !important; } html, body { overflow: hidden !important; }'
     );
 }
 
@@ -61,6 +61,7 @@ async function invoicePdfBlob() {
                   })
         )
     );
+    layoutPages();
     const worker = window
         .html2pdf()
         .set({
@@ -68,13 +69,58 @@ async function invoicePdfBlob() {
             image: { type: 'jpeg', quality: 0.88 },
             html2canvas: { scale: 1.6, useCORS: true, windowWidth: 794 }, // A4 width at 96 dpi
             jsPDF: { unit: 'mm', format: 'a4' },
-            pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.qv-pay'] } // never cut a row or the bank box in half
+            pagebreak: { mode: ['css'] } // the itemised pages are laid out by layoutPages()
         })
         .from(document.getElementById('quote-root'))
         .toPdf();
     const pdf = await worker.get('pdf');
     dropBlankEnd(pdf, await worker.get('canvas'));
     return pdf.output('blob');
+}
+
+/*  THE ITEMISED PAGES (Max, 18 Nov 2026). The itemised invoice starts on a new
+    page; from there, in A4-tall slices:
+      - no item row is cut between two pages (it moves to the next page, with
+        a top margin like the printed pages), and
+      - the totals and payment details always sit at the BOTTOM of the last page
+        (moved onto a new page if they don't fit under the items).        */
+const PAGE_H = (794 * 297) / 210; // one A4 page at 794px wide
+const EDGE = 45; // ~12mm top / bottom margin
+
+function layoutPages() {
+    const doc = document.getElementById('qv-doc');
+    if (!doc) return;
+    // the PDF page starts where the doc's padding ends (its top padding is drawn off the page)
+    const top = () => doc.getBoundingClientRect().top + parseFloat(getComputedStyle(doc).paddingTop);
+    const pageOf = (y) => Math.floor(y / PAGE_H);
+
+    // 1. rows: never across a page edge
+    doc.querySelectorAll('.qv-table tbody tr').forEach((tr) => {
+        const r = tr.getBoundingClientRect();
+        const y0 = r.top - top();
+        const limit = (pageOf(y0) + 1) * PAGE_H - EDGE;
+        if (y0 + r.height <= limit || r.height > PAGE_H - 2 * EDGE) return;
+        const gap = document.createElement('tr');
+        gap.className = 'qv-pdf-gap';
+        gap.innerHTML =
+            '<td colspan="5" style="height:' +
+            Math.ceil((pageOf(y0) + 1) * PAGE_H + EDGE - y0) +
+            'px;padding:0;border:0;background:#fff"></td>';
+        tr.before(gap);
+    });
+
+    // 2. totals + payment details: pinned to the bottom of the last page
+    const group = doc.querySelector('.qv-sumwrap');
+    const kids = [...doc.children].filter((k) => getComputedStyle(k).display !== 'none' && k.getBoundingClientRect().height > 0);
+    const last = kids[kids.length - 1];
+    if (!group || !last) return;
+    const g0 = group.getBoundingClientRect().top - top();
+    const g1 = last.getBoundingClientRect().bottom - top();
+    const height = g1 - g0;
+    let end = (pageOf(g0) + 1) * PAGE_H - EDGE; // bottom of the page the totals start on
+    if (g0 + height > end) end += PAGE_H; // doesn't fit under the items: bottom of the next page
+    const push = end - g1;
+    if (push > 0) group.style.marginTop = parseFloat(getComputedStyle(group).marginTop) + push + 'px';
 }
 
 /*  Leftover space at the bottom can make an empty last page - drop any blank
