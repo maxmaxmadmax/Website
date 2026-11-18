@@ -884,20 +884,21 @@ async function autoGearOnDeposit(id) {
         logger.error('gear list on deposit', { id, err: err && err.message });
     }
 }
-/*  INVOICE ON ACCEPT: once per job, the customer gets their tax invoice PDF,
-    what's due and how to pay (lib/payment-email.js). Online accept, or Max
-    marking it accepted in admin (not for an event that's already over). */
+/*  INVOICE ON ACCEPT: once per job, the customer gets their invoice email -
+    link, what's due, how to pay - with the invoice PDF that their page (or
+    admin's hidden copy) makes; see sendInvoicePdf / invoiceEmailSweep.
+    Online accept, card payment, or Max marking it accepted in admin (not for
+    an event that's already over). This only marks it due. */
 async function autoInvoiceOnAccept(id, fromAdmin) {
     try {
         const ref = db.collection('quotes').doc(String(id || ''));
         const snap = await ref.get();
         if (!snap.exists) return;
         const q = snap.data();
-        if (q.invoiceEmailAt || q.isTemplate || q.vendor || !(q.customer && q.customer.email)) return;
+        if (q.invoiceEmailDueAt || q.invoiceEmailAt || q.isTemplate || q.vendor || !(q.customer && q.customer.email)) return;
         const end = (q.hire && (q.hire.endDate || q.hire.startDate)) || '';
         if (fromAdmin && /^\d{4}-\d{2}-\d{2}$/.test(end) && end < brisbaneTodayISO()) return; // old job being tidied up
-        await ref.update({ invoiceEmailAt: FieldValue.serverTimestamp() }); // claim it first - no double send
-        await require('./lib/payment-email').sendInvoiceEmail(q, SITE_URL);
+        await ref.update({ invoiceEmailDueAt: FieldValue.serverTimestamp() });
     } catch (err) {
         logger.error('invoice email on accept', { id, err: err && err.message });
     }

@@ -2629,6 +2629,27 @@ function wireQuoteActions() {
         });
     };
     statusButton('q-accept', 'accepted', 'Accepted - now an invoice.');
+    // ...and a hidden copy of the invoice page makes the invoice PDF for the
+    // customer's invoice email (js/site/invoice-pdf.js). Gone after a minute.
+    const acceptBtn = document.getElementById('q-accept');
+    const tok = (currentQuoteDoc() || {}).token;
+    if (acceptBtn && tok)
+        acceptBtn.addEventListener('click', () =>
+            setTimeout(() => {
+                const f = document.createElement('iframe');
+                f.className = 'qb-pdf-maker';
+                f.title = 'Making the invoice PDF';
+                f.src = '/quote?t=' + tok + '&pdf=1';
+                document.body.appendChild(f);
+                const done = (e) => {
+                    if (e.source !== f.contentWindow || !e.data || !e.data.sgInvoicePdf) return;
+                    window.removeEventListener('message', done);
+                    f.remove();
+                };
+                window.addEventListener('message', done);
+                setTimeout(() => f.remove(), 60000);
+            }, 2500)
+        );
 
     // UNDO ACCEPT: puts the quote back to "sent" so the customer can accept again
     // (e.g. a test click). Refused on the server if any card money was taken.

@@ -85,6 +85,16 @@
     display: block;
     box-sizing: border-box;
 }
+/* hidden copy of the invoice page that makes the invoice PDF after Mark accepted
+   (A4 width so it draws like the printed pages; off screen, never seen) */
+.qb-pdf-maker {
+    position: absolute;
+    left: -10000px;
+    top: 0;
+    width: 794px;
+    height: 1123px;
+    border: 0;
+}
 .qb-back {
     background: none;
     border: none;

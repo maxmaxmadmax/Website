@@ -13,6 +13,7 @@ const {
     STRIPE_WEBHOOK_SECRET,
     autoGearOnDeposit,
     autoReceipt,
+    autoInvoiceOnAccept,
     categoryRef,
     checkBayCount,
     confirmAndNotify,
@@ -745,6 +746,7 @@ exports.stripeWebhook = onRequest(
                     if (session.metadata && session.metadata.quoteId) {
                         if (session.payment_status === 'paid') {
                             const fresh = await recordQuotePayment(session);
+                            await autoInvoiceOnAccept(String(session.metadata.quoteId)); // paying by card accepts it too
                             if (fresh) await autoReceipt(String(session.metadata.quoteId), session.amount_total, 'card', false); // "payment received"
                             await autoGearOnDeposit(String(session.metadata.quoteId)); // gear list out once the deposit is in
                         }

@@ -1,3 +1,13 @@
+/* Hidden A4-wide copy of the invoice that draws the invoice PDF (js/site/invoice-pdf.js) */
+.qv-pdf-maker {
+    position: absolute;
+    left: -10000px;
+    top: 0;
+    width: 794px;
+    height: 1123px;
+    border: 0;
+}
+
 /* ==========================================================================
    QUOTE / INVOICE - the customer document page (quote.html, vendor-invoice.html),
    on top of site.css. A white paper on the dark site. .qv- = the paper,

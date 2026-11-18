@@ -24,9 +24,9 @@
 
 /* ---------- 1  Setup ---------- */
 
-import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=882';
-import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=882'; // DJ / entertainment quotes
-import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=882';
+import { TERMS, TERMS_INTRO, termBodyHtml } from './terms-data.js?v=883';
+import { DJ_TERMS, DJ_TERMS_INTRO } from './dj-terms-data.js?v=883'; // DJ / entertainment quotes
+import { firebaseConfig, functionsRegion, isFirebaseConfigured } from './firebase-config.js?v=883';
 
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1';
 
@@ -143,7 +143,8 @@ async function initFns() {
         checkout: functions.httpsCallable(fns, 'quoteCheckout'),
         details: functions.httpsCallable(fns, 'submitQuoteDetails'),
         gearTeam: functions.httpsCallable(fns, 'setGearTeam'),
-        gearLink: functions.httpsCallable(fns, 'getGearShareLink')
+        gearLink: functions.httpsCallable(fns, 'getGearShareLink'),
+        invoicePdf: functions.httpsCallable(fns, 'sendInvoicePdf')
     };
 }
 
@@ -1883,8 +1884,10 @@ function wirePayment(q) {
             if (pick === 'bank' || pick === 'bankfull') {
                 say('Accepting…');
                 await callable.accept({ token: token(), name, method: 'bank', plan: pick === 'bankfull' ? 'full' : 'deposit' });
-                render(await fetchQuote());
+                const fresh = await fetchQuote();
+                render(fresh);
                 scrollToBooking();
+                maybeSendPdf(fresh);
             } else {
                 await openCheckout(name, pick);
             }
@@ -1911,6 +1914,30 @@ function wireProposal(q) {
 
 /* ---------- 13  Start ---------- */
 
+/*  Just accepted (or paid) and the invoice email is waiting for its PDF: a
+    hidden A4-wide copy of this page (?pdf=1) draws it, so a phone gives the
+    same pages as a laptop (js/site/invoice-pdf.js). Admin's Mark accepted
+    opens the same copy. */
+const pdfMode = /[?&]pdf=1\b/.test(location.search);
+let pdfStarted = false;
+function maybeSendPdf(q) {
+    if (pdfStarted || !q || !q.pdfWanted) return;
+    pdfStarted = true;
+    if (pdfMode) {
+        // this IS the hidden copy: draw and send (after the photo and fonts load)
+        setTimeout(() => {
+            import('./invoice-pdf.js').then((m) => m.sendInvoicePdf(callable.invoicePdf, token())).catch(() => {});
+        }, 1500);
+        return;
+    }
+    const f = document.createElement('iframe');
+    f.className = 'qv-pdf-maker';
+    f.title = 'Making your invoice PDF';
+    f.src = '/quote?t=' + encodeURIComponent(token()) + '&pdf=1';
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 60000);
+}
+
 function fail(text) {
     document.getElementById('quote-root').innerHTML =
         `<div class="qv-empty"><h1>${esc(text)}</h1><p>If you think this is a mistake, please <a href="/contact">get in touch</a>.</p></div>`;
@@ -1921,7 +1948,9 @@ async function load() {
     if (!isFirebaseConfigured) return fail('This link cannot be opened right now.');
     try {
         await initFns();
-        render(await fetchQuote());
+        const q = await fetchQuote();
+        render(q);
+        maybeSendPdf(q);
         // from the email's "Add your team" link
         const to = location.hash === '#qp-team' && document.getElementById('qp-team');
         if (to) to.scrollIntoView();

@@ -657,19 +657,21 @@ exports.adminSendQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (requ
     return mail;
 });
 
-/*  HOW DID WE DO? Every morning, jobs whose event ended yesterday get one
-    "How did we do?" email with the Google review button (Max, 18 Nov 2026).
+/*  HOW DID WE DO? Tuesdays at 10 am, jobs whose event ended in the past week
+    (Wednesday to Monday) get one "How did we do?" email with the Google
+    review button (Max, 18 Nov 2026).
     Booked jobs only (tax invoices), not pub-night DJ invoices, once per job. */
 exports.reviewRequests = onSchedule(
-    { schedule: '0 10 * * *', timeZone: 'Australia/Brisbane', timeoutSeconds: 300, secrets: [SMTP_USER, SMTP_PASS] },
+    { schedule: '0 10 * * 2', timeZone: 'Australia/Brisbane', timeoutSeconds: 300, secrets: [SMTP_USER, SMTP_PASS] },
     async () => {
         const { sendReviewEmail, addDays } = require('../lib/payment-email');
-        const yesterday = addDays(brisbaneTodayISO(), -1);
+        const today = brisbaneTodayISO();
+        const weekAgo = addDays(today, -7);
         const snap = await db.collection('quotes').where('kind', '==', 'invoice').get();
         for (const d of snap.docs) {
             const q = d.data();
             const end = (q.hire && (q.hire.endDate || q.hire.startDate)) || '';
-            if (end !== yesterday || q.reviewAskedAt || q.status === 'cancelled') continue;
+            if (!(end >= weekAgo && end < today) || q.reviewAskedAt || q.status === 'cancelled') continue;
             if (q.isTemplate || q.vendor || q.gigBookingId || q.gigDj || !(q.customer && q.customer.email)) continue;
             await d.ref.update({ reviewAskedAt: FieldValue.serverTimestamp() }); // claim it first - once per job
             const out = await sendReviewEmail(q);
@@ -738,6 +740,7 @@ exports.getQuote = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
         lateFees: Array.isArray(q.lateFees) ? q.lateFees.map((x) => ({ cents: x.cents || 0, date: x.date || '' })) : [],
         acceptedName: q.acceptedName || '',
         acceptedAt: secs(q.acceptedAt),
+        pdfWanted: !!q.invoiceEmailDueAt && !q.invoiceEmailAt, // the invoice email is waiting for this page to make its PDF
         createdAt: secs(q.createdAt),
         paymentStatus: q.paymentStatus || '', // '' | bank | deposit | paid
         bankPlan: q.bankPlan || '', // bank payers: 'deposit' | 'full'
@@ -791,6 +794,53 @@ exports.acceptQuote = onCall({ secrets: [SMTP_USER, SMTP_PASS] }, async (request
     await autoInvoiceOnAccept(doc.id); // and they get their tax invoice PDF
     return { ok: true };
 });
+
+/*  INVOICE PDF FROM THE BROWSER: the customer's page (or admin's hidden copy)
+    made the invoice PDF - email the invoice with it attached. Once per job;
+    anything else is ignored. The sweep below sends it link-only if no PDF comes. */
+exports.sendInvoicePdf = onCall({ secrets: [SMTP_USER, SMTP_PASS], memory: '512MiB' }, async (request) => {
+    await limitIp(request, 'tok', 30, 60);
+    const data = request.data || {};
+    const token = String(data.token || '').trim();
+    if (!/^[a-f0-9]{20,40}$/.test(token)) throw new HttpsError('invalid-argument', 'That link is not valid.');
+    const pdf = Buffer.from(String(data.pdf || ''), 'base64');
+    if (pdf.length < 1000 || pdf.length > 8 * 1024 * 1024 || pdf.subarray(0, 4).toString() !== '%PDF') {
+        throw new HttpsError('invalid-argument', 'Not a PDF.');
+    }
+    const snap = await db.collection('quotes').where('token', '==', token).limit(1).get();
+    if (snap.empty) throw new HttpsError('not-found', 'That link is not valid.');
+    const ref = snap.docs[0].ref;
+    const claimed = await db.runTransaction(async (tx) => {
+        const q = (await tx.get(ref)).data();
+        if (!q.invoiceEmailDueAt || q.invoiceEmailAt) return null;
+        tx.update(ref, { invoiceEmailAt: FieldValue.serverTimestamp() }); // claim it - once per job
+        return q;
+    });
+    if (!claimed) return { ok: true, already: true };
+    const out = await require('../lib/payment-email').sendInvoiceEmail(claimed, SITE_URL, pdf);
+    return { ok: true, sent: out.sent };
+});
+
+/*  INVOICE EMAIL SWEEP: an accepted job whose page never made the PDF (closed
+    the tab, old phone) gets its invoice email with the link only, 10 minutes on. */
+exports.invoiceEmailSweep = onSchedule(
+    { schedule: 'every 10 minutes', timeZone: 'Australia/Brisbane', timeoutSeconds: 120, secrets: [SMTP_USER, SMTP_PASS] },
+    async () => {
+        const cutoff = new Date(Date.now() - 10 * 60 * 1000);
+        const snap = await db.collection('quotes').where('invoiceEmailDueAt', '<=', cutoff).get();
+        for (const d of snap.docs) {
+            const claimed = await db.runTransaction(async (tx) => {
+                const q = (await tx.get(d.ref)).data();
+                if (q.invoiceEmailAt) return null;
+                tx.update(d.ref, { invoiceEmailAt: FieldValue.serverTimestamp() });
+                return q;
+            });
+            if (!claimed) continue;
+            const out = await require('../lib/payment-email').sendInvoiceEmail(claimed, SITE_URL);
+            logger.info('invoice email (link only)', { id: d.id, sent: out.sent });
+        }
+    }
+);
 
 /* -------------------------------------------------------------------------
    quoteCheckout  PUBLIC
