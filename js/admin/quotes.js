@@ -2566,7 +2566,8 @@ function wireQuoteActions() {
           <p class="ad-cell-muted qb-email-to" data-to></p>
           <label>Subject<input data-f="subject" maxlength="200"></label>
           <label>Heading<input data-f="heading" maxlength="120"></label>
-          <label>Message<textarea data-f="message" rows="10" maxlength="3000"></textarea></label>
+          <label class="is-grow">Message<textarea data-f="message" rows="8" maxlength="3000"></textarea></label>
+          <p class="qb-email-tip">The total, button, gear list and link are added below it for you.</p>
         </div>
         <iframe sandbox="" class="ms-log-frame" title="Email preview"></iframe>
       </div>
@@ -2584,7 +2585,7 @@ function wireQuoteActions() {
                     const r = await call('adminPreviewClientEmail', { kind: 'quote', quoteId: id, ...(first ? {} : words()) });
                     if (first) fields.forEach((f) => (f.value = (r.fields || {})[f.dataset.f] || ''));
                     box.querySelector('[data-subj]').textContent = 'Preview & send';
-                    box.querySelector('[data-to]').textContent = r.note || '';
+                    box.querySelector('[data-to]').textContent = (r.note || '').replace(', cc ', '\ncc ').replace('. Nothing', '\nNothing'); // To / cc / not sent yet, one per line
                     box.querySelector('iframe').srcdoc = r.html || '';
                 };
                 let wait = 0;

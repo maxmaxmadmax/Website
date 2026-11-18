@@ -32,11 +32,11 @@
      17. Helpers
    -------------------------------------------------------------------------- */
 
-import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=881';
+import { firebaseConfig, functionsRegion, eventId as defaultEventId, isFirebaseConfigured } from './firebase-config.js?v=882';
 
-import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=881';
-import { termBodyHtml } from './terms-data.js?v=881';
-import { VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION } from './vendor-terms-data.js?v=881';
+import { VendorMap, previewLayout, previewCategories } from './vendor-map.js?v=882';
+import { termBodyHtml } from './terms-data.js?v=882';
+import { VENDOR_TERMS, VENDOR_TERMS_INTRO, VENDOR_TERMS_OUTRO, VENDOR_TERMS_VERSION } from './vendor-terms-data.js?v=882';
 
 /* ---------------------------------------------------------------- 1. Settings */
 

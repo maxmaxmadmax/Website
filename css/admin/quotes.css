@@ -29,22 +29,58 @@
     display: grid;
     grid-template-columns: minmax(260px, 2fr) 3fr;
     gap: 20px;
-    align-items: start;
+    align-items: stretch;
+}
+/* the edit side: a card the same height as the preview, the message box fills it */
+.qb-email-edit {
+    min-width: 0; /* long addresses wrap instead of running under the preview */
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    background: var(--ad-soft);
+    border: 1px solid var(--ad-line);
+    border-radius: 10px;
+}
+.qb-email-edit label {
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.qb-email-edit .is-grow {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 .qb-email-edit textarea {
+    flex: 1;
+    min-height: 140px;
     width: 100%;
     box-sizing: border-box;
+    resize: none;
+    line-height: 1.5;
+}
+.qb-email-to {
+    margin: 0 0 4px;
+    padding: 10px 12px;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    white-space: pre-line; /* To and cc on their own lines */
+    overflow-wrap: anywhere; /* long cc lists wrap */
+    background: var(--ad-white);
+    border: 1px solid var(--ad-line);
+    border-radius: 8px;
+}
+.qb-email-tip {
+    margin: 8px 0 0;
+    font-size: 0.75rem;
+    color: var(--ad-faint);
 }
 @media (max-width: 800px) {
     .qb-email-split {
         grid-template-columns: 1fr;
     }
 }
-.qb-email-to {
-    overflow-wrap: anywhere; /* long cc lists wrap */
-}
 .qb-email-modal .ms-log-frame {
-    height: 65vh;
+    height: min(65vh, 640px);
     width: 100%;
     display: block;
     box-sizing: border-box;
