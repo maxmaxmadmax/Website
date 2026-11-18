@@ -76,12 +76,9 @@ function acceptSteps(q) {
             q.payFull
                 ? 'Choose how you&rsquo;d like to pay: bank transfer or card.'
                 : 'Choose how you&rsquo;d like to pay: bank transfer or card, deposit or in full.',
-            'Tick the box to accept the terms, then press <b>Accept</b>.'
+            'Agree to the <b>Terms &amp; Conditions</b>, then press <b>Accept</b>.'
         ],
-        after:
-            'Your date is secured once ' +
-            (q.payFull ? 'payment is' : 'the deposit is') +
-            ' received. If you pick bank transfer, we&rsquo;ll email your invoice with our bank details.'
+        after: 'Your date is secured once you accept your quote. Please pay by the due dates on your invoice to avoid late fees.'
     };
 }
 const plain = (h) =>
